@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const cleanupRealtime = async () => {
       const channels = supabase.getChannels();
       if (channels.length > 0) {
-        console.log(`🧹 Cleaning up ${channels.length} realtime channel(s)`);
+        // console.log(`🧹 Cleaning up ${channels.length} realtime channel(s)`);
         for (const ch of channels) {
           await supabase.removeChannel(ch);
         }
@@ -47,25 +47,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Fetch user role from app_users table and normalize it
     const fetchUserRole = async (userId: string): Promise<UserRole> => {
       try {
-        const { data, error } = await supabase
+        // Add timeout to prevent hanging
+        const timeoutPromise = new Promise<UserRole>((_, reject) => {
+          setTimeout(() => reject(new Error('Role fetch timeout')), 5000);
+        });
+
+        const fetchPromise = supabase
           .from('app_users')
           .select('role')
           .eq('user_id', userId)
-          .maybeSingle();
+          .maybeSingle()
+          .then(({ data, error }) => {
+            if (error) {
+              console.error('❌ Error fetching user role:', error.message);
+              return 'user';
+            }
 
-        if (error) {
-          console.error('❌ Error fetching user role:', error.message);
-          return 'user';
-        }
+            const rawRole = data?.role;
 
-        const rawRole = data?.role;
+            // Normalize role to UserRole type
+            if (rawRole === 'admin' || rawRole === 'mechanic' || rawRole === 'employee') {
+              return rawRole;
+            }
 
-        // Normalize role to UserRole type
-        if (rawRole === 'admin' || rawRole === 'mechanic' || rawRole === 'employee') {
-          return rawRole;
-        }
+            return 'user';
+          });
 
-        return 'user';
+        return await Promise.race([fetchPromise, timeoutPromise]);
       } catch (error) {
         console.error('❌ Failed to fetch user role:', error);
         return 'user';
@@ -85,7 +93,80 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (mounted) {
           if (session) {
-            // Fetch user role
+            try {
+              const normalizedRole = await fetchUserRole(session.user.id);
+              const extendedSession: ExtendedSession = {
+                ...session,
+                role: normalizedRole || undefined,
+              };
+
+              const isAdminUser = normalizedRole === 'admin';
+              const isMechanicUser = normalizedRole === 'mechanic';
+              const hasMechanicAccessUser = isAdminUser || isMechanicUser;
+
+              setSessionState(extendedSession);
+              setUser(session.user);
+              setRole(normalizedRole);
+              setIsAdmin(isAdminUser);
+              setIsMechanic(isMechanicUser);
+              setHasMechanicAccess(hasMechanicAccessUser);
+            } catch (roleError) {
+              console.error('❌ Error fetching role, defaulting to user:', roleError);
+              // Set session with default role if role fetch fails
+              const extendedSession: ExtendedSession = {
+                ...session,
+                role: 'user',
+              };
+              setSessionState(extendedSession);
+              setUser(session.user);
+              setRole('user');
+              setIsAdmin(false);
+              setIsMechanic(false);
+              setHasMechanicAccess(false);
+            }
+          } else {
+            setSessionState(null);
+            setUser(null);
+            setRole(null);
+            setIsAdmin(false);
+            setIsMechanic(false);
+            setHasMechanicAccess(false);
+          }
+        }
+      } catch (error) {
+        console.error('❌ Failed to initialize auth:', error);
+        // Ensure we clear loading even on error
+        if (mounted) {
+          setSessionState(null);
+          setUser(null);
+          setRole(null);
+          setIsAdmin(false);
+          setIsMechanic(false);
+          setHasMechanicAccess(false);
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    initializeAuth();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // console.log('🔐 Auth state changed:', event, session?.user?.email || 'No user');
+
+      if (event === 'SIGNED_OUT') {
+        // console.log('🧹 User signed out - cleaning up realtime channels');
+        await cleanupRealtime();
+      }
+
+      if (mounted) {
+        if (session) {
+          try {
+            // Fetch user role on auth state change
             const normalizedRole = await fetchUserRole(session.user.id);
             const extendedSession: ExtendedSession = {
               ...session,
@@ -104,63 +185,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setIsMechanic(isMechanicUser);
             setHasMechanicAccess(hasMechanicAccessUser);
 
-            console.log('✅ Session restored for user:', session.user.email, 'Role:', normalizedRole);
-          } else {
-            setSessionState(null);
-            setUser(null);
-            setRole(null);
+            if (event === 'SIGNED_IN') {
+              // console.log('✅ User signed in with role:', normalizedRole);
+            }
+          } catch (roleError) {
+            console.error('❌ Error fetching role in auth state change, defaulting to user:', roleError);
+            // Set session with default role if role fetch fails
+            const extendedSession: ExtendedSession = {
+              ...session,
+              role: 'user',
+            };
+            setSessionState(extendedSession);
+            setUser(session.user);
+            setRole('user');
             setIsAdmin(false);
             setIsMechanic(false);
             setHasMechanicAccess(false);
-            console.log('ℹ️ No active session found');
-          }
-
-          // ✅ Done initializing
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error('❌ Failed to initialize auth:', error);
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    initializeAuth();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔐 Auth state changed:', event, session?.user?.email || 'No user');
-
-      if (event === 'SIGNED_OUT') {
-        console.log('🧹 User signed out - cleaning up realtime channels');
-        await cleanupRealtime();
-      }
-
-      if (mounted) {
-        if (session) {
-          // Fetch user role on auth state change
-          const normalizedRole = await fetchUserRole(session.user.id);
-          const extendedSession: ExtendedSession = {
-            ...session,
-            role: normalizedRole || undefined,
-          };
-
-          // Compute derived booleans
-          const isAdminUser = normalizedRole === 'admin';
-          const isMechanicUser = normalizedRole === 'mechanic';
-          const hasMechanicAccessUser = isAdminUser || isMechanicUser;
-
-          setSessionState(extendedSession);
-          setUser(session.user);
-          setRole(normalizedRole);
-          setIsAdmin(isAdminUser);
-          setIsMechanic(isMechanicUser);
-          setHasMechanicAccess(hasMechanicAccessUser);
-
-          if (event === 'SIGNED_IN') {
-            console.log('✅ User signed in with role:', normalizedRole);
           }
         } else {
           setSessionState(null);
@@ -188,11 +228,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     try {
-      console.log('🚪 Signing out user:', user?.email);
+      // console.log('🚪 Signing out user:', user?.email);
 
       const channels = supabase.getChannels();
       if (channels.length > 0) {
-        console.log(`🧹 Cleaning up ${channels.length} realtime channel(s) before sign out`);
+        // console.log(`🧹 Cleaning up ${channels.length} realtime channel(s) before sign out`);
         for (const ch of channels) {
           await supabase.removeChannel(ch);
         }
@@ -211,7 +251,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsAdmin(false);
       setIsMechanic(false);
       setHasMechanicAccess(false);
-      console.log('✅ User signed out successfully');
+      // console.log('✅ User signed out successfully');
     } catch (error) {
       console.error('❌ Failed to sign out:', error);
       throw error;

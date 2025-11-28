@@ -1,46 +1,46 @@
-import { ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { ReactNode } from "react";
+import { Navigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import LoadingScreen from "./LoadingScreen";
+
+type UserRole = "user" | "employee" | "mechanic" | "admin";
 
 interface ProtectedRouteProps {
   children: ReactNode;
-  requiredRole?: string;
+  requiredRole?: UserRole;
   requireMechanicAccess?: boolean;
 }
 
-export default function ProtectedRoute({ children, requiredRole, requireMechanicAccess = false }: ProtectedRouteProps) {
-  const { session, role, loading, hasMechanicAccess } = useAuth();
+export default function ProtectedRoute({
+  children,
+  requiredRole,
+  requireMechanicAccess,
+}: ProtectedRouteProps) {
+  const { loading, session, role, hasMechanicAccess } = useAuth();
 
-  // Show loading state while checking authentication
+  // 🔹 While auth is still figuring out who we are, just show a lightweight loading screen
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
-  // Redirect to home page if no valid session
+  // 🔹 After loading: if there is still no session, bounce to home/login
   if (!session) {
-    console.log('🔒 No active session, redirecting to home page');
+    // console.log("🔒 No active session, redirecting to home page");
     return <Navigate to="/" replace />;
   }
 
-  // Check role-based access if required
+  // 🔹 If a specific role is required (e.g. admin only)
   if (requiredRole && role !== requiredRole) {
-    console.log(`🚫 Access denied. Required role: ${requiredRole}, User role: ${role}`);
+    // console.log(`🚫 Access denied. Required role: ${requiredRole}, User role: ${role}`);
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Check mechanic access if required
+  // 🔹 If mechanic access is required (admin OR mechanic)
   if (requireMechanicAccess && !hasMechanicAccess) {
-    console.log(`🚫 Mechanic access denied. User role: ${role}`);
+    // console.log(`🚫 Mechanic access denied. User role: ${role}`);
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Session exists and role matches (if required) - render protected content
+  // 🔹 All checks passed, render the protected content
   return <>{children}</>;
 }
