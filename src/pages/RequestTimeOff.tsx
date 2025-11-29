@@ -2,6 +2,8 @@ import DashboardLayout from "../layouts/DashboardLayout";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { CONFIG } from "../lib/config";
+import { logger } from "../lib/logger";
 
 export default function RequestTimeOff() {
   const [formData, setFormData] = useState({
@@ -31,29 +33,29 @@ export default function RequestTimeOff() {
         } = await supabase.auth.getUser();
 
         if (userError) {
-          console.error("Error fetching auth user:", userError);
+          logger.error("Error fetching auth user:", userError);
           return;
         }
 
         if (!user) {
-          console.warn("No authenticated user found");
+          logger.warn("No authenticated user found");
           return;
         }
 
-        // Try to also fetch user_profiles row (optional)
+        // Try to also fetch app_users row (optional)
         const { data: profile, error: profileError } = await supabase
-          .from("user_profiles")
-          .select("email")
-          .eq("user_id", user.id) // 👈 change to the correct FK column if needed
+          .from("app_users")
+          .select("email, full_name")
+          .eq("user_id", user.id)
           .maybeSingle(); // won't throw if no row
 
         if (profileError) {
-          console.error("Error fetching user profile:", profileError);
+          logger.error("Error fetching user profile:", profileError);
         }
 
         // Log to verify what you're getting back
-        console.log("Auth user:", user);
-        console.log("Profile row:", profile);
+        logger.debug("Auth user:", user);
+        logger.debug("Profile row:", profile);
 
         setFormData((prev) => ({
           ...prev,
@@ -63,7 +65,7 @@ export default function RequestTimeOff() {
           fullName: prev.fullName || profile?.full_name || "",
         }));
       } catch (err) {
-        console.error("Unexpected error fetching user profile:", err);
+        logger.error("Unexpected error fetching user profile:", err);
       }
     };
 
@@ -142,8 +144,12 @@ export default function RequestTimeOff() {
         totalDuration,
       };
 
+      if (!CONFIG.make.rtoWebhook) {
+        throw new Error("RTO webhook URL is not configured");
+      }
+      
       const res = await fetch(
-        "https://hook.us2.make.com/ra84c07wtmtub87etqp4nncrlitijiqc",
+        CONFIG.make.rtoWebhook,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -183,7 +189,7 @@ export default function RequestTimeOff() {
       setTotalDuration("");
       setTimeout(() => setStatus("idle"), 3000);
     } catch (err) {
-      console.error("Submission error:", err);
+      logger.error("Submission error:", err);
       setStatus("error");
       setTimeout(() => setStatus("idle"), 3000);
     }

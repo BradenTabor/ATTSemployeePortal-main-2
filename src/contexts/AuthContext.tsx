@@ -1,6 +1,8 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
+import { logger } from "../lib/logger";
+
 
 type UserRole = "employee" | "admin" | "mechanic" | "user" | null;
 
@@ -30,6 +32,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isMechanic, setIsMechanic] = useState(false);
   const [hasMechanicAccess, setHasMechanicAccess] = useState(false);
+  
+  // Keep track of last known role to preserve it on transient errors
+  const lastKnownRoleRef = useRef<UserRole>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -45,8 +50,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     // Fetch user role from app_users table and normalize it
+    // Returns null on error (not 'user') so caller can preserve last known role
     const fetchUserRole = async (userId: string): Promise<UserRole> => {
       try {
+        logger.info(`[AuthContext] Fetching role for user_id: ${userId}`);
+        
         // Add timeout to prevent hanging
         const timeoutPromise = new Promise<UserRole>((_, reject) => {
           setTimeout(() => reject(new Error('Role fetch timeout')), 5000);
@@ -59,24 +67,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .maybeSingle()
           .then(({ data, error }) => {
             if (error) {
-              console.error('❌ Error fetching user role:', error.message);
-              return 'user';
+              logger.error(`[AuthContext] Error fetching user role for ${userId}:`, error.message);
+              // Return null on error so caller can decide whether to preserve last known role
+              return null;
             }
 
             const rawRole = data?.role;
+            logger.info(`[AuthContext] Raw role from DB for ${userId}:`, rawRole);
 
             // Normalize role to UserRole type
             if (rawRole === 'admin' || rawRole === 'mechanic' || rawRole === 'employee') {
+              logger.info(`[AuthContext] Normalized role for ${userId}: ${rawRole}`);
               return rawRole;
             }
 
+            // If role is null/undefined or invalid, return 'user' as legitimate fallback
+            // This means the user truly has no role record or invalid role
+            if (rawRole === null || rawRole === undefined) {
+              logger.warn(`[AuthContext] No role found in DB for ${userId}, using 'user' as fallback`);
+              return 'user';
+            }
+
+            // Invalid role value - log and use 'user' as fallback
+            logger.warn(`[AuthContext] Invalid role value '${rawRole}' for ${userId}, using 'user' as fallback`);
             return 'user';
           });
 
-        return await Promise.race([fetchPromise, timeoutPromise]);
+        const result = await Promise.race([fetchPromise, timeoutPromise]);
+        return result;
       } catch (error) {
-        console.error('❌ Failed to fetch user role:', error);
-        return 'user';
+        logger.error(`[AuthContext] Failed to fetch user role for ${userId}:`, error);
+        // Return null on error so caller can preserve last known role
+        return null;
       }
     };
 
@@ -88,43 +110,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } = await supabase.auth.getSession();
 
         if (error) {
-          console.error('❌ Error fetching session:', error.message);
+          logger.error('Error fetching session:', error.message);
         }
 
         if (mounted) {
           if (session) {
-            try {
-              const normalizedRole = await fetchUserRole(session.user.id);
-              const extendedSession: ExtendedSession = {
-                ...session,
-                role: normalizedRole || undefined,
-              };
-
-              const isAdminUser = normalizedRole === 'admin';
-              const isMechanicUser = normalizedRole === 'mechanic';
-              const hasMechanicAccessUser = isAdminUser || isMechanicUser;
-
-              setSessionState(extendedSession);
-              setUser(session.user);
-              setRole(normalizedRole);
-              setIsAdmin(isAdminUser);
-              setIsMechanic(isMechanicUser);
-              setHasMechanicAccess(hasMechanicAccessUser);
-            } catch (roleError) {
-              console.error('❌ Error fetching role, defaulting to user:', roleError);
-              // Set session with default role if role fetch fails
-              const extendedSession: ExtendedSession = {
-                ...session,
-                role: 'user',
-              };
-              setSessionState(extendedSession);
-              setUser(session.user);
-              setRole('user');
-              setIsAdmin(false);
-              setIsMechanic(false);
-              setHasMechanicAccess(false);
+            const normalizedRole = await fetchUserRole(session.user.id);
+            
+            // If fetch failed (returned null), preserve last known role or use 'user' as initial fallback
+            const finalRole: UserRole = normalizedRole !== null 
+              ? normalizedRole 
+              : (lastKnownRoleRef.current !== null 
+                  ? lastKnownRoleRef.current 
+                  : 'user');
+            
+            if (normalizedRole !== null) {
+              // Only update ref when we get a valid role from DB
+              lastKnownRoleRef.current = normalizedRole;
+              logger.info(`[AuthContext] Initial auth: Set role to ${normalizedRole} for ${session.user.id}`);
+            } else {
+              logger.warn(`[AuthContext] Initial auth: Role fetch failed, preserving last known role: ${lastKnownRoleRef.current || 'user'}`);
             }
+            
+            const extendedSession: ExtendedSession = {
+              ...session,
+              role: finalRole || undefined,
+            };
+
+            const isAdminUser = finalRole === 'admin';
+            const isMechanicUser = finalRole === 'mechanic';
+            const hasMechanicAccessUser = isAdminUser || isMechanicUser;
+
+            setSessionState(extendedSession);
+            setUser(session.user);
+            setRole(finalRole);
+            setIsAdmin(isAdminUser);
+            setIsMechanic(isMechanicUser);
+            setHasMechanicAccess(hasMechanicAccessUser);
           } else {
+            // No session - clear everything including last known role
+            lastKnownRoleRef.current = null;
             setSessionState(null);
             setUser(null);
             setRole(null);
@@ -134,7 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         }
       } catch (error) {
-        console.error('❌ Failed to initialize auth:', error);
+        logger.error('Failed to initialize auth:', error);
         // Ensure we clear loading even on error
         if (mounted) {
           setSessionState(null);
@@ -156,53 +181,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // console.log('🔐 Auth state changed:', event, session?.user?.email || 'No user');
+      logger.info(`[AuthContext] Auth state changed: ${event}`, session?.user?.email || 'No user');
 
       if (event === 'SIGNED_OUT') {
-        // console.log('🧹 User signed out - cleaning up realtime channels');
+        logger.info('[AuthContext] User signed out - cleaning up realtime channels');
         await cleanupRealtime();
+        // Clear last known role on sign out
+        lastKnownRoleRef.current = null;
       }
 
       if (mounted) {
         if (session) {
-          try {
-            // Fetch user role on auth state change
-            const normalizedRole = await fetchUserRole(session.user.id);
-            const extendedSession: ExtendedSession = {
-              ...session,
-              role: normalizedRole || undefined,
-            };
+          // Fetch user role on auth state change
+          const normalizedRole = await fetchUserRole(session.user.id);
+          
+          // If fetch failed (returned null), preserve last known role
+          // Only use 'user' as fallback if we truly have no prior role
+          const finalRole: UserRole = normalizedRole !== null 
+            ? normalizedRole 
+            : (lastKnownRoleRef.current !== null 
+                ? lastKnownRoleRef.current 
+                : 'user');
+          
+          if (normalizedRole !== null) {
+            // Only update ref when we get a valid role from DB
+            lastKnownRoleRef.current = normalizedRole;
+            logger.info(`[AuthContext] Auth state change (${event}): Set role to ${normalizedRole} for ${session.user.id}`);
+          } else {
+            logger.warn(`[AuthContext] Auth state change (${event}): Role fetch failed, preserving last known role: ${lastKnownRoleRef.current || 'user'}`);
+          }
+          
+          const extendedSession: ExtendedSession = {
+            ...session,
+            role: finalRole || undefined,
+          };
 
-            // Compute derived booleans
-            const isAdminUser = normalizedRole === 'admin';
-            const isMechanicUser = normalizedRole === 'mechanic';
-            const hasMechanicAccessUser = isAdminUser || isMechanicUser;
+          // Compute derived booleans
+          const isAdminUser = finalRole === 'admin';
+          const isMechanicUser = finalRole === 'mechanic';
+          const hasMechanicAccessUser = isAdminUser || isMechanicUser;
 
-            setSessionState(extendedSession);
-            setUser(session.user);
-            setRole(normalizedRole);
-            setIsAdmin(isAdminUser);
-            setIsMechanic(isMechanicUser);
-            setHasMechanicAccess(hasMechanicAccessUser);
+          setSessionState(extendedSession);
+          setUser(session.user);
+          setRole(finalRole);
+          setIsAdmin(isAdminUser);
+          setIsMechanic(isMechanicUser);
+          setHasMechanicAccess(hasMechanicAccessUser);
 
-            if (event === 'SIGNED_IN') {
-              // console.log('✅ User signed in with role:', normalizedRole);
-            }
-          } catch (roleError) {
-            console.error('❌ Error fetching role in auth state change, defaulting to user:', roleError);
-            // Set session with default role if role fetch fails
-            const extendedSession: ExtendedSession = {
-              ...session,
-              role: 'user',
-            };
-            setSessionState(extendedSession);
-            setUser(session.user);
-            setRole('user');
-            setIsAdmin(false);
-            setIsMechanic(false);
-            setHasMechanicAccess(false);
+          if (event === 'SIGNED_IN') {
+            logger.info(`[AuthContext] User signed in with role: ${finalRole}`);
           }
         } else {
+          // No session - clear everything including last known role
+          lastKnownRoleRef.current = null;
           setSessionState(null);
           setUser(null);
           setRole(null);
@@ -241,19 +272,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.auth.signOut();
 
       if (error) {
-        console.error('❌ Sign out error:', error.message);
+        logger.error('Sign out error:', error.message);
         throw error;
       }
 
+      // Clear last known role on sign out
+      lastKnownRoleRef.current = null;
       setUser(null);
       setSessionState(null);
       setRole(null);
       setIsAdmin(false);
       setIsMechanic(false);
       setHasMechanicAccess(false);
-      // console.log('✅ User signed out successfully');
+      logger.info('✅ User signed out successfully');
     } catch (error) {
-      console.error('❌ Failed to sign out:', error);
+      logger.error('Failed to sign out:', error);
       throw error;
     }
   };

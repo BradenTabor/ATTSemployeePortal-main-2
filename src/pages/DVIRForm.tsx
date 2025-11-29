@@ -5,11 +5,14 @@ import {
   useImperativeHandle,
   forwardRef,
   FormEvent,
+  ReactNode,
 } from "react";
 import DashboardLayout from "../layouts/DashboardLayout";
-import { Camera } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Camera, CheckCircle2, AlertTriangle } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
+import { CONFIG} from "../lib/config";
+import { logger } from "../lib/logger"; 
+import { cn } from "../lib/utils";
 
 type ExtraPhotos = {
   tire?: File;
@@ -144,6 +147,79 @@ const AERIAL_LIFT_ITEMS: ChecklistItem[] = [
 ];
 
 /* ------------------------------------------------------------------
+   Layout Helpers
+-------------------------------------------------------------------*/
+
+interface SectionCardProps {
+  title: string;
+  subtitle?: string;
+  badge?: string;
+  children: ReactNode;
+}
+
+const SectionCard = ({ title, subtitle, badge, children }: SectionCardProps) => (
+  <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-gray-900/80 via-gray-900/40 to-gray-900/10 shadow-xl p-6 space-y-5">
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div>
+        <p className="text-[10px] tracking-[0.3em] uppercase text-emerald-200/70">
+          {badge || "DOT COMPLIANT"}
+        </p>
+        <h2 className="text-lg font-semibold text-white">{title}</h2>
+        {subtitle && <p className="text-sm text-white/70 mt-1 max-w-2xl">{subtitle}</p>}
+      </div>
+    </div>
+    <div className="space-y-4">{children}</div>
+  </section>
+);
+
+interface UploadTileProps {
+  label: string;
+  description?: string;
+  required?: boolean;
+  status: boolean;
+  onClick: () => void;
+}
+
+const UploadTile = ({ label, description, required, status, onClick }: UploadTileProps) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="group flex items-center justify-between gap-4 rounded-2xl border border-white/5 bg-white/[0.04] px-4 py-3 text-left transition-all hover:border-emerald-400/40 hover:bg-white/[0.07]"
+  >
+    <div className="flex items-center gap-3">
+      <span className="inline-flex items-center justify-center rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-2.5 text-emerald-200">
+        <Camera className="w-4 h-4" />
+      </span>
+      <div>
+        <p className="text-sm font-semibold text-white flex items-center gap-1">
+          {label}
+          {required && <span className="text-rose-300 text-[11px]">* Required</span>}
+        </p>
+        {description && <p className="text-xs text-white/60">{description}</p>}
+      </div>
+    </div>
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 text-xs font-semibold transition-colors",
+        status ? "text-emerald-300" : "text-amber-200"
+      )}
+    >
+      {status ? (
+        <>
+          <CheckCircle2 className="w-4 h-4" />
+          Captured
+        </>
+      ) : (
+        <>
+          <AlertTriangle className="w-4 h-4" />
+          Pending
+        </>
+      )}
+    </span>
+  </button>
+);
+
+/* ------------------------------------------------------------------
    Signature Pad Component
 -------------------------------------------------------------------*/
 
@@ -160,39 +236,73 @@ interface SignaturePadProps {
 const SignaturePad = forwardRef<SignaturePadHandle, SignaturePadProps>(
   ({ label }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
+    const strokesRef = useRef<{ x: number; y: number }[][]>([]);
+    const currentStrokeRef = useRef<{ x: number; y: number }[] | null>(null);
     const [isDrawing, setIsDrawing] = useState(false);
     const [hasDrawing, setHasDrawing] = useState(false);
 
-    useEffect(() => {
+    const resizeCanvas = () => {
       const canvas = canvasRef.current;
       if (!canvas) return;
-
       const dpr = window.devicePixelRatio || 1;
       const rect = canvas.getBoundingClientRect();
       canvas.width = rect.width * dpr;
       canvas.height = rect.height * dpr;
-
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
       ctx.scale(dpr, dpr);
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, rect.width, rect.height);
-      ctx.strokeStyle = "#000000";
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2.2;
       ctx.lineCap = "round";
+      ctx.strokeStyle = "#0f172a";
+      ctxRef.current = ctx;
+      redraw();
+    };
+
+    const redraw = () => {
+      const canvas = canvasRef.current;
+      const ctx = ctxRef.current;
+      if (!canvas || !ctx) return;
+      const rect = canvas.getBoundingClientRect();
+      ctx.clearRect(0, 0, rect.width, rect.height);
+      ctx.fillStyle = "#fdfdfd";
+      ctx.fillRect(0, 0, rect.width, rect.height);
+      strokesRef.current.forEach((stroke) => {
+        ctx.beginPath();
+        stroke.forEach((point, index) => {
+          if (index === 0) {
+            ctx.moveTo(point.x, point.y);
+          } else {
+            ctx.lineTo(point.x, point.y);
+          }
+        });
+        ctx.stroke();
+      });
+    };
+
+    useEffect(() => {
+      resizeCanvas();
+      const handleResize = () => resizeCanvas();
+      window.addEventListener("resize", handleResize);
+      return () => window.removeEventListener("resize", handleResize);
     }, []);
 
+    const handleClear = () => {
+      strokesRef.current = [];
+      currentStrokeRef.current = null;
+      redraw();
+      setHasDrawing(false);
+    };
+
+    const handleUndo = () => {
+      if (!strokesRef.current.length) return;
+      strokesRef.current.pop();
+      redraw();
+      setHasDrawing(strokesRef.current.length > 0);
+    };
+
     useImperativeHandle(ref, () => ({
-      clear() {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-        const rect = canvas.getBoundingClientRect();
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, rect.width, rect.height);
-        setHasDrawing(false);
-      },
+      clear: handleClear,
       isEmpty() {
         return !hasDrawing;
       },
@@ -200,70 +310,87 @@ const SignaturePad = forwardRef<SignaturePadHandle, SignaturePadProps>(
         const canvas = canvasRef.current;
         if (!canvas || !hasDrawing) return null;
         return new Promise((resolve) => {
-          canvas.toBlob((blob) => {
-            resolve(blob || null);
-          }, "image/png");
+          canvas.toBlob((blob) => resolve(blob || null), "image/png");
         });
       },
     }));
 
-    const handlePointerDown = (
-      e: React.PointerEvent<HTMLCanvasElement>
-    ) => {
+    const getPoint = (event: React.PointerEvent<HTMLCanvasElement>) => {
       const canvas = canvasRef.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
+      if (!canvas) return null;
       const rect = canvas.getBoundingClientRect();
+      return {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      };
+    };
+
+    const handlePointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
+      event.preventDefault();
+      const ctx = ctxRef.current;
+      if (!ctx) return;
+      const point = getPoint(event);
+      if (!point) return;
       ctx.beginPath();
-      ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+      ctx.moveTo(point.x, point.y);
+      currentStrokeRef.current = [point];
       setIsDrawing(true);
     };
 
-    const handlePointerMove = (
-      e: React.PointerEvent<HTMLCanvasElement>
-    ) => {
-      if (!isDrawing) return;
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d");
+    const handlePointerMove = (event: React.PointerEvent<HTMLCanvasElement>) => {
+      if (!isDrawing || !currentStrokeRef.current) return;
+      const ctx = ctxRef.current;
       if (!ctx) return;
-      const rect = canvas.getBoundingClientRect();
-      ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+      const point = getPoint(event);
+      if (!point) return;
+      ctx.lineTo(point.x, point.y);
       ctx.stroke();
+      currentStrokeRef.current.push(point);
       setHasDrawing(true);
     };
 
     const handlePointerUp = () => {
       setIsDrawing(false);
+      if (currentStrokeRef.current && currentStrokeRef.current.length) {
+        strokesRef.current.push(currentStrokeRef.current);
+      }
+      currentStrokeRef.current = null;
     };
 
     return (
-      <div className="space-y-1">
-        <div className="flex items-center justify-between">
-          <label className="block text-xs text-gray-300 mb-1">
-            {label}
-          </label>
-          <button
-            type="button"
-            onClick={() => ref && (ref as any).current?.clear?.()}
-            className="text-[10px] text-gray-400 hover:text-white underline"
-          >
-            Clear
-          </button>
+      <div className="space-y-2">
+        <div className="flex items-center justify-between text-xs text-white/70">
+          <span>{label}</span>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleUndo}
+              disabled={!hasDrawing}
+              className="text-[11px] text-white/60 hover:text-white disabled:opacity-30 disabled:hover:text-white/60 transition"
+            >
+              Undo
+            </button>
+            <button
+              type="button"
+              onClick={handleClear}
+              className="text-[11px] text-white/60 hover:text-white transition"
+            >
+              Clear
+            </button>
+          </div>
         </div>
-        <div className="rounded-md border border-gray-600 bg-white overflow-hidden">
+        <div className="rounded-2xl border border-white/10 bg-white overflow-hidden shadow-inner">
           <canvas
             ref={canvasRef}
-            className="w-full h-28 touch-none"
+            className="w-full h-36 md:h-44 touch-none cursor-crosshair"
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerLeave={handlePointerUp}
           />
         </div>
-        <p className="text-[10px] text-gray-400">
-          Sign inside the box with your finger or stylus.
+        <p className="text-[11px] text-white/50">
+          Use your finger or stylus. Undo or clear as needed before submitting.
         </p>
       </div>
     );
@@ -277,8 +404,6 @@ SignaturePad.displayName = "SignaturePad";
 -------------------------------------------------------------------*/
 
 export default function DVIRForm() {
-  const navigate = useNavigate();
-
   // Mechanic section
   const [mechTruckNumber, setMechTruckNumber] = useState("");
   const [deficiencyCorrected, setDeficiencyCorrected] = useState("");
@@ -316,11 +441,11 @@ export default function DVIRForm() {
         } = await supabase.auth.getUser();
 
         if (userError) {
-          console.error("Error getting auth user:", userError);
+          logger.error("Error getting auth user:", userError);
           return;
         }
         if (!user) {
-          console.warn("No authenticated user found for DVIR form.");
+          logger.warn("No authenticated user found for DVIR form.");
           return;
         }
 
@@ -333,11 +458,11 @@ export default function DVIRForm() {
           .maybeSingle();
 
         if (error) {
-          console.error("Error loading app_users for DVIR:", error);
+          logger.error("Error loading app_users for DVIR:", error);
           return;
         }
         if (!data) {
-          console.warn("No app_users record found for user:", user.id);
+          logger.warn("No app_users record found for user:", user.id);
           return;
         }
 
@@ -369,7 +494,7 @@ export default function DVIRForm() {
           );
         }
       } catch (err) {
-        console.error("Unexpected error loading driver info for DVIR:", err);
+        logger.error("Unexpected error loading driver info for DVIR:", err);
       }
     };
 
@@ -467,7 +592,7 @@ export default function DVIRForm() {
       });
 
     if (error) {
-      console.error(`Error uploading ${fieldName}`, error);
+      logger.error(`Error uploading ${fieldName}`, error);
       throw error;
     }
 
@@ -515,13 +640,13 @@ export default function DVIRForm() {
       } = await supabase.auth.getUser();
 
       if (userError) {
-        console.error("Auth error in DVIR submit (getUser):", userError);
+        logger.error("Auth error in DVIR submit (getUser):", userError);
         setError(`Unable to load user: ${userError.message}`);
         return;
       }
 
       if (!user) {
-        console.error("No authenticated user in DVIR submit");
+        logger.error("No authenticated user in DVIR submit");
         setError("You must be logged in to submit a DVIR.");
         return;
       }
@@ -533,13 +658,13 @@ export default function DVIRForm() {
       } = await supabase.auth.getSession();
 
       if (sessionError) {
-        console.error("Auth session error in DVIR submit (getSession):", sessionError);
+        logger.error("Auth session error in DVIR submit (getSession):", sessionError);
         setError("Unable to verify your session. Please refresh the page and try again.");
         return;
       }
 
       if (!session) {
-        console.warn("No active session in DVIR submit – auth still hydrating?");
+        logger.warn("No active session in DVIR submit – auth still hydrating?");
         setError("Your session is still loading. Please wait a moment and try again.");
         return;
       }
@@ -548,9 +673,9 @@ export default function DVIRForm() {
       const userEmail = user.email ?? null;
 
       // 3) Upload required oil dipstick photo
-      console.log("Uploading oil dipstick photo...");
+      logger.debug("Uploading oil dipstick photo...");
       const oilDipstickPath = await uploadPhoto(oilDipstickPhoto, "oil_dipstick");
-      console.log("Oil dipstick uploaded:", oilDipstickPath);
+      logger.debug("Oil dipstick uploaded:", oilDipstickPath);
 
       // 4) Upload optional photos
       let tirePhotoPath: string | null = null;
@@ -559,19 +684,19 @@ export default function DVIRForm() {
       let detailCleanTruckPhotoPath: string | null = null;
 
       if (extraPhotos.tire) {
-        console.log("Uploading tire photo...");
+        logger.debug("Uploading tire photo...");
         tirePhotoPath = await uploadPhoto(extraPhotos.tire, "tire");
       }
       if (extraPhotos.coolant) {
-        console.log("Uploading coolant photo...");
+        logger.debug("Uploading coolant photo...");
         coolantPhotoPath = await uploadPhoto(extraPhotos.coolant, "coolant");
       }
       if (extraPhotos.damage) {
-        console.log("Uploading damage photo...");
+        logger.debug("Uploading damage photo...");
         damagePhotoPath = await uploadPhoto(extraPhotos.damage, "damage");
       }
       if (extraPhotos.mileage) {
-        console.log("Uploading detail-clean truck photo...");
+        logger.debug("Uploading detail-clean truck photo...");
         detailCleanTruckPhotoPath = await uploadPhoto(
           extraPhotos.mileage,
           "detail-clean_truck"
@@ -579,7 +704,7 @@ export default function DVIRForm() {
       }
 
       // 5) Upload signatures (if signed)
-      console.log("Uploading signatures (if any)...");
+      logger.debug("Uploading signatures (if any)...");
       const finalDriverSigPath = await uploadSignatureFromPad(
         finalDriverSigRef,
         "final_driver_signature"
@@ -647,7 +772,7 @@ export default function DVIRForm() {
       };
 
       // 7) FIRST save to Supabase (DB is the source of truth)
-      console.log("Inserting DVIR into dvir_reports...");
+      logger.debug("Inserting DVIR into dvir_reports...");
      const { error: insertError } = await supabase
   .from("dvir_reports")
   .insert({
@@ -703,16 +828,20 @@ export default function DVIRForm() {
   });
 
       if (insertError) {
-        console.error("❌ Supabase insert error (dvir_reports):", insertError);
+        logger.error("Supabase insert error (dvir_reports):", insertError);
         setError(`Failed to save DVIR to the database: ${insertError.message}`);
         return;
       }
 
-      console.log("✅ DVIR row inserted successfully. Sending to Make webhook...");
+      logger.info("DVIR row inserted successfully. Sending to Make webhook...");
 
       // 8) THEN send to Make.com webhook (non-blocking for DB save)
+      if (!CONFIG.make.dvirWebhook) {
+        throw new Error("DVIR webhook URL is not configured");
+      }
+
       const webhookRes = await fetch(
-        "https://hook.us2.make.com/24ocs936nykr05avzp2bhq46lxm6i3hz",
+        CONFIG.make.dvirWebhook,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -722,7 +851,7 @@ export default function DVIRForm() {
 
       if (!webhookRes.ok) {
         const text = await webhookRes.text();
-        console.error("❌ Make webhook error:", text);
+        logger.error("Make webhook error:", text);
         // Don't undo the successful DB insert, just warn the user
         setError(
           "DVIR was saved, but there was an issue sending data to the automation webhook."
@@ -730,7 +859,7 @@ export default function DVIRForm() {
         return;
       }
 
-      console.log("✅ Make webhook call succeeded.");
+      logger.info("Make webhook call succeeded.");
 
       // ✅ Success – show message & reset form
       setSuccess("DVIR submitted successfully.");
@@ -778,7 +907,7 @@ export default function DVIRForm() {
       mechanicSigRef.current?.clear();
       driverApprovalSigRef.current?.clear();
     } catch (err: any) {
-      console.error("❌ Unexpected error in DVIR handleSubmit:", err);
+      logger.error("Unexpected error in DVIR handleSubmit:", err);
       setError(
         err?.message || "Something went wrong submitting the DVIR (unexpected error)."
       );
@@ -826,16 +955,11 @@ export default function DVIRForm() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* SECTION A – Vehicle / Driver Information */}
-          <div className="rounded-2xl border border-green-700/40 bg-black/60 p-4 space-y-4">
-            <div className="flex items-center justify-between mb-1">
-              <h2 className="text-base font-semibold text-white">
-                SECTION A. VEHICLE / DRIVER INFORMATION
-              </h2>
-              <span className="text-[10px] text-gray-400 uppercase">
-                Required
-              </span>
-            </div>
-
+          <SectionCard
+            title="Section A. Vehicle / Driver Information"
+            subtitle="Complete before operating any ATTS vehicle. Fields marked with * are required."
+            badge="Required"
+          >
             {/* Truck / Trailer / GVWR row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* TRUCK NUMBER as dropdown */}
@@ -1134,24 +1258,14 @@ export default function DVIRForm() {
                 />
               </div>
             </div>
-          </div>
+          </SectionCard>
 
           {/* SECTION B – Vehicle / Trailer Inspection Checklist */}
-          <div className="rounded-2xl border border-green-700/40 bg-black/60 p-4 space-y-3">
-            <div className="flex items-center justify-between mb-1">
-              <h2 className="text-base font-semibold text-white">
-                SECTION B. VEHICLE / TRAILER INSPECTION CHECKLIST
-              </h2>
-              <span className="text-[10px] text-gray-400 uppercase">
-                P = Pass, F = Fail
-              </span>
-            </div>
-            <p className="text-[11px] text-gray-300">
-              Check each vehicle/trailer component and mark &quot;P&quot; for passes
-              inspection or &quot;F&quot; for fails inspection. Note components that don&apos;t
-              pass and describe the deficiency in the Notes section.
-            </p>
-
+          <SectionCard
+            title="Section B. Vehicle / Trailer Inspection Checklist"
+            subtitle='Mark "P" for pass and "F" for fail. Describe deficiencies in the Notes section.'
+            badge="Inspection"
+          >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {VEHICLE_TRAILER_ITEMS.map((item) => {
                 const value = vehicleTrailerChecklist[item.id] || "";
@@ -1205,19 +1319,14 @@ export default function DVIRForm() {
                 );
               })}
             </div>
-          </div>
+          </SectionCard>
 
           {/* Photos (Camera Capture) */}
-          <div className="rounded-2xl border border-green-700/40 bg-black/50 p-4 space-y-4">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-base font-semibold text-white">
-                Photos (Camera Capture)
-              </h2>
-              <span className="text-[10px] text-gray-400 uppercase">
-                Oil dipstick photo required
-              </span>
-            </div>
-
+          <SectionCard
+            title="Photo Evidence"
+            subtitle="Capture the required oil dipstick photo plus any additional context that helps maintenance."
+            badge="Media"
+          >
             {/* Hidden inputs */}
             <input
               ref={oilInputRef}
@@ -1275,112 +1384,64 @@ export default function DVIRForm() {
               }}
             />
 
-            <div className="space-y-3">
-              {/* Required oil dipstick */}
-              <button
-                type="button"
+            <div className="space-y-4">
+              <UploadTile
+                label="Oil Dipstick Photo"
+                description="Required before submitting this DVIR"
+                required
+                status={Boolean(oilDipstickPhoto)}
                 onClick={() => oilInputRef.current?.click()}
-                className="w-full inline-flex items-center justify-between rounded-lg border border-green-600/50 bg-black/60 px-3 py-2 text-sm text-green-100"
-              >
-                <span className="flex items-center gap-2">
-                  <Camera className="w-4 h-4" />
-                  Capture Oil Dipstick Photo *
-                </span>
-                <span className="text-[10px] text-gray-400">
-                  {oilDipstickPhoto ? "Captured" : "Not captured"}
-                </span>
-              </button>
-
-              {/* Optional photos */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <button
-                  type="button"
+              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <UploadTile
+                  label="Tire Tread"
+                  description="Optional"
+                  status={Boolean(extraPhotos.tire)}
                   onClick={() => tireInputRef.current?.click()}
-                  className="inline-flex items-center justify-between rounded-lg border border-gray-700 bg-black/50 px-3 py-2 text-xs text-gray-100"
-                >
-                  <span className="flex items-center gap-2">
-                    <Camera className="w-4 h-4" />
-                    Tire Tread (optional)
-                  </span>
-                  <span className="text-[10px] text-gray-500">
-                    {extraPhotos.tire ? "Captured" : "Not captured"}
-                  </span>
-                </button>
-
-                <button
-                  type="button"
+                />
+                <UploadTile
+                  label="Coolant Level"
+                  description="Optional"
+                  status={Boolean(extraPhotos.coolant)}
                   onClick={() => coolantInputRef.current?.click()}
-                  className="inline-flex items-center justify-between rounded-lg border border-gray-700 bg-black/50 px-3 py-2 text-xs text-gray-100"
-                >
-                  <span className="flex items-center gap-2">
-                    <Camera className="w-4 h-4" />
-                    Coolant Level (optional)
-                  </span>
-                  <span className="text-[10px] text-gray-500">
-                    {extraPhotos.coolant ? "Captured" : "Not captured"}
-                  </span>
-                </button>
-
-                <button
-                  type="button"
+                />
+                <UploadTile
+                  label="Vehicle Damage"
+                  description="Optional"
+                  status={Boolean(extraPhotos.damage)}
                   onClick={() => damageInputRef.current?.click()}
-                  className="inline-flex items-center justify-between rounded-lg border border-gray-700 bg-black/50 px-3 py-2 text-xs text-gray-100"
-                >
-                  <span className="flex items-center gap-2">
-                    <Camera className="w-4 h-4" />
-                    Vehicle Damage (optional)
-                  </span>
-                  <span className="text-[10px] text-gray-500">
-                    {extraPhotos.damage ? "Captured" : "Not captured"}
-                  </span>
-                </button>
-
-                <button
-                  type="button"
+                />
+                <UploadTile
+                  label="Detail / Clean Truck"
+                  description="Optional"
+                  status={Boolean(extraPhotos.mileage)}
                   onClick={() => mileageInputRef.current?.click()}
-                  className="inline-flex items-center justify-between rounded-lg border border-gray-700 bg-black/50 px-3 py-2 text-xs text-gray-100"
-                >
-                  <span className="flex items-center gap-2">
-                    <Camera className="w-4 h-4" />
-                    Detail-clean Truck Photo (optional)
-                  </span>
-                  <span className="text-[10px] text-gray-500">
-                    {extraPhotos.mileage ? "Captured" : "Not captured"}
-                  </span>
-                </button>
+                />
               </div>
             </div>
-          </div>
+          </SectionCard>
 
           {/* NOTES */}
-          <div className="rounded-2xl border border-green-700/40 bg-black/60 p-4 space-y-3">
-            <h2 className="text-base font-semibold text-white">NOTES</h2>
-            <p className="text-[11px] text-gray-300 mb-1">
-              Describe in detail any deficiencies found during inspection.
-            </p>
+          <SectionCard
+            title="Notes & Deficiencies"
+            subtitle="Describe every deficiency that needs attention. These notes appear in the mechanic review."
+            badge="Documentation"
+          >
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={6}
-              className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-sm text-white"
+              className="w-full rounded-2xl bg-black/60 border border-white/10 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
+              placeholder="Example: Right tail light not functioning, noted during inspection."
             />
-          </div>
+          </SectionCard>
 
           {/* Aerial Lift Section */}
-          <div className="rounded-2xl border border-green-700/40 bg-black/60 p-4 space-y-3">
-            <div className="flex items-center justify-between mb-1">
-              <h2 className="text-base font-semibold text-white">
-                Aerial Lift Inspection (If Equipped)
-              </h2>
-              <span className="text-[10px] text-gray-400 uppercase">
-                P = Pass, F = Fail
-              </span>
-            </div>
-            <p className="text-[11px] text-gray-300">
-              This section is to be used for vehicles equipped with aerial lifts.
-              Inspect each component and mark &quot;P&quot; for pass and &quot;F&quot; for fail.
-            </p>
-
+          <SectionCard
+            title="Aerial Lift Inspection (If Equipped)"
+            subtitle='Only complete for vehicles with aerial lifts. Mark "P" for pass and "F" for fail.'
+            badge="Aerial"
+          >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {AERIAL_LIFT_ITEMS.map((item) => {
                 const value = aerialChecklist[item.id] || "";
@@ -1436,69 +1497,60 @@ export default function DVIRForm() {
             </div>
 
             <div>
-              <label className="block text-xs text-gray-300 mb-1">NOTES</label>
+              <label className="block text-xs text-white/70 mb-1">NOTES</label>
               <textarea
                 value={aerialNotes}
                 onChange={(e) => setAerialNotes(e.target.value)}
                 rows={3}
-                className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-sm text-white"
+                className="w-full rounded-2xl bg-black/60 border border-white/10 px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
               />
             </div>
-          </div>
+          </SectionCard>
 
           {/* Final Sign-off with signature pads */}
-          <div className="rounded-2xl border border-green-700/40 bg-black/60 p-4 space-y-4">
-            <p className="text-[11px] text-gray-300">
-              By signing below, you are agreeing to have completed the Daily
-              Vehicle Inspection Report to the best of your ability and reported
-              any deficiencies.
-            </p>
-
+          <SectionCard
+            title="Driver & Foreman Sign-off"
+            subtitle="Certify that today's inspection is complete and deficiencies have been communicated."
+            badge="Signatures"
+          >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <SignaturePad
                 ref={finalDriverSigRef}
-                label="DRIVERS SIGNATURE (draw)"
+                label="Driver Signature (draw)"
               />
               <SignaturePad
                 ref={generalForemanSigRef}
-                label="GENERAL FOREMAN SIGNATURE (draw)"
+                label="General Foreman Signature (draw)"
               />
             </div>
-          </div>
+          </SectionCard>
 
-          {/* Mechanic Section – now collapsible, with signature pads */}
-          <div className="rounded-2xl border border-green-700/40 bg-black/60">
-            {/* Header / toggle */}
+          {/* Mechanic Section – collapsible */}
+          <SectionCard
+            title="Mechanic Review (Complete if deficiencies exist)"
+            subtitle="Only mechanics should complete this section after addressing noted issues."
+            badge="Mechanic"
+          >
             <button
               type="button"
               onClick={() => setIsMechanicOpen((prev) => !prev)}
-              className="w-full flex items-center justify-between px-4 py-3 text-left"
+              className="w-full flex items-center justify-between rounded-2xl border border-white/5 bg-white/5 px-4 py-3 text-sm text-white/80 transition hover:border-emerald-400/30"
             >
-              <div>
-                <h2 className="text-base font-semibold text-white">
-                  Mechanics Only (Section)
-                </h2>
-                <p className="text-[11px] text-gray-300">
-                  If deficiency noted, MECHANIC is to complete below.
-                </p>
-              </div>
-              <span className="text-xs text-gray-300">
-                {isMechanicOpen ? "Hide" : "Show"}
-              </span>
+              <span>{isMechanicOpen ? "Hide mechanic form" : "Open mechanic form"}</span>
+              <span className="text-xs text-white/60">{isMechanicOpen ? "▲" : "▼"}</span>
             </button>
 
             {isMechanicOpen && (
-              <div className="border-t border-green-700/40 px-4 pb-4 pt-3 space-y-4">
+              <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Mechanic Truck Number as dropdown */}
                   <div>
-                    <label className="block text-xs text-gray-300 mb-1">
+                    <label className="block text-xs text-white/70 mb-1">
                       Truck Number
                     </label>
                     <select
                       value={mechTruckNumber}
                       onChange={(e) => setMechTruckNumber(e.target.value)}
-                      className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-sm text-white"
+                      className="w-full rounded-2xl bg-black/60 border border-white/10 px-3 py-2 text-sm text-white"
                     >
                       <option value="">Select Truck Number</option>
                       {TRUCK_NUMBERS.map((num) => (
@@ -1509,67 +1561,74 @@ export default function DVIRForm() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-300 mb-1">
+                    <label className="block text-xs text-white/70 mb-1">
                       Date (MM/DD/YYYY)
                     </label>
                     <input
                       value={mechanicDate}
                       onChange={(e) => setMechanicDate(e.target.value)}
                       placeholder="MM/DD/YYYY"
-                      className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-sm text-white"
+                      className="w-full rounded-2xl bg-black/60 border border-white/10 px-3 py-2 text-sm text-white"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs text-gray-300 mb-1">
+                  <label className="block text-xs text-white/70 mb-1">
                     Noted Deficiency Corrected
                   </label>
                   <input
                     value={deficiencyCorrected}
-                    onChange={(e) =>
-                      setDeficiencyCorrected(e.target.value)
-                    }
-                    className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-sm text-white"
+                    onChange={(e) => setDeficiencyCorrected(e.target.value)}
+                    className="w-full rounded-2xl bg-black/60 border border-white/10 px-3 py-2 text-sm text-white"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs text-gray-300 mb-1">
+                  <label className="block text-xs text-white/70 mb-1">
                     Remarks by Mechanic
                   </label>
                   <textarea
                     value={mechanicRemarks}
                     onChange={(e) => setMechanicRemarks(e.target.value)}
                     rows={2}
-                    className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-sm text-white"
+                    className="w-full rounded-2xl bg-black/60 border border-white/10 px-3 py-2 text-sm text-white"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <SignaturePad
                     ref={mechanicSigRef}
-                    label="MECHANIC SIGNATURE (draw)"
+                    label="Mechanic Signature (draw)"
                   />
                   <SignaturePad
                     ref={driverApprovalSigRef}
-                    label="DRIVER APPROVAL SIGNATURE (draw)"
+                    label="Driver Approval Signature (draw)"
                   />
                 </div>
               </div>
             )}
-          </div>
+          </SectionCard>
 
           {/* Submit */}
-          <div className="pt-2">
+          <SectionCard
+            title="Submit & Certify DVIR"
+            subtitle="Submission locks this inspection to today's date and triggers any required follow-up."
+            badge="Compliance"
+          >
+            <ul className="text-xs text-white/70 space-y-1">
+              <li>• I have reviewed all sections and confirmed accuracy.</li>
+              <li>• Any deficiencies are documented and communicated.</li>
+              <li>• Required oil dipstick photo has been captured.</li>
+            </ul>
             <button
               type="submit"
               disabled={submitting}
-              className="w-full rounded-xl bg-green-600 hover:bg-green-500 px-4 py-3 text-sm font-medium text-white disabled:opacity-60"
+              className="w-full rounded-2xl bg-emerald-500/90 hover:bg-emerald-500 px-4 py-3 text-sm font-semibold text-white transition disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {submitting ? "Submitting..." : "Submit DVIR"}
             </button>
-          </div>
+          </SectionCard>
         </form>
       </div>
     </DashboardLayout>

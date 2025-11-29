@@ -28,9 +28,25 @@ export default function DashboardLayout({ title, children }: DashboardLayoutProp
               className="w-20 sm:w-24 object-contain drop-shadow-md"
             />
             {title && (
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-wide text-green-400">
+              <motion.h1
+                className="text-2xl sm:text-3xl font-bold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] drop-shadow-[0_0_25px_rgba(244,201,121,0.35)]"
+                style={{ backgroundSize: "200% 200%" }}
+                animate={{
+                  backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+                  textShadow: [
+                    "0 0 12px rgba(247,228,189,0.35)",
+                    "0 0 24px rgba(244,201,121,0.55)",
+                    "0 0 12px rgba(247,228,189,0.35)",
+                  ],
+                }}
+                transition={{
+                  duration: 6,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              >
                 {title}
-              </h1>
+              </motion.h1>
             )}
           </div>
 

@@ -8,7 +8,7 @@ import { cn } from "../lib/utils";
 
 const userPages = [
   {
-    label: "Forms",
+    label: "Company Forms",
     path: "/forms",
     icon: FileText,
     description: "Access and submit required ATTS forms"
@@ -34,7 +34,7 @@ const userPages = [
 ];
 
 export default function NavCards() {
-  const { role, isAdmin, hasMechanicAccess } = useAuth();
+  const { isAdmin, hasMechanicAccess } = useAuth();
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8 w-full max-w-6xl mx-auto">
@@ -76,7 +76,7 @@ export default function NavCards() {
                   <Wrench className="w-8 h-8" />
                 </div>
                 <h3 className="text-xl sm:text-2xl font-semibold text-white mb-2 tracking-wide">
-                  Mechanic Dashboard
+                  Mechanic Panel
                 </h3>
                 <p className="text-sm text-orange-100/80 max-w-xs">
                   Review and manage DVIR reports
@@ -115,7 +115,7 @@ export default function NavCards() {
                   <Shield className="w-8 h-8" />
                 </div>
                 <h3 className="text-xl sm:text-2xl font-semibold text-white mb-2 tracking-wide">
-                  Admin Dashboard
+                  Admin Panel
                 </h3>
                 <p className="text-sm text-yellow-100/80 max-w-xs">
                   Manage users and system settings

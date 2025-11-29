@@ -1,134 +1,497 @@
-import DashboardLayout from "../layouts/DashboardLayout";
-import BrandedNavCard from "../components/BrandedNavCard";
-import AdaptiveCardWrapper from "../components/AdaptiveCardWrapper";
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import {
-  FileText,
+  ArrowRight,
   CalendarDays,
+  ClipboardList,
   DollarSign,
-  Wrench,
-  ShoppingCart,
   ExternalLink,
-  ClipboardList, // ⬅️ NEW
+  FileText,
+  Filter,
+  HardHat,
+  Search,
+  ShoppingCart,
+  Sparkles,
+  Wrench,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import type { LucideIcon } from "lucide-react";
+import DashboardLayout from "../layouts/DashboardLayout";
+import AdaptiveCardWrapper from "../components/AdaptiveCardWrapper";
 import { cn } from "../lib/utils";
-import { ReactNode } from "react";
 
-interface ExternalFormCardProps {
+const CATEGORY_META = {
+  "Daily Operations": {
+    description: "Crew safety, inspections, and daily readiness workflows.",
+    dot: "bg-emerald-400",
+  },
+  "People & HR": {
+    description: "Employee requests, scheduling, and communication.",
+    dot: "bg-sky-400",
+  },
+  "Finance & Procurement": {
+    description: "Expense tracking, purchasing, and approvals.",
+    dot: "bg-amber-400",
+  },
+  "Maintenance & Repairs": {
+    description: "Fleet upkeep, shop coordination, and repair requests.",
+    dot: "bg-orange-400",
+  },
+} as const;
+
+type FormCategory = keyof typeof CATEGORY_META;
+type CategoryFilterOption = "All" | FormCategory;
+
+interface FormDefinition {
+  id: string;
   title: string;
   description: string;
-  icon: ReactNode;
-  url: string;
+  icon: LucideIcon;
+  category: FormCategory;
+  type: "internal" | "external";
+  to?: string;
+  url?: string;
+  tag?: string;
 }
 
-function ExternalFormCard({ title, description, icon, url }: ExternalFormCardProps) {
-  return (
-    <a href={url} target="_blank" rel="noopener noreferrer">
-      <AdaptiveCardWrapper>
-        <motion.div
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.98 }}
-          className={cn(
-            "relative w-full max-w-sm p-[2px] rounded-2xl overflow-hidden shadow-lg",
-            "bg-gradient-to-br from-green-600/70 via-black/80 to-green-800/80",
-            "hover:from-green-500 hover:via-black hover:to-green-700",
-            "transition-all duration-300 ease-out"
-          )}
-        >
-          <div
-            className={cn(
-              "h-full w-full rounded-2xl p-6 flex flex-col justify-center items-center text-center",
-              "bg-black/70 backdrop-blur-xl",
-              "border border-green-700/30"
-            )}
-          >
-            <div className="mb-3 text-green-400">{icon}</div>
-            <h3 className="text-xl sm:text-2xl font-semibold text-white mb-2 tracking-wide">
-              {title}
-            </h3>
-            <p className="text-sm text-white/80 max-w-xs mb-3">{description}</p>
-            <div className="flex items-center gap-1 text-green-400 text-xs">
-              <ExternalLink className="w-3 h-3" />
-              <span>Opens in new tab</span>
+const formsCatalog: FormDefinition[] = [
+  {
+    id: "daily-jsa",
+    title: "Daily JSA",
+    description: "Create, update, and review daily job safety analysis forms.",
+    icon: HardHat,
+    category: "Daily Operations",
+    type: "internal",
+    to: "/forms/jsa",
+    tag: "Daily",
+  },
+  {
+    id: "dvir",
+    title: "Daily Vehicle Inspection (DVIR)",
+    description: "Complete required truck and trailer inspections before rolling out.",
+    icon: ClipboardList,
+    category: "Daily Operations",
+    type: "internal",
+    to: "/dashboard/forms/dvir",
+    tag: "Compliance",
+  },
+  {
+    id: "equipment-inspection",
+    title: "Daily Equipment Inspection",
+    description: "Document checks for bucket trucks, chippers, and field equipment.",
+    icon: Wrench,
+    category: "Daily Operations",
+    type: "internal",
+    to: "/dashboard/forms/equipment-inspection",
+    tag: "Field Ops",
+  },
+  {
+    id: "request-time-off",
+    title: "Request Time Off",
+    description: "Submit your time-off request for review and approval.",
+    icon: CalendarDays,
+    category: "People & HR",
+    type: "internal",
+    to: "/dashboard/forms/request-time-off",
+    tag: "HR",
+  },
+  {
+    id: "payroll-form",
+    title: "Payroll Form",
+    description: "Send payroll updates and adjustments securely.",
+    icon: DollarSign,
+    category: "Finance & Procurement",
+    type: "external",
+    url: "https://docs.google.com/forms/d/e/1FAIpQLSdozbTMe9qO1OuLZvHKJBOH7BDMMOsB_-tua1FRo6YXc0C4Zw/viewform",
+    tag: "Finance",
+  },
+  {
+    id: "receipts-form",
+    title: "Receipts Form",
+    description: "Upload expense receipts for reimbursements.",
+    icon: FileText,
+    category: "Finance & Procurement",
+    type: "external",
+    url: "https://docs.google.com/forms/d/e/1FAIpQLSdzpVGahh3Lautt3XBIBV-PSKJsfq2R5DY111N_KRO3RvJdIQ/viewform",
+    tag: "Receipts",
+  },
+  {
+    id: "purchase-orders",
+    title: "Purchase Orders (POs)",
+    description: "Request purchase order approvals for materials or services.",
+    icon: ShoppingCart,
+    category: "Finance & Procurement",
+    type: "external",
+    url: "https://docs.google.com/forms/d/e/1FAIpQLSe2GHpif_3F5NvekttjiAMR37Y9HvWchbnDDlj5VAoH1EqlzQ/viewform",
+    tag: "Procurement",
+  },
+  {
+    id: "mechanic-work-order",
+    title: "Mechanic Work Order",
+    description: "Request shop maintenance or repair follow-ups.",
+    icon: Wrench,
+    category: "Maintenance & Repairs",
+    type: "external",
+    url: "https://docs.google.com/forms/d/e/1FAIpQLSczU3KNU4P3bO4zyfEqSfs6OWg7WPNbrYrmdyUMxvtLmrvVIw/viewform",
+    tag: "Fleet",
+  },
+];
+
+const CATEGORY_OPTIONS: CategoryFilterOption[] = [
+  "All",
+  ...(Object.keys(CATEGORY_META) as FormCategory[]),
+];
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 20, scale: 0.98 },
+  visible: (index: number) => ({
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      delay: index * 0.05,
+      duration: 0.35,
+      ease: "easeOut",
+    },
+  }),
+  exit: {
+    opacity: 0,
+    y: -12,
+    scale: 0.95,
+    transition: { duration: 0.2, ease: "easeIn" },
+  },
+} as const;
+
+interface FormCardProps {
+  form: FormDefinition;
+  index: number;
+}
+
+const FormCard = ({ form, index }: FormCardProps) => {
+  const Icon = form.icon;
+  const isExternal = form.type === "external";
+
+  const cardContent = (
+    <AdaptiveCardWrapper>
+      <motion.div
+        whileHover={{ y: -6, scale: 1.01 }}
+        whileTap={{ scale: 0.99 }}
+        className={cn(
+          "relative h-full rounded-2xl p-[2px] overflow-hidden shadow-lg transition-all duration-500 group",
+          isExternal
+            ? "bg-gradient-to-br from-sky-600/80 via-black/80 to-sky-800/80"
+            : "bg-gradient-to-br from-emerald-600/80 via-black/80 to-emerald-800/80"
+        )}
+      >
+        <div className="relative h-full rounded-[1.05rem] bg-black/75 border border-white/5 p-5 flex flex-col gap-5 backdrop-blur-2xl">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div
+                className={cn(
+                  "w-12 h-12 rounded-xl flex items-center justify-center border transition-all duration-300",
+                  isExternal
+                    ? "bg-sky-500/10 border-sky-400/40 text-sky-100"
+                    : "bg-emerald-500/10 border-emerald-400/40 text-emerald-100",
+                  "group-hover:rotate-3 group-hover:scale-105"
+                )}
+              >
+                <Icon className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-lg font-semibold text-white leading-tight">{form.title}</p>
+                <p className="text-xs uppercase tracking-wide text-white/50">{form.category}</p>
+              </div>
+            </div>
+            <div className="flex flex-col items-end gap-1">
+              <span
+                className={cn(
+                  "text-[10px] uppercase tracking-widest px-2 py-1 rounded-full border",
+                  isExternal
+                    ? "bg-sky-500/10 border-sky-400/30 text-sky-100"
+                    : "bg-emerald-500/10 border-emerald-400/30 text-emerald-100"
+                )}
+              >
+                {isExternal ? "External" : "Internal"}
+              </span>
+              {form.tag && (
+                <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-white/70">
+                  {form.tag}
+                </span>
+              )}
             </div>
           </div>
 
-          <div className="absolute inset-0 rounded-2xl pointer-events-none bg-gradient-to-br from-green-500/10 to-transparent" />
-        </motion.div>
-      </AdaptiveCardWrapper>
-    </a>
+          <p className="text-sm text-white/70 leading-relaxed flex-1">{form.description}</p>
+
+          <div className="flex items-center justify-between text-xs text-white/60">
+            <div className="flex items-center gap-2">
+              {isExternal ? (
+                <ExternalLink className="w-4 h-4" />
+              ) : (
+                <Sparkles className="w-4 h-4 text-emerald-300" />
+              )}
+              <span>
+                {isExternal ? "Opens in a secure new tab" : "Completes inside the portal"}
+              </span>
+            </div>
+            <div className="flex items-center gap-1 text-white">
+              <span className="font-semibold text-sm">Open</span>
+              <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+            </div>
+          </div>
+        </div>
+        <div className="absolute inset-0 rounded-2xl pointer-events-none bg-gradient-to-br from-white/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      </motion.div>
+    </AdaptiveCardWrapper>
   );
+
+  return (
+    <motion.div
+      layout
+      variants={cardVariants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      custom={index}
+      className="h-full"
+    >
+      {isExternal ? (
+        <a
+          href={form.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block h-full"
+        >
+          {cardContent}
+        </a>
+      ) : (
+        <Link to={form.to ?? "/"} className="block h-full">
+          {cardContent}
+        </Link>
+      )}
+    </motion.div>
+  );
+};
+
+interface FormCategorySectionProps {
+  category: FormCategory;
+  forms: FormDefinition[];
+  startIndex: number;
 }
 
-export default function Forms() {
+const FormCategorySection = ({ category, forms, startIndex }: FormCategorySectionProps) => {
+  const meta = CATEGORY_META[category];
+
   return (
-    <DashboardLayout title="Company Forms">
-      {/* 🔔 Permanent "Important / Daily" toast */}
-      <div className="flex justify-center mb-4">
-        <div className="inline-flex items-center gap-2 rounded-full border border-yellow-500/40 bg-yellow-500/10 px-4 py-2">
-          <span className="h-2 w-2 rounded-full bg-yellow-400 animate-pulse" />
-          <span className="text-xs font-semibold uppercase tracking-wide text-yellow-200">
-            Important / Daily
+    <section className="space-y-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-white/50">
+            <span className={cn("h-2 w-2 rounded-full", meta.dot)} />
+            <span>{category}</span>
+          </div>
+          <p className="text-sm text-white/70 mt-1 max-w-2xl">{meta.description}</p>
+        </div>
+        <span className="text-xs text-white/50">{forms.length} forms</span>
+      </div>
+      <motion.div layout className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        <AnimatePresence mode="popLayout">
+          {forms.map((form, idx) => (
+            <FormCard key={form.id} form={form} index={startIndex + idx} />
+          ))}
+        </AnimatePresence>
+        </motion.div>
+    </section>
+  );
+};
+
+interface SearchBarProps {
+  value: string;
+  onChange: (value: string) => void;
+  totalCount: number;
+  filteredCount: number;
+}
+
+const SearchBar = ({ value, onChange, totalCount, filteredCount }: SearchBarProps) => (
+  <motion.div
+    initial={{ opacity: 0, y: 15 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.4, delay: 0.1 }}
+    className="w-full max-w-5xl mx-auto border border-white/10 rounded-3xl bg-white/5 backdrop-blur-2xl shadow-2xl p-5 sm:p-6"
+  >
+    <div className="flex flex-col gap-4">
+      <label className="relative block group">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50 pointer-events-none transition-colors group-focus-within:text-emerald-300" />
+        <input
+          type="text"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder="Search by form name, purpose, or tag..."
+          className="w-full rounded-2xl bg-black/50 border border-white/10 pl-11 pr-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-400/60 focus:border-transparent transition-all shadow-inner"
+        />
+      </label>
+      <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-white/60">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-emerald-300" />
+          <span>
+            Showing <span className="text-white font-semibold">{filteredCount}</span> of{" "}
+            {totalCount} forms
           </span>
         </div>
+        <span className="uppercase tracking-[0.4em] text-white/40">Live filters</span>
       </div>
+    </div>
+  </motion.div>
+);
 
-      <p className="text-gray-300 text-base sm:text-lg mb-8 sm:mb-10 text-center">
-        Select a form below to access
+interface CategoryFilterProps {
+  activeCategory: CategoryFilterOption;
+  onChange: (category: CategoryFilterOption) => void;
+}
+
+const CategoryFilter = ({ activeCategory, onChange }: CategoryFilterProps) => (
+  <motion.div
+    initial={{ opacity: 0, y: 15 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.4, delay: 0.15 }}
+    className="flex gap-3 flex-wrap items-center justify-center"
+  >
+    {CATEGORY_OPTIONS.map((category) => {
+      const isActive = category === activeCategory;
+      return (
+        <motion.button
+          key={category}
+          type="button"
+          onClick={() => onChange(category)}
+          whileTap={{ scale: 0.95 }}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-medium transition-all backdrop-blur-md",
+            isActive
+              ? "bg-white text-slate-900 border-white shadow-lg shadow-emerald-500/20"
+              : "bg-white/5 text-white/70 border-white/10 hover:border-white/30"
+          )}
+        >
+          {category === "All" ? (
+            <Sparkles className="w-4 h-4" />
+          ) : (
+            <span className={cn("h-2 w-2 rounded-full", CATEGORY_META[category].dot)} />
+          )}
+          <span>{category === "All" ? "All Forms" : category}</span>
+        </motion.button>
+      );
+    })}
+  </motion.div>
+);
+
+interface EmptyStateProps {
+  query: string;
+}
+
+const EmptyState = ({ query }: EmptyStateProps) => (
+  <motion.div
+    initial={{ opacity: 0, y: 25 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.4 }}
+    className="w-full"
+  >
+    <div className="border border-white/10 rounded-3xl bg-white/5 backdrop-blur-2xl p-8 text-center space-y-4 shadow-xl">
+      <FileText className="w-10 h-10 text-white/50 mx-auto" />
+      <h3 className="text-xl font-semibold text-white">No forms match your filters</h3>
+      <p className="text-sm text-white/70">
+        {query
+          ? `We could not find anything for "${query}". Try clearing your search or picking another category.`
+          : "Try choosing a different category or resetting your filters."}
       </p>
+    </div>
+  </motion.div>
+);
 
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 w-full max-w-6xl mx-auto">
-        {/* Existing cards */}
-        <BrandedNavCard
-          title="Request Time Off"
-          description="Submit your time-off request for approval"
-          icon={<CalendarDays className="w-8 h-8" />}
-          to="/dashboard/forms/request-time-off"
-        />
+export default function Forms() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState<CategoryFilterOption>("All");
 
-        <ExternalFormCard
-          title="Payroll Form"
-          description="Submit payroll information and updates"
-          icon={<DollarSign className="w-8 h-8" />}
-          url="https://docs.google.com/forms/d/e/1FAIpQLSdozbTMe9qO1OuLZvHKJBOH7BDMMOsB_-tua1FRo6YXc0C4Zw/viewform"
-        />
+  const filteredForms = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
 
-        <ExternalFormCard
-          title="Receipts Form"
-          description="Upload and submit expense receipts"
-          icon={<FileText className="w-8 h-8" />}
-          url="https://docs.google.com/forms/d/e/1FAIpQLSdzpVGahh3Lautt3XBIBV-PSKJsfq2R5DY111N_KRO3RvJdIQ/viewform"
-        />
+    return formsCatalog.filter((form) => {
+      const matchesCategory = activeCategory === "All" || form.category === activeCategory;
+      const text = `${form.title} ${form.description} ${form.tag ?? ""}`.toLowerCase();
+      const matchesSearch = !normalizedQuery || text.includes(normalizedQuery);
+      return matchesCategory && matchesSearch;
+    });
+  }, [activeCategory, searchQuery]);
 
-        <ExternalFormCard
-          title="Mechanic Work Order"
-          description="Request vehicle maintenance and repairs"
-          icon={<Wrench className="w-8 h-8" />}
-          url="https://docs.google.com/forms/d/e/1FAIpQLSczU3KNU4P3bO4zyfEqSfs6OWg7WPNbrYrmdyUMxvtLmrvVIw/viewform"
-        />
+  const sections = useMemo(() => {
+    const targetCategories: FormCategory[] =
+      activeCategory === "All"
+        ? (Object.keys(CATEGORY_META) as FormCategory[])
+        : [activeCategory];
 
-        <ExternalFormCard
-          title="Purchase Orders (POs)"
-          description="Submit purchase order requests"
-          icon={<ShoppingCart className="w-8 h-8" />}
-          url="https://docs.google.com/forms/d/e/1FAIpQLSe2GHpif_3F5NvekttjiAMR37Y9HvWchbnDDlj5VAoH1EqlzQ/viewform"
-        />
+    return targetCategories
+      .map((category) => ({
+        category,
+        forms: filteredForms.filter((form) => form.category === category),
+      }))
+      .filter((section) => section.forms.length > 0);
+  }, [activeCategory, filteredForms]);
 
-        {/* NEW: DVIR internal form */}
-        <BrandedNavCard
-          title="Daily Vehicle Inspection (DVIR)"
-          description="Complete required daily truck and trailer inspection"
-          icon={<ClipboardList className="w-8 h-8" />}
-          to="/dashboard/forms/dvir"
-        />
+  const trimmedQuery = searchQuery.trim();
+  let cardCounter = 0;
 
-        {/* NEW: Daily Equipment Inspection internal form */}
-        <BrandedNavCard
-          title="Daily Equipment Inspection"
-          description="Document daily checks for equipment in the field"
-          icon={<Wrench className="w-8 h-8" />}
-          to="/dashboard/forms/equipment-inspection"
-        />
+  return (
+    <DashboardLayout title="Company Forms">
+      <div className="w-full max-w-6xl mx-auto space-y-8 sm:space-y-10">
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-center space-y-4"
+        >
+          <div className="inline-flex items-center gap-2 rounded-full border border-yellow-500/40 bg-yellow-500/10 px-4 py-2">
+            <span className="h-2 w-2 rounded-full bg-yellow-400 animate-ping" />
+            <span className="text-xs font-semibold uppercase tracking-[0.4em] text-yellow-100">
+              Important / Daily
+            </span>
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-3xl sm:text-4xl font-black text-white">
+              Pick the workflow you need and jump right in
+            </h2>
+            <p className="text-base sm:text-lg text-white/70 max-w-3xl mx-auto">
+              Organized categories, instant search, and cinematic hover states give you a faster,
+              more delightful path to every internal and external form.
+            </p>
+          </div>
+        </motion.div>
+
+        <div className="space-y-5">
+          <SearchBar
+            value={searchQuery}
+            onChange={setSearchQuery}
+            totalCount={formsCatalog.length}
+            filteredCount={filteredForms.length}
+          />
+          <CategoryFilter activeCategory={activeCategory} onChange={setActiveCategory} />
+        </div>
+
+        <div className="space-y-10">
+          {sections.length > 0 ? (
+            sections.map(({ category, forms }) => {
+              const section = (
+                <FormCategorySection
+                  key={category}
+                  category={category}
+                  forms={forms}
+                  startIndex={cardCounter}
+                />
+              );
+              cardCounter += forms.length;
+              return section;
+            })
+          ) : (
+            <EmptyState query={trimmedQuery} />
+          )}
+        </div>
       </div>
     </DashboardLayout>
   );

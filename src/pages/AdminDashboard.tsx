@@ -1,10 +1,33 @@
-import { useAuth } from "../contexts/AuthContext";
-import { Shield, CalendarCheck, Users } from "lucide-react";
+import { useMemo, useState, FormEvent } from "react";
+import {
+  Shield,
+  CalendarCheck,
+  Users,
+  Megaphone,
+  Sparkles,
+  ClipboardList,
+} from "lucide-react";
 import DashboardLayout from "../layouts/DashboardLayout";
-import BrandedNavCard from "../components/BrandedNavCard";
+import AdminPremiumScaffold, {
+  type AdminHeroConfig,
+  type AdminNavCardConfig,
+  type AdminStat,
+} from "../components/admin/AdminPremiumScaffold";
+import { useAuth } from "../contexts/AuthContext";
+import { supabase } from "../lib/supabaseClient";
+import { logger } from "../lib/logger";
 
 export default function AdminDashboard() {
   const { session, role } = useAuth();
+  const [title, setTitle] = useState("");
+  const [message, setMessage] = useState("");
+  const [scheduleLater, setScheduleLater] = useState(false);
+  const [publishDate, setPublishDate] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [feedback, setFeedback] = useState<
+    { type: "success" | "error"; message: string } | null
+  >(null);
 
   // Security check: only render admin content for admin users
   if (role !== "admin") {
@@ -19,45 +42,251 @@ export default function AdminDashboard() {
     );
   }
 
-  return (
-    <DashboardLayout title="Admin Dashboard">
-          <div className="w-full max-w-7xl mx-auto px-4 sm:px-6">{/* Main Content */}
-        {/* Welcome Card */}
-        <div className="bg-white/5 backdrop-blur-md rounded-xl border border-white/10 p-8 mb-8">
-          <div className="flex items-start justify-between">
-            <div>
-              <h2 className="text-2xl font-semibold text-white mb-2">
-                Welcome back, Administrator
-              </h2>
-              <p className="text-gray-300 mb-4">
-                Logged in as: <span className="text-green-400 font-medium">{session?.user?.email}</span>
-              </p>
-              <div className="inline-flex items-center space-x-2 px-4 py-2 bg-green-600/20 rounded-lg border border-green-500/30">
-                <Shield className="w-5 h-5 text-green-500" />
-                <span className="text-green-400 font-semibold uppercase tracking-wide">
-                  {role || 'Loading...'}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
+  const stats = useMemo<AdminStat[]>(
+    () => [
+      {
+        label: "Admin Role",
+        value: (role || "Admin").toUpperCase(),
+        hint: "Highest privileges",
+      },
+      {
+        label: "Core Panels",
+        value: "02",
+        hint: "RTO & Users",
+      },
+      {
+        label: "Announcements",
+        value: "Live",
+        hint: "Supabase powered",
+      },
+    ],
+    [role]
+  );
 
-        {/* Admin Navigation Cards */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8">
-          <BrandedNavCard
-            title="RTO Requests"
-            description="View and manage employee time-off submissions"
-            icon={<CalendarCheck className="w-8 h-8" />}
-            to="/admin/rto"
-          />
-          <BrandedNavCard
-            title="User Management"
-            description="Manage user accounts and permissions"
-            icon={<Users className="w-8 h-8" />}
-            to="/admin/users"
-          />
+  const heroConfig = useMemo<AdminHeroConfig>(
+    () => ({
+      eyebrow: "Admin Control Room",
+      eyebrowIcon: <Sparkles className="w-4 h-4 text-[#f8dda7]" />,
+      heading: `Welcome back, ${session?.user?.email?.split("@")[0] || "Admin"}`,
+      description:
+        "Track mission-critical tools, manage users, and keep everyone informed with polished announcements.",
+      badges: [
+        {
+          label: role || "ADMIN",
+          icon: <Shield className="w-4 h-4 text-[#f4c979]" />,
+          variant: "solid",
+        },
+        {
+          label: "Announcements ready",
+          icon: <Megaphone className="w-4 h-4 text-[#f4c979]" />,
+          variant: "outline",
+        },
+      ],
+    }),
+    [role, session?.user?.email]
+  );
+
+  const navCards = useMemo<AdminNavCardConfig[]>(
+    () => [
+      {
+        title: "RTO Requests",
+        description: "View and manage employee time-off submissions.",
+        icon: <CalendarCheck className="w-8 h-8 text-[#f4c979]" />,
+        to: "/admin/rto",
+      },
+      {
+        title: "User Management",
+        description: "Manage user accounts and permissions.",
+        icon: <Users className="w-8 h-8 text-[#f4c979]" />,
+        to: "/admin/users",
+      },
+      {
+        title: "Daily JSA Oversight",
+        description: "Audit every job safety analysis in one place.",
+        icon: <ClipboardList className="w-8 h-8 text-[#f4c979]" />,
+        to: "/admin/jsa",
+      },
+    ],
+    []
+  );
+
+  const isValid = title.trim().length > 0 && message.trim().length > 0;
+
+  const handleCreateAnnouncement = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!isValid) {
+      setFeedback({ type: "error", message: "Title and message are required." });
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      setFeedback(null);
+      const payload = {
+        title: title.trim(),
+        message: message.trim(),
+        author: session?.user?.email ?? "Admin Team",
+        date:
+          scheduleLater && publishDate
+            ? publishDate
+            : new Date().toISOString().slice(0, 10),
+      };
+
+      const { error } = await supabase.from("announcements").insert(payload);
+      if (error) {
+        logger.error("Failed to publish announcement:", error);
+        setFeedback({
+          type: "error",
+          message: "Failed to publish announcement. Please try again.",
+        });
+        return;
+      }
+
+      setFeedback({
+        type: "success",
+        message: "Announcement published successfully.",
+      });
+      setTitle("");
+      setMessage("");
+      setScheduleLater(false);
+      setPublishDate("");
+    } catch (err) {
+      logger.error("Unexpected error publishing announcement:", err);
+      setFeedback({
+        type: "error",
+        message: "Something went wrong. Please try again shortly.",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const announcementPanel = (
+    <>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#fef3d1]/10 border border-[#f6dcb2]/40 rounded-full text-[0.65rem] font-semibold tracking-[0.3em] uppercase text-[#f8dfb3] mb-4">
+            <Megaphone className="w-4 h-4 text-[#f5cf82]" />
+            Publish Update
+          </div>
+          <h3 className="text-xl font-semibold text-white">Create Announcement</h3>
+          <p className="text-sm text-[#f8e5bb]/80 mt-1">
+            A subtle, premium touch—publish news that appears instantly on the announcements page.
+          </p>
         </div>
+        <button
+          type="button"
+          onClick={() => setComposerOpen(true)}
+          disabled={composerOpen}
+          className="inline-flex items-center justify-center whitespace-nowrap rounded-full border border-transparent bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] px-5 py-2 text-sm font-semibold text-[#332308] shadow-[0_15px_30px_rgba(0,0,0,0.45)] transition hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c0b09] disabled:cursor-not-allowed disabled:opacity-60"
+          aria-expanded={composerOpen}
+        >
+          Create New Announcement
+        </button>
       </div>
+
+      {composerOpen ? (
+        <>
+          {feedback && (
+            <div
+              className={`rounded-2xl px-4 py-3 text-sm ${
+                feedback.type === "success"
+                  ? "bg-[#1d1a14] text-[#f4d589] border border-[#f4d589]/50"
+                  : "bg-[#2b1414] text-[#f2a4a4] border border-[#f47373]/40"
+              }`}
+            >
+              {feedback.message}
+            </div>
+          )}
+
+          <form className="space-y-4" onSubmit={handleCreateAnnouncement}>
+            <div>
+              <label className="text-xs uppercase tracking-[0.35em] text-[#f3d9a4]/70 block mb-2">
+                Title
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. New safety protocols"
+                className="w-full bg-[#050402]/80 border border-[#f6dcb2]/20 rounded-2xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 focus:ring-offset-2 focus:ring-offset-[#030201]"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs uppercase tracking-[0.35em] text-[#f3d9a4]/70 block mb-2">
+                Message
+              </label>
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Share the details your team should know..."
+                rows={5}
+                className="w-full bg-[#050402]/80 border border-[#f6dcb2]/20 rounded-2xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 focus:ring-offset-2 focus:ring-offset-[#030201] resize-none"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="inline-flex items-center gap-2 text-sm text-[#f8e5bb]/80">
+                <input
+                  type="checkbox"
+                  checked={scheduleLater}
+                  onChange={(e) => setScheduleLater(e.target.checked)}
+                  className="accent-[#f4c979]"
+                />
+                Schedule publish date
+              </label>
+              {scheduleLater && (
+                <input
+                  type="date"
+                  value={publishDate}
+                  onChange={(e) => setPublishDate(e.target.value)}
+                  className="w-full bg-[#050402]/80 border border-[#f6dcb2]/20 rounded-2xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 focus:ring-offset-2 focus:ring-offset-[#030201]"
+                />
+              )}
+            </div>
+
+            <button
+              type="submit"
+              disabled={!isValid || submitting}
+              className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#2e1b02] font-semibold transition hover:scale-[1.01] border border-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#050301] disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {submitting ? "Publishing..." : "Publish announcement"}
+            </button>
+            {submitting && (
+              <div className="h-1 w-full rounded-full bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] animate-pulse" />
+            )}
+          </form>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/5 pt-4 text-xs text-[#f8e5bb]/70">
+            <p className="leading-relaxed">
+              Announcements publish directly to the Supabase `announcements` table and appear immediately on the employee announcements page.
+            </p>
+            <button
+              type="button"
+              onClick={() => setComposerOpen(false)}
+              className="inline-flex items-center gap-1 font-semibold text-[#fcdca1] hover:text-white"
+            >
+              Hide composer
+            </button>
+          </div>
+        </>
+      ) : (
+        <p className="text-sm text-[#f8e5bb]/70 border-t border-white/5 pt-4">
+          Keep the dashboard tidy—open the composer only when you need to publish an update.
+        </p>
+      )}
+    </>
+  );
+
+  return (
+    <DashboardLayout title="Admin Panel">
+      <AdminPremiumScaffold
+        hero={heroConfig}
+        stats={stats}
+        navCards={navCards}
+        sidePanel={announcementPanel}
+      />
     </DashboardLayout>
   );
 }

@@ -23,6 +23,7 @@ const Contact = lazy(() => import("./pages/Contact"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AdminRTO = lazy(() => import("./pages/AdminRTO"));
 const AdminUsers = lazy(() => import("./pages/AdminUsers"));
+const AdminJSA = lazy(() => import("./pages/AdminJSA"));
 
 // Mechanic pages
 const MechanicDashboard = lazy(() => import("./pages/MechanicDashboard"));
@@ -36,6 +37,7 @@ const DVIRForm = lazy(() => import("./pages/DVIRForm"));
 const DailyEquipmentInspectionForm = lazy(
   () => import("./pages/DailyEquipmentInspectionForm")
 );
+const DailyJSAForm = lazy(() => import("./pages/DailyJSAForm"));
 
 // 🔹 Forms history pages
 const FormHistory = lazy(() => import("./pages/FormHistory")); // 👈 matches FormHistory.tsx
@@ -155,6 +157,38 @@ function AnimatedRoutes() {
                 >
                   <ProtectedRoute>
                     <DailyEquipmentInspectionForm />
+                  </ProtectedRoute>
+                </motion.div>
+              }
+            />
+
+            <Route
+              path="/forms/jsa"
+              element={
+                <motion.div
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  variants={pageTransition}
+                >
+                  <ProtectedRoute>
+                    <DailyJSAForm />
+                  </ProtectedRoute>
+                </motion.div>
+              }
+            />
+
+            <Route
+              path="/forms/jsa/:id"
+              element={
+                <motion.div
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  variants={pageTransition}
+                >
+                  <ProtectedRoute>
+                    <DailyJSAForm />
                   </ProtectedRoute>
                 </motion.div>
               }
@@ -321,6 +355,22 @@ function AnimatedRoutes() {
                 >
                   <ProtectedRoute requiredRole="admin">
                     <AdminUsers />
+                  </ProtectedRoute>
+                </motion.div>
+              }
+            />
+
+            <Route
+              path="/admin/jsa"
+              element={
+                <motion.div
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  variants={pageTransition}
+                >
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminJSA />
                   </ProtectedRoute>
                 </motion.div>
               }

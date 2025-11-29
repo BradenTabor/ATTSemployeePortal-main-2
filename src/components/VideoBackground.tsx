@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { logger } from "../lib/logger";
 
 interface VideoBackgroundProps {
   videoSrc: string;
@@ -21,7 +22,7 @@ export const VideoBackground: React.FC<VideoBackgroundProps> = ({
         await video.play();
         setLoaded(true);
       } catch (err) {
-        console.warn("Autoplay may be blocked:", err);
+        logger.warn("Autoplay may be blocked:", err);
         setLoaded(true);
       }
     };
@@ -44,7 +45,7 @@ export const VideoBackground: React.FC<VideoBackgroundProps> = ({
           loaded ? "opacity-100" : "opacity-0"
         } z-0`}
         onLoadedData={() => setLoaded(true)}
-        onError={(e) => console.error("Video load error:", e)}
+        onError={(e) => logger.error("Video load error:", e)}
       />
 
       <div className="absolute inset-0 bg-gradient-to-br from-green-900/60 via-green-800/50 to-green-700/40 z-10"></div>

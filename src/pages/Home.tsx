@@ -5,6 +5,8 @@ import { VideoBackground } from "../components/VideoBackground";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../contexts/AuthContext";
 import logo from "../assets/ATTS_Logo-removebg-preview.png";
+import { logger } from "../lib/logger";
+
 
 type AuthMode = "login" | "signup";
 
@@ -22,17 +24,17 @@ export default function Home() {
   useEffect(() => {
     if (session) {
       if (hasMechanicAccess && !isAdmin) {
-        console.log("✅ Mechanic session detected, redirecting to mechanic dashboard");
+        logger.info("Mechanic session detected, redirecting to mechanic dashboard");
         navigate("/mechanic-dashboard", { replace: true });
       } else {
-        console.log("✅ Active session detected, redirecting to dashboard");
+        logger.info("Active session detected, redirecting to dashboard");
         navigate("/dashboard", { replace: true });
       }
     }
   }, [session, isAdmin, hasMechanicAccess, navigate]);
 
   const handleModeSwitch = (newMode: AuthMode) => {
-    console.log(`🔄 Switching mode to: ${newMode}`);
+    logger.info(`Switching mode to: ${newMode}`);
     setMode(newMode);
     setError(null);
     setSuccess(null);
@@ -40,7 +42,7 @@ export default function Home() {
 
   const handleSignIn = async (e: FormEvent) => {
     e.preventDefault();
-    console.log("🔐 Attempting login for:", email);
+    logger.info("Attempting login for:", email);
     setLoading(true);
     setError(null);
     setSuccess(null);
@@ -52,15 +54,15 @@ export default function Home() {
       });
 
       if (error) {
-        console.error("❌ Login error:", error.message);
+        logger.error("Login error:", error.message);
         setError(error.message);
       } else if (data.user) {
-        console.log("✅ Login successful for:", data.user.email);
+        logger.info("Login successful for:", data.user.email);
         // ✅ AuthContext's onAuthStateChange will pick this up,
         //    update session + role, and the useEffect above will redirect.
       }
     } catch (err) {
-      console.error("❌ Unexpected login error:", err);
+      logger.error("Unexpected login error:", err);
       setError("An unexpected error occurred. Please try again.");
     } finally {
       // ✅ Always stop the local loading state, even if something fails
@@ -70,14 +72,14 @@ export default function Home() {
 
   const handleSignUp = async (e: FormEvent) => {
     e.preventDefault();
-    console.log("📝 Attempting signup for:", email);
+    logger.info("Attempting signup for:", email);
     setLoading(true);
     setError(null);
     setSuccess(null);
 
     try {
       const redirectUrl = `${window.location.origin}/dashboard`;
-      console.log("🔗 Email confirmation will redirect to:", redirectUrl);
+      logger.info("Email confirmation will redirect to:", redirectUrl);
 
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
@@ -88,10 +90,10 @@ export default function Home() {
       });
 
       if (error) {
-        console.error("❌ Signup error:", error.message);
+        logger.error("Signup error:", error.message);
         setError(error.message);
       } else if (data.user) {
-        console.log("✅ Signup successful for:", data.user.email);
+        logger.info("Signup successful for:", data.user.email);
 
         if (data.user.identities && data.user.identities.length === 0) {
           setError("This email is already registered. Please log in instead.");
@@ -102,7 +104,7 @@ export default function Home() {
         }
       }
     } catch (err) {
-      console.error("❌ Unexpected signup error:", err);
+      logger.error("Unexpected signup error:", err);
       setError("An unexpected error occurred. Please try again.");
     } finally {
       setLoading(false);

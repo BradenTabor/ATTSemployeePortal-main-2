@@ -9,16 +9,16 @@ export default function MechanicDashboard() {
   // Optional simple guard (extra safety on top of ProtectedRoute)
   if (role && role !== "mechanic" && role !== "admin") {
     return (
-      <DashboardLayout title="Mechanic Dashboard">
+      <DashboardLayout title="Mechanic Panel">
         <div className="max-w-xl mx-auto mt-10 text-center text-sm text-gray-300">
-          You do not have permission to view the mechanic dashboard.
+          You do not have permission to view the mechanic panel.
         </div>
       </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout title="Mechanic Dashboard">
+    <DashboardLayout title="Mechanic Panel">
       <div className="max-w-5xl mx-auto space-y-4">
         <div>
           <h1 className="text-xl font-semibold text-white flex items-center gap-2">

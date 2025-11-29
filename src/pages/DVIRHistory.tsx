@@ -1,7 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../contexts/AuthContext";
+import { PaginationControls } from "../components/PaginationControls";
+import { logger } from "../lib/logger";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -130,7 +133,7 @@ function getFailedItems(report: DVIRReport) {
 
   if (report.aerial_checklist) {
     for (const item of AERIAL_LIFT_ITEMS) {
-      const val = report.aerial_checklist[item.id];
+      const val = report. aerial_checklist[item.id];
       if (val === "F") {
         aerialFails.push(item.label);
       }
@@ -160,62 +163,79 @@ export default function DVIRHistory() {
   const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!user?.id) {
+  // 🔢 Pagination State
+  const pageSize = 20;
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalReports, setTotalReports] = useState<number | null>(null);
+
+  const totalPages =
+    totalReports && totalReports > 0
+      ?  Math.max(1, Math.ceil(totalReports / pageSize))
+      : 1;
+
+  const fetchDVIRReports = useCallback(async () => {
+    if (!user?. id) {
       setLoading(false);
       return;
     }
 
-    let isMounted = true;
+    try {
+      setLoading(true);
+      setError(null);
 
-    const fetchHistory = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+      // 🔢 Calculate the row range for the current page
+      const from = (currentPage - 1) * pageSize;
+      const to = from + pageSize - 1;
 
-        const { data, error } = await supabase
-          .from("dvir_reports")
-          .select(
-            `
-            id,
-            created_at,
-            user_id,
-            truck_number,
-            mileage,
-            drivers_name,
-            notes,
-            vehicle_trailer_checklist,
-            aerial_checklist,
-            mechanic_truck_number,
-            mechanic_date,
-            deficiency_corrected,
-            mechanic_remarks
+      const { data, error: supabaseError, count } = await supabase
+        .from("dvir_reports")
+        .select(
           `
-          )
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false });
+          id,
+          created_at,
+          user_id,
+          truck_number,
+          mileage,
+          drivers_name,
+          notes,
+          vehicle_trailer_checklist,
+          aerial_checklist,
+          mechanic_truck_number,
+          mechanic_date,
+          deficiency_corrected,
+          mechanic_remarks
+        `,
+          { count: "exact" }
+        )
+        .eq("user_id", user.id)
+        . order("created_at", { ascending: false })
+        .range(from, to);
 
-        if (error) throw error;
+      if (supabaseError) throw supabaseError;
 
-        if (isMounted && data) {
-          setReports(data as DVIRReport[]);
-        }
-      } catch (err: any) {
-        console.error("Error loading DVIR history:", err);
-        if (isMounted) setError("Failed to load your DVIR history.");
-      } finally {
-        if (isMounted) setLoading(false);
+      setReports(data as DVIRReport[] || []);
+
+      // Store total count for pagination
+      if (typeof count === "number") {
+        setTotalReports(count);
+      } else {
+        setTotalReports(data?. length ??  0);
       }
-    };
+    } catch (err: any) {
+      logger.error("Error loading DVIR history:", err);
+      setError("Failed to load your DVIR history.");
+      setReports([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id, currentPage, pageSize]);
 
-    fetchHistory();
-    return () => {
-      isMounted = false;
-    };
-  }, [user?.id]);
+  useEffect(() => {
+    fetchDVIRReports();
+  }, [fetchDVIRReports]);
 
   const formatDateTime = (iso: string | null | undefined) => {
-    if (!iso) return "Unknown date";
+    if (! iso) return "Unknown date";
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return iso;
     return d.toLocaleString();
@@ -245,219 +265,297 @@ export default function DVIRHistory() {
   return (
     <DashboardLayout title="DVIR History">
       <div className="max-w-4xl mx-auto space-y-4">
-        <div>
-          <h1 className="text-xl font-semibold text-white">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <h1 className="text-2xl font-bold text-white">
             Your Daily Vehicle Inspection Reports
           </h1>
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-sm text-gray-400 mt-2">
             Review your submitted DVIRs, see which items were marked as failed,
             and check if mechanics have recorded any corrections.
           </p>
-        </div>
+        </motion.div>
 
+        {/* Loading State */}
         {loading && (
-          <div className="flex items-center gap-2 text-xs text-gray-300">
-            <Loader2 className="w-4 h-4 animate-spin" />
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center gap-2 text-sm text-gray-300 py-8"
+          >
+            <Loader2 className="w-5 h-5 animate-spin text-green-500" />
             Loading your DVIR history...
-          </div>
+          </motion.div>
         )}
 
+        {/* Error State */}
         {error && (
-          <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-2 text-xs text-red-100">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-100"
+          >
             {error}
-          </div>
+          </motion.div>
         )}
 
+        {/* Empty State */}
         {!loading && !error && reports.length === 0 && (
-          <div className="rounded-lg border border-gray-700 bg-black/60 px-4 py-3 text-xs text-gray-300">
-            You haven&apos;t submitted any DVIRs yet.
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-lg border border-gray-700 bg-black/60 px-6 py-8 text-center"
+          >
+            <CheckCircle2 className="w-12 h-12 text-gray-500 mx-auto mb-3" />
+            <h3 className="text-lg font-semibold text-white mb-1">
+              No DVIRs Yet
+            </h3>
+            <p className="text-sm text-gray-400">
+              You haven&apos;t submitted any DVIRs yet. Start by creating one! 
+            </p>
+          </motion.div>
         )}
 
-        {!loading && !error && reports.length > 0 && (
+        {/* Reports List */}
+        {! loading && !error && reports.length > 0 && (
           <>
-            <div className="flex flex-wrap items-center gap-2 text-[11px]">
-              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-emerald-200">
-                <CheckCircle2 className="w-3 h-3" />
-                Total reports: {reports.length}
+            {/* Stats */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="flex flex-wrap items-center gap-3"
+            >
+              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-200">
+                <CheckCircle2 className="w-4 h-4" />
+                Page {currentPage} of {totalPages}
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full border border-red-500/40 bg-red-500/10 px-2 py-0.5 text-red-200">
-                <AlertTriangle className="w-3 h-3" />
-                Reports with fails: {totalFailed}
+              <span className="inline-flex items-center gap-2 rounded-full border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs font-medium text-red-200">
+                <AlertTriangle className="w-4 h-4" />
+                {totalFailed} of {totalReports} reports with failures
               </span>
-            </div>
+            </motion.div>
 
-            <div className="space-y-2">
-              {reports.map((r) => {
-                const { vehicleFails, aerialFails, allFails } = getFailedItems(r);
-                const status = getStatus(r);
-                const mechanicFlag = hasMechanicUpdate(r);
-                const isOpen = expandedId === r.id;
+            {/* Reports Cards */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.15 }}
+              className="space-y-3"
+            >
+              <AnimatePresence>
+                {reports.map((r, index) => {
+                  const { vehicleFails, aerialFails, allFails } = getFailedItems(r);
+                  const status = getStatus(r);
+                  const mechanicFlag = hasMechanicUpdate(r);
+                  const isOpen = expandedId === r.id;
 
-                return (
-                  <div
-                    key={r.id}
-                    className="rounded-2xl border border-gray-700 bg-black/60 overflow-hidden"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => handleToggle(r.id)}
-                      className="w-full flex items-center justify-between px-4 py-3 text-left text-xs hover:bg-white/5 transition-colors"
+                  return (
+                    <motion.div
+                      key={r.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="rounded-2xl border border-gray-700 bg-black/60 overflow-hidden hover:border-gray-600 transition-all"
                     >
-                      <div className="flex flex-col gap-0.5">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-white">
-                            Truck {r.truck_number || "N/A"}
-                          </span>
-                          {status === "failed" ? (
-                            <span className="inline-flex items-center gap-1 rounded-full border border-red-400/70 bg-red-500/20 px-2 py-0.5 text-[10px] text-red-100">
-                              <AlertTriangle className="w-3 h-3" />
-                              Items marked Fail: {allFails.length}
+                      <button
+                        type="button"
+                        onClick={() => handleToggle(r.id)}
+                        className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-white/5 transition-colors"
+                      >
+                        <div className="flex flex-col gap-2 flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-base font-semibold text-white">
+                              Truck {r.truck_number || "N/A"}
                             </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/70 bg-emerald-500/20 px-2 py-0.5 text-[10px] text-emerald-100">
-                              <CheckCircle2 className="w-3 h-3" />
-                              All items passed
-                            </span>
-                          )}
-                          {mechanicFlag && (
-                            <span className="inline-flex items-center gap-1 rounded-full border border-yellow-400/60 bg-yellow-500/10 px-2 py-0.5 text-[10px] text-yellow-100">
-                              <Clock className="w-3 h-3" />
-                              Mechanic updated
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-[11px] text-gray-400">
-                          {formatDateTime(r.created_at)} · Mileage:{" "}
-                          {r.mileage != null ? r.mileage : "N/A"}
-                        </div>
-                        {allFails.length > 0 && (
-                          <div className="text-[11px] text-red-100/90 truncate max-w-[280px]">
-                            Checklist fails: {allFails.join(", ")}
-                          </div>
-                        )}
-                      </div>
-                      <div className="ml-3 text-gray-400">
-                        {isOpen ? (
-                          <ChevronUp className="w-4 h-4" />
-                        ) : (
-                          <ChevronDown className="w-4 h-4" />
-                        )}
-                      </div>
-                    </button>
-
-                    {isOpen && (
-                      <div className="border-t border-gray-700 px-4 py-3 text-xs text-gray-200 space-y-3">
-                        {/* Failed items breakdown */}
-                        {allFails.length > 0 ? (
-                          <div className="rounded-lg border border-red-500/30 bg-red-500/5 px-3 py-2">
-                            <div className="text-[11px] font-semibold text-red-100 mb-1">
-                              Failed Checklist Items ({allFails.length})
-                            </div>
-                            {vehicleFails.length > 0 && (
-                              <div className="mb-1">
-                                <div className="text-[11px] text-red-200/90">
-                                  Vehicle / Trailer:
-                                </div>
-                                <ul className="list-disc list-inside text-[11px] text-red-100">
-                                  {vehicleFails.map((label) => (
-                                    <li key={label}>{label}</li>
-                                  ))}
-                                </ul>
-                              </div>
+                            {status === "failed" ?  (
+                              <span className="inline-flex items-center gap-1 rounded-full border border-red-400/70 bg-red-500/20 px-2. 5 py-1 text-xs font-medium text-red-100 flex-shrink-0">
+                                <AlertTriangle className="w-3 h-3" />
+                                {allFails. length} Fails
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/70 bg-emerald-500/20 px-2.5 py-1 text-xs font-medium text-emerald-100 flex-shrink-0">
+                                <CheckCircle2 className="w-3 h-3" />
+                                All Passed
+                              </span>
                             )}
-                            {aerialFails.length > 0 && (
-                              <div>
-                                <div className="text-[11px] text-red-200/90">
-                                  Aerial Lift:
-                                </div>
-                                <ul className="list-disc list-inside text-[11px] text-red-100">
-                                  {aerialFails.map((label) => (
-                                    <li key={label}>{label}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-[11px] text-emerald-100">
-                            No failed items on this DVIR. Good job.
-                          </div>
-                        )}
-
-                        {/* Driver notes */}
-                        <div>
-                          <div className="text-[11px] text-gray-400 mb-1">
-                            Your Notes
-                          </div>
-                          <div className="rounded-lg border border-gray-700 bg-black/60 px-3 py-2 text-[11px] text-gray-200 min-h-[48px]">
-                            {r.notes?.trim()
-                              ? r.notes
-                              : "No notes were added to this DVIR."}
-                          </div>
-                        </div>
-
-                        {/* Mechanic section */}
-                        <div className="rounded-lg border border-gray-700 bg-black/70 px-3 py-2">
-                          <div className="flex items-center justify-between gap-2 mb-1">
-                            <div className="text-[11px] text-gray-400">
-                              Mechanic Updates
-                            </div>
                             {mechanicFlag && (
-                              <span className="inline-flex items-center gap-1 rounded-full border border-yellow-400/60 bg-yellow-500/10 px-2 py-0.5 text-[10px] text-yellow-100">
+                              <span className="inline-flex items-center gap-1 rounded-full border border-yellow-400/60 bg-yellow-500/10 px-2.5 py-1 text-xs font-medium text-yellow-100 flex-shrink-0">
                                 <Clock className="w-3 h-3" />
-                                Updated
+                                Mechanic Updated
                               </span>
                             )}
                           </div>
-
-                          {mechanicFlag ? (
-                            <div className="space-y-1 text-[11px] text-gray-200">
-                              {r.mechanic_truck_number && (
-                                <div>
-                                  <span className="text-gray-400">
-                                    Mechanic Truck:{" "}
-                                  </span>
-                                  {r.mechanic_truck_number}
-                                </div>
-                              )}
-                              {r.mechanic_date && (
-                                <div>
-                                  <span className="text-gray-400">
-                                    Mechanic Date:{" "}
-                                  </span>
-                                  {formatDateOnly(r.mechanic_date)}
-                                </div>
-                              )}
-                              {r.deficiency_corrected && (
-                                <div>
-                                  <span className="text-gray-400">
-                                    Deficiency Corrected:{" "}
-                                  </span>
-                                  {r.deficiency_corrected}
-                                </div>
-                              )}
-                              {r.mechanic_remarks && (
-                                <div>
-                                  <span className="text-gray-400">
-                                    Remarks:{" "}
-                                  </span>
-                                  {r.mechanic_remarks}
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="text-[11px] text-gray-400">
-                              No mechanic updates have been recorded yet.
+                          <div className="text-xs text-gray-400">
+                            {formatDateTime(r.created_at)} · Mileage:{" "}
+                            {r.mileage != null ? r.mileage. toLocaleString() : "N/A"}
+                          </div>
+                          {allFails.length > 0 && (
+                            <div className="text-xs text-red-100/80 truncate">
+                              Fails: {allFails.join(", ")}
                             </div>
                           )}
                         </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                        <div className="ml-3 text-gray-400 flex-shrink-0">
+                          {isOpen ? (
+                            <ChevronUp className="w-5 h-5" />
+                          ) : (
+                            <ChevronDown className="w-5 h-5" />
+                          )}
+                        </div>
+                      </button>
+
+                      {/* Expanded Details */}
+                      <AnimatePresence>
+                        {isOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="border-t border-gray-700 px-5 py-4 text-xs text-gray-200 space-y-4"
+                          >
+                            {/* Failed items breakdown */}
+                            {allFails.length > 0 ?  (
+                              <div className="rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-3">
+                                <div className="text-xs font-semibold text-red-100 mb-2">
+                                  Failed Checklist Items ({allFails.length})
+                                </div>
+                                {vehicleFails.length > 0 && (
+                                  <div className="mb-2">
+                                    <div className="text-xs text-red-200/90 font-medium mb-1">
+                                      Vehicle / Trailer:
+                                    </div>
+                                    <ul className="list-disc list-inside text-xs text-red-100 space-y-0. 5">
+                                      {vehicleFails.map((label) => (
+                                        <li key={label}>{label}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                                {aerialFails.length > 0 && (
+                                  <div>
+                                    <div className="text-xs text-red-200/90 font-medium mb-1">
+                                      Aerial Lift:
+                                    </div>
+                                    <ul className="list-disc list-inside text-xs text-red-100 space-y-0.5">
+                                      {aerialFails.map((label) => (
+                                        <li key={label}>{label}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-xs text-emerald-100">
+                                ✓ No failed items on this DVIR.  Good job!
+                              </div>
+                            )}
+
+                            {/* Driver notes */}
+                            <div>
+                              <div className="text-xs text-gray-400 font-medium mb-2">
+                                Your Notes
+                              </div>
+                              <div className="rounded-lg border border-gray-700 bg-black/60 px-4 py-3 text-xs text-gray-200 min-h-[48px]">
+                                {r.notes?. trim()
+                                  ? r.notes
+                                  : "No notes were added to this DVIR."}
+                              </div>
+                            </div>
+
+                            {/* Mechanic section */}
+                            <div className="rounded-lg border border-gray-700 bg-black/70 px-4 py-3">
+                              <div className="flex items-center justify-between gap-2 mb-2">
+                                <div className="text-xs text-gray-400 font-medium">
+                                  Mechanic Updates
+                                </div>
+                                {mechanicFlag && (
+                                  <span className="inline-flex items-center gap-1 rounded-full border border-yellow-400/60 bg-yellow-500/10 px-2 py-0.5 text-[11px] font-medium text-yellow-100">
+                                    <Clock className="w-3 h-3" />
+                                    Updated
+                                  </span>
+                                )}
+                              </div>
+
+                              {mechanicFlag ?  (
+                                <div className="space-y-2 text-xs text-gray-200">
+                                  {r.mechanic_truck_number && (
+                                    <div>
+                                      <span className="text-gray-400">
+                                        Mechanic Truck:{" "}
+                                      </span>
+                                      <span className="font-medium">
+                                        {r.mechanic_truck_number}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {r. mechanic_date && (
+                                    <div>
+                                      <span className="text-gray-400">
+                                        Mechanic Date:{" "}
+                                      </span>
+                                      <span className="font-medium">
+                                        {formatDateOnly(r.mechanic_date)}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {r.deficiency_corrected && (
+                                    <div>
+                                      <span className="text-gray-400">
+                                        Deficiency Corrected:{" "}
+                                      </span>
+                                      <span className="font-medium">
+                                        {r. deficiency_corrected}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {r. mechanic_remarks && (
+                                    <div>
+                                      <span className="text-gray-400">
+                                        Remarks:{" "}
+                                      </span>
+                                      <span className="font-medium">
+                                        {r.mechanic_remarks}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="text-xs text-gray-400">
+                                  No mechanic updates have been recorded yet.
+                                </div>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </motion.div>
+
+            {/* Pagination Footer */}
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalReports}
+              loading={loading}
+              pageSize={pageSize}
+              onPreviousClick={() =>
+                setCurrentPage((prev) => Math.max(1, prev - 1))
+              }
+              onNextClick={() =>
+                setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+              }
+              label="reports"
+            />
           </>
         )}
       </div>

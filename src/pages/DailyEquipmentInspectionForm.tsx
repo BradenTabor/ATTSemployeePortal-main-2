@@ -3,6 +3,7 @@ import DashboardLayout from "../layouts/DashboardLayout";
 import { ArrowLeft, Camera } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import { logger } from "../lib/logger";
 
 type ChecklistValue = "" | "P" | "F";
 
@@ -172,7 +173,7 @@ export default function DailyEquipmentInspectionForm() {
       // setSpecificChecklist({});
       // setPhotos({});
     } catch (err: any) {
-      console.error(err);
+      logger.error(err);
       setError("Something went wrong submitting the inspection.");
     } finally {
       setSubmitting(false);

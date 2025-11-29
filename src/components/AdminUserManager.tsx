@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { RefreshCw, Save, Users, AlertCircle } from "lucide-react";
+import { logger } from "../lib/logger";
 
 interface AppUser {
   id: string;
@@ -39,7 +40,7 @@ export default function AdminUserManager() {
           .in("id", userIds);
 
         if (authUsersError) {
-          console.error("Error fetching auth users:", authUsersError);
+          logger.error("Error fetching auth users:", authUsersError);
         }
 
         const emailMap = new Map(
@@ -56,7 +57,7 @@ export default function AdminUserManager() {
         setUsers([]);
       }
     } catch (err) {
-      console.error("Error fetching users:", err);
+      logger.error("Error fetching users:", err);
       setError(err instanceof Error ? err.message : "Failed to fetch users");
     } finally {
       setLoading(false);
@@ -102,7 +103,7 @@ export default function AdminUserManager() {
       setSuccessMessage("Role updated successfully");
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
-      console.error("Error updating role:", err);
+      logger.error("Error updating role:", err);
       setError(err instanceof Error ? err.message : "Failed to update role");
     } finally {
       setUpdatingUserId(null);

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell } from "lucide-react";
 import { hasNewDataWithExpiry, setLastViewedWithTimestamp, STORAGE_KEYS } from "../lib/notifications";
+import { logger } from "../lib/logger";
 
 export default function AnnouncementAlert() {
   const [hasNew, setHasNew] = useState(false);
@@ -38,7 +39,7 @@ export default function AnnouncementAlert() {
           }
         }
       } catch (error) {
-        console.error("Failed to check announcements:", error);
+        logger.error("Failed to check announcements:", error);
       }
     };
 
