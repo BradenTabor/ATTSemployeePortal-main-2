@@ -1,18 +1,11 @@
 import { useMemo, useState, FormEvent } from "react";
-import {
-  Shield,
-  CalendarCheck,
-  Users,
-  Megaphone,
-  Sparkles,
-  ClipboardList,
-} from "lucide-react";
+import { Shield, Megaphone, Sparkles } from "lucide-react";
 import DashboardLayout from "../layouts/DashboardLayout";
 import AdminPremiumScaffold, {
   type AdminHeroConfig,
-  type AdminNavCardConfig,
   type AdminStat,
 } from "../components/admin/AdminPremiumScaffold";
+import { ADMIN_CORE_NAV_CARDS } from "../components/admin/adminNavConfig";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabaseClient";
 import { logger } from "../lib/logger";
@@ -84,30 +77,6 @@ export default function AdminDashboard() {
       ],
     }),
     [role, session?.user?.email]
-  );
-
-  const navCards = useMemo<AdminNavCardConfig[]>(
-    () => [
-      {
-        title: "RTO Requests",
-        description: "View and manage employee time-off submissions.",
-        icon: <CalendarCheck className="w-8 h-8 text-[#f4c979]" />,
-        to: "/admin/rto",
-      },
-      {
-        title: "User Management",
-        description: "Manage user accounts and permissions.",
-        icon: <Users className="w-8 h-8 text-[#f4c979]" />,
-        to: "/admin/users",
-      },
-      {
-        title: "Daily JSA Oversight",
-        description: "Audit every job safety analysis in one place.",
-        icon: <ClipboardList className="w-8 h-8 text-[#f4c979]" />,
-        to: "/admin/jsa",
-      },
-    ],
-    []
   );
 
   const isValid = title.trim().length > 0 && message.trim().length > 0;
@@ -284,7 +253,7 @@ export default function AdminDashboard() {
       <AdminPremiumScaffold
         hero={heroConfig}
         stats={stats}
-        navCards={navCards}
+        navCards={ADMIN_CORE_NAV_CARDS}
         sidePanel={announcementPanel}
       />
     </DashboardLayout>

@@ -4,12 +4,14 @@ import { cn } from "../lib/utils";
 import { ReactNode } from "react";
 import AdaptiveCardWrapper from "./AdaptiveCardWrapper";
 
+type CardVariant = "emerald" | "gold" | "ember";
+
 interface BrandedNavCardProps {
   title: string;
   description?: string;
   icon?: ReactNode;
   to: string;
-  variant?: "emerald" | "gold";
+  variant?: CardVariant;
 }
 
 const VARIANT_STYLES = {
@@ -33,6 +35,17 @@ const VARIANT_STYLES = {
     title: "text-[#fff6dd]",
     description: "text-[#f8e5bb]/80",
     overlay: "bg-gradient-to-br from-[#f4c979]/15 via-transparent to-transparent",
+  },
+  ember: {
+    outer:
+      "bg-gradient-to-br from-[#341109]/80 via-[#120504] to-[#050201] border border-[#f59a71]/35 hover:border-[#ffb089]/60 hover:shadow-[0_25px_45px_rgba(0,0,0,0.65)]",
+    inner:
+      "bg-[#080302]/85 border border-[#f38d57]/35 items-start text-left text-[#ffd4b8]/85 shadow-[0_20px_45px_rgba(0,0,0,0.6)]",
+    iconWrapper:
+      "mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#ffb47a]/10 border border-[#ff9350]/40 text-[#ff9d5f]",
+    title: "text-[#ffe4c9]",
+    description: "text-[#ffd4b8]/80",
+    overlay: "bg-gradient-to-br from-[#ff8f57]/15 via-transparent to-transparent",
   },
 };
 

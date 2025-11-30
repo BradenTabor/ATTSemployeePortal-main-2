@@ -1,12 +1,48 @@
-import { Link } from "react-router-dom";
+import { useMemo } from "react";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { useAuth } from "../contexts/AuthContext";
-import { Wrench, ClipboardList, AlertTriangle } from "lucide-react";
+import { Wrench, AlertTriangle, Flame, Activity } from "lucide-react";
+import AdminPremiumScaffold, {
+  type AdminHeroConfig,
+  type AdminStat,
+} from "../components/admin/AdminPremiumScaffold";
+import { MECHANIC_NAV_CARDS } from "../components/admin/adminNavConfig";
+
+const PLACEHOLDER_STATS = {
+  dvirQueue: "08",
+  failedToday: "03",
+  openRepairs: "12",
+};
+
+const UPCOMING_PANELS = [
+  {
+    title: "Preventive Maintenance",
+    body: "Auto-generate PM windows, export checklists, and share schedules with ops.",
+    tag: "Launching soon",
+  },
+  {
+    title: "Parts & Repairs Log",
+    body: "Track parts consumption, vendor history, and recurring component failures.",
+    tag: "In design",
+  },
+];
+
+const ACTIVE_ALERTS = [
+  {
+    title: "3 failed DVIRs awaiting triage",
+    detail: "Units #112, #214, #309",
+    tone: "text-[#ffb48a]",
+  },
+  {
+    title: "2 overdue PM intervals",
+    detail: "Bucket Truck 18, Line Truck 07",
+    tone: "text-[#ffd0a6]",
+  },
+];
 
 export default function MechanicDashboard() {
   const { role } = useAuth();
 
-  // Optional simple guard (extra safety on top of ProtectedRoute)
   if (role && role !== "mechanic" && role !== "admin") {
     return (
       <DashboardLayout title="Mechanic Panel">
@@ -17,97 +53,163 @@ export default function MechanicDashboard() {
     );
   }
 
-  return (
-    <DashboardLayout title="Mechanic Panel">
-      <div className="max-w-5xl mx-auto space-y-4">
-        <div>
-          <h1 className="text-xl font-semibold text-white flex items-center gap-2">
-            <Wrench className="w-5 h-5 text-emerald-400" />
-            Mechanic Control Center
-          </h1>
-          <p className="text-xs text-gray-400 mt-1">
-            Review DVIRs, track failed inspections, and record repairs. More
-            mechanic tools will be added here over time.
-          </p>
-        </div>
+  const heroStats = useMemo<AdminStat[]>(
+    () => [
+      {
+        label: "DVIR Queue",
+        value: PLACEHOLDER_STATS.dvirQueue,
+        hint: "Awaiting review",
+      },
+      {
+        label: "Failed Today",
+        value: PLACEHOLDER_STATS.failedToday,
+        hint: "Needs triage",
+      },
+      {
+        label: "Open Repairs",
+        value: PLACEHOLDER_STATS.openRepairs,
+        hint: "Tracked in shop",
+      },
+    ],
+    []
+  );
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* DVIR Center main nav card */}
-          <Link
-            to="/mechanic-dvir-center"
-            className="
-              group relative flex flex-col justify-between
-              rounded-2xl border border-emerald-600/40 bg-black/60
-              px-4 py-4
-              shadow-[0_0_0_0_rgba(16,185,129,0.0)]
-              transition-all duration-200
-              hover:border-emerald-400 hover:shadow-[0_0_20px_rgba(16,185,129,0.28)]
-              hover:-translate-y-0.5
-              active:translate-y-0
-              active:scale-95
-            "
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="space-y-1">
-                <div className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-200">
-                  <ClipboardList className="w-3 h-3" />
-                  DVIR Queue & Updates
-                </div>
-                <h2 className="text-sm font-semibold text-white mt-1">
-                  DVIR Review & Mechanic Updates
-                </h2>
-                <p className="text-[11px] text-gray-400">
-                  See all driver-submitted DVIRs, grouped by passed and failed.
-                  Open one at a time, view failed items, and log what&apos;s been
-                  fixed.
-                </p>
-              </div>
-              <AlertTriangle className="w-6 h-6 text-yellow-400/80 group-hover:text-yellow-300 transition-colors" />
-            </div>
+  const heroConfig = useMemo<AdminHeroConfig>(
+    () => ({
+      eyebrow: "Ember Ops Network",
+      eyebrowIcon: <Wrench className="w-4 h-4 text-[#ffb48a]" />,
+      heading: "Mechanic Control Center",
+      description:
+        "Stay ahead of failed inspections, coordinate PM windows, and keep the fleet road-ready.",
+      badges: [
+        {
+          label: "Shift live",
+          icon: <Flame className="w-4 h-4 text-[#ff9350]" />,
+          variant: "solid",
+        },
+        {
+          label: "Realtime feed",
+          icon: <Activity className="w-4 h-4 text-[#ff9350]" />,
+          variant: "outline",
+        },
+      ],
+    }),
+    []
+  );
 
-            <div className="mt-3 flex items-center justify-between text-[11px] text-gray-400">
-              <span className="group-hover:text-emerald-300 transition-colors">
-                Open DVIR Center
-              </span>
-              <span className="inline-flex items-center gap-1 text-emerald-300 group-hover:translate-x-0.5 transition-transform">
-                View queue
-                <span className="text-xs">↗</span>
-              </span>
-            </div>
-          </Link>
-
-          {/* Placeholder cards for future expansion */}
-          <div className="rounded-2xl border border-gray-700 bg-black/50 px-4 py-4 text-xs text-gray-400 flex flex-col justify-between">
-            <div>
-              <h2 className="text-sm font-semibold text-white mb-1">
-                Upcoming: PM Schedule
-              </h2>
-              <p>
-                Reserved for preventive maintenance scheduling, due dates, and
-                service reminders.
+  const sidePanelContent = (
+    <>
+      <div>
+        <p className="text-xs uppercase tracking-[0.35em] text-[#ffbf94]/70">
+          Alerts & Watchlist
+        </p>
+        <div className="mt-4 space-y-4">
+          {ACTIVE_ALERTS.map((alert) => (
+            <div
+              key={alert.title}
+              className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-md"
+            >
+              <p className={`text-sm font-semibold ${alert.tone}`}>
+                {alert.title}
               </p>
+              <p className="text-xs text-white/60 mt-1">{alert.detail}</p>
             </div>
-            <span className="mt-3 text-[10px] text-gray-500">
-              Coming soon
-            </span>
-          </div>
-
-          <div className="rounded-2xl border border-gray-700 bg-black/50 px-4 py-4 text-xs text-gray-400 flex flex-col justify-between">
-            <div>
-              <h2 className="text-sm font-semibold text-white mb-1">
-                Upcoming: Parts & Repairs Log
-              </h2>
-              <p>
-                Track parts used, repeat issues, and repair history by truck or
-                trailer number.
-              </p>
-            </div>
-            <span className="mt-3 text-[10px] text-gray-500">
-              Coming soon
-            </span>
-          </div>
+          ))}
         </div>
       </div>
+
+      <div className="rounded-2xl border border-white/15 bg-black/20 px-4 py-4">
+        <p className="text-xs uppercase tracking-[0.3em] text-[#ffd4b8]/70">
+          Quick Links
+        </p>
+        <ul className="mt-3 space-y-2 text-sm text-white/80">
+          <li className="flex items-center justify-between">
+            <span>Latest failed DVIR</span>
+            <span className="text-[#ffb48a] font-semibold">Unit #214</span>
+          </li>
+          <li className="flex items-center justify-between">
+            <span>Shop capacity</span>
+            <span className="text-[#ffd0a6] font-semibold">4 / 8 bays</span>
+          </li>
+          <li className="flex items-center justify-between">
+            <span>Next PM window</span>
+            <span className="text-[#ffb48a] font-semibold">Thu · 07:00</span>
+          </li>
+        </ul>
+      </div>
+    </>
+  );
+
+  return (
+    <DashboardLayout title="Mechanic Panel">
+      <AdminPremiumScaffold
+        hero={heroConfig}
+        stats={heroStats}
+        navCards={MECHANIC_NAV_CARDS}
+        sidePanel={sidePanelContent}
+        theme="ember"
+      >
+        <div className="grid gap-6 md:grid-cols-2">
+          {UPCOMING_PANELS.map((panel) => (
+            <div
+              key={panel.title}
+              className="rounded-3xl border border-[#f28b53]/30 bg-[#1a0905]/80 p-6 shadow-lg shadow-black/40 space-y-3 text-white/80"
+            >
+              <div className="text-xs uppercase tracking-[0.35em] text-[#ffb48a]/70">
+                {panel.tag}
+              </div>
+              <h3 className="text-xl font-semibold text-white">
+                {panel.title}
+              </h3>
+              <p className="text-sm text-white/70">{panel.body}</p>
+              <div className="inline-flex items-center gap-1 text-xs text-[#ff9350]">
+                <span>Preview</span>
+                <span>↗</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="rounded-3xl border border-[#f28b53]/25 bg-[#120705]/90 p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.35em] text-[#ffbf94]/70">
+                DVIR Highlights
+              </p>
+              <p className="text-lg font-semibold text-white mt-2">
+                Failed reasons this shift
+              </p>
+            </div>
+            <AlertTriangle className="w-8 h-8 text-[#ff9c63]" />
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3 text-sm">
+            {[
+              { label: "Brakes", count: "05" },
+              { label: "Lighting", count: "03" },
+              { label: "Hydraulics", count: "02" },
+            ].map((item) => (
+              <div
+                key={item.label}
+                className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
+              >
+                <p className="text-xs uppercase tracking-[0.3em] text-white/60">
+                  {item.label}
+                </p>
+                <p className="text-2xl font-bold text-[#ffe4c9]">
+                  {item.count}
+                </p>
+                <p className="text-xs text-white/50 mt-1">flags in queue</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="text-xs text-white/60">
+            Real metrics will pipe in directly from the DVIR Center once the API
+            endpoints are finalized.
+          </div>
+        </div>
+      </AdminPremiumScaffold>
     </DashboardLayout>
   );
 }
