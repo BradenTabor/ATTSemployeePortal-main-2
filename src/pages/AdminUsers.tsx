@@ -25,6 +25,75 @@ interface ToastMessage {
   message: string;
 }
 
+const getRoleBadgeClass = (role: string) => {
+  if (role === "admin") {
+    return "bg-[#2a0b02] text-[#ffb199] border border-[#ff6b4a]/40";
+  }
+  if (role === "mechanic") {
+    return "bg-[#0d1d2c] text-[#9cd7ff] border border-[#4c95c9]/40";
+  }
+  if (role === "employee") {
+    return "bg-[#23102a] text-[#deb2ff] border border-[#b57ae3]/40";
+  }
+  return "bg-white/5 text-[#fdf4db] border border-white/15";
+};
+
+const formatJoinedDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+const formatJoinedTime = (iso: string) =>
+  new Date(iso).toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+const MobileUserCard = ({ user }: { user: AppUser }) => (
+  <motion.article
+    layout
+    className="rounded-2xl border border-[#f6dcb2]/25 bg-[#0c0a07]/90 p-4 space-y-4 shadow-[0_18px_40px_rgba(0,0,0,0.55)]"
+  >
+    <div className="flex items-center gap-3">
+      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#f4c979] to-[#d89d3e] flex items-center justify-center text-[#2d1c04] font-semibold">
+        {user.email.charAt(0).toUpperCase()}
+      </div>
+      <div>
+        <p className="font-semibold text-white text-base">{user.email}</p>
+        <p className="text-[0.65rem] text-[#c7b696] tracking-wide">
+          ID: {user.id.slice(0, 8)}…
+        </p>
+      </div>
+    </div>
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <span
+        className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${getRoleBadgeClass(
+          user.role
+        )}`}
+      >
+        {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+      </span>
+      <div className="text-xs text-[#f0e2c7] text-right">
+        <p>{formatJoinedDate(user.created_at)}</p>
+        <p className="text-[0.7rem] text-[#c7b696]">{formatJoinedTime(user.created_at)}</p>
+      </div>
+    </div>
+  </motion.article>
+);
+
+const MobileLoadingSkeleton = () => (
+  <div className="md:hidden space-y-3 p-4">
+    {Array.from({ length: 4 }).map((_, index) => (
+      <div
+        key={index}
+        className="rounded-2xl border border-white/5 bg-white/5 h-28 animate-pulse"
+      />
+    ))}
+  </div>
+);
+
 function AdminUsers() {
   const { role: currentUserRole } = useAuth();
   const [users, setUsers] = useState<AppUser[]>([]);
@@ -298,7 +367,12 @@ function AdminUsers() {
             className="rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] overflow-hidden shadow-[0_40px_80px_rgba(0,0,0,0.65)]"
           >
             {loading ? (
-              <TableSkeleton rows={6} columns={4} variant="gold" />
+              <>
+                <div className="hidden md:block">
+                  <TableSkeleton rows={6} columns={4} variant="gold" />
+                </div>
+                <MobileLoadingSkeleton />
+              </>
             ) : users.length === 0 ? (
               <div className="text-center py-24 space-y-3">
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#211c15] border border-[#f6dcb2]/30 mx-auto">
@@ -313,7 +387,7 @@ function AdminUsers() {
               </div>
             ) : (
               <>
-                <div className="overflow-x-auto">
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-gradient-to-r from-[#2b251b] to-[#1b1812] border-b border-[#f6dcb2]/15 text-[0.65rem] uppercase tracking-[0.3em] text-[#f4c979]/80">
                       <tr>
@@ -354,38 +428,30 @@ function AdminUsers() {
                           </td>
                           <td className="px-6 py-5">
                             <span
-                              className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${
-                                user.role === "admin"
-                                  ? "bg-[#2a0b02] text-[#ffb199] border border-[#ff6b4a]/40"
-                                  : user.role === "mechanic"
-                                  ? "bg-[#0d1d2c] text-[#9cd7ff] border border-[#4c95c9]/40"
-                                  : user.role === "employee"
-                                  ? "bg-[#23102a] text-[#deb2ff] border border-[#b57ae3]/40"
-                                  : "bg-white/5 text-[#fdf4db] border border-white/15"
-                              }`}
+                              className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${getRoleBadgeClass(
+                                user.role
+                              )}`}
                             >
                               {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                             </span>
                           </td>
                           <td className="px-6 py-5">
                             <p className="text-[#f0e2c7]">
-                              {new Date(user.created_at).toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              })}
+                              {formatJoinedDate(user.created_at)}
                             </p>
                             <p className="text-xs text-[#c7b696]">
-                              {new Date(user.created_at).toLocaleTimeString("en-US", {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
+                              {formatJoinedTime(user.created_at)}
                             </p>
                           </td>
                         </motion.tr>
                       ))}
                     </tbody>
                   </table>
+                </div>
+                <div className="md:hidden space-y-3 p-4">
+                  {users.map((user) => (
+                    <MobileUserCard key={user.id} user={user} />
+                  ))}
                 </div>
                 <div className="border-t border-[#f6dcb2]/15 bg-[#0c0a08]/80">
                   <div className="flex items-center justify-between px-6 py-4 text-sm text-[#f0e2c7]">

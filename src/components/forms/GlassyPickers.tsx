@@ -115,8 +115,24 @@ BasePicker.displayName = "BasePicker";
 
 const defaultDateFormatter: PickerValueFormatter = (value) => {
   try {
-    const uiDate = new Date(value);
-    if (Number.isNaN(uiDate.getTime())) return value;
+    const [datePart] = value.split("T");
+    if (!datePart) return value;
+    const [yearStr, monthStr, dayStr] = datePart.split("-");
+    const year = Number(yearStr);
+    const month = Number(monthStr);
+    const day = Number(dayStr);
+    if (
+      Number.isNaN(year) ||
+      Number.isNaN(month) ||
+      Number.isNaN(day) ||
+      month < 1 ||
+      month > 12 ||
+      day < 1 ||
+      day > 31
+    ) {
+      return value;
+    }
+    const uiDate = new Date(year, month - 1, day, 0, 0, 0, 0);
     return new Intl.DateTimeFormat(undefined, {
       weekday: "short",
       month: "short",
