@@ -27,8 +27,9 @@ const AdminJSA = lazy(() => import("./pages/AdminJSA"));
 
 // Mechanic pages
 const MechanicDashboard = lazy(() => import("./pages/MechanicDashboard"));
-const MechanicDVIRCenter = lazy(
-  () => import("./pages/MechanicDVIRCenter")
+const MechanicDVIRCenter = lazy(() => import("./pages/MechanicDVIRCenter"));
+const MechanicEquipmentCenter = lazy(
+  () => import("./pages/MechanicEquipmentCenter")
 );
 
 // Form pages - Files are directly in src/pages/
@@ -306,6 +307,22 @@ function AnimatedRoutes() {
                 >
                   <ProtectedRoute requireMechanicAccess={true}>
                     <MechanicDVIRCenter />
+                  </ProtectedRoute>
+                </motion.div>
+              }
+            />
+
+            <Route
+              path="/mechanic-equipment-center"
+              element={
+                <motion.div
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  variants={pageTransition}
+                >
+                  <ProtectedRoute requireMechanicAccess={true}>
+                    <MechanicEquipmentCenter />
                   </ProtectedRoute>
                 </motion.div>
               }

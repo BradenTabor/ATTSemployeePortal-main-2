@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { CONFIG } from "../lib/config";
 import { logger } from "../lib/logger";
+import { DateField, TimeField } from "../components/forms/GlassyPickers";
+import { CalendarDays, Clock } from "lucide-react";
 
 export default function RequestTimeOff() {
   const [formData, setFormData] = useState({
@@ -22,6 +24,11 @@ export default function RequestTimeOff() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">(
     "idle"
   );
+  const hasFullRange =
+    Boolean(formData.startDate) &&
+    Boolean(formData.endDate) &&
+    Boolean(startTime) &&
+    Boolean(endTime);
 
     // 🔹 Load current user from Supabase and populate email
   useEffect(() => {
@@ -242,60 +249,85 @@ export default function RequestTimeOff() {
 </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-white/80 mb-1">
-                Start Date
-              </label>
-              <input
-                type="date"
-                name="startDate"
-                value={formData.startDate}
-                onChange={handleChange}
-                required
-                className="w-full rounded-lg p-3 bg-neutral-900 border border-green-700/40 text-white focus:outline-none focus:ring-2 focus:ring-green-600 transition-all"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-white/80 mb-1">
-                End Date
-              </label>
-              <input
-                type="date"
-                name="endDate"
-                value={formData.endDate}
-                onChange={handleChange}
-                required
-                className="w-full rounded-lg p-3 bg-neutral-900 border border-green-700/40 text-white focus:outline-none focus:ring-2 focus:ring-green-600 transition-all"
-              />
-            </div>
+            <DateField
+              label="Start Date"
+              name="startDate"
+              value={formData.startDate}
+              onChange={handleChange}
+              helperText="First day away from work"
+              required
+            />
+            <DateField
+              label="End Date"
+              name="endDate"
+              value={formData.endDate}
+              onChange={handleChange}
+              helperText="Expected return on the next day"
+              required
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-white/80 mb-1">
-                Start Time<span className="text-red-400 ml-1">*</span>
-              </label>
-              <input
-                type="time"
-                required
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                className="w-full rounded-lg p-3 bg-neutral-900 border border-green-700/40 text-white focus:outline-none focus:ring-2 focus:ring-green-600 transition-all"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-white/80 mb-1">
-                End Time<span className="text-red-400 ml-1">*</span>
-              </label>
-              <input
-                type="time"
-                required
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                className="w-full rounded-lg p-3 bg-neutral-900 border border-green-700/40 text-white focus:outline-none focus:ring-2 focus:ring-green-600 transition-all"
-              />
-            </div>
+            <TimeField
+              label={
+                <>
+                  Start Time<span className="text-red-400 ml-1">*</span>
+                </>
+              }
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+              helperText="When coverage should begin"
+              required
+            />
+            <TimeField
+              label={
+                <>
+                  End Time<span className="text-red-400 ml-1">*</span>
+                </>
+              }
+              value={endTime}
+              onChange={(e) => setEndTime(e.target.value)}
+              helperText="Final hour of coverage"
+              required
+            />
           </div>
+
+          {hasFullRange && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+            >
+              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 flex items-center gap-4">
+                <div className="p-3 rounded-2xl bg-emerald-600/30 border border-emerald-400/40">
+                  <CalendarDays className="w-5 h-5 text-emerald-200" />
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.3em] text-emerald-200/70">
+                    Starts
+                  </p>
+                  <p className="text-base font-semibold text-white">
+                    {formatFriendlyDate(formData.startDate)} ·{" "}
+                    {formatFriendlyTime(startTime)}
+                  </p>
+                </div>
+              </div>
+              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4 flex items-center gap-4">
+                <div className="p-3 rounded-2xl bg-emerald-600/20 border border-emerald-400/30">
+                  <Clock className="w-5 h-5 text-emerald-200" />
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.3em] text-emerald-200/70">
+                    Returns
+                  </p>
+                  <p className="text-base font-semibold text-white">
+                    {formatFriendlyDate(formData.endDate)} ·{" "}
+                    {formatFriendlyTime(endTime)}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
 
           {totalDuration && (
             <motion.div
@@ -373,4 +405,28 @@ export default function RequestTimeOff() {
       </motion.div>
     </DashboardLayout>
   );
+}
+
+function formatFriendlyDate(value: string) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function formatFriendlyTime(value: string) {
+  if (!value) return "—";
+  const [hours, minutes] = value.split(":").map(Number);
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return value;
+  const date = new Date();
+  date.setHours(hours, minutes, 0, 0);
+  return date.toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }

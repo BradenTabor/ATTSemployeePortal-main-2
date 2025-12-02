@@ -1,13 +1,16 @@
 import { supabase } from "./supabaseClient";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
+import { logger } from "./logger";
 
-export interface TableSubscriptionOptions {
+export interface TableSubscriptionOptions<
+  Row extends Record<string, unknown> = Record<string, unknown>
+> {
   channelName: string;
   table: string;
   schema?: string;
-  onInsert?: (payload: RealtimePostgresChangesPayload<Record<string, any>>) => void;
-  onUpdate?: (payload: RealtimePostgresChangesPayload<Record<string, any>>) => void;
-  onDelete?: (payload: RealtimePostgresChangesPayload<Record<string, any>>) => void;
+  onInsert?: (payload: RealtimePostgresChangesPayload<Row>) => void;
+  onUpdate?: (payload: RealtimePostgresChangesPayload<Row>) => void;
+  onDelete?: (payload: RealtimePostgresChangesPayload<Row>) => void;
   onError?: (error: Error) => void;
 }
 
@@ -31,8 +34,10 @@ export interface TableSubscriptionOptions {
  * 
  * Returns an unsubscribe function you MUST call in your useEffect cleanup.
  */
-export function subscribeToTableChanges(
-  options: TableSubscriptionOptions
+export function subscribeToTableChanges<
+  Row extends Record<string, unknown> = Record<string, unknown>
+>(
+  options: TableSubscriptionOptions<Row>
 ): () => void {
   const {
     channelName,
@@ -54,12 +59,12 @@ export function subscribeToTableChanges(
     channel.on(
       "postgres_changes",
       { event: "INSERT", schema, table },
-      (payload: RealtimePostgresChangesPayload<Record<string, any>>) => {
+      (payload: RealtimePostgresChangesPayload<Row>) => {
         try {
           onInsert(payload);
         } catch (error) {
           const err = error instanceof Error ? error : new Error(String(error));
-          console.error(`Error in onInsert handler for ${channelName}:`, err);
+          logger.error(`Error in onInsert handler for ${channelName}:`, err);
           onError?.(err);
         }
       }
@@ -70,12 +75,12 @@ export function subscribeToTableChanges(
     channel.on(
       "postgres_changes",
       { event: "UPDATE", schema, table },
-      (payload: RealtimePostgresChangesPayload<Record<string, any>>) => {
+      (payload: RealtimePostgresChangesPayload<Row>) => {
         try {
           onUpdate(payload);
         } catch (error) {
           const err = error instanceof Error ? error : new Error(String(error));
-          console.error(`Error in onUpdate handler for ${channelName}:`, err);
+          logger.error(`Error in onUpdate handler for ${channelName}:`, err);
           onError?.(err);
         }
       }
@@ -86,12 +91,12 @@ export function subscribeToTableChanges(
     channel.on(
       "postgres_changes",
       { event: "DELETE", schema, table },
-      (payload: RealtimePostgresChangesPayload<Record<string, any>>) => {
+      (payload: RealtimePostgresChangesPayload<Row>) => {
         try {
           onDelete(payload);
         } catch (error) {
           const err = error instanceof Error ? error : new Error(String(error));
-          console.error(`Error in onDelete handler for ${channelName}:`, err);
+          logger.error(`Error in onDelete handler for ${channelName}:`, err);
           onError?.(err);
         }
       }
@@ -101,15 +106,15 @@ export function subscribeToTableChanges(
   // Subscribe and handle errors
   channel.subscribe((status) => {
     if (status === "SUBSCRIBED") {
-      console.log(`✅ Realtime subscription active: ${channelName}`);
+      logger.debug(`[Realtime] channel ready: ${channelName}`);
     } else if (status === "CHANNEL_ERROR") {
       const error = new Error(
         `Failed to subscribe to realtime channel: ${channelName}`
       );
-      console.error(error);
+      logger.error(error);
       onError?.(error);
     } else if (status === "CLOSED") {
-      console.log(`Realtime subscription closed: ${channelName}`);
+      logger.debug(`[Realtime] channel closed: ${channelName}`);
     }
   });
 

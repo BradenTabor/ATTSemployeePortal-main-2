@@ -16,7 +16,6 @@ function log(level: LogLevel, ...args: unknown[]) {
       ? "⚠️ [WARN]"
       : "❌ [ERROR]";
 
-  // eslint-disable-next-line no-console
   console[level === "error" ? "error" : level === "warn" ? "warn" : "log"](
     prefix,
     ...args

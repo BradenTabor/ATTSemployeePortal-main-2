@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
+import type { Variants } from "framer-motion";
 import {
   ArrowRight,
   CalendarDays,
@@ -8,7 +9,6 @@ import {
   DollarSign,
   ExternalLink,
   FileText,
-  Filter,
   HardHat,
   Search,
   ShoppingCart,
@@ -142,7 +142,7 @@ const CATEGORY_OPTIONS: CategoryFilterOption[] = [
   ...(Object.keys(CATEGORY_META) as FormCategory[]),
 ];
 
-const cardVariants = {
+const cardVariants: Variants = {
   hidden: { opacity: 0, y: 20, scale: 0.98 },
   visible: (index: number) => ({
     opacity: 1,
@@ -151,14 +151,14 @@ const cardVariants = {
     transition: {
       delay: index * 0.05,
       duration: 0.35,
-      ease: "easeOut",
+      ease: "easeOut" as const,
     },
   }),
   exit: {
     opacity: 0,
     y: -12,
     scale: 0.95,
-    transition: { duration: 0.2, ease: "easeIn" },
+    transition: { duration: 0.2, ease: "easeIn" as const },
   },
 } as const;
 
@@ -221,7 +221,16 @@ const FormCard = ({ form, index }: FormCardProps) => {
             </div>
           </div>
 
-          <p className="text-sm text-white/70 leading-relaxed flex-1">{form.description}</p>
+          <p
+            className="text-sm text-white/70 leading-relaxed flex-1 overflow-hidden"
+            style={{
+              display: "-webkit-box",
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: "vertical",
+            }}
+          >
+            {form.description}
+          </p>
 
           <div className="flex items-center justify-between text-xs text-white/60">
             <div className="flex items-center gap-2">

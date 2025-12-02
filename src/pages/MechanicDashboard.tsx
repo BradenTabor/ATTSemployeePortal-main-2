@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { useAuth } from "../contexts/AuthContext";
 import { Wrench, AlertTriangle, Flame, Activity } from "lucide-react";
@@ -7,12 +7,12 @@ import AdminPremiumScaffold, {
   type AdminStat,
 } from "../components/admin/AdminPremiumScaffold";
 import { MECHANIC_NAV_CARDS } from "../components/admin/adminNavConfig";
-
-const PLACEHOLDER_STATS = {
-  dvirQueue: "08",
-  failedToday: "03",
-  openRepairs: "12",
-};
+import {
+  fetchDvirMetrics,
+  type DvirMetrics,
+} from "../lib/dvirMetrics";
+import { logger } from "../lib/logger";
+import { supabase } from "../lib/supabaseClient";
 
 const UPCOMING_PANELS = [
   {
@@ -40,38 +40,165 @@ const ACTIVE_ALERTS = [
   },
 ];
 
+type EquipmentHighlights = {
+  total: number;
+  needsAttention: number;
+  awaitingFix: number;
+  resolved: number;
+  recentHazards: Array<{ equipment: string; signer: string; submitted: string }>;
+};
+
+type InspectionLite = {
+  general_checklist: Record<string, string> | null;
+  specific_checklist: Record<string, string> | null;
+  mechanic_fixes: string | null;
+  equipment_number: string | null;
+  submitted_by: string | null;
+  created_at: string;
+};
+
+const inspectionHasFailures = (inspection: InspectionLite): boolean => {
+  const general = inspection.general_checklist || {};
+  const specific = inspection.specific_checklist || {};
+  return (
+    Object.values(general).some((val) => val === "F") ||
+    Object.values(specific).some((val) => val === "F")
+  );
+};
+
+const equipmentDefaults: EquipmentHighlights = {
+  total: 0,
+  needsAttention: 0,
+  awaitingFix: 0,
+  resolved: 0,
+  recentHazards: [],
+};
+
 export default function MechanicDashboard() {
   const { role } = useAuth();
+  const unauthorized = role && role !== "mechanic" && role !== "admin";
+  const [dvirMetrics, setDvirMetrics] = useState<DvirMetrics | null>(null);
+  const [metricsLoading, setMetricsLoading] = useState(true);
+  const [metricsError, setMetricsError] = useState<string | null>(null);
+  const [equipmentStats, setEquipmentStats] = useState<EquipmentHighlights>(equipmentDefaults);
+  const [equipmentLoading, setEquipmentLoading] = useState(true);
+  const [equipmentError, setEquipmentError] = useState<string | null>(null);
 
-  if (role && role !== "mechanic" && role !== "admin") {
-    return (
-      <DashboardLayout title="Mechanic Panel">
-        <div className="max-w-xl mx-auto mt-10 text-center text-sm text-gray-300">
-          You do not have permission to view the mechanic panel.
-        </div>
-      </DashboardLayout>
-    );
-  }
+  useEffect(() => {
+    let isMounted = true;
+    const refreshMs = 60_000;
+
+    const loadMetrics = async (withSpinner: boolean) => {
+      if (withSpinner) {
+        setMetricsLoading(true);
+      }
+      try {
+        const data = await fetchDvirMetrics();
+        if (!isMounted) return;
+        setDvirMetrics(data);
+        setMetricsError(null);
+      } catch (error) {
+        logger.error("[MechanicDashboard] Failed to fetch DVIR metrics", error);
+        if (!isMounted) return;
+        setMetricsError("Unable to sync DVIR metrics right now.");
+      } finally {
+        if (isMounted) {
+          setMetricsLoading(false);
+        }
+      }
+    };
+
+    loadMetrics(true);
+    const interval = setInterval(() => loadMetrics(false), refreshMs);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  const EQUIPMENT_FETCH_LIMIT = 200;
+
+  const loadEquipmentHighlights = useCallback(async () => {
+    try {
+      setEquipmentLoading(true);
+      setEquipmentError(null);
+
+      const allInspections = await supabase
+        .from("daily_equipment_inspections")
+        .select(
+          `
+          id,
+          equipment_number,
+          submitted_by,
+          created_at,
+          general_checklist,
+          specific_checklist,
+          mechanic_fixes,
+          last_mechanic_updated_at
+        `
+        )
+        .order("created_at", { ascending: false })
+        .range(0, EQUIPMENT_FETCH_LIMIT - 1);
+
+      if (allInspections.error) {
+        throw allInspections.error;
+      }
+
+      const inspections = (allInspections.data as InspectionLite[]) || [];
+      const needsAttention = inspections.filter(inspectionHasFailures).length;
+      const resolved = inspections.filter((inspection) => Boolean(inspection.mechanic_fixes?.trim()))
+        .length;
+      const awaitingFix = Math.max(needsAttention - resolved, 0);
+
+      const recentHazards = inspections
+        .filter(inspectionHasFailures)
+        .slice(0, 4)
+        .map((inspection) => ({
+          equipment: inspection.equipment_number || "Unknown unit",
+          signer: inspection.submitted_by || "Unknown operator",
+          submitted: new Date(inspection.created_at).toLocaleDateString(),
+        }));
+
+      setEquipmentStats({
+        total: inspections.length,
+        needsAttention,
+        awaitingFix,
+        resolved,
+        recentHazards,
+      });
+    } catch (error) {
+      logger.error("[MechanicDashboard] Failed to load equipment highlights", error);
+      setEquipmentError("Unable to sync equipment metrics.");
+      setEquipmentStats(equipmentDefaults);
+    } finally {
+      setEquipmentLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadEquipmentHighlights();
+  }, [loadEquipmentHighlights]);
 
   const heroStats = useMemo<AdminStat[]>(
     () => [
       {
-        label: "DVIR Queue",
-        value: PLACEHOLDER_STATS.dvirQueue,
-        hint: "Awaiting review",
+        label: "Open DVIRs",
+        value: String(dvirMetrics?.totalOpen ?? 0),
+        hint: "Awaiting mechanic review",
       },
       {
-        label: "Failed Today",
-        value: PLACEHOLDER_STATS.failedToday,
-        hint: "Needs triage",
+        label: "Today's DVIRs",
+        value: String(dvirMetrics?.todaysReports ?? 0),
+        hint: "Submitted since midnight",
       },
       {
-        label: "Open Repairs",
-        value: PLACEHOLDER_STATS.openRepairs,
-        hint: "Tracked in shop",
+        label: "Equipment Alerts",
+        value: String(equipmentStats.needsAttention ?? 0),
+        hint: "Inspections with failed items",
       },
     ],
-    []
+    [dvirMetrics, equipmentStats.needsAttention]
   );
 
   const heroConfig = useMemo<AdminHeroConfig>(
@@ -140,6 +267,16 @@ export default function MechanicDashboard() {
     </>
   );
 
+  if (unauthorized) {
+    return (
+      <DashboardLayout title="Mechanic Panel">
+        <div className="max-w-xl mx-auto mt-10 text-center text-sm text-gray-300">
+          You do not have permission to view the mechanic panel.
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout title="Mechanic Panel">
       <AdminPremiumScaffold
@@ -170,45 +307,131 @@ export default function MechanicDashboard() {
           ))}
         </div>
 
-        <div className="rounded-3xl border border-[#f28b53]/25 bg-[#120705]/90 p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.35em] text-[#ffbf94]/70">
-                DVIR Highlights
-              </p>
-              <p className="text-lg font-semibold text-white mt-2">
-                Failed reasons this shift
-              </p>
-            </div>
-            <AlertTriangle className="w-8 h-8 text-[#ff9c63]" />
-          </div>
 
-          <div className="grid gap-4 md:grid-cols-3 text-sm">
-            {[
-              { label: "Brakes", count: "05" },
-              { label: "Lighting", count: "03" },
-              { label: "Hydraulics", count: "02" },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
-              >
-                <p className="text-xs uppercase tracking-[0.3em] text-white/60">
-                  {item.label}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="rounded-3xl border border-[#f28b53]/25 bg-[#120705]/90 p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.35em] text-[#ffbf94]/70">
+                  DVIR Highlights
                 </p>
-                <p className="text-2xl font-bold text-[#ffe4c9]">
-                  {item.count}
+                <p className="text-lg font-semibold text-white mt-2">
+                  Live inspection health
                 </p>
-                <p className="text-xs text-white/50 mt-1">flags in queue</p>
               </div>
-            ))}
+              <AlertTriangle className="w-8 h-8 text-[#ff9c63]" />
+            </div>
+
+            <div className="text-xs text-white/60">
+              {metricsLoading ? (
+                <span className="animate-pulse text-white/70">Syncing live DVIR metrics…</span>
+              ) : metricsError ? (
+                <span className="text-red-200">{metricsError}</span>
+              ) : dvirMetrics ? (
+                <div className="grid gap-3 sm:grid-cols-2 text-left">
+                  {[
+                    {
+                      label: "Awaiting Review",
+                      value: dvirMetrics.totalOpen,
+                      helper: "Need mechanic sign-off",
+                    },
+                    {
+                      label: "Completed (7d)",
+                      value: dvirMetrics.totalCompletedLast7Days,
+                      helper: "Signed by shop",
+                    },
+                    {
+                      label: "Today's Reports",
+                      value: dvirMetrics.todaysReports,
+                      helper: "Submitted since midnight",
+                    },
+                  ].map((metric) => (
+                    <div
+                      key={metric.label}
+                      className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
+                    >
+                      <p className="text-[0.6rem] uppercase tracking-[0.3em] text-white/60">
+                        {metric.label}
+                      </p>
+                      <p className="text-2xl font-bold text-[#ffe4c9]">
+                        {metric.value.toLocaleString()}
+                      </p>
+                      <p className="text-xs text-white/50 mt-1">{metric.helper}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <span>DVIR metrics unavailable.</span>
+              )}
+            </div>
           </div>
 
-          <div className="text-xs text-white/60">
-            Real metrics will pipe in directly from the DVIR Center once the API
-            endpoints are finalized.
+          <div className="rounded-3xl border border-[#f28b53]/25 bg-[#120705]/90 p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.35em] text-[#ffbf94]/70">
+                  Equipment Highlights
+                </p>
+                <p className="text-lg font-semibold text-white mt-2">
+                  Daily inspection spotlight
+                </p>
+              </div>
+              <Wrench className="w-8 h-8 text-[#ffb48a]" />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2 text-sm text-white/80">
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                <p className="text-xs uppercase tracking-[0.3em] text-white/60">Needs attention</p>
+                <p className="text-2xl font-bold text-[#ffe4c9]">
+                  {equipmentStats.needsAttention}
+                </p>
+                <p className="text-xs text-white/50 mt-1">Failed checklists</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                <p className="text-xs uppercase tracking-[0.3em] text-white/60">Awaiting fix</p>
+                <p className="text-2xl font-bold text-[#ffe4c9]">{equipmentStats.awaitingFix}</p>
+                <p className="text-xs text-white/50 mt-1">Need mechanic log</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                <p className="text-xs uppercase tracking-[0.3em] text-white/60">Fixes logged</p>
+                <p className="text-2xl font-bold text-[#ffe4c9]">{equipmentStats.resolved}</p>
+                <p className="text-xs text-white/50 mt-1">Mechanic updates</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                <p className="text-xs uppercase tracking-[0.3em] text-white/60">Total inspections</p>
+                <p className="text-2xl font-bold text-[#ffe4c9]">{equipmentStats.total}</p>
+                <p className="text-xs text-white/50 mt-1">Historical submissions</p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs uppercase tracking-[0.3em] text-white/60">Recent hazards</p>
+              {equipmentLoading ? (
+                <p className="text-xs text-white/60 animate-pulse">Loading equipment feed…</p>
+              ) : equipmentError ? (
+                <p className="text-xs text-red-200">{equipmentError}</p>
+              ) : equipmentStats.recentHazards.length === 0 ? (
+                <p className="text-xs text-white/60">No failed inspections in the latest batch.</p>
+              ) : (
+                <div className="space-y-2 text-sm">
+                  {equipmentStats.recentHazards.map((hazard, index) => (
+                    <div
+                      key={`${hazard.equipment}-${hazard.submitted}-${index}`}
+                      className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-2"
+                    >
+                      <div>
+                        <p className="text-white font-semibold">{hazard.equipment}</p>
+                        <p className="text-xs text-white/60">{hazard.signer}</p>
+                      </div>
+                      <span className="text-xs text-white/60">{hazard.submitted}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
+
       </AdminPremiumScaffold>
     </DashboardLayout>
   );

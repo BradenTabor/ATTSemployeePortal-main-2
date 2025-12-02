@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import { User, Session, type PostgrestSingleResponse } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
 import { logger } from "../lib/logger";
 
@@ -54,50 +54,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const fetchUserRole = async (userId: string): Promise<UserRole> => {
       try {
         logger.info(`[AuthContext] Fetching role for user_id: ${userId}`);
-        
-        // Add timeout to prevent hanging
-        const timeoutPromise = new Promise<UserRole>((_, reject) => {
-          setTimeout(() => reject(new Error('Role fetch timeout')), 5000);
-        });
+        const timeoutSentinel = Symbol('role-timeout');
+        let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
         const fetchPromise = supabase
           .from('app_users')
           .select('role')
           .eq('user_id', userId)
-          .maybeSingle()
-          .then(({ data, error }) => {
-            if (error) {
-              logger.error(`[AuthContext] Error fetching user role for ${userId}:`, error.message);
-              // Return null on error so caller can decide whether to preserve last known role
-              return null;
-            }
+          .maybeSingle();
 
-            const rawRole = data?.role;
-            logger.info(`[AuthContext] Raw role from DB for ${userId}:`, rawRole);
+        const winner = await Promise.race([
+          fetchPromise.then((response) => {
+            if (timeoutId) clearTimeout(timeoutId);
+            return response;
+          }),
+          new Promise<typeof timeoutSentinel>((resolve) => {
+            timeoutId = setTimeout(() => resolve(timeoutSentinel), 5000);
+          }),
+        ]);
 
-            // Normalize role to UserRole type
-            if (rawRole === 'admin' || rawRole === 'mechanic' || rawRole === 'employee') {
-              logger.info(`[AuthContext] Normalized role for ${userId}: ${rawRole}`);
-              return rawRole;
-            }
+        if (winner === timeoutSentinel) {
+          logger.warn(
+            `[AuthContext] Role fetch timed out for ${userId}, using cached role fallback.`
+          );
+          return lastKnownRoleRef.current ?? 'user';
+        }
 
-            // If role is null/undefined or invalid, return 'user' as legitimate fallback
-            // This means the user truly has no role record or invalid role
-            if (rawRole === null || rawRole === undefined) {
-              logger.warn(`[AuthContext] No role found in DB for ${userId}, using 'user' as fallback`);
-              return 'user';
-            }
+        const { data, error } = winner as PostgrestSingleResponse<{ role: string | null }>;
 
-            // Invalid role value - log and use 'user' as fallback
-            logger.warn(`[AuthContext] Invalid role value '${rawRole}' for ${userId}, using 'user' as fallback`);
-            return 'user';
-          });
+        if (error) {
+          logger.error(`[AuthContext] Error fetching user role for ${userId}:`, error.message);
+          return null;
+        }
 
-        const result = await Promise.race([fetchPromise, timeoutPromise]);
-        return result;
+        const rawRole = data?.role;
+        logger.info(`[AuthContext] Raw role from DB for ${userId}:`, rawRole);
+
+        // Normalize to known roles
+        if (rawRole === 'admin' || rawRole === 'mechanic' || rawRole === 'employee') {
+          logger.info(`[AuthContext] Normalized role for ${userId}: ${rawRole}`);
+          return rawRole;
+        }
+
+        if (rawRole === null || rawRole === undefined) {
+          logger.warn(`[AuthContext] No role found in DB for ${userId}, using 'user' as fallback`);
+          return 'user';
+        }
+
+        logger.warn(`[AuthContext] Invalid role value '${rawRole}' for ${userId}, using 'user' as fallback`);
+        return 'user';
       } catch (error) {
         logger.error(`[AuthContext] Failed to fetch user role for ${userId}:`, error);
-        // Return null on error so caller can preserve last known role
         return null;
       }
     };
@@ -312,6 +319,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// This hook is exported from the same module as AuthProvider for developer ergonomics.
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {

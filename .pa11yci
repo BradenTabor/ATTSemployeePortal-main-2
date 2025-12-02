@@ -1,0 +1,26 @@
+{
+  "defaults": {
+    "timeout": 15000,
+    "standard": "WCAG2AA",
+    "wait": 500,
+    "chromeLaunchConfig": {
+      "args": [
+        "--no-sandbox",
+        "--disable-dev-shm-usage"
+      ]
+    },
+    "viewport": {
+      "width": 375,
+      "height": 812
+    }
+  },
+  "urls": [
+    "http://127.0.0.1:4173/dashboard",
+    "http://127.0.0.1:4173/announcements",
+    "http://127.0.0.1:4173/admin/users",
+    "http://127.0.0.1:4173/admin/rto",
+    "http://127.0.0.1:4173/mechanic-dvir-center",
+    "http://127.0.0.1:4173/forms-history/dvir"
+  ]
+}
+

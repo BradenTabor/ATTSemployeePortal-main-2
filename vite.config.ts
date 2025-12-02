@@ -32,4 +32,10 @@ export default defineConfig(({ mode }) => ({
   esbuild: mode === 'production' ? {
     drop: ['console', 'debugger'],
   } : undefined,
+  test: {
+    environment: 'jsdom',
+    setupFiles: './vitest.setup.ts',
+    globals: true,
+    include: ['src/**/*.test.{ts,tsx}'],
+  },
 }));

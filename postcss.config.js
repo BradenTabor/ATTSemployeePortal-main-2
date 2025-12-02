@@ -1,29 +1,15 @@
-import postcss from 'postcss';
+import tailwindcss from "tailwindcss";
+import autoprefixer from "autoprefixer";
 
-// Tailwind's parser helpers call `postcss.parse` without a `from` option.
-// PostCSS 8.4.35+ warns about this, so we normalize the options once here.
-if (!postcss.__fromPatched) {
-  const originalParse = postcss.parse;
+export default (ctx = {}) => {
+  if (!ctx.options) {
+    ctx.options = {};
+  }
+  if (ctx.options.from === undefined) {
+    ctx.options.from = "inline.css";
+  }
 
-  postcss.parse = (css, opts) => {
-    const normalizedOpts =
-      opts && typeof opts === 'object'
-        ? { ...opts }
-        : {};
-
-    if (normalizedOpts.from === undefined) {
-      normalizedOpts.from = 'inline.css';
-    }
-
-    return originalParse(css, normalizedOpts);
+  return {
+    plugins: [tailwindcss(), autoprefixer()],
   };
-
-  postcss.__fromPatched = true;
-}
-
-export default {
-  plugins: {
-    tailwindcss: {},
-    autoprefixer: {},
-  },
 };

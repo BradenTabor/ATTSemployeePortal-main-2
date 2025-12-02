@@ -6,6 +6,7 @@ import {
   forwardRef,
   FormEvent,
   ReactNode,
+  useCallback,
 } from "react";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { Camera, CheckCircle2, AlertTriangle } from "lucide-react";
@@ -13,6 +14,7 @@ import { supabase } from "../lib/supabaseClient";
 import { CONFIG} from "../lib/config";
 import { logger } from "../lib/logger"; 
 import { cn } from "../lib/utils";
+import { DateField } from "../components/forms/GlassyPickers";
 
 type ExtraPhotos = {
   tire?: File;
@@ -242,24 +244,7 @@ const SignaturePad = forwardRef<SignaturePadHandle, SignaturePadProps>(
     const [isDrawing, setIsDrawing] = useState(false);
     const [hasDrawing, setHasDrawing] = useState(false);
 
-    const resizeCanvas = () => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const dpr = window.devicePixelRatio || 1;
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      ctx.scale(dpr, dpr);
-      ctx.lineWidth = 2.2;
-      ctx.lineCap = "round";
-      ctx.strokeStyle = "#0f172a";
-      ctxRef.current = ctx;
-      redraw();
-    };
-
-    const redraw = () => {
+    const redraw = useCallback(() => {
       const canvas = canvasRef.current;
       const ctx = ctxRef.current;
       if (!canvas || !ctx) return;
@@ -278,14 +263,31 @@ const SignaturePad = forwardRef<SignaturePadHandle, SignaturePadProps>(
         });
         ctx.stroke();
       });
-    };
+    }, []);
+
+    const resizeCanvas = useCallback(() => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.scale(dpr, dpr);
+      ctx.lineWidth = 2.2;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = "#0f172a";
+      ctxRef.current = ctx;
+      redraw();
+    }, [redraw]);
 
     useEffect(() => {
       resizeCanvas();
       const handleResize = () => resizeCanvas();
       window.addEventListener("resize", handleResize);
       return () => window.removeEventListener("resize", handleResize);
-    }, []);
+    }, [resizeCanvas]);
 
     const handleClear = () => {
       strokesRef.current = [];
@@ -906,11 +908,13 @@ export default function DVIRForm() {
       generalForemanSigRef.current?.clear();
       mechanicSigRef.current?.clear();
       driverApprovalSigRef.current?.clear();
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error("Unexpected error in DVIR handleSubmit:", err);
-      setError(
-        err?.message || "Something went wrong submitting the DVIR (unexpected error)."
-      );
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Something went wrong submitting the DVIR (unexpected error).";
+      setError(message);
     } finally {
       setSubmitting(false);
     }
@@ -1177,17 +1181,15 @@ export default function DVIRForm() {
 
             {/* Medical card exp + copies */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs text-gray-300 mb-1">
-                  MEDICAL CARD EXPIRATION (MM/DD/YYYY)
-                </label>
-                <input
-                  type="date"
-                  value={medicalCardExp}
-                  onChange={(e) => setMedicalCardExp(e.target.value)}
-                  className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-sm text-white [color-scheme:dark]"
-                />
-              </div>
+              <DateField
+                label="MEDICAL CARD EXPIRATION (MM/DD/YYYY)"
+                value={medicalCardExp}
+                onValueChange={setMedicalCardExp}
+                helperText="Required for DOT compliance"
+                containerClassName="text-white"
+                labelClassName="text-xs tracking-wide text-gray-300"
+                className="bg-black/70 border-gray-700 focus:ring-emerald-400/50"
+              />
 
               <div>
                 <label className="block text-xs text-gray-300 mb-1">

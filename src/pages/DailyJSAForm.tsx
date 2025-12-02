@@ -27,6 +27,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabaseClient";
 import { PaginationControls } from "../components/PaginationControls";
 import { cn } from "../lib/utils";
+import { DateField, TimeField } from "../components/forms/GlassyPickers";
 
 type ConditionState = "good" | "needs_replaced";
 
@@ -38,6 +39,7 @@ interface PpeState {
 interface JobSelection {
   key: string;
   label: string;
+  value?: string;
 }
 
 interface WeatherPayload {
@@ -196,6 +198,8 @@ const TRAFFIC_SETUP = [
   { key: "cone_separation", label: "Cone separation correct?" },
   { key: "buffer_zone", label: "Buffer/Taper zone correct?" },
 ];
+
+const PHONE_PATTERN = /[+\d][\d\s().-]{6,}/;
 
 const NOMINAL_VOLTAGE_GUIDE = [
   { range: "0.051 – 0.3 kV", clearance: "Avoid contact" },
@@ -384,7 +388,7 @@ export default function DailyJSAForm() {
       setLoadingRecord(false);
     };
     fetchRecord();
-  }, [id, user]);
+  }, [id, user, isAdmin]);
 
   const fetchDraftRecords = useCallback(async () => {
     if (!user && !isAdmin) return;
@@ -417,7 +421,7 @@ export default function DailyJSAForm() {
     setDraftRecords((data as DailyJsaRecord[]) || []);
     setDraftCount(count || 0);
     setDraftLoading(false);
-  }, [user, draftPage, listPageSize, listRefreshKey]);
+  }, [user, draftPage, listPageSize, isAdmin]);
 
   const fetchCompletedRecords = useCallback(async () => {
     if (!user && !isAdmin) return;
@@ -447,15 +451,15 @@ export default function DailyJSAForm() {
     setCompletedRecords((data as DailyJsaRecord[]) || []);
     setCompletedCount(count || 0);
     setCompletedLoading(false);
-  }, [user, completedPage, listPageSize, listRefreshKey]);
+  }, [user, completedPage, listPageSize, isAdmin]);
 
   useEffect(() => {
     fetchDraftRecords();
-  }, [fetchDraftRecords]);
+  }, [fetchDraftRecords, listRefreshKey]);
 
   useEffect(() => {
     fetchCompletedRecords();
-  }, [fetchCompletedRecords]);
+  }, [fetchCompletedRecords, listRefreshKey]);
 
   const handleJobToggle = (key: string) => {
     setForm((prev) => {
@@ -607,6 +611,23 @@ export default function DailyJSAForm() {
       setError("You must be signed in to save a JSA.");
       return;
     }
+    const requiredContacts = [
+      { value: form.ocContact, label: "OC Name & Telephone" },
+      { value: form.docContact, label: "DOC Telephone" },
+      { value: form.gfContact, label: "GF & Telephone" },
+      { value: form.safetyContact, label: "Safety & Telephone" },
+    ];
+    for (const contact of requiredContacts) {
+      const trimmed = contact.value.trim();
+      if (!trimmed) {
+        setError("All emergency contact fields are required.");
+        return;
+      }
+      if (!PHONE_PATTERN.test(trimmed)) {
+        setError(`Enter a valid phone number for ${contact.label}.`);
+        return;
+      }
+    }
     setSaving(true);
     setError(null);
     setSuccess(null);
@@ -732,8 +753,12 @@ export default function DailyJSAForm() {
           setSpanPage(1);
         }
       }
-    } catch (submitError: any) {
-      setError(submitError?.message || "Unable to save JSA.");
+    } catch (submitError: unknown) {
+      const message =
+        submitError instanceof Error
+          ? submitError.message
+          : "Unable to save JSA.";
+      setError(message);
     } finally {
       setSaving(false);
     }
@@ -895,24 +920,24 @@ export default function DailyJSAForm() {
               badge={<span className={cn("px-3 py-1 rounded-full text-xs font-semibold", formattedStatus)}>{form.status}</span>}
             >
               <div className="grid gap-4 sm:grid-cols-3">
-                <InputField
-                  label="Date"
-                  type="date"
-                  value={form.jobDate}
-                  onChange={(value) => handleInputChange("jobDate", value)}
+                <DateField
+                  label="Job Date"
+                  value={form.jobDate || ""}
+                  onValueChange={(value) => handleInputChange("jobDate", value)}
+                  helperText="The day this crew is on site"
                   required
                 />
-                <InputField
+                <TimeField
                   label="Call-in Time (AM)"
-                  type="time"
-                  value={form.callInTime}
-                  onChange={(value) => handleInputChange("callInTime", value)}
+                  value={form.callInTime || ""}
+                  onValueChange={(value) => handleInputChange("callInTime", value)}
+                  helperText="Morning briefing / call-in"
                 />
-                <InputField
+                <TimeField
                   label="Call-out Time (PM)"
-                  type="time"
-                  value={form.callOutTime}
-                  onChange={(value) => handleInputChange("callOutTime", value)}
+                  value={form.callOutTime || ""}
+                  onValueChange={(value) => handleInputChange("callOutTime", value)}
+                  helperText="Estimated completion"
                 />
               </div>
 
@@ -948,23 +973,35 @@ export default function DailyJSAForm() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <InputField
                   label="OC Name & Telephone"
+                  type="tel"
+                  required
                   value={form.ocContact}
                   onChange={(value) => handleInputChange("ocContact", value)}
+                  placeholder="Jane Supervisor · 870-555-1234"
                 />
                 <InputField
                   label="DOC Telephone"
+                  type="tel"
+                  required
                   value={form.docContact}
                   onChange={(value) => handleInputChange("docContact", value)}
+                  placeholder="870-555-5678"
                 />
                 <InputField
                   label="GF & Telephone"
+                  type="tel"
+                  required
                   value={form.gfContact}
                   onChange={(value) => handleInputChange("gfContact", value)}
+                  placeholder="Officer Smith · 870-555-2468"
                 />
                 <InputField
                   label="Safety & Telephone"
+                  type="tel"
+                  required
                   value={form.safetyContact}
                   onChange={(value) => handleInputChange("safetyContact", value)}
+                  placeholder="Safety Desk · 870-555-1357"
                 />
               </div>
 
@@ -1667,13 +1704,15 @@ function summarizeJobs(jobs?: JobSelection[] | null): string {
 }
 
 function transformRecordToFormState(record: DailyJsaRecord): DailyJsaFormState {
-  const jobsRaw: JobSelection[] = Array.isArray(record.jobs_performed)
-    ? (record.jobs_performed as JobSelection[])
+  const jobsRaw: Array<JobSelection | string> = Array.isArray(
+    record.jobs_performed
+  )
+    ? (record.jobs_performed as Array<JobSelection | string>)
     : [];
   const jobsPerformed: string[] = [];
   let jobsOther = "";
 
-  jobsRaw.forEach((entry: any) => {
+  jobsRaw.forEach((entry) => {
     if (typeof entry === "string") {
       if (entry.startsWith("custom:")) {
         jobsOther = entry.replace("custom:", "");

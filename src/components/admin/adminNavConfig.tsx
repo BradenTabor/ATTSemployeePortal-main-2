@@ -40,6 +40,13 @@ export const MECHANIC_NAV_CARDS: AdminNavCardConfig[] = [
     variant: "ember",
   },
   {
+    title: "Equipment Inspections",
+    description: "Audit equipment checklists and record fixes.",
+    icon: <Wrench className="w-8 h-8 text-[#ff9c63]" />,
+    to: "/mechanic-equipment-center",
+    variant: "ember",
+  },
+  {
     title: "Preventive Maintenance",
     description: "Schedule PM windows and automate reminders.",
     icon: <Gauge className="w-8 h-8 text-[#ff9c63]" />,

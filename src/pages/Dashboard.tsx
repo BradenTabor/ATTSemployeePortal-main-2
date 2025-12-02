@@ -1,22 +1,17 @@
-import { useCallback, memo, useMemo } from "react";
+import { useCallback, memo, useMemo, Suspense, lazy } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
 import {
   LogOut,
-  Activity,
   Calendar,
   FileText,
   Megaphone,
-  Clock,
   ChevronRight,
   Zap,
   Shield,
   Wrench,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import DashboardAnnouncementCard from "../components/DashboardAnnouncementCard";
-import GreetingHeader from "../components/GreetingHeader";
-import NavCards from "../components/NavCards";
 import { useAuth } from "../contexts/AuthContext";
 import AdaptiveCardWrapper from "../components/AdaptiveCardWrapper";
 import { cn } from "../lib/utils";
@@ -26,6 +21,10 @@ import AdminPremiumScaffold, {
   type AdminStat,
 } from "../components/admin/AdminPremiumScaffold";
 
+const DashboardAnnouncementCard = lazy(
+  () => import("../components/DashboardAnnouncementCard")
+);
+const NavCards = lazy(() => import("../components/NavCards"));
 
 type QuickLink = {
   label: string;
@@ -115,6 +114,28 @@ const QuickActionCard = ({ link, index }: QuickActionCardProps) => {
     </motion.div>
   );
 };
+
+const AnnouncementCardSkeleton = () => (
+  <div className="rounded-3xl border border-white/10 bg-[#041b14]/70 p-5 space-y-3 animate-pulse">
+    <div className="h-3 w-32 bg-white/10 rounded-full" />
+    <div className="space-y-2">
+      <div className="h-3 w-full bg-white/10 rounded-full" />
+      <div className="h-3 w-3/4 bg-white/10 rounded-full" />
+      <div className="h-3 w-2/3 bg-white/5 rounded-full" />
+    </div>
+  </div>
+);
+
+const NavCardsSkeleton = () => (
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+    {Array.from({ length: 6 }).map((_, idx) => (
+      <div
+        key={`nav-skeleton-${idx}`}
+        className="rounded-2xl border border-white/10 bg-white/5 h-32 animate-pulse"
+      />
+    ))}
+  </div>
+);
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -268,7 +289,9 @@ function Dashboard() {
             Latest News
           </p>
         </div>
-        <DashboardAnnouncementCard />
+        <Suspense fallback={<AnnouncementCardSkeleton />}>
+          <DashboardAnnouncementCard />
+        </Suspense>
       </div>
     </div>
   );
@@ -282,63 +305,6 @@ function Dashboard() {
         sidePanel={sidePanelContent}
       >
         <div className="w-full space-y-10">
-          <section className="rounded-3xl border border-[#1f5f46]/40 bg-[#03150f]/85 p-6 text-white space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <p className="text-xs uppercase tracking-[0.35em] text-emerald-200/70">
-                  Pulse Check
-                </p>
-                <GreetingHeader />
-              </div>
-              <div className="text-sm text-white/70">
-                Need help? Reach out via{" "}
-                <Link
-                  to="/contact"
-                  className="text-emerald-300 underline-offset-4 hover:underline"
-                >
-                  Contact
-                </Link>
-                .
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {[
-                {
-                  icon: Activity,
-                  label: "Status",
-                  value: "Active",
-                  accent: "text-emerald-300",
-                },
-                {
-                  icon: Zap,
-                  label: "Shortcuts",
-                  value: `${quickLinks.length} links`,
-                  accent: "text-amber-300",
-                },
-                {
-                  icon: Clock,
-                  label: "Current Time",
-                  value: heroStats[2].value,
-                  accent: "text-cyan-300",
-                },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded-2xl border border-white/10 bg-white/5/10 px-4 py-4 backdrop-blur-lg"
-                >
-                  <div className="flex items-center gap-2 text-xs text-white/60 mb-2">
-                    <item.icon className={cn("w-4 h-4", item.accent)} />
-                    {item.label}
-                  </div>
-                  <p className="text-lg font-semibold text-white">
-                    {item.value}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </section>
-
           <section className="rounded-3xl border border-[#1f5f46]/40 bg-[#04150f]/85 p-6 space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
@@ -381,7 +347,9 @@ function Dashboard() {
                 All Tools & Features
               </h3>
             </div>
-            <NavCards />
+            <Suspense fallback={<NavCardsSkeleton />}>
+              <NavCards />
+            </Suspense>
           </section>
         </div>
       </AdminPremiumScaffold>

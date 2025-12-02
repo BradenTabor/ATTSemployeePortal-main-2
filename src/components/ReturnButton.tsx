@@ -37,9 +37,9 @@ export default function ReturnButton() {
     <div className="w-full flex justify-center mt-8">
       <button
         onClick={() => navigate(target)}
-        className="inline-flex items-center space-x-2 bg-gradient-to-r from-green-700 to-green-900 hover:from-green-800 hover:to-green-950 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5"
+        className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-600 px-6 py-3 text-sm font-semibold text-[#041b1a] shadow-[0_20px_35px_rgba(0,0,0,0.35)] transition hover:-translate-y-0.5 hover:shadow-[0_25px_45px_rgba(0,0,0,0.45)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-200"
       >
-        <ArrowLeft className="w-5 h-5" />
+        <ArrowLeft className="w-4 h-4" />
         <span>{label}</span>
       </button>
     </div>
