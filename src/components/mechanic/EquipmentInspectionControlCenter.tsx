@@ -17,7 +17,7 @@ import {
   Camera,
 } from "lucide-react";
 import { logger } from "../../lib/logger";
-import type { PostgrestFilterBuilder } from "@supabase/supabase-js";
+import type { PostgrestFilterBuilder } from "@supabase/postgrest-js";
 
 type ChecklistValue = "" | "P" | "F";
 
@@ -43,6 +43,7 @@ interface EquipmentInspection {
   hydraulic_photo_path: string | null;
   mechanic_fixes: string | null;
   last_mechanic_updated_at: string | null;
+  [key: string]: unknown;
 }
 
 const GENERAL_ITEMS: ChecklistItem[] = [
@@ -178,7 +179,44 @@ export function EquipmentInspectionControlCenter({
   const debouncedSearch = useDebouncedValue(search, 300);
 
   const applyFilters = useCallback(
-    <T,>(query: PostgrestFilterBuilder<T, T[], unknown>) => {
+    (
+      query: PostgrestFilterBuilder<
+        { PostgrestVersion?: string },
+        {
+          Tables: Record<
+            string,
+            {
+              Row: Record<string, unknown>;
+              Insert: Record<string, unknown>;
+              Update: Record<string, unknown>;
+              Relationships: {
+                foreignKeyName: string;
+                columns: string[];
+                referencedRelation: string;
+                referencedColumns: string[];
+                isOneToOne?: boolean;
+              }[];
+            }
+          >;
+          Views: Record<
+            string,
+            {
+              Row: Record<string, unknown>;
+              Relationships: {
+                foreignKeyName: string;
+                columns: string[];
+                referencedRelation: string;
+                referencedColumns: string[];
+                isOneToOne?: boolean;
+              }[];
+            }
+          >;
+          Functions: Record<string, { Args: Record<string, unknown>; Returns: unknown }>;
+        },
+        EquipmentInspection,
+        EquipmentInspection[]
+      >
+    ) => {
       let builder = query;
 
       if (typeFilter) {
