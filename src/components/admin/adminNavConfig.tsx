@@ -4,6 +4,7 @@ import {
   Users,
   Wrench,
   Gauge,
+  Briefcase,
 } from "lucide-react";
 import type { AdminNavCardConfig } from "./AdminPremiumScaffold";
 
@@ -27,6 +28,13 @@ export const ADMIN_CORE_NAV_CARDS: AdminNavCardConfig[] = [
     description: "Audit every job safety analysis in one place.",
     icon: <ClipboardList className="w-8 h-8 text-[#f4c979]" />,
     to: "/admin/jsa",
+    variant: "gold",
+  },
+  {
+    title: "Job Progress Tracker",
+    description: "Create and monitor job timelines with crew assignments.",
+    icon: <Briefcase className="w-8 h-8 text-[#f4c979]" />,
+    to: "/admin/jobs",
     variant: "gold",
   },
 ];

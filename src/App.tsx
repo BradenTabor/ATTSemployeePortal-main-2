@@ -24,6 +24,7 @@ const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AdminRTO = lazy(() => import("./pages/AdminRTO"));
 const AdminUsers = lazy(() => import("./pages/AdminUsers"));
 const AdminJSA = lazy(() => import("./pages/AdminJSA"));
+const AdminJobTracker = lazy(() => import("./pages/AdminJobTracker"));
 
 // Mechanic pages
 const MechanicDashboard = lazy(() => import("./pages/MechanicDashboard"));
@@ -388,6 +389,22 @@ function AnimatedRoutes() {
                 >
                   <ProtectedRoute requiredRole="admin">
                     <AdminJSA />
+                  </ProtectedRoute>
+                </motion.div>
+              }
+            />
+
+            <Route
+              path="/admin/jobs"
+              element={
+                <motion.div
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  variants={pageTransition}
+                >
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminJobTracker />
                   </ProtectedRoute>
                 </motion.div>
               }

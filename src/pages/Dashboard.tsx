@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import { useUserAssignedJobs } from "../hooks/jobs";
 import AdaptiveCardWrapper from "../components/AdaptiveCardWrapper";
 import { cn } from "../lib/utils";
 import DashboardLayout from "../layouts/DashboardLayout";
@@ -20,6 +21,7 @@ import AdminPremiumScaffold, {
   type AdminHeroConfig,
   type AdminStat,
 } from "../components/admin/AdminPremiumScaffold";
+import { DashboardJobWidget } from "../components/jobs";
 
 const DashboardAnnouncementCard = lazy(
   () => import("../components/DashboardAnnouncementCard")
@@ -142,6 +144,13 @@ function Dashboard() {
   const { user, signOut, setSession, role, isAdmin, hasMechanicAccess } =
     useAuth();
   const displayName = user?.email?.split("@")[0] ?? "Employee";
+
+  // Fetch user's assigned jobs for the widget
+  const {
+    assignedJobs,
+    loading: jobsLoading,
+    error: jobsError,
+  } = useUserAssignedJobs(user?.id);
 
   const handleSignOut = useCallback(async () => {
     try {
@@ -336,6 +345,21 @@ function Dashboard() {
               ))}
             </div>
           </section>
+
+          {/* Assigned Jobs Widget - only show if user has assigned jobs */}
+          {(assignedJobs.length > 0 || jobsLoading) && (
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <DashboardJobWidget
+                jobs={assignedJobs}
+                loading={jobsLoading}
+                error={jobsError}
+              />
+            </motion.section>
+          )}
 
           <section
             id="navigation"
