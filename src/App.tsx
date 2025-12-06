@@ -4,12 +4,16 @@ import {
   Route,
   useLocation,
 } from "react-router-dom";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { motion, AnimatePresence } from "framer-motion";
 import { Suspense, lazy } from "react";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SessionOverlay from "./components/SessionOverlay";
 import LoadingScreen from "./components/LoadingScreen";
 import { useAuth } from "./contexts/AuthContext";
+import { Toaster } from "./components/ui/Toaster";
+import { queryClient } from "./lib/queryClient";
 
 // Main pages
 const Home = lazy(() => import("./pages/Home"));
@@ -445,8 +449,19 @@ function AnimatedRoutes() {
 
 export default function App() {
   return (
-    <Router>
-      <AnimatedRoutes />
-    </Router>
+    <QueryClientProvider client={queryClient}>
+      <Router>
+        <AnimatedRoutes />
+      </Router>
+      <Toaster />
+      {/* DevTools - only renders in development */}
+      {import.meta.env.DEV && (
+        <ReactQueryDevtools
+          initialIsOpen={false}
+          position="bottom"
+          buttonPosition="bottom-right"
+        />
+      )}
+    </QueryClientProvider>
   );
 }

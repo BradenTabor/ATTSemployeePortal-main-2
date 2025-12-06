@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, memo, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Users, Search, Filter, Mail, Calendar, Shield, Sparkles } from "lucide-react";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { supabase } from "../lib/supabaseClient";
@@ -11,18 +11,13 @@ import AdminPremiumScaffold, {
   type AdminHeroConfig,
   type AdminStat,
 } from "../components/admin/AdminPremiumScaffold";
+import { toast } from "../lib/toast";
 
 interface AppUser {
   id: string;
   email: string;
   role: string;
   created_at: string;
-}
-
-interface ToastMessage {
-  id: string;
-  type: "success" | "error";
-  message: string;
 }
 
 const getRoleBadgeClass = (role: string) => {
@@ -98,7 +93,6 @@ function AdminUsers() {
   const { role: currentUserRole } = useAuth();
   const [users, setUsers] = useState<AppUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string | null>(null);
@@ -170,14 +164,6 @@ function AdminUsers() {
     </div>
   );
 
-  const showToast = useCallback((type: "success" | "error", message: string) => {
-    const id = Math.random().toString(36).substring(7);
-    setToasts((prev) => [...prev, { id, type, message }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((toast) => toast.id !== id));
-    }, 3000);
-  }, []);
-
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
@@ -202,7 +188,7 @@ function AdminUsers() {
 
       if (error) {
         console.error("Supabase error:", error.message, error.details);
-        showToast("error", error.message || "Failed to load users");
+        toast.error(error.message || "Failed to load users");
         setUsers([]);
         return;
       }
@@ -227,12 +213,12 @@ function AdminUsers() {
       }
     } catch (err: unknown) {
       console.error("Unexpected error:", err);
-      showToast("error", "Unexpected error loading users");
+      toast.error("Unexpected error loading users");
       setUsers([]);
     } finally {
       setLoading(false);
     }
-  }, [currentPage, pageSize, debouncedSearchQuery, roleFilter, showToast]);
+  }, [currentPage, pageSize, debouncedSearchQuery, roleFilter]);
 
   useEffect(() => {
     let cancelled = false;
@@ -487,32 +473,6 @@ function AdminUsers() {
           </motion.div>
         </div>
       </AdminPremiumScaffold>
-
-      <div className="fixed bottom-4 right-4 z-50 space-y-2">
-        <AnimatePresence>
-          {toasts.map((toast) => (
-            <motion.div
-              key={toast.id}
-              initial={{ opacity: 0, x: 100, y: 20 }}
-              animate={{ opacity: 1, x: 0, y: 0 }}
-              exit={{ opacity: 0, x: 100, y: 20 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className={`flex items-center space-x-3 px-6 py-4 rounded-xl shadow-xl backdrop-blur-md border ${
-                toast.type === "success"
-                  ? "bg-[#1b291c]/90 border-[#8ff2c7]/40"
-                  : "bg-[#2b120b]/90 border-[#ff8a65]/40"
-              }`}
-            >
-              <div
-                className={`flex-shrink-0 w-5 h-5 rounded-full ${
-                  toast.type === "success" ? "bg-[#8ff2c7]/40" : "bg-[#ffb199]/40"
-                }`}
-              />
-              <span className="text-white font-medium text-sm">{toast.message}</span>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
     </DashboardLayout>
   );
 }

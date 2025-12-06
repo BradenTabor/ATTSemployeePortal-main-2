@@ -1,4 +1,4 @@
-import { memo, useState, useMemo, useEffect, useCallback } from 'react';
+import { memo, useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Briefcase, Search, Filter, SlidersHorizontal } from 'lucide-react';
@@ -52,7 +52,26 @@ function JobListComponent({
   const [statusFilter, setStatusFilter] = useState<JobStatus | 'all'>(
     isValidStatus(urlStatus) ? urlStatus : 'all'
   );
-  const [selectedJob, setSelectedJob] = useState<JobProgressTracker | null>(null);
+  
+  // Track selected job by ID only - the actual job data comes from the jobs array
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  
+  // Derive selectedJob from jobs array using selectedJobId
+  // This ensures the modal always shows fresh data after updates
+  const selectedJob = useMemo(() => {
+    if (!selectedJobId) return null;
+    return jobs.find(job => job.id === selectedJobId) || null;
+  }, [jobs, selectedJobId]);
+  
+  // Close modal if the selected job was deleted
+  const prevSelectedJobRef = useRef(selectedJob);
+  useEffect(() => {
+    // If we had a selected job but now it's gone (deleted), close the modal
+    if (selectedJobId && prevSelectedJobRef.current && !selectedJob) {
+      setSelectedJobId(null);
+    }
+    prevSelectedJobRef.current = selectedJob;
+  }, [selectedJob, selectedJobId]);
 
   const debouncedSearch = useDebouncedValue(searchQuery, 300);
 
@@ -249,7 +268,7 @@ function JobListComponent({
               <JobCard
                 key={job.id}
                 job={job}
-                onClick={() => setSelectedJob(job)}
+                onClick={() => setSelectedJobId(job.id)}
                 index={index}
               />
             ))}
@@ -269,7 +288,7 @@ function JobListComponent({
             job={selectedJob}
             crewMembers={crewMembers}
             crewLoading={crewLoading}
-            onClose={() => setSelectedJob(null)}
+            onClose={() => setSelectedJobId(null)}
             onUpdate={onUpdate}
             onDelete={onDelete}
             onStatusChange={onStatusChange}

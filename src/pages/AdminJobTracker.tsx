@@ -8,8 +8,6 @@ import {
   Plus,
   Target,
   Users,
-  CheckCircle2,
-  XCircle,
 } from 'lucide-react';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { useAuth } from '../contexts/AuthContext';
@@ -21,12 +19,7 @@ import AdminPremiumScaffold, {
 } from '../components/admin/AdminPremiumScaffold';
 import { JobList, JobCreationForm, JobTrackerErrorBoundary } from '../components/jobs';
 import type { JobFormData, JobStatus } from '../types/jobs';
-
-interface ToastMessage {
-  id: string;
-  type: 'success' | 'error';
-  message: string;
-}
+import { toast } from '../lib/toast';
 
 function AdminJobTracker() {
   const { role, user } = useAuth();
@@ -46,16 +39,6 @@ function AdminJobTracker() {
   const { crewMembers, loading: crewLoading } = useCrewMembers();
 
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [toasts, setToasts] = useState<ToastMessage[]>([]);
-
-  // Toast notification helper
-  const showToast = useCallback((type: 'success' | 'error', message: string) => {
-    const id = Math.random().toString(36).substring(7);
-    setToasts(prev => [...prev, { id, type, message }]);
-    setTimeout(() => {
-      setToasts(prev => prev.filter(toast => toast.id !== id));
-    }, 4000);
-  }, []);
 
   // Calculate job statistics
   const jobStats = useMemo(() => {
@@ -195,52 +178,52 @@ function AdminJobTracker() {
     const result = await createJob(data, userId);
     if (result.success) {
       setShowCreateForm(false);
-      showToast('success', `Job "${data.job_name}" created successfully`);
+      toast.success(`Job "${data.job_name}" created successfully`);
     } else {
-      showToast('error', result.error || 'Failed to create job');
+      toast.error(result.error || 'Failed to create job');
     }
     return result;
-  }, [createJob, userId, showToast]);
+  }, [createJob, userId]);
 
   const handleUpdateJob = useCallback(async (jobId: string, data: JobFormData) => {
     const result = await updateJob(jobId, data, userId);
     if (result.success) {
-      showToast('success', 'Job updated successfully');
+      toast.success('Job updated successfully');
     } else {
-      showToast('error', result.error || 'Failed to update job');
+      toast.error(result.error || 'Failed to update job');
     }
     return result;
-  }, [updateJob, userId, showToast]);
+  }, [updateJob, userId]);
 
   const handleDeleteJob = useCallback(async (jobId: string) => {
     const result = await deleteJob(jobId);
     if (result.success) {
-      showToast('success', 'Job deleted successfully');
+      toast.success('Job deleted successfully');
     } else {
-      showToast('error', result.error || 'Failed to delete job');
+      toast.error(result.error || 'Failed to delete job');
     }
     return result;
-  }, [deleteJob, showToast]);
+  }, [deleteJob]);
 
   const handleStatusChange = useCallback(async (jobId: string, status: JobStatus) => {
     const result = await updateJobStatus(jobId, status);
     if (result.success) {
-      showToast('success', `Job status updated to ${status}`);
+      toast.success(`Job status updated to ${status}`);
     } else {
-      showToast('error', result.error || 'Failed to update status');
+      toast.error(result.error || 'Failed to update status');
     }
     return result;
-  }, [updateJobStatus, showToast]);
+  }, [updateJobStatus]);
 
   const handleToggleMilestone = useCallback(async (milestoneId: string, isCompleted: boolean) => {
     const result = await toggleMilestone(milestoneId, isCompleted, userId);
     if (result.success) {
-      showToast('success', isCompleted ? 'Milestone completed' : 'Milestone uncompleted');
+      toast.success(isCompleted ? 'Milestone completed' : 'Milestone uncompleted');
     } else {
-      showToast('error', result.error || 'Failed to update milestone');
+      toast.error(result.error || 'Failed to update milestone');
     }
     return result;
-  }, [toggleMilestone, userId, showToast]);
+  }, [toggleMilestone, userId]);
 
   // Access denied for non-admins
   if (!isAdmin) {
@@ -363,35 +346,6 @@ function AdminJobTracker() {
           )}
         </AnimatePresence>
       </AdminPremiumScaffold>
-
-      {/* Toast Notifications */}
-      <div className="fixed bottom-4 right-4 z-50 space-y-2">
-        <AnimatePresence>
-          {toasts.map((toast) => (
-            <motion.div
-              key={toast.id}
-              initial={{ opacity: 0, x: 100, y: 20 }}
-              animate={{ opacity: 1, x: 0, y: 0 }}
-              exit={{ opacity: 0, x: 100, y: 20 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className={`flex items-center space-x-3 px-6 py-4 rounded-xl shadow-xl backdrop-blur-md border ${
-                toast.type === 'success'
-                  ? 'bg-[#1b291c]/90 border-[#8ff2c7]/40'
-                  : 'bg-[#2b120b]/90 border-[#ff8a65]/40'
-              }`}
-            >
-              <div className="flex-shrink-0">
-                {toast.type === 'success' ? (
-                  <CheckCircle2 className="w-5 h-5 text-[#8ff2c7]" />
-                ) : (
-                  <XCircle className="w-5 h-5 text-[#ffb199]" />
-                )}
-              </div>
-              <span className="text-white font-medium text-sm">{toast.message}</span>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
     </DashboardLayout>
   );
 }

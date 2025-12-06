@@ -16,9 +16,12 @@
     "accessibility": "start-server-and-test preview:ci http://127.0.0.1:4173 pa11y-ci"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
     "@react-three/drei": "^9.114.3",
     "@react-three/fiber": "^8.18.0",
     "@supabase/supabase-js": "^2.57.4",
+    "@tanstack/react-query": "^5.90.12",
+    "@tanstack/react-query-devtools": "^5.91.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.24",
@@ -27,9 +30,14 @@
     "lucide-react": "^0.344.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-error-boundary": "^6.0.0",
+    "react-hook-form": "^7.68.0",
     "react-router-dom": "^7.9.4",
+    "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1",
-    "three": "^0.180.0"
+    "three": "^0.180.0",
+    "zod": "^4.1.13",
+    "zustand": "^5.0.9"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
