@@ -6,6 +6,7 @@ import {
   useCallback,
   type ReactNode,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '../../lib/utils';
@@ -174,7 +175,9 @@ export function ExpandableScreenContent({
   const { isExpanded, collapse, layoutId, contentRadius, animationDuration } =
     useExpandableScreen();
 
-  return (
+  // Use portal to render outside of any parent stacking context
+  // This ensures the expanded content always appears on top
+  const content = (
     <AnimatePresence initial={false}>
       {isExpanded && (
         <>
@@ -185,11 +188,15 @@ export function ExpandableScreenContent({
             exit={{ opacity: 0 }}
             transition={{ duration: animationDuration * 0.8 }}
             onClick={collapse}
-            className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm"
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+            style={{ zIndex: 9998 }}
           />
           
           {/* Content */}
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+          <div 
+            className="fixed inset-0 flex items-center justify-center p-4 sm:p-6"
+            style={{ zIndex: 9999 }}
+          >
             {/* Morphing container with shared layoutId */}
             <motion.div
               layoutId={layoutId}
@@ -233,6 +240,9 @@ export function ExpandableScreenContent({
       )}
     </AnimatePresence>
   );
+
+  // Render via portal to document.body to escape any parent stacking contexts
+  return createPortal(content, document.body);
 }
 
 export default ExpandableScreen;

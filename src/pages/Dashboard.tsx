@@ -1,29 +1,28 @@
-import { useCallback, memo, useMemo, Suspense, lazy } from 'react';
+import { useCallback, memo, useMemo, Suspense, lazy, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
   LogOut,
   Calendar,
   FileText,
-  Megaphone,
-  Zap,
   Shield,
   Wrench,
-  Briefcase,
   RefreshCw,
   Inbox,
   AlertTriangle,
 } from 'lucide-react';
+import { DashboardAvatar } from '../components/dashboard/DashboardAvatar';
 import { useAuth } from '../contexts/AuthContext';
 import { useUserAssignedJobs } from '../hooks/jobs';
-import { cn } from '../lib/utils';
+import { supabase } from '../lib/supabaseClient';
+import { logger } from '../lib/logger';
 import DashboardLayout from '../layouts/DashboardLayout';
 import AdminPremiumScaffold, {
   type AdminHeroConfig,
 } from '../components/admin/AdminPremiumScaffold';
 import { PERSISTENCE_KEYS } from '../lib/persistence';
-import { CollapsibleSection } from '../components/dashboard/CollapsibleSection';
-import { CompactQuickActions, type QuickActionLink } from '../components/dashboard/CompactQuickActions';
+import { ExpandableSection } from '../components/dashboard/ExpandableSection';
+import { QuickActionsFAB, type QuickActionLink } from '../components/dashboard/QuickActionsFAB';
 import { CompactJobCard } from '../components/jobs';
 import {
   ExpandableScreen,
@@ -32,12 +31,10 @@ import {
 } from '../components/ui/ExpandableScreen';
 import { JobDetailExpanded } from '../components/jobs/JobDetailExpanded';
 import type { JobProgressTracker } from '../types/jobs';
-
 const DashboardAnnouncementCard = lazy(
   () => import('../components/DashboardAnnouncementCard')
 );
 const NavCards = lazy(() => import('../components/NavCards'));
-
 // Skeleton loaders
 const AnnouncementCardSkeleton = () => (
   <div className="rounded-3xl border border-white/10 bg-[#041b14]/70 p-5 space-y-3 animate-pulse">
@@ -49,7 +46,6 @@ const AnnouncementCardSkeleton = () => (
     </div>
   </div>
 );
-
 const JobCardSkeleton = () => (
   <div className="rounded-2xl border border-emerald-500/20 bg-[#041510]/80 p-3 md:p-4 animate-pulse">
     <div className="flex items-start justify-between gap-3 mb-2">
@@ -62,7 +58,6 @@ const JobCardSkeleton = () => (
     <div className="ml-5 h-1.5 bg-white/5 rounded-full" />
   </div>
 );
-
 const NavCardsSkeleton = () => (
   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
     {Array.from({ length: 6 }).map((_, idx) => (
@@ -73,7 +68,6 @@ const NavCardsSkeleton = () => (
     ))}
   </div>
 );
-
 // Empty state component for jobs
 const EmptyJobsState = () => (
   <div className="flex flex-col items-center justify-center py-8 text-center">
@@ -84,13 +78,11 @@ const EmptyJobsState = () => (
     <p className="text-xs text-white/40 mt-1">Jobs assigned to you will appear here</p>
   </div>
 );
-
 // Error state component with retry
 interface ErrorStateProps {
   message: string;
   onRetry?: () => void;
 }
-
 const ErrorState = ({ message, onRetry }: ErrorStateProps) => (
   <div className="flex flex-col items-center justify-center py-6 text-center">
     <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center mb-3">
@@ -108,12 +100,10 @@ const ErrorState = ({ message, onRetry }: ErrorStateProps) => (
     )}
   </div>
 );
-
 // Expandable Job Card wrapper
 interface ExpandableJobCardProps {
   job: JobProgressTracker;
 }
-
 const ExpandableJobCard = memo(function ExpandableJobCard({ job }: ExpandableJobCardProps) {
   return (
     <ExpandableScreen
@@ -131,12 +121,36 @@ const ExpandableJobCard = memo(function ExpandableJobCard({ job }: ExpandableJob
     </ExpandableScreen>
   );
 });
-
 function Dashboard() {
   const navigate = useNavigate();
   const { user, signOut, setSession, role, isAdmin, hasMechanicAccess } = useAuth();
-  const displayName = user?.email?.split('@')[0] ?? 'Employee';
-
+  const [fullName, setFullName] = useState<string | null>(null);
+  // Fetch full_name from app_users table
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user?.id) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('app_users')
+          .select('full_name')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        if (error) {
+          logger.error('Failed to fetch user profile:', error);
+          return;
+        }
+        if (data?.full_name) {
+          setFullName(data.full_name);
+        }
+      } catch (err) {
+        logger.error('Unexpected error fetching user profile:', err);
+      }
+    };
+    fetchUserProfile();
+  }, [user?.id]);
+  // Display full_name if available, otherwise show full email
+  const displayName = fullName || user?.email || 'Employee';
   // Fetch user's assigned jobs
   const {
     assignedJobs,
@@ -144,7 +158,6 @@ function Dashboard() {
     error: jobsError,
     refetch: refetchJobs,
   } = useUserAssignedJobs(user?.id);
-
   const handleSignOut = useCallback(async () => {
     try {
       setSession(null);
@@ -154,7 +167,6 @@ function Dashboard() {
       console.error('Sign out failed:', error);
     }
   }, [navigate, setSession, signOut]);
-
   // Quick links for CompactQuickActions
   const quickLinks: QuickActionLink[] = useMemo(
     () => [
@@ -199,7 +211,6 @@ function Dashboard() {
     ],
     [isAdmin, hasMechanicAccess]
   );
-
   // Hero config - simplified for cleaner look
   const heroConfig = useMemo<AdminHeroConfig>(
     () => ({
@@ -207,7 +218,6 @@ function Dashboard() {
     }),
     [displayName]
   );
-
   // Side panel content (desktop only - includes sign out)
   const sidePanelContent = (
     <div className="space-y-6">
@@ -234,7 +244,6 @@ function Dashboard() {
           </motion.button>
         </div>
       </div>
-
       {/* Quick stats - desktop side panel */}
       <div className="hidden lg:block rounded-3xl border border-white/10 bg-[#03150f]/80 p-5 space-y-4">
         <p className="text-xs uppercase tracking-[0.35em] text-emerald-200/70">
@@ -257,28 +266,8 @@ function Dashboard() {
       </div>
     </div>
   );
-
   return (
     <DashboardLayout title="Employee Hub">
-      {/* Mobile sign-out button - fixed in header area */}
-      <div className="md:hidden fixed top-4 right-4 z-50">
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={handleSignOut}
-          aria-label="Sign out"
-          className={cn(
-            'w-11 h-11 rounded-full',
-            'bg-red-600/90 border border-red-500/50',
-            'flex items-center justify-center',
-            'shadow-lg shadow-red-900/30',
-            'focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900'
-          )}
-        >
-          <LogOut className="w-5 h-5 text-white" />
-        </motion.button>
-      </div>
-
       <AdminPremiumScaffold
         hero={heroConfig}
         theme="emerald"
@@ -290,30 +279,28 @@ function Dashboard() {
             Mobile stacking order (priority):
             1. Announcements (defaultOpen: true)
             2. Assigned Jobs (defaultOpen: true)
-            3. Quick Actions (defaultOpen: false)
-            4. All Tools (defaultOpen: false)
+            3. All Tools (defaultOpen: false)
+            Quick Actions are accessible via FAB (floating action button)
           */}
-
           {/* Section 1: Announcements */}
-          <CollapsibleSection
+          <ExpandableSection
             id="dashboard-announcements"
             title="Latest Announcements"
             subtitle="Company news and updates"
-            icon={<Megaphone className="w-4 h-4 md:w-5 md:h-5 text-emerald-300" />}
+            icon={<DashboardAvatar variant="announcements" className="w-12 h-14 md:w-14 md:h-16" />}
             storageKey={PERSISTENCE_KEYS.ANNOUNCEMENTS}
             defaultOpen={true}
           >
             <Suspense fallback={<AnnouncementCardSkeleton />}>
               <DashboardAnnouncementCard />
             </Suspense>
-          </CollapsibleSection>
-
+          </ExpandableSection>
           {/* Section 2: Assigned Jobs */}
-          <CollapsibleSection
+          <ExpandableSection
             id="dashboard-assigned-jobs"
             title="Your Assigned Jobs"
             subtitle={`${assignedJobs.length} active assignment${assignedJobs.length !== 1 ? 's' : ''}`}
-            icon={<Briefcase className="w-4 h-4 md:w-5 md:h-5 text-emerald-300" />}
+            icon={<DashboardAvatar variant="jobs" className="w-12 h-14 md:w-14 md:h-16" />}
             storageKey={PERSISTENCE_KEYS.ASSIGNED_JOBS}
             defaultOpen={true}
           >
@@ -334,37 +321,25 @@ function Dashboard() {
                 ))}
               </div>
             )}
-          </CollapsibleSection>
-
-          {/* Section 3: Quick Actions */}
-          <CollapsibleSection
-            id="dashboard-quick-actions"
-            title="Quick Actions"
-            subtitle="Launch high-impact workflows"
-            icon={<Zap className="w-4 h-4 md:w-5 md:h-5 text-amber-300" />}
-            storageKey={PERSISTENCE_KEYS.QUICK_ACTIONS}
-            defaultOpen={false}
-          >
-            <CompactQuickActions links={quickLinks} />
-          </CollapsibleSection>
-
-          {/* Section 4: All Tools & Features */}
-          <CollapsibleSection
+          </ExpandableSection>
+          {/* Section 3: All Tools & Features */}
+          <ExpandableSection
             id="dashboard-all-tools"
             title="All Tools & Features"
             subtitle="Complete navigation menu"
-            icon={<FileText className="w-4 h-4 md:w-5 md:h-5 text-emerald-300" />}
+            icon={<DashboardAvatar variant="tools" className="w-12 h-14 md:w-14 md:h-16" />}
             storageKey={PERSISTENCE_KEYS.ALL_TOOLS}
             defaultOpen={false}
           >
             <Suspense fallback={<NavCardsSkeleton />}>
               <NavCards />
             </Suspense>
-          </CollapsibleSection>
+          </ExpandableSection>
         </div>
       </AdminPremiumScaffold>
+      {/* Quick Actions FAB - Floating action button (outside scaffold for proper z-index) */}
+      <QuickActionsFAB links={quickLinks} />
     </DashboardLayout>
   );
 }
-
 export default memo(Dashboard);

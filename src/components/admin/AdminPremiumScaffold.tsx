@@ -1,6 +1,8 @@
 import { ReactNode } from "react";
 import BrandedNavCard from "../BrandedNavCard";
 import { cn } from "../../lib/utils";
+import { GlowEffect } from "../ui/GlowEffect";
+import { TextEffect } from "../ui/TextEffect";
 
 export type AdminHeroBadge = {
   label: string;
@@ -67,6 +69,12 @@ const THEME_STYLES: Record<
     sidePanelBorder: string;
     sidePanelGlowOne: string;
     sidePanelGlowTwo: string;
+    glowColors: string[];
+    shimmerColor: string;
+    shimmerColorAlt: string;
+    borderGlowColor: string;
+    headingGradient: string;
+    headingTextGlow: string;
   }
 > = {
   gold: {
@@ -98,6 +106,12 @@ const THEME_STYLES: Record<
       "pointer-events-none absolute -top-24 -right-10 h-56 w-56 bg-[radial-gradient(circle,rgba(247,223,179,0.35),transparent_60%)] blur-2xl",
     sidePanelGlowTwo:
       "pointer-events-none absolute -bottom-32 left-1/3 h-64 w-64 bg-[radial-gradient(circle,rgba(209,152,57,0.35),transparent_70%)] blur-3xl",
+    glowColors: ["#f7e4bd", "#f4c979", "#d79a32", "#fef3d1"],
+    shimmerColor: "rgba(247,228,189,0.08)",
+    shimmerColorAlt: "rgba(244,201,121,0.05)",
+    borderGlowColor: "rgba(247,228,189,0.15)",
+    headingGradient: "bg-gradient-to-r from-[#fff6dd] via-[#f4c979] to-[#fff6dd]",
+    headingTextGlow: "drop-shadow-[0_0_25px_rgba(247,228,189,0.5)]",
   },
   ember: {
     heroContainer:
@@ -128,6 +142,12 @@ const THEME_STYLES: Record<
       "pointer-events-none absolute -top-24 -right-10 h-56 w-56 bg-[radial-gradient(circle,rgba(255,166,102,0.4),transparent_60%)] blur-2xl",
     sidePanelGlowTwo:
       "pointer-events-none absolute -bottom-32 left-1/3 h-64 w-64 bg-[radial-gradient(circle,rgba(255,85,37,0.35),transparent_70%)] blur-3xl",
+    glowColors: ["#f6b78f", "#ff6f3c", "#ffa366", "#ff9350"],
+    shimmerColor: "rgba(246,183,143,0.08)",
+    shimmerColorAlt: "rgba(255,111,60,0.05)",
+    borderGlowColor: "rgba(246,183,143,0.15)",
+    headingGradient: "bg-gradient-to-r from-[#ffe7d0] via-[#ff9350] to-[#ffe7d0]",
+    headingTextGlow: "drop-shadow-[0_0_25px_rgba(255,147,80,0.5)]",
   },
   emerald: {
     heroContainer:
@@ -158,6 +178,12 @@ const THEME_STYLES: Record<
       "pointer-events-none absolute -top-24 -right-10 h-56 w-56 bg-[radial-gradient(circle,rgba(117,255,200,0.35),transparent_60%)] blur-2xl",
     sidePanelGlowTwo:
       "pointer-events-none absolute -bottom-32 left-1/3 h-64 w-64 bg-[radial-gradient(circle,rgba(31,166,118,0.35),transparent_70%)] blur-3xl",
+    glowColors: ["#7de1b4", "#10b981", "#34d399", "#059669"],
+    shimmerColor: "rgba(125,225,180,0.06)",
+    shimmerColorAlt: "rgba(16,185,129,0.04)",
+    borderGlowColor: "rgba(125,225,180,0.12)",
+    headingGradient: "bg-gradient-to-r from-[#e5fff6] via-[#7de1b4] to-[#e5fff6]",
+    headingTextGlow: "drop-shadow-[0_0_25px_rgba(125,225,180,0.5)]",
   },
 };
 
@@ -218,68 +244,172 @@ function AdminHero({
   themeStyles: (typeof THEME_STYLES)[AdminTheme];
 }) {
   return (
-    <div className={themeStyles.heroContainer}>
-      <div className={themeStyles.heroOverlayPrimary} />
-      <div className={themeStyles.heroOverlaySecondary} />
+    <div className="relative">
+      {/* Background glow effect around the container */}
+      <div className="absolute -inset-3 rounded-[2rem] overflow-hidden">
+        <GlowEffect
+          colors={themeStyles.glowColors}
+          mode="breathe"
+          blur="stronger"
+          duration={6}
+          scale={1.15}
+          className="opacity-30"
+        />
+      </div>
+      
+      {/* Border glow pulse effect */}
+      <div 
+        className="pointer-events-none absolute -inset-[1px] rounded-3xl"
+        style={{
+          background: `linear-gradient(135deg, ${themeStyles.borderGlowColor}, transparent 40%, transparent 60%, ${themeStyles.borderGlowColor})`,
+          animation: "borderPulse 4s ease-in-out infinite",
+        }}
+      />
 
-      <div className="relative flex flex-col gap-6">
-        {(hero.eyebrow || hero.eyebrowIcon) && (
-          <p className={themeStyles.eyebrowClass}>
-            {hero.eyebrowIcon}
-            {hero.eyebrow}
-          </p>
-        )}
+      <div className={themeStyles.heroContainer}>
+        <div className={themeStyles.heroOverlayPrimary} />
+        <div className={themeStyles.heroOverlaySecondary} />
+        
+        {/* Enhanced multi-layer shimmer overlay */}
+        <div 
+          className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl"
+          style={{
+            background: `linear-gradient(
+              115deg,
+              transparent 15%,
+              ${themeStyles.shimmerColor} 35%,
+              ${themeStyles.shimmerColorAlt} 50%,
+              ${themeStyles.shimmerColor} 65%,
+              transparent 85%
+            )`,
+            backgroundSize: "250% 100%",
+            animation: "shimmerPrimary 7s ease-in-out infinite",
+          }}
+        />
+        
+        {/* Secondary shimmer layer for depth */}
+        <div 
+          className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl opacity-60"
+          style={{
+            background: `linear-gradient(
+              -65deg,
+              transparent 20%,
+              ${themeStyles.shimmerColorAlt} 45%,
+              ${themeStyles.shimmerColorAlt} 55%,
+              transparent 80%
+            )`,
+            backgroundSize: "200% 100%",
+            animation: "shimmerSecondary 11s ease-in-out infinite",
+          }}
+        />
+        
+        {/* Edge highlight effect */}
+        <div 
+          className="pointer-events-none absolute inset-0 rounded-3xl"
+          style={{
+            background: `linear-gradient(180deg, ${themeStyles.borderGlowColor} 0%, transparent 8%, transparent 92%, ${themeStyles.borderGlowColor} 100%)`,
+            animation: "edgeGlow 5s ease-in-out infinite alternate",
+          }}
+        />
+        
+        {/* CSS keyframes for all animations */}
+        <style>{`
+          @keyframes shimmerPrimary {
+            0%, 100% { background-position: 250% 0; }
+            50% { background-position: -250% 0; }
+          }
+          @keyframes shimmerSecondary {
+            0%, 100% { background-position: -200% 0; }
+            50% { background-position: 200% 0; }
+          }
+          @keyframes borderPulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.8; }
+          }
+          @keyframes edgeGlow {
+            0% { opacity: 0.3; }
+            100% { opacity: 0.6; }
+          }
+        `}</style>
 
-        <div>
-          <h2 className="text-3xl sm:text-4xl font-black text-white leading-tight">
-            {hero.heading}
-          </h2>
-          {hero.description && (
-            <p className={themeStyles.descriptionClass}>{hero.description}</p>
+        <div className="relative flex flex-col gap-6">
+          {(hero.eyebrow || hero.eyebrowIcon) && (
+            <p className={themeStyles.eyebrowClass}>
+              {hero.eyebrowIcon}
+              {hero.eyebrow}
+            </p>
+          )}
+
+          <div className="relative">
+            {/* GlowEffect behind the heading */}
+            <div className="absolute -inset-4 -top-6 -bottom-2">
+              <GlowEffect
+                colors={themeStyles.glowColors}
+                mode="breathe"
+                blur="strong"
+                duration={7}
+                scale={1.1}
+                className="opacity-50"
+              />
+            </div>
+            {/* Upgraded heading with TextEffect animation */}
+            <TextEffect
+              as="h2"
+              preset="blurSlide"
+              per="char"
+              delay={0.1}
+              className="relative text-3xl sm:text-4xl font-black leading-tight tracking-tight text-white"
+              segmentWrapperClassName={themeStyles.headingTextGlow}
+            >
+              {hero.heading}
+            </TextEffect>
+            {hero.description && (
+              <p className={cn("relative mt-3", themeStyles.descriptionClass)}>{hero.description}</p>
+            )}
+          </div>
+
+          {hero.badges && hero.badges.length > 0 && (
+            <div className="flex flex-wrap gap-3">
+              {hero.badges.map((badge, index) => (
+                <div
+                  key={`${badge.label}-${index}`}
+                  className={cn(
+                    BADGE_STYLES[badge.variant ?? "solid"],
+                    badge.variant === "outline" && "text-[#f8e4bb]"
+                  )}
+                >
+                  {badge.icon}
+                  <span>{badge.label}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {stats && stats.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {stats.map((stat) => (
+                <div
+                  key={stat.label}
+                  className={themeStyles.statsCard}
+                >
+                  <div className={themeStyles.statsOverlay} />
+                  <div className={themeStyles.statsGlow} />
+                  <div className="relative space-y-1.5">
+                    <p className={themeStyles.statsLabel}>
+                      {stat.label}
+                    </p>
+                    <p className={themeStyles.statsValue}>
+                      {stat.value}
+                    </p>
+                    {stat.hint && (
+                      <p className={themeStyles.statsHint}>{stat.hint}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
-
-        {hero.badges && hero.badges.length > 0 && (
-          <div className="flex flex-wrap gap-3">
-            {hero.badges.map((badge, index) => (
-              <div
-                key={`${badge.label}-${index}`}
-                className={cn(
-                  BADGE_STYLES[badge.variant ?? "solid"],
-                  badge.variant === "outline" && "text-[#f8e4bb]"
-                )}
-              >
-                {badge.icon}
-                <span>{badge.label}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {stats && stats.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {stats.map((stat) => (
-              <div
-                key={stat.label}
-                className={themeStyles.statsCard}
-              >
-                <div className={themeStyles.statsOverlay} />
-                <div className={themeStyles.statsGlow} />
-                <div className="relative space-y-1.5">
-                  <p className={themeStyles.statsLabel}>
-                    {stat.label}
-                  </p>
-                  <p className={themeStyles.statsValue}>
-                    {stat.value}
-                  </p>
-                  {stat.hint && (
-                    <p className={themeStyles.statsHint}>{stat.hint}</p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
