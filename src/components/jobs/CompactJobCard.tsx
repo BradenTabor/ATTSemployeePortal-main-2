@@ -1,4 +1,4 @@
-import { memo, useCallback } from 'react';
+import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, AlertTriangle, Briefcase } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -8,70 +8,37 @@ import type { JobProgressTracker } from '../../types/jobs';
 
 interface CompactJobCardProps {
   job: JobProgressTracker;
-  onClick?: () => void;
   className?: string;
 }
 
 function CompactJobCardComponent({ 
   job, 
-  onClick,
   className 
 }: CompactJobCardProps) {
   const progress = calculateJobProgress(job.start_date, job.end_date);
   const isExceeded = progress.status === 'exceeded';
-
-  const handleClick = useCallback(() => {
-    onClick?.();
-  }, [onClick]);
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if ((e.key === 'Enter' || e.key === ' ') && onClick) {
-        e.preventDefault();
-        onClick();
-      }
-    },
-    [onClick]
-  );
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
+      aria-label={`${job.job_name}, ${progress.percentage}% complete${isExceeded ? ', timeline exceeded' : ''}`}
       className={cn(
         // Base card styles
-        'rounded-2xl border overflow-hidden transition-all',
+        'rounded-2xl border overflow-hidden transition-all cursor-pointer',
         'bg-gradient-to-br',
         // Conditional styling based on exceeded status
         isExceeded
           ? 'border-red-500/30 from-[#1a0808]/80 via-[#0d0505]/90 to-[#050302] hover:border-red-500/50'
           : 'border-emerald-500/20 from-[#041510]/80 via-[#020d09]/90 to-[#010604] hover:border-emerald-400/40',
-        // Interactive styles when onClick is provided
-        onClick && 'cursor-pointer hover:shadow-lg',
+        // Hover styles
+        'hover:shadow-lg',
         isExceeded ? 'hover:shadow-red-900/20' : 'hover:shadow-emerald-900/20',
         className
       )}
     >
-      <button
-        type="button"
-        onClick={handleClick}
-        onKeyDown={handleKeyDown}
-        disabled={!onClick}
-        aria-label={`${job.job_name}, ${progress.percentage}% complete${isExceeded ? ', timeline exceeded' : ''}`}
-        className={cn(
-          'w-full p-3 md:p-4 text-left',
-          // Touch target - min 44px
-          'min-h-[44px]',
-          // Focus styles
-          'focus:outline-none focus-visible:ring-2 focus-visible:ring-inset',
-          isExceeded
-            ? 'focus-visible:ring-red-400/50'
-            : 'focus-visible:ring-emerald-400/50',
-          // Disabled state when no onClick
-          !onClick && 'cursor-default'
-        )}
-      >
+      <div className="w-full p-3 md:p-4 text-left min-h-[44px]">
         {/* Top row: Job info and progress percentage */}
         <div className="flex items-start justify-between gap-3 mb-2">
           {/* Left: Job name and location */}
@@ -141,11 +108,10 @@ function CompactJobCardComponent({
             </span>
           </motion.div>
         )}
-      </button>
+      </div>
     </motion.div>
   );
 }
 
 export const CompactJobCard = memo(CompactJobCardComponent);
 export default CompactJobCard;
-
