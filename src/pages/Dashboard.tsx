@@ -1,32 +1,42 @@
-import { useCallback, memo, useMemo, Suspense, lazy } from "react";
+import { useCallback, memo, useMemo, Suspense, lazy, useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   LogOut,
   Calendar,
   FileText,
   Megaphone,
-  ChevronRight,
   Zap,
   Shield,
   Wrench,
+  Briefcase,
+  Grid3X3,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useUserAssignedJobs } from "../hooks/jobs";
-import AdaptiveCardWrapper from "../components/AdaptiveCardWrapper";
 import { cn } from "../lib/utils";
 import DashboardLayout from "../layouts/DashboardLayout";
 import AdminPremiumScaffold, {
   type AdminHeroConfig,
   type AdminStat,
 } from "../components/admin/AdminPremiumScaffold";
-import { DashboardJobWidget } from "../components/jobs";
+import { CollapsibleSection } from "../components/dashboard";
+import { CompactQuickActions } from "../components/dashboard";
+import { CompactJobCard } from "../components/jobs";
 
 const DashboardAnnouncementCard = lazy(
   () => import("../components/DashboardAnnouncementCard")
 );
 const NavCards = lazy(() => import("../components/NavCards"));
+
+// Storage keys for persisted collapse states
+const STORAGE_KEYS = {
+  announcements: "atts:dashboard:collapse:announcements",
+  assignedJobs: "atts:dashboard:collapse:assignedJobs",
+  quickActions: "atts:dashboard:collapse:quickActions",
+  allTools: "atts:dashboard:collapse:allTools",
+} as const;
 
 type QuickLink = {
   label: string;
@@ -40,83 +50,7 @@ type QuickLink = {
   iconAccent?: string;
 };
 
-const QUICK_CARD_DEFAULTS = {
-  gradient: "from-[#1b5f43]/70 via-[#04130d] to-[#010604]",
-  border: "border-[#2a8a63]/40",
-  glow: "from-[#33c38a]/20 to-transparent",
-  iconBg: "bg-[#1c7a57]/30 border border-[#2e9b6e]/40",
-  iconAccent: "text-emerald-200",
-};
-
-interface QuickActionCardProps {
-  link: QuickLink;
-  index: number;
-}
-
-const QuickActionCard = ({ link, index }: QuickActionCardProps) => {
-  const Icon = link.icon;
-  const gradient = link.gradient ?? QUICK_CARD_DEFAULTS.gradient;
-  const border = link.border ?? QUICK_CARD_DEFAULTS.border;
-  const glow = link.glow ?? QUICK_CARD_DEFAULTS.glow;
-  const iconBg = link.iconBg ?? QUICK_CARD_DEFAULTS.iconBg;
-  const iconAccent = link.iconAccent ?? QUICK_CARD_DEFAULTS.iconAccent;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.08 }}
-    >
-      <Link to={link.path} className="block h-full">
-        <AdaptiveCardWrapper>
-          <motion.div
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.98 }}
-            className={cn(
-              "relative w-full h-full p-[2px] rounded-2xl overflow-hidden shadow-lg bg-gradient-to-br group",
-              gradient
-            )}
-          >
-            <div
-              className={cn(
-                "h-full w-full rounded-2xl p-5 flex flex-col gap-4 bg-black/70 backdrop-blur-xl border transition-all duration-300",
-                border
-              )}
-            >
-              <div
-                className={cn(
-                  "w-12 h-12 rounded-xl flex items-center justify-center",
-                  iconBg
-                )}
-              >
-                <Icon className={cn("w-5 h-5", iconAccent)} />
-              </div>
-              <div className="flex-1">
-                <p className="text-white font-semibold text-lg mb-1">
-                  {link.label}
-                </p>
-                <p className="text-sm text-white/70 leading-relaxed">
-                  {link.description}
-                </p>
-              </div>
-              <div className="pt-2 flex items-center gap-2 text-xs text-white/60 group-hover:text-white transition-colors">
-                Open
-                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </div>
-            <div
-              className={cn(
-                "absolute inset-0 rounded-2xl pointer-events-none bg-gradient-to-br",
-                glow
-              )}
-            />
-          </motion.div>
-        </AdaptiveCardWrapper>
-      </Link>
-    </motion.div>
-  );
-};
-
+// Skeletons
 const AnnouncementCardSkeleton = () => (
   <div className="rounded-3xl border border-white/10 bg-[#041b14]/70 p-5 space-y-3 animate-pulse">
     <div className="h-3 w-32 bg-white/10 rounded-full" />
@@ -129,7 +63,7 @@ const AnnouncementCardSkeleton = () => (
 );
 
 const NavCardsSkeleton = () => (
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
     {Array.from({ length: 6 }).map((_, idx) => (
       <div
         key={`nav-skeleton-${idx}`}
@@ -139,11 +73,36 @@ const NavCardsSkeleton = () => (
   </div>
 );
 
+const JobCardSkeleton = () => (
+  <div className="rounded-xl border border-white/10 bg-[#041b14]/70 p-3 animate-pulse">
+    <div className="flex items-center gap-3">
+      <div className="flex-1 space-y-2">
+        <div className="h-3 w-3/4 bg-white/10 rounded-full" />
+        <div className="h-2 w-1/2 bg-white/5 rounded-full" />
+      </div>
+      <div className="w-16 space-y-1">
+        <div className="h-3 w-full bg-white/10 rounded-full" />
+        <div className="h-1.5 w-full bg-white/5 rounded-full" />
+      </div>
+    </div>
+  </div>
+);
+
 function Dashboard() {
   const navigate = useNavigate();
   const { user, signOut, setSession, role, isAdmin, hasMechanicAccess } =
     useAuth();
   const displayName = user?.email?.split("@")[0] ?? "Employee";
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile viewport
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // Fetch user's assigned jobs for the widget
   const {
@@ -266,6 +225,57 @@ function Dashboard() {
     [displayName, quickLinks.length, role]
   );
 
+  // Assigned jobs section content
+  const assignedJobsContent = useMemo(() => {
+    if (jobsLoading) {
+      return (
+        <div className="space-y-2">
+          {Array.from({ length: 2 }).map((_, idx) => (
+            <JobCardSkeleton key={`job-skeleton-${idx}`} />
+          ))}
+        </div>
+      );
+    }
+
+    if (jobsError) {
+      return (
+        <p className="text-sm text-red-400/80 py-4 text-center">
+          Failed to load assignments. Please try again.
+        </p>
+      );
+    }
+
+    if (assignedJobs.length === 0) {
+      return (
+        <p className="text-sm text-white/50 py-4 text-center">
+          No active assignments at the moment.
+        </p>
+      );
+    }
+
+    return (
+      <div className="space-y-2">
+        {assignedJobs.slice(0, 5).map((job, idx) => (
+          <CompactJobCard
+            key={job.id}
+            job={job}
+            index={idx}
+            onClick={() => navigate("/job-tracker")}
+          />
+        ))}
+        {assignedJobs.length > 5 && (
+          <button
+            onClick={() => navigate("/job-tracker")}
+            className="w-full text-center text-xs text-emerald-300 hover:text-emerald-200 py-2 transition-colors"
+          >
+            View all {assignedJobs.length} assignments →
+          </button>
+        )}
+      </div>
+    );
+  }, [assignedJobs, jobsError, jobsLoading, navigate]);
+
+  // Side panel for desktop (profile + sign-out + announcements)
   const sidePanelContent = (
     <div className="space-y-6">
       <div className="rounded-3xl border border-white/10 bg-[#03150f]/80 p-5">
@@ -305,77 +315,98 @@ function Dashboard() {
     </div>
   );
 
+  // Mobile-first main content with collapsible sections
+  const mainContent = (
+    <div className="w-full space-y-4 md:space-y-6">
+      {/* Mobile sign-out header */}
+      {isMobile && (
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-sm text-white/60">
+            Logged in as <span className="text-emerald-300">{displayName}</span>
+          </p>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleSignOut}
+            aria-label="Sign out"
+            className={cn(
+              "p-2 rounded-full bg-red-600/80 border border-red-500/40",
+              "hover:bg-red-600 transition-colors",
+              "focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50"
+            )}
+          >
+            <LogOut className="w-4 h-4 text-white" />
+          </motion.button>
+        </div>
+      )}
+
+      {/* 1. Announcements - always visible, open by default */}
+      <CollapsibleSection
+        id="announcements"
+        title="Latest Announcements"
+        subtitle="Stay up to date with company news"
+        icon={<Megaphone className="w-5 h-5" />}
+        storageKey={STORAGE_KEYS.announcements}
+        defaultOpen={true}
+      >
+        <Suspense fallback={<AnnouncementCardSkeleton />}>
+          <DashboardAnnouncementCard />
+        </Suspense>
+      </CollapsibleSection>
+
+      {/* 2. Assigned Jobs - open by default, prioritized for mobile */}
+      <CollapsibleSection
+        id="assigned-jobs"
+        title="My Assigned Jobs"
+        subtitle={
+          jobsLoading
+            ? "Loading..."
+            : `${assignedJobs.length} active assignment${assignedJobs.length !== 1 ? "s" : ""}`
+        }
+        icon={<Briefcase className="w-5 h-5" />}
+        storageKey={STORAGE_KEYS.assignedJobs}
+        defaultOpen={true}
+      >
+        {assignedJobsContent}
+      </CollapsibleSection>
+
+      {/* 3. Quick Actions - collapsed by default on mobile */}
+      <CollapsibleSection
+        id="quick-actions"
+        title="Quick Actions"
+        subtitle="Launch high-impact workflows"
+        icon={<Zap className="w-5 h-5" />}
+        storageKey={STORAGE_KEYS.quickActions}
+        defaultOpen={false}
+      >
+        <CompactQuickActions links={quickLinks} />
+      </CollapsibleSection>
+
+      {/* 4. All Tools & Features - collapsed by default */}
+      <CollapsibleSection
+        id="all-tools"
+        title="All Tools & Features"
+        subtitle="Full navigation menu"
+        icon={<Grid3X3 className="w-5 h-5" />}
+        storageKey={STORAGE_KEYS.allTools}
+        defaultOpen={false}
+      >
+        <Suspense fallback={<NavCardsSkeleton />}>
+          <NavCards />
+        </Suspense>
+      </CollapsibleSection>
+    </div>
+  );
+
   return (
     <DashboardLayout title="Employee Hub">
       <AdminPremiumScaffold
         hero={heroConfig}
         stats={heroStats}
         theme="emerald"
-        sidePanel={sidePanelContent}
+        sidePanel={isMobile ? undefined : sidePanelContent}
       >
-        <div className="w-full space-y-10">
-          <section className="rounded-3xl border border-[#1f5f46]/40 bg-[#04150f]/85 p-6 space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-amber-300" />
-                  Quick Actions
-                </h3>
-                <p className="text-xs text-white/60 mt-1">
-                  Launch high-impact workflows in a single tap.
-                </p>
-              </div>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                className="text-sm text-emerald-300 hover:text-emerald-200 font-medium flex items-center gap-1 group"
-                onClick={() =>
-                  document
-                    .getElementById("navigation")
-                    ?.scrollIntoView({ behavior: "smooth" })
-                }
-              >
-                View all tools
-                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </motion.button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {quickLinks.map((link, idx) => (
-                <QuickActionCard key={link.path} link={link} index={idx} />
-              ))}
-            </div>
-          </section>
-
-          {/* Assigned Jobs Widget - only show if user has assigned jobs */}
-          {(assignedJobs.length > 0 || jobsLoading) && (
-            <motion.section
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <DashboardJobWidget
-                jobs={assignedJobs}
-                loading={jobsLoading}
-                error={jobsError}
-              />
-            </motion.section>
-          )}
-
-          <section
-            id="navigation"
-            className="rounded-3xl border border-[#1f5f46]/40 bg-[#04150f]/85 p-6 space-y-6"
-          >
-            <div className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-emerald-300" />
-              <h3 className="text-lg font-bold text-white">
-                All Tools & Features
-              </h3>
-            </div>
-            <Suspense fallback={<NavCardsSkeleton />}>
-              <NavCards />
-            </Suspense>
-          </section>
-        </div>
+        {mainContent}
       </AdminPremiumScaffold>
     </DashboardLayout>
   );
