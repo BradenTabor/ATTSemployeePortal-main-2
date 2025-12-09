@@ -20,7 +20,6 @@ import { cn } from '../lib/utils';
 import DashboardLayout from '../layouts/DashboardLayout';
 import AdminPremiumScaffold, {
   type AdminHeroConfig,
-  type AdminStat,
 } from '../components/admin/AdminPremiumScaffold';
 import { PERSISTENCE_KEYS } from '../lib/persistence';
 import { CollapsibleSection } from '../components/dashboard/CollapsibleSection';
@@ -171,53 +170,12 @@ function Dashboard() {
     [isAdmin, hasMechanicAccess]
   );
 
-  // Hero stats
-  const heroStats = useMemo<AdminStat[]>(() => {
-    const localTime = new Date().toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-    return [
-      {
-        label: 'Portal Status',
-        value: 'ACTIVE',
-        hint: 'Secure session',
-      },
-      {
-        label: 'Active Jobs',
-        value: assignedJobs.length.toString().padStart(2, '0'),
-        hint: 'Assigned to you',
-      },
-      {
-        label: 'Local Time',
-        value: localTime,
-        hint: 'System clock',
-      },
-    ];
-  }, [assignedJobs.length]);
-
-  // Hero config
+  // Hero config - simplified for cleaner look
   const heroConfig = useMemo<AdminHeroConfig>(
     () => ({
-      eyebrow: 'Employee Command',
-      eyebrowIcon: <Zap className="w-4 h-4 text-[#7ef2c8]" />,
       heading: `Welcome back, ${displayName}`,
-      description:
-        'Stay synced with your jobs, announcements, and tools—all from one dashboard.',
-      badges: [
-        {
-          label: (role ?? 'Employee').toUpperCase(),
-          icon: <Shield className="w-4 h-4 text-[#7ef2c8]" />,
-          variant: 'solid',
-        },
-        {
-          label: `${assignedJobs.length} active job${assignedJobs.length !== 1 ? 's' : ''}`,
-          icon: <Briefcase className="w-4 h-4 text-[#7ef2c8]" />,
-          variant: 'outline',
-        },
-      ],
     }),
-    [displayName, assignedJobs.length, role]
+    [displayName]
   );
 
   // Side panel content (desktop only - includes sign out)
@@ -293,7 +251,6 @@ function Dashboard() {
 
       <AdminPremiumScaffold
         hero={heroConfig}
-        stats={heroStats}
         theme="emerald"
         sidePanel={sidePanelContent}
       >
