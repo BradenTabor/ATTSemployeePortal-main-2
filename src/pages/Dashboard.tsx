@@ -1,122 +1,38 @@
-import { useCallback, memo, useMemo, Suspense, lazy } from "react";
-import { motion } from "framer-motion";
-import { useNavigate, Link } from "react-router-dom";
+import { useCallback, memo, useMemo, Suspense, lazy } from 'react';
+import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import {
   LogOut,
   Calendar,
   FileText,
   Megaphone,
-  ChevronRight,
   Zap,
   Shield,
   Wrench,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
-import { useAuth } from "../contexts/AuthContext";
-import { useUserAssignedJobs } from "../hooks/jobs";
-import AdaptiveCardWrapper from "../components/AdaptiveCardWrapper";
-import { cn } from "../lib/utils";
-import DashboardLayout from "../layouts/DashboardLayout";
+  Briefcase,
+  RefreshCw,
+  Inbox,
+  AlertTriangle,
+} from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { useUserAssignedJobs } from '../hooks/jobs';
+import { cn } from '../lib/utils';
+import DashboardLayout from '../layouts/DashboardLayout';
 import AdminPremiumScaffold, {
   type AdminHeroConfig,
   type AdminStat,
-} from "../components/admin/AdminPremiumScaffold";
-import { DashboardJobWidget } from "../components/jobs";
+} from '../components/admin/AdminPremiumScaffold';
+import { PERSISTENCE_KEYS } from '../lib/persistence';
+import { CollapsibleSection } from '../components/dashboard/CollapsibleSection';
+import { CompactQuickActions, type QuickActionLink } from '../components/dashboard/CompactQuickActions';
+import { CompactJobCard } from '../components/jobs';
 
 const DashboardAnnouncementCard = lazy(
-  () => import("../components/DashboardAnnouncementCard")
+  () => import('../components/DashboardAnnouncementCard')
 );
-const NavCards = lazy(() => import("../components/NavCards"));
+const NavCards = lazy(() => import('../components/NavCards'));
 
-type QuickLink = {
-  label: string;
-  description: string;
-  icon: LucideIcon;
-  path: string;
-  gradient?: string;
-  border?: string;
-  glow?: string;
-  iconBg?: string;
-  iconAccent?: string;
-};
-
-const QUICK_CARD_DEFAULTS = {
-  gradient: "from-[#1b5f43]/70 via-[#04130d] to-[#010604]",
-  border: "border-[#2a8a63]/40",
-  glow: "from-[#33c38a]/20 to-transparent",
-  iconBg: "bg-[#1c7a57]/30 border border-[#2e9b6e]/40",
-  iconAccent: "text-emerald-200",
-};
-
-interface QuickActionCardProps {
-  link: QuickLink;
-  index: number;
-}
-
-const QuickActionCard = ({ link, index }: QuickActionCardProps) => {
-  const Icon = link.icon;
-  const gradient = link.gradient ?? QUICK_CARD_DEFAULTS.gradient;
-  const border = link.border ?? QUICK_CARD_DEFAULTS.border;
-  const glow = link.glow ?? QUICK_CARD_DEFAULTS.glow;
-  const iconBg = link.iconBg ?? QUICK_CARD_DEFAULTS.iconBg;
-  const iconAccent = link.iconAccent ?? QUICK_CARD_DEFAULTS.iconAccent;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.08 }}
-    >
-      <Link to={link.path} className="block h-full">
-        <AdaptiveCardWrapper>
-          <motion.div
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.98 }}
-            className={cn(
-              "relative w-full h-full p-[2px] rounded-2xl overflow-hidden shadow-lg bg-gradient-to-br group",
-              gradient
-            )}
-          >
-            <div
-              className={cn(
-                "h-full w-full rounded-2xl p-5 flex flex-col gap-4 bg-black/70 backdrop-blur-xl border transition-all duration-300",
-                border
-              )}
-            >
-              <div
-                className={cn(
-                  "w-12 h-12 rounded-xl flex items-center justify-center",
-                  iconBg
-                )}
-              >
-                <Icon className={cn("w-5 h-5", iconAccent)} />
-              </div>
-              <div className="flex-1">
-                <p className="text-white font-semibold text-lg mb-1">
-                  {link.label}
-                </p>
-                <p className="text-sm text-white/70 leading-relaxed">
-                  {link.description}
-                </p>
-              </div>
-              <div className="pt-2 flex items-center gap-2 text-xs text-white/60 group-hover:text-white transition-colors">
-                Open
-                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </div>
-            <div
-              className={cn(
-                "absolute inset-0 rounded-2xl pointer-events-none bg-gradient-to-br",
-                glow
-              )}
-            />
-          </motion.div>
-        </AdaptiveCardWrapper>
-      </Link>
-    </motion.div>
-  );
-};
-
+// Skeleton loaders
 const AnnouncementCardSkeleton = () => (
   <div className="rounded-3xl border border-white/10 bg-[#041b14]/70 p-5 space-y-3 animate-pulse">
     <div className="h-3 w-32 bg-white/10 rounded-full" />
@@ -128,90 +44,126 @@ const AnnouncementCardSkeleton = () => (
   </div>
 );
 
+const JobCardSkeleton = () => (
+  <div className="rounded-2xl border border-emerald-500/20 bg-[#041510]/80 p-3 md:p-4 animate-pulse">
+    <div className="flex items-start justify-between gap-3 mb-2">
+      <div className="flex-1">
+        <div className="h-4 w-32 bg-white/10 rounded mb-2" />
+        <div className="h-3 w-24 bg-white/5 rounded" />
+      </div>
+      <div className="h-8 w-12 bg-emerald-500/10 rounded-lg" />
+    </div>
+    <div className="ml-5 h-1.5 bg-white/5 rounded-full" />
+  </div>
+);
+
 const NavCardsSkeleton = () => (
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
     {Array.from({ length: 6 }).map((_, idx) => (
       <div
         key={`nav-skeleton-${idx}`}
-        className="rounded-2xl border border-white/10 bg-white/5 h-32 animate-pulse"
+        className="rounded-2xl border border-white/10 bg-white/5 h-28 md:h-32 animate-pulse"
       />
     ))}
   </div>
 );
 
+// Empty state component for jobs
+const EmptyJobsState = () => (
+  <div className="flex flex-col items-center justify-center py-8 text-center">
+    <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center mb-3">
+      <Inbox className="w-6 h-6 text-emerald-400/60" />
+    </div>
+    <p className="text-sm text-white/60 font-medium">No active assignments</p>
+    <p className="text-xs text-white/40 mt-1">Jobs assigned to you will appear here</p>
+  </div>
+);
+
+// Error state component with retry
+interface ErrorStateProps {
+  message: string;
+  onRetry?: () => void;
+}
+
+const ErrorState = ({ message, onRetry }: ErrorStateProps) => (
+  <div className="flex flex-col items-center justify-center py-6 text-center">
+    <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center mb-3">
+      <AlertTriangle className="w-5 h-5 text-red-400" />
+    </div>
+    <p className="text-sm text-red-400 font-medium">{message}</p>
+    {onRetry && (
+      <button
+        onClick={onRetry}
+        className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-medium hover:bg-red-500/20 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50"
+      >
+        <RefreshCw className="w-3.5 h-3.5" />
+        Try Again
+      </button>
+    )}
+  </div>
+);
+
 function Dashboard() {
   const navigate = useNavigate();
-  const { user, signOut, setSession, role, isAdmin, hasMechanicAccess } =
-    useAuth();
-  const displayName = user?.email?.split("@")[0] ?? "Employee";
+  const { user, signOut, setSession, role, isAdmin, hasMechanicAccess } = useAuth();
+  const displayName = user?.email?.split('@')[0] ?? 'Employee';
 
-  // Fetch user's assigned jobs for the widget
+  // Fetch user's assigned jobs
   const {
     assignedJobs,
     loading: jobsLoading,
     error: jobsError,
+    refetch: refetchJobs,
   } = useUserAssignedJobs(user?.id);
 
   const handleSignOut = useCallback(async () => {
     try {
       setSession(null);
       await signOut();
-      navigate("/", { replace: true });
+      navigate('/', { replace: true });
     } catch (error) {
-      console.error("Sign out failed:", error);
+      console.error('Sign out failed:', error);
     }
   }, [navigate, setSession, signOut]);
 
-  const quickLinks: QuickLink[] = useMemo(
+  // Quick links for CompactQuickActions
+  const quickLinks: QuickActionLink[] = useMemo(
     () => [
       {
-        label: "View Forms History",
-        description: "Review, export, and reference previous submissions.",
+        label: 'View Forms History',
+        description: 'Review and export previous submissions',
         icon: FileText,
-        path: "/forms-history",
+        path: '/forms-history',
       },
       ...(isAdmin
         ? [
             {
-              label: "Manage RTO Requests",
-              description:
-                "Approve or deny employee time-off requests in one place.",
+              label: 'Manage RTO Requests',
+              description: 'Approve or deny time-off requests',
               icon: Calendar,
-              path: "/admin/rto",
-              gradient:
-                "from-[#f6b96b]/70 via-black/80 to-[#37240d] hover:from-[#fccc7b]",
-              border: "border-[#f6b96b]/40",
-              glow: "from-[#f5c982]/18 to-transparent",
-              iconBg: "bg-[#f6b96b]/15 border border-[#f6b96b]/40",
-              iconAccent: "text-[#ffd9a6]",
+              path: '/admin/rto',
+              iconBg: 'bg-[#f6b96b]/15 border border-[#f6b96b]/30',
+              iconColor: 'text-[#ffd9a6]',
             },
             {
-              label: "Manage App Users",
-              description: "Update user roles, permissions, and onboarding.",
+              label: 'Manage App Users',
+              description: 'Update roles and permissions',
               icon: Shield,
-              path: "/admin/users",
-              gradient:
-                "from-[#f7e4bd]/70 via-black/80 to-[#3a250f] hover:from-[#f7e4bd]",
-              border: "border-[#f7e4bd]/35",
-              glow: "from-[#ffe6c3]/18 to-transparent",
-              iconBg: "bg-[#f7e4bd]/10 border border-[#f4c979]/35",
-              iconAccent: "text-[#f4c979]",
+              path: '/admin/users',
+              iconBg: 'bg-[#f7e4bd]/10 border border-[#f4c979]/30',
+              iconColor: 'text-[#f4c979]',
             },
           ]
         : []),
       ...(hasMechanicAccess
         ? [
             {
-              label: "DVIR ControlCenter",
-              description: "Inspect DVIR submissions and coordinate repairs.",
+              label: 'DVIR Control Center',
+              description: 'Inspect DVIR submissions',
               icon: Wrench,
-              path: "/mechanic-dvir-center",
-              gradient:
-                "from-[#ff8f5b]/70 via-black/80 to-[#3d1a0c] hover:from-[#ff9f6f]",
-              border: "border-[#ff9f6f]/35",
-              glow: "from-[#ff925d]/18 to-transparent",
-              iconBg: "bg-[#ff9350]/10 border border-[#ff9350]/35",
-              iconAccent: "text-[#ffb48a]",
+              path: '/mechanic-dvir-center',
+              iconBg: 'bg-[#ff9350]/10 border border-[#ff9350]/30',
+              iconColor: 'text-[#ffb48a]',
             },
           ]
         : []),
@@ -219,62 +171,66 @@ function Dashboard() {
     [isAdmin, hasMechanicAccess]
   );
 
+  // Hero stats
   const heroStats = useMemo<AdminStat[]>(() => {
-    const localTime = new Date().toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
+    const localTime = new Date().toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
     });
     return [
       {
-        label: "Portal Status",
-        value: "ACTIVE",
-        hint: "Secure session",
+        label: 'Portal Status',
+        value: 'ACTIVE',
+        hint: 'Secure session',
       },
       {
-        label: "Quick Links",
-        value: quickLinks.length.toString().padStart(2, "0"),
-        hint: "Personalized shortcuts",
+        label: 'Active Jobs',
+        value: assignedJobs.length.toString().padStart(2, '0'),
+        hint: 'Assigned to you',
       },
       {
-        label: "Local Time",
+        label: 'Local Time',
         value: localTime,
-        hint: "System clock",
+        hint: 'System clock',
       },
     ];
-  }, [quickLinks.length]);
+  }, [assignedJobs.length]);
 
+  // Hero config
   const heroConfig = useMemo<AdminHeroConfig>(
     () => ({
-      eyebrow: "Employee Command",
+      eyebrow: 'Employee Command',
       eyebrowIcon: <Zap className="w-4 h-4 text-[#7ef2c8]" />,
       heading: `Welcome back, ${displayName}`,
       description:
-        "Stay synced with forms, announcements, and role-specific panels—all from one launch surface.",
+        'Stay synced with your jobs, announcements, and tools—all from one dashboard.',
       badges: [
         {
-          label: (role ?? "Employee").toUpperCase(),
+          label: (role ?? 'Employee').toUpperCase(),
           icon: <Shield className="w-4 h-4 text-[#7ef2c8]" />,
-          variant: "solid",
+          variant: 'solid',
         },
         {
-          label: `${quickLinks.length} quick links`,
-          icon: <FileText className="w-4 h-4 text-[#7ef2c8]" />,
-          variant: "outline",
+          label: `${assignedJobs.length} active job${assignedJobs.length !== 1 ? 's' : ''}`,
+          icon: <Briefcase className="w-4 h-4 text-[#7ef2c8]" />,
+          variant: 'outline',
         },
       ],
     }),
-    [displayName, quickLinks.length, role]
+    [displayName, assignedJobs.length, role]
   );
 
+  // Side panel content (desktop only - includes sign out)
   const sidePanelContent = (
     <div className="space-y-6">
+      {/* Profile card with sign out */}
       <div className="rounded-3xl border border-white/10 bg-[#03150f]/80 p-5">
         <div className="flex items-center justify-between gap-3">
-          <div>
+          <div className="min-w-0">
             <p className="text-xs uppercase tracking-[0.35em] text-emerald-200/70">
               Profile Snapshot
             </p>
-            <p className="text-lg font-semibold text-white mt-2">
+            <p className="text-lg font-semibold text-white mt-2 truncate">
               {user?.email}
             </p>
             <p className="text-sm text-white/60 capitalize">{role}</p>
@@ -283,7 +239,7 @@ function Dashboard() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.96 }}
             onClick={handleSignOut}
-            className="inline-flex items-center gap-2 rounded-full bg-red-600/80 px-3 py-2 text-xs font-semibold border border-red-500/40"
+            className="flex-shrink-0 inline-flex items-center gap-2 rounded-full bg-red-600/80 px-3 py-2 text-xs font-semibold border border-red-500/40 hover:bg-red-600 transition-colors"
           >
             <LogOut className="w-4 h-4" />
             Sign out
@@ -291,90 +247,133 @@ function Dashboard() {
         </div>
       </div>
 
-      <div className="rounded-3xl border border-white/10 bg-[#041b14]/80 p-5 space-y-4">
-        <div className="flex items-center gap-2">
-          <Megaphone className="w-4 h-4 text-emerald-300" />
-          <p className="text-xs uppercase tracking-[0.35em] text-emerald-200/70">
-            Latest News
-          </p>
+      {/* Quick stats - desktop side panel */}
+      <div className="hidden lg:block rounded-3xl border border-white/10 bg-[#03150f]/80 p-5 space-y-4">
+        <p className="text-xs uppercase tracking-[0.35em] text-emerald-200/70">
+          Quick Stats
+        </p>
+        <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-white/60">Quick Links</span>
+            <span className="text-sm font-semibold text-emerald-400">
+              {quickLinks.length}
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-white/60">Active Jobs</span>
+            <span className="text-sm font-semibold text-emerald-400">
+              {assignedJobs.length}
+            </span>
+          </div>
         </div>
-        <Suspense fallback={<AnnouncementCardSkeleton />}>
-          <DashboardAnnouncementCard />
-        </Suspense>
       </div>
     </div>
   );
 
   return (
     <DashboardLayout title="Employee Hub">
+      {/* Mobile sign-out button - fixed in header area */}
+      <div className="md:hidden fixed top-4 right-4 z-50">
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={handleSignOut}
+          aria-label="Sign out"
+          className={cn(
+            'w-11 h-11 rounded-full',
+            'bg-red-600/90 border border-red-500/50',
+            'flex items-center justify-center',
+            'shadow-lg shadow-red-900/30',
+            'focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900'
+          )}
+        >
+          <LogOut className="w-5 h-5 text-white" />
+        </motion.button>
+      </div>
+
       <AdminPremiumScaffold
         hero={heroConfig}
         stats={heroStats}
         theme="emerald"
         sidePanel={sidePanelContent}
       >
-        <div className="w-full space-y-10">
-          <section className="rounded-3xl border border-[#1f5f46]/40 bg-[#04150f]/85 p-6 space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-amber-300" />
-                  Quick Actions
-                </h3>
-                <p className="text-xs text-white/60 mt-1">
-                  Launch high-impact workflows in a single tap.
-                </p>
-              </div>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                className="text-sm text-emerald-300 hover:text-emerald-200 font-medium flex items-center gap-1 group"
-                onClick={() =>
-                  document
-                    .getElementById("navigation")
-                    ?.scrollIntoView({ behavior: "smooth" })
-                }
-              >
-                View all tools
-                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </motion.button>
-            </div>
+        {/* Mobile-first Bento layout */}
+        <div className="w-full space-y-4 md:space-y-6">
+          {/* 
+            Mobile stacking order (priority):
+            1. Announcements (defaultOpen: true)
+            2. Assigned Jobs (defaultOpen: true)
+            3. Quick Actions (defaultOpen: false)
+            4. All Tools (defaultOpen: false)
+          */}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {quickLinks.map((link, idx) => (
-                <QuickActionCard key={link.path} link={link} index={idx} />
-              ))}
-            </div>
-          </section>
-
-          {/* Assigned Jobs Widget - only show if user has assigned jobs */}
-          {(assignedJobs.length > 0 || jobsLoading) && (
-            <motion.section
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <DashboardJobWidget
-                jobs={assignedJobs}
-                loading={jobsLoading}
-                error={jobsError}
-              />
-            </motion.section>
-          )}
-
-          <section
-            id="navigation"
-            className="rounded-3xl border border-[#1f5f46]/40 bg-[#04150f]/85 p-6 space-y-6"
+          {/* Section 1: Announcements */}
+          <CollapsibleSection
+            id="dashboard-announcements"
+            title="Latest Announcements"
+            subtitle="Company news and updates"
+            icon={<Megaphone className="w-4 h-4 md:w-5 md:h-5 text-emerald-300" />}
+            storageKey={PERSISTENCE_KEYS.ANNOUNCEMENTS}
+            defaultOpen={true}
           >
-            <div className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-emerald-300" />
-              <h3 className="text-lg font-bold text-white">
-                All Tools & Features
-              </h3>
-            </div>
+            <Suspense fallback={<AnnouncementCardSkeleton />}>
+              <DashboardAnnouncementCard />
+            </Suspense>
+          </CollapsibleSection>
+
+          {/* Section 2: Assigned Jobs */}
+          <CollapsibleSection
+            id="dashboard-assigned-jobs"
+            title="Your Assigned Jobs"
+            subtitle={`${assignedJobs.length} active assignment${assignedJobs.length !== 1 ? 's' : ''}`}
+            icon={<Briefcase className="w-4 h-4 md:w-5 md:h-5 text-emerald-300" />}
+            storageKey={PERSISTENCE_KEYS.ASSIGNED_JOBS}
+            defaultOpen={true}
+          >
+            {jobsLoading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <JobCardSkeleton key={`job-skeleton-${i}`} />
+                ))}
+              </div>
+            ) : jobsError ? (
+              <ErrorState message={jobsError} onRetry={refetchJobs} />
+            ) : assignedJobs.length === 0 ? (
+              <EmptyJobsState />
+            ) : (
+              <div className="space-y-3">
+                {assignedJobs.map((job) => (
+                  <CompactJobCard key={job.id} job={job} />
+                ))}
+              </div>
+            )}
+          </CollapsibleSection>
+
+          {/* Section 3: Quick Actions */}
+          <CollapsibleSection
+            id="dashboard-quick-actions"
+            title="Quick Actions"
+            subtitle="Launch high-impact workflows"
+            icon={<Zap className="w-4 h-4 md:w-5 md:h-5 text-amber-300" />}
+            storageKey={PERSISTENCE_KEYS.QUICK_ACTIONS}
+            defaultOpen={false}
+          >
+            <CompactQuickActions links={quickLinks} />
+          </CollapsibleSection>
+
+          {/* Section 4: All Tools & Features */}
+          <CollapsibleSection
+            id="dashboard-all-tools"
+            title="All Tools & Features"
+            subtitle="Complete navigation menu"
+            icon={<FileText className="w-4 h-4 md:w-5 md:h-5 text-emerald-300" />}
+            storageKey={PERSISTENCE_KEYS.ALL_TOOLS}
+            defaultOpen={false}
+          >
             <Suspense fallback={<NavCardsSkeleton />}>
               <NavCards />
             </Suspense>
-          </section>
+          </CollapsibleSection>
         </div>
       </AdminPremiumScaffold>
     </DashboardLayout>

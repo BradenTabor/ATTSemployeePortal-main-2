@@ -7,4 +7,5 @@ export { JobDetailModal } from './JobDetailModal';
 export { JobList } from './JobList';
 export { DashboardJobWidget } from './DashboardJobWidget';
 export { JobTrackerErrorBoundary } from './JobTrackerErrorBoundary';
+export { CompactJobCard } from './CompactJobCard';
 
