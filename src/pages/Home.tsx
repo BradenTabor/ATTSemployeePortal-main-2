@@ -1,7 +1,7 @@
 import { useState, FormEvent, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle2, Lock, Sparkles } from "lucide-react";
+import { Lock, ArrowRight } from "lucide-react";
 import { VideoBackground } from "../components/VideoBackground";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../contexts/AuthContext";
@@ -26,45 +26,21 @@ export default function Home() {
   const [driversLicenseExpiration, setDriversLicenseExpiration] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  // Simplified hero copy
   const heroCopy: Record<
     AuthMode,
     {
-      badge: string;
       title: string;
-      description: string;
-      bullets: string[];
-      statLabel: string;
-      statValue: string;
-      footnote: string;
+      subtitle: string;
     }
   > = {
     login: {
-      badge: "Returning Team Members",
-      title: "Secure Workforce Access",
-      description:
-        "Log back in to review crew updates, monitor fleet health, and act on approvals in one place.",
-      bullets: [
-        "Role-aware dashboards for admins, mechanics, and field teams",
-        "Session protection powered by Supabase Auth",
-        "Live data synchronized with DVIR, JSA, and equipment logs",
-      ],
-      statLabel: "Fast Redirect",
-      statValue: "< 2s",
-      footnote: "Average time to route you to the right dashboard",
+      title: "Welcome Back",
+      subtitle: "Access your dashboard and stay connected with your team.",
     },
     signup: {
-      badge: "New Employee Setup",
-      title: "Create Your ATTS Portal Identity",
-      description:
-        "Share a few licensing details so we can pre-configure safety workflows and compliance records.",
-      bullets: [
-        "Identity syncs directly with app_users secure profile",
-        "Licensing data stays encrypted at rest",
-        "Instant email verification routed to your ATTS inbox",
-      ],
-      statLabel: "Onboarding Time",
-      statValue: "~ 60s",
-      footnote: "Complete once. Updates are handled by the admin team.",
+      title: "Join the Team",
+      subtitle: "Create your portal identity to get started.",
     },
   };
 
@@ -125,14 +101,11 @@ export default function Home() {
         setError(error.message);
       } else if (data.user) {
         logger.info("Login successful for:", data.user.email);
-        // ✅ AuthContext's onAuthStateChange will pick this up,
-        //    update session + role, and the useEffect above will redirect.
       }
     } catch (err) {
       logger.error("Unexpected login error:", err);
       setError("An unexpected error occurred. Please try again.");
     } finally {
-      // ✅ Always stop the local loading state, even if something fails
       setLoading(false);
     }
   };
@@ -199,89 +172,84 @@ export default function Home() {
     }
   };
 
+  // Liquid Glass input styles
+  const inputStyles = "w-full px-4 py-3.5 rounded-2xl bg-white/[0.03] text-white placeholder-white/30 border border-white/[0.08] focus:border-emerald-400/50 focus:bg-white/[0.06] focus:ring-1 focus:ring-emerald-400/20 outline-none transition-all duration-300 backdrop-blur-sm";
+  const labelStyles = "text-[11px] font-medium uppercase tracking-[0.2em] text-white/40";
+
   return (
     <VideoBackground videoSrc="https://res.cloudinary.com/ddqvn1gi5/video/upload/v1761347534/20251024_1735_New_Video_simple_compose_01k8c5rppves9tja80dm88cqsx_lqoodw.mp4">
-      <div className="flex flex-col items-center justify-center min-h-screen text-center space-y-8 px-4 py-6">
+      <div className="flex flex-col items-center justify-center min-h-screen text-center px-4 py-8">
+        {/* Logo and Title */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1 }}
-          className="space-y-4"
+          transition={{ duration: 0.8 }}
+          className="mb-8"
         >
           <img
             src={logo}
             alt="ATTS Logo"
-            className="h-24 sm:h-28 md:h-32 w-auto mx-auto opacity-90"
+            className="h-20 sm:h-24 w-auto mx-auto opacity-95 drop-shadow-2xl"
           />
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white drop-shadow-lg leading-tight">
-            Welcome to All Terrain Tree Service
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mt-4 tracking-tight">
+            All Terrain Tree Service
           </h1>
-          <p className="text-lg sm:text-xl text-gray-200 mt-2">
-            Simplifying communication, management, and operations.
-          </p>
         </motion.div>
 
+        {/* Liquid Glass Card */}
         <motion.div
-          initial={{ opacity: 0, y: 30, scale: 0.95 }}
+          initial={{ opacity: 0, y: 30, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.98 }}
-          transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
-          className="w-full max-w-5xl"
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="w-full max-w-md"
         >
-          <div className="bg-white/10 backdrop-blur-2xl rounded-3xl border border-white/15 shadow-2xl overflow-hidden">
-            <div className="grid md:grid-cols-[1.05fr_0.95fr] divide-y md:divide-y-0 md:divide-x divide-white/10">
+          {/* Main glass container */}
+          <div className="relative">
+            {/* Glow effect behind card */}
+            <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 via-white/5 to-emerald-500/20 rounded-[2rem] blur-2xl opacity-60" />
+            
+            {/* Card */}
+            <div className="relative bg-white/[0.04] backdrop-blur-3xl rounded-[1.75rem] border border-white/[0.08] shadow-[0_8px_64px_rgba(0,0,0,0.4)] overflow-hidden">
+              {/* Subtle inner glow */}
+              <div className="absolute inset-0 bg-gradient-to-b from-white/[0.06] via-transparent to-transparent pointer-events-none" />
+              
+              {/* Hero section - simplified */}
               <AnimatePresence mode="wait">
                 <motion.div
                   key={mode}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.4 }}
-                  className="relative text-left p-6 sm:p-8 bg-gradient-to-br from-emerald-600/20 via-black/40 to-emerald-900/20"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="relative px-6 pt-8 pb-6 text-center border-b border-white/[0.06]"
                 >
-                  <span className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-emerald-100/90 bg-white/5 border border-white/10 rounded-full px-4 py-1">
-                    <Sparkles className="w-3 h-3" />
-                    {currentHero.badge}
-                  </span>
-                  <h3 className="text-3xl font-black text-white mt-4">{currentHero.title}</h3>
-                  <p className="text-sm text-white/80 leading-relaxed mt-3">
-                    {currentHero.description}
+                  <h2 className="text-2xl font-bold text-white tracking-tight">
+                    {currentHero.title}
+                  </h2>
+                  <p className="text-sm text-white/50 mt-2 max-w-xs mx-auto">
+                    {currentHero.subtitle}
                   </p>
-                  <ul className="mt-6 space-y-3">
-                    {currentHero.bullets.map((bullet) => (
-                      <li key={bullet} className="flex items-start gap-3 text-white/80">
-                        <CheckCircle2 className="w-5 h-5 text-emerald-300 flex-shrink-0 mt-0.5" />
-                        <span className="text-sm leading-relaxed">{bullet}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="mt-8 p-4 rounded-2xl border border-white/10 bg-white/5">
-                    <p className="text-xs uppercase tracking-[0.4em] text-white/50">
-                      {currentHero.statLabel}
-                    </p>
-                    <p className="text-4xl font-black text-white mt-1">{currentHero.statValue}</p>
-                    <p className="text-[11px] text-white/60 mt-2">{currentHero.footnote}</p>
-                  </div>
-                  <div className="absolute inset-0 pointer-events-none opacity-70 bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.25),_transparent_65%)]" />
                 </motion.div>
               </AnimatePresence>
 
-              <div className="p-6 sm:p-8 text-left bg-slate-950/30">
+              {/* Form section */}
+              <div className="relative p-6">
+                {/* Mode toggle */}
                 <div className="flex justify-center mb-6">
-                  <div className="inline-flex bg-white/5 border border-white/15 rounded-full p-1">
+                  <div className="inline-flex bg-white/[0.03] border border-white/[0.06] rounded-full p-1">
                     {(["login", "signup"] as AuthMode[]).map((option) => (
                       <button
                         key={option}
                         type="button"
                         onClick={() => handleModeSwitch(option)}
-                        className={`px-6 py-2 text-sm font-semibold rounded-full transition-all ${
+                        className={`px-5 py-2 text-sm font-medium rounded-full transition-all duration-300 ${
                           mode === option
-                            ? "bg-white text-slate-900 shadow-lg"
-                            : "text-white/70 hover:text-white"
+                            ? "bg-white/10 text-white shadow-lg shadow-black/20 border border-white/10"
+                            : "text-white/40 hover:text-white/70"
                         }`}
                         aria-pressed={mode === option}
                       >
-                        {option === "login" ? "Sign In" : "Create Account"}
+                        {option === "login" ? "Sign In" : "Sign Up"}
                       </button>
                     ))}
                   </div>
@@ -290,19 +258,17 @@ export default function Home() {
                 <AnimatePresence mode="wait">
                   <motion.form
                     key={mode}
-                    initial={{ opacity: 0, x: mode === "login" ? 15 : -15 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: mode === "login" ? -15 : 15 }}
-                    transition={{ duration: 0.35 }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.25 }}
                     onSubmit={mode === "login" ? handleSignIn : handleSignUp}
-                    className="space-y-5"
+                    className="space-y-4"
                   >
-                    <div className="space-y-1">
-                      <label
-                        htmlFor="auth-email"
-                        className="text-xs font-semibold uppercase tracking-[0.4em] text-white/60"
-                      >
-                        Email Address
+                    {/* Email */}
+                    <div className="space-y-2">
+                      <label htmlFor="auth-email" className={labelStyles}>
+                        Email
                       </label>
                       <input
                         id="auth-email"
@@ -310,23 +276,23 @@ export default function Home() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
-                        placeholder="crew.member@atts.com"
-                        className="w-full px-4 py-3 rounded-2xl bg-black/60 text-white placeholder-white/40 border border-white/15 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/40 outline-none transition"
+                        placeholder="you@atts.com"
+                        className={inputStyles}
                       />
                     </div>
 
-                    <div className="space-y-1">
+                    {/* Password */}
+                    <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <label
-                          htmlFor="auth-password"
-                          className="text-xs font-semibold uppercase tracking-[0.4em] text-white/60"
-                        >
+                        <label htmlFor="auth-password" className={labelStyles}>
                           Password
                         </label>
-                        <span className="flex items-center gap-1 text-[11px] text-white/50">
-                          <Lock className="w-3.5 h-3.5" />
-                          {isSignup ? "Min. 6 characters" : "Use your portal password"}
-                        </span>
+                        {isSignup && (
+                          <span className="flex items-center gap-1 text-[10px] text-white/30">
+                            <Lock className="w-3 h-3" />
+                            Min. 6 characters
+                          </span>
+                        )}
                       </div>
                       <div className="relative">
                         <input
@@ -335,64 +301,66 @@ export default function Home() {
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           required
-                          placeholder={isSignup ? "Create a secure password" : "Enter your password"}
+                          placeholder={isSignup ? "Create password" : "Enter password"}
                           minLength={6}
-                          className="w-full px-4 py-3 rounded-2xl bg-black/60 text-white placeholder-white/40 border border-white/15 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/40 outline-none transition pr-28"
+                          className={`${inputStyles} pr-16`}
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword((prev) => !prev)}
-                          className="absolute top-1/2 right-3 -translate-y-1/2 text-xs font-semibold tracking-wide text-emerald-200 hover:text-white transition"
+                          className="absolute top-1/2 right-3 -translate-y-1/2 text-[11px] font-medium text-white/30 hover:text-white/60 transition-colors"
                         >
                           {showPassword ? "Hide" : "Show"}
                         </button>
                       </div>
                     </div>
 
+                    {/* Signup fields */}
                     {isSignup && (
-                      <div className="space-y-4 pt-2">
-                        <div className="grid sm:grid-cols-2 gap-4">
-                          <div className="space-y-1">
-                            <label className="text-xs font-semibold uppercase tracking-[0.4em] text-white/60">
-                              Full Name
-                            </label>
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="space-y-4 pt-2"
+                      >
+                        {/* Full Name & License Number */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-2">
+                            <label className={labelStyles}>Full Name</label>
                             <input
                               type="text"
                               value={fullName}
                               onChange={(e) => setFullName(e.target.value)}
                               required
-                              placeholder="First & Last Name"
-                              className="w-full px-4 py-3 rounded-2xl bg-black/60 text-white placeholder-white/40 border border-white/15 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/40 outline-none transition"
+                              placeholder="Your name"
+                              className={inputStyles}
                             />
                           </div>
-                          <div className="space-y-1">
-                            <label className="text-xs font-semibold uppercase tracking-[0.4em] text-white/60">
-                              License Number
-                            </label>
+                          <div className="space-y-2">
+                            <label className={labelStyles}>License #</label>
                             <input
                               type="text"
                               value={driversLicenseNumber}
                               onChange={(e) => setDriversLicenseNumber(e.target.value)}
                               required
-                              placeholder="CDL / State ID"
-                              className="w-full px-4 py-3 rounded-2xl bg-black/60 text-white placeholder-white/40 border border-white/15 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/40 outline-none transition"
+                              placeholder="CDL / ID"
+                              className={inputStyles}
                             />
                           </div>
                         </div>
 
-                        <div className="grid sm:grid-cols-2 gap-4">
-                          <div className="space-y-1">
-                            <label className="text-xs font-semibold uppercase tracking-[0.4em] text-white/60">
-                              License Class
-                            </label>
+                        {/* License Class & Expiration */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-2">
+                            <label className={labelStyles}>License Class</label>
                             <select
                               value={driversLicenseClass}
                               onChange={(e) => setDriversLicenseClass(e.target.value)}
                               required
-                              className="w-full px-4 py-3 rounded-2xl bg-black/60 text-white border border-white/15 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/40 outline-none transition"
+                              className={inputStyles}
                             >
                               <option value="" disabled>
-                                Select class
+                                Select
                               </option>
                               {licenseClassOptions.map((option) => (
                                 <option key={option.value} value={option.value}>
@@ -401,71 +369,74 @@ export default function Home() {
                               ))}
                             </select>
                           </div>
-                          <div className="space-y-1">
-                            <label className="text-xs font-semibold uppercase tracking-[0.4em] text-white/60">
-                              License Expiration
-                            </label>
+                          <div className="space-y-2">
+                            <label className={labelStyles}>Expiration</label>
                             <input
                               type="date"
                               value={driversLicenseExpiration}
                               onChange={(e) => setDriversLicenseExpiration(e.target.value)}
                               required
-                              className="w-full px-4 py-3 rounded-2xl bg-black/60 text-white border border-white/15 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/40 outline-none transition"
+                              className={inputStyles}
                             />
                           </div>
                         </div>
-
-                        <p className="text-[11px] text-white/50">
-                          Licensing data is encrypted, synced to `app_users`, and only visible to the
-                          safety & compliance team.
-                        </p>
-                      </div>
+                      </motion.div>
                     )}
 
+                    {/* Error message */}
                     {error && (
                       <motion.div
-                        initial={{ opacity: 0, y: -10 }}
+                        initial={{ opacity: 0, y: -5 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="bg-red-500/15 border border-red-500/40 text-red-100 px-4 py-3 rounded-2xl text-sm"
+                        className="bg-red-500/10 border border-red-500/20 text-red-200 px-4 py-3 rounded-xl text-sm backdrop-blur-sm"
                       >
                         {error}
                       </motion.div>
                     )}
 
+                    {/* Success message */}
                     {success && (
                       <motion.div
-                        initial={{ opacity: 0, y: -10 }}
+                        initial={{ opacity: 0, y: -5 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="bg-emerald-500/15 border border-emerald-400/40 text-emerald-100 px-4 py-3 rounded-2xl text-sm space-y-1"
+                        className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-200 px-4 py-3 rounded-xl text-sm backdrop-blur-sm"
                       >
-                        <p className="font-semibold">{success}</p>
+                        <p className="font-medium">{success}</p>
                         {isSignup && (
-                          <p className="text-xs text-emerald-100/80">
-                            Confirm your email to activate your access. You can return here after
-                            verification.
+                          <p className="text-xs text-emerald-200/60 mt-1">
+                            Check your email to confirm your account.
                           </p>
                         )}
                       </motion.div>
                     )}
 
+                    {/* Submit button */}
                     <button
                       type="submit"
                       disabled={loading}
-                      className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-semibold py-3.5 px-6 rounded-2xl transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-emerald-600/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
+                      className="group w-full bg-gradient-to-r from-emerald-500/90 to-emerald-600/90 hover:from-emerald-400 hover:to-emerald-500 text-white font-semibold py-3.5 px-6 rounded-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-900/30 hover:shadow-emerald-500/25 flex items-center justify-center gap-2"
                     >
-                      {loading
-                        ? mode === "login"
-                          ? "Signing you in..."
-                          : "Creating your account..."
-                        : mode === "login"
-                        ? "Access Portal"
-                        : "Create Secure Account"}
+                      {loading ? (
+                        <span className="flex items-center gap-2">
+                          <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                          </svg>
+                          {mode === "login" ? "Signing in..." : "Creating account..."}
+                        </span>
+                      ) : (
+                        <>
+                          {mode === "login" ? "Sign In" : "Create Account"}
+                          <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                        </>
+                      )}
                     </button>
 
-                    <p className="text-[11px] text-white/50 text-center">
+                    {/* Helper text */}
+                    <p className="text-[11px] text-white/30 text-center pt-2">
                       {isSignup
-                        ? "Already submitted your documents? Sign in instead."
-                        : "Need access? Switch to Create Account to start onboarding."}
+                        ? "Already have an account? Sign in above."
+                        : "New to ATTS? Switch to Sign Up."}
                     </p>
                   </motion.form>
                 </AnimatePresence>
@@ -473,6 +444,16 @@ export default function Home() {
             </div>
           </div>
         </motion.div>
+
+        {/* Footer text */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+          className="text-[11px] text-white/20 mt-6"
+        >
+          Secure portal powered by Supabase
+        </motion.p>
       </div>
     </VideoBackground>
   );
