@@ -21,3 +21,27 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# --- Performance & Lighthouse artifacts ---
+
+# Raw Lighthouse HTML reports
+.lighthouse/*.html
+
+# Lighthouse CI artifacts
+.lighthouseci/
+
+# Ad-hoc Lighthouse exports
+lh-*.json
+lh-*.html
+
+# CPU profiles & tracing artifacts
+*-cpu.profile
+*-trace.json
+
+# Bundle / perf reports
+bundle-analysis.json
+bundle-report.html
+perf-summary.json
+
+# Heavy perf artifacts under performance-report
+performance-report/artifacts/

@@ -134,13 +134,15 @@ self.onmessage = function (event: MessageEvent<WorkerMessage>) {
         result = sortLargeArray(payload as unknown[]);
         break;
 
-      case WORKER_MESSAGES.FILTER_COMPLEX:
+      case WORKER_MESSAGES.FILTER_COMPLEX: {
         // Expects { data: T[], predicates: serialized predicates }
         const filterPayload = payload as { data: unknown[]; filterFn?: string };
         // Note: Functions can't be passed directly to workers
         // You'd need to define filter logic here or pass serializable filter config
-        result = filterPayload.data;
+        // Using filterComplex with an empty predicate array returns all items (passthrough)
+        result = filterComplex(filterPayload.data, []);
         break;
+      }
 
       case WORKER_MESSAGES.COMPUTE_STATS:
         result = computeStats(payload as number[]);

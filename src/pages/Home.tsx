@@ -189,6 +189,7 @@ export default function Home() {
           <img
             src={logo}
             alt="ATTS Logo"
+            fetchPriority="high"
             className="h-20 sm:h-24 w-auto mx-auto opacity-95 drop-shadow-2xl"
           />
           <h1 className="text-2xl sm:text-3xl font-bold text-white mt-4 tracking-tight">

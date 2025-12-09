@@ -1,0 +1,95 @@
+{
+  "timestamp": "2025-12-09T07:13:38.523Z",
+  "config": {
+    "baseUrl": "http://127.0.0.1:4173",
+    "warmupRuns": 1,
+    "skipLogin": true,
+    "isLoggedIn": false
+  },
+  "flows": {
+    "home-load": {
+      "name": "Home Page Load",
+      "duration": 2235,
+      "trace": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/traces/home-load.trace.json"
+    },
+    "dashboard": {
+      "name": "Dashboard",
+      "duration": 2591,
+      "trace": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/traces/dashboard.trace.json"
+    },
+    "forms": {
+      "name": "Forms Page",
+      "duration": 2240,
+      "trace": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/traces/forms.trace.json"
+    },
+    "announcements": {
+      "name": "Announcements",
+      "duration": 2909,
+      "trace": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/traces/announcements.trace.json"
+    },
+    "admin-users": {
+      "name": "Admin Users",
+      "duration": 2284,
+      "trace": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/traces/admin-users.trace.json"
+    },
+    "admin-rto": {
+      "name": "Admin RTO",
+      "duration": 2249,
+      "trace": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/traces/admin-rto.trace.json"
+    },
+    "mechanic-dvir-center": {
+      "name": "Mechanic DVIR Center",
+      "duration": 2298,
+      "trace": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/traces/mechanic-dvir-center.trace.json"
+    },
+    "dvir-form": {
+      "name": "DVIR Form",
+      "duration": 2269,
+      "trace": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/traces/dvir-form.trace.json"
+    },
+    "navigation-stress": {
+      "name": "Navigation Stress Test",
+      "duration": 5836,
+      "trace": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/traces/navigation-stress.trace.json"
+    },
+    "scroll-stress": {
+      "name": "Scroll Stress Test",
+      "duration": 3269,
+      "trace": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/traces/scroll-stress.trace.json"
+    }
+  },
+  "artifacts": {
+    "traces": [
+      "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/traces/home-load.trace.json",
+      "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/traces/dashboard.trace.json",
+      "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/traces/forms.trace.json",
+      "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/traces/announcements.trace.json",
+      "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/traces/admin-users.trace.json",
+      "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/traces/admin-rto.trace.json",
+      "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/traces/mechanic-dvir-center.trace.json",
+      "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/traces/dvir-form.trace.json",
+      "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/traces/navigation-stress.trace.json",
+      "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/traces/scroll-stress.trace.json"
+    ],
+    "cpuProfiles": [
+      "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/cpu-profiles/home-load.cpuprofile",
+      "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/cpu-profiles/dashboard.cpuprofile",
+      "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/cpu-profiles/forms.cpuprofile",
+      "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/cpu-profiles/announcements.cpuprofile",
+      "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/cpu-profiles/admin-users.cpuprofile",
+      "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/cpu-profiles/admin-rto.cpuprofile",
+      "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/cpu-profiles/mechanic-dvir-center.cpuprofile",
+      "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/cpu-profiles/dvir-form.cpuprofile",
+      "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/cpu-profiles/navigation-stress.cpuprofile",
+      "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/cpu-profiles/scroll-stress.cpuprofile"
+    ],
+    "heapSnapshots": [
+      "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/heap-snapshots/dashboard.heapsnapshot"
+    ],
+    "lighthouse": [
+      "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/lighthouse/lh-mobile.json",
+      "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/lighthouse/lh-desktop.json",
+      "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/performance-report/artifacts/lighthouse/lh-dashboard.json"
+    ]
+  }
+}
