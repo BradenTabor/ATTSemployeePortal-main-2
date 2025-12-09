@@ -8,4 +8,5 @@ export { JobList } from './JobList';
 export { DashboardJobWidget } from './DashboardJobWidget';
 export { JobTrackerErrorBoundary } from './JobTrackerErrorBoundary';
 export { CompactJobCard } from './CompactJobCard';
+export { JobDetailExpanded } from './JobDetailExpanded';
 

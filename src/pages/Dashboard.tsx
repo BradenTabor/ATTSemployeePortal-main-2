@@ -25,6 +25,13 @@ import { PERSISTENCE_KEYS } from '../lib/persistence';
 import { CollapsibleSection } from '../components/dashboard/CollapsibleSection';
 import { CompactQuickActions, type QuickActionLink } from '../components/dashboard/CompactQuickActions';
 import { CompactJobCard } from '../components/jobs';
+import {
+  ExpandableScreen,
+  ExpandableScreenTrigger,
+  ExpandableScreenContent,
+} from '../components/ui/ExpandableScreen';
+import { JobDetailExpanded } from '../components/jobs/JobDetailExpanded';
+import type { JobProgressTracker } from '../types/jobs';
 
 const DashboardAnnouncementCard = lazy(
   () => import('../components/DashboardAnnouncementCard')
@@ -101,6 +108,29 @@ const ErrorState = ({ message, onRetry }: ErrorStateProps) => (
     )}
   </div>
 );
+
+// Expandable Job Card wrapper
+interface ExpandableJobCardProps {
+  job: JobProgressTracker;
+}
+
+const ExpandableJobCard = memo(function ExpandableJobCard({ job }: ExpandableJobCardProps) {
+  return (
+    <ExpandableScreen
+      layoutId={`job-card-${job.id}`}
+      triggerRadius="16px"
+      contentRadius="24px"
+      animationDuration={0.35}
+    >
+      <ExpandableScreenTrigger>
+        <CompactJobCard job={job} />
+      </ExpandableScreenTrigger>
+      <ExpandableScreenContent className="bg-gradient-to-br from-[#041812] via-[#020d09] to-[#010604]">
+        <JobDetailExpanded job={job} />
+      </ExpandableScreenContent>
+    </ExpandableScreen>
+  );
+});
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -300,7 +330,7 @@ function Dashboard() {
             ) : (
               <div className="space-y-3">
                 {assignedJobs.map((job) => (
-                  <CompactJobCard key={job.id} job={job} />
+                  <ExpandableJobCard key={job.id} job={job} />
                 ))}
               </div>
             )}
