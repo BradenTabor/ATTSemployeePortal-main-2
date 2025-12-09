@@ -36,6 +36,23 @@ function useIntersectionObserver(ref: React.RefObject<HTMLElement>, options?: In
   return isVisible;
 }
 
+// === PERFORMANCE: Hook to detect mobile devices ===
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768 || 'ontouchstart' in window);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  
+  return isMobile;
+}
+
 interface DashboardAvatarProps extends IconInteractionProps {
   variant: AvatarVariant;
   className?: string;
@@ -220,9 +237,13 @@ function DashboardAvatarComponent({
   // === PERFORMANCE: Accessibility and visibility optimizations ===
   const prefersReducedMotion = useReducedMotion();
   const isVisible = useIntersectionObserver(containerRef as React.RefObject<HTMLElement>);
+  const isMobile = useIsMobile();
   
   // Disable heavy animations when not visible or reduced motion is preferred
   const shouldAnimate = isVisible && !prefersReducedMotion;
+  
+  // Skip expensive idle animations on mobile to save battery
+  const shouldAnimateIdle = shouldAnimate && !isMobile;
   
   // Animation controllers for gesture sequences
   const bodyControls = useAnimationControls();
@@ -334,8 +355,13 @@ function DashboardAvatarComponent({
   }, [isHovered, wasJustToggled, gestures, bodyControls, headControls, rightArmControls, leftArmControls]);
 
   // Random blink effect - more frequent when excited (respects visibility)
+  // On mobile, reduce frequency to save battery
   useEffect(() => {
     if (!shouldAnimate) return;
+    
+    // On mobile, blink less frequently (every 4s instead of 2s)
+    const baseInterval = isMobile ? 4000 : 2000;
+    const excitedInterval = isMobile ? 2000 : 1000;
     
     const blinkInterval = setInterval(() => {
       const blinkChance = isExcited ? 0.5 : 0.7;
@@ -343,12 +369,13 @@ function DashboardAvatarComponent({
         setIsBlinking(true);
         setTimeout(() => setIsBlinking(false), 150);
       }
-    }, isExcited ? 1000 : 2000);
+    }, isExcited ? excitedInterval : baseInterval);
 
     return () => clearInterval(blinkInterval);
-  }, [isExcited, shouldAnimate]);
+  }, [isExcited, shouldAnimate, isMobile]);
 
   // Subtle eye movement - follows interaction state with fidget support
+  // Optimized: Skip continuous movement on mobile, only respond to interactions
   useEffect(() => {
     if (isHovered) {
       // Look slightly towards the viewer when hovered
@@ -362,8 +389,8 @@ function DashboardAvatarComponent({
         });
       }, 300);
       return () => clearInterval(moveInterval);
-    } else if (isFidgeting && fidgetType === 'look') {
-      // Look around fidget - dramatic eye movements
+    } else if (isFidgeting && fidgetType === 'look' && shouldAnimateIdle) {
+      // Look around fidget - dramatic eye movements (skip on mobile)
       const lookSequence = [
         { x: -1.5, y: 0 },    // Look left
         { x: -1.5, y: -0.5 }, // Look up-left
@@ -378,8 +405,8 @@ function DashboardAvatarComponent({
         step = (step + 1) % lookSequence.length;
       }, 300);
       return () => clearInterval(lookInterval);
-    } else {
-      // Normal subtle movement
+    } else if (shouldAnimateIdle) {
+      // Normal subtle movement - only on desktop to save mobile battery
       const moveInterval = setInterval(() => {
         setEyeOffset({
           x: (Math.random() - 0.5) * 1,
@@ -387,8 +414,11 @@ function DashboardAvatarComponent({
         });
       }, 3000);
       return () => clearInterval(moveInterval);
+    } else {
+      // Static eye position when animations disabled
+      setEyeOffset({ x: 0, y: 0 });
     }
-  }, [isHovered, isExcited, isFidgeting, fidgetType]);
+  }, [isHovered, isExcited, isFidgeting, fidgetType, shouldAnimateIdle]);
 
   // Handle mouse move for parallax and dynamic lighting
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
@@ -411,16 +441,20 @@ function DashboardAvatarComponent({
   }, [mouseX, mouseY, lightX, lightY]);
   
   // === NEW: Particle generation effect (respects visibility and reduced motion) ===
+  // Optimized: Reduced particles on mobile, longer intervals
   useEffect(() => {
     if (!shouldAnimate || (!isExpanded && !isExcited)) {
       setParticles([]);
       return;
     }
     
-    // Generate initial particles
+    // Generate initial particles - fewer on mobile
     const generateParticles = () => {
       const newParticles: Particle[] = [];
-      const count = isExcited ? 12 : 6;
+      // On mobile: 3-6 particles, on desktop: 6-12
+      const count = isMobile 
+        ? (isExcited ? 6 : 3)
+        : (isExcited ? 12 : 6);
       for (let i = 0; i < count; i++) {
         newParticles.push({
           id: Date.now() + i,
@@ -435,9 +469,10 @@ function DashboardAvatarComponent({
     };
     
     generateParticles();
-    const interval = setInterval(generateParticles, 4000);
+    // Longer interval on mobile to reduce repaints (6s vs 4s)
+    const interval = setInterval(generateParticles, isMobile ? 6000 : 4000);
     return () => clearInterval(interval);
-  }, [isExpanded, isExcited, shouldAnimate]);
+  }, [isExpanded, isExcited, shouldAnimate, isMobile]);
   
   // === PERFORMANCE: Memoized intensity calculations (must be before effects that use them) ===
   const smileIntensity = useMemo(() => 
@@ -468,22 +503,22 @@ function DashboardAvatarComponent({
     }
   }, [wasJustToggled, toggleDirection]);
   
-  // === NEW: Idle fidget system (respects visibility) ===
+  // === NEW: Idle fidget system (respects visibility, skipped on mobile) ===
   useEffect(() => {
-    // Reset idle time on any interaction or when not visible
-    if (isHovered || wasJustToggled || isExcited || !shouldAnimate) {
+    // Reset idle time on any interaction or when not visible or on mobile
+    if (isHovered || wasJustToggled || isExcited || !shouldAnimateIdle) {
       setIdleTime(0);
       setIsFidgeting(false);
       return;
     }
     
-    // Increment idle time
+    // Increment idle time (only on desktop)
     const idleTimer = setInterval(() => {
       setIdleTime(prev => prev + 1);
     }, 1000);
     
     return () => clearInterval(idleTimer);
-  }, [isHovered, wasJustToggled, isExcited, shouldAnimate]);
+  }, [isHovered, wasJustToggled, isExcited, shouldAnimateIdle]);
   
   // Trigger fidgets after idle threshold
   useEffect(() => {

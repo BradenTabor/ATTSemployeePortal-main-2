@@ -1,0 +1,356 @@
+{
+  "version": "1.0.0",
+  "generated": "2025-12-09T07:16:06.475Z",
+  "summary": {
+    "totalHotspots": 10,
+    "highSeverity": 2,
+    "mediumSeverity": 5,
+    "lowSeverity": 3,
+    "lighthouseScores": {
+      "mobile": {
+        "performance": 94,
+        "accessibility": 100,
+        "bestPractices": 100,
+        "seo": 92
+      },
+      "desktop": {
+        "performance": 100,
+        "accessibility": 100,
+        "bestPractices": 100,
+        "seo": 92
+      }
+    },
+    "coreWebVitals": {
+      "mobile": {
+        "fcp": 2199,
+        "lcp": 2711,
+        "tbt": 0,
+        "cls": 0
+      },
+      "desktop": {
+        "fcp": 471,
+        "lcp": 569,
+        "tbt": 0,
+        "cls": 0
+      }
+    }
+  },
+  "hotspots": [
+    {
+      "id": "unused-javascript",
+      "priority": 1,
+      "severity": "high",
+      "type": "bundle",
+      "title": "Unused JavaScript",
+      "description": "~60 KiB of unused JavaScript code in vendor bundles",
+      "impact": {
+        "metric": "FCP/LCP",
+        "estimated": "450ms reduction on mobile",
+        "percentage": 15
+      },
+      "location": {
+        "files": [
+          "dist/assets/vendor-motion-*.js",
+          "dist/assets/vendor-supabase-*.js",
+          "dist/assets/vendor-react-*.js"
+        ]
+      },
+      "fix": {
+        "type": "code-split",
+        "description": "More aggressive lazy loading of vendor chunks",
+        "file": "src/App.tsx",
+        "snippet": "const DashboardAvatar = lazy(() => import('./components/dashboard/DashboardAvatar'));",
+        "risk": "medium",
+        "effort": "medium"
+      },
+      "validation": "Lighthouse unused-javascript score should improve to >50"
+    },
+    {
+      "id": "long-main-thread-tasks",
+      "priority": 2,
+      "severity": "high",
+      "type": "runtime",
+      "title": "Long Main-Thread Tasks",
+      "description": "Tasks up to 123ms during navigation block the main thread",
+      "impact": {
+        "metric": "TBT/INP",
+        "estimated": "15-30% reduction in perceived jank",
+        "percentage": 25
+      },
+      "location": {
+        "traces": [
+          "navigation-stress.trace.json",
+          "dashboard.trace.json"
+        ],
+        "files": [
+          "src/App.tsx",
+          "src/pages/Dashboard.tsx"
+        ]
+      },
+      "evidence": {
+        "maxTaskDuration": 123,
+        "tasksOver50ms": 16,
+        "flows": ["navigation-stress", "dashboard", "scroll-stress"]
+      },
+      "fix": {
+        "type": "optimization",
+        "description": "Use startTransition and optimize AnimatePresence mode",
+        "file": "src/App.tsx",
+        "snippet": "<AnimatePresence mode=\"popLayout\">",
+        "risk": "low",
+        "effort": "low"
+      },
+      "validation": "Re-profile navigation - task durations should be <50ms"
+    },
+    {
+      "id": "render-blocking-css",
+      "priority": 3,
+      "severity": "medium",
+      "type": "loading",
+      "title": "Render-Blocking CSS",
+      "description": "CSS bundle blocks initial render by 150ms on mobile",
+      "impact": {
+        "metric": "FCP",
+        "estimated": "150ms improvement",
+        "percentage": 7
+      },
+      "location": {
+        "files": ["dist/assets/index-*.css"]
+      },
+      "fix": {
+        "type": "critical-css",
+        "description": "Inline critical CSS and async load the rest",
+        "file": "index.html",
+        "risk": "low",
+        "effort": "medium"
+      },
+      "validation": "FCP should improve by 100-150ms on mobile"
+    },
+    {
+      "id": "gc-pauses",
+      "priority": 4,
+      "severity": "medium",
+      "type": "memory",
+      "title": "GC Pauses During Scroll",
+      "description": "34ms Major GC pause during scroll interactions",
+      "impact": {
+        "metric": "Scroll smoothness",
+        "estimated": "10-20% reduction in scroll jank",
+        "percentage": 15
+      },
+      "location": {
+        "traces": ["scroll-stress.trace.json"],
+        "files": ["src/components/dashboard/DashboardAvatar.tsx"]
+      },
+      "evidence": {
+        "gcEvents": [
+          {"name": "V8.GCFinalizeMC", "duration": 34},
+          {"name": "V8.GC_MC_MARK", "duration": 13},
+          {"name": "V8.GCIncrementalMarkingStart", "duration": 11}
+        ]
+      },
+      "fix": {
+        "type": "optimization",
+        "description": "Memoize animation objects and reduce inline object creation",
+        "file": "src/components/dashboard/DashboardAvatar.tsx",
+        "snippet": "const perspectiveStyle = useMemo(() => ({ perspective: 800, transformStyle: 'preserve-3d' }), []);",
+        "risk": "low",
+        "effort": "low"
+      },
+      "validation": "Heap snapshot should show stable memory during scroll"
+    },
+    {
+      "id": "complex-avatar-component",
+      "priority": 5,
+      "severity": "medium",
+      "type": "component",
+      "title": "DashboardAvatar Complexity",
+      "description": "2000-line SVG component with 50+ animated elements",
+      "impact": {
+        "metric": "Component render time",
+        "estimated": "20-30% reduction in render time",
+        "percentage": 20
+      },
+      "location": {
+        "files": ["src/components/dashboard/DashboardAvatar.tsx"],
+        "lineCount": 1991
+      },
+      "fix": {
+        "type": "refactor",
+        "description": "Reduce particle count, use CSS animations for simple effects, split into sub-components",
+        "file": "src/components/dashboard/DashboardAvatar.tsx",
+        "risk": "medium",
+        "effort": "high"
+      },
+      "validation": "Profile Dashboard load - DashboardAvatar render time should decrease"
+    },
+    {
+      "id": "image-formats",
+      "priority": 6,
+      "severity": "low",
+      "type": "assets",
+      "title": "Image Format Optimization",
+      "description": "PNG images could be served as WebP/AVIF",
+      "impact": {
+        "metric": "Asset size",
+        "estimated": "27 KiB savings",
+        "percentage": 3
+      },
+      "location": {
+        "files": [
+          "src/assets/ATTS_Logo-removebg-preview.png",
+          "public/icon-192.png",
+          "public/icon-512.png"
+        ]
+      },
+      "fix": {
+        "type": "assets",
+        "description": "Convert to WebP/AVIF with PNG fallback",
+        "risk": "very-low",
+        "effort": "low"
+      },
+      "validation": "Lighthouse modern-image-formats audit should pass"
+    },
+    {
+      "id": "unused-css",
+      "priority": 7,
+      "severity": "low",
+      "type": "bundle",
+      "title": "Unused CSS",
+      "description": "~15 KiB of unused Tailwind CSS utilities",
+      "impact": {
+        "metric": "CSS bundle size",
+        "estimated": "15 KiB savings",
+        "percentage": 13
+      },
+      "location": {
+        "files": ["dist/assets/index-*.css"]
+      },
+      "fix": {
+        "type": "purge-css",
+        "description": "Ensure Tailwind content paths are correct, consider PurgeCSS",
+        "file": "tailwind.config.js",
+        "risk": "low",
+        "effort": "low"
+      },
+      "validation": "CSS bundle size should decrease by ~15-20%"
+    },
+    {
+      "id": "route-preloading",
+      "priority": 8,
+      "severity": "low",
+      "type": "navigation",
+      "title": "Route Preloading",
+      "description": "No preloading of likely navigation targets",
+      "impact": {
+        "metric": "Subsequent navigation speed",
+        "estimated": "200-400ms faster navigations",
+        "percentage": 10
+      },
+      "location": {
+        "files": [
+          "src/App.tsx",
+          "src/components/NavCards.tsx"
+        ]
+      },
+      "fix": {
+        "type": "preload",
+        "description": "Preload route chunks on hover/focus",
+        "risk": "low",
+        "effort": "low"
+      },
+      "validation": "Time-to-interactive on subsequent navigations should improve"
+    },
+    {
+      "id": "beforeunload-cost",
+      "priority": 9,
+      "severity": "low",
+      "type": "cleanup",
+      "title": "beforeunload Handler Cost",
+      "description": "Cleanup handlers taking 30-74ms",
+      "impact": {
+        "metric": "Page exit smoothness",
+        "estimated": "Minor improvement",
+        "percentage": 2
+      },
+      "location": {
+        "files": ["src/contexts/AuthContext.tsx"]
+      },
+      "evidence": {
+        "maxDuration": 74,
+        "avgDuration": 42
+      },
+      "fix": {
+        "type": "optimization",
+        "description": "Use requestIdleCallback for non-critical cleanup",
+        "file": "src/contexts/AuthContext.tsx",
+        "risk": "very-low",
+        "effort": "low"
+      },
+      "validation": "beforeunload handler time should decrease"
+    },
+    {
+      "id": "bundle-size",
+      "priority": 10,
+      "severity": "low",
+      "type": "bundle",
+      "title": "Bundle Size Optimization",
+      "description": "Some chunks exceed 100KB",
+      "impact": {
+        "metric": "Initial load",
+        "estimated": "5-10% faster initial load",
+        "percentage": 8
+      },
+      "location": {
+        "chunks": [
+          {"name": "vendor-supabase", "size": 186, "gzip": 48},
+          {"name": "vendor-react", "size": 174, "gzip": 57},
+          {"name": "vendor-motion", "size": 119, "gzip": 40}
+        ]
+      },
+      "fix": {
+        "type": "code-split",
+        "description": "More aggressive manual chunks in Vite config",
+        "file": "vite.config.ts",
+        "risk": "low",
+        "effort": "medium"
+      },
+      "validation": "Run npm run bundle:check - no chunks should exceed 200KB"
+    }
+  ],
+  "artifacts": {
+    "traces": [
+      "performance-report/artifacts/traces/home-load.trace.json",
+      "performance-report/artifacts/traces/dashboard.trace.json",
+      "performance-report/artifacts/traces/forms.trace.json",
+      "performance-report/artifacts/traces/announcements.trace.json",
+      "performance-report/artifacts/traces/admin-users.trace.json",
+      "performance-report/artifacts/traces/admin-rto.trace.json",
+      "performance-report/artifacts/traces/mechanic-dvir-center.trace.json",
+      "performance-report/artifacts/traces/dvir-form.trace.json",
+      "performance-report/artifacts/traces/navigation-stress.trace.json",
+      "performance-report/artifacts/traces/scroll-stress.trace.json"
+    ],
+    "cpuProfiles": [
+      "performance-report/artifacts/cpu-profiles/home-load.cpuprofile",
+      "performance-report/artifacts/cpu-profiles/dashboard.cpuprofile",
+      "performance-report/artifacts/cpu-profiles/forms.cpuprofile",
+      "performance-report/artifacts/cpu-profiles/announcements.cpuprofile",
+      "performance-report/artifacts/cpu-profiles/admin-users.cpuprofile",
+      "performance-report/artifacts/cpu-profiles/admin-rto.cpuprofile",
+      "performance-report/artifacts/cpu-profiles/mechanic-dvir-center.cpuprofile",
+      "performance-report/artifacts/cpu-profiles/dvir-form.cpuprofile",
+      "performance-report/artifacts/cpu-profiles/navigation-stress.cpuprofile",
+      "performance-report/artifacts/cpu-profiles/scroll-stress.cpuprofile"
+    ],
+    "heapSnapshots": [
+      "performance-report/artifacts/heap-snapshots/dashboard.heapsnapshot"
+    ],
+    "lighthouse": [
+      "performance-report/artifacts/lighthouse/lh-mobile.json",
+      "performance-report/artifacts/lighthouse/lh-desktop.json",
+      "performance-report/artifacts/lighthouse/lh-dashboard.json"
+    ]
+  }
+}
+

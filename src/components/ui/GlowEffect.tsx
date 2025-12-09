@@ -1,5 +1,6 @@
+import { useRef, useState, useEffect, useMemo } from 'react';
 import { cn } from '../../lib/utils';
-import { motion, Transition } from 'framer-motion';
+import { motion, Transition, useReducedMotion } from 'framer-motion';
 
 export type GlowEffectProps = {
   className?: string;
@@ -26,6 +27,28 @@ export type GlowEffectProps = {
   duration?: number;
 };
 
+// Custom hook for intersection observer
+function useIsVisible(ref: React.RefObject<HTMLElement | null>, options?: IntersectionObserverInit) {
+  const [isVisible, setIsVisible] = useState(false);
+  
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting);
+      },
+      { threshold: 0.1, ...options }
+    );
+    
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [ref, options]);
+  
+  return isVisible;
+}
+
 export function GlowEffect({
   className,
   style,
@@ -36,13 +59,23 @@ export function GlowEffect({
   scale = 1,
   duration = 5,
 }: GlowEffectProps) {
-  const BASE_TRANSITION = {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isVisible = useIsVisible(containerRef);
+  const prefersReducedMotion = useReducedMotion();
+  
+  // Disable animations if user prefers reduced motion or element is not visible
+  const shouldAnimate = isVisible && !prefersReducedMotion;
+  
+  // Use static mode if reduced motion is preferred
+  const effectiveMode = prefersReducedMotion ? 'static' : mode;
+
+  const BASE_TRANSITION = useMemo(() => ({
     repeat: Infinity,
     duration: duration,
     ease: 'linear',
-  };
+  }), [duration]);
 
-  const animations: Record<string, object> = {
+  const animations = useMemo(() => ({
     rotate: {
       background: [
         `conic-gradient(from 0deg at 50% 50%, ${colors.join(', ')})`,
@@ -62,7 +95,7 @@ export function GlowEffect({
       transition: {
         ...(transition ?? {
           ...BASE_TRANSITION,
-          repeatType: 'mirror',
+          repeatType: 'mirror' as const,
         }),
       },
     },
@@ -77,7 +110,7 @@ export function GlowEffect({
       transition: {
         ...(transition ?? {
           ...BASE_TRANSITION,
-          repeatType: 'mirror',
+          repeatType: 'mirror' as const,
         }),
       },
     },
@@ -89,7 +122,7 @@ export function GlowEffect({
       transition: {
         ...(transition ?? {
           ...BASE_TRANSITION,
-          repeatType: 'mirror',
+          repeatType: 'mirror' as const,
         }),
       },
     },
@@ -101,14 +134,14 @@ export function GlowEffect({
       transition: {
         ...(transition ?? {
           ...BASE_TRANSITION,
-          repeatType: 'mirror',
+          repeatType: 'mirror' as const,
         }),
       },
     },
     static: {
       background: `linear-gradient(to right, ${colors.join(', ')})`,
     },
-  };
+  }), [colors, scale, transition, BASE_TRANSITION]);
 
   const getBlurClass = (blur: GlowEffectProps['blur']) => {
     if (typeof blur === 'number') {
@@ -128,15 +161,24 @@ export function GlowEffect({
 
   return (
     <motion.div
+      ref={containerRef}
       style={
         {
           ...style,
           '--scale': scale,
-          willChange: 'transform',
+          // Only set willChange when visible and animating to reduce compositor layer overhead
+          willChange: shouldAnimate ? 'transform, background' : 'auto',
           backfaceVisibility: 'hidden',
         } as React.CSSProperties
       }
-      animate={animations[mode]}
+      // Only animate when visible and motion is allowed
+      animate={shouldAnimate ? animations[effectiveMode] : animations.static}
+      // When not visible, show the first color as static background
+      initial={
+        effectiveMode !== 'static'
+          ? { background: `linear-gradient(to right, ${colors.join(', ')})` }
+          : undefined
+      }
       className={cn(
         'pointer-events-none absolute inset-0 h-full w-full',
         'scale-[var(--scale)] transform-gpu',
@@ -146,4 +188,3 @@ export function GlowEffect({
     />
   );
 }
-

@@ -280,13 +280,12 @@ const SearchBar = ({ value, onChange, onClear, visibleCount, totalCount }: Searc
 
 // Side panel components
 interface LiveStatusCardProps {
-  isLive: boolean;
   hasNewAnnouncement: boolean;
   refreshing: boolean;
   onRefresh: () => void;
 }
 
-const LiveStatusCard = ({ isLive, hasNewAnnouncement, refreshing, onRefresh }: LiveStatusCardProps) => (
+const LiveStatusCard = ({ hasNewAnnouncement, refreshing, onRefresh }: LiveStatusCardProps) => (
   <div className="rounded-3xl border border-white/10 bg-[#03150f]/80 p-5 space-y-4">
     <div className="flex items-center gap-2">
       <Activity className="w-4 h-4 text-emerald-400" />
@@ -583,7 +582,6 @@ export default function Announcements() {
   const sidePanelContent = (
     <div className="space-y-6">
       <LiveStatusCard
-        isLive={true}
         hasNewAnnouncement={newAnnouncementIndicator}
         refreshing={refreshing}
         onRefresh={handleManualRefresh}

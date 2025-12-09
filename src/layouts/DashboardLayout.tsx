@@ -25,6 +25,7 @@ export default function DashboardLayout({ title, children }: DashboardLayoutProp
             <img
               src={logo}
               alt="ATTS Logo"
+              fetchPriority="high"
               className="w-20 sm:w-24 object-contain drop-shadow-md"
             />
             {title && (

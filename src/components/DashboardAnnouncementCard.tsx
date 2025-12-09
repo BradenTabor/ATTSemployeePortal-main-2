@@ -100,7 +100,7 @@ export default function DashboardAnnouncementCard() {
 
       {/* Subtle ATTS logo watermark */}
       <div className="absolute top-4 right-4 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
-        <img src={logo} alt="" className="w-12 h-12 object-contain" />
+        <img src={logo} alt="" loading="lazy" className="w-12 h-12 object-contain" />
       </div>
 
       <div className="relative p-6 sm:p-8">

@@ -1,0 +1,1961 @@
+{
+  "timestamp": "2025-12-09T07:16:06.475Z",
+  "traces": {
+    "admin-rto": {
+      "file": "admin-rto.trace.json",
+      "longTasks": [
+        {
+          "duration": 62,
+          "timestamp": 2230221001358,
+          "category": "disabled-by-default-devtools.timeline"
+        }
+      ],
+      "gcPauses": [],
+      "layoutThrashing": [],
+      "eventHandlers": [
+        {
+          "type": "beforeunload",
+          "count": 1,
+          "totalDuration": 33.743
+        },
+        {
+          "type": "timeupdate",
+          "count": 8,
+          "totalDuration": 0.8549999999999999
+        },
+        {
+          "type": "visibilitychange",
+          "count": 2,
+          "totalDuration": 0.33
+        },
+        {
+          "type": "durationchange",
+          "count": 1,
+          "totalDuration": 0.2
+        },
+        {
+          "type": "load",
+          "count": 13,
+          "totalDuration": 0.153
+        },
+        {
+          "type": "loadeddata",
+          "count": 1,
+          "totalDuration": 0.145
+        },
+        {
+          "type": "transitionend",
+          "count": 1,
+          "totalDuration": 0.129
+        },
+        {
+          "type": "pause",
+          "count": 1,
+          "totalDuration": 0.109
+        },
+        {
+          "type": "volumechange",
+          "count": 1,
+          "totalDuration": 0.085
+        },
+        {
+          "type": "canplaythrough",
+          "count": 1,
+          "totalDuration": 0.07
+        }
+      ],
+      "topFunctions": [
+        {
+          "name": "P",
+          "total": 33.643,
+          "count": 1
+        },
+        {
+          "name": "nt",
+          "total": 7.825,
+          "count": 6
+        },
+        {
+          "name": "y",
+          "total": 7.545999999999999,
+          "count": 54
+        },
+        {
+          "name": "ku",
+          "total": 0.8080000000000004,
+          "count": 40
+        },
+        {
+          "name": "Yo.animation.onfinish",
+          "total": 0.414,
+          "count": 7
+        },
+        {
+          "name": "visibilityChangedCallback",
+          "total": 0.232,
+          "count": 1
+        },
+        {
+          "name": "Gr",
+          "total": 0.20400000000000013,
+          "count": 60
+        },
+        {
+          "name": "FunctionCall",
+          "total": 0.19599999999999998,
+          "count": 11
+        },
+        {
+          "name": "Wf",
+          "total": 0.10200000000000001,
+          "count": 8
+        },
+        {
+          "name": "n",
+          "total": 0.056,
+          "count": 1
+        },
+        {
+          "name": "s",
+          "total": 0.051,
+          "count": 1
+        }
+      ],
+      "forcedLayouts": [],
+      "styleRecalcs": []
+    },
+    "admin-users": {
+      "file": "admin-users.trace.json",
+      "longTasks": [],
+      "gcPauses": [],
+      "layoutThrashing": [],
+      "eventHandlers": [
+        {
+          "type": "beforeunload",
+          "count": 1,
+          "totalDuration": 40.677
+        },
+        {
+          "type": "timeupdate",
+          "count": 10,
+          "totalDuration": 1.2159999999999997
+        },
+        {
+          "type": "pause",
+          "count": 1,
+          "totalDuration": 0.243
+        },
+        {
+          "type": "durationchange",
+          "count": 1,
+          "totalDuration": 0.21
+        },
+        {
+          "type": "loadeddata",
+          "count": 1,
+          "totalDuration": 0.21
+        },
+        {
+          "type": "visibilitychange",
+          "count": 2,
+          "totalDuration": 0.206
+        },
+        {
+          "type": "transitionend",
+          "count": 1,
+          "totalDuration": 0.165
+        },
+        {
+          "type": "play",
+          "count": 1,
+          "totalDuration": 0.106
+        },
+        {
+          "type": "canplaythrough",
+          "count": 1,
+          "totalDuration": 0.101
+        },
+        {
+          "type": "load",
+          "count": 13,
+          "totalDuration": 0.10000000000000002
+        }
+      ],
+      "topFunctions": [
+        {
+          "name": "P",
+          "total": 40.208,
+          "count": 1
+        },
+        {
+          "name": "nt",
+          "total": 9.338999999999999,
+          "count": 6
+        },
+        {
+          "name": "y",
+          "total": 8.64,
+          "count": 53
+        },
+        {
+          "name": "ku",
+          "total": 1.0560000000000003,
+          "count": 44
+        },
+        {
+          "name": "Yo.animation.onfinish",
+          "total": 0.556,
+          "count": 7
+        },
+        {
+          "name": "FunctionCall",
+          "total": 0.301,
+          "count": 11
+        },
+        {
+          "name": "Gr",
+          "total": 0.1890000000000001,
+          "count": 59
+        },
+        {
+          "name": "Wf",
+          "total": 0.10099999999999999,
+          "count": 8
+        },
+        {
+          "name": "n",
+          "total": 0.084,
+          "count": 1
+        },
+        {
+          "name": "visibilityChangedCallback",
+          "total": 0.083,
+          "count": 1
+        },
+        {
+          "name": "s",
+          "total": 0.076,
+          "count": 1
+        }
+      ],
+      "forcedLayouts": [],
+      "styleRecalcs": []
+    },
+    "announcements": {
+      "file": "announcements.trace.json",
+      "longTasks": [],
+      "gcPauses": [],
+      "layoutThrashing": [],
+      "eventHandlers": [
+        {
+          "type": "beforeunload",
+          "count": 1,
+          "totalDuration": 40.812
+        },
+        {
+          "type": "timeupdate",
+          "count": 11,
+          "totalDuration": 0.9919999999999998
+        },
+        {
+          "type": "visibilitychange",
+          "count": 2,
+          "totalDuration": 0.5700000000000001
+        },
+        {
+          "type": "pause",
+          "count": 1,
+          "totalDuration": 0.518
+        },
+        {
+          "type": "transitionend",
+          "count": 1,
+          "totalDuration": 0.443
+        },
+        {
+          "type": "load",
+          "count": 13,
+          "totalDuration": 0.18700000000000003
+        },
+        {
+          "type": "durationchange",
+          "count": 1,
+          "totalDuration": 0.186
+        },
+        {
+          "type": "loadeddata",
+          "count": 1,
+          "totalDuration": 0.17
+        },
+        {
+          "type": "volumechange",
+          "count": 1,
+          "totalDuration": 0.12
+        },
+        {
+          "type": "canplaythrough",
+          "count": 1,
+          "totalDuration": 0.074
+        }
+      ],
+      "topFunctions": [
+        {
+          "name": "P",
+          "total": 40.289,
+          "count": 1
+        },
+        {
+          "name": "nt",
+          "total": 9.006,
+          "count": 6
+        },
+        {
+          "name": "y",
+          "total": 8.352,
+          "count": 52
+        },
+        {
+          "name": "ku",
+          "total": 1.1219999999999999,
+          "count": 46
+        },
+        {
+          "name": "Yo.animation.onfinish",
+          "total": 0.534,
+          "count": 7
+        },
+        {
+          "name": "visibilityChangedCallback",
+          "total": 0.37,
+          "count": 1
+        },
+        {
+          "name": "Gr",
+          "total": 0.24500000000000013,
+          "count": 58
+        },
+        {
+          "name": "FunctionCall",
+          "total": 0.24300000000000002,
+          "count": 11
+        },
+        {
+          "name": "Wf",
+          "total": 0.109,
+          "count": 8
+        },
+        {
+          "name": "s",
+          "total": 0.096,
+          "count": 1
+        },
+        {
+          "name": "n",
+          "total": 0.058,
+          "count": 1
+        }
+      ],
+      "forcedLayouts": [],
+      "styleRecalcs": []
+    },
+    "dashboard": {
+      "file": "dashboard.trace.json",
+      "longTasks": [
+        {
+          "duration": 109,
+          "timestamp": 2230183764492,
+          "category": "disabled-by-default-devtools.timeline"
+        },
+        {
+          "duration": 55,
+          "timestamp": 2230183709131,
+          "category": "disabled-by-default-devtools.timeline"
+        },
+        {
+          "duration": 51,
+          "timestamp": 2230183881970,
+          "category": "disabled-by-default-devtools.timeline"
+        }
+      ],
+      "gcPauses": [],
+      "layoutThrashing": [],
+      "eventHandlers": [
+        {
+          "type": "beforeunload",
+          "count": 1,
+          "totalDuration": 18.554
+        },
+        {
+          "type": "timeupdate",
+          "count": 10,
+          "totalDuration": 1.7269999999999999
+        },
+        {
+          "type": "visibilitychange",
+          "count": 2,
+          "totalDuration": 0.86
+        },
+        {
+          "type": "load",
+          "count": 13,
+          "totalDuration": 0.216
+        },
+        {
+          "type": "loadeddata",
+          "count": 1,
+          "totalDuration": 0.208
+        },
+        {
+          "type": "durationchange",
+          "count": 1,
+          "totalDuration": 0.201
+        },
+        {
+          "type": "transitionend",
+          "count": 1,
+          "totalDuration": 0.163
+        },
+        {
+          "type": "pause",
+          "count": 1,
+          "totalDuration": 0.128
+        },
+        {
+          "type": "volumechange",
+          "count": 1,
+          "totalDuration": 0.125
+        },
+        {
+          "type": "progress",
+          "count": 1,
+          "totalDuration": 0.102
+        }
+      ],
+      "topFunctions": [
+        {
+          "name": "P",
+          "total": 18.33,
+          "count": 1
+        },
+        {
+          "name": "nt",
+          "total": 11.365,
+          "count": 6
+        },
+        {
+          "name": "y",
+          "total": 7.184000000000002,
+          "count": 32
+        },
+        {
+          "name": "ku",
+          "total": 1.2480000000000002,
+          "count": 44
+        },
+        {
+          "name": "visibilityChangedCallback",
+          "total": 0.587,
+          "count": 1
+        },
+        {
+          "name": "Yo.animation.onfinish",
+          "total": 0.516,
+          "count": 7
+        },
+        {
+          "name": "FunctionCall",
+          "total": 0.3970000000000001,
+          "count": 13
+        },
+        {
+          "name": "EvaluateScript",
+          "total": 0.215,
+          "count": 1
+        },
+        {
+          "name": "Gr",
+          "total": 0.14500000000000007,
+          "count": 39
+        },
+        {
+          "name": "Wf",
+          "total": 0.135,
+          "count": 8
+        },
+        {
+          "name": "n",
+          "total": 0.078,
+          "count": 1
+        },
+        {
+          "name": "s",
+          "total": 0.064,
+          "count": 1
+        }
+      ],
+      "forcedLayouts": [],
+      "styleRecalcs": []
+    },
+    "dvir-form": {
+      "file": "dvir-form.trace.json",
+      "longTasks": [],
+      "gcPauses": [],
+      "layoutThrashing": [],
+      "eventHandlers": [
+        {
+          "type": "beforeunload",
+          "count": 1,
+          "totalDuration": 35.795
+        },
+        {
+          "type": "timeupdate",
+          "count": 8,
+          "totalDuration": 2.651
+        },
+        {
+          "type": "visibilitychange",
+          "count": 2,
+          "totalDuration": 0.762
+        },
+        {
+          "type": "progress",
+          "count": 2,
+          "totalDuration": 0.29400000000000004
+        },
+        {
+          "type": "loadeddata",
+          "count": 1,
+          "totalDuration": 0.164
+        },
+        {
+          "type": "transitionend",
+          "count": 1,
+          "totalDuration": 0.159
+        },
+        {
+          "type": "pause",
+          "count": 1,
+          "totalDuration": 0.135
+        },
+        {
+          "type": "load",
+          "count": 13,
+          "totalDuration": 0.134
+        },
+        {
+          "type": "canplaythrough",
+          "count": 1,
+          "totalDuration": 0.088
+        },
+        {
+          "type": "volumechange",
+          "count": 1,
+          "totalDuration": 0.066
+        }
+      ],
+      "topFunctions": [
+        {
+          "name": "P",
+          "total": 35.48,
+          "count": 1
+        },
+        {
+          "name": "nt",
+          "total": 7.864999999999998,
+          "count": 6
+        },
+        {
+          "name": "y",
+          "total": 6.921000000000002,
+          "count": 54
+        },
+        {
+          "name": "ku",
+          "total": 1.3440000000000003,
+          "count": 44
+        },
+        {
+          "name": "EvaluateScript",
+          "total": 0.813,
+          "count": 1
+        },
+        {
+          "name": "visibilityChangedCallback",
+          "total": 0.629,
+          "count": 1
+        },
+        {
+          "name": "Yo.animation.onfinish",
+          "total": 0.43400000000000005,
+          "count": 7
+        },
+        {
+          "name": "Gr",
+          "total": 0.19900000000000012,
+          "count": 60
+        },
+        {
+          "name": "FunctionCall",
+          "total": 0.195,
+          "count": 11
+        },
+        {
+          "name": "Wf",
+          "total": 0.07600000000000001,
+          "count": 8
+        },
+        {
+          "name": "n",
+          "total": 0.072,
+          "count": 1
+        },
+        {
+          "name": "s",
+          "total": 0.042,
+          "count": 1
+        }
+      ],
+      "forcedLayouts": [],
+      "styleRecalcs": []
+    },
+    "forms": {
+      "file": "forms.trace.json",
+      "longTasks": [
+        {
+          "duration": 60,
+          "timestamp": 2230191204758,
+          "category": "disabled-by-default-devtools.timeline"
+        }
+      ],
+      "gcPauses": [],
+      "layoutThrashing": [],
+      "eventHandlers": [
+        {
+          "type": "timeupdate",
+          "count": 9,
+          "totalDuration": 22.570000000000004
+        },
+        {
+          "type": "visibilitychange",
+          "count": 2,
+          "totalDuration": 0.46
+        },
+        {
+          "type": "durationchange",
+          "count": 1,
+          "totalDuration": 0.266
+        },
+        {
+          "type": "transitionend",
+          "count": 1,
+          "totalDuration": 0.196
+        },
+        {
+          "type": "loadeddata",
+          "count": 1,
+          "totalDuration": 0.186
+        },
+        {
+          "type": "beforeunload",
+          "count": 1,
+          "totalDuration": 0.158
+        },
+        {
+          "type": "load",
+          "count": 13,
+          "totalDuration": 0.112
+        },
+        {
+          "type": "pause",
+          "count": 1,
+          "totalDuration": 0.096
+        },
+        {
+          "type": "canplaythrough",
+          "count": 1,
+          "totalDuration": 0.091
+        },
+        {
+          "type": "loadedmetadata",
+          "count": 1,
+          "totalDuration": 0.073
+        }
+      ],
+      "topFunctions": [
+        {
+          "name": "ku",
+          "total": 22.34600000000001,
+          "count": 42
+        },
+        {
+          "name": "nt",
+          "total": 8.276,
+          "count": 6
+        },
+        {
+          "name": "y",
+          "total": 6.323999999999999,
+          "count": 38
+        },
+        {
+          "name": "Yo.animation.onfinish",
+          "total": 0.486,
+          "count": 7
+        },
+        {
+          "name": "visibilityChangedCallback",
+          "total": 0.345,
+          "count": 1
+        },
+        {
+          "name": "FunctionCall",
+          "total": 0.23900000000000002,
+          "count": 11
+        },
+        {
+          "name": "Gr",
+          "total": 0.13100000000000006,
+          "count": 44
+        },
+        {
+          "name": "n",
+          "total": 0.076,
+          "count": 1
+        },
+        {
+          "name": "Wf",
+          "total": 0.06700000000000002,
+          "count": 8
+        },
+        {
+          "name": "s",
+          "total": 0.059,
+          "count": 1
+        },
+        {
+          "name": "P",
+          "total": 0.031,
+          "count": 1
+        }
+      ],
+      "forcedLayouts": [],
+      "styleRecalcs": []
+    },
+    "home-load": {
+      "file": "home-load.trace.json",
+      "longTasks": [],
+      "gcPauses": [],
+      "layoutThrashing": [],
+      "eventHandlers": [
+        {
+          "type": "beforeunload",
+          "count": 1,
+          "totalDuration": 28.794
+        },
+        {
+          "type": "timeupdate",
+          "count": 8,
+          "totalDuration": 0.707
+        },
+        {
+          "type": "visibilitychange",
+          "count": 1,
+          "totalDuration": 0.674
+        },
+        {
+          "type": "load",
+          "count": 13,
+          "totalDuration": 0.33000000000000007
+        },
+        {
+          "type": "loadeddata",
+          "count": 1,
+          "totalDuration": 0.228
+        },
+        {
+          "type": "transitionend",
+          "count": 1,
+          "totalDuration": 0.131
+        },
+        {
+          "type": "loadedmetadata",
+          "count": 1,
+          "totalDuration": 0.109
+        },
+        {
+          "type": "progress",
+          "count": 1,
+          "totalDuration": 0.107
+        },
+        {
+          "type": "durationchange",
+          "count": 1,
+          "totalDuration": 0.099
+        },
+        {
+          "type": "canplaythrough",
+          "count": 1,
+          "totalDuration": 0.087
+        }
+      ],
+      "topFunctions": [
+        {
+          "name": "P",
+          "total": 27.776,
+          "count": 1
+        },
+        {
+          "name": "nt",
+          "total": 10.355,
+          "count": 7
+        },
+        {
+          "name": "y",
+          "total": 7.041,
+          "count": 51
+        },
+        {
+          "name": "ku",
+          "total": 0.9500000000000004,
+          "count": 40
+        },
+        {
+          "name": "Yo.animation.onfinish",
+          "total": 0.554,
+          "count": 7
+        },
+        {
+          "name": "visibilityChangedCallback",
+          "total": 0.413,
+          "count": 1
+        },
+        {
+          "name": "FunctionCall",
+          "total": 0.24400000000000002,
+          "count": 10
+        },
+        {
+          "name": "Gr",
+          "total": 0.19300000000000012,
+          "count": 57
+        },
+        {
+          "name": "s",
+          "total": 0.191,
+          "count": 1
+        },
+        {
+          "name": "n",
+          "total": 0.071,
+          "count": 1
+        },
+        {
+          "name": "Wf",
+          "total": 0.056999999999999995,
+          "count": 6
+        }
+      ],
+      "forcedLayouts": [],
+      "styleRecalcs": []
+    },
+    "mechanic-dvir-center": {
+      "file": "mechanic-dvir-center.trace.json",
+      "longTasks": [],
+      "gcPauses": [],
+      "layoutThrashing": [],
+      "eventHandlers": [
+        {
+          "type": "beforeunload",
+          "count": 1,
+          "totalDuration": 33.991
+        },
+        {
+          "type": "timeupdate",
+          "count": 8,
+          "totalDuration": 0.9159999999999999
+        },
+        {
+          "type": "transitionend",
+          "count": 1,
+          "totalDuration": 0.687
+        },
+        {
+          "type": "visibilitychange",
+          "count": 2,
+          "totalDuration": 0.551
+        },
+        {
+          "type": "loadeddata",
+          "count": 1,
+          "totalDuration": 0.252
+        },
+        {
+          "type": "durationchange",
+          "count": 1,
+          "totalDuration": 0.226
+        },
+        {
+          "type": "load",
+          "count": 13,
+          "totalDuration": 0.16900000000000004
+        },
+        {
+          "type": "loadedmetadata",
+          "count": 1,
+          "totalDuration": 0.139
+        },
+        {
+          "type": "pause",
+          "count": 1,
+          "totalDuration": 0.105
+        },
+        {
+          "type": "canplaythrough",
+          "count": 1,
+          "totalDuration": 0.088
+        }
+      ],
+      "topFunctions": [
+        {
+          "name": "P",
+          "total": 33.069,
+          "count": 1
+        },
+        {
+          "name": "nt",
+          "total": 11.871,
+          "count": 6
+        },
+        {
+          "name": "y",
+          "total": 7.179,
+          "count": 30
+        },
+        {
+          "name": "ku",
+          "total": 1.184,
+          "count": 40
+        },
+        {
+          "name": "Yo.animation.onfinish",
+          "total": 1.098,
+          "count": 7
+        },
+        {
+          "name": "FunctionCall",
+          "total": 0.3620000000000001,
+          "count": 11
+        },
+        {
+          "name": "visibilityChangedCallback",
+          "total": 0.275,
+          "count": 1
+        },
+        {
+          "name": "Gr",
+          "total": 0.17200000000000007,
+          "count": 36
+        },
+        {
+          "name": "Wf",
+          "total": 0.128,
+          "count": 8
+        },
+        {
+          "name": "n",
+          "total": 0.069,
+          "count": 1
+        },
+        {
+          "name": "s",
+          "total": 0.049,
+          "count": 1
+        }
+      ],
+      "forcedLayouts": [],
+      "styleRecalcs": []
+    },
+    "navigation-stress": {
+      "file": "navigation-stress.trace.json",
+      "longTasks": [
+        {
+          "duration": 123,
+          "timestamp": 2230251403644,
+          "category": "disabled-by-default-devtools.timeline"
+        },
+        {
+          "duration": 120,
+          "timestamp": 2230251529425,
+          "category": "disabled-by-default-devtools.timeline"
+        },
+        {
+          "duration": 79,
+          "timestamp": 2230251102618,
+          "category": "disabled-by-default-devtools.timeline"
+        },
+        {
+          "duration": 64,
+          "timestamp": 2230254156201,
+          "category": "disabled-by-default-devtools.timeline"
+        },
+        {
+          "duration": 51,
+          "timestamp": 2230254220755,
+          "category": "disabled-by-default-devtools.timeline"
+        }
+      ],
+      "gcPauses": [],
+      "layoutThrashing": [],
+      "eventHandlers": [
+        {
+          "type": "beforeunload",
+          "count": 5,
+          "totalDuration": 48.124
+        },
+        {
+          "type": "timeupdate",
+          "count": 23,
+          "totalDuration": 3.2060000000000004
+        },
+        {
+          "type": "visibilitychange",
+          "count": 10,
+          "totalDuration": 1.287
+        },
+        {
+          "type": "transitionend",
+          "count": 5,
+          "totalDuration": 1.091
+        },
+        {
+          "type": "loadeddata",
+          "count": 5,
+          "totalDuration": 0.996
+        },
+        {
+          "type": "durationchange",
+          "count": 5,
+          "totalDuration": 0.783
+        },
+        {
+          "type": "progress",
+          "count": 5,
+          "totalDuration": 0.641
+        },
+        {
+          "type": "load",
+          "count": 65,
+          "totalDuration": 0.5520000000000002
+        },
+        {
+          "type": "canplaythrough",
+          "count": 6,
+          "totalDuration": 0.487
+        },
+        {
+          "type": "volumechange",
+          "count": 5,
+          "totalDuration": 0.389
+        }
+      ],
+      "topFunctions": [
+        {
+          "name": "P",
+          "total": 46.859,
+          "count": 5
+        },
+        {
+          "name": "y",
+          "total": 41.641,
+          "count": 235
+        },
+        {
+          "name": "nt",
+          "total": 40.842000000000006,
+          "count": 30
+        },
+        {
+          "name": "ku",
+          "total": 4.279999999999998,
+          "count": 174
+        },
+        {
+          "name": "Yo.animation.onfinish",
+          "total": 2.7829999999999995,
+          "count": 35
+        },
+        {
+          "name": "FunctionCall",
+          "total": 1.0470000000000004,
+          "count": 55
+        },
+        {
+          "name": "Gr",
+          "total": 1.0389999999999997,
+          "count": 264
+        },
+        {
+          "name": "visibilityChangedCallback",
+          "total": 0.7250000000000001,
+          "count": 5
+        },
+        {
+          "name": "Wf",
+          "total": 0.41800000000000015,
+          "count": 40
+        },
+        {
+          "name": "n",
+          "total": 0.37,
+          "count": 6
+        },
+        {
+          "name": "s",
+          "total": 0.369,
+          "count": 5
+        }
+      ],
+      "forcedLayouts": [],
+      "styleRecalcs": []
+    },
+    "scroll-stress": {
+      "file": "scroll-stress.trace.json",
+      "longTasks": [
+        {
+          "duration": 94,
+          "timestamp": 2230270990297,
+          "category": "disabled-by-default-devtools.timeline"
+        },
+        {
+          "duration": 75,
+          "timestamp": 2230270172637,
+          "category": "disabled-by-default-devtools.timeline"
+        },
+        {
+          "duration": 58,
+          "timestamp": 2230271234642,
+          "category": "disabled-by-default-devtools.timeline"
+        },
+        {
+          "duration": 55,
+          "timestamp": 2230270742653,
+          "category": "disabled-by-default-devtools.timeline"
+        },
+        {
+          "duration": 54,
+          "timestamp": 2230271179847,
+          "category": "disabled-by-default-devtools.timeline"
+        },
+        {
+          "duration": 53,
+          "timestamp": 2230270984132,
+          "category": "disabled-by-default-devtools.timeline"
+        }
+      ],
+      "gcPauses": [
+        {
+          "name": "V8.GCIncrementalMarkingStart",
+          "duration": 11,
+          "timestamp": 2230273258785
+        },
+        {
+          "name": "V8.GC_MC_INCREMENTAL_START",
+          "duration": 11,
+          "timestamp": 2230273258793
+        },
+        {
+          "name": "MajorGC",
+          "duration": 34,
+          "timestamp": 2230273270837
+        },
+        {
+          "name": "V8.GCFinalizeMC",
+          "duration": 34,
+          "timestamp": 2230273270841
+        },
+        {
+          "name": "V8.GC_MARK_COMPACTOR",
+          "duration": 34,
+          "timestamp": 2230273270846
+        },
+        {
+          "name": "V8.GC_MC_MARK",
+          "duration": 13,
+          "timestamp": 2230273271008
+        },
+        {
+          "name": "V8.GC_MC_MARK_FULL_CLOSURE_PARALLEL",
+          "duration": 12,
+          "timestamp": 2230273271509
+        }
+      ],
+      "layoutThrashing": [],
+      "eventHandlers": [
+        {
+          "type": "beforeunload",
+          "count": 1,
+          "totalDuration": 74.28
+        },
+        {
+          "type": "timeupdate",
+          "count": 12,
+          "totalDuration": 3.593
+        },
+        {
+          "type": "visibilitychange",
+          "count": 2,
+          "totalDuration": 0.719
+        },
+        {
+          "type": "transitionend",
+          "count": 1,
+          "totalDuration": 0.235
+        },
+        {
+          "type": "loadeddata",
+          "count": 1,
+          "totalDuration": 0.192
+        },
+        {
+          "type": "durationchange",
+          "count": 1,
+          "totalDuration": 0.185
+        },
+        {
+          "type": "load",
+          "count": 13,
+          "totalDuration": 0.15800000000000003
+        },
+        {
+          "type": "pause",
+          "count": 1,
+          "totalDuration": 0.125
+        },
+        {
+          "type": "canplaythrough",
+          "count": 1,
+          "totalDuration": 0.085
+        },
+        {
+          "type": "progress",
+          "count": 1,
+          "totalDuration": 0.074
+        }
+      ],
+      "topFunctions": [
+        {
+          "name": "P",
+          "total": 72.994,
+          "count": 1
+        },
+        {
+          "name": "nt",
+          "total": 11.18,
+          "count": 6
+        },
+        {
+          "name": "y",
+          "total": 8.268,
+          "count": 30
+        },
+        {
+          "name": "ku",
+          "total": 2.679,
+          "count": 48
+        },
+        {
+          "name": "Yo.animation.onfinish",
+          "total": 0.7969999999999999,
+          "count": 7
+        },
+        {
+          "name": "visibilityChangedCallback",
+          "total": 0.469,
+          "count": 1
+        },
+        {
+          "name": "FunctionCall",
+          "total": 0.273,
+          "count": 11
+        },
+        {
+          "name": "Gr",
+          "total": 0.20000000000000007,
+          "count": 36
+        },
+        {
+          "name": "Wf",
+          "total": 0.084,
+          "count": 8
+        },
+        {
+          "name": "n",
+          "total": 0.068,
+          "count": 1
+        },
+        {
+          "name": "s",
+          "total": 0.049,
+          "count": 1
+        }
+      ],
+      "forcedLayouts": [],
+      "styleRecalcs": []
+    }
+  },
+  "cpuProfiles": {
+    "admin-rto": {
+      "file": "admin-rto.cpuprofile",
+      "totalTime": 2041,
+      "topFunctions": [
+        {
+          "functionName": "(garbage collector)",
+          "scriptUrl": "",
+          "lineNumber": -1,
+          "selfTime": 18
+        }
+      ]
+    },
+    "admin-users": {
+      "file": "admin-users.cpuprofile",
+      "totalTime": 2041,
+      "topFunctions": [
+        {
+          "functionName": "yu",
+          "scriptUrl": "vendor-react-BBVvs-kr.js",
+          "lineNumber": 4,
+          "selfTime": 1
+        }
+      ]
+    },
+    "announcements": {
+      "file": "announcements.cpuprofile",
+      "totalTime": 2036,
+      "topFunctions": []
+    },
+    "dashboard": {
+      "file": "dashboard.cpuprofile",
+      "totalTime": 2015,
+      "topFunctions": []
+    },
+    "dvir-form": {
+      "file": "dvir-form.cpuprofile",
+      "totalTime": 2050,
+      "topFunctions": [
+        {
+          "functionName": "yu",
+          "scriptUrl": "vendor-react-BBVvs-kr.js",
+          "lineNumber": 4,
+          "selfTime": 1
+        }
+      ]
+    },
+    "forms": {
+      "file": "forms.cpuprofile",
+      "totalTime": 2030,
+      "topFunctions": []
+    },
+    "home-load": {
+      "file": "home-load.cpuprofile",
+      "totalTime": 2021,
+      "topFunctions": [
+        {
+          "functionName": "To",
+          "scriptUrl": "vendor-react-BBVvs-kr.js",
+          "lineNumber": 4,
+          "selfTime": 1
+        },
+        {
+          "functionName": "ku",
+          "scriptUrl": "vendor-react-BBVvs-kr.js",
+          "lineNumber": 4,
+          "selfTime": 1
+        }
+      ]
+    },
+    "mechanic-dvir-center": {
+      "file": "mechanic-dvir-center.cpuprofile",
+      "totalTime": 2029,
+      "topFunctions": []
+    },
+    "navigation-stress": {
+      "file": "navigation-stress.cpuprofile",
+      "totalTime": 2125,
+      "topFunctions": [
+        {
+          "functionName": "ql",
+          "scriptUrl": "vendor-react-BBVvs-kr.js",
+          "lineNumber": 4,
+          "selfTime": 1
+        }
+      ]
+    },
+    "scroll-stress": {
+      "file": "scroll-stress.cpuprofile",
+      "totalTime": 2036,
+      "topFunctions": [
+        {
+          "functionName": "jt",
+          "scriptUrl": "vendor-react-BBVvs-kr.js",
+          "lineNumber": 4,
+          "selfTime": 1
+        }
+      ]
+    }
+  },
+  "lighthouse": {
+    "lh-dashboard": {
+      "file": "lh-dashboard.json",
+      "formFactor": "mobile",
+      "scores": {
+        "performance": 94,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 92
+      },
+      "metrics": {
+        "first-contentful-paint": {
+          "score": 83,
+          "value": 2039.6185,
+          "displayValue": "2.0 s"
+        },
+        "largest-contentful-paint": {
+          "score": 85,
+          "value": 2709.1422,
+          "displayValue": "2.7 s"
+        },
+        "total-blocking-time": {
+          "score": 100,
+          "value": 0,
+          "displayValue": "0 ms"
+        },
+        "cumulative-layout-shift": {
+          "score": 100,
+          "value": 0,
+          "displayValue": "0"
+        },
+        "speed-index": {
+          "score": 98,
+          "value": 2495.1724941071307,
+          "displayValue": "2.5 s"
+        },
+        "interactive": {
+          "score": 97,
+          "value": 2709.1422,
+          "displayValue": "2.7 s"
+        }
+      },
+      "opportunities": [
+        {
+          "id": "unused-javascript",
+          "title": "Reduce unused JavaScript",
+          "score": 0,
+          "savings": 300,
+          "displayValue": "Est savings of 60 KiB"
+        },
+        {
+          "id": "modern-image-formats",
+          "title": "Serve images in next-gen formats",
+          "score": 0,
+          "savings": 290,
+          "displayValue": "Est savings of 27 KiB"
+        },
+        {
+          "id": "render-blocking-resources",
+          "title": "Eliminate render-blocking resources",
+          "score": 0,
+          "savings": 150,
+          "displayValue": "Est savings of 150 ms"
+        },
+        {
+          "id": "unused-css-rules",
+          "title": "Reduce unused CSS",
+          "score": 0,
+          "savings": 150,
+          "displayValue": "Est savings of 15 KiB"
+        }
+      ],
+      "diagnostics": []
+    },
+    "lh-desktop": {
+      "file": "lh-desktop.json",
+      "formFactor": "desktop",
+      "scores": {
+        "performance": 100,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 92
+      },
+      "metrics": {
+        "first-contentful-paint": {
+          "score": 100,
+          "value": 471.26412500000004,
+          "displayValue": "0.5 s"
+        },
+        "largest-contentful-paint": {
+          "score": 100,
+          "value": 568.71695,
+          "displayValue": "0.6 s"
+        },
+        "total-blocking-time": {
+          "score": 100,
+          "value": 0,
+          "displayValue": "0 ms"
+        },
+        "cumulative-layout-shift": {
+          "score": 100,
+          "value": 0,
+          "displayValue": "0"
+        },
+        "speed-index": {
+          "score": 98,
+          "value": 914.6999870347488,
+          "displayValue": "0.9 s"
+        },
+        "interactive": {
+          "score": 100,
+          "value": 568.71695,
+          "displayValue": "0.6 s"
+        }
+      },
+      "opportunities": [
+        {
+          "id": "render-blocking-resources",
+          "title": "Eliminate render-blocking resources",
+          "score": 0,
+          "savings": 40,
+          "displayValue": "Est savings of 40 ms"
+        },
+        {
+          "id": "unused-javascript",
+          "title": "Reduce unused JavaScript",
+          "score": 0,
+          "savings": 40,
+          "displayValue": "Est savings of 60 KiB"
+        },
+        {
+          "id": "modern-image-formats",
+          "title": "Serve images in next-gen formats",
+          "score": 0,
+          "savings": 30,
+          "displayValue": "Est savings of 27 KiB"
+        },
+        {
+          "id": "unused-css-rules",
+          "title": "Reduce unused CSS",
+          "score": 50,
+          "savings": 0,
+          "displayValue": "Est savings of 15 KiB"
+        }
+      ],
+      "diagnostics": []
+    },
+    "lh-mobile": {
+      "file": "lh-mobile.json",
+      "formFactor": "mobile",
+      "scores": {
+        "performance": 94,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 92
+      },
+      "metrics": {
+        "first-contentful-paint": {
+          "score": 78,
+          "value": 2199.4681249999994,
+          "displayValue": "2.2 s"
+        },
+        "largest-contentful-paint": {
+          "score": 85,
+          "value": 2711.36175,
+          "displayValue": "2.7 s"
+        },
+        "total-blocking-time": {
+          "score": 100,
+          "value": 0,
+          "displayValue": "0 ms"
+        },
+        "cumulative-layout-shift": {
+          "score": 100,
+          "value": 0,
+          "displayValue": "0"
+        },
+        "speed-index": {
+          "score": 99,
+          "value": 2305.4816062309264,
+          "displayValue": "2.3 s"
+        },
+        "interactive": {
+          "score": 97,
+          "value": 2711.36175,
+          "displayValue": "2.7 s"
+        }
+      },
+      "opportunities": [
+        {
+          "id": "unused-javascript",
+          "title": "Reduce unused JavaScript",
+          "score": 0,
+          "savings": 450,
+          "displayValue": "Est savings of 60 KiB"
+        },
+        {
+          "id": "modern-image-formats",
+          "title": "Serve images in next-gen formats",
+          "score": 0,
+          "savings": 270,
+          "displayValue": "Est savings of 27 KiB"
+        },
+        {
+          "id": "render-blocking-resources",
+          "title": "Eliminate render-blocking resources",
+          "score": 0,
+          "savings": 150,
+          "displayValue": "Est savings of 150 ms"
+        },
+        {
+          "id": "unused-css-rules",
+          "title": "Reduce unused CSS",
+          "score": 0,
+          "savings": 150,
+          "displayValue": "Est savings of 15 KiB"
+        }
+      ],
+      "diagnostics": []
+    }
+  },
+  "hotspots": [
+    {
+      "type": "lighthouse-opportunity",
+      "source": "lh-mobile",
+      "auditId": "unused-javascript",
+      "title": "Reduce unused JavaScript",
+      "score": 0,
+      "savings": 450,
+      "severity": "high",
+      "description": "Reduce unused JavaScript: Est savings of 60 KiB"
+    },
+    {
+      "type": "lighthouse-opportunity",
+      "source": "lh-dashboard",
+      "auditId": "unused-javascript",
+      "title": "Reduce unused JavaScript",
+      "score": 0,
+      "savings": 300,
+      "severity": "high",
+      "description": "Reduce unused JavaScript: Est savings of 60 KiB"
+    },
+    {
+      "type": "lighthouse-opportunity",
+      "source": "lh-dashboard",
+      "auditId": "modern-image-formats",
+      "title": "Serve images in next-gen formats",
+      "score": 0,
+      "savings": 290,
+      "severity": "high",
+      "description": "Serve images in next-gen formats: Est savings of 27 KiB"
+    },
+    {
+      "type": "lighthouse-opportunity",
+      "source": "lh-mobile",
+      "auditId": "modern-image-formats",
+      "title": "Serve images in next-gen formats",
+      "score": 0,
+      "savings": 270,
+      "severity": "high",
+      "description": "Serve images in next-gen formats: Est savings of 27 KiB"
+    },
+    {
+      "type": "lighthouse-opportunity",
+      "source": "lh-dashboard",
+      "auditId": "render-blocking-resources",
+      "title": "Eliminate render-blocking resources",
+      "score": 0,
+      "savings": 150,
+      "severity": "high",
+      "description": "Eliminate render-blocking resources: Est savings of 150 ms"
+    },
+    {
+      "type": "lighthouse-opportunity",
+      "source": "lh-dashboard",
+      "auditId": "unused-css-rules",
+      "title": "Reduce unused CSS",
+      "score": 0,
+      "savings": 150,
+      "severity": "high",
+      "description": "Reduce unused CSS: Est savings of 15 KiB"
+    },
+    {
+      "type": "lighthouse-opportunity",
+      "source": "lh-mobile",
+      "auditId": "render-blocking-resources",
+      "title": "Eliminate render-blocking resources",
+      "score": 0,
+      "savings": 150,
+      "severity": "high",
+      "description": "Eliminate render-blocking resources: Est savings of 150 ms"
+    },
+    {
+      "type": "lighthouse-opportunity",
+      "source": "lh-mobile",
+      "auditId": "unused-css-rules",
+      "title": "Reduce unused CSS",
+      "score": 0,
+      "savings": 150,
+      "severity": "high",
+      "description": "Reduce unused CSS: Est savings of 15 KiB"
+    },
+    {
+      "type": "long-task",
+      "source": "navigation-stress",
+      "duration": 123,
+      "severity": "high",
+      "description": "Long main-thread task: 123ms",
+      "category": "disabled-by-default-devtools.timeline"
+    },
+    {
+      "type": "long-task",
+      "source": "navigation-stress",
+      "duration": 120,
+      "severity": "high",
+      "description": "Long main-thread task: 120ms",
+      "category": "disabled-by-default-devtools.timeline"
+    },
+    {
+      "type": "long-task",
+      "source": "dashboard",
+      "duration": 109,
+      "severity": "high",
+      "description": "Long main-thread task: 109ms",
+      "category": "disabled-by-default-devtools.timeline"
+    },
+    {
+      "type": "lighthouse-opportunity",
+      "source": "lh-desktop",
+      "auditId": "render-blocking-resources",
+      "title": "Eliminate render-blocking resources",
+      "score": 0,
+      "savings": 40,
+      "severity": "high",
+      "description": "Eliminate render-blocking resources: Est savings of 40 ms"
+    },
+    {
+      "type": "lighthouse-opportunity",
+      "source": "lh-desktop",
+      "auditId": "unused-javascript",
+      "title": "Reduce unused JavaScript",
+      "score": 0,
+      "savings": 40,
+      "severity": "high",
+      "description": "Reduce unused JavaScript: Est savings of 60 KiB"
+    },
+    {
+      "type": "lighthouse-opportunity",
+      "source": "lh-desktop",
+      "auditId": "modern-image-formats",
+      "title": "Serve images in next-gen formats",
+      "score": 0,
+      "savings": 30,
+      "severity": "high",
+      "description": "Serve images in next-gen formats: Est savings of 27 KiB"
+    },
+    {
+      "type": "long-task",
+      "source": "scroll-stress",
+      "duration": 94,
+      "severity": "medium",
+      "description": "Long main-thread task: 94ms",
+      "category": "disabled-by-default-devtools.timeline"
+    },
+    {
+      "type": "long-task",
+      "source": "navigation-stress",
+      "duration": 79,
+      "severity": "medium",
+      "description": "Long main-thread task: 79ms",
+      "category": "disabled-by-default-devtools.timeline"
+    },
+    {
+      "type": "long-task",
+      "source": "scroll-stress",
+      "duration": 75,
+      "severity": "medium",
+      "description": "Long main-thread task: 75ms",
+      "category": "disabled-by-default-devtools.timeline"
+    },
+    {
+      "type": "long-task",
+      "source": "navigation-stress",
+      "duration": 64,
+      "severity": "medium",
+      "description": "Long main-thread task: 64ms",
+      "category": "disabled-by-default-devtools.timeline"
+    },
+    {
+      "type": "long-task",
+      "source": "admin-rto",
+      "duration": 62,
+      "severity": "medium",
+      "description": "Long main-thread task: 62ms",
+      "category": "disabled-by-default-devtools.timeline"
+    },
+    {
+      "type": "long-task",
+      "source": "forms",
+      "duration": 60,
+      "severity": "medium",
+      "description": "Long main-thread task: 60ms",
+      "category": "disabled-by-default-devtools.timeline"
+    },
+    {
+      "type": "long-task",
+      "source": "scroll-stress",
+      "duration": 58,
+      "severity": "medium",
+      "description": "Long main-thread task: 58ms",
+      "category": "disabled-by-default-devtools.timeline"
+    },
+    {
+      "type": "long-task",
+      "source": "dashboard",
+      "duration": 55,
+      "severity": "medium",
+      "description": "Long main-thread task: 55ms",
+      "category": "disabled-by-default-devtools.timeline"
+    },
+    {
+      "type": "long-task",
+      "source": "scroll-stress",
+      "duration": 55,
+      "severity": "medium",
+      "description": "Long main-thread task: 55ms",
+      "category": "disabled-by-default-devtools.timeline"
+    },
+    {
+      "type": "long-task",
+      "source": "scroll-stress",
+      "duration": 54,
+      "severity": "medium",
+      "description": "Long main-thread task: 54ms",
+      "category": "disabled-by-default-devtools.timeline"
+    },
+    {
+      "type": "long-task",
+      "source": "dashboard",
+      "duration": 51,
+      "severity": "medium",
+      "description": "Long main-thread task: 51ms",
+      "category": "disabled-by-default-devtools.timeline"
+    },
+    {
+      "type": "long-task",
+      "source": "navigation-stress",
+      "duration": 51,
+      "severity": "medium",
+      "description": "Long main-thread task: 51ms",
+      "category": "disabled-by-default-devtools.timeline"
+    },
+    {
+      "type": "gc-pause",
+      "source": "scroll-stress",
+      "duration": 34,
+      "severity": "medium",
+      "description": "Long GC pause (MajorGC): 34ms"
+    },
+    {
+      "type": "gc-pause",
+      "source": "scroll-stress",
+      "duration": 11,
+      "severity": "medium",
+      "description": "Long GC pause (V8.GCIncrementalMarkingStart): 11ms"
+    },
+    {
+      "type": "gc-pause",
+      "source": "scroll-stress",
+      "duration": 11,
+      "severity": "medium",
+      "description": "Long GC pause (V8.GC_MC_INCREMENTAL_START): 11ms"
+    },
+    {
+      "type": "lighthouse-opportunity",
+      "source": "lh-desktop",
+      "auditId": "unused-css-rules",
+      "title": "Reduce unused CSS",
+      "score": 50,
+      "savings": 0,
+      "severity": "medium",
+      "description": "Reduce unused CSS: Est savings of 15 KiB"
+    }
+  ],
+  "recommendations": [
+    {
+      "hotspot": {
+        "type": "lighthouse-opportunity",
+        "source": "lh-mobile",
+        "auditId": "unused-javascript",
+        "title": "Reduce unused JavaScript",
+        "score": 0,
+        "savings": 450,
+        "severity": "high",
+        "description": "Reduce unused JavaScript: Est savings of 60 KiB"
+      },
+      "priority": 1,
+      "title": "Remove unused JavaScript",
+      "cause": "Large JS bundles with unused code slow initial load",
+      "suggestion": "\n1. Use dynamic imports for route-based code splitting:\n   const Dashboard = lazy(() => import('./pages/Dashboard'));\n\n2. Tree-shake unused exports:\n   // Import only what you need\n   import { format } from 'date-fns'; // Not: import * as dateFns\n\n3. Analyze bundle with:\n   npx vite-bundle-visualizer\n\n4. Consider removing unused dependencies",
+      "impact": "Significant reduction in JS payload",
+      "risk": "Medium",
+      "validation": "Lighthouse unused-javascript score should improve"
+    },
+    {
+      "hotspot": {
+        "type": "long-task",
+        "source": "navigation-stress",
+        "duration": 123,
+        "severity": "high",
+        "description": "Long main-thread task: 123ms",
+        "category": "disabled-by-default-devtools.timeline"
+      },
+      "priority": 1,
+      "title": "Break up long main-thread tasks",
+      "cause": "Long-running JavaScript blocks the main thread, causing jank",
+      "suggestion": "\nUse requestIdleCallback or setTimeout to break up work:\n\n// Before\nfunction processLargeArray(items) {\n  items.forEach(item => expensiveOperation(item));\n}\n\n// After\nasync function processLargeArray(items) {\n  const CHUNK_SIZE = 50;\n  for (let i = 0; i < items.length; i += CHUNK_SIZE) {\n    const chunk = items.slice(i, i + CHUNK_SIZE);\n    chunk.forEach(item => expensiveOperation(item));\n    await new Promise(r => setTimeout(r, 0)); // Yield to main thread\n  }\n}",
+      "impact": "15-30% reduction in main-thread blocking",
+      "risk": "Low",
+      "validation": "Re-run profiling to verify task durations are < 50ms"
+    },
+    {
+      "hotspot": {
+        "type": "long-task",
+        "source": "scroll-stress",
+        "duration": 94,
+        "severity": "medium",
+        "description": "Long main-thread task: 94ms",
+        "category": "disabled-by-default-devtools.timeline"
+      },
+      "priority": 2,
+      "title": "Break up long main-thread tasks",
+      "cause": "Long-running JavaScript blocks the main thread, causing jank",
+      "suggestion": "\nUse requestIdleCallback or setTimeout to break up work:\n\n// Before\nfunction processLargeArray(items) {\n  items.forEach(item => expensiveOperation(item));\n}\n\n// After\nasync function processLargeArray(items) {\n  const CHUNK_SIZE = 50;\n  for (let i = 0; i < items.length; i += CHUNK_SIZE) {\n    const chunk = items.slice(i, i + CHUNK_SIZE);\n    chunk.forEach(item => expensiveOperation(item));\n    await new Promise(r => setTimeout(r, 0)); // Yield to main thread\n  }\n}",
+      "impact": "15-30% reduction in main-thread blocking",
+      "risk": "Low",
+      "validation": "Re-run profiling to verify task durations are < 50ms"
+    },
+    {
+      "hotspot": {
+        "type": "gc-pause",
+        "source": "scroll-stress",
+        "duration": 34,
+        "severity": "medium",
+        "description": "Long GC pause (MajorGC): 34ms"
+      },
+      "priority": 2,
+      "title": "Reduce garbage collection pressure",
+      "cause": "Frequent object allocations trigger GC pauses",
+      "suggestion": "\nReduce allocations:\n\n// Before (creates new objects in render loop)\nfunction Component() {\n  return <div style={{ color: 'red' }} />; // New object every render\n}\n\n// After (stable reference)\nconst style = { color: 'red' };\nfunction Component() {\n  return <div style={style} />;\n}\n\n// Or use useMemo for computed values\nfunction Component({ items }) {\n  const processed = useMemo(() => \n    items.map(i => ({ ...i, computed: expensive(i) })),\n    [items]\n  );\n  return <List items={processed} />;\n}",
+      "impact": "10-20% reduction in GC time",
+      "risk": "Low",
+      "validation": "Heap snapshot should show stable memory"
+    }
+  ]
+}

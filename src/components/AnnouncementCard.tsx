@@ -28,6 +28,7 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
       <img
         src={attsLogo}
         alt="ATTS Logo"
+        loading="lazy"
         className="w-10 h-10 object-contain opacity-50"
       />
     </div>

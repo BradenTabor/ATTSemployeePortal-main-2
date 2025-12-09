@@ -15,6 +15,7 @@ export default function Footer() {
             <img
               src={logo}
               alt="ATTS Logo"
+              loading="lazy"
               className="w-20 sm:w-24 object-contain drop-shadow-md"
             />
             <p className="text-xs sm:text-sm text-center sm:text-left">
