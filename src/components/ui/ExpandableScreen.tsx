@@ -23,6 +23,8 @@ interface ExpandableScreenContextValue {
 
 const ExpandableScreenContext = createContext<ExpandableScreenContextValue | null>(null);
 
+// This hook is exported from the same module as ExpandableScreen for developer ergonomics.
+// eslint-disable-next-line react-refresh/only-export-components
 export function useExpandableScreen() {
   const context = useContext(ExpandableScreenContext);
   if (!context) {
