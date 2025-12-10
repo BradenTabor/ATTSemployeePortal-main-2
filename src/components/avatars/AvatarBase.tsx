@@ -1,10 +1,8 @@
 import { memo, useRef, useMemo, ReactNode } from 'react';
-import { motion } from 'framer-motion';
 import type { AvatarProps } from './types';
-import { AVATAR_COLORS, SPRING_CONFIGS, SIZE_CONFIGS, DEFAULT_EFFECTS } from './constants';
+import { AVATAR_COLORS, SIZE_CONFIGS, DEFAULT_EFFECTS } from './constants';
 import { useAvatarAnimation } from './hooks/useAvatarAnimation';
 import { useAvatarInteraction } from './hooks/useAvatarInteraction';
-import { AvatarGlow, AvatarRimLighting, AvatarParticles, AvatarCelebrationBurst } from './AvatarEffects';
 
 interface AvatarBaseProps extends AvatarProps {
   /** Render function for variant-specific SVG content */
@@ -15,7 +13,7 @@ interface AvatarBaseProps extends AvatarProps {
 export interface AvatarRenderProps {
   id: string;
   colors: typeof AVATAR_COLORS;
-  // Animation state
+  // Animation state (static values)
   isBlinking: boolean;
   eyeOffset: { x: number; y: number };
   isExcited: boolean;
@@ -26,7 +24,7 @@ export interface AvatarRenderProps {
   glowIntensity: number;
   cheekSquish: number;
   eyebrowRaise: number;
-  // Animation controls
+  // Animation controls (no-op)
   bodyControls: ReturnType<typeof useAvatarAnimation>['bodyControls'];
   headControls: ReturnType<typeof useAvatarAnimation>['headControls'];
   rightArmControls: ReturnType<typeof useAvatarAnimation>['rightArmControls'];
@@ -35,7 +33,7 @@ export interface AvatarRenderProps {
   shouldAnimate: boolean;
   smoothLightX: ReturnType<typeof useAvatarInteraction>['smoothLightX'];
   smoothLightY: ReturnType<typeof useAvatarInteraction>['smoothLightY'];
-  // Layer transforms for parallax
+  // Layer transforms (static)
   layer1X: ReturnType<typeof useAvatarInteraction>['layer1X'];
   layer1Y: ReturnType<typeof useAvatarInteraction>['layer1Y'];
   layer2X: ReturnType<typeof useAvatarInteraction>['layer2X'];
@@ -56,11 +54,7 @@ function AvatarBaseComponent({
   isHovered = false,
   wasJustToggled = false,
   toggleDirection = null,
-  showParticles = DEFAULT_EFFECTS.showParticles,
-  showGlow = DEFAULT_EFFECTS.showGlow,
-  showRimLighting = DEFAULT_EFFECTS.showRimLighting,
   enableIdleFidgets = DEFAULT_EFFECTS.enableIdleFidgets,
-  themeColor,
   children,
 }: AvatarBaseProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -69,19 +63,19 @@ function AvatarBaseComponent({
   // Get size configuration
   const sizeConfig = SIZE_CONFIGS[size];
 
-  // Interaction handling (parallax, lighting, visibility)
+  // Interaction handling (static - no parallax/lighting)
   const interaction = useAvatarInteraction({
     containerRef: containerRef as React.RefObject<HTMLElement>,
   });
 
-  // Animation state and controls
+  // Animation state (static - no animations)
   const animation = useAvatarAnimation({
     variant,
     isExpanded,
     isHovered,
     wasJustToggled,
     toggleDirection,
-    shouldAnimate: interaction.shouldAnimate,
+    shouldAnimate: false, // Animations disabled
     enableIdleFidgets,
   });
 
@@ -103,7 +97,7 @@ function AvatarBaseComponent({
     headControls: animation.headControls,
     rightArmControls: animation.rightArmControls,
     leftArmControls: animation.leftArmControls,
-    shouldAnimate: interaction.shouldAnimate,
+    shouldAnimate: false, // Animations disabled
     smoothLightX: interaction.smoothLightX,
     smoothLightY: interaction.smoothLightY,
     layer1X: interaction.layer1X,
@@ -120,77 +114,21 @@ function AvatarBaseComponent({
   ]);
 
   return (
-    <motion.div
+    <div
       ref={containerRef}
       className={`relative ${className}`}
-      onMouseMove={interaction.handleMouseMove}
-      onMouseLeave={interaction.handleMouseLeave}
       style={{
         width: sizeConfig.width,
         height: sizeConfig.height,
-        perspective: 800,
-        transformStyle: 'preserve-3d',
-        willChange: interaction.shouldAnimate ? 'transform, opacity' : 'auto',
-        contain: 'layout style paint',
       }}
-      animate={interaction.shouldAnimate ? animation.bodyControls : undefined}
-      transition={{ type: 'spring', ...SPRING_CONFIGS.bouncy }}
     >
-      {/* Glow effects */}
-      {showGlow && (
-        <AvatarGlow
-          isExcited={animation.isExcited}
-          isHovered={isHovered}
-          isExpanded={isExpanded}
-          isCelebrating={animation.isCelebrating}
-          glowIntensity={animation.glowIntensity}
-          smoothLightX={interaction.smoothLightX}
-          smoothLightY={interaction.smoothLightY}
-          themeColor={themeColor}
-        />
-      )}
-
-      {/* Rim lighting */}
-      {showRimLighting && (
-        <AvatarRimLighting
-          isHovered={isHovered}
-          isExpanded={isExpanded}
-          smoothLightX={interaction.smoothLightX}
-          themeColor={themeColor}
-        />
-      )}
-
-      {/* Floating particles */}
-      {showParticles && (
-        <AvatarParticles
-          isExpanded={isExpanded}
-          isExcited={animation.isExcited}
-          shouldAnimate={interaction.shouldAnimate}
-          themeColor={themeColor}
-        />
-      )}
-
-      {/* Celebration burst */}
-      <AvatarCelebrationBurst
-        isCelebrating={animation.isCelebrating}
-        themeColor={themeColor}
-      />
-
-      {/* Avatar content with parallax */}
-      <motion.div
-        style={{
-          rotateX: interaction.rotateX,
-          rotateY: interaction.rotateY,
-          transformStyle: 'preserve-3d',
-        }}
-        className="w-full h-full"
-      >
+      {/* Avatar content - no effects, no parallax */}
+      <div className="w-full h-full">
         {children(renderProps)}
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }
 
 export const AvatarBase = memo(AvatarBaseComponent);
 export default AvatarBase;
-

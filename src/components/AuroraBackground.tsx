@@ -1,5 +1,4 @@
 import { ReactNode, useEffect, useState, memo } from 'react';
-import { motion } from 'framer-motion';
 import { cn } from '../lib/utils';
 
 interface AuroraBackgroundProps extends React.HTMLProps<HTMLDivElement> {
@@ -7,75 +6,56 @@ interface AuroraBackgroundProps extends React.HTMLProps<HTMLDivElement> {
   showRadialGradient?: boolean;
 }
 
-interface BlobConfig {
+interface StaticBlobConfig {
   id: number;
-  x: number[];
-  y: number[];
-  scale: number[];
   opacity: number;
-  duration: number;
   size: string;
   color: string;
   blur: string;
+  top: string;
+  left: string;
 }
 
-// Desktop blob configurations - full animation
-const DESKTOP_BLOBS: BlobConfig[] = [
+// Static blob configurations - no animations for better performance
+const STATIC_BLOBS: StaticBlobConfig[] = [
   {
     id: 1,
-    x: [-20, 30, -10, 20, -20],
-    y: [-15, 25, -20, 15, -15],
-    scale: [1, 1.2, 0.9, 1.1, 1],
-    opacity: 0.35,
-    duration: 25,
+    opacity: 0.25,
     size: 'w-[500px] h-[500px]',
-    color: 'bg-emerald-500/40',
+    color: 'bg-emerald-500/30',
     blur: 'blur-[100px]',
+    top: '20%',
+    left: '15%',
   },
   {
     id: 2,
-    x: [30, -25, 15, -30, 30],
-    y: [20, -15, 30, -10, 20],
-    scale: [1.1, 0.9, 1.15, 0.95, 1.1],
-    opacity: 0.3,
-    duration: 28,
+    opacity: 0.2,
     size: 'w-[400px] h-[400px]',
-    color: 'bg-green-400/35',
+    color: 'bg-green-400/25',
     blur: 'blur-[80px]',
+    top: '45%',
+    left: '55%',
   },
   {
     id: 3,
-    x: [-15, 20, -25, 10, -15],
-    y: [25, -20, 10, -25, 25],
-    scale: [0.95, 1.1, 1, 1.05, 0.95],
-    opacity: 0.25,
-    duration: 32,
+    opacity: 0.15,
     size: 'w-[350px] h-[350px]',
-    color: 'bg-teal-400/30',
+    color: 'bg-teal-400/20',
     blur: 'blur-[90px]',
+    top: '65%',
+    left: '25%',
   },
 ];
 
-// Mobile blob - single, reduced animation
-const MOBILE_BLOB: BlobConfig = {
+// Mobile: single blob for less overhead
+const MOBILE_BLOB: StaticBlobConfig = {
   id: 1,
-  x: [-10, 15, -5, 10, -10], // Halved amplitude
-  y: [-8, 12, -10, 8, -8],
-  scale: [1, 1.08, 0.95, 1.05, 1], // Reduced scale variation
   opacity: 0.2,
-  duration: 30, // Slower for mobile
   size: 'w-[350px] h-[350px]',
   color: 'bg-emerald-500/25',
   blur: 'blur-[80px]',
-};
-
-// Static blob for reduced motion
-const STATIC_BLOB: Omit<BlobConfig, 'x' | 'y' | 'scale' | 'duration'> = {
-  id: 1,
-  opacity: 0.15,
-  size: 'w-[400px] h-[400px]',
-  color: 'bg-emerald-500/20',
-  blur: 'blur-[100px]',
+  top: '30%',
+  left: '30%',
 };
 
 function AuroraBackgroundComponent({
@@ -85,7 +65,6 @@ function AuroraBackgroundComponent({
   ...props
 }: AuroraBackgroundProps) {
   const [isMobile, setIsMobile] = useState(false);
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
 
   useEffect(() => {
@@ -96,33 +75,19 @@ function AuroraBackgroundComponent({
       setIsMobile(window.innerWidth < 768);
     };
     
-    // Check for reduced motion preference
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setPrefersReducedMotion(mediaQuery.matches);
-    
-    const handleMotionChange = (e: MediaQueryListEvent) => {
-      setPrefersReducedMotion(e.matches);
-    };
-    
     // Initial check
     checkMobile();
     
     // Listen for resize
     window.addEventListener('resize', checkMobile);
-    mediaQuery.addEventListener('change', handleMotionChange);
     
     return () => {
       window.removeEventListener('resize', checkMobile);
-      mediaQuery.removeEventListener('change', handleMotionChange);
     };
   }, []);
 
   // Determine which blobs to render
-  const blobs = prefersReducedMotion
-    ? [] // No animated blobs for reduced motion
-    : isMobile
-      ? [MOBILE_BLOB]
-      : DESKTOP_BLOBS;
+  const blobs = isMobile ? [MOBILE_BLOB] : STATIC_BLOBS;
 
   return (
     <main>
@@ -133,62 +98,27 @@ function AuroraBackgroundComponent({
         )}
         {...props}
       >
-        {/* Animated Aurora Blobs */}
+        {/* Static Aurora Blobs - no animations */}
         <div 
           className="absolute inset-0 overflow-hidden pointer-events-none"
           aria-hidden="true"
         >
-          {hasMounted && prefersReducedMotion ? (
-            // Static blob for reduced motion users
+          {hasMounted && blobs.map((blob) => (
             <div
+              key={blob.id}
               className={cn(
-                'absolute top-1/4 left-1/4 rounded-full',
-                STATIC_BLOB.size,
-                STATIC_BLOB.color,
-                STATIC_BLOB.blur
+                'absolute rounded-full',
+                blob.size,
+                blob.color,
+                blob.blur
               )}
-              style={{ 
-                opacity: STATIC_BLOB.opacity,
-                willChange: 'auto'
+              style={{
+                top: blob.top,
+                left: blob.left,
+                opacity: blob.opacity,
               }}
             />
-          ) : (
-            // Animated blobs
-            blobs.map((blob) => (
-              <motion.div
-                key={blob.id}
-                className={cn(
-                  'absolute rounded-full',
-                  blob.size,
-                  blob.color,
-                  blob.blur
-                )}
-                style={{
-                  top: `${20 + blob.id * 15}%`,
-                  left: `${15 + blob.id * 20}%`,
-                  willChange: 'transform, opacity',
-                }}
-                initial={{
-                  x: 0,
-                  y: 0,
-                  scale: 1,
-                  opacity: 0,
-                }}
-                animate={{
-                  x: blob.x,
-                  y: blob.y,
-                  scale: blob.scale,
-                  opacity: blob.opacity,
-                }}
-                transition={{
-                  duration: blob.duration,
-                  repeat: Infinity,
-                  repeatType: 'loop',
-                  ease: 'easeInOut',
-                }}
-              />
-            ))
-          )}
+          ))}
 
           {/* Radial gradient mask */}
           {showRadialGradient && (
