@@ -1,5 +1,5 @@
 import { useCallback, memo, useMemo, Suspense, lazy, useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
   LogOut,
@@ -23,7 +23,7 @@ import AdminPremiumScaffold, {
 import { PERSISTENCE_KEYS } from '../lib/persistence';
 import { ExpandableSection } from '../components/dashboard/ExpandableSection';
 import { QuickActionsFAB, type QuickActionLink } from '../components/dashboard/QuickActionsFAB';
-import { CompactJobCard, JobProgressUpdateForm } from '../components/jobs';
+import { CompactJobCard } from '../components/jobs';
 import {
   ExpandableScreen,
   ExpandableScreenTrigger,
@@ -111,12 +111,9 @@ const ErrorState = ({ message, onRetry }: ErrorStateProps) => (
 // Expandable Job Card wrapper
 interface ExpandableJobCardProps {
   job: JobProgressTracker;
-  onProgressSaved: () => void;
 }
 
-const ExpandableJobCard = memo(function ExpandableJobCard({ job, onProgressSaved }: ExpandableJobCardProps) {
-  const [showProgressForm, setShowProgressForm] = useState(false);
-
+const ExpandableJobCard = memo(function ExpandableJobCard({ job }: ExpandableJobCardProps) {
   return (
     <ExpandableScreen
       layoutId={`job-card-${job.id}`}
@@ -129,28 +126,6 @@ const ExpandableJobCard = memo(function ExpandableJobCard({ job, onProgressSaved
       </ExpandableScreenTrigger>
       <ExpandableScreenContent className="bg-gradient-to-br from-[#041812] via-[#020d09] to-[#010604]">
         <JobDetailExpanded job={job} />
-        {job.tracking_type === 'job_progress' && (
-          <div className="mt-4 flex justify-end">
-            <button
-              onClick={() => setShowProgressForm(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#2e1b02] text-sm font-semibold hover:shadow-[0_0_16px_rgba(244,201,121,0.3)] transition-all"
-            >
-              Submit Progress Update
-            </button>
-          </div>
-        )}
-        <AnimatePresence>
-          {showProgressForm && (
-            <JobProgressUpdateForm
-              job={job}
-              onSubmit={() => {
-                setShowProgressForm(false);
-                onProgressSaved();
-              }}
-              onCancel={() => setShowProgressForm(false)}
-            />
-          )}
-        </AnimatePresence>
       </ExpandableScreenContent>
     </ExpandableScreen>
   );
@@ -366,7 +341,7 @@ function Dashboard() {
             ) : (
               <div className="space-y-3">
                 {assignedJobs.map((job) => (
-                  <ExpandableJobCard key={job.id} job={job} onProgressSaved={refetchJobs} />
+                  <ExpandableJobCard key={job.id} job={job} />
                 ))}
               </div>
             )}
