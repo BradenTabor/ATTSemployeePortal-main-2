@@ -13,6 +13,48 @@ export type JobStatus = 'active' | 'completed' | 'paused' | 'cancelled';
 export type ProgressStatus = 'not_started' | 'in_progress' | 'completed' | 'exceeded';
 
 /**
+ * Tracking modes for jobs
+ */
+export type TrackingType = 'timeline' | 'job_progress';
+
+/**
+ * Metric used for span-based progress calculation
+ */
+export type SpanProgressMetric = 'spans' | 'feet';
+
+/**
+ * Span length and equipment enums for span-based tracking
+ */
+export type SpanLengthCategory = 'urban_suburban' | 'rural' | 'transmission' | 'custom';
+export type Equipment = 'jerraff' | 'bucket' | 'mulcher';
+
+// Span length presets (feet)
+export const SPAN_LENGTH_PRESETS: Record<Exclude<SpanLengthCategory, 'custom'>, number> = {
+  urban_suburban: 200,
+  rural: 500,
+  transmission: 735,
+};
+
+export interface JobProgressUpdate {
+  id: string;
+  job_id: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+  full_name: string;
+  email: string;
+  circuit: string;
+  date: string;
+  spans_completed: number;
+  span_length_feet: number;
+  span_length_category: SpanLengthCategory;
+  equipment: Equipment;
+  job_title: string;
+  total_feet_completed: number;
+  notes: string | null;
+}
+
+/**
  * A milestone/checkpoint within a job
  */
 export interface JobMilestone {
@@ -59,9 +101,16 @@ export interface JobProgressTracker {
   end_date: string;
   status: JobStatus;
   notes: string | null;
+  tracking_type?: TrackingType;
+  circuit?: string | null;
+  // Span-based tracking fields
+  estimated_total_spans?: number | null;
+  estimated_total_feet?: number | null;
+  span_progress_metric?: SpanProgressMetric;
   // Joined data
   milestones?: JobMilestone[];
   crew_assignments?: JobCrewAssignment[];
+  progress_updates?: JobProgressUpdate[];
 }
 
 /**
@@ -105,6 +154,7 @@ export interface MilestoneInput {
 export interface JobFormData {
   job_name: string;
   job_location: string;
+  circuit: string;
   job_description: string;
   job_specs: string;
   start_date: string;
@@ -112,6 +162,11 @@ export interface JobFormData {
   notes: string;
   milestones: MilestoneInput[];
   crew_member_ids: string[];
+  tracking_type: TrackingType;
+  // Span-based tracking fields
+  estimated_total_spans: number | null;
+  estimated_total_feet: number | null;
+  span_progress_metric: SpanProgressMetric;
 }
 
 /**
@@ -120,6 +175,7 @@ export interface JobFormData {
 export const EMPTY_JOB_FORM_DATA: JobFormData = {
   job_name: '',
   job_location: '',
+  circuit: '',
   job_description: '',
   job_specs: '',
   start_date: '',
@@ -127,6 +183,10 @@ export const EMPTY_JOB_FORM_DATA: JobFormData = {
   notes: '',
   milestones: [],
   crew_member_ids: [],
+  tracking_type: 'timeline',
+  estimated_total_spans: null,
+  estimated_total_feet: null,
+  span_progress_metric: 'spans',
 };
 
 /**
@@ -168,4 +228,24 @@ export const JOB_STATUS_CONFIG: Record<JobStatus, StatusConfig> = {
     textColor: 'text-red-400',
   },
 };
+
+// Form data for span-based progress updates
+export interface JobProgressUpdateFormData {
+  date: string;
+  spans_completed: number;
+  span_length_category: SpanLengthCategory;
+  custom_span_length?: number;
+  equipment: Equipment;
+  job_title: string;
+  notes: string;
+  /** Optional override for user's full name */
+  full_name?: string;
+}
+
+// Type guard for span-based jobs
+export function isJobProgressTracking(
+  job: JobProgressTracker
+): job is JobProgressTracker & { tracking_type: 'job_progress'; progress_updates: JobProgressUpdate[] } {
+  return job.tracking_type === 'job_progress';
+}
 

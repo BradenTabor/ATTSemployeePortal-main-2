@@ -37,7 +37,8 @@ export function useJobs(): UseJobsReturn {
         .select(`
           *,
           milestones:job_milestones(*),
-          crew_assignments:job_crew_assignments(*)
+          crew_assignments:job_crew_assignments(*),
+          progress_updates:job_progress_updates(*)
         `)
         .order('created_at', { ascending: false });
 
@@ -80,6 +81,8 @@ export function useJobs(): UseJobsReturn {
       // Transform data and manually join user info
       const transformedJobs = (jobsData || []).map(job => ({
         ...job,
+        tracking_type: job.tracking_type || 'timeline',
+        circuit: job.circuit || job.job_location || null,
         milestones: job.milestones?.sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order) || [],
         crew_assignments: job.crew_assignments?.map((assignment: {
           id: string;
@@ -96,6 +99,12 @@ export function useJobs(): UseJobsReturn {
             user_role: user?.role,
           };
         }) || [],
+        progress_updates: job.progress_updates
+          ?.sort((a: { date: string; created_at: string }, b: { date: string; created_at: string }) => {
+            const aDate = new Date(a.date || a.created_at).getTime();
+            const bDate = new Date(b.date || b.created_at).getTime();
+            return bDate - aDate;
+          }) || [],
       }));
 
       setJobs(transformedJobs);
@@ -117,14 +126,20 @@ export function useJobs(): UseJobsReturn {
         .from('job_progress_trackers')
         .insert({
           job_name: formData.job_name,
-          job_location: formData.job_location || null,
+          job_location: formData.job_location || formData.circuit || null,
+          circuit: formData.circuit || formData.job_location || null,
           job_description: formData.job_description || null,
           job_specs: formData.job_specs || null,
-          start_date: formData.start_date,
-          end_date: formData.end_date,
+          start_date: formData.tracking_type === 'timeline' ? formData.start_date || null : null,
+          end_date: formData.tracking_type === 'timeline' ? formData.end_date || null : null,
           notes: formData.notes || null,
           created_by: userId,
           status: 'active',
+          tracking_type: formData.tracking_type,
+          // Span-based tracking fields
+          estimated_total_spans: formData.tracking_type === 'job_progress' ? formData.estimated_total_spans : null,
+          estimated_total_feet: formData.tracking_type === 'job_progress' ? formData.estimated_total_feet : null,
+          span_progress_metric: formData.tracking_type === 'job_progress' ? formData.span_progress_metric : null,
         })
         .select('id')
         .single();
@@ -197,12 +212,18 @@ export function useJobs(): UseJobsReturn {
         .from('job_progress_trackers')
         .update({
           job_name: formData.job_name,
-          job_location: formData.job_location || null,
+          job_location: formData.job_location || formData.circuit || null,
+          circuit: formData.circuit || formData.job_location || null,
           job_description: formData.job_description || null,
           job_specs: formData.job_specs || null,
-          start_date: formData.start_date,
-          end_date: formData.end_date,
+          start_date: formData.tracking_type === 'timeline' ? formData.start_date || null : null,
+          end_date: formData.tracking_type === 'timeline' ? formData.end_date || null : null,
           notes: formData.notes || null,
+          tracking_type: formData.tracking_type,
+          // Span-based tracking fields
+          estimated_total_spans: formData.tracking_type === 'job_progress' ? formData.estimated_total_spans : null,
+          estimated_total_feet: formData.tracking_type === 'job_progress' ? formData.estimated_total_feet : null,
+          span_progress_metric: formData.tracking_type === 'job_progress' ? formData.span_progress_metric : null,
         })
         .eq('id', jobId);
 
@@ -358,11 +379,21 @@ export function useJobs(): UseJobsReturn {
       onError: (err) => logger.error('Assignments realtime error:', err),
     });
 
+    const unsubscribeProgressUpdates = subscribeToTableChanges({
+      channelName: 'progress-updates-realtime',
+      table: 'job_progress_updates',
+      onInsert: () => { if (!cancelled) fetchJobs(); },
+      onUpdate: () => { if (!cancelled) fetchJobs(); },
+      onDelete: () => { if (!cancelled) fetchJobs(); },
+      onError: (err) => logger.error('Progress updates realtime error:', err),
+    });
+
     return () => {
       cancelled = true;
       unsubscribeJobs();
       unsubscribeMilestones();
       unsubscribeAssignments();
+      unsubscribeProgressUpdates();
     };
   }, [fetchJobs]);
 

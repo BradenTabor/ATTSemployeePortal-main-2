@@ -58,18 +58,14 @@ create policy "equipment_inspection_select_own"
   to authenticated
   using (user_id = auth.uid());
 
+-- Uses public.is_admin() helper function to avoid direct app_users queries
+-- NOTE: Fixed bug where it used au.id instead of au.user_id
+-- (prevents potential recursion issues)
 create policy "equipment_inspection_admin_select"
   on public.daily_equipment_inspections
   for select
   to authenticated
-  using (
-    exists (
-      select 1
-      from public.app_users au
-      where au.id = auth.uid()
-        and au.role = 'admin'
-    )
-  );
+  using (public.is_admin());
 
 -- Storage bucket -----------------------------------------------------------
 insert into storage.buckets (id, name, public)

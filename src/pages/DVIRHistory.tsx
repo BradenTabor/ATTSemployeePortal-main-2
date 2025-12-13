@@ -635,7 +635,7 @@ export default function DVIRHistory() {
                   <p className="text-xs uppercase tracking-[0.4em] text-white/50">
                     Truck
                   </p>
-                  <h2 className="text-3xl font-bold text-white">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-white break-normal">
                     {selectedReport.truck_number || "N/A"}
                   </h2>
                   <p className="text-sm text-white/60">

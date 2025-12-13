@@ -198,9 +198,26 @@ CREATE POLICY "Users can read own crew assignments"
 -- ============================================================================
 -- ENABLE REALTIME
 -- ============================================================================
-ALTER PUBLICATION supabase_realtime ADD TABLE public.job_progress_trackers;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.job_milestones;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.job_crew_assignments;
+DO $$
+BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.job_progress_trackers;
+EXCEPTION WHEN duplicate_object THEN
+    NULL;
+END $$;
+
+DO $$
+BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.job_milestones;
+EXCEPTION WHEN duplicate_object THEN
+    NULL;
+END $$;
+
+DO $$
+BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.job_crew_assignments;
+EXCEPTION WHEN duplicate_object THEN
+    NULL;
+END $$;
 
 -- ============================================================================
 -- OPTIONAL: Server-side progress calculation function

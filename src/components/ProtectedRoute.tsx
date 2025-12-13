@@ -3,7 +3,8 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import LoadingScreen from "./LoadingScreen";
 
-type UserRole = "user" | "employee" | "mechanic" | "admin";
+// Matches DB constraint: check (role in ('employee', 'admin', 'manager', 'mechanic'))
+type UserRole = "employee" | "admin" | "mechanic" | "manager";
 
 interface ProtectedRouteProps {
   children: ReactNode;

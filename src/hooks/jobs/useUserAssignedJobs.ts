@@ -29,7 +29,8 @@ export function useUserAssignedJobs(userId: string | undefined) {
         .select(`
           job:job_progress_trackers(
             *,
-            milestones:job_milestones(*)
+            milestones:job_milestones(*),
+            progress_updates:job_progress_updates(*)
           )
         `)
         .eq('user_id', userId);
@@ -50,7 +51,15 @@ export function useUserAssignedJobs(userId: string | undefined) {
         )
         .map(job => ({
           ...job,
+          tracking_type: job.tracking_type || 'timeline',
+          circuit: job.circuit || job.job_location || null,
           milestones: job.milestones?.sort((a, b) => a.sort_order - b.sort_order) || [],
+          progress_updates: job.progress_updates
+            ?.sort((a: { date: string; created_at: string }, b: { date: string; created_at: string }) => {
+              const aDate = new Date(a.date || a.created_at).getTime();
+              const bDate = new Date(b.date || b.created_at).getTime();
+              return bDate - aDate;
+            }) || [],
         }));
 
       setAssignedJobs(jobs);
@@ -101,11 +110,21 @@ export function useUserAssignedJobs(userId: string | undefined) {
       onError: (err) => logger.error('User milestones realtime error:', err),
     });
 
+    const unsubscribeProgressUpdates = subscribeToTableChanges({
+      channelName: `user-progress-updates-${userId}`,
+      table: 'job_progress_updates',
+      onInsert: () => { if (!cancelled) fetchAssignedJobs(); },
+      onUpdate: () => { if (!cancelled) fetchAssignedJobs(); },
+      onDelete: () => { if (!cancelled) fetchAssignedJobs(); },
+      onError: (err) => logger.error('User progress updates realtime error:', err),
+    });
+
     return () => {
       cancelled = true;
       unsubscribeJobs();
       unsubscribeAssignments();
       unsubscribeMilestones();
+      unsubscribeProgressUpdates();
     };
   }, [fetchAssignedJobs, userId]);
 

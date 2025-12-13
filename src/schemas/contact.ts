@@ -5,7 +5,7 @@ export const contactFormSchema = z.object({
   name: nonEmptyString('Name').max(100),
   email: emailSchema,
   topic: z.enum(['general', 'hr', 'safety', 'payroll', 'it', 'other'], {
-    errorMap: () => ({ message: 'Please select a topic' }),
+    error: 'Please select a topic',
   }),
   message: nonEmptyString('Message').max(2000, 'Message too long'),
 });

@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../contexts/AuthContext";
 import { PaginationControls } from "../PaginationControls";
 import CardListSkeleton from "../skeletons/CardListSkeleton";
 import TableSkeleton from "../skeletons/TableSkeleton";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
+import { EmberCollapsibleSection } from "./EmberCollapsibleSection";
 import {
   AlertTriangle,
   Search,
@@ -15,6 +16,9 @@ import {
   ClipboardCheck,
   Loader2,
   Camera,
+  Filter,
+  ListChecks,
+  X,
 } from "lucide-react";
 import { logger } from "../../lib/logger";
 import type { PostgrestFilterBuilder } from "@supabase/postgrest-js";
@@ -155,10 +159,46 @@ interface EquipmentInspectionControlCenterProps {
   onStatsUpdate?: (stats: StatsUpdate) => void;
 }
 
+// Animation variants - defined outside component for stable references
+const listItemVariants = {
+  hidden: { opacity: 0, x: -8 },
+  visible: (i: number) => ({
+    opacity: 1,
+    x: 0,
+    transition: {
+      delay: Math.min(i * 0.02, 0.12), // Cap max delay
+      duration: 0.2,
+      ease: [0.4, 0, 0.2, 1] as [number, number, number, number],
+    },
+  }),
+};
+
+// Reduced motion variants
+const listItemVariantsReduced = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.1 } },
+};
+
+// Stable page transition configs
+const detailTransition = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -8 },
+  transition: { duration: 0.2 },
+};
+
+const detailTransitionReduced = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  exit: { opacity: 0 },
+  transition: { duration: 0.1 },
+};
+
 export function EquipmentInspectionControlCenter({
   onStatsUpdate,
 }: EquipmentInspectionControlCenterProps) {
   const { role, loading: authLoading } = useAuth();
+  const prefersReducedMotion = useReducedMotion();
   const hasRole = Boolean(role);
   const unauthorized = hasRole ? role !== "mechanic" && role !== "admin" : false;
 
@@ -429,6 +469,15 @@ export function EquipmentInspectionControlCenter({
     }
   };
 
+  const clearFilters = () => {
+    setSearch("");
+    setStatusFilter("attention");
+    setTypeFilter("");
+    setCurrentPage(1);
+  };
+
+  const hasActiveFilters = search || statusFilter !== "attention" || typeFilter;
+
   if (authLoading && !hasRole) {
     return (
       <div className="rounded-3xl border border-[#ff9350]/30 bg-[#2a0c02]/80 p-6 text-center text-sm text-white/70">
@@ -446,389 +495,472 @@ export function EquipmentInspectionControlCenter({
   }
 
   return (
-    <section className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <p className="text-xs uppercase tracking-[0.35em] text-[#ffbf94]/70">
-            Daily Equipment
-          </p>
-          <h2 className="text-2xl font-semibold text-white">
-            Equipment Inspection Control Center
-          </h2>
-          <p className="text-sm text-white/70">
-            Review daily inspection submissions, verify checklist outcomes, and log mechanic fixes.
-          </p>
-        </div>
-        <div className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80">
-          <Wrench className="w-4 h-4 text-[#ff9350]" />
-          Mechanics & Admin Access
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="grid gap-3 md:grid-cols-3">
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
-          <label className="text-xs uppercase tracking-[0.35em] text-white/50 block mb-2">
-            Status
-          </label>
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value as typeof statusFilter);
-              setCurrentPage(1);
-            }}
-            className="w-full bg-transparent text-white focus:outline-none"
-          >
-            <option value="attention">Needs attention</option>
-            <option value="all">All inspections</option>
-            <option value="passed">Passed</option>
-          </select>
-        </div>
-
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
-          <label className="text-xs uppercase tracking-[0.35em] text-white/50 block mb-2">
-            Equipment Type
-          </label>
-          <select
-            value={typeFilter}
-            onChange={(e) => {
-              setTypeFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full bg-transparent text-white focus:outline-none"
-          >
-            <option value="">All types</option>
-            {EQUIPMENT_TYPE_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="relative rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
-          <label className="text-xs uppercase tracking-[0.35em] text-white/50 block mb-2">
-            Search
-          </label>
-          <Search className="absolute right-4 bottom-3 w-4 h-4 text-white/40" />
-          <input
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setCurrentPage(1);
-            }}
-            placeholder="Equipment # or operator"
-            className="w-full bg-transparent text-white focus:outline-none text-sm"
-          />
-        </div>
-      </div>
-
-      {/* Loading / Error */}
-      {loading && (
-        <div className="space-y-4">
-          <TableSkeleton rows={4} columns={5} variant="ember" />
-          <CardListSkeleton rows={3} variant="ember" />
-        </div>
-      )}
-      {error && (
-        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-          {error}
-        </div>
-      )}
-
-      {!loading && !error && (
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="rounded-3xl border border-[#ff9350]/25 bg-[#0f0401]/85 backdrop-blur-md overflow-hidden">
-            <div className="bg-gradient-to-r from-[#ff9350]/20 to-[#ffb48a]/15 px-4 py-3 border-b border-white/5">
-              <h3 className="text-sm font-semibold text-white">
-                Inspections ({totalCount})
-              </h3>
+    <div className="space-y-6">
+      {/* Filters Section */}
+      <EmberCollapsibleSection
+        id="inspection-filters"
+        title="Search & Filters"
+        subtitle="Narrow down inspections by status, type, or search term"
+        storageKey="inspection-filters-collapsed"
+        defaultOpen={true}
+        icon={<Filter className="w-5 h-5 md:w-6 md:h-6 text-[#ff9350]" />}
+        headerAction={
+          hasActiveFilters ? (
+            <motion.button
+              type="button"
+              onClick={clearFilters}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-[#ff9350]/15 border border-[#ff9350]/30 text-[#ffb48a] hover:bg-[#ff9350]/25 transition-colors"
+            >
+              <X className="w-3 h-3" />
+              Clear Filters
+            </motion.button>
+          ) : undefined
+        }
+      >
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="space-y-2">
+            <label className="text-xs uppercase tracking-[0.35em] text-[#ffd4b8]/60 block">
+              Status
+            </label>
+            <div className="relative">
+              <select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value as typeof statusFilter);
+                  setCurrentPage(1);
+                }}
+                className="w-full bg-[#0c0402]/80 border border-[#ff9350]/25 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[#ff9350]/50 appearance-none cursor-pointer transition-all hover:border-[#ff9350]/40"
+              >
+                <option value="attention">Needs Attention</option>
+                <option value="all">All Inspections</option>
+                <option value="passed">Passed Only</option>
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                <ClipboardList className="w-4 h-4 text-[#ff9350]/60" />
+              </div>
             </div>
-            <div className="max-h-[720px] overflow-y-auto divide-y divide-white/5">
-              {paginatedInspections.length === 0 ? (
-                <div className="p-6 text-center text-white/60 text-sm">
-                  No inspections match your filters.
-                </div>
-              ) : (
-                paginatedInspections.map((inspection) => {
-                  const isSelected = inspection.id === selectedId;
-                  const hasFailures = inspectionHasFailures(inspection);
-                  const hasFix = Boolean(inspection.mechanic_fixes?.trim());
+          </div>
 
-                  return (
-                    <button
-                      key={inspection.id}
-                      onClick={() => setSelectedId(inspection.id)}
-                      className={`w-full text-left px-4 py-4 space-y-2 transition ${
-                        isSelected ? "bg-[#ff9350]/10" : "hover:bg-white/5"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div>
-                          <p className="text-xs uppercase tracking-[0.35em] text-white/50">
-                            {inspection.equipment_type || "Unknown"}
+          <div className="space-y-2">
+            <label className="text-xs uppercase tracking-[0.35em] text-[#ffd4b8]/60 block">
+              Equipment Type
+            </label>
+            <div className="relative">
+              <select
+                value={typeFilter}
+                onChange={(e) => {
+                  setTypeFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full bg-[#0c0402]/80 border border-[#ff9350]/25 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[#ff9350]/50 appearance-none cursor-pointer transition-all hover:border-[#ff9350]/40"
+              >
+                <option value="">All Types</option>
+                {EQUIPMENT_TYPE_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                <Wrench className="w-4 h-4 text-[#ff9350]/60" />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs uppercase tracking-[0.35em] text-[#ffd4b8]/60 block">
+              Search
+            </label>
+            <div className="relative">
+              <input
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setCurrentPage(1);
+                }}
+                placeholder="Equipment # or operator..."
+                className="w-full bg-[#0c0402]/80 border border-[#ff9350]/25 rounded-xl px-4 py-3 pr-10 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#ff9350]/50 transition-all hover:border-[#ff9350]/40"
+              />
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#ff9350]/60" />
+            </div>
+          </div>
+        </div>
+      </EmberCollapsibleSection>
+
+      {/* Inspection Records Section */}
+      <EmberCollapsibleSection
+        id="inspection-records"
+        title="Inspection Records"
+        subtitle={`${totalCount} inspection${totalCount !== 1 ? "s" : ""} found`}
+        storageKey="inspection-records-collapsed"
+        defaultOpen={true}
+        icon={<ListChecks className="w-5 h-5 md:w-6 md:h-6 text-[#ff9350]" />}
+      >
+        {/* Loading / Error */}
+        {loading && (
+          <div className="space-y-4">
+            <TableSkeleton rows={4} columns={5} variant="ember" />
+            <CardListSkeleton rows={3} variant="ember" />
+          </div>
+        )}
+        {error && (
+          <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+            {error}
+          </div>
+        )}
+
+        {!loading && !error && (
+          <div className="grid gap-6 lg:grid-cols-3">
+            {/* Inspection List Panel */}
+            <div className="rounded-2xl border border-[#ff9350]/20 bg-[#0a0302]/90 backdrop-blur-sm overflow-hidden">
+              <div className="bg-gradient-to-r from-[#ff9350]/15 to-[#ffb48a]/10 px-4 py-3 border-b border-white/5">
+                <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                  <ClipboardList className="w-4 h-4 text-[#ff9350]" />
+                  Inspections ({totalCount})
+                </h3>
+              </div>
+              <div className="max-h-[720px] overflow-y-auto divide-y divide-white/5">
+                {paginatedInspections.length === 0 ? (
+                  <div className="p-6 text-center text-white/60 text-sm">
+                    <ClipboardList className="w-10 h-10 text-[#ff9350]/30 mx-auto mb-3" />
+                    <p>No inspections match your filters.</p>
+                    {hasActiveFilters && (
+                      <button
+                        type="button"
+                        onClick={clearFilters}
+                        className="mt-3 text-[#ff9350] hover:text-white text-xs font-semibold"
+                      >
+                        Clear all filters
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  paginatedInspections.map((inspection, index) => {
+                    const isSelected = inspection.id === selectedId;
+                    const hasFailures = inspectionHasFailures(inspection);
+                    const hasFix = Boolean(inspection.mechanic_fixes?.trim());
+
+                    return (
+                      <motion.button
+                        key={inspection.id}
+                        custom={index}
+                        variants={prefersReducedMotion ? listItemVariantsReduced : listItemVariants}
+                        initial="hidden"
+                        animate="visible"
+                        onClick={() => setSelectedId(inspection.id)}
+                        className={`w-full text-left px-4 py-4 space-y-2 transition-all duration-200 ${
+                          isSelected
+                            ? "bg-[#ff9350]/15 border-l-2 border-l-[#ff9350]"
+                            : "hover:bg-white/5 border-l-2 border-l-transparent"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div>
+                            <p className="text-xs uppercase tracking-[0.35em] text-white/50">
+                              {inspection.equipment_type || "Unknown"}
+                            </p>
+                            <p className="text-lg font-semibold text-white">
+                              {inspection.equipment_number || "N/A"}
+                            </p>
+                          </div>
+                          <span
+                            className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-semibold transition-all ${
+                              hasFailures
+                                ? "bg-[#2a0b02] text-[#ffb199] border border-[#ff6b4a]/35"
+                                : "bg-[#052015] text-[#7ef2c8] border border-[#2a8a63]/40"
+                            }`}
+                          >
+                            {hasFailures ? (
+                              <>
+                                <AlertTriangle className="w-3 h-3" />
+                                Needs Fix
+                              </>
+                            ) : (
+                              <>
+                                <ClipboardCheck className="w-3 h-3" />
+                                Passed
+                              </>
+                            )}
+                          </span>
+                        </div>
+                        <div className="text-xs text-white/60 space-y-1">
+                          <p className="flex items-center gap-1">
+                            Submitted by{" "}
+                            <span className="text-[#ffd4b8]">{inspection.submitted_by || "Unknown"}</span>
                           </p>
-                          <p className="text-lg font-semibold text-white">
-                            {inspection.equipment_number || "N/A"}
+                          <p>
+                            {new Date(inspection.created_at).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
                           </p>
                         </div>
-                        <span
-                          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-semibold ${
-                            hasFailures
-                              ? "bg-[#2a0b02] text-[#ffb199] border border-[#ff6b4a]/35"
-                              : "bg-[#052015] text-[#7ef2c8] border border-[#2a8a63]/40"
-                          }`}
-                        >
-                          {hasFailures ? "Needs Fix" : "Passed"}
-                        </span>
-                      </div>
-                      <div className="text-xs text-white/60 space-y-1">
-                        <p>Submitted by {inspection.submitted_by || "Unknown"}</p>
-                        <p>
-                          {new Date(inspection.created_at).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap gap-2 text-[10px] text-white/60">
-                        {hasFailures && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#ff6b4a]/15 text-[#ffb199]">
-                            <AlertTriangle className="w-3 h-3" />
-                            Checklist fail
-                          </span>
-                        )}
                         {hasFix && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#ffde8b]/15 text-[#ffeac1]">
-                            <Wrench className="w-3 h-3" />
-                            Fix logged
-                          </span>
+                          <div className="flex flex-wrap gap-2 text-[10px] text-white/60">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#ffde8b]/15 text-[#ffeac1] border border-[#ffde8b]/20">
+                              <Wrench className="w-3 h-3" />
+                              Fix logged
+                            </span>
+                          </div>
                         )}
-                      </div>
-                    </button>
-                  );
-                })
+                      </motion.button>
+                    );
+                  })
+                )}
+              </div>
+              {totalCount > pageSize && (
+                <div className="border-t border-white/5">
+                  <PaginationControls
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalItems={totalCount}
+                    loading={loading}
+                    pageSize={pageSize}
+                    onPreviousClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                    onNextClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                    label="inspections"
+                  />
+                </div>
               )}
             </div>
-            {totalCount > pageSize && (
-              <PaginationControls
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalItems={totalCount}
-                loading={loading}
-                pageSize={pageSize}
-                onPreviousClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                onNextClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                label="inspections"
-              />
-            )}
-          </div>
 
-          <div className="lg:col-span-2 space-y-6">
-            {!selectedInspection ? (
-              <div className="rounded-3xl border border-white/10 bg-[#120603]/80 p-10 text-center text-white/70">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#ff9350]/10 border border-[#ff9350]/30 mb-4">
-                  <ClipboardList className="w-7 h-7 text-[#ffb48a]" />
-                </div>
-                <p className="text-lg font-semibold text-white mb-1">
-                  Select an inspection to view details
-                </p>
-                <p className="text-sm text-white/60 max-w-md mx-auto">
-                  Choose a record from the left to review checklists, photos, and log mechanic fixes.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                <div className="rounded-3xl border border-[#ff9350]/25 bg-[#0f0401]/85 p-6 space-y-6">
-                  <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/5 pb-4">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.35em] text-white/50">
-                        Inspection Summary
-                      </p>
-                      <h3 className="text-2xl font-semibold text-white">
-                        {selectedInspection.equipment_number || "Unknown"}
-                      </h3>
-                      <p className="text-sm text-white/70">
-                        {selectedInspection.equipment_type || "Equipment"} ·{" "}
-                        {new Date(selectedInspection.inspection_date).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className="flex flex-col gap-2 text-sm text-white/70">
-                      <span>
-                        Submitted by{" "}
-                        <strong className="text-white">
-                          {selectedInspection.submitted_by || "Unknown"}
-                        </strong>
-                      </span>
-                      {selectedInspection.last_mechanic_updated_at && (
-                        <span className="text-white/60">
-                          Last fix update{" "}
-                          {new Date(
-                            selectedInspection.last_mechanic_updated_at
-                          ).toLocaleString()}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
-                      <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-                        <AlertTriangle className="w-4 h-4 text-[#ffb199]" />
-                        General Checklist
-                      </h4>
-                      <div className="max-h-72 overflow-y-auto pr-1 space-y-2">
-                        {GENERAL_ITEMS.map((item) => {
-                          const value = selectedInspection.general_checklist?.[item.id];
-                          const status = getChecklistStatusLabel(value);
-                          return (
-                            <div
-                              key={item.id}
-                              className="flex items-center justify-between text-sm text-white/80"
-                            >
-                              <span className="pr-2">{item.label}</span>
-                              <span
-                                className={`px-3 py-0.5 rounded-full text-[10px] font-semibold ${status.className}`}
-                              >
-                                {status.label}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                    <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
-                      <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-                        <ClipboardCheck className="w-4 h-4 text-[#ffd4b8]" />
-                        Template-specific
-                      </h4>
-                      {getSpecificItems(selectedInspection.template).length === 0 ? (
-                        <p className="text-sm text-white/60">
-                          No template selected when submitted.
-                        </p>
-                      ) : (
-                        <div className="max-h-72 overflow-y-auto pr-1 space-y-2">
-                          {getSpecificItems(selectedInspection.template).map((item) => {
-                            const value = selectedInspection.specific_checklist?.[item.id];
-                            const status = getChecklistStatusLabel(value);
-                            return (
-                              <div
-                                key={item.id}
-                                className="flex items-center justify-between text-sm text-white/80"
-                              >
-                                <span className="pr-2">{item.label}</span>
-                                <span
-                                  className={`px-3 py-0.5 rounded-full text-[10px] font-semibold ${status.className}`}
-                                >
-                                  {status.label}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="text-sm font-semibold text-white mb-2">Notes</h4>
-                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/80">
-                      {selectedInspection.notes?.trim() || "No notes provided."}
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-semibold text-white flex items-center gap-2">
-                      <ImageIcon className="w-4 h-4 text-[#ffb48a]" />
-                      Photo Evidence
-                    </h4>
-                    {photoEntries.length === 0 ? (
-                      <p className="text-sm text-white/60">No photos with this inspection.</p>
-                    ) : (
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        {photoEntries.map((photo) => (
-                          <a
-                            key={photo.label}
-                            href={photo.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden group"
-                          >
-                            <div className="px-4 py-2 text-xs uppercase tracking-[0.35em] text-white/50 flex items-center gap-2">
-                              <Camera className="w-4 h-4 text-[#ffbf94]" />
-                              {photo.label}
-                            </div>
-                            <img
-                              src={photo.url}
-                              alt={photo.label}
-                              className="h-48 w-full object-cover transition group-hover:scale-[1.02]"
-                            />
-                          </a>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="rounded-3xl border border-[#ff9350]/25 bg-[#1a0500]/70 p-6 space-y-5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.35em] text-white/50">
-                        Mechanic Fix Log
-                      </p>
-                      <h3 className="text-xl font-semibold text-white">
-                        Document corrective action
-                      </h3>
-                    </div>
-                    <Wrench className="w-6 h-6 text-[#ffb48a]" />
-                  </div>
-
-                  <textarea
-                    value={mechanicNotes}
-                    onChange={(e) => setMechanicNotes(e.target.value)}
-                    rows={4}
-                    placeholder="Describe the deficiency corrected, parts used, or follow-up needed..."
-                    className="w-full rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#ff9350]/60"
-                  />
-
-                  <div className="flex flex-wrap items-center gap-3 text-xs text-white/60">
-                    <span>
-                      Last updated:{" "}
-                      {selectedInspection.last_mechanic_updated_at
-                        ? new Date(
-                            selectedInspection.last_mechanic_updated_at
-                          ).toLocaleString()
-                        : "Never"}
-                    </span>
-                    {saveMessage && <span className="font-semibold text-white">{saveMessage}</span>}
-                  </div>
-
-                  <motion.button
-                    whileHover={{ scale: 1.01 }}
-                    whileTap={{ scale: 0.99 }}
-                    onClick={handleSaveFix}
-                    disabled={savingFix}
-                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#ff9350] to-[#ffb48a] px-5 py-3 font-semibold text-[#2a0d03] disabled:opacity-60"
+            {/* Detail Panel */}
+            <div className="lg:col-span-2 space-y-6">
+              <AnimatePresence mode="wait">
+                {!selectedInspection ? (
+                  <motion.div
+                    key="empty-state"
+                    {...(prefersReducedMotion ? detailTransitionReduced : detailTransition)}
+                    className="rounded-2xl border border-white/10 bg-[#0a0302]/80 p-10 text-center"
                   >
-                    {savingFix ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Wrench className="w-4 h-4" />
-                        Save Fix Update
-                      </>
-                    )}
-                  </motion.button>
-                </div>
-              </div>
-            )}
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#ff9350]/10 border border-[#ff9350]/30 mb-4">
+                      <ClipboardList className="w-7 h-7 text-[#ffb48a]" />
+                    </div>
+                    <p className="text-lg font-semibold text-white mb-1">
+                      Select an inspection to view details
+                    </p>
+                    <p className="text-sm text-white/60 max-w-md mx-auto">
+                      Choose a record from the list to review checklists, photos, and log mechanic fixes.
+                    </p>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key={selectedInspection.id}
+                    {...(prefersReducedMotion ? detailTransitionReduced : detailTransition)}
+                    className="space-y-6"
+                  >
+                    {/* Inspection Summary Card */}
+                    <div className="rounded-2xl border border-[#ff9350]/20 bg-[#0a0302]/90 p-6 space-y-6">
+                      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/5 pb-4">
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.35em] text-[#ff9350]/80">
+                            Inspection Summary
+                          </p>
+                          <h3 className="text-2xl font-bold text-white mt-1">
+                            {selectedInspection.equipment_number || "Unknown"}
+                          </h3>
+                          <p className="text-sm text-white/70">
+                            {selectedInspection.equipment_type || "Equipment"} ·{" "}
+                            {new Date(selectedInspection.inspection_date).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="flex flex-col gap-2 text-sm text-white/70">
+                          <span>
+                            Submitted by{" "}
+                            <strong className="text-white">
+                              {selectedInspection.submitted_by || "Unknown"}
+                            </strong>
+                          </span>
+                          {selectedInspection.last_mechanic_updated_at && (
+                            <span className="text-white/60 text-xs">
+                              Last fix update{" "}
+                              {new Date(
+                                selectedInspection.last_mechanic_updated_at
+                              ).toLocaleString()}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Checklists Grid */}
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+                          <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                            <AlertTriangle className="w-4 h-4 text-[#ffb199]" />
+                            General Checklist
+                          </h4>
+                          <div className="max-h-72 overflow-y-auto pr-1 space-y-2">
+                            {GENERAL_ITEMS.map((item) => {
+                              const value = selectedInspection.general_checklist?.[item.id];
+                              const status = getChecklistStatusLabel(value);
+                              return (
+                                <div
+                                  key={item.id}
+                                  className="flex items-center justify-between text-sm text-white/80"
+                                >
+                                  <span className="pr-2">{item.label}</span>
+                                  <span
+                                    className={`px-3 py-0.5 rounded-full text-[10px] font-semibold ${status.className}`}
+                                  >
+                                    {status.label}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+                          <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                            <ClipboardCheck className="w-4 h-4 text-[#ffd4b8]" />
+                            Template-specific
+                          </h4>
+                          {getSpecificItems(selectedInspection.template).length === 0 ? (
+                            <p className="text-sm text-white/60">
+                              No template selected when submitted.
+                            </p>
+                          ) : (
+                            <div className="max-h-72 overflow-y-auto pr-1 space-y-2">
+                              {getSpecificItems(selectedInspection.template).map((item) => {
+                                const value = selectedInspection.specific_checklist?.[item.id];
+                                const status = getChecklistStatusLabel(value);
+                                return (
+                                  <div
+                                    key={item.id}
+                                    className="flex items-center justify-between text-sm text-white/80"
+                                  >
+                                    <span className="pr-2">{item.label}</span>
+                                    <span
+                                      className={`px-3 py-0.5 rounded-full text-[10px] font-semibold ${status.className}`}
+                                    >
+                                      {status.label}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Notes */}
+                      <div>
+                        <h4 className="text-sm font-semibold text-white mb-2">Notes</h4>
+                        <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-white/80">
+                          {selectedInspection.notes?.trim() || "No notes provided."}
+                        </div>
+                      </div>
+
+                      {/* Photo Evidence */}
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-semibold text-white flex items-center gap-2">
+                          <ImageIcon className="w-4 h-4 text-[#ffb48a]" />
+                          Photo Evidence
+                        </h4>
+                        {photoEntries.length === 0 ? (
+                          <p className="text-sm text-white/60">No photos with this inspection.</p>
+                        ) : (
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            {photoEntries.map((photo) => (
+                              <a
+                                key={photo.label}
+                                href={photo.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="rounded-xl border border-white/10 bg-white/5 overflow-hidden group transition-all hover:border-[#ff9350]/30"
+                              >
+                                <div className="px-4 py-2 text-xs uppercase tracking-[0.35em] text-white/50 flex items-center gap-2">
+                                  <Camera className="w-4 h-4 text-[#ffbf94]" />
+                                  {photo.label}
+                                </div>
+                                <img
+                                  src={photo.url}
+                                  alt={photo.label}
+                                  className="h-48 w-full object-cover transition group-hover:scale-[1.02]"
+                                />
+                              </a>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Mechanic Fix Log */}
+                    <div className="rounded-2xl border border-[#ff9350]/25 bg-gradient-to-br from-[#150602]/90 to-[#0a0201]/90 p-6 space-y-5">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.35em] text-[#ff9350]/80">
+                            Mechanic Fix Log
+                          </p>
+                          <h3 className="text-xl font-semibold text-white mt-1">
+                            Document corrective action
+                          </h3>
+                        </div>
+                        <div className="w-10 h-10 rounded-xl bg-[#ff9350]/15 border border-[#ff9350]/30 flex items-center justify-center">
+                          <Wrench className="w-5 h-5 text-[#ffb48a]" />
+                        </div>
+                      </div>
+
+                      <textarea
+                        value={mechanicNotes}
+                        onChange={(e) => setMechanicNotes(e.target.value)}
+                        rows={4}
+                        placeholder="Describe the deficiency corrected, parts used, or follow-up needed..."
+                        className="w-full rounded-xl border border-white/10 bg-[#0a0302]/80 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#ff9350]/50 resize-none transition-all"
+                      />
+
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-white/60">
+                        <span>
+                          Last updated:{" "}
+                          {selectedInspection.last_mechanic_updated_at
+                            ? new Date(
+                                selectedInspection.last_mechanic_updated_at
+                              ).toLocaleString()
+                            : "Never"}
+                        </span>
+                        <AnimatePresence>
+                          {saveMessage && (
+                            <motion.span
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              exit={{ opacity: 0, x: -10 }}
+                              className="font-semibold text-white"
+                            >
+                              {saveMessage}
+                            </motion.span>
+                          )}
+                        </AnimatePresence>
+                      </div>
+
+                      <motion.button
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                        onClick={handleSaveFix}
+                        disabled={savingFix}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#ff9350] to-[#ffb48a] px-5 py-3 font-semibold text-[#2a0d03] transition-all disabled:opacity-60 shadow-[0_10px_25px_rgba(255,147,80,0.25)] hover:shadow-[0_15px_30px_rgba(255,147,80,0.35)]"
+                      >
+                        {savingFix ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Wrench className="w-4 h-4" />
+                            Save Fix Update
+                          </>
+                        )}
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
-        </div>
-      )}
-    </section>
+        )}
+      </EmberCollapsibleSection>
+    </div>
   );
 }
-

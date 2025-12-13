@@ -786,7 +786,7 @@ export default function DailyJSAForm() {
             <ClipboardList className="w-5 h-5 text-emerald-400" />
             {isEditMode ? "Editing existing JSA" : "Start a new job safety analysis"}
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-white">
+          <h1 className="text-3xl sm:text-4xl font-bold text-white break-normal">
             Daily Job Safety Analysis
           </h1>
           <p className="text-gray-400 max-w-3xl">

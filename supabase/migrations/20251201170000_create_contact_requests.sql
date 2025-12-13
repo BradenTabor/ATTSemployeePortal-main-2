@@ -39,16 +39,11 @@ create policy "contact_requests_select_self"
   to authenticated
   using (user_id = auth.uid());
 
+-- Uses public.is_admin() helper function to avoid direct app_users queries
+-- (prevents potential recursion issues)
 create policy "contact_requests_select_admin"
   on public.contact_requests
   for select
   to authenticated
-  using (
-    exists (
-      select 1
-      from public.app_users au
-      where au.user_id = auth.uid()
-        and au.role = 'admin'
-    )
-  );
+  using (public.is_admin());
 

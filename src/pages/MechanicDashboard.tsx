@@ -1,270 +1,187 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { useAuth } from "../contexts/AuthContext";
-import { Wrench, AlertTriangle, Flame, Activity } from "lucide-react";
-import AdminPremiumScaffold, {
-  type AdminHeroConfig,
-  type AdminStat,
-} from "../components/admin/AdminPremiumScaffold";
+import { 
+  LogOut,
+  ArrowRight,
+} from "lucide-react";
+import { Link } from "react-router-dom";
 import { MECHANIC_NAV_CARDS } from "../components/admin/adminNavConfig";
-import {
-  fetchDvirMetrics,
-  type DvirMetrics,
-} from "../lib/dvirMetrics";
+import { fetchDvirMetrics, type DvirMetrics } from "../lib/dvirMetrics";
 import { logger } from "../lib/logger";
 import { supabase } from "../lib/supabaseClient";
+import { MechanicAvatar } from "../components/admin/MechanicAvatar";
+import { EmberExpandableSection } from "../components/dashboard/EmberExpandableSection";
+import { DashboardAvatar } from "../components/dashboard/DashboardAvatar";
+import AdminPremiumScaffold, { type AdminHeroConfig } from "../components/admin/AdminPremiumScaffold";
 
-const UPCOMING_PANELS = [
-  {
-    title: "Preventive Maintenance",
-    body: "Auto-generate PM windows, export checklists, and share schedules with ops.",
-    tag: "Launching soon",
-  },
-  {
-    title: "Parts & Repairs Log",
-    body: "Track parts consumption, vendor history, and recurring component failures.",
-    tag: "In design",
-  },
-];
-
-const ACTIVE_ALERTS = [
-  {
-    title: "3 failed DVIRs awaiting triage",
-    detail: "Units #112, #214, #309",
-    tone: "text-[#ffb48a]",
-  },
-  {
-    title: "2 overdue PM intervals",
-    detail: "Bucket Truck 18, Line Truck 07",
-    tone: "text-[#ffd0a6]",
-  },
-];
-
-type EquipmentHighlights = {
-  total: number;
-  needsAttention: number;
-  awaitingFix: number;
-  resolved: number;
-  recentHazards: Array<{ equipment: string; signer: string; submitted: string }>;
-};
-
-type InspectionLite = {
-  general_checklist: Record<string, string> | null;
-  specific_checklist: Record<string, string> | null;
-  mechanic_fixes: string | null;
-  equipment_number: string | null;
-  submitted_by: string | null;
-  created_at: string;
-};
-
-const inspectionHasFailures = (inspection: InspectionLite): boolean => {
-  const general = inspection.general_checklist || {};
-  const specific = inspection.specific_checklist || {};
-  return (
-    Object.values(general).some((val) => val === "F") ||
-    Object.values(specific).some((val) => val === "F")
-  );
-};
-
-const equipmentDefaults: EquipmentHighlights = {
-  total: 0,
-  needsAttention: 0,
-  awaitingFix: 0,
-  resolved: 0,
-  recentHazards: [],
+// Persistence keys for section states
+const PERSISTENCE_KEYS = {
+  QUICK_ACTIONS: 'mechanic_quick_actions_open',
 };
 
 export default function MechanicDashboard() {
-  const { role } = useAuth();
+  const navigate = useNavigate();
+  const { role, user, signOut, setSession } = useAuth();
   const unauthorized = role && role !== "mechanic" && role !== "admin";
   const [dvirMetrics, setDvirMetrics] = useState<DvirMetrics | null>(null);
   const [metricsLoading, setMetricsLoading] = useState(true);
-  const [metricsError, setMetricsError] = useState<string | null>(null);
-  const [equipmentStats, setEquipmentStats] = useState<EquipmentHighlights>(equipmentDefaults);
+  const [equipmentCount, setEquipmentCount] = useState(0);
   const [equipmentLoading, setEquipmentLoading] = useState(true);
-  const [equipmentError, setEquipmentError] = useState<string | null>(null);
+  const [fullName, setFullName] = useState<string | null>(null);
+
+  // Fetch full_name from app_users table
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user?.id) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('app_users')
+          .select('full_name')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (error) {
+          logger.error('Failed to fetch user profile:', error);
+          return;
+        }
+
+        if (data?.full_name) {
+          setFullName(data.full_name);
+        }
+      } catch (err) {
+        logger.error('Unexpected error fetching user profile:', err);
+      }
+    };
+
+    fetchUserProfile();
+  }, [user?.id]);
+
+  // Display name
+  const displayName = fullName || user?.email || 'Mechanic';
 
   useEffect(() => {
     let isMounted = true;
     const refreshMs = 60_000;
 
     const loadMetrics = async (withSpinner: boolean) => {
-      if (withSpinner) {
-        setMetricsLoading(true);
-      }
+      if (withSpinner) setMetricsLoading(true);
       try {
         const data = await fetchDvirMetrics();
-        if (!isMounted) return;
-        setDvirMetrics(data);
-        setMetricsError(null);
+        if (isMounted) setDvirMetrics(data);
       } catch (error) {
         logger.error("[MechanicDashboard] Failed to fetch DVIR metrics", error);
-        if (!isMounted) return;
-        setMetricsError("Unable to sync DVIR metrics right now.");
       } finally {
-        if (isMounted) {
-          setMetricsLoading(false);
-        }
+        if (isMounted) setMetricsLoading(false);
       }
     };
 
     loadMetrics(true);
     const interval = setInterval(() => loadMetrics(false), refreshMs);
-
     return () => {
       isMounted = false;
       clearInterval(interval);
     };
   }, []);
 
-  const EQUIPMENT_FETCH_LIMIT = 200;
-
-  const loadEquipmentHighlights = useCallback(async () => {
+  const loadEquipmentCount = useCallback(async () => {
     try {
       setEquipmentLoading(true);
-      setEquipmentError(null);
-
-      const allInspections = await supabase
+      const { count, error } = await supabase
         .from("daily_equipment_inspections")
-        .select(
-          `
-          id,
-          equipment_number,
-          submitted_by,
-          created_at,
-          general_checklist,
-          specific_checklist,
-          mechanic_fixes,
-          last_mechanic_updated_at
-        `
-        )
-        .order("created_at", { ascending: false })
-        .range(0, EQUIPMENT_FETCH_LIMIT - 1);
+        .select("id", { count: "exact", head: true });
 
-      if (allInspections.error) {
-        throw allInspections.error;
-      }
-
-      const inspections = (allInspections.data as InspectionLite[]) || [];
-      const needsAttention = inspections.filter(inspectionHasFailures).length;
-      const resolved = inspections.filter((inspection) => Boolean(inspection.mechanic_fixes?.trim()))
-        .length;
-      const awaitingFix = Math.max(needsAttention - resolved, 0);
-
-      const recentHazards = inspections
-        .filter(inspectionHasFailures)
-        .slice(0, 4)
-        .map((inspection) => ({
-          equipment: inspection.equipment_number || "Unknown unit",
-          signer: inspection.submitted_by || "Unknown operator",
-          submitted: new Date(inspection.created_at).toLocaleDateString(),
-        }));
-
-      setEquipmentStats({
-        total: inspections.length,
-        needsAttention,
-        awaitingFix,
-        resolved,
-        recentHazards,
-      });
+      if (error) throw error;
+      setEquipmentCount(count ?? 0);
     } catch (error) {
-      logger.error("[MechanicDashboard] Failed to load equipment highlights", error);
-      setEquipmentError("Unable to sync equipment metrics.");
-      setEquipmentStats(equipmentDefaults);
+      logger.error("[MechanicDashboard] Failed to load equipment count", error);
+      setEquipmentCount(0);
     } finally {
       setEquipmentLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadEquipmentHighlights();
-  }, [loadEquipmentHighlights]);
+    loadEquipmentCount();
+  }, [loadEquipmentCount]);
 
-  const heroStats = useMemo<AdminStat[]>(
-    () => [
-      {
-        label: "Open DVIRs",
-        value: String(dvirMetrics?.totalOpen ?? 0),
-        hint: "Awaiting mechanic review",
-      },
-      {
-        label: "Today's DVIRs",
-        value: String(dvirMetrics?.todaysReports ?? 0),
-        hint: "Submitted since midnight",
-      },
-      {
-        label: "Equipment Alerts",
-        value: String(equipmentStats.needsAttention ?? 0),
-        hint: "Inspections with failed items",
-      },
-    ],
-    [dvirMetrics, equipmentStats.needsAttention]
-  );
+  const handleSignOut = useCallback(async () => {
+    try {
+      setSession(null);
+      await signOut();
+      navigate('/', { replace: true });
+    } catch (error) {
+      console.error('Sign out failed:', error);
+    }
+  }, [navigate, setSession, signOut]);
 
+  // Hero config with avatar
   const heroConfig = useMemo<AdminHeroConfig>(
     () => ({
-      eyebrow: "Ember Ops Network",
-      eyebrowIcon: <Wrench className="w-4 h-4 text-[#ffb48a]" />,
-      heading: "Mechanic Control Center",
-      description:
-        "Stay ahead of failed inspections, coordinate PM windows, and keep the fleet road-ready.",
-      badges: [
-        {
-          label: "Shift live",
-          icon: <Flame className="w-4 h-4 text-[#ff9350]" />,
-          variant: "solid",
-        },
-        {
-          label: "Realtime feed",
-          icon: <Activity className="w-4 h-4 text-[#ff9350]" />,
-          variant: "outline",
-        },
-      ],
+      heading: `Welcome back, ${displayName}`,
+      description: "Manage vehicle inspections, equipment maintenance, and keep the fleet running smoothly.",
+      avatar: <MechanicAvatar className="w-full h-full" />,
     }),
-    []
+    [displayName]
   );
 
+  // Side panel content
   const sidePanelContent = (
-    <>
-      <div>
-        <p className="text-xs uppercase tracking-[0.35em] text-[#ffbf94]/70">
-          Alerts & Watchlist
-        </p>
-        <div className="mt-4 space-y-4">
-          {ACTIVE_ALERTS.map((alert) => (
-            <div
-              key={alert.title}
-              className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-md"
-            >
-              <p className={`text-sm font-semibold ${alert.tone}`}>
-                {alert.title}
-              </p>
-              <p className="text-xs text-white/60 mt-1">{alert.detail}</p>
-            </div>
-          ))}
+    <div className="space-y-6">
+      {/* Profile card with sign out */}
+      <div className="rounded-3xl border border-[#ff9350]/20 bg-[#140804]/80 p-5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs uppercase tracking-[0.35em] text-[#ffb48a]/70">
+              Profile Snapshot
+            </p>
+            <p className="text-lg font-semibold text-white mt-2 truncate">
+              {user?.email}
+            </p>
+            <p className="text-sm text-white/60 capitalize">{role}</p>
+          </div>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.96 }}
+            onClick={handleSignOut}
+            className="flex-shrink-0 inline-flex items-center gap-2 rounded-full bg-red-600/80 px-3 py-2 text-xs font-semibold border border-red-500/40 hover:bg-red-600 transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            Sign out
+          </motion.button>
         </div>
       </div>
 
-      <div className="rounded-2xl border border-white/15 bg-black/20 px-4 py-4">
-        <p className="text-xs uppercase tracking-[0.3em] text-[#ffd4b8]/70">
-          Quick Links
+      {/* Quick stats */}
+      <div className="hidden lg:block rounded-3xl border border-[#ff9350]/20 bg-[#140804]/80 p-5 space-y-4">
+        <p className="text-xs uppercase tracking-[0.35em] text-[#ffb48a]/70">
+          Quick Stats
         </p>
-        <ul className="mt-3 space-y-2 text-sm text-white/80">
-          <li className="flex items-center justify-between">
-            <span>Latest failed DVIR</span>
-            <span className="text-[#ffb48a] font-semibold">Unit #214</span>
-          </li>
-          <li className="flex items-center justify-between">
-            <span>Shop capacity</span>
-            <span className="text-[#ffd0a6] font-semibold">4 / 8 bays</span>
-          </li>
-          <li className="flex items-center justify-between">
-            <span>Next PM window</span>
-            <span className="text-[#ffb48a] font-semibold">Thu · 07:00</span>
-          </li>
-        </ul>
+        <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-white/60">Open DVIRs</span>
+            <span className="text-sm font-semibold text-[#ffb48a]">
+              {metricsLoading ? "–" : dvirMetrics?.totalOpen ?? 0}
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-white/60">Equipment Inspections</span>
+            <span className="text-sm font-semibold text-[#ffb48a]">
+              {equipmentLoading ? "–" : equipmentCount}
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-white/60">Today's DVIRs</span>
+            <span className="text-sm font-semibold text-[#ffb48a]">
+              {metricsLoading ? "–" : dvirMetrics?.todaysReports ?? 0}
+            </span>
+          </div>
+        </div>
       </div>
-    </>
+    </div>
   );
 
   if (unauthorized) {
@@ -281,157 +198,77 @@ export default function MechanicDashboard() {
     <DashboardLayout title="Mechanic Panel">
       <AdminPremiumScaffold
         hero={heroConfig}
-        stats={heroStats}
-        navCards={MECHANIC_NAV_CARDS}
-        sidePanel={sidePanelContent}
         theme="ember"
+        sidePanel={sidePanelContent}
       >
-        <div className="grid gap-6 md:grid-cols-2">
-          {UPCOMING_PANELS.map((panel) => (
-            <div
-              key={panel.title}
-              className="rounded-3xl border border-[#f28b53]/30 bg-[#1a0905]/80 p-6 shadow-lg shadow-black/40 space-y-3 text-white/80"
-            >
-              <div className="text-xs uppercase tracking-[0.35em] text-[#ffb48a]/70">
-                {panel.tag}
-              </div>
-              <h3 className="text-xl font-semibold text-white">
-                {panel.title}
-              </h3>
-              <p className="text-sm text-white/70">{panel.body}</p>
-              <div className="inline-flex items-center gap-1 text-xs text-[#ff9350]">
-                <span>Preview</span>
-                <span>↗</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-3xl border border-[#f28b53]/25 bg-[#120705]/90 p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-[0.35em] text-[#ffbf94]/70">
-                  DVIR Highlights
-                </p>
-                <p className="text-lg font-semibold text-white mt-2">
-                  Live inspection health
-                </p>
-              </div>
-              <AlertTriangle className="w-8 h-8 text-[#ff9c63]" />
-            </div>
-
-            <div className="text-xs text-white/60">
-              {metricsLoading ? (
-                <span className="animate-pulse text-white/70">Syncing live DVIR metrics…</span>
-              ) : metricsError ? (
-                <span className="text-red-200">{metricsError}</span>
-              ) : dvirMetrics ? (
-                <div className="grid gap-3 sm:grid-cols-2 text-left">
-                  {[
-                    {
-                      label: "Awaiting Review",
-                      value: dvirMetrics.totalOpen,
-                      helper: "Need mechanic sign-off",
-                    },
-                    {
-                      label: "Completed (7d)",
-                      value: dvirMetrics.totalCompletedLast7Days,
-                      helper: "Signed by shop",
-                    },
-                    {
-                      label: "Today's Reports",
-                      value: dvirMetrics.todaysReports,
-                      helper: "Submitted since midnight",
-                    },
-                  ].map((metric) => (
-                    <div
-                      key={metric.label}
-                      className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
-                    >
-                      <p className="text-[0.6rem] uppercase tracking-[0.3em] text-white/60">
-                        {metric.label}
-                      </p>
-                      <p className="text-2xl font-bold text-[#ffe4c9]">
-                        {metric.value.toLocaleString()}
-                      </p>
-                      <p className="text-xs text-white/50 mt-1">{metric.helper}</p>
+        {/* Mobile-first Bento layout */}
+        <div className="w-full space-y-4 md:space-y-6">
+          {/* All Tools & Features */}
+          <EmberExpandableSection
+            id="mechanic-quick-actions"
+            title="All Tools & Features"
+            subtitle="Complete navigation menu"
+            icon={<DashboardAvatar variant="jobs" className="w-8 h-8 md:w-10 md:h-10" />}
+            storageKey={PERSISTENCE_KEYS.QUICK_ACTIONS}
+            defaultOpen={false}
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {MECHANIC_NAV_CARDS.map((card) => {
+                const baseClassName = `group flex items-start gap-3 rounded-xl border px-4 py-3 transition-all ${
+                  card.comingSoon 
+                    ? "border-[#ff9350]/10 bg-[#140804]/40 opacity-70 cursor-not-allowed"
+                    : "border-[#ff9350]/20 bg-[#140804]/60 hover:border-[#ff9350]/40 hover:bg-[#1a0a06]"
+                }`;
+                
+                const content = (
+                  <>
+                    <div className={`flex-shrink-0 p-2 rounded-lg border ${
+                      card.comingSoon 
+                        ? "bg-[#ff9350]/5 border-[#ff9350]/10" 
+                        : "bg-[#ff9350]/10 border-[#ff9350]/20"
+                    }`}>
+                      {card.icon}
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <span>DVIR metrics unavailable.</span>
-              )}
-            </div>
-          </div>
-
-          <div className="rounded-3xl border border-[#f28b53]/25 bg-[#120705]/90 p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-[0.35em] text-[#ffbf94]/70">
-                  Equipment Highlights
-                </p>
-                <p className="text-lg font-semibold text-white mt-2">
-                  Daily inspection spotlight
-                </p>
-              </div>
-              <Wrench className="w-8 h-8 text-[#ffb48a]" />
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2 text-sm text-white/80">
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                <p className="text-xs uppercase tracking-[0.3em] text-white/60">Needs attention</p>
-                <p className="text-2xl font-bold text-[#ffe4c9]">
-                  {equipmentStats.needsAttention}
-                </p>
-                <p className="text-xs text-white/50 mt-1">Failed checklists</p>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                <p className="text-xs uppercase tracking-[0.3em] text-white/60">Awaiting fix</p>
-                <p className="text-2xl font-bold text-[#ffe4c9]">{equipmentStats.awaitingFix}</p>
-                <p className="text-xs text-white/50 mt-1">Need mechanic log</p>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                <p className="text-xs uppercase tracking-[0.3em] text-white/60">Fixes logged</p>
-                <p className="text-2xl font-bold text-[#ffe4c9]">{equipmentStats.resolved}</p>
-                <p className="text-xs text-white/50 mt-1">Mechanic updates</p>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                <p className="text-xs uppercase tracking-[0.3em] text-white/60">Total inspections</p>
-                <p className="text-2xl font-bold text-[#ffe4c9]">{equipmentStats.total}</p>
-                <p className="text-xs text-white/50 mt-1">Historical submissions</p>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-xs uppercase tracking-[0.3em] text-white/60">Recent hazards</p>
-              {equipmentLoading ? (
-                <p className="text-xs text-white/60 animate-pulse">Loading equipment feed…</p>
-              ) : equipmentError ? (
-                <p className="text-xs text-red-200">{equipmentError}</p>
-              ) : equipmentStats.recentHazards.length === 0 ? (
-                <p className="text-xs text-white/60">No failed inspections in the latest batch.</p>
-              ) : (
-                <div className="space-y-2 text-sm">
-                  {equipmentStats.recentHazards.map((hazard, index) => (
-                    <div
-                      key={`${hazard.equipment}-${hazard.submitted}-${index}`}
-                      className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-2"
-                    >
-                      <div>
-                        <p className="text-white font-semibold">{hazard.equipment}</p>
-                        <p className="text-xs text-white/60">{hazard.signer}</p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className={`text-sm font-semibold transition-colors ${
+                          card.comingSoon 
+                            ? "text-white/60" 
+                            : "text-white group-hover:text-[#ffe4c9]"
+                        }`}>
+                          {card.title}
+                        </p>
+                        {card.comingSoon && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-[#ff9350]/20 text-[#ffb48a] border border-[#ff9350]/30">
+                            Coming Soon
+                          </span>
+                        )}
                       </div>
-                      <span className="text-xs text-white/60">{hazard.submitted}</span>
+                      <p className={`text-xs mt-0.5 line-clamp-2 ${
+                        card.comingSoon ? "text-white/30" : "text-white/50"
+                      }`}>
+                        {card.description}
+                      </p>
                     </div>
-                  ))}
-                </div>
-              )}
+                    {!card.comingSoon && (
+                      <ArrowRight className="w-4 h-4 text-[#ffb48a]/40 group-hover:text-[#ffb48a] group-hover:translate-x-0.5 transition-all mt-1" />
+                    )}
+                  </>
+                );
+                
+                return card.comingSoon ? (
+                  <div key={card.to} className={baseClassName}>
+                    {content}
+                  </div>
+                ) : (
+                  <Link key={card.to} to={card.to} className={baseClassName}>
+                    {content}
+                  </Link>
+                );
+              })}
             </div>
-          </div>
+          </EmberExpandableSection>
         </div>
-
       </AdminPremiumScaffold>
     </DashboardLayout>
   );

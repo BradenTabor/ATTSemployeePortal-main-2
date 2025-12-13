@@ -1,5 +1,5 @@
 import { useState, FormEvent, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Lock, ArrowRight } from "lucide-react";
 import { VideoBackground } from "../components/VideoBackground";
@@ -192,7 +192,7 @@ export default function Home() {
             fetchPriority="high"
             className="h-20 sm:h-24 w-auto mx-auto opacity-95 drop-shadow-2xl"
           />
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mt-4 tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mt-4 tracking-tight break-normal">
             All Terrain Tree Service
           </h1>
         </motion.div>
@@ -432,6 +432,16 @@ export default function Home() {
                         </>
                       )}
                     </button>
+
+                    {/* Forgot Password link - only show on login */}
+                    {!isSignup && (
+                      <Link
+                        to="/reset-password"
+                        className="block text-center text-xs text-emerald-400/70 hover:text-emerald-400 transition-colors mt-2"
+                      >
+                        Forgot your password?
+                      </Link>
+                    )}
 
                     {/* Helper text */}
                     <p className="text-[11px] text-white/30 text-center pt-2">

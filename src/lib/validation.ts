@@ -15,10 +15,10 @@ export function validateSchema<T extends z.ZodSchema>(
 
   // Flatten errors into simple object
   const errors: Record<string, string> = {};
-  result.error.errors.forEach((err) => {
-    const path = err.path.join('.');
+  result.error.issues.forEach((issue) => {
+    const path = issue.path.join('.');
     if (!errors[path]) {
-      errors[path] = err.message;
+      errors[path] = issue.message;
     }
   });
 
@@ -59,8 +59,8 @@ export function getFieldError(
 ): string | undefined {
   if (!error) return undefined;
   
-  const fieldError = error.errors.find(
-    (err) => err.path.join('.') === fieldName
+  const fieldError = error.issues.find(
+    (issue) => issue.path.join('.') === fieldName
   );
   
   return fieldError?.message;

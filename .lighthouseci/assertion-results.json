@@ -1,1 +1,30 @@
-[]
+[
+  {
+    "name": "minScore",
+    "expected": 0.8,
+    "actual": 0.55,
+    "values": [
+      0.55
+    ],
+    "operator": ">=",
+    "passed": false,
+    "auditProperty": "performance",
+    "auditId": "categories",
+    "level": "warn",
+    "url": "http://127.0.0.1:4173/announcements"
+  },
+  {
+    "name": "minScore",
+    "expected": 0.8,
+    "actual": 0.63,
+    "values": [
+      0.63
+    ],
+    "operator": ">=",
+    "passed": false,
+    "auditProperty": "performance",
+    "auditId": "categories",
+    "level": "warn",
+    "url": "http://127.0.0.1:4173/admin/rto"
+  }
+]

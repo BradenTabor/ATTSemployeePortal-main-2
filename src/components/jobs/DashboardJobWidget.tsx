@@ -1,4 +1,4 @@
-import { memo, useState } from 'react';
+import { memo, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Briefcase,
@@ -16,6 +16,9 @@ import {
   formatDateRange,
   formatProgressLabel,
   calculateMilestoneProgress,
+  calculateSpanProgress,
+  formatSpanProgressLabel,
+  getSpanProgressColors,
 } from '../../lib/jobProgressUtils';
 import { JobProgressBar } from './JobProgressBar';
 import type { JobProgressTracker } from '../../types/jobs';
@@ -33,17 +36,50 @@ interface JobWidgetCardProps {
 
 function JobWidgetCard({ job, defaultExpanded = false }: JobWidgetCardProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
-  const progress = calculateJobProgress(job.start_date, job.end_date);
+  const isSpanBased = job.tracking_type === 'job_progress';
+  
+  // Calculate span-based progress
+  const spanProgress = useMemo(() => {
+    if (!isSpanBased) return null;
+    const progressUpdates = job.progress_updates || [];
+    const totalSpans = progressUpdates.reduce((sum, u) => sum + (u.spans_completed || 0), 0);
+    const totalFeet = progressUpdates.reduce((sum, u) => sum + (u.total_feet_completed || 0), 0);
+    return calculateSpanProgress(
+      totalSpans,
+      totalFeet,
+      job.estimated_total_spans,
+      job.estimated_total_feet,
+      job.span_progress_metric || 'spans'
+    );
+  }, [isSpanBased, job.progress_updates, job.estimated_total_spans, job.estimated_total_feet, job.span_progress_metric]);
+  
+  const spanProgressColors = useMemo(() => {
+    if (!spanProgress) return null;
+    return getSpanProgressColors(spanProgress.percentage);
+  }, [spanProgress]);
+  
+  // Timeline progress (only for non-span jobs)
+  const progress = isSpanBased
+    ? { percentage: spanProgress?.percentage ?? 0, status: 'in_progress' as const, daysExceeded: 0, daysRemaining: 0, totalDays: 0, elapsedDays: 0 }
+    : calculateJobProgress(job.start_date, job.end_date);
   const milestoneProgress = calculateMilestoneProgress(job.milestones || []);
+  
+  // Never show exceeded for span-based jobs
+  const isExceeded = !isSpanBased && progress.status === 'exceeded';
+
+  // Card styling - span-based jobs use blue accent, never red
+  const cardColors = isSpanBased
+    ? 'border-blue-500/20 from-[#040815] via-[#020509] to-[#010204]'
+    : isExceeded
+      ? 'border-red-500/30 from-[#1a0808] via-[#0d0505] to-[#050302]'
+      : 'border-emerald-500/20 from-[#041510] via-[#020d09] to-[#010604]';
 
   return (
     <motion.div
       layout
       className={cn(
         'rounded-2xl border bg-gradient-to-br overflow-hidden transition-colors',
-        progress.status === 'exceeded'
-          ? 'border-red-500/30 from-[#1a0808] via-[#0d0505] to-[#050302]'
-          : 'border-emerald-500/20 from-[#041510] via-[#020d09] to-[#010604]'
+        cardColors
       )}
     >
       {/* Header - Always visible with progress bar */}
@@ -56,9 +92,14 @@ function JobWidgetCard({ job, defaultExpanded = false }: JobWidgetCardProps) {
             <div className="flex items-center gap-2">
               <Briefcase className={cn(
                 'w-4 h-4',
-                progress.status === 'exceeded' ? 'text-red-400' : 'text-emerald-400'
+                isSpanBased ? 'text-blue-400' : isExceeded ? 'text-red-400' : 'text-emerald-400'
               )} />
               <h4 className="font-semibold text-white truncate">{job.job_name}</h4>
+              {isSpanBased && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-semibold border border-blue-500/40 bg-blue-500/10 text-blue-200">
+                  SPAN
+                </span>
+              )}
             </div>
             {job.job_location && (
               <p className="flex items-center gap-1.5 text-xs text-white/50 mt-1">
@@ -74,12 +115,41 @@ function JobWidgetCard({ job, defaultExpanded = false }: JobWidgetCardProps) {
         </div>
 
         {/* Progress bar - always visible */}
-        <JobProgressBar
-          startDate={job.start_date}
-          endDate={job.end_date}
-          size="sm"
-          showExceededBadge={false}
-        />
+        {isSpanBased && spanProgress && spanProgressColors ? (
+          // Span-based progress
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className={cn('font-medium', spanProgressColors.text)}>
+                {spanProgress.percentage}%
+              </span>
+              <span className="text-white/50">
+                {formatSpanProgressLabel(spanProgress)}
+              </span>
+            </div>
+            <div className={cn(
+              'relative w-full h-2 rounded-full overflow-hidden',
+              spanProgressColors.bg
+            )}>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${spanProgress.percentage}%` }}
+                transition={{ duration: 0.6, ease: 'easeOut' }}
+                className={cn(
+                  'absolute inset-y-0 left-0 rounded-full bg-gradient-to-r',
+                  spanProgressColors.gradient
+                )}
+              />
+            </div>
+          </div>
+        ) : (
+          // Timeline-based progress
+          <JobProgressBar
+            startDate={job.start_date}
+            endDate={job.end_date}
+            size="sm"
+            showExceededBadge={false}
+          />
+        )}
       </button>
 
       {/* Expanded content */}
@@ -93,8 +163,8 @@ function JobWidgetCard({ job, defaultExpanded = false }: JobWidgetCardProps) {
             className="overflow-hidden"
           >
             <div className="px-4 pb-4 space-y-3 border-t border-white/5 pt-3">
-              {/* Timeline exceeded warning */}
-              {progress.status === 'exceeded' && (
+              {/* Timeline exceeded warning - only for timeline-based jobs */}
+              {!isSpanBased && isExceeded && (
                 <div className="flex items-center gap-2 p-2 rounded-lg bg-red-500/10 border border-red-500/20">
                   <AlertTriangle className="w-4 h-4 text-red-400" />
                   <span className="text-xs text-red-400">
@@ -103,11 +173,27 @@ function JobWidgetCard({ job, defaultExpanded = false }: JobWidgetCardProps) {
                 </div>
               )}
 
-              {/* Timeline */}
-              <div className="flex items-center gap-2 text-xs text-white/50">
-                <Calendar className="w-3.5 h-3.5 text-emerald-400/60" />
-                <span>{formatDateRange(job.start_date, job.end_date)}</span>
-              </div>
+              {/* Span progress info for span-based jobs */}
+              {isSpanBased && spanProgress && (
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                  <Target className="w-4 h-4 text-blue-400" />
+                  <span className="text-xs text-blue-300">
+                    {spanProgress.remaining > 0 
+                      ? `${spanProgress.remaining.toLocaleString()} ${spanProgress.metricLabel} remaining`
+                      : spanProgress.total > 0 
+                        ? 'Target reached!' 
+                        : 'No estimate set'}
+                  </span>
+                </div>
+              )}
+
+              {/* Timeline - only for timeline-based jobs */}
+              {!isSpanBased && (
+                <div className="flex items-center gap-2 text-xs text-white/50">
+                  <Calendar className="w-3.5 h-3.5 text-emerald-400/60" />
+                  <span>{formatDateRange(job.start_date, job.end_date)}</span>
+                </div>
+              )}
 
               {/* Description */}
               {job.job_description && (

@@ -17,6 +17,7 @@ import { queryClient } from "./lib/queryClient";
 
 // Main pages
 const Home = lazy(() => import("./pages/Home"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Forms = lazy(() => import("./pages/Forms"));
 const Announcements = lazy(() => import("./pages/Announcements"));
@@ -29,6 +30,7 @@ const AdminRTO = lazy(() => import("./pages/AdminRTO"));
 const AdminUsers = lazy(() => import("./pages/AdminUsers"));
 const AdminJSA = lazy(() => import("./pages/AdminJSA"));
 const AdminJobTracker = lazy(() => import("./pages/AdminJobTracker"));
+const AdminJobProgress = lazy(() => import("./pages/AdminJobProgress"));
 
 // Mechanic pages
 const MechanicDashboard = lazy(() => import("./pages/MechanicDashboard"));
@@ -81,6 +83,21 @@ function AnimatedRoutes() {
                   variants={pageTransition}
                 >
                   <Home />
+                </motion.div>
+              }
+            />
+
+            {/* Password Reset Page (Public) */}
+            <Route
+              path="/reset-password"
+              element={
+                <motion.div
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  variants={pageTransition}
+                >
+                  <ResetPassword />
                 </motion.div>
               }
             />
@@ -409,6 +426,22 @@ function AnimatedRoutes() {
                 >
                   <ProtectedRoute requiredRole="admin">
                     <AdminJobTracker />
+                  </ProtectedRoute>
+                </motion.div>
+              }
+            />
+
+            <Route
+              path="/admin/job-progress"
+              element={
+                <motion.div
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  variants={pageTransition}
+                >
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminJobProgress />
                   </ProtectedRoute>
                 </motion.div>
               }

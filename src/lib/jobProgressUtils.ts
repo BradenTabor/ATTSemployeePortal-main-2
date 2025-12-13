@@ -2,7 +2,7 @@
 // Job Progress Tracker - Utility Functions
 // ============================================================================
 
-import type { JobProgressResult, ProgressStatus } from '../types/jobs';
+import type { JobProgressResult, ProgressStatus, SpanProgressMetric } from '../types/jobs';
 
 /**
  * Calculate job progress based on start and end dates
@@ -210,5 +210,118 @@ export function isDateInPast(dateString: string): boolean {
 export function isValidDateRange(startDate: string, endDate: string): boolean {
   if (!startDate || !endDate) return true; // Allow empty during form entry
   return new Date(endDate) >= new Date(startDate);
+}
+
+// ============================================================================
+// Span-Based Progress Tracking
+// ============================================================================
+
+/**
+ * Result of span-based progress calculation
+ */
+export interface SpanProgressResult {
+  percentage: number;
+  completed: number;
+  total: number;
+  remaining: number;
+  metric: 'spans' | 'feet';
+  metricLabel: string;
+}
+
+/**
+ * Calculate span-based job progress
+ * 
+ * @param completedSpans - Total spans completed from progress updates
+ * @param completedFeet - Total feet completed from progress updates
+ * @param estimatedSpans - Admin-defined estimated total spans (nullable)
+ * @param estimatedFeet - Admin-defined estimated total feet (nullable)
+ * @param metric - Which metric to use for calculation ('spans' or 'feet')
+ * @returns SpanProgressResult with percentage and totals
+ */
+export function calculateSpanProgress(
+  completedSpans: number,
+  completedFeet: number,
+  estimatedSpans: number | null | undefined,
+  estimatedFeet: number | null | undefined,
+  metric: SpanProgressMetric = 'spans'
+): SpanProgressResult {
+  if (metric === 'spans') {
+    const total = estimatedSpans ?? 0;
+    const completed = completedSpans;
+    const remaining = Math.max(0, total - completed);
+    const percentage = total > 0 ? Math.min(100, Math.round((completed / total) * 100)) : 0;
+    
+    return {
+      percentage,
+      completed,
+      total,
+      remaining,
+      metric: 'spans',
+      metricLabel: 'spans',
+    };
+  } else {
+    const total = estimatedFeet ?? 0;
+    const completed = completedFeet;
+    const remaining = Math.max(0, total - completed);
+    const percentage = total > 0 ? Math.min(100, Math.round((completed / total) * 100)) : 0;
+    
+    return {
+      percentage,
+      completed,
+      total,
+      remaining,
+      metric: 'feet',
+      metricLabel: 'ft',
+    };
+  }
+}
+
+/**
+ * Format span progress for display
+ */
+export function formatSpanProgressLabel(result: SpanProgressResult): string {
+  if (result.total === 0) {
+    return `${result.completed.toLocaleString()} ${result.metricLabel} completed (no estimate set)`;
+  }
+  
+  return `${result.completed.toLocaleString()} of ${result.total.toLocaleString()} ${result.metricLabel}`;
+}
+
+/**
+ * Get colors for span progress (always in_progress style, never exceeded)
+ */
+export function getSpanProgressColors(percentage: number): {
+  gradient: string;
+  bg: string;
+  text: string;
+  border: string;
+} {
+  if (percentage >= 100) {
+    // Completed - gold theme
+    return {
+      gradient: 'from-[#f4c979] to-[#d79a32]',
+      bg: 'bg-[#f4c979]/15',
+      text: 'text-[#f4c979]',
+      border: 'border-[#f4c979]/30',
+    };
+  }
+  
+  if (percentage === 0) {
+    // Not started
+    return {
+      gradient: 'from-gray-400 to-gray-500',
+      bg: 'bg-gray-500/15',
+      text: 'text-gray-400',
+      border: 'border-gray-500/30',
+    };
+  }
+  
+  // In progress - emerald
+  return {
+    gradient: 'from-emerald-400 to-emerald-600',
+    bg: 'bg-emerald-500/15',
+    text: 'text-emerald-400',
+    border: 'border-emerald-500/30',
+  };
 }
 

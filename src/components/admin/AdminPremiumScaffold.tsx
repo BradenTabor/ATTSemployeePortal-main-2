@@ -16,6 +16,8 @@ export type AdminHeroConfig = {
   heading: string;
   description?: string;
   badges?: AdminHeroBadge[];
+  /** Optional avatar component to display in the hero section */
+  avatar?: ReactNode;
 };
 
 export type AdminStat = {
@@ -30,6 +32,8 @@ export type AdminNavCardConfig = {
   icon?: ReactNode;
   to: string;
   variant?: "emerald" | "gold" | "ember";
+  /** Mark as coming soon - disables link and shows badge */
+  comingSoon?: boolean;
 };
 
 type AdminTheme = "gold" | "ember" | "emerald";
@@ -333,57 +337,70 @@ function AdminHero({
         `}</style>
 
         <div className="relative flex flex-col gap-6">
-          {(hero.eyebrow || hero.eyebrowIcon) && (
-            <p className={themeStyles.eyebrowClass}>
-              {hero.eyebrowIcon}
-              {hero.eyebrow}
-            </p>
-          )}
+          {/* Hero content with optional avatar */}
+          <div className={cn("flex gap-6", hero.avatar ? "items-start" : "")}>
+            {/* Text content */}
+            <div className="flex-1 flex flex-col gap-4">
+              {(hero.eyebrow || hero.eyebrowIcon) && (
+                <p className={themeStyles.eyebrowClass}>
+                  {hero.eyebrowIcon}
+                  {hero.eyebrow}
+                </p>
+              )}
 
-          <div className="relative">
-            {/* GlowEffect behind the heading */}
-            <div className="absolute -inset-4 -top-6 -bottom-2">
-              <GlowEffect
-                colors={themeStyles.glowColors}
-                mode="breathe"
-                blur="strong"
-                duration={7}
-                scale={1.1}
-                className="opacity-50"
-              />
+              <div className="relative">
+                {/* GlowEffect behind the heading */}
+                <div className="absolute -inset-4 -top-6 -bottom-2">
+                  <GlowEffect
+                    colors={themeStyles.glowColors}
+                    mode="breathe"
+                    blur="strong"
+                    duration={7}
+                    scale={1.1}
+                    className="opacity-50"
+                  />
+                </div>
+                {/* Upgraded heading with TextEffect animation */}
+                <TextEffect
+                  as="h2"
+                  preset="blurSlide"
+                  per="char"
+                  delay={0.1}
+                  className="relative text-2xl sm:text-3xl md:text-4xl font-black leading-tight tracking-tight text-white break-normal"
+                  segmentWrapperClassName={themeStyles.headingTextGlow}
+                >
+                  {hero.heading}
+                </TextEffect>
+                {hero.description && (
+                  <p className={cn("relative mt-3", themeStyles.descriptionClass)}>{hero.description}</p>
+                )}
+              </div>
+
+              {hero.badges && hero.badges.length > 0 && (
+                <div className="flex flex-wrap gap-3">
+                  {hero.badges.map((badge, index) => (
+                    <div
+                      key={`${badge.label}-${index}`}
+                      className={cn(
+                        BADGE_STYLES[badge.variant ?? "solid"],
+                        badge.variant === "outline" && "text-[#f8e4bb]"
+                      )}
+                    >
+                      {badge.icon}
+                      <span>{badge.label}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-            {/* Upgraded heading with TextEffect animation */}
-            <TextEffect
-              as="h2"
-              preset="blurSlide"
-              per="char"
-              delay={0.1}
-              className="relative text-3xl sm:text-4xl font-black leading-tight tracking-tight text-white"
-              segmentWrapperClassName={themeStyles.headingTextGlow}
-            >
-              {hero.heading}
-            </TextEffect>
-            {hero.description && (
-              <p className={cn("relative mt-3", themeStyles.descriptionClass)}>{hero.description}</p>
+
+            {/* Avatar section */}
+            {hero.avatar && (
+              <div className="hidden sm:block flex-shrink-0 w-28 h-36 md:w-36 md:h-44 lg:w-40 lg:h-48">
+                {hero.avatar}
+              </div>
             )}
           </div>
-
-          {hero.badges && hero.badges.length > 0 && (
-            <div className="flex flex-wrap gap-3">
-              {hero.badges.map((badge, index) => (
-                <div
-                  key={`${badge.label}-${index}`}
-                  className={cn(
-                    BADGE_STYLES[badge.variant ?? "solid"],
-                    badge.variant === "outline" && "text-[#f8e4bb]"
-                  )}
-                >
-                  {badge.icon}
-                  <span>{badge.label}</span>
-                </div>
-              ))}
-            </div>
-          )}
 
           {stats && stats.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

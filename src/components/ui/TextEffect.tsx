@@ -124,6 +124,16 @@ export function TextEffect({
   const containerVariants = variants?.container ?? selectedVariants?.container ?? defaultContainerVariants;
   const itemVariants = variants?.item ?? selectedVariants?.item ?? defaultItemVariants;
 
+  // For 'char' mode, we need to split by words first, then by characters
+  // This prevents words from being split across lines
+  const wordSegments = useMemo(() => {
+    if (per === 'char') {
+      // Split into words and spaces, keeping spaces as separate elements
+      return children.split(/(\s+)/);
+    }
+    return null;
+  }, [children, per]);
+
   const segments = useMemo(() => {
     if (per === 'line') {
       return children.split('\n');
@@ -131,7 +141,7 @@ export function TextEffect({
     if (per === 'word') {
       return children.split(/(\s+)/);
     }
-    // per === 'char'
+    // per === 'char' - handled separately via wordSegments
     return children.split('');
   }, [children, per]);
 
@@ -154,6 +164,55 @@ export function TextEffect({
       },
     };
   }, [containerVariants, delay]);
+
+  // For 'char' mode, render words as non-breaking units
+  if (per === 'char' && wordSegments) {
+    let charIndex = 0;
+    return (
+      <MotionComponent
+        initial="hidden"
+        animate={trigger ? 'visible' : 'hidden'}
+        exit="exit"
+        variants={containerWithDelay}
+        onAnimationComplete={onAnimationComplete}
+        className={cn('inline-flex flex-wrap', className)}
+      >
+        {wordSegments.map((word, wordIndex) => {
+          // If it's whitespace, render a space
+          if (/^\s+$/.test(word)) {
+            const spaceKey = `space-${wordIndex}-${charIndex++}`;
+            return (
+              <motion.span
+                key={spaceKey}
+                variants={itemVariants}
+                className={cn('inline-block w-[0.3em]', segmentWrapperClassName)}
+              >
+                {'\u00A0'}
+              </motion.span>
+            );
+          }
+          // Otherwise, wrap the word in a non-breaking container
+          const chars = word.split('');
+          return (
+            <span key={`word-${wordIndex}`} className="inline-flex whitespace-nowrap">
+              {chars.map((char) => {
+                const key = `char-${charIndex++}`;
+                return (
+                  <motion.span
+                    key={key}
+                    variants={itemVariants}
+                    className={cn('inline-block', segmentWrapperClassName)}
+                  >
+                    {char}
+                  </motion.span>
+                );
+              })}
+            </span>
+          );
+        })}
+      </MotionComponent>
+    );
+  }
 
   return (
     <MotionComponent

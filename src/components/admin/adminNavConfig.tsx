@@ -5,6 +5,7 @@ import {
   Wrench,
   Gauge,
   Briefcase,
+  TrendingUp,
 } from "lucide-react";
 import type { AdminNavCardConfig } from "./AdminPremiumScaffold";
 
@@ -37,6 +38,13 @@ export const ADMIN_CORE_NAV_CARDS: AdminNavCardConfig[] = [
     to: "/admin/jobs",
     variant: "gold",
   },
+  {
+    title: "Job Progress Analytics",
+    description: "Span-based production and week-over-week deltas.",
+    icon: <TrendingUp className="w-8 h-8 text-[#f4c979]" />,
+    to: "/admin/job-progress",
+    variant: "gold",
+  },
 ];
 
 export const MECHANIC_NAV_CARDS: AdminNavCardConfig[] = [
@@ -60,6 +68,7 @@ export const MECHANIC_NAV_CARDS: AdminNavCardConfig[] = [
     icon: <Gauge className="w-8 h-8 text-[#ff9c63]" />,
     to: "/mechanic-dashboard#pm",
     variant: "ember",
+    comingSoon: true,
   },
   {
     title: "Parts & Repairs Log",
@@ -67,6 +76,7 @@ export const MECHANIC_NAV_CARDS: AdminNavCardConfig[] = [
     icon: <Wrench className="w-8 h-8 text-[#ff8a4b]" />,
     to: "/mechanic-dashboard#repairs",
     variant: "ember",
+    comingSoon: true,
   },
 ];
 

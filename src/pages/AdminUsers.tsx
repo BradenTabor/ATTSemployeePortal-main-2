@@ -305,9 +305,9 @@ function AdminUsers() {
                   className="w-full rounded-2xl bg-[#050402]/70 border border-[#f4c979]/20 pl-11 pr-4 py-3 text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 appearance-none cursor-pointer"
                 >
                   <option value="">All Roles</option>
-                  <option value="user">User</option>
                   <option value="employee">Employee</option>
                   <option value="mechanic">Mechanic</option>
+                  <option value="manager">Manager</option>
                   <option value="admin">Admin</option>
                 </select>
               </div>

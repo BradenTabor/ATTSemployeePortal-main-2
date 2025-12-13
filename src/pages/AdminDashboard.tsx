@@ -1,15 +1,43 @@
 import { useMemo, useState, FormEvent, useEffect } from "react";
-import { Shield, Megaphone, Sparkles, Inbox, X, Filter } from "lucide-react";
+import { motion } from "framer-motion";
+import { Shield, Megaphone, Sparkles, Inbox, X, Filter, LayoutGrid } from "lucide-react";
 import DashboardLayout from "../layouts/DashboardLayout";
 import AdminPremiumScaffold, {
   type AdminHeroConfig,
   type AdminStat,
 } from "../components/admin/AdminPremiumScaffold";
 import { ADMIN_CORE_NAV_CARDS } from "../components/admin/adminNavConfig";
+import { GoldCollapsibleSection } from "../components/admin/GoldCollapsibleSection";
+import { AdminAvatar } from "../components/admin/AdminAvatar";
+import BrandedNavCard from "../components/BrandedNavCard";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabaseClient";
 import { logger } from "../lib/logger";
 import { DateField } from "../components/forms/GlassyPickers";
+
+// Animation variants for staggered entrance
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.15,
+      delayChildren: 0.1,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5,
+      ease: [0.4, 0, 0.2, 1] as [number, number, number, number],
+    },
+  },
+};
 
 type ContactRequest = {
   id: string;
@@ -127,6 +155,7 @@ export default function AdminDashboard() {
           variant: "outline",
         },
       ],
+      avatar: <AdminAvatar className="w-full h-full" />,
     }),
     [role, session?.user?.email]
   );
@@ -309,52 +338,63 @@ export default function AdminDashboard() {
   }, [contactRequests, contactTopicFilter]);
 
   const renderContactRequestsPanel = () => (
-    <section className="rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] p-6 space-y-4 shadow-[0_35px_60px_rgba(0,0,0,0.6)]">
-      <div className="flex items-start justify-between gap-4">
+    <section className="rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] p-6 space-y-4 shadow-[0_35px_60px_rgba(0,0,0,0.6)] relative overflow-hidden">
+      {/* Ambient glow overlays */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(247,228,189,0.06),transparent_50%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(209,152,57,0.04),transparent_40%)]" />
+      
+      <div className="relative flex items-start justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.35em] text-[#f8dfb3]/80 flex items-center gap-2">
             <Inbox className="w-4 h-4 text-[#f4c979]" />
             Latest contact requests
           </p>
-          <p className="text-sm text-[#f8e5bb]/70">
+          <p className="text-sm text-[#f8e5bb]/70 mt-1">
             Messages submitted through the Contact page are routed here for admin follow-up.
           </p>
         </div>
-        <span className="text-xs text-[#f8e5bb]/60">
+        <span className="text-xs text-[#f8e5bb]/60 whitespace-nowrap">
           {contactRequests.length} shown · refreshes every minute
         </span>
       </div>
 
       {contactRequests.length > 0 && (
-        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/5 bg-white/5 p-3">
+        <div className="relative flex flex-wrap items-center gap-3 rounded-2xl border border-white/5 bg-white/5 p-3">
           <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.35em] text-[#f4c979]">
             <Filter className="w-4 h-4" />
             Filter topics
           </div>
           <div className="flex flex-wrap gap-2">
             {["all", "general", "hr", "safety", "payroll"].map((topic) => (
-              <button
+              <motion.button
                 key={topic}
                 type="button"
                 onClick={() => setContactTopicFilter(topic)}
-                className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className={`rounded-full px-3 py-1 text-xs font-semibold transition-all duration-200 ${
                   contactTopicFilter === topic
-                    ? "bg-[#f4c979] text-[#2e1b02] shadow-[0_5px_20px_rgba(0,0,0,0.35)]"
-                    : "border border-white/10 text-[#f8e5bb]/80 hover:text-white"
+                    ? "bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#2e1b02] shadow-[0_5px_20px_rgba(244,201,121,0.35)]"
+                    : "border border-white/10 text-[#f8e5bb]/80 hover:text-white hover:border-[#f4c979]/40 hover:bg-white/5"
                 }`}
               >
                 {topic === "all" ? "All topics" : CONTACT_TOPIC_LABELS[topic] ?? topic}
-              </button>
+              </motion.button>
             ))}
           </div>
           {contactTopicFilter !== "all" && (
-            <button
+            <motion.button
               type="button"
               onClick={() => setContactTopicFilter("all")}
-              className="text-xs font-semibold text-[#f8e5bb]/70 hover:text-white transition"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              whileHover={{ scale: 1.05 }}
+              className="text-xs font-semibold text-[#f8e5bb]/70 hover:text-white transition-colors inline-flex items-center gap-1"
             >
+              <X className="w-3 h-3" />
               Reset filters
-            </button>
+            </motion.button>
           )}
         </div>
       )}
@@ -382,22 +422,26 @@ export default function AdminDashboard() {
         </p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
-          {filteredContactRequests.map((request) => (
-            <article
+          {filteredContactRequests.map((request, index) => (
+            <motion.article
               key={request.id}
-              className="rounded-2xl border border-white/10 bg-black/30 p-4 text-white/85 space-y-3"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05, duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+              whileHover={{ scale: 1.02, y: -2 }}
+              className="rounded-2xl border border-white/10 bg-black/30 p-4 text-white/85 space-y-3 transition-all duration-300 hover:border-[#f4c979]/30 hover:bg-black/40 hover:shadow-[0_10px_30px_rgba(0,0,0,0.4)] cursor-pointer"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-white">{request.name}</p>
                   <a
                     href={`mailto:${request.email}`}
-                    className="text-xs text-[#f4c979] hover:text-[#ffe6bc]"
+                    className="text-xs text-[#f4c979] hover:text-[#ffe6bc] transition-colors"
                   >
                     {request.email}
                   </a>
                 </div>
-                <span className="text-[0.65rem] uppercase tracking-[0.25em] px-3 py-1 rounded-full border border-[#f6dcb2]/30 text-[#f8e5bb]/80">
+                <span className="text-[0.65rem] uppercase tracking-[0.25em] px-3 py-1 rounded-full border border-[#f6dcb2]/30 text-[#f8e5bb]/80 transition-colors hover:border-[#f4c979]/50">
                   {CONTACT_TOPIC_LABELS[request.topic] ?? request.topic}
                 </span>
               </div>
@@ -408,15 +452,16 @@ export default function AdminDashboard() {
                 <button
                   type="button"
                   onClick={() => setExpandedRequest(request)}
-                  className="text-xs font-semibold tracking-wide text-[#f4c979] hover:text-white transition-colors"
+                  className="text-xs font-semibold tracking-wide text-[#f4c979] hover:text-white transition-colors inline-flex items-center gap-1 group"
                 >
                   View full message
+                  <span className="transform transition-transform group-hover:translate-x-1">→</span>
                 </button>
               </div>
               <p className="text-xs text-[#f8e5bb]/60">
                 {new Date(request.submitted_at).toLocaleString()}
               </p>
-            </article>
+            </motion.article>
           ))}
         </div>
       )}
@@ -441,26 +486,80 @@ export default function AdminDashboard() {
         <AdminPremiumScaffold
           hero={heroConfig}
           stats={stats}
-          navCards={ADMIN_CORE_NAV_CARDS}
           sidePanel={announcementPanel}
         >
-          <div className="space-y-6">
-            {renderContactRequestsPanel()}
-          </div>
+          <motion.div 
+            className="space-y-6"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {/* Collapsible Nav Cards Section */}
+            <motion.div variants={itemVariants}>
+              <GoldCollapsibleSection
+                id="admin-nav-panels"
+                title="Admin Control Panels"
+                subtitle="Quick access to all administrative tools and management areas"
+                storageKey="admin-nav-collapsed"
+                defaultOpen={true}
+                icon={<LayoutGrid className="w-5 h-5 md:w-6 md:h-6 text-[#f4c979]" />}
+              >
+                <motion.div 
+                  className="grid gap-4 sm:grid-cols-2"
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                >
+                  {ADMIN_CORE_NAV_CARDS.map((card, index) => (
+                    <motion.div
+                      key={card.to}
+                      variants={itemVariants}
+                      custom={index}
+                    >
+                      <BrandedNavCard
+                        title={card.title}
+                        description={card.description}
+                        icon={card.icon}
+                        to={card.to}
+                        variant={card.variant ?? "gold"}
+                      />
+                    </motion.div>
+                  ))}
+                </motion.div>
+              </GoldCollapsibleSection>
+            </motion.div>
+
+            <motion.div variants={itemVariants}>
+              {renderContactRequestsPanel()}
+            </motion.div>
+          </motion.div>
         </AdminPremiumScaffold>
 
         {expandedRequest && (
-          <div
+          <motion.div
             className="fixed inset-0 z-[70] flex items-center justify-center px-4 py-8"
             role="dialog"
             aria-modal="true"
             aria-labelledby="contact-request-title"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
           >
-            <div
+            <motion.div
               className="absolute inset-0 bg-black/70 backdrop-blur-sm"
               onClick={() => setExpandedRequest(null)}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
             />
-            <div className="relative w-full max-w-2xl rounded-3xl border border-white/10 bg-[#0c0804] p-6 text-white shadow-[0_45px_80px_rgba(0,0,0,0.7)] space-y-4">
+            <motion.div 
+              className="relative w-full max-w-2xl rounded-3xl border border-[#f4c979]/20 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] p-6 text-white shadow-[0_45px_80px_rgba(0,0,0,0.7)] space-y-4"
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+            >
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p
@@ -500,16 +599,18 @@ export default function AdminDashboard() {
               </div>
 
               <div className="flex justify-end">
-                <button
+                <motion.button
                   type="button"
                   onClick={() => setExpandedRequest(null)}
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-transparent bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] px-5 py-2 text-sm font-semibold text-[#2e1b02] hover:scale-[1.01] transition"
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-transparent bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] px-5 py-2 text-sm font-semibold text-[#2e1b02] shadow-[0_10px_25px_rgba(244,201,121,0.3)] transition"
                 >
                   Close
-                </button>
+                </motion.button>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         )}
       </>
     </DashboardLayout>

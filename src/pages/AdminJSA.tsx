@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Shield,
   ClipboardList,
   Search,
-  Filter,
   MapPin,
   User,
   Clock,
@@ -14,6 +13,12 @@ import {
   AlertTriangle,
   ChevronRight,
   Sparkles,
+  FileText,
+  CheckCircle2,
+  FileEdit,
+  Calendar,
+  SortDesc,
+  X,
 } from "lucide-react";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { useAuth } from "../contexts/AuthContext";
@@ -22,10 +27,8 @@ import { PaginationControls } from "../components/PaginationControls";
 import type { DailyJsaRecord, JsaSpan } from "./DailyJSAForm";
 import TableSkeleton from "../components/skeletons/TableSkeleton";
 import CardListSkeleton from "../components/skeletons/CardListSkeleton";
-import { DateField } from "../components/forms/GlassyPickers";
 import AdminPremiumScaffold, {
   type AdminHeroConfig,
-  type AdminStat,
 } from "../components/admin/AdminPremiumScaffold";
 
 type AdminJsaRow = DailyJsaRecord & {
@@ -198,7 +201,7 @@ export default function AdminJSA() {
           ...row,
           user_email: meta.email || row.user_id,
           user_name: meta.full_name || meta.email || row.user_id,
-          user_role: meta.role || "user",
+          user_role: meta.role || "employee",
         };
       });
 
@@ -236,27 +239,6 @@ export default function AdminJSA() {
     [records, selectedId]
   );
 
-  const heroStats = useMemo<AdminStat[]>(
-    () => [
-      {
-        label: "Total JSAs",
-        value: String(total),
-        hint: "All records in Supabase",
-      },
-      {
-        label: "Drafts on page",
-        value: String(records.filter((row) => row.status === "draft").length),
-        hint: "Visible draft entries",
-      },
-      {
-        label: "Completed on page",
-        value: String(records.filter((row) => row.status === "completed").length),
-        hint: "Visible completed entries",
-      },
-    ],
-    [records, total]
-  );
-
   const heroConfig = useMemo<AdminHeroConfig>(
     () => ({
       eyebrow: "Admin • Safety",
@@ -277,25 +259,6 @@ export default function AdminJSA() {
     [statusFilter, dateFilter]
   );
 
-  const sidePanel = (
-    <div className="space-y-5 text-sm text-[#fdf4db]/80">
-      <p className="text-xs uppercase tracking-[0.35em] text-[#f7e7c3]">
-        Review cadence
-      </p>
-      <ul className="space-y-3 text-xs leading-relaxed">
-        <li className="flex gap-2">
-          <span className="text-[#f4c979]">•</span>Drafts older than 24h should be nudged before the next shift briefing.
-        </li>
-        <li className="flex gap-2">
-          <span className="text-[#f4c979]">•</span>Use the date filter when regional storms increase submissions.
-        </li>
-        <li className="flex gap-2">
-          <span className="text-[#f4c979]">•</span>Detail view mirrors the field form—download artifacts directly.
-        </li>
-      </ul>
-    </div>
-  );
-
   if (!isAdmin) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-neutral-900 via-black to-neutral-900 flex items-center justify-center">
@@ -308,55 +271,121 @@ export default function AdminJSA() {
     );
   }
 
+  // Count drafts and completed for tab badges
+  const draftCount = records.filter((row) => row.status === "draft").length;
+  const completedCount = records.filter((row) => row.status === "completed").length;
+
+  // Check if any filters are active
+  const hasActiveFilters = searchQuery.trim() || dateFilter || signatureFilter.trim();
+
+  const clearAllFilters = () => {
+    setSearchQuery("");
+    setDateFilter("");
+    setSignatureFilter("");
+    setStatusFilter("all");
+  };
+
   return (
     <DashboardLayout title="Daily JSA Oversight">
       <AdminPremiumScaffold
         hero={heroConfig}
-        stats={heroStats}
-        sidePanel={sidePanel}
         theme="gold"
       >
         <div className="space-y-6">
+          {/* Status Tabs */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="flex flex-wrap items-center gap-2"
+          >
+            {statusFilters.map((filter) => {
+              const isActive = statusFilter === filter.value;
+              const count = filter.value === "all" ? total : filter.value === "draft" ? draftCount : completedCount;
+              const Icon = filter.value === "draft" ? FileEdit : filter.value === "completed" ? CheckCircle2 : FileText;
+              
+              return (
+                <motion.button
+                  key={filter.value}
+                  type="button"
+                  onClick={() => setStatusFilter(filter.value as "all" | "draft" | "completed")}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-semibold transition-all duration-200 ${
+                    isActive
+                      ? "bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#2e1b02] shadow-[0_8px_25px_rgba(244,201,121,0.35)]"
+                      : "bg-[#0c0a08]/70 border border-[#f6dcb2]/20 text-[#f8e5bb]/80 hover:border-[#f4c979]/40 hover:text-white"
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {filter.label}
+                  <span className={`px-2 py-0.5 rounded-full text-xs ${
+                    isActive 
+                      ? "bg-[#2e1b02]/20 text-[#2e1b02]" 
+                      : "bg-white/10 text-[#f8e5bb]"
+                  }`}>
+                    {count}
+                  </span>
+                </motion.button>
+              );
+            })}
+          </motion.div>
+
+          {/* Search & Filters Bar */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.05 }}
-            className="rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] p-6 space-y-4 shadow-[0_25px_50px_rgba(0,0,0,0.55)]"
+            className="rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] p-5 space-y-4 shadow-[0_25px_50px_rgba(0,0,0,0.55)]"
           >
-            <div className="grid gap-4 lg:grid-cols-5">
+            {/* Filter Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-[#f4c979]">
+                <Search className="w-4 h-4" />
+                Search & Filter
+              </div>
+              <AnimatePresence>
+                {hasActiveFilters && (
+                  <motion.button
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10 }}
+                    type="button"
+                    onClick={clearAllFilters}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold text-[#f8e5bb]/80 hover:text-white bg-white/5 border border-white/10 hover:border-[#f4c979]/40 transition-all"
+                  >
+                    <X className="w-3 h-3" />
+                    Clear all filters
+                  </motion.button>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {/* Search Input */}
               <div className="relative">
                 <Search className="w-4 h-4 text-[#b59d72] absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Search location, circuit, notes..."
+                  placeholder="Location, circuit, notes..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full rounded-2xl bg-[#050402]/70 border border-[#f4c979]/25 pl-10 pr-4 py-2.5 text-sm text-[#fdf4db] placeholder:text-[#bfa984] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60"
                 />
               </div>
+
+              {/* Date Filter */}
               <div className="relative">
-                <Filter className="w-4 h-4 text-[#b59d72] absolute left-3 top-1/2 -translate-y-1/2" />
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as "all" | "draft" | "completed")}
-                  className="w-full rounded-2xl bg-[#050402]/70 border border-[#f4c979]/25 pl-10 pr-4 py-2.5 text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60"
-                >
-                  {statusFilters.map((filter) => (
-                    <option key={filter.value} value={filter.value}>
-                      {filter.label}
-                    </option>
-                  ))}
-                </select>
+                <Calendar className="w-4 h-4 text-[#b59d72] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                <input
+                  type="date"
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  className="w-full rounded-2xl bg-[#050402]/70 border border-[#f4c979]/25 pl-10 pr-4 py-2.5 text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 [color-scheme:dark]"
+                />
               </div>
-              <DateField
-                label="Job Date"
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-                helperText="Filter by scheduled work day"
-                containerClassName="text-white"
-                labelClassName="text-xs uppercase tracking-[0.3em] text-[#d3c2a1]"
-                className="bg-[#050402]/70 border-[#f4c979]/25 focus:ring-[#f4c979]/60"
-              />
+
+              {/* Signer Filter */}
               <div className="relative">
                 <User className="w-4 h-4 text-[#b59d72] absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
@@ -367,10 +396,19 @@ export default function AdminJSA() {
                   className="w-full rounded-2xl bg-[#050402]/70 border border-[#f4c979]/25 pl-10 pr-4 py-2.5 text-sm text-[#fdf4db] placeholder:text-[#bfa984] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60"
                 />
               </div>
-              <div className="flex items-center justify-center lg:justify-end text-sm text-[#f8e5bb]">
-                Page {page} of {totalPages}
+
+              {/* Results Summary */}
+              <div className="flex items-center justify-center lg:justify-end gap-3 text-sm text-[#f8e5bb]">
+                <div className="flex items-center gap-2">
+                  <SortDesc className="w-4 h-4 text-[#f4c979]" />
+                  <span className="text-xs text-[#c7b696]">Most recent first</span>
+                </div>
+                <span className="text-[#f4c979] font-semibold">
+                  {page}/{totalPages}
+                </span>
               </div>
             </div>
+
             {error && (
               <div className="rounded-2xl border border-[#ff8a65]/40 bg-[#2b120b]/70 text-[#ffb199] px-4 py-3 text-sm">
                 {error}
@@ -438,7 +476,7 @@ export default function AdminJSA() {
                                     <span>{ownerName}</span>
                                   </div>
                                   <p className="text-xs text-[#c7b696] mt-1">
-                                    {ownerEmail} · {record.user_role || "user"}
+                                    {ownerEmail} · {record.user_role || "employee"}
                                   </p>
                                 </>
                               );

@@ -1,0 +1,457 @@
+import { useMemo, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Calendar, Loader2, MapPin, Ruler, Shield, User, Wrench } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabaseClient';
+import { toast } from '../../lib/toast';
+import { cn } from '../../lib/utils';
+import { getTodayDateString } from '../../lib/jobProgressUtils';
+import {
+  SPAN_LENGTH_PRESETS,
+  type Equipment,
+  type JobProgressTracker,
+  type JobProgressUpdateFormData,
+  type SpanLengthCategory,
+} from '../../types/jobs';
+import { logger } from '../../lib/logger';
+
+interface JobProgressUpdateFormProps {
+  job: JobProgressTracker;
+  onSubmit: () => void;
+  onCancel: () => void;
+}
+
+const baseInput =
+  'w-full bg-[#050402]/80 border border-[#f6dcb2]/20 rounded-2xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 disabled:opacity-50 disabled:cursor-not-allowed';
+
+const labelClass =
+  'text-xs uppercase tracking-[0.3em] text-[#f3d9a4]/70 flex items-center gap-2 mb-2';
+
+const defaultForm: JobProgressUpdateFormData = {
+  date: getTodayDateString(),
+  spans_completed: 1,
+  span_length_category: 'urban_suburban',
+  custom_span_length: undefined,
+  equipment: 'bucket',
+  job_title: '',
+  notes: '',
+};
+
+export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUpdateFormProps) {
+  const { user } = useAuth();
+  const [formData, setFormData] = useState<JobProgressUpdateFormData>({
+    ...defaultForm,
+    full_name: undefined,
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const userFullName =
+    (user?.user_metadata as Record<string, string | undefined>)?.full_name ||
+    (user?.user_metadata as Record<string, string | undefined>)?.name ||
+    'Unknown User';
+  const userEmail = user?.email || 'unknown@atts.com';
+
+  const spanLengthFeet = useMemo(() => {
+    if (formData.span_length_category === 'custom') {
+      return formData.custom_span_length || 0;
+    }
+    return SPAN_LENGTH_PRESETS[formData.span_length_category];
+  }, [formData.custom_span_length, formData.span_length_category]);
+
+  const totalFeet = useMemo(
+    () => (spanLengthFeet > 0 ? spanLengthFeet * Math.max(0, formData.spans_completed) : 0),
+    [spanLengthFeet, formData.spans_completed]
+  );
+
+  const validate = (): boolean => {
+    if (!user?.id) {
+      toast.error('You must be signed in to submit progress');
+      return false;
+    }
+
+    if (!formData.date) {
+      setError('Date is required');
+      return false;
+    }
+
+    const effectiveName = formData.full_name?.trim() || userFullName;
+    if (!effectiveName.trim()) {
+      setError('Full name is required');
+      return false;
+    }
+
+    if (!formData.spans_completed || formData.spans_completed <= 0) {
+      setError('Spans completed must be greater than zero');
+      return false;
+    }
+
+    if (formData.span_length_category === 'custom') {
+      if (!formData.custom_span_length || formData.custom_span_length <= 0) {
+        setError('Please enter a custom span length greater than zero');
+        return false;
+      }
+      if (formData.custom_span_length > 2000) {
+        setError('Custom span length cannot exceed 2000 ft');
+        return false;
+      }
+    }
+
+    if (!formData.job_title.trim()) {
+      setError('Your role is required');
+      return false;
+    }
+
+    if (!job.circuit && !job.job_location) {
+      setError('Circuit is required on the job before submitting progress');
+      return false;
+    }
+
+    setError(null);
+    return true;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
+
+    setSubmitting(true);
+    setError(null);
+
+    const userId = user?.id;
+    if (!userId) {
+      toast.error('You must be signed in to submit progress');
+      setSubmitting(false);
+      return;
+    }
+
+    const spanLength = spanLengthFeet;
+    const payload = {
+      job_id: job.id,
+      user_id: userId,
+      full_name: formData.full_name?.trim() || userFullName,
+      email: userEmail,
+      circuit: job.circuit || job.job_location || '',
+      date: formData.date,
+      spans_completed: formData.spans_completed,
+      span_length_feet: spanLength,
+      span_length_category: formData.span_length_category,
+      equipment: formData.equipment,
+      job_title: formData.job_title,
+      notes: formData.notes || null,
+    };
+
+    const { error: insertError } = await supabase.from('job_progress_updates').insert(payload);
+
+    if (insertError) {
+      logger.error('Progress update error:', insertError);
+      if (insertError.code === '23503') {
+        toast.error('Job no longer exists');
+      } else if (insertError.code === '42501') {
+        toast.error('You do not have permission to update this job');
+      } else {
+        toast.error(`Failed to save progress: ${insertError.message}`);
+      }
+      setSubmitting(false);
+      return;
+    }
+
+    toast.success('Progress update saved!');
+    setSubmitting(false);
+    onSubmit();
+  };
+
+  const spanOptions: { value: SpanLengthCategory; label: string; hint: string }[] = [
+    { value: 'urban_suburban', label: 'Urban/Suburban', hint: 'Typical 150-250 ft (default 200)' },
+    { value: 'rural', label: 'Rural', hint: 'Typical 200-800 ft (default 500)' },
+    { value: 'transmission', label: 'Transmission', hint: 'Typical 490-980 ft (default 735)' },
+    { value: 'custom', label: 'Custom', hint: 'Enter a custom length (1-2000 ft)' },
+  ];
+
+  const equipmentOptions: { value: Equipment; label: string }[] = [
+    { value: 'jerraff', label: 'Jarraff' },
+    { value: 'bucket', label: 'Bucket' },
+    { value: 'mulcher', label: 'Mulcher' },
+  ];
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 10 }}
+        className={cn(
+          'fixed inset-0 z-50 flex items-center justify-center px-4',
+          'bg-black/70 backdrop-blur-sm'
+        )}
+      >
+        <motion.div
+          initial={{ scale: 0.98, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.98, opacity: 0 }}
+          className={cn(
+            'w-full max-w-2xl rounded-3xl bg-gradient-to-b from-[#0b0907] to-[#050402] border border-white/10 shadow-2xl overflow-hidden',
+            'max-h-[90vh] flex flex-col'
+          )}
+        >
+          <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-white/50">Submit Progress</p>
+              <h3 className="text-lg font-semibold text-white">{job.job_name}</h3>
+              <div className="flex items-center gap-3 text-xs text-white/60 mt-1">
+                <span className="inline-flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5 text-[#f4c979]" />
+                  {job.circuit || job.job_location || 'Circuit not set'}
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <User className="w-3.5 h-3.5 text-[#f4c979]" />
+                  {userFullName}
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={onCancel}
+              className="text-white/60 hover:text-white bg-white/5 hover:bg-white/10 rounded-full px-3 py-1 text-xs"
+            >
+              Close
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto md:p-8">
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="p-3 rounded-xl bg-red-500/15 border border-red-500/30 text-red-300 text-sm"
+              >
+                {error}
+              </motion.div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>
+                  <User className="w-4 h-4 text-[#f4c979]" />
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  value={formData.full_name ?? userFullName}
+                  onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
+                  placeholder="Your full name"
+                  className={baseInput}
+                  disabled={submitting}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>
+                  <Calendar className="w-4 h-4 text-[#f4c979]" />
+                  Work Date
+                </label>
+                <input
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                  max={getTodayDateString()}
+                  className={cn(baseInput, '[color-scheme:dark]')}
+                  disabled={submitting}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>
+                  <Shield className="w-4 h-4 text-[#f4c979]" />
+                  Equipment Used
+                </label>
+                <select
+                  value={formData.equipment}
+                  onChange={(e) => setFormData(prev => ({ ...prev, equipment: e.target.value as Equipment }))}
+                  className={cn(baseInput, 'pr-10')}
+                  disabled={submitting}
+                >
+                  {equipmentOptions.map(option => (
+                    <option key={option.value} value={option.value} className="bg-[#0b0907]">
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className={labelClass}>
+                  <Wrench className="w-4 h-4 text-[#f4c979]" />
+                  Your Role
+                </label>
+                <input
+                  type="text"
+                  value={formData.job_title}
+                  onChange={(e) => setFormData(prev => ({ ...prev, job_title: e.target.value }))}
+                  placeholder="e.g., Bucket Foreman"
+                  className={baseInput}
+                  disabled={submitting}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>
+                  <Wrench className="w-4 h-4 text-[#f4c979]" />
+                  Your Role
+                </label>
+                <input
+                  type="text"
+                  value={formData.job_title}
+                  onChange={(e) => setFormData(prev => ({ ...prev, job_title: e.target.value }))}
+                  placeholder="e.g., Bucket Foreman"
+                  className={baseInput}
+                  disabled={submitting}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>
+                  <Ruler className="w-4 h-4 text-[#f4c979]" />
+                  Spans Completed
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  value={formData.spans_completed}
+                  onChange={(e) =>
+                    setFormData(prev => ({ ...prev, spans_completed: Number(e.target.value) || 0 }))
+                  }
+                  className={baseInput}
+                  disabled={submitting}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className={labelClass}>
+                <Ruler className="w-4 h-4 text-[#f4c979]" />
+                Typical Span Length
+              </label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {spanOptions.map(option => (
+                  <label
+                    key={option.value}
+                    className={cn(
+                      'flex items-start gap-3 rounded-2xl border p-3 cursor-pointer transition-all',
+                      formData.span_length_category === option.value
+                        ? 'border-[#f4c979]/50 bg-[#f4c979]/5'
+                        : 'border-white/10 hover:border-[#f4c979]/30'
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="span_length_category"
+                      value={option.value}
+                      checked={formData.span_length_category === option.value}
+                      onChange={() =>
+                        setFormData(prev => ({
+                          ...prev,
+                          span_length_category: option.value,
+                          custom_span_length: option.value === 'custom' ? prev.custom_span_length : undefined,
+                        }))
+                      }
+                      disabled={submitting}
+                      className="mt-1"
+                    />
+                    <div>
+                      <p className="text-sm text-white font-semibold">{option.label}</p>
+                      <p className="text-xs text-white/60">{option.hint}</p>
+                      {option.value !== 'custom' && (
+                        <p className="text-xs text-emerald-300 mt-1">Preset: {SPAN_LENGTH_PRESETS[option.value]} ft</p>
+                      )}
+                      {option.value === 'custom' && formData.span_length_category === 'custom' && (
+                        <div className="mt-2">
+                          <input
+                            type="number"
+                            min={1}
+                            max={2000}
+                            value={formData.custom_span_length ?? ''}
+                            onChange={(e) =>
+                              setFormData(prev => ({
+                                ...prev,
+                                custom_span_length: e.target.value ? Number(e.target.value) : undefined,
+                              }))
+                            }
+                            placeholder="Enter custom length"
+                            className={cn(baseInput, 'bg-[#0b0907]')}
+                            disabled={submitting}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className={labelClass}>Notes</label>
+              <textarea
+                value={formData.notes}
+                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                rows={3}
+                placeholder="Any important context or blockers..."
+                className={cn(baseInput, 'resize-none')}
+                disabled={submitting}
+              />
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-white/50">Summary</p>
+                <p className="text-sm text-white">
+                  {formData.spans_completed} span(s) × {spanLengthFeet.toFixed(0)} ft
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-white/60">Total Feet</p>
+                <p className="text-2xl font-bold text-emerald-300">{totalFeet.toFixed(0)} ft</p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={onCancel}
+                disabled={submitting}
+                className="px-5 py-2.5 rounded-xl border border-white/20 text-white/80 text-sm font-semibold hover:bg-white/5 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <motion.button
+                type="submit"
+                disabled={submitting}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className={cn(
+                  'inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all',
+                  'bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#2e1b02]',
+                  'hover:shadow-[0_0_20px_rgba(244,201,121,0.3)]',
+                  'disabled:opacity-50 disabled:cursor-not-allowed'
+                )}
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Shield className="w-4 h-4" />
+                    Save Progress
+                  </>
+                )}
+              </motion.button>
+            </div>
+          </form>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+

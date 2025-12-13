@@ -1,4 +1,4 @@
-import { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -19,9 +19,17 @@ import {
   XCircle,
   Loader2,
   Undo2,
+  Ruler,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { formatDateForDisplay, formatDateRange, calculateMilestoneProgress } from '../../lib/jobProgressUtils';
+import { 
+  formatDateForDisplay, 
+  formatDateRange, 
+  calculateMilestoneProgress,
+  calculateSpanProgress,
+  formatSpanProgressLabel,
+  getSpanProgressColors,
+} from '../../lib/jobProgressUtils';
 import { JobProgressBar } from './JobProgressBar';
 import { JobCreationForm } from './JobCreationForm';
 import type { JobProgressTracker, JobStatus, JobFormData, CrewMember } from '../../types/jobs';
@@ -76,6 +84,29 @@ function JobDetailModalComponent({
   
   const milestoneProgress = calculateMilestoneProgress(milestonesWithOptimistic);
   const crewAssignments = job.crew_assignments || [];
+  
+  // Calculate span-based progress for job_progress tracking type
+  const isSpanBased = job.tracking_type === 'job_progress';
+  const spanProgress = useMemo(() => {
+    if (!isSpanBased) return null;
+    
+    const progressUpdates = job.progress_updates || [];
+    const totalSpans = progressUpdates.reduce((sum, u) => sum + (u.spans_completed || 0), 0);
+    const totalFeet = progressUpdates.reduce((sum, u) => sum + (u.total_feet_completed || 0), 0);
+    
+    return calculateSpanProgress(
+      totalSpans,
+      totalFeet,
+      job.estimated_total_spans,
+      job.estimated_total_feet,
+      job.span_progress_metric || 'spans'
+    );
+  }, [isSpanBased, job.progress_updates, job.estimated_total_spans, job.estimated_total_feet, job.span_progress_metric]);
+  
+  const spanProgressColors = useMemo(() => {
+    if (!spanProgress) return null;
+    return getSpanProgressColors(spanProgress.percentage);
+  }, [spanProgress]);
 
   const handleUpdate = useCallback(async (data: JobFormData) => {
     const result = await onUpdate(job.id, data, userId);
@@ -214,15 +245,90 @@ function JobDetailModalComponent({
 
             {/* Progress */}
             <div className="p-6 border-b border-white/10">
-              <JobProgressBar
-                startDate={job.start_date}
-                endDate={job.end_date}
-                size="lg"
-              />
-              <div className="flex items-center gap-2 mt-3 text-sm text-white/60">
-                <Calendar className="w-4 h-4 text-[#f4c979]/60" />
-                <span>{formatDateRange(job.start_date, job.end_date)}</span>
-              </div>
+              {isSpanBased && spanProgress && spanProgressColors ? (
+                // Span-based progress display
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-semibold border border-blue-500/40 bg-blue-500/10 text-blue-200">
+                      <Ruler className="w-3 h-3 mr-1.5" />
+                      SPAN-BASED TRACKING
+                    </span>
+                  </div>
+                  
+                  {/* Progress bar */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className={cn('font-medium', spanProgressColors.text)}>
+                        {spanProgress.percentage}%
+                      </span>
+                      <span className="text-white/50">
+                        {formatSpanProgressLabel(spanProgress)}
+                      </span>
+                    </div>
+                    <div className={cn(
+                      'relative w-full h-4 rounded-full overflow-hidden',
+                      spanProgressColors.bg
+                    )}>
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${spanProgress.percentage}%` }}
+                        transition={{ duration: 0.6, ease: 'easeOut' }}
+                        className={cn(
+                          'absolute inset-y-0 left-0 rounded-full bg-gradient-to-r',
+                          spanProgressColors.gradient
+                        )}
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Stats grid */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-center">
+                      <p className="text-xs text-white/50 mb-1">Completed</p>
+                      <p className="text-lg font-bold text-emerald-400">
+                        {spanProgress.completed.toLocaleString()}
+                      </p>
+                      <p className="text-[10px] text-white/40">{spanProgress.metricLabel}</p>
+                    </div>
+                    <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-center">
+                      <p className="text-xs text-white/50 mb-1">Estimated</p>
+                      <p className="text-lg font-bold text-[#f4c979]">
+                        {spanProgress.total > 0 ? spanProgress.total.toLocaleString() : '—'}
+                      </p>
+                      <p className="text-[10px] text-white/40">{spanProgress.metricLabel}</p>
+                    </div>
+                    <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-center">
+                      <p className="text-xs text-white/50 mb-1">Remaining</p>
+                      <p className="text-lg font-bold text-white/80">
+                        {spanProgress.total > 0 ? spanProgress.remaining.toLocaleString() : '—'}
+                      </p>
+                      <p className="text-[10px] text-white/40">{spanProgress.metricLabel}</p>
+                    </div>
+                  </div>
+                  
+                  {/* No estimate warning */}
+                  {spanProgress.total === 0 && (
+                    <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
+                      <p className="text-xs text-amber-300">
+                        No estimated total set. Edit this job to add an estimated total for accurate progress tracking.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                // Timeline-based progress display
+                <>
+                  <JobProgressBar
+                    startDate={job.start_date}
+                    endDate={job.end_date}
+                    size="lg"
+                  />
+                  <div className="flex items-center gap-2 mt-3 text-sm text-white/60">
+                    <Calendar className="w-4 h-4 text-[#f4c979]/60" />
+                    <span>{formatDateRange(job.start_date, job.end_date)}</span>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Content */}

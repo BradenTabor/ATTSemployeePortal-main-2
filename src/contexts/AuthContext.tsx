@@ -4,7 +4,8 @@ import { supabase } from '../lib/supabaseClient';
 import { logger } from "../lib/logger";
 
 
-type UserRole = "employee" | "admin" | "mechanic" | "user" | null;
+// Matches DB constraint: check (role in ('employee', 'admin', 'manager', 'mechanic'))
+type UserRole = "employee" | "admin" | "mechanic" | "manager" | null;
 
 interface ExtendedSession extends Session {
   role?: string;
@@ -51,15 +52,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Fetch user role from app_users table and normalize it
     // Returns null on error (not 'user') so caller can preserve last known role
+    // 
+    // IMPORTANT: This queries app_users.role WHERE user_id = userId
+    // The user_id column must contain the auth.users.id (UUID from Supabase Auth)
     const fetchUserRole = async (userId: string): Promise<UserRole> => {
       try {
         logger.info(`[AuthContext] Fetching role for user_id: ${userId}`);
+        console.log('[AuthContext] DEBUG: Fetching role from app_users where user_id =', userId);
+        
         const timeoutSentinel = Symbol('role-timeout');
         let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
         const fetchPromise = supabase
           .from('app_users')
-          .select('role')
+          .select('role, user_id, email')
           .eq('user_id', userId)
           .maybeSingle();
 
@@ -77,34 +83,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           logger.warn(
             `[AuthContext] Role fetch timed out for ${userId}, using cached role fallback.`
           );
-          return lastKnownRoleRef.current ?? 'user';
+          console.warn('[AuthContext] DEBUG: Role fetch TIMED OUT');
+          return lastKnownRoleRef.current ?? 'employee';
         }
 
-        const { data, error } = winner as PostgrestSingleResponse<{ role: string | null }>;
+        const { data, error } = winner as PostgrestSingleResponse<{ role: string | null; user_id: string; email: string | null }>;
 
         if (error) {
           logger.error(`[AuthContext] Error fetching user role for ${userId}:`, error.message);
+          console.error('[AuthContext] DEBUG: Supabase error:', error.code, error.message, error.hint);
           return null;
+        }
+
+        // Debug: Log the full response
+        console.log('[AuthContext] DEBUG: Query response:', { 
+          hasData: !!data, 
+          role: data?.role, 
+          user_id: data?.user_id,
+          email: data?.email,
+          queryUserId: userId
+        });
+
+        if (!data) {
+          logger.warn(`[AuthContext] No app_users record found for user_id: ${userId}`);
+          console.warn('[AuthContext] DEBUG: No record found! Check if app_users has a row with user_id =', userId);
+          return 'employee';
         }
 
         const rawRole = data?.role;
         logger.info(`[AuthContext] Raw role from DB for ${userId}:`, rawRole);
 
-        // Normalize to known roles
-        if (rawRole === 'admin' || rawRole === 'mechanic' || rawRole === 'employee') {
+        // Normalize to known roles (matches DB constraint)
+        if (rawRole === 'admin' || rawRole === 'mechanic' || rawRole === 'employee' || rawRole === 'manager') {
           logger.info(`[AuthContext] Normalized role for ${userId}: ${rawRole}`);
+          console.log('[AuthContext] DEBUG: Role resolved as:', rawRole);
           return rawRole;
         }
 
         if (rawRole === null || rawRole === undefined) {
-          logger.warn(`[AuthContext] No role found in DB for ${userId}, using 'user' as fallback`);
-          return 'user';
+          logger.warn(`[AuthContext] No role found in DB for ${userId}, using 'employee' as fallback`);
+          console.warn('[AuthContext] DEBUG: Role column is NULL, falling back to employee');
+          return 'employee';
         }
 
-        logger.warn(`[AuthContext] Invalid role value '${rawRole}' for ${userId}, using 'user' as fallback`);
-        return 'user';
+        logger.warn(`[AuthContext] Invalid role value '${rawRole}' for ${userId}, using 'employee' as fallback`);
+        console.warn('[AuthContext] DEBUG: Unknown role value:', rawRole);
+        return 'employee';
       } catch (error) {
         logger.error(`[AuthContext] Failed to fetch user role for ${userId}:`, error);
+        console.error('[AuthContext] DEBUG: Exception in fetchUserRole:', error);
         return null;
       }
     };
@@ -124,19 +151,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (session) {
             const normalizedRole = await fetchUserRole(session.user.id);
             
-            // If fetch failed (returned null), preserve last known role or use 'user' as initial fallback
+            // If fetch failed (returned null), preserve last known role or use 'employee' as initial fallback
             const finalRole: UserRole = normalizedRole !== null 
               ? normalizedRole 
               : (lastKnownRoleRef.current !== null 
                   ? lastKnownRoleRef.current 
-                  : 'user');
+                  : 'employee');
             
             if (normalizedRole !== null) {
               // Only update ref when we get a valid role from DB
               lastKnownRoleRef.current = normalizedRole;
               logger.info(`[AuthContext] Initial auth: Set role to ${normalizedRole} for ${session.user.id}`);
             } else {
-              logger.warn(`[AuthContext] Initial auth: Role fetch failed, preserving last known role: ${lastKnownRoleRef.current || 'user'}`);
+              logger.warn(`[AuthContext] Initial auth: Role fetch failed, preserving last known role: ${lastKnownRoleRef.current || 'employee'}`);
             }
             
             const extendedSession: ExtendedSession = {
@@ -203,19 +230,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const normalizedRole = await fetchUserRole(session.user.id);
           
           // If fetch failed (returned null), preserve last known role
-          // Only use 'user' as fallback if we truly have no prior role
+          // Only use 'employee' as fallback if we truly have no prior role
           const finalRole: UserRole = normalizedRole !== null 
             ? normalizedRole 
             : (lastKnownRoleRef.current !== null 
                 ? lastKnownRoleRef.current 
-                : 'user');
+                : 'employee');
           
           if (normalizedRole !== null) {
             // Only update ref when we get a valid role from DB
             lastKnownRoleRef.current = normalizedRole;
             logger.info(`[AuthContext] Auth state change (${event}): Set role to ${normalizedRole} for ${session.user.id}`);
           } else {
-            logger.warn(`[AuthContext] Auth state change (${event}): Role fetch failed, preserving last known role: ${lastKnownRoleRef.current || 'user'}`);
+            logger.warn(`[AuthContext] Auth state change (${event}): Role fetch failed, preserving last known role: ${lastKnownRoleRef.current || 'employee'}`);
           }
           
           const extendedSession: ExtendedSession = {

@@ -48,9 +48,39 @@
   }
 }
 
+@layer base {
+  /* Prevent word breaks in headings by default */
+  h1, h2, h3, h4, h5, h6 {
+    overflow-wrap: break-word;
+    word-break: break-word;
+    hyphens: none;
+  }
+}
+
 @layer utilities {
   .animate-aurora {
     animation: aurora 20s linear infinite alternate;
+  }
+
+  /* Text wrapping utilities */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  /* Prevent word breaks - keep words together */
+  .break-keep {
+    word-break: keep-all;
+    overflow-wrap: normal;
+  }
+
+  /* Break words only when necessary (at word boundaries) */
+  .break-normal {
+    word-break: normal;
+    overflow-wrap: break-word;
   }
 }
 

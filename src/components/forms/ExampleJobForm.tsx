@@ -1,4 +1,5 @@
-import { useZodForm } from '../../hooks/useZodForm';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { jobFormSchema, type JobFormData } from '../../schemas/jobs';
 import { FormField } from './FormField';
 import { Input } from './Input';
@@ -20,7 +21,10 @@ export function ExampleJobForm({ initialData, onSubmit, onCancel }: ExampleJobFo
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useZodForm(jobFormSchema, {
+  } = useForm<JobFormData>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(jobFormSchema as any),
+    mode: 'onBlur',
     defaultValues: {
       job_name: '',
       job_location: '',

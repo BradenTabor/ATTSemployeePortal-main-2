@@ -5,7 +5,7 @@ import { Briefcase, Search, Filter, SlidersHorizontal } from 'lucide-react';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { JobCard } from './JobCard';
 import { JobDetailModal } from './JobDetailModal';
-import type { JobProgressTracker, JobStatus, JobFormData, CrewMember } from '../../types/jobs';
+import type { JobProgressTracker, JobStatus, JobFormData, CrewMember, TrackingType } from '../../types/jobs';
 
 interface JobListProps {
   jobs: JobProgressTracker[];
@@ -27,8 +27,18 @@ const STATUS_OPTIONS: { value: JobStatus | 'all'; label: string }[] = [
   { value: 'cancelled', label: 'Cancelled' },
 ];
 
+const TRACKING_OPTIONS: { value: TrackingType | 'all'; label: string }[] = [
+  { value: 'all', label: 'All Modes' },
+  { value: 'timeline', label: 'Timeline' },
+  { value: 'job_progress', label: 'Span-based' },
+];
+
 const isValidStatus = (value: string | null): value is JobStatus | 'all' => {
   return value === 'all' || value === 'active' || value === 'paused' || value === 'completed' || value === 'cancelled';
+};
+
+const isValidTracking = (value: string | null): value is TrackingType | 'all' => {
+  return value === 'all' || value === 'timeline' || value === 'job_progress';
 };
 
 function JobListComponent({
@@ -47,10 +57,14 @@ function JobListComponent({
   // Initialize state from URL params
   const urlStatus = searchParams.get('status');
   const urlSearch = searchParams.get('search') || '';
+  const urlTracking = searchParams.get('mode');
   
   const [searchQuery, setSearchQuery] = useState(urlSearch);
   const [statusFilter, setStatusFilter] = useState<JobStatus | 'all'>(
     isValidStatus(urlStatus) ? urlStatus : 'all'
+  );
+  const [trackingFilter, setTrackingFilter] = useState<TrackingType | 'all'>(
+    isValidTracking(urlTracking) ? urlTracking : 'all'
   );
   
   // Track selected job by ID only - the actual job data comes from the jobs array
@@ -76,7 +90,7 @@ function JobListComponent({
   const debouncedSearch = useDebouncedValue(searchQuery, 300);
 
   // Sync URL with filter state
-  const updateUrlParams = useCallback((search: string, status: JobStatus | 'all') => {
+  const updateUrlParams = useCallback((search: string, status: JobStatus | 'all', tracking: TrackingType | 'all') => {
     const params = new URLSearchParams();
     if (search) {
       params.set('search', search);
@@ -84,13 +98,16 @@ function JobListComponent({
     if (status !== 'all') {
       params.set('status', status);
     }
+    if (tracking !== 'all') {
+      params.set('mode', tracking);
+    }
     setSearchParams(params, { replace: true });
   }, [setSearchParams]);
 
   // Update URL when debounced search or status changes
   useEffect(() => {
-    updateUrlParams(debouncedSearch, statusFilter);
-  }, [debouncedSearch, statusFilter, updateUrlParams]);
+    updateUrlParams(debouncedSearch, statusFilter, trackingFilter);
+  }, [debouncedSearch, statusFilter, trackingFilter, updateUrlParams]);
 
   // Handle search input change
   const handleSearchChange = useCallback((value: string) => {
@@ -100,6 +117,10 @@ function JobListComponent({
   // Handle status filter change
   const handleStatusChange = useCallback((value: JobStatus | 'all') => {
     setStatusFilter(value);
+  }, []);
+
+  const handleTrackingChange = useCallback((value: TrackingType | 'all') => {
+    setTrackingFilter(value);
   }, []);
 
   // Clear search
@@ -112,10 +133,21 @@ function JobListComponent({
     setStatusFilter('all');
   }, []);
 
+  const clearTrackingFilter = useCallback(() => {
+    setTrackingFilter('all');
+  }, []);
+
   const filteredJobs = useMemo(() => {
     return jobs.filter(job => {
+      const trackingType = job.tracking_type || 'timeline';
+
       // Status filter
       if (statusFilter !== 'all' && job.status !== statusFilter) {
+        return false;
+      }
+
+      // Tracking filter
+      if (trackingFilter !== 'all' && trackingType !== trackingFilter) {
         return false;
       }
 
@@ -124,15 +156,16 @@ function JobListComponent({
         const searchLower = debouncedSearch.toLowerCase();
         const matchesName = job.job_name.toLowerCase().includes(searchLower);
         const matchesLocation = job.job_location?.toLowerCase().includes(searchLower);
+        const matchesCircuit = job.circuit?.toLowerCase().includes(searchLower);
         const matchesDescription = job.job_description?.toLowerCase().includes(searchLower);
-        if (!matchesName && !matchesLocation && !matchesDescription) {
+        if (!matchesName && !matchesLocation && !matchesDescription && !matchesCircuit) {
           return false;
         }
       }
 
       return true;
     });
-  }, [jobs, statusFilter, debouncedSearch]);
+  }, [jobs, statusFilter, debouncedSearch, trackingFilter]);
 
   // Loading skeleton
   if (loading) {
@@ -173,7 +206,7 @@ function JobListComponent({
           <span className="text-xs uppercase tracking-[0.3em] text-[#f4c979]/70">Filters</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Search */}
           <div className="relative">
             <Search className="w-4 h-4 text-[#b59d72] absolute left-4 top-1/2 -translate-y-1/2" />
@@ -195,6 +228,22 @@ function JobListComponent({
               className="w-full rounded-2xl bg-[#050402]/70 border border-[#f4c979]/20 pl-11 pr-4 py-3 text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 appearance-none cursor-pointer"
             >
               {STATUS_OPTIONS.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Tracking filter */}
+          <div className="relative">
+            <Filter className="w-4 h-4 text-[#b59d72] absolute left-4 top-1/2 -translate-y-1/2" />
+            <select
+              value={trackingFilter}
+              onChange={(e) => handleTrackingChange(e.target.value as TrackingType | 'all')}
+              className="w-full rounded-2xl bg-[#050402]/70 border border-[#f4c979]/20 pl-11 pr-4 py-3 text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 appearance-none cursor-pointer"
+            >
+              {TRACKING_OPTIONS.map(option => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
@@ -228,6 +277,18 @@ function JobListComponent({
                 <button
                   type="button"
                   onClick={clearStatusFilter}
+                  className="hover:text-white"
+                >
+                  ✕
+                </button>
+              </span>
+            )}
+            {trackingFilter !== 'all' && (
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#f6dcb2]/30 bg-[#f6dcb2]/10 text-xs text-[#fef3d1]">
+                <span>Mode: {trackingFilter === 'job_progress' ? 'Span-based' : 'Timeline'}</span>
+                <button
+                  type="button"
+                  onClick={clearTrackingFilter}
                   className="hover:text-white"
                 >
                   ✕

@@ -30,7 +30,7 @@ export default function DashboardLayout({ title, children }: DashboardLayoutProp
             />
             {title && (
               <motion.h1
-                className="text-2xl sm:text-3xl font-bold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] drop-shadow-[0_0_25px_rgba(244,201,121,0.35)]"
+                className="text-2xl sm:text-3xl font-bold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] drop-shadow-[0_0_25px_rgba(244,201,121,0.35)] break-normal"
                 style={{ backgroundSize: "200% 200%" }}
                 animate={{
                   backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],

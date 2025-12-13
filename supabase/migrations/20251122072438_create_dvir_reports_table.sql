@@ -121,15 +121,11 @@ create policy "dvir_select_own"
   using (user_id = auth.uid());
 
 -- Policy: Admins can select all reports
+-- Uses public.is_admin() helper function to avoid direct app_users queries
+-- NOTE: Fixed bug where it used au.id instead of au.user_id
+-- (prevents potential recursion issues)
 create policy "dvir_admin_select_all"
   on public.dvir_reports
   for select
   to authenticated
-  using (
-    exists (
-      select 1
-      from public.app_users au
-      where au.id = auth.uid()
-        and au.role = 'admin'
-    )
-  );
+  using (public.is_admin());

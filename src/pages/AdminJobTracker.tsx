@@ -57,8 +57,9 @@ function AdminJobTracker() {
       if (job.status === 'completed') stats.completed++;
       if (job.status === 'paused') stats.paused++;
 
-      // Check if active job has exceeded timeline
-      if (job.status === 'active') {
+      // Check if active timeline-based job has exceeded timeline
+      // Span-based jobs don't have timeline exceeded status
+      if (job.status === 'active' && job.tracking_type !== 'job_progress') {
         const progress = calculateJobProgress(job.start_date, job.end_date);
         if (progress.status === 'exceeded') stats.exceeded++;
       }
