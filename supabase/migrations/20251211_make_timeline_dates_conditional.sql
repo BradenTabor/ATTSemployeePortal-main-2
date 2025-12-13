@@ -20,3 +20,4 @@ ALTER TABLE public.job_progress_trackers
 ALTER TABLE public.job_progress_trackers
   ALTER COLUMN tracking_type SET DEFAULT 'timeline';
 
+
