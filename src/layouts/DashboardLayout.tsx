@@ -26,7 +26,7 @@ export default function DashboardLayout({ title, children }: DashboardLayoutProp
               src={logo}
               alt="ATTS Logo"
               fetchPriority="high"
-              className="w-20 sm:w-24 object-contain drop-shadow-md"
+              className="w-28 sm:w-36 md:w-44 object-contain drop-shadow-lg"
             />
             {title && (
               <motion.h1

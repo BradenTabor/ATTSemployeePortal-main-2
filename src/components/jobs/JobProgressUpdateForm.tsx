@@ -211,7 +211,7 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
             </div>
             <button
               onClick={onCancel}
-              className="text-white/60 hover:text-white bg-white/5 hover:bg-white/10 rounded-full px-3 py-1 text-xs"
+              className="text-white/70 hover:text-white bg-white/15 hover:bg-white/25 rounded-lg px-4 py-2 text-sm font-medium mr-12 border border-white/10 hover:border-white/20 transition-all duration-200"
             >
               Close
             </button>

@@ -105,26 +105,7 @@ function AdminUsers() {
   const totalPages =
     totalUsers && totalUsers > 0 ? Math.max(1, Math.ceil(totalUsers / pageSize)) : 1;
 
-  const heroStats = useMemo<AdminStat[]>(
-    () => [
-      {
-        label: "Total Users",
-        value: String(totalUsers ?? users.length),
-        hint: "All records in Supabase",
-      },
-      {
-        label: "Visible on Page",
-        value: String(users.length),
-        hint: "After filters & pagination",
-      },
-      {
-        label: "Role Filter",
-        value: roleFilter ? roleFilter.toUpperCase() : "ALL",
-        hint: roleFilter ? "Scoped to a role" : "All roles shown",
-      },
-    ],
-    [totalUsers, users.length, roleFilter]
-  );
+  const heroStats = useMemo<AdminStat[]>(() => [], []);
 
   const heroConfig = useMemo<AdminHeroConfig>(
     () => ({

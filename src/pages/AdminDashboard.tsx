@@ -73,26 +73,7 @@ export default function AdminDashboard() {
   const [expandedRequest, setExpandedRequest] = useState<ContactRequest | null>(null);
   const [contactTopicFilter, setContactTopicFilter] = useState<string>("all");
 
-  const stats = useMemo<AdminStat[]>(
-    () => [
-      {
-        label: "Admin Role",
-        value: (role || "Admin").toUpperCase(),
-        hint: "Highest privileges",
-      },
-      {
-        label: "Core Panels",
-        value: "02",
-        hint: "RTO & Users",
-      },
-      {
-        label: "Announcements",
-        value: "Live",
-        hint: "Supabase powered",
-      },
-    ],
-    [role]
-  );
+  const stats = useMemo<AdminStat[]>(() => [], []);
 
   useEffect(() => {
     if (!isAdmin) return;

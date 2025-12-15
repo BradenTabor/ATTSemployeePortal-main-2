@@ -1,4 +1,4 @@
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Briefcase,
@@ -13,6 +13,7 @@ import {
   Clock,
   Wrench,
   Ruler,
+  Plus,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import {
@@ -25,10 +26,12 @@ import {
   getSpanProgressColors,
 } from '../../lib/jobProgressUtils';
 import { JobProgressBar } from './JobProgressBar';
+import { JobProgressUpdateForm } from './JobProgressUpdateForm';
 import type { JobProgressTracker, JOB_STATUS_CONFIG } from '../../types/jobs';
 
 interface JobDetailExpandedProps {
   job: JobProgressTracker;
+  onJobUpdate?: () => void;
 }
 
 const statusConfig: typeof JOB_STATUS_CONFIG = {
@@ -58,9 +61,10 @@ const statusConfig: typeof JOB_STATUS_CONFIG = {
   },
 };
 
-function JobDetailExpandedComponent({ job }: JobDetailExpandedProps) {
+function JobDetailExpandedComponent({ job, onJobUpdate }: JobDetailExpandedProps) {
   const isSpanBased = job.tracking_type === 'job_progress';
-  
+  const [showProgressForm, setShowProgressForm] = useState(false);
+
   // Calculate span-based progress
   const spanProgress = useMemo(() => {
     if (!isSpanBased) return null;
@@ -75,7 +79,7 @@ function JobDetailExpandedComponent({ job }: JobDetailExpandedProps) {
       job.span_progress_metric || 'spans'
     );
   }, [isSpanBased, job.progress_updates, job.estimated_total_spans, job.estimated_total_feet, job.span_progress_metric]);
-  
+
   const spanProgressColors = useMemo(() => {
     if (!spanProgress) return null;
     return getSpanProgressColors(spanProgress.percentage);
@@ -151,12 +155,23 @@ function JobDetailExpandedComponent({ job }: JobDetailExpandedProps) {
             spanProgressColors.bg
           )}
         >
-          <div className="flex items-center gap-2 mb-3">
-            <Ruler className="w-4 h-4 text-blue-400" />
-            <span className="text-sm font-medium text-white/70">Span Progress</span>
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border border-blue-500/40 bg-blue-500/10 text-blue-200">
-              {job.span_progress_metric === 'feet' ? 'FEET' : 'SPANS'}
-            </span>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Ruler className="w-4 h-4 text-blue-400" />
+              <span className="text-sm font-medium text-white/70">Span Progress</span>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border border-blue-500/40 bg-blue-500/10 text-blue-200">
+                {job.span_progress_metric === 'feet' ? 'FEET' : 'SPANS'}
+              </span>
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => setShowProgressForm(true)}
+              className="relative inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-br from-[#f7e4bd]/25 via-[#f4c979]/20 to-[#d79a32]/25 border border-[#f4c979]/50 text-[#fdf4db] text-sm font-bold shadow-lg shadow-[#f4c979]/15 ring-1 ring-[#f4c979]/20 hover:bg-gradient-to-br hover:from-[#f7e4bd]/35 hover:via-[#f4c979]/30 hover:to-[#d79a32]/35 hover:border-[#f4c979]/70 hover:shadow-xl hover:shadow-[#f4c979]/25 hover:ring-[#f4c979]/30 transition-all duration-300 backdrop-blur-sm"
+            >
+              <Plus className="w-4 h-4" />
+              Add Update
+            </motion.button>
           </div>
           
           <div className="flex items-center justify-between mb-3">
@@ -375,6 +390,18 @@ function JobDetailExpandedComponent({ job }: JobDetailExpandedProps) {
             {job.notes}
           </p>
         </div>
+      )}
+
+      {/* Progress Update Form */}
+      {showProgressForm && (
+        <JobProgressUpdateForm
+          job={job}
+          onSubmit={() => {
+            setShowProgressForm(false);
+            onJobUpdate?.(); // Refresh the job data
+          }}
+          onCancel={() => setShowProgressForm(false)}
+        />
       )}
     </div>
   );

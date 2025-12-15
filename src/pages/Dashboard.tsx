@@ -111,9 +111,10 @@ const ErrorState = ({ message, onRetry }: ErrorStateProps) => (
 // Expandable Job Card wrapper
 interface ExpandableJobCardProps {
   job: JobProgressTracker;
+  onJobUpdate?: () => void;
 }
 
-const ExpandableJobCard = memo(function ExpandableJobCard({ job }: ExpandableJobCardProps) {
+const ExpandableJobCard = memo(function ExpandableJobCard({ job, onJobUpdate }: ExpandableJobCardProps) {
   return (
     <ExpandableScreen
       layoutId={`job-card-${job.id}`}
@@ -125,7 +126,7 @@ const ExpandableJobCard = memo(function ExpandableJobCard({ job }: ExpandableJob
         <CompactJobCard job={job} />
       </ExpandableScreenTrigger>
       <ExpandableScreenContent className="bg-gradient-to-br from-[#041812] via-[#020d09] to-[#010604]">
-        <JobDetailExpanded job={job} />
+        <JobDetailExpanded job={job} onJobUpdate={onJobUpdate} />
       </ExpandableScreenContent>
     </ExpandableScreen>
   );
@@ -341,7 +342,7 @@ function Dashboard() {
             ) : (
               <div className="space-y-3">
                 {assignedJobs.map((job) => (
-                  <ExpandableJobCard key={job.id} job={job} />
+                  <ExpandableJobCard key={job.id} job={job} onJobUpdate={refetchJobs} />
                 ))}
               </div>
             )}

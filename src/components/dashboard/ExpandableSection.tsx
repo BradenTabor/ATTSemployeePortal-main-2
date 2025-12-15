@@ -7,7 +7,7 @@ import { getPersistedBool, setPersistedBool } from '../../lib/persistence';
 import { GlowEffect } from '../ui/GlowEffect';
 import { ShimmerEffect } from '../ui/ShimmerEffect';
 
-const springConfig = { stiffness: 250, damping: 30, mass: 0.6 };
+const springConfig = { stiffness: 200, damping: 25, mass: 0.8 };
 
 // Emerald glow color palette
 const GLOW_COLORS = ['#10b981', '#059669', '#34d399', '#047857'];
@@ -162,14 +162,8 @@ function ExpandableSectionComponent({
 
   return (
     <div className={cn('relative', className)}>
-      {/* Glow effect layer - reduced opacity when collapsed, enhanced on hover */}
-      <div
-        className={cn(
-          "absolute -inset-3 transition-opacity duration-500",
-          isOpen ? "opacity-40" : "opacity-20",
-          isHovered && "opacity-60"
-        )}
-      >
+      {/* Glow effect layer - behind the card */}
+      <div className="absolute -inset-3 opacity-40">
         <GlowEffect
           colors={GLOW_COLORS}
           mode="rotate"
@@ -192,22 +186,15 @@ function ExpandableSectionComponent({
             // Premium glass morphism styling
             'bg-gradient-to-br from-[#04150f]/95 via-[#041812]/90 to-[#03120c]/95',
             'border border-emerald-500/30',
-            // Consolidated shadow for better performance
-            'shadow-[0_0_40px_-12px_rgba(16,185,129,0.35)]',
-            // Conditional backdrop blur - reduced when collapsed
-            isOpen ? 'backdrop-blur-sm' : 'backdrop-blur-[2px]',
-            // Performance optimizations
-            'transform-gpu will-change-auto'
+            // Enhanced shadow for depth
+            'shadow-[0_0_40px_-12px_rgba(16,185,129,0.25)]',
+            'shadow-emerald-500/10',
+            // Backdrop blur for glass effect
+            'backdrop-blur-sm'
           )}
-          style={{
-            contentVisibility: isOpen ? 'auto' : 'auto',
-            containIntrinsicSize: isOpen ? 'auto' : '200px'
-          }}
         >
-          {/* Inner glow accent - only render when expanded or hovered to reduce DOM complexity */}
-          {(isOpen || isHovered) && (
-            <div className="absolute inset-0 rounded-3xl bg-gradient-to-b from-emerald-500/5 via-transparent to-transparent pointer-events-none" />
-          )}
+          {/* Inner glow accent */}
+          <div className="absolute inset-0 rounded-3xl bg-gradient-to-b from-emerald-500/5 via-transparent to-transparent pointer-events-none" />
 
           {/* Header - clickable toggle area */}
           <div className="relative p-4 md:p-6">
@@ -236,15 +223,14 @@ function ExpandableSectionComponent({
                       'bg-gradient-to-br from-emerald-500/15 via-emerald-600/8 to-transparent',
                       'border border-emerald-400/30',
                       'flex items-center justify-center',
-                      // Consolidated shadow for better performance
-                      'shadow-[0_20px_25px_-5px_rgba(16,185,129,0.3)]',
+                      'shadow-xl shadow-emerald-500/20',
                       'ring-1 ring-inset ring-emerald-300/5',
-                      'overflow-visible relative will-change-transform transform-gpu'
+                      'overflow-visible relative'
                     )}
                     animate={{
                       scale: isHovered ? 1.03 : 1,
-                      boxShadow: isHovered
-                        ? '0 0 50px rgba(16, 185, 129, 0.4)'
+                      boxShadow: isHovered 
+                        ? '0 0 50px rgba(16, 185, 129, 0.4)' 
                         : '0 20px 25px -5px rgba(16, 185, 129, 0.2)',
                     }}
                     transition={{ type: 'spring', stiffness: 300, damping: 20 }}
@@ -289,18 +275,18 @@ function ExpandableSectionComponent({
 
                 {/* Animated chevron indicator */}
                 <motion.div
-                  animate={{
+                  animate={{ 
                     rotate: isOpen ? 180 : 0,
                     scale: wasJustToggled ? [1, 1.15, 1] : 1,
                   }}
-                  transition={{
+                  transition={{ 
                     rotate: { duration: 0.3, ease: 'easeInOut' },
                     scale: { duration: 0.4, ease: 'easeOut' },
                   }}
                   className={cn(
                     'flex-shrink-0 w-8 h-8 rounded-lg',
                     'bg-emerald-500/10 border border-emerald-500/20',
-                    'flex items-center justify-center will-change-transform'
+                    'flex items-center justify-center'
                   )}
                 >
                   <ChevronDown
@@ -323,10 +309,6 @@ function ExpandableSectionComponent({
             role="region"
             aria-labelledby={toggleId}
             style={{ height: smoothHeight, overflow: 'hidden' }}
-            className={cn(
-              'will-change-transform transform-gpu',
-              !isOpen && 'contain-layout contain-paint'
-            )}
           >
             <AnimatePresence initial={false}>
               {isOpen && (
@@ -354,13 +336,19 @@ function ExpandableSectionComponent({
                   <div className="mx-4 md:mx-6 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />
                   
                   <div className="px-4 pb-4 md:px-6 md:pb-6 pt-4">
-                    {/* Simplified content reveal - reduced stagger overhead */}
+                    {/* Staggered content reveal */}
                     <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{
-                        opacity: 1,
-                        y: 0,
-                        transition: { duration: 0.3, ease: 'easeOut' }
+                      initial="hidden"
+                      animate="visible"
+                      variants={{
+                        hidden: { opacity: 0 },
+                        visible: {
+                          opacity: 1,
+                          transition: {
+                            staggerChildren: 0.05,
+                            delayChildren: 0.1,
+                          },
+                        },
                       }}
                     >
                       {/* Only render children after hydration to avoid flash */}

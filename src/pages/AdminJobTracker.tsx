@@ -77,23 +77,7 @@ function AdminJobTracker() {
     return stats;
   }, [jobs]);
 
-  const heroStats = useMemo<AdminStat[]>(() => [
-    {
-      label: 'Active Jobs',
-      value: String(jobStats.active),
-      hint: 'Currently in progress',
-    },
-    {
-      label: 'Completed',
-      value: String(jobStats.completed),
-      hint: 'Finished jobs',
-    },
-    {
-      label: 'Timeline Exceeded',
-      value: String(jobStats.exceeded),
-      hint: jobStats.exceeded > 0 ? 'Needs attention' : 'All on track',
-    },
-  ], [jobStats]);
+  const heroStats = useMemo<AdminStat[]>(() => [], []);
 
   const heroConfig = useMemo<AdminHeroConfig>(() => ({
     eyebrow: 'Admin • Job Management',
