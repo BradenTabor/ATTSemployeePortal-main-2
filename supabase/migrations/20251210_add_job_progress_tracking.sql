@@ -104,3 +104,4 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.job_progress_updates;
 -- DROP TABLE IF EXISTS public.job_progress_updates CASCADE;
 
 
+
