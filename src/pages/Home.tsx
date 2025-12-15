@@ -184,17 +184,19 @@ export default function Home() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="mb-5"
+          className="mb-0"
         >
           <img
             src={logo}
             alt="ATTS Logo"
-            fetchPriority="high"
-            className="h-32 sm:h-44 md:h-56 w-auto mx-auto opacity-95 drop-shadow-[0_0_40px_rgba(16,185,129,0.35)]"
+            fetchpriority="high"
+            className="h-64 sm:h-80 md:h-96 lg:h-[28rem] xl:h-[32rem] w-auto mx-auto opacity-95 drop-shadow-[0_0_60px_rgba(16,185,129,0.5)]"
+            style={{
+              imageRendering: 'auto',
+              WebkitImageRendering: 'optimize-contrast',
+              imageRendering: 'crisp-edges'
+            }}
           />
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mt-4 tracking-tight break-normal">
-            All Terrain Tree Service
-          </h1>
         </motion.div>
 
         {/* Liquid Glass Card */}
