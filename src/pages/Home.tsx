@@ -189,11 +189,9 @@ export default function Home() {
           <img
             src={logo}
             alt="ATTS Logo"
-            fetchpriority="high"
+            fetchPriority="high"
             className="h-64 sm:h-80 md:h-96 lg:h-[28rem] xl:h-[32rem] w-auto mx-auto opacity-95 drop-shadow-[0_0_60px_rgba(16,185,129,0.5)]"
             style={{
-              imageRendering: 'auto',
-              WebkitImageRendering: 'optimize-contrast',
               imageRendering: 'crisp-edges'
             }}
           />
