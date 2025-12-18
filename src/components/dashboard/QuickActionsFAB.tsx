@@ -87,7 +87,8 @@ function QuickActionsFABComponent({ links, className }: QuickActionsFABProps) {
         
         {/* Pulsing ring animation */}
         <motion.div
-          className="absolute inset-0 rounded-full border-2 border-emerald-400/60"
+          className="absolute inset-0 rounded-full border-2"
+          style={{ borderColor: 'rgba(7, 207, 84, 0.6)' }}
           animate={{
             scale: [1, 1.3, 1],
             opacity: [0.6, 0, 0.6],

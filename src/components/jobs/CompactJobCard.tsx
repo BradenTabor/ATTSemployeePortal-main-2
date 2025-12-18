@@ -66,7 +66,10 @@ function CompactJobCardComponent({
         className
       )}
     >
-      <div className="w-full p-3 md:p-4 text-left min-h-[44px]">
+      <div 
+        className="w-full p-3 md:p-4 text-left min-h-[44px]"
+        style={{ background: 'radial-gradient(circle at 50% 50%, rgba(5, 77, 53, 1) 0%, rgba(10, 10, 10, 1) 100%)' }}
+      >
         {/* Top row: Job info and progress percentage */}
         <div className="flex items-start justify-between gap-3 mb-2">
           {/* Left: Job name and location */}
@@ -75,8 +78,11 @@ function CompactJobCardComponent({
               <Briefcase 
                 className={cn(
                   'w-3.5 h-3.5 flex-shrink-0',
-                  isSpanBased ? 'text-blue-400' : isExceeded ? 'text-red-400' : 'text-emerald-400'
-                )} 
+                  isExceeded && !isSpanBased && 'text-red-400'
+                )}
+                style={{
+                  color: isSpanBased ? 'rgb(231, 114, 4)' : isExceeded ? undefined : 'rgb(0, 219, 77)'
+                }}
               />
               <h4 className="font-semibold text-sm md:text-base text-white truncate">
                 {job.job_name}

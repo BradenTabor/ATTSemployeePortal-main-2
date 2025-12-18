@@ -90,10 +90,15 @@ function JobWidgetCard({ job, defaultExpanded = false }: JobWidgetCardProps) {
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <Briefcase className={cn(
-                'w-4 h-4',
-                isSpanBased ? 'text-blue-400' : isExceeded ? 'text-red-400' : 'text-emerald-400'
-              )} />
+              <Briefcase 
+                className={cn(
+                  'w-4 h-4',
+                  isExceeded && !isSpanBased && 'text-red-400'
+                )}
+                style={{
+                  color: isSpanBased ? 'rgb(231, 114, 4)' : isExceeded ? undefined : 'rgb(0, 219, 77)'
+                }}
+              />
               <h4 className="font-semibold text-white truncate">{job.job_name}</h4>
               {isSpanBased && (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-semibold border border-blue-500/40 bg-blue-500/10 text-blue-200">

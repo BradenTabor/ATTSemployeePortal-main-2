@@ -57,6 +57,7 @@ const BADGE_STYLES: Record<string, string> = {
 const THEME_STYLES: Record<
   AdminTheme,
   {
+    mainContainer: string;
     heroContainer: string;
     heroOverlayPrimary: string;
     heroOverlaySecondary: string;
@@ -82,6 +83,7 @@ const THEME_STYLES: Record<
   }
 > = {
   gold: {
+    mainContainer: "",
     heroContainer:
       "relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#1c1c1f] via-[#262224] to-[#0f0d09] border border-[#f4dab1]/20 shadow-[0_25px_60px_rgba(0,0,0,0.65)] p-8",
     heroOverlayPrimary:
@@ -118,6 +120,7 @@ const THEME_STYLES: Record<
     headingTextGlow: "drop-shadow-[0_0_25px_rgba(247,228,189,0.5)]",
   },
   ember: {
+    mainContainer: "rounded-3xl border-[3px] border-[#d17000]/90 bg-[#675628] shadow-[0px_4px_25px_8px_rgba(0,0,0,0.86),inset_0px_4px_15px_6px_rgba(0,0,0,0.85)]",
     heroContainer:
       "relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#2b120b] via-[#1a0b07] to-[#080403] border border-[#f6b78f]/25 shadow-[0_25px_60px_rgba(0,0,0,0.65)] p-8",
     heroOverlayPrimary:
@@ -154,6 +157,7 @@ const THEME_STYLES: Record<
     headingTextGlow: "drop-shadow-[0_0_25px_rgba(255,147,80,0.5)]",
   },
   emerald: {
+    mainContainer: "",
     heroContainer:
       "relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#08241b] via-[#04140e] to-[#010805] border border-[#7de1b4]/25 shadow-[0_25px_60px_rgba(0,0,0,0.6)] p-8",
     heroOverlayPrimary:
@@ -175,7 +179,7 @@ const THEME_STYLES: Record<
     statsHint: "text-xs text-[#c5ffe6]/75",
     navVariant: "emerald",
     sidePanelContainer:
-      "relative overflow-hidden rounded-3xl border border-[#53d6a1]/35 bg-gradient-to-br from-[#08251a] via-[#02140d] to-[#000704] shadow-[0_40px_80px_rgba(0,0,0,0.65)] p-6",
+      "relative overflow-hidden rounded-3xl border border-[#53d6a1]/35 bg-gradient-to-br from-[#08251a] via-[#02140d] to-[#000704] shadow-[0_40px_80px_rgba(0,0,0,0.65),0_4px_25px_8px_rgba(0,0,0,0.85)] p-6",
     sidePanelBorder:
       "pointer-events-none absolute inset-0 rounded-3xl border border-[#6fe9b7]/25 opacity-40",
     sidePanelGlowOne:
@@ -202,7 +206,7 @@ export default function AdminPremiumScaffold({
   const themeStyles = THEME_STYLES[theme] ?? THEME_STYLES.gold;
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-8">
+    <div className={cn("w-full max-w-7xl mx-auto px-4 sm:px-6 py-8", themeStyles.mainContainer)}>
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="space-y-8 lg:col-span-2">
           <AdminHero hero={hero} stats={stats} themeStyles={themeStyles} />
@@ -250,7 +254,12 @@ function AdminHero({
   return (
     <div className="relative">
       {/* Background glow effect around the container */}
-      <div className="absolute -inset-3 rounded-[2rem] overflow-hidden">
+      <div 
+        className="absolute -inset-3 rounded-[2rem] overflow-hidden"
+        style={{
+          boxShadow: '0px 4px 25px 8px rgba(0, 0, 0, 0.85)'
+        }}
+      >
         <GlowEffect
           colors={themeStyles.glowColors}
           mode="breathe"

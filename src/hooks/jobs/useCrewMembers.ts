@@ -49,9 +49,10 @@ export function useCrewMembers() {
 
     load();
 
+    // Subscribe to app_users table changes (not user_profiles VIEW - realtime doesn't work on views)
     const unsubscribe = subscribeToTableChanges({
       channelName: 'crew-members-realtime',
-      table: 'user_profiles',
+      table: 'app_users',
       onInsert: () => {
         if (!cancelled) fetchCrewMembers();
       },

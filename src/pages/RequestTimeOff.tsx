@@ -6,8 +6,10 @@ import { CONFIG } from "../lib/config";
 import { logger } from "../lib/logger";
 import { DateField, TimeField } from "../components/forms/GlassyPickers";
 import { CalendarDays, Clock } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function RequestTimeOff() {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -168,6 +170,7 @@ export default function RequestTimeOff() {
 
       const { error } = await supabase.from("rto_requests").insert([
         {
+          user_id: user?.id, // Required for RLS policy
           full_name: formData.fullName,
           email: formData.email,
           start_date: formData.startDate,
@@ -208,9 +211,17 @@ export default function RequestTimeOff() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="w-full max-w-3xl bg-black/70 backdrop-blur-xl border border-green-700/30 rounded-2xl p-8 shadow-2xl text-white"
+        className="w-full max-w-3xl backdrop-blur-xl border rounded-[45px] p-8 text-white"
+        style={{
+          background: 'linear-gradient(124.2deg, rgba(0, 0, 0, 0.7) 0%, rgba(16, 66, 42, 1) 100%)',
+          borderColor: 'rgba(18, 222, 93, 0.3)',
+          boxShadow: '0px 4px 25px 8px rgba(0, 0, 0, 0.85), 0px 25px 50px -12px rgba(0, 0, 0, 0.25)',
+        }}
       >
-        <h2 className="text-2xl font-semibold text-green-400 mb-6 text-center">
+        <h2 
+          className="text-2xl font-semibold mb-6 text-center"
+          style={{ color: 'rgba(9, 225, 121, 1)' }}
+        >
           Submit a Time-Off Request
         </h2>
 
@@ -225,7 +236,7 @@ export default function RequestTimeOff() {
               value={formData.fullName}
               onChange={handleChange}
               required
-              className="w-full rounded-lg p-3 bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-green-600 transition-all"
+              className="w-full rounded-[25px] p-3 bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-green-600 transition-all"
               placeholder="Enter your full name"
             />
           </div>
@@ -243,7 +254,7 @@ export default function RequestTimeOff() {
     onChange={handleChange}
     required
     readOnly // 🔒 locked so users don't change it
-    className="w-full rounded-lg p-3 bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-green-600 transition-all"
+    className="w-full rounded-[25px] p-3 bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-green-600 transition-all"
     placeholder="you@atts.com"
   />
 </div>
@@ -351,7 +362,7 @@ export default function RequestTimeOff() {
               onChange={handleChange}
               rows={3}
               required
-              className="w-full rounded-lg p-3 bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-green-600 resize-none transition-all"
+              className="w-full rounded-[25px] p-3 bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-green-600 resize-none transition-all"
               placeholder="Explain why you need time off"
             />
           </div>
@@ -365,7 +376,7 @@ export default function RequestTimeOff() {
               value={formData.notes}
               onChange={handleChange}
               rows={2}
-              className="w-full rounded-lg p-3 bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-green-600 resize-none transition-all"
+              className="w-full rounded-[25px] p-3 bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-green-600 resize-none transition-all"
               placeholder="Any extra details (optional)"
             />
           </div>
@@ -373,7 +384,10 @@ export default function RequestTimeOff() {
           <button
             type="submit"
             disabled={status === "loading"}
-            className="w-full py-3 rounded-lg font-semibold bg-green-700 hover:bg-green-800 text-white shadow-md transition-all focus:ring-2 focus:ring-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3 rounded-[45px] font-semibold text-white shadow-md transition-all focus:ring-2 focus:ring-green-600 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
+            style={{
+              background: 'radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 1) 0%, rgba(16, 66, 42, 1) 100%)',
+            }}
           >
             {status === "loading"
               ? "Submitting..."

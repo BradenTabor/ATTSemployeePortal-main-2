@@ -17,7 +17,6 @@ import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../contexts/AuthContext";
 import { subscribeToTableChanges } from "../lib/realtime";
 import { PaginationControls } from "../components/PaginationControls";
-import { User as SupabaseUser } from "@supabase/supabase-js";
 import { logger } from "../lib/logger";
 import TableSkeleton from "../components/skeletons/TableSkeleton";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
@@ -75,11 +74,10 @@ const STATUS_CONFIG: Record<string, StatusConfig> = {
 };
 
 export default function AdminRTO() {
-  const { role: currentUserRole } = useAuth();
+  // Use user and loading from AuthContext instead of redundant getUser() call
+  const { role: currentUserRole, user, loading: authLoading } = useAuth();
   const [requests, setRequests] = useState<RTORequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState<SupabaseUser | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [monthFilter, setMonthFilter] = useState<string | null>(null);
@@ -95,44 +93,10 @@ export default function AdminRTO() {
       ?  Math.max(1, Math.ceil(totalRequests / pageSize))
       : 1;
 
-  // 🔒 Load auth user
-  useEffect(() => {
-    let isMounted = true;
-
-    const initAuth = async () => {
-      setAuthLoading(true);
-      const { data, error } = await supabase.auth.getUser();
-
-      if (! isMounted) return;
-
-      if (error) {
-        logger.error("Error loading auth user in AdminRTO:", error);
-      }
-
-      setCurrentUser(data?. user ??  null);
-      setAuthLoading(false);
-    };
-
-    initAuth();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (! isMounted) return;
-      setCurrentUser(session?.user ?? null);
-      setAuthLoading(false);
-    });
-
-    return () => {
-      isMounted = false;
-      subscription?.unsubscribe();
-    };
-  }, []);
-
   // 📥 Fetch RTO requests with pagination
   const fetchRTORequests = useCallback(
     async (showSpinner: boolean = true) => {
-      if (!currentUser) return;
+      if (!user) return;
 
       if (showSpinner) setLoading(true);
 
@@ -194,7 +158,7 @@ export default function AdminRTO() {
       debouncedSearchQuery,
       statusFilter,
       monthFilter,
-      currentUser,
+      user,
     ]
   );
 
@@ -202,7 +166,7 @@ export default function AdminRTO() {
   useEffect(() => {
     if (authLoading) return;
 
-    if (!currentUser) {
+    if (!user) {
       setRequests([]);
       setLoading(false);
       return;
@@ -238,7 +202,7 @@ export default function AdminRTO() {
       cancelled = true;
       unsubscribe();
     };
-  }, [authLoading, currentUser, fetchRTORequests]);
+  }, [authLoading, user, fetchRTORequests]);
 
   const filteredRequests = useMemo(() => {
     let filtered = requests;

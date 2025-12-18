@@ -14,8 +14,6 @@ import {
   ShoppingCart,
   Sparkles,
   Wrench,
-  Filter,
-  Lightbulb,
   LayoutGrid,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -23,10 +21,7 @@ import DashboardLayout from "../layouts/DashboardLayout";
 import AdaptiveCardWrapper from "../components/AdaptiveCardWrapper";
 import AdminPremiumScaffold, {
   type AdminHeroConfig,
-  type AdminStat,
 } from "../components/admin/AdminPremiumScaffold";
-import { ExpandableSection } from "../components/dashboard/ExpandableSection";
-import { DashboardAvatar } from "../components/dashboard/DashboardAvatar";
 import { cn } from "../lib/utils";
 
 const CATEGORY_META = {
@@ -433,35 +428,6 @@ const CategoryLegend = () => (
   </div>
 );
 
-const QuickTips = () => (
-  <div className="space-y-3">
-    <div className="flex items-start gap-3">
-      <div className="w-6 h-6 rounded-lg bg-emerald-500/15 border border-emerald-400/30 flex items-center justify-center flex-shrink-0">
-        <Search className="w-3 h-3 text-emerald-300" />
-      </div>
-      <p className="text-xs text-white/60 leading-relaxed">
-        Use the search bar to find forms by name, description, or tag.
-      </p>
-    </div>
-    <div className="flex items-start gap-3">
-      <div className="w-6 h-6 rounded-lg bg-emerald-500/15 border border-emerald-400/30 flex items-center justify-center flex-shrink-0">
-        <Filter className="w-3 h-3 text-emerald-300" />
-      </div>
-      <p className="text-xs text-white/60 leading-relaxed">
-        Filter by category to narrow down to the forms you need.
-      </p>
-    </div>
-    <div className="flex items-start gap-3">
-      <div className="w-6 h-6 rounded-lg bg-sky-500/15 border border-sky-400/30 flex items-center justify-center flex-shrink-0">
-        <ExternalLink className="w-3 h-3 text-sky-300" />
-      </div>
-      <p className="text-xs text-white/60 leading-relaxed">
-        External forms open in a new tab. Internal forms stay in the portal.
-      </p>
-    </div>
-  </div>
-);
-
 export default function Forms() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<CategoryFilterOption>("All");
@@ -491,10 +457,6 @@ export default function Forms() {
       .filter((section) => section.forms.length > 0);
   }, [activeCategory, filteredForms]);
 
-  // Form stats for hero
-  const internalCount = formsCatalog.filter((f) => f.type === "internal").length;
-  const externalCount = formsCatalog.filter((f) => f.type === "external").length;
-
   const heroConfig = useMemo<AdminHeroConfig>(
     () => ({
       eyebrow: "Company Forms",
@@ -504,15 +466,6 @@ export default function Forms() {
         "Organized categories, instant search, and easy access to every internal and external form.",
     }),
     []
-  );
-
-  const heroStats = useMemo<AdminStat[]>(
-    () => [
-      { label: "Total Forms", value: String(formsCatalog.length), hint: "Available now" },
-      { label: "Internal", value: String(internalCount), hint: "Portal forms" },
-      { label: "External", value: String(externalCount), hint: "Google Forms" },
-    ],
-    [internalCount, externalCount]
   );
 
   // Side panel content
@@ -528,17 +481,6 @@ export default function Forms() {
         </div>
         <CategoryLegend />
       </div>
-
-      {/* Quick Tips */}
-      <div className="rounded-3xl border border-white/10 bg-[#03150f]/80 p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <Lightbulb className="w-4 h-4 text-amber-400" />
-          <p className="text-xs uppercase tracking-[0.35em] text-emerald-200/70">
-            Quick Tips
-          </p>
-        </div>
-        <QuickTips />
-      </div>
     </div>
   );
 
@@ -549,59 +491,40 @@ export default function Forms() {
     <DashboardLayout title="Company Forms">
       <AdminPremiumScaffold
         hero={heroConfig}
-        stats={heroStats}
         theme="emerald"
         sidePanel={sidePanelContent}
       >
-        <div className="w-full space-y-4 md:space-y-6">
-          {/* Search & Filters Section */}
-          <ExpandableSection
-            id="forms-search-filters"
-            title="Search & Filter"
-            subtitle="Find forms quickly"
-            icon={<DashboardAvatar variant="tools" className="w-8 h-8 md:w-10 md:h-10" />}
-            storageKey="forms-search-expanded"
-            defaultOpen={true}
-          >
-            <div className="space-y-4">
-              <SearchBar
-                value={searchQuery}
-                onChange={setSearchQuery}
-                totalCount={formsCatalog.length}
-                filteredCount={filteredForms.length}
-              />
-              <CategoryFilter activeCategory={activeCategory} onChange={setActiveCategory} />
-            </div>
-          </ExpandableSection>
+        <div className="w-full space-y-6 md:space-y-8">
+          {/* Search & Filters */}
+          <div className="rounded-3xl border border-white/10 bg-[#03150f]/60 backdrop-blur-xl p-5 md:p-6 space-y-4">
+            <SearchBar
+              value={searchQuery}
+              onChange={setSearchQuery}
+              totalCount={formsCatalog.length}
+              filteredCount={filteredForms.length}
+            />
+            <CategoryFilter activeCategory={activeCategory} onChange={setActiveCategory} />
+          </div>
 
-          {/* Form Categories Section */}
-          <ExpandableSection
-            id="forms-all-categories"
-            title="All Forms"
-            subtitle={`${filteredForms.length} form${filteredForms.length !== 1 ? "s" : ""} available`}
-            icon={<DashboardAvatar variant="announcements" className="w-8 h-8 md:w-10 md:h-10" />}
-            storageKey="forms-categories-expanded"
-            defaultOpen={true}
-          >
-            <div className="space-y-8">
-              {sections.length > 0 ? (
-                sections.map(({ category, forms }) => {
-                  const section = (
-                    <FormCategorySection
-                      key={category}
-                      category={category}
-                      forms={forms}
-                      startIndex={cardCounter}
-                    />
-                  );
-                  cardCounter += forms.length;
-                  return section;
-                })
-              ) : (
-                <EmptyState query={trimmedQuery} />
-              )}
-            </div>
-          </ExpandableSection>
+          {/* Form Categories */}
+          <div className="space-y-8">
+            {sections.length > 0 ? (
+              sections.map(({ category, forms }) => {
+                const section = (
+                  <FormCategorySection
+                    key={category}
+                    category={category}
+                    forms={forms}
+                    startIndex={cardCounter}
+                  />
+                );
+                cardCounter += forms.length;
+                return section;
+              })
+            ) : (
+              <EmptyState query={trimmedQuery} />
+            )}
+          </div>
         </div>
       </AdminPremiumScaffold>
     </DashboardLayout>

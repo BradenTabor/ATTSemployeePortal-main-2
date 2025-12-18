@@ -413,14 +413,20 @@ export default function DVIRHistory() {
                 surface photos or signatures instantly when field teams ask for proof.
               </p>
             </div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs tracking-[0.4em] text-white/60">
+            <div 
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-xs tracking-[0.4em] text-white/60"
+              style={{ background: 'linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 1) 100%)' }}
+            >
               <Activity className="w-4 h-4 text-emerald-300" />
               Auto-synced
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-5 shadow-lg shadow-emerald-500/5">
+            <div 
+              className="rounded-2xl border border-white/10 backdrop-blur-xl p-5 shadow-lg shadow-emerald-500/5"
+              style={{ background: 'radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 1) 100%)' }}
+            >
               <p className="text-xs uppercase tracking-[0.4em] text-white/40 flex items-center gap-2">
                 <Truck className="w-4 h-4 text-emerald-300" />
                 Total Reports
@@ -430,7 +436,10 @@ export default function DVIRHistory() {
               </p>
               <p className="text-xs text-white/60 mt-1">Across all pages</p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-5 shadow-lg shadow-emerald-500/5">
+            <div 
+              className="rounded-2xl border border-white/10 backdrop-blur-xl p-5 shadow-lg shadow-emerald-500/5"
+              style={{ background: 'radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 1) 100%)' }}
+            >
               <p className="text-xs uppercase tracking-[0.4em] text-white/40 flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 text-amber-300" />
                 Active Fails
@@ -442,7 +451,10 @@ export default function DVIRHistory() {
                 In current view ({visibleReports} shown)
               </p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-5 shadow-lg shadow-emerald-500/5">
+            <div 
+              className="rounded-2xl border border-white/10 backdrop-blur-xl p-5 shadow-lg shadow-emerald-500/5"
+              style={{ background: 'radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 1) 100%)' }}
+            >
               <p className="text-xs uppercase tracking-[0.4em] text-white/40 flex items-center gap-2">
                 <CalendarClock className="w-4 h-4 text-emerald-300" />
                 Last Submitted
@@ -456,7 +468,7 @@ export default function DVIRHistory() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-2xl p-5 space-y-4">
+          <div className="rounded-2xl border border-white/10 bg-black/60 backdrop-blur-2xl p-5 space-y-4">
             <div className="flex flex-col gap-2">
               <p className="text-xs uppercase tracking-[0.4em] text-white/50">
                 Quick filters
@@ -532,7 +544,8 @@ export default function DVIRHistory() {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}
-                    className="group text-left rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-4 sm:p-5 hover:border-emerald-400/50 hover:shadow-emerald-500/20 hover:shadow-2xl transition-all"
+                    className="group text-left rounded-3xl border border-white/10 backdrop-blur-xl p-4 sm:p-5 hover:border-emerald-400/50 hover:shadow-emerald-500/20 hover:shadow-2xl transition-all"
+                    style={{ background: 'radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 1) 100%)' }}
                     >
                     <div className="flex items-start justify-between gap-3">
                       <div>

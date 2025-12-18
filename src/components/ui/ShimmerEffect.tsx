@@ -119,7 +119,7 @@ export function ShimmerEffect({
       />
 
       {/* Content container */}
-      <div className="relative">{children}</div>
+      <div className="relative rounded-[inherit]">{children}</div>
     </div>
   );
 }

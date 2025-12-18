@@ -147,7 +147,7 @@ export default function MechanicDashboard() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.96 }}
             onClick={handleSignOut}
-            className="flex-shrink-0 inline-flex items-center gap-2 rounded-full bg-red-600/80 px-3 py-2 text-xs font-semibold border border-red-500/40 hover:bg-red-600 transition-colors"
+            className="flex-shrink-0 inline-flex items-center gap-2 rounded-full bg-[#ff0000] px-3 py-2 text-xs font-semibold border border-red-100/40 hover:bg-red-600 transition-colors min-h-[44px]"
           >
             <LogOut className="w-4 h-4" />
             Sign out

@@ -7,7 +7,6 @@ import {
   RefreshCcw,
   Clock,
   Sparkles,
-  TrendingUp,
   Bell,
   ChevronRight,
   Megaphone,
@@ -336,42 +335,6 @@ const LiveStatusCard = ({ hasNewAnnouncement, refreshing, onRefresh }: LiveStatu
   </div>
 );
 
-interface QuickStatsCardProps {
-  totalCount: number;
-  visibleCount: number;
-  latestAuthor: string | null;
-}
-
-const QuickStatsCard = ({ totalCount, visibleCount, latestAuthor }: QuickStatsCardProps) => (
-  <div className="rounded-3xl border border-white/10 bg-[#03150f]/80 p-5 space-y-4">
-    <div className="flex items-center gap-2">
-      <TrendingUp className="w-4 h-4 text-emerald-400" />
-      <p className="text-xs uppercase tracking-[0.35em] text-emerald-200/70">
-        Quick Stats
-      </p>
-    </div>
-    
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-white/60">Total Broadcasts</span>
-        <span className="text-sm font-semibold text-emerald-400">{totalCount}</span>
-      </div>
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-white/60">Currently Showing</span>
-        <span className="text-sm font-semibold text-emerald-400">{visibleCount}</span>
-      </div>
-      {latestAuthor && (
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-white/60">Latest Author</span>
-          <span className="text-sm font-semibold text-white/80 truncate max-w-[100px]">
-            {latestAuthor}
-          </span>
-        </div>
-      )}
-    </div>
-  </div>
-);
-
 const QuickTipsCard = () => (
   <div className="rounded-3xl border border-white/10 bg-[#03150f]/80 p-5 space-y-4">
     <div className="flex items-center gap-2">
@@ -564,18 +527,16 @@ export default function Announcements() {
     []
   );
 
-  // Hero stats
+  // Hero stats - keeping minimal for cleaner layout
   const heroStats = useMemo<AdminStat[]>(
     () => [
-      { label: "Total Broadcasts", value: String(totalAnnouncements), hint: "Active signals" },
-      { label: "Visible", value: String(visibleAnnouncements), hint: `of ${totalAnnouncements} total` },
       {
         label: "Last Updated",
         value: latestAnnouncement ? formatDate(latestAnnouncement.created_at).split(" at ")[0] : "—",
         hint: latestAnnouncement ? formatDate(latestAnnouncement.created_at).split(" at ")[1] || "" : "No updates",
       },
     ],
-    [totalAnnouncements, visibleAnnouncements, latestAnnouncement]
+    [latestAnnouncement]
   );
 
   // Side panel content
@@ -585,11 +546,6 @@ export default function Announcements() {
         hasNewAnnouncement={newAnnouncementIndicator}
         refreshing={refreshing}
         onRefresh={handleManualRefresh}
-      />
-      <QuickStatsCard
-        totalCount={totalAnnouncements}
-        visibleCount={visibleAnnouncements}
-        latestAuthor={latestAnnouncement?.author || null}
       />
       <QuickTipsCard />
     </div>

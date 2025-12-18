@@ -103,7 +103,7 @@ export default function DashboardAnnouncementCard() {
         <img src={logo} alt="" loading="lazy" className="w-12 h-12 object-contain" />
       </div>
 
-      <div className="relative p-6 sm:p-8">
+      <div className="relative p-6 sm:p-8 shadow-[inset_0px_4px_35px_18px_rgba(0,0,0,0.35)] backdrop-blur-[100px]">
         {/* Header */}
         <div className="flex items-start justify-between gap-4 mb-4">
           <motion.div
@@ -118,7 +118,20 @@ export default function DashboardAnnouncementCard() {
             initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1 }}
-            className="inline-flex items-center gap-1. 5 px-2. 5 py-1 bg-amber-500/20 border border-amber-500/40 rounded-full text-[10px] font-bold text-amber-300"
+            className="inline-flex items-center justify-center gap-1.5 rounded-full"
+            style={{
+              width: '65px',
+              height: '32px',
+              background: 'linear-gradient(90deg, rgba(102, 67, 5, 0.2) 21%, rgba(175, 146, 4, 1) 100%)',
+              borderWidth: '1px',
+              borderStyle: 'solid',
+              borderColor: 'rgba(168, 107, 0, 0.4)',
+              color: 'rgb(255, 255, 255)',
+              fontSize: '15px',
+              fontWeight: 600,
+              lineHeight: '15px',
+              textAlign: 'center',
+            }}
           >
             <Sparkles className="w-3 h-3" />
             NEW

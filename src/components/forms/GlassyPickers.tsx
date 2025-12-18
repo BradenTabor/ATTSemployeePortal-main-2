@@ -82,9 +82,12 @@ const BasePicker = forwardRef<HTMLInputElement, InternalPickerProps>(
             type={pickerType}
             onChange={handleChange}
             className={cn(
-              "w-full rounded-2xl border border-white/10 bg-gradient-to-r from-white/5 via-black/40 to-black/70 px-12 py-3 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-400/70 focus:border-transparent transition-all shadow-[0_0_20px_rgba(16,185,129,0.15)] [color-scheme:dark]",
+              "w-full rounded-2xl border border-white/10 px-12 py-3 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-400/70 focus:border-transparent transition-all shadow-[0_0_20px_rgba(16,185,129,0.15)] [color-scheme:dark]",
               className
             )}
+            style={{
+              background: 'radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 1) 0%, rgba(21, 96, 60, 1) 100%)',
+            }}
           />
           {value && pickerType === "time" && (
             <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[0.6rem] uppercase tracking-[0.3em] text-emerald-200">

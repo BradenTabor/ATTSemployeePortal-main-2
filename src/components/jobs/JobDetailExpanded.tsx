@@ -94,9 +94,9 @@ function JobDetailExpandedComponent({ job, onJobUpdate }: JobDetailExpandedProps
   const isExceeded = !isSpanBased && progress.status === 'exceeded';
   const status = statusConfig[job.status];
 
-  // Card styling - span-based jobs use blue accent, never red
+  // Card styling - span-based jobs use emerald accent, never red
   const bgColors = isSpanBased
-    ? 'from-[#040815] via-[#020509] to-[#010204]'
+    ? 'from-[#238561] via-[#020509] to-[#010204]'
     : isExceeded
       ? 'from-[#1a0808] via-[#0d0606] to-[#050303]'
       : 'from-[#041812] via-[#020d09] to-[#010604]';
@@ -154,6 +154,7 @@ function JobDetailExpandedComponent({ job, onJobUpdate }: JobDetailExpandedProps
             spanProgressColors.border,
             spanProgressColors.bg
           )}
+          style={{ boxShadow: 'inset 0px 4px 25px 15px rgba(0, 0, 0, 0.35)' }}
         >
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -167,7 +168,12 @@ function JobDetailExpandedComponent({ job, onJobUpdate }: JobDetailExpandedProps
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => setShowProgressForm(true)}
-              className="relative inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-br from-[#f7e4bd]/25 via-[#f4c979]/20 to-[#d79a32]/25 border border-[#f4c979]/50 text-[#fdf4db] text-sm font-bold shadow-lg shadow-[#f4c979]/15 ring-1 ring-[#f4c979]/20 hover:bg-gradient-to-br hover:from-[#f7e4bd]/35 hover:via-[#f4c979]/30 hover:to-[#d79a32]/35 hover:border-[#f4c979]/70 hover:shadow-xl hover:shadow-[#f4c979]/25 hover:ring-[#f4c979]/30 transition-all duration-300 backdrop-blur-sm"
+              className="relative inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-[#f4c979]/50 text-[#fdf4db] text-sm font-bold ring-1 ring-[#f4c979]/20 hover:border-[#f4c979]/70 hover:ring-[#f4c979]/30 transition-all duration-300"
+              style={{
+                background: 'linear-gradient(135deg, rgba(247, 228, 189, 0.35) 0%, rgba(244, 201, 121, 0.65) 50%, rgba(215, 154, 50, 0.45) 100%)',
+                boxShadow: '0px 0px 0px 0px rgba(255, 255, 255, 1), 0px 0px 0px 1px rgba(244, 201, 121, 0.3), 0px 20px 25px -5px rgba(244, 201, 121, 0.25), 0px 8px 10px -6px rgba(244, 201, 121, 0.25), 0px 4px 12px 0px rgba(0, 0, 0, 0.15)',
+                backdropFilter: 'blur(8px)',
+              }}
             >
               <Plus className="w-4 h-4" />
               Add Update

@@ -160,7 +160,12 @@ interface SectionCardProps {
 }
 
 const SectionCard = ({ title, subtitle, badge, children }: SectionCardProps) => (
-  <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-gray-900/80 via-gray-900/40 to-gray-900/10 shadow-xl p-6 space-y-5">
+  <section 
+    className="rounded-3xl border border-white/10 bg-gradient-to-br from-gray-900/80 via-gray-900/40 to-gray-900/10 p-6 space-y-5"
+    style={{
+      boxShadow: '0px 4px 25px 8px rgba(0, 0, 0, 0.65), 0px 20px 25px -5px rgba(0, 0, 0, 0.1), 0px 8px 10px -6px rgba(0, 0, 0, 0.1)',
+    }}
+  >
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div>
         <p className="text-[10px] tracking-[0.3em] uppercase text-emerald-200/70">
@@ -939,7 +944,13 @@ export default function DVIRForm() {
         )}
 
         {/* Info banner */}
-        <div className="mb-4 rounded-lg border border-yellow-500/40 bg-yellow-500/10 px-4 py-3 text-xs text-yellow-100">
+        <div 
+          className="mb-4 rounded-3xl border-4 border-yellow-500 px-4 py-3 text-xs text-white"
+          style={{
+            backgroundColor: 'rgba(112, 84, 0, 0.45)',
+            boxShadow: '0px 4px 18px 4px rgba(0, 0, 0, 1)',
+          }}
+        >
           At the start of each shift, drivers must inspect their vehicles and
           report any deficiency that could affect safety or result in a breakdown.
           Complete Section A, then Section B, record any deficiencies in the Notes
@@ -1598,16 +1609,10 @@ export default function DVIRForm() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <SignaturePad
-                    ref={mechanicSigRef}
-                    label="Mechanic Signature (draw)"
-                  />
-                  <SignaturePad
-                    ref={driverApprovalSigRef}
-                    label="Driver Approval Signature (draw)"
-                  />
-                </div>
+                <SignaturePad
+                  ref={mechanicSigRef}
+                  label="Mechanic Signature (draw)"
+                />
               </div>
             )}
           </SectionCard>
@@ -1626,7 +1631,10 @@ export default function DVIRForm() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full rounded-2xl bg-emerald-500/90 hover:bg-emerald-500 px-4 py-3 text-sm font-semibold text-white transition disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full rounded-2xl px-4 py-3 text-sm font-semibold text-white transition disabled:opacity-60 disabled:cursor-not-allowed hover:opacity-90"
+              style={{
+                background: 'linear-gradient(90deg, rgba(16, 185, 129, 1) 0%, rgba(3, 3, 3, 1) 100%)',
+              }}
             >
               {submitting ? "Submitting..." : "Submit DVIR"}
             </button>

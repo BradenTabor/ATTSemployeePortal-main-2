@@ -780,7 +780,14 @@ export default function DailyJSAForm() {
 
   return (
     <DashboardLayout title="Daily JSA">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div 
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+        style={{
+          background: 'linear-gradient(270.54deg, rgba(2, 59, 32, 1) 0%, rgba(1, 55, 29, 1) 12.5%, rgba(45, 67, 56, 1) 25%, rgba(10, 26, 18, 1) 50%, rgba(8, 53, 31, 1) 75%, rgba(0, 0, 0, 1) 100%)',
+          boxShadow: '0px 4px 25px 8px rgba(0, 0, 0, 0.85), inset 0px 4px 25px 20px rgba(0, 0, 0, 0.75)',
+          borderRadius: '45px'
+        }}
+      >
         <div className="flex flex-col gap-3 mb-6 text-center sm:text-left">
           <div className="inline-flex items-center gap-2 text-sm text-gray-400">
             <ClipboardList className="w-5 h-5 text-emerald-400" />
@@ -812,6 +819,9 @@ export default function DailyJSAForm() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl mb-6"
+          style={{
+            background: 'radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.05) 0%, rgba(5, 5, 5, 1) 100%)'
+          }}
         >
           <div className="flex items-center gap-3 mb-4">
             <HardHat className="w-6 h-6 text-emerald-400" />
@@ -888,7 +898,14 @@ export default function DailyJSAForm() {
         </motion.div>
 
         {!formOpen && !isEditMode ? (
-          <div className="rounded-3xl border border-dashed border-emerald-400/40 bg-emerald-500/5 p-10 text-center">
+          <div 
+            className="rounded-3xl border border-dashed border-emerald-400/40 bg-emerald-500/5 p-10 text-center"
+            style={{
+              marginTop: '15px',
+              marginBottom: '15px',
+              background: 'radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.05) 0%, rgb(5, 5, 5) 100%)'
+            }}
+          >
             <h3 className="text-2xl font-semibold text-white mb-2">
               Ready to document today’s job?
             </h3>
@@ -899,7 +916,10 @@ export default function DailyJSAForm() {
             <button
               type="button"
               onClick={handleStartNewJsa}
-              className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-6 py-3 text-white font-semibold shadow-lg shadow-emerald-600/30 hover:bg-emerald-500 transition"
+              className="inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-white font-semibold shadow-lg shadow-emerald-600/30 hover:opacity-80 transition"
+              style={{
+                background: 'linear-gradient(90deg, rgba(131, 109, 63, 1) 0%, rgba(0, 0, 0, 1) 100%)'
+              }}
             >
               <Plus className="w-5 h-5" />
               Create New JSA
@@ -1103,9 +1123,14 @@ export default function DailyJSAForm() {
                                 className={cn(
                                   "flex-1 text-xs font-semibold rounded-lg border px-3 py-2 transition",
                                   state?.condition === condition
-                                    ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-100"
+                                    ? ""
                                     : "border-white/10 bg-white/5 text-gray-400 hover:border-white/30"
                                 )}
+                                style={state?.condition === condition ? {
+                                  backgroundColor: 'rgba(233, 184, 7, 0.1)',
+                                  borderColor: 'rgba(255, 174, 0, 0.4)',
+                                  color: 'rgba(255, 123, 0, 1)'
+                                } : undefined}
                               >
                                 {condition === "good"
                                   ? "Good"
@@ -1863,7 +1888,12 @@ function JsaListSection({
   const totalPages = Math.max(1, Math.ceil((count || 0) / pageSize));
 
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl">
+    <div 
+      className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl"
+      style={{
+        background: 'radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 1) 100%)'
+      }}
+    >
       <div className="px-6 py-5 border-b border-white/10">
         <p className="text-sm text-gray-400 uppercase tracking-wide">
           {title}
@@ -1910,7 +1940,16 @@ function JsaListSection({
                   </p>
                   <Link
                     to={`/forms/jsa/${record.id}`}
-                    className="inline-flex items-center gap-2 text-sm text-emerald-300 hover:text-emerald-200"
+                    className="inline-flex items-center justify-center gap-2 hover:opacity-80 transition"
+                    style={{
+                      width: '160px',
+                      height: '40px',
+                      fontSize: '25px',
+                      lineHeight: '30px',
+                      color: 'rgba(247, 247, 247, 1)',
+                      background: 'linear-gradient(90deg, rgba(176, 133, 74, 1) 2%, rgba(0, 0, 0, 1) 100%)',
+                      borderRadius: '20px'
+                    }}
                   >
                     View / Edit
                     <CheckCircle2 className="w-4 h-4" />

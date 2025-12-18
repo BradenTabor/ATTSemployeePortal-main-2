@@ -48,7 +48,7 @@ export default function NavCards() {
             key={page.path}
             title={page.label}
             description={page.description}
-            icon={<Icon className="w-8 h-8 text-emerald-200" />}
+            icon={<Icon className="w-8 h-8 text-white" />}
             to={page.path}
             variant="emerald"
           />

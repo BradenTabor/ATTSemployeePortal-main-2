@@ -30,8 +30,7 @@ const labelClass =
 const defaultForm: JobProgressUpdateFormData = {
   date: getTodayDateString(),
   spans_completed: 1,
-  span_length_category: 'urban_suburban',
-  custom_span_length: undefined,
+  span_length_category: 'general',
   equipment: 'bucket',
   job_title: '',
   notes: '',
@@ -53,11 +52,8 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
   const userEmail = user?.email || 'unknown@atts.com';
 
   const spanLengthFeet = useMemo(() => {
-    if (formData.span_length_category === 'custom') {
-      return formData.custom_span_length || 0;
-    }
     return SPAN_LENGTH_PRESETS[formData.span_length_category];
-  }, [formData.custom_span_length, formData.span_length_category]);
+  }, [formData.span_length_category]);
 
   const totalFeet = useMemo(
     () => (spanLengthFeet > 0 ? spanLengthFeet * Math.max(0, formData.spans_completed) : 0),
@@ -84,17 +80,6 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
     if (!formData.spans_completed || formData.spans_completed <= 0) {
       setError('Spans completed must be greater than zero');
       return false;
-    }
-
-    if (formData.span_length_category === 'custom') {
-      if (!formData.custom_span_length || formData.custom_span_length <= 0) {
-        setError('Please enter a custom span length greater than zero');
-        return false;
-      }
-      if (formData.custom_span_length > 2000) {
-        setError('Custom span length cannot exceed 2000 ft');
-        return false;
-      }
     }
 
     if (!formData.job_title.trim()) {
@@ -162,10 +147,7 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
   };
 
   const spanOptions: { value: SpanLengthCategory; label: string; hint: string }[] = [
-    { value: 'urban_suburban', label: 'Urban/Suburban', hint: 'Typical 150-250 ft (default 200)' },
-    { value: 'rural', label: 'Rural', hint: 'Typical 200-800 ft (default 500)' },
-    { value: 'transmission', label: 'Transmission', hint: 'Typical 490-980 ft (default 735)' },
-    { value: 'custom', label: 'Custom', hint: 'Enter a custom length (1-2000 ft)' },
+    { value: 'general', label: 'General', hint: '200 ft per span' },
   ];
 
   const equipmentOptions: { value: Equipment; label: string }[] = [
@@ -181,8 +163,8 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 10 }}
         className={cn(
-          'fixed inset-0 z-50 flex items-center justify-center px-4',
-          'bg-black/70 backdrop-blur-sm'
+          'fixed inset-0 z-50 flex items-center justify-center px-[1px]',
+          'bg-black/70 backdrop-blur-sm rounded-[25px]'
         )}
       >
         <motion.div
@@ -194,7 +176,7 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
             'max-h-[90vh] flex flex-col'
           )}
         >
-          <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 mt-2.5 mb-2.5">
             <div>
               <p className="text-xs uppercase tracking-[0.3em] text-white/50">Submit Progress</p>
               <h3 className="text-lg font-semibold text-white">{job.job_name}</h3>
@@ -294,37 +276,21 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className={labelClass}>
-                  <Wrench className="w-4 h-4 text-[#f4c979]" />
-                  Your Role
-                </label>
-                <input
-                  type="text"
-                  value={formData.job_title}
-                  onChange={(e) => setFormData(prev => ({ ...prev, job_title: e.target.value }))}
-                  placeholder="e.g., Bucket Foreman"
-                  className={baseInput}
-                  disabled={submitting}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>
-                  <Ruler className="w-4 h-4 text-[#f4c979]" />
-                  Spans Completed
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  value={formData.spans_completed}
-                  onChange={(e) =>
-                    setFormData(prev => ({ ...prev, spans_completed: Number(e.target.value) || 0 }))
-                  }
-                  className={baseInput}
-                  disabled={submitting}
-                />
-              </div>
+            <div>
+              <label className={labelClass}>
+                <Ruler className="w-4 h-4 text-[#f4c979]" />
+                Spans Completed
+              </label>
+              <input
+                type="number"
+                min={1}
+                value={formData.spans_completed}
+                onChange={(e) =>
+                  setFormData(prev => ({ ...prev, spans_completed: Number(e.target.value) || 0 }))
+                }
+                className={baseInput}
+                disabled={submitting}
+              />
             </div>
 
             <div>
@@ -352,7 +318,6 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
                         setFormData(prev => ({
                           ...prev,
                           span_length_category: option.value,
-                          custom_span_length: option.value === 'custom' ? prev.custom_span_length : undefined,
                         }))
                       }
                       disabled={submitting}
@@ -361,28 +326,7 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
                     <div>
                       <p className="text-sm text-white font-semibold">{option.label}</p>
                       <p className="text-xs text-white/60">{option.hint}</p>
-                      {option.value !== 'custom' && (
-                        <p className="text-xs text-emerald-300 mt-1">Preset: {SPAN_LENGTH_PRESETS[option.value]} ft</p>
-                      )}
-                      {option.value === 'custom' && formData.span_length_category === 'custom' && (
-                        <div className="mt-2">
-                          <input
-                            type="number"
-                            min={1}
-                            max={2000}
-                            value={formData.custom_span_length ?? ''}
-                            onChange={(e) =>
-                              setFormData(prev => ({
-                                ...prev,
-                                custom_span_length: e.target.value ? Number(e.target.value) : undefined,
-                              }))
-                            }
-                            placeholder="Enter custom length"
-                            className={cn(baseInput, 'bg-[#0b0907]')}
-                            disabled={submitting}
-                          />
-                        </div>
-                      )}
+                      <p className="text-xs text-emerald-300 mt-1">Preset: {SPAN_LENGTH_PRESETS[option.value]} ft</p>
                     </div>
                   </label>
                 ))}
@@ -414,7 +358,7 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-2">
+            <div className="flex items-center justify-end gap-3 pt-[50px] pb-[50px]">
               <button
                 type="button"
                 onClick={onCancel}

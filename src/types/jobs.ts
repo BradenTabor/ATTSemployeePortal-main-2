@@ -25,14 +25,12 @@ export type SpanProgressMetric = 'spans' | 'feet';
 /**
  * Span length and equipment enums for span-based tracking
  */
-export type SpanLengthCategory = 'urban_suburban' | 'rural' | 'transmission' | 'custom';
+export type SpanLengthCategory = 'general';
 export type Equipment = 'jerraff' | 'bucket' | 'mulcher';
 
 // Span length presets (feet)
-export const SPAN_LENGTH_PRESETS: Record<Exclude<SpanLengthCategory, 'custom'>, number> = {
-  urban_suburban: 200,
-  rural: 500,
-  transmission: 735,
+export const SPAN_LENGTH_PRESETS: Record<SpanLengthCategory, number> = {
+  general: 200,
 };
 
 export interface JobProgressUpdate {
@@ -234,7 +232,6 @@ export interface JobProgressUpdateFormData {
   date: string;
   spans_completed: number;
   span_length_category: SpanLengthCategory;
-  custom_span_length?: number;
   equipment: Equipment;
   job_title: string;
   notes: string;

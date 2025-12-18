@@ -17,6 +17,7 @@ export default function DashboardLayout({ title, children }: DashboardLayoutProp
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
+        style={{ background: 'radial-gradient(circle at 50% 50%, rgba(96, 79, 31, 1) 0%, rgba(142, 122, 67, 1) 44%, rgba(176, 154, 94, 1) 63%, rgba(212, 212, 212, 1) 95%)' }}
       >
         {/* Header Area */}
         <header className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
@@ -26,12 +27,16 @@ export default function DashboardLayout({ title, children }: DashboardLayoutProp
               src={logo}
               alt="ATTS Logo"
               fetchPriority="high"
-              className="w-28 sm:w-36 md:w-44 object-contain drop-shadow-lg"
+              className="w-[180px] sm:w-52 md:w-60 object-contain drop-shadow-lg"
             />
             {title && (
               <motion.h1
-                className="text-2xl sm:text-3xl font-bold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] drop-shadow-[0_0_25px_rgba(244,201,121,0.35)] break-normal"
-                style={{ backgroundSize: "200% 200%" }}
+                className="text-2xl sm:text-3xl font-bold tracking-wide text-transparent bg-clip-text break-normal"
+                style={{
+                  backgroundSize: "200% 200%",
+                  backgroundImage: "linear-gradient(90deg, rgba(247, 228, 189, 1) 0%, rgba(138, 99, 30, 1) 20%, rgba(244, 201, 121, 1) 50%, rgba(138, 99, 30, 1) 75%, rgba(215, 154, 50, 1) 100%)",
+                  WebkitBackgroundClip: "text",
+                }}
                 animate={{
                   backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
                   textShadow: [

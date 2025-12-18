@@ -16,6 +16,7 @@ interface AuthContextType {
   session: ExtendedSession | null;
   loading: boolean;
   role: UserRole;
+  fullName: string | null;
   isAdmin: boolean;
   isMechanic: boolean;
   hasMechanicAccess: boolean;
@@ -29,13 +30,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSessionState] = useState<ExtendedSession | null>(null);
   const [role, setRole] = useState<UserRole>(null);
+  const [fullName, setFullName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isMechanic, setIsMechanic] = useState(false);
   const [hasMechanicAccess, setHasMechanicAccess] = useState(false);
   
-  // Keep track of last known role to preserve it on transient errors
+  // Keep track of last known values to preserve them on transient errors
   const lastKnownRoleRef = useRef<UserRole>(null);
+  const lastKnownFullNameRef = useRef<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -50,22 +53,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    // Fetch user role from app_users table and normalize it
-    // Returns null on error (not 'user') so caller can preserve last known role
+    // Fetch user profile (role + full_name) from app_users table
+    // Returns { role, fullName } on success, null values on error so caller can preserve last known values
     // 
-    // IMPORTANT: This queries app_users.role WHERE user_id = userId
+    // IMPORTANT: This queries app_users WHERE user_id = userId
     // The user_id column must contain the auth.users.id (UUID from Supabase Auth)
-    const fetchUserRole = async (userId: string): Promise<UserRole> => {
+    interface UserProfile {
+      role: UserRole;
+      fullName: string | null;
+    }
+    
+    const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
       try {
-        logger.info(`[AuthContext] Fetching role for user_id: ${userId}`);
-        console.log('[AuthContext] DEBUG: Fetching role from app_users where user_id =', userId);
+        logger.info(`[AuthContext] Fetching profile for user_id: ${userId}`);
         
-        const timeoutSentinel = Symbol('role-timeout');
+        const timeoutSentinel = Symbol('profile-timeout');
         let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
+        // Fetch role AND full_name in single query (eliminates Dashboard duplicate)
         const fetchPromise = supabase
           .from('app_users')
-          .select('role, user_id, email')
+          .select('role, full_name, user_id, email')
           .eq('user_id', userId)
           .maybeSingle();
 
@@ -81,57 +89,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (winner === timeoutSentinel) {
           logger.warn(
-            `[AuthContext] Role fetch timed out for ${userId}, using cached role fallback.`
+            `[AuthContext] Profile fetch timed out for ${userId}, using cached values.`
           );
-          console.warn('[AuthContext] DEBUG: Role fetch TIMED OUT');
-          return lastKnownRoleRef.current ?? 'employee';
+          return {
+            role: lastKnownRoleRef.current ?? 'employee',
+            fullName: lastKnownFullNameRef.current,
+          };
         }
 
-        const { data, error } = winner as PostgrestSingleResponse<{ role: string | null; user_id: string; email: string | null }>;
+        const { data, error } = winner as PostgrestSingleResponse<{ 
+          role: string | null; 
+          full_name: string | null;
+          user_id: string; 
+          email: string | null;
+        }>;
 
         if (error) {
-          logger.error(`[AuthContext] Error fetching user role for ${userId}:`, error.message);
-          console.error('[AuthContext] DEBUG: Supabase error:', error.code, error.message, error.hint);
+          logger.error(`[AuthContext] Error fetching user profile for ${userId}:`, error.message);
           return null;
         }
 
-        // Debug: Log the full response
-        console.log('[AuthContext] DEBUG: Query response:', { 
-          hasData: !!data, 
-          role: data?.role, 
-          user_id: data?.user_id,
-          email: data?.email,
-          queryUserId: userId
-        });
-
         if (!data) {
           logger.warn(`[AuthContext] No app_users record found for user_id: ${userId}`);
-          console.warn('[AuthContext] DEBUG: No record found! Check if app_users has a row with user_id =', userId);
-          return 'employee';
+          return { role: 'employee', fullName: null };
         }
 
         const rawRole = data?.role;
-        logger.info(`[AuthContext] Raw role from DB for ${userId}:`, rawRole);
+        const rawFullName = data?.full_name;
+        
+        logger.info(`[AuthContext] Profile from DB for ${userId}:`, { role: rawRole, fullName: rawFullName });
 
-        // Normalize to known roles (matches DB constraint)
+        // Normalize role to known values (matches DB constraint)
+        let normalizedRole: UserRole = 'employee';
         if (rawRole === 'admin' || rawRole === 'mechanic' || rawRole === 'employee' || rawRole === 'manager') {
-          logger.info(`[AuthContext] Normalized role for ${userId}: ${rawRole}`);
-          console.log('[AuthContext] DEBUG: Role resolved as:', rawRole);
-          return rawRole;
+          normalizedRole = rawRole;
         }
 
-        if (rawRole === null || rawRole === undefined) {
-          logger.warn(`[AuthContext] No role found in DB for ${userId}, using 'employee' as fallback`);
-          console.warn('[AuthContext] DEBUG: Role column is NULL, falling back to employee');
-          return 'employee';
-        }
-
-        logger.warn(`[AuthContext] Invalid role value '${rawRole}' for ${userId}, using 'employee' as fallback`);
-        console.warn('[AuthContext] DEBUG: Unknown role value:', rawRole);
-        return 'employee';
+        return {
+          role: normalizedRole,
+          fullName: rawFullName || null,
+        };
       } catch (error) {
-        logger.error(`[AuthContext] Failed to fetch user role for ${userId}:`, error);
-        console.error('[AuthContext] DEBUG: Exception in fetchUserRole:', error);
+        logger.error(`[AuthContext] Failed to fetch user profile for ${userId}:`, error);
         return null;
       }
     };
@@ -149,21 +148,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (mounted) {
           if (session) {
-            const normalizedRole = await fetchUserRole(session.user.id);
+            const profile = await fetchUserProfile(session.user.id);
             
-            // If fetch failed (returned null), preserve last known role or use 'employee' as initial fallback
-            const finalRole: UserRole = normalizedRole !== null 
-              ? normalizedRole 
-              : (lastKnownRoleRef.current !== null 
-                  ? lastKnownRoleRef.current 
-                  : 'employee');
+            // If fetch failed (returned null), preserve last known values
+            const finalRole: UserRole = profile?.role ?? lastKnownRoleRef.current ?? 'employee';
+            const finalFullName = profile?.fullName ?? lastKnownFullNameRef.current ?? null;
             
-            if (normalizedRole !== null) {
-              // Only update ref when we get a valid role from DB
-              lastKnownRoleRef.current = normalizedRole;
-              logger.info(`[AuthContext] Initial auth: Set role to ${normalizedRole} for ${session.user.id}`);
+            if (profile !== null) {
+              // Only update refs when we get valid data from DB
+              lastKnownRoleRef.current = profile.role;
+              lastKnownFullNameRef.current = profile.fullName;
+              logger.info(`[AuthContext] Initial auth: Set profile for ${session.user.id}`, { role: profile.role, fullName: profile.fullName });
             } else {
-              logger.warn(`[AuthContext] Initial auth: Role fetch failed, preserving last known role: ${lastKnownRoleRef.current || 'employee'}`);
+              logger.warn(`[AuthContext] Initial auth: Profile fetch failed, preserving last known values`);
             }
             
             const extendedSession: ExtendedSession = {
@@ -178,15 +175,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setSessionState(extendedSession);
             setUser(session.user);
             setRole(finalRole);
+            setFullName(finalFullName);
             setIsAdmin(isAdminUser);
             setIsMechanic(isMechanicUser);
             setHasMechanicAccess(hasMechanicAccessUser);
           } else {
-            // No session - clear everything including last known role
+            // No session - clear everything including last known values
             lastKnownRoleRef.current = null;
+            lastKnownFullNameRef.current = null;
             setSessionState(null);
             setUser(null);
             setRole(null);
+            setFullName(null);
             setIsAdmin(false);
             setIsMechanic(false);
             setHasMechanicAccess(false);
@@ -199,6 +199,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setSessionState(null);
           setUser(null);
           setRole(null);
+          setFullName(null);
           setIsAdmin(false);
           setIsMechanic(false);
           setHasMechanicAccess(false);
@@ -220,29 +221,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === 'SIGNED_OUT') {
         logger.info('[AuthContext] User signed out - cleaning up realtime channels');
         await cleanupRealtime();
-        // Clear last known role on sign out
+        // Clear last known values on sign out
         lastKnownRoleRef.current = null;
+        lastKnownFullNameRef.current = null;
       }
 
       if (mounted) {
         if (session) {
-          // Fetch user role on auth state change
-          const normalizedRole = await fetchUserRole(session.user.id);
+          // Fetch user profile on auth state change
+          const profile = await fetchUserProfile(session.user.id);
           
-          // If fetch failed (returned null), preserve last known role
-          // Only use 'employee' as fallback if we truly have no prior role
-          const finalRole: UserRole = normalizedRole !== null 
-            ? normalizedRole 
-            : (lastKnownRoleRef.current !== null 
-                ? lastKnownRoleRef.current 
-                : 'employee');
+          // If fetch failed (returned null), preserve last known values
+          const finalRole: UserRole = profile?.role ?? lastKnownRoleRef.current ?? 'employee';
+          const finalFullName = profile?.fullName ?? lastKnownFullNameRef.current ?? null;
           
-          if (normalizedRole !== null) {
-            // Only update ref when we get a valid role from DB
-            lastKnownRoleRef.current = normalizedRole;
-            logger.info(`[AuthContext] Auth state change (${event}): Set role to ${normalizedRole} for ${session.user.id}`);
+          if (profile !== null) {
+            // Only update refs when we get valid data from DB
+            lastKnownRoleRef.current = profile.role;
+            lastKnownFullNameRef.current = profile.fullName;
+            logger.info(`[AuthContext] Auth state change (${event}): Set profile for ${session.user.id}`, { role: profile.role, fullName: profile.fullName });
           } else {
-            logger.warn(`[AuthContext] Auth state change (${event}): Role fetch failed, preserving last known role: ${lastKnownRoleRef.current || 'employee'}`);
+            logger.warn(`[AuthContext] Auth state change (${event}): Profile fetch failed, preserving last known values`);
           }
           
           const extendedSession: ExtendedSession = {
@@ -258,6 +257,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setSessionState(extendedSession);
           setUser(session.user);
           setRole(finalRole);
+          setFullName(finalFullName);
           setIsAdmin(isAdminUser);
           setIsMechanic(isMechanicUser);
           setHasMechanicAccess(hasMechanicAccessUser);
@@ -266,11 +266,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             logger.info(`[AuthContext] User signed in with role: ${finalRole}`);
           }
         } else {
-          // No session - clear everything including last known role
+          // No session - clear everything including last known values
           lastKnownRoleRef.current = null;
+          lastKnownFullNameRef.current = null;
           setSessionState(null);
           setUser(null);
           setRole(null);
+          setFullName(null);
           setIsAdmin(false);
           setIsMechanic(false);
           setHasMechanicAccess(false);
@@ -310,11 +312,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw error;
       }
 
-      // Clear last known role on sign out
+      // Clear last known values on sign out
       lastKnownRoleRef.current = null;
+      lastKnownFullNameRef.current = null;
       setUser(null);
       setSessionState(null);
       setRole(null);
+      setFullName(null);
       setIsAdmin(false);
       setIsMechanic(false);
       setHasMechanicAccess(false);
@@ -340,7 +344,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, role, isAdmin, isMechanic, hasMechanicAccess, signOut, setSession }}>
+    <AuthContext.Provider value={{ user, session, loading, role, fullName, isAdmin, isMechanic, hasMechanicAccess, signOut, setSession }}>
       {children}
     </AuthContext.Provider>
   );

@@ -113,7 +113,7 @@ function EmberCollapsibleSectionComponent({
   return (
     <section
       className={cn(
-        'relative rounded-3xl border border-[#ff9350]/25 bg-gradient-to-br from-[#1a0a06] via-[#0f0502] to-[#070302] overflow-hidden shadow-[0_25px_50px_rgba(0,0,0,0.5)]',
+        'relative rounded-3xl border border-[#ff9350]/25 bg-gradient-to-br from-[#1a0a06] via-[#bf7140] to-[#070302] overflow-hidden shadow-[0_25px_50px_rgba(0,0,0,0.5)]',
         className
       )}
     >

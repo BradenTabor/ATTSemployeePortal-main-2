@@ -319,7 +319,7 @@ export function getSpanProgressColors(percentage: number): {
   // In progress - emerald
   return {
     gradient: 'from-emerald-400 to-emerald-600',
-    bg: 'bg-emerald-500/15',
+    bg: 'bg-[rgba(10,219,150,0.15)]',
     text: 'text-emerald-400',
     border: 'border-emerald-500/30',
   };

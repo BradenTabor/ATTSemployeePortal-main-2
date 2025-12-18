@@ -11,7 +11,6 @@ import {
 import DashboardLayout from "../layouts/DashboardLayout";
 import AdminPremiumScaffold, {
   type AdminHeroConfig,
-  type AdminStat,
 } from "../components/admin/AdminPremiumScaffold";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../contexts/AuthContext";
@@ -48,14 +47,6 @@ const CONTACT_CHANNELS = [
 
 export default function Contact() {
   const { user } = useAuth();
-  const heroStats = useMemo<AdminStat[]>(
-    () => [
-      { label: "Avg. response", value: "24h", hint: "During business hours" },
-      { label: "Support lines", value: "03", hint: "Mgmt · HR · Safety" },
-      { label: "Coverage", value: "24/7", hint: "Emergency hotline" },
-    ],
-    []
-  );
 
   const heroConfig = useMemo<AdminHeroConfig>(
     () => ({
@@ -96,7 +87,11 @@ export default function Contact() {
         <div className="flex flex-col gap-3">
           <a
             href="tel:8709308000"
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-500/90 px-4 py-3 text-sm font-semibold text-black shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 min-h-[44px]"
+            className="inline-flex items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-semibold text-black transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 min-h-[44px]"
+            style={{
+              background: 'radial-gradient(circle at 50% 50%, rgba(52, 211, 153, 1) 0%, rgba(5, 5, 5, 0.5) 100%)',
+              boxShadow: '0px 10px 15px -0.54px rgba(16, 185, 129, 0.45), 0px 4px 6px -4px rgba(16, 185, 129, 0.3)'
+            }}
           >
             <Phone className="w-4 h-4" />
             Call emergency hotline
@@ -115,7 +110,10 @@ export default function Contact() {
         </p>
       </div>
 
-      <div className="rounded-3xl border border-white/10 bg-[#041b14]/85 p-5 space-y-3">
+      <div 
+        className="rounded-3xl border border-white/10 bg-[#041b14]/85 p-5 space-y-3"
+        style={{ boxShadow: 'inset 0px 4px 20px 15px rgba(0, 0, 0, 0.45)' }}
+      >
         <p className="text-xs uppercase tracking-[0.35em] text-emerald-200/70">
           HQ & mail
         </p>
@@ -137,17 +135,25 @@ export default function Contact() {
     <DashboardLayout title="Contact Management & HR">
       <AdminPremiumScaffold
         hero={heroConfig}
-        stats={heroStats}
         theme="emerald"
         sidePanel={sidePanel}
       >
         <div className="space-y-10">
-          <section className="rounded-3xl border border-white/10 bg-[#03150f]/80 p-6 backdrop-blur">
+          <section 
+            className="rounded-3xl border border-white/10 bg-[#03150f]/80 p-6 backdrop-blur"
+            style={{
+              background: 'linear-gradient(90deg, rgba(3, 21, 15, 0.8) 0%, rgba(16, 66, 42, 1) 100%)',
+              boxShadow: '0px 4px 25px 8px rgba(0, 0, 0, 0.85)'
+            }}
+          >
             <div className="grid gap-6 md:grid-cols-2">
               {CONTACT_CHANNELS.map((channel) => (
                 <article
                   key={channel.title}
                   className="rounded-2xl border border-white/10 bg-black/30 p-5 text-white/90 hover:border-emerald-400/40 transition"
+                  style={{
+                    boxShadow: '0px 4px 25px 20px rgba(0, 0, 0, 0.75)'
+                  }}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div>
@@ -281,7 +287,13 @@ function ContactForm({ userId }: ContactFormProps) {
   };
 
   return (
-    <section className="rounded-3xl border border-white/10 bg-[#04150f]/85 p-6 space-y-6">
+    <section 
+      className="rounded-3xl border border-white/10 bg-[#04150f]/85 p-6 space-y-6"
+      style={{
+        background: 'linear-gradient(90deg, rgba(4, 21, 15, 0.85) 0%, rgba(16, 66, 42, 0.85) 100%)',
+        boxShadow: 'inset 0px 4px 35px 15px rgba(0, 0, 0, 0.85), 0px 4px 25px 8px rgba(0, 0, 0, 0.85)'
+      }}
+    >
       <div>
         <h3 className="text-xl font-bold text-white flex items-center gap-2">
           <Mail className="w-5 h-5 text-emerald-300" />
@@ -407,7 +419,10 @@ function ContactForm({ userId }: ContactFormProps) {
           <button
             type="submit"
             disabled={status === "loading"}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-300 px-4 py-3 text-sm font-semibold text-[#02150d] shadow-lg shadow-emerald-500/40 transition hover:from-emerald-400 hover:to-emerald-200 disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-200"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold text-[#02150d] shadow-lg shadow-emerald-500/40 transition hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-200"
+            style={{
+              background: 'linear-gradient(90deg, rgba(16, 66, 42, 0.85) 5%, rgba(52, 211, 153, 1) 50%, rgba(16, 66, 42, 1) 100%)'
+            }}
           >
             {status === "loading" ? (
               "Sending..."
@@ -497,6 +512,10 @@ function LazyMap() {
     <section
       ref={ref}
       className="rounded-3xl border border-white/10 bg-[#03150f]/85 p-6 space-y-4"
+      style={{
+        background: 'radial-gradient(circle at 50% 50%, rgba(3, 21, 15, 0.85) 60%, rgba(26, 102, 74, 1) 100%)',
+        boxShadow: 'inset 0px 4px 25px 15px rgba(0, 0, 0, 0.85), 0px 4px 25px 8px rgba(0, 0, 0, 0.85)'
+      }}
     >
       <div className="flex items-center gap-2">
         <MapPin className="w-5 h-5 text-emerald-300" />

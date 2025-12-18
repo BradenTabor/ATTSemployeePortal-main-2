@@ -224,7 +224,7 @@ export default function Home() {
                   transition={{ duration: 0.3 }}
                   className="relative px-6 pt-8 pb-6 text-center border-b border-white/[0.06]"
                 >
-                  <h2 className="text-2xl font-bold text-white tracking-tight">
+                  <h2 className="text-2xl font-bold font-serif text-white tracking-tight">
                     {currentHero.title}
                   </h2>
                   <p className="text-sm text-white/50 mt-2 max-w-xs mx-auto">
@@ -415,7 +415,7 @@ export default function Home() {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="group w-full bg-gradient-to-r from-emerald-500/90 to-emerald-600/90 hover:from-emerald-400 hover:to-emerald-500 text-white font-semibold py-3.5 px-6 rounded-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-900/30 hover:shadow-emerald-500/25 flex items-center justify-center gap-2"
+                      className="group w-full bg-gradient-to-r from-[#004708] to-[#03cc00] hover:from-[#004708] hover:to-[#03cc00] text-white font-semibold py-3.5 px-6 rounded-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-green-900/30 hover:shadow-green-500/25 flex items-center justify-center gap-2"
                     >
                       {loading ? (
                         <span className="flex items-center gap-2">
@@ -437,7 +437,7 @@ export default function Home() {
                     {!isSignup && (
                       <Link
                         to="/reset-password"
-                        className="block text-center text-xs text-emerald-400/70 hover:text-emerald-400 transition-colors mt-2"
+                        className="block text-center text-xs text-white/70 hover:text-white transition-colors mt-2"
                       >
                         Forgot your password?
                       </Link>

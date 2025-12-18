@@ -12,6 +12,7 @@ import { AdminAvatar } from "../components/admin/AdminAvatar";
 import BrandedNavCard from "../components/BrandedNavCard";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabaseClient";
+import { subscribeToTableChanges } from "../lib/realtime";
 import { logger } from "../lib/logger";
 import { DateField } from "../components/forms/GlassyPickers";
 
@@ -110,10 +111,26 @@ export default function AdminDashboard() {
     };
 
     fetchContactRequests();
-    const interval = setInterval(fetchContactRequests, 60_000);
+    
+    // Use realtime subscription instead of polling for better performance
+    const unsubscribe = subscribeToTableChanges({
+      channelName: "admin-contact-requests",
+      table: "contact_requests",
+      onInsert: () => {
+        if (isMounted) fetchContactRequests();
+      },
+      onUpdate: () => {
+        if (isMounted) fetchContactRequests();
+      },
+      onDelete: () => {
+        if (isMounted) fetchContactRequests();
+      },
+      onError: (err) => logger.error("Contact requests realtime error:", err),
+    });
+
     return () => {
       isMounted = false;
-      clearInterval(interval);
+      unsubscribe();
     };
   }, [isAdmin]);
 
