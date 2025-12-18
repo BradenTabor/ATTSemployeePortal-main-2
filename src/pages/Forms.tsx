@@ -180,24 +180,16 @@ const FormCard = ({ form, index }: FormCardProps) => {
       <motion.div
         whileHover={{ y: -6, scale: 1.01 }}
         whileTap={{ scale: 0.99 }}
-        className={cn(
-          "relative h-full rounded-2xl p-[2px] overflow-hidden shadow-lg transition-all duration-500 group",
-          isExternal
-            ? "bg-gradient-to-br from-sky-600/80 via-black/80 to-sky-800/80"
-            : "bg-gradient-to-br from-emerald-600/80 via-black/80 to-emerald-800/80"
-        )}
+        className="relative h-full rounded-2xl p-[2px] overflow-hidden shadow-[0_0_25px_8px_rgba(0,0,0,0.85)] transition-all duration-500 group"
+        style={{
+          background: "linear-gradient(135deg, rgba(28, 130, 93, 0.8) 0%, rgba(0, 0, 0, 0.8) 49%, rgba(52, 211, 153, 1) 100%)"
+        }}
       >
-        <div className="relative h-full rounded-[1.05rem] bg-black/75 border border-white/5 p-5 flex flex-col gap-5 backdrop-blur-2xl">
+        <div className="relative h-full rounded-[1.05rem] bg-black/35 border border-white/5 p-5 flex flex-col gap-5 backdrop-blur-2xl">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
               <div
-                className={cn(
-                  "w-12 h-12 rounded-xl flex items-center justify-center border transition-all duration-300",
-                  isExternal
-                    ? "bg-sky-500/10 border-sky-400/40 text-sky-100"
-                    : "bg-emerald-500/10 border-emerald-400/40 text-emerald-100",
-                  "group-hover:rotate-3 group-hover:scale-105"
-                )}
+                className="w-12 h-12 rounded-xl flex items-center justify-center border transition-all duration-300 bg-sky-500/10 border-sky-400/40 text-sky-100 group-hover:rotate-3 group-hover:scale-105"
               >
                 <Icon className="w-5 h-5" />
               </div>
@@ -208,12 +200,7 @@ const FormCard = ({ form, index }: FormCardProps) => {
             </div>
             <div className="flex flex-col items-end gap-1">
               <span
-                className={cn(
-                  "text-[10px] uppercase tracking-widest px-2 py-1 rounded-full border",
-                  isExternal
-                    ? "bg-sky-500/10 border-sky-400/30 text-sky-100"
-                    : "bg-emerald-500/10 border-emerald-400/30 text-emerald-100"
-                )}
+                className="text-[10px] uppercase tracking-widest px-2 py-1 rounded-full border bg-sky-500/10 border-sky-400/30 text-sky-100"
               >
                 {isExternal ? "External" : "Internal"}
               </span>

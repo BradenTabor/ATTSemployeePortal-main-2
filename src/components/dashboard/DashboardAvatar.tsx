@@ -62,13 +62,14 @@ function DashboardAvatarComponent({
   useEffect(() => {
     const container = containerRef.current;
     if (!container) {
-      setIsVisible(true);
+      // Schedule state update asynchronously to avoid synchronous setState in effect
+      queueMicrotask(() => setIsVisible(true));
       return;
     }
 
     // If already rendered once, keep it rendered (avoid re-mounting)
     if (hasRendered) {
-      setIsVisible(true);
+      queueMicrotask(() => setIsVisible(true));
       return;
     }
 

@@ -30,7 +30,7 @@ export type Equipment = 'jerraff' | 'bucket' | 'mulcher';
 
 // Span length presets (feet)
 export const SPAN_LENGTH_PRESETS: Record<SpanLengthCategory, number> = {
-  general: 200,
+  general: 300,
 };
 
 export interface JobProgressUpdate {

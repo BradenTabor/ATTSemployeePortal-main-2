@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, ReactNode, memo } from 'react';
+import { useState, useCallback, ReactNode, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -36,18 +36,15 @@ function CollapsibleSectionComponent({
   icon,
   headerAction,
 }: CollapsibleSectionProps) {
-  // Initialize with defaultOpen, will be updated in useEffect from localStorage
-  const [isOpen, setIsOpen] = useState(defaultOpen);
-  const [hasHydrated, setHasHydrated] = useState(false);
-
-  // Read persisted state on mount (in useEffect to avoid hydration mismatch)
-  useEffect(() => {
+  // Use lazy initializer to read persisted state without useEffect setState
+  const [isOpen, setIsOpen] = useState(() => {
     if (storageKey) {
-      const persisted = getPersistedBool(storageKey, defaultOpen);
-      setIsOpen(persisted);
+      return getPersistedBool(storageKey, defaultOpen);
     }
-    setHasHydrated(true);
-  }, [storageKey, defaultOpen]);
+    return defaultOpen;
+  });
+  // Always true since we initialize synchronously now
+  const hasHydrated = true;
 
   // Toggle handler with persistence
   const toggle = useCallback(() => {

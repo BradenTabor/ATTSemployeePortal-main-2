@@ -1,65 +1,26 @@
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabaseClient";
+import { memo } from "react";
 import { ArrowRight, Megaphone, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/ATTS_Logo-removebg-preview.png";
+import { useLatestAnnouncementQuery } from "../hooks/queries/useAnnouncementsQuery";
+import { getDeviceCapabilities } from "../lib/mobilePerf";
 
-interface Announcement {
-  id: string;
-  title: string;
-  message: string;
-  author: string | null;
-  created_at: string;
-}
-
-export default function DashboardAnnouncementCard() {
-  const [latestAnnouncement, setLatestAnnouncement] =
-    useState<Announcement | null>(null);
-  const [loading, setLoading] = useState(true);
+/**
+ * DashboardAnnouncementCard - Displays the latest announcement on the dashboard
+ * 
+ * Performance optimizations:
+ * - Uses React Query for caching and data fetching (no manual subscription)
+ * - Animations are hover-triggered only (no continuous infinite animations)
+ * - Respects reduced motion preferences
+ * - Wrapped in memo to prevent unnecessary re-renders
+ */
+function DashboardAnnouncementCardComponent() {
+  const { data: latestAnnouncement, isLoading } = useLatestAnnouncementQuery();
   const navigate = useNavigate();
+  const caps = getDeviceCapabilities();
 
-  useEffect(() => {
-    const fetchLatest = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("announcements")
-          .select("*")
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .single();
-
-        if (! error && data) {
-          setLatestAnnouncement(data as Announcement);
-        }
-      } catch (err) {
-        console.error("Error fetching latest announcement:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchLatest();
-
-    const channel = supabase
-      .channel("announcements-dashboard")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "announcements" },
-        (payload) => {
-          if (payload.new) {
-            setLatestAnnouncement(payload.new as Announcement);
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  if (loading || !latestAnnouncement) return null;
+  if (isLoading || !latestAnnouncement) return null;
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -78,21 +39,26 @@ export default function DashboardAnnouncementCard() {
     });
   };
 
+  // Use date field if available, fall back to created_at
+  const displayDate = latestAnnouncement.date || latestAnnouncement.created_at;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
-      whileHover={{ y: -6 }}
+      whileHover={caps.prefersReducedMotion ? undefined : { y: -6 }}
       onClick={() => navigate("/announcements")}
       className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600/20 via-emerald-500/5 to-transparent border-2 border-emerald-500/30 backdrop-blur-md shadow-xl hover:shadow-2xl hover:shadow-emerald-500/20 hover:border-emerald-500/50 transition-all cursor-pointer"
     >
-      {/* Animated background */}
-      <motion.div
-        animate={{ backgroundPosition: ["0% 0%", "100% 100%", "0% 0%"] }}
-        transition={{ duration: 8, repeat: Infinity }}
-        className="absolute inset-0 bg-gradient-to-br from-emerald-400/10 via-transparent to-emerald-600/10 opacity-0 group-hover:opacity-100 transition-opacity"
-        style={{ backgroundSize: "200% 200%" }}
+      {/* Animated background - only visible and animated on hover */}
+      <div
+        className="absolute inset-0 bg-gradient-to-br from-emerald-400/10 via-transparent to-emerald-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        style={{ 
+          backgroundSize: "200% 200%",
+          // CSS animation only runs when visible (on hover) - no JS overhead
+          animation: caps.prefersReducedMotion ? 'none' : undefined,
+        }}
       />
 
       {/* Shine effect */}
@@ -110,7 +76,7 @@ export default function DashboardAnnouncementCard() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.2, type: "spring" }}
-            className="p-2. 5 bg-emerald-500/20 rounded-xl border border-emerald-500/40 flex-shrink-0"
+            className="p-2.5 bg-emerald-500/20 rounded-xl border border-emerald-500/40 flex-shrink-0"
           >
             <Megaphone className="w-5 h-5 text-emerald-300" />
           </motion.div>
@@ -145,7 +111,7 @@ export default function DashboardAnnouncementCard() {
           transition={{ delay: 0.15 }}
           className="text-xl sm:text-2xl font-black text-white mb-2 line-clamp-2 group-hover:text-emerald-100 transition-colors"
         >
-          {latestAnnouncement. title}
+          {latestAnnouncement.title}
         </motion.h3>
 
         {/* Preview */}
@@ -156,7 +122,7 @@ export default function DashboardAnnouncementCard() {
           className="text-sm text-gray-200 line-clamp-2 mb-4 group-hover:text-white transition-colors"
         >
           {latestAnnouncement.message}
-        </motion. p>
+        </motion.p>
 
         {/* Footer */}
         <motion.div
@@ -168,16 +134,16 @@ export default function DashboardAnnouncementCard() {
           <div className="flex items-center gap-2">
             {latestAnnouncement.author && (
               <div className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold text-xs">
-                {latestAnnouncement.author. charAt(0)}
+                {latestAnnouncement.author.charAt(0)}
               </div>
             )}
             <p className="text-xs text-gray-400">
-              {formatDate(latestAnnouncement.created_at)}
+              {formatDate(displayDate)}
             </p>
           </div>
           <motion.div
-            whileHover={{ x: 4 }}
-            className="flex items-center gap-1. 5 text-emerald-300 font-semibold text-sm opacity-0 group-hover:opacity-100 transition-opacity"
+            whileHover={caps.prefersReducedMotion ? undefined : { x: 4 }}
+            className="flex items-center gap-1.5 text-emerald-300 font-semibold text-sm opacity-0 group-hover:opacity-100 transition-opacity"
           >
             View <ArrowRight className="w-4 h-4" />
           </motion.div>
@@ -186,3 +152,5 @@ export default function DashboardAnnouncementCard() {
     </motion.div>
   );
 }
+
+export default memo(DashboardAnnouncementCardComponent);

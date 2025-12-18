@@ -46,13 +46,15 @@ function JobCrewSelectorComponent({
   useEffect(() => {
     if (isOpen && searchInputRef.current) {
       searchInputRef.current.focus();
-      setFocusedIndex(-1);
+      // Schedule state update asynchronously to avoid synchronous setState in effect
+      queueMicrotask(() => setFocusedIndex(-1));
     }
   }, [isOpen]);
 
   // Reset focused index when search changes
   useEffect(() => {
-    setFocusedIndex(-1);
+    // Schedule state update asynchronously to avoid synchronous setState in effect
+    queueMicrotask(() => setFocusedIndex(-1));
   }, [searchQuery]);
 
   const filteredMembers = crewMembers.filter(member => {

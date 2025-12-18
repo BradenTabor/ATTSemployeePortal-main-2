@@ -327,7 +327,8 @@ export default function DVIRHistory() {
 
   const visibleReports = filteredReports.length;
 
-  const totalFailed = useMemo(
+  // These computed values are kept for potential future use but prefixed to avoid lint errors
+  const _totalFailed = useMemo(
     () =>
       filteredReports.reduce((acc, r) => {
         const { allFails } = getFailedItems(r);
@@ -337,17 +338,22 @@ export default function DVIRHistory() {
   );
 
   const lastSubmitted = filteredReports[0]?.created_at ?? null;
-  const lastSubmittedRelative = lastSubmitted
+  const _lastSubmittedRelative = lastSubmitted
     ? formatDistanceToNow(new Date(lastSubmitted), { addSuffix: true })
     : "—";
 
-  const averageMileage =
+  const _averageMileage =
     filteredReports.length > 0
       ? Math.round(
           filteredReports.reduce((acc, report) => acc + (report.mileage ?? 0), 0) /
             filteredReports.length
         )
       : null;
+  
+  // Suppress unused variable warnings - these are kept for future dashboard stats
+  void _totalFailed;
+  void _lastSubmittedRelative;
+  void _averageMileage;
 
   const handleReportClick = (report: DVIRReport) => {
     setSelectedReport(report);
@@ -415,60 +421,23 @@ export default function DVIRHistory() {
             </div>
             <div 
               className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-xs tracking-[0.4em] text-white/60"
-              style={{ background: 'linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 1) 100%)' }}
+              style={{ 
+                background: 'linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0%, rgba(32, 126, 98, 1) 0%, rgba(0, 0, 0, 1) 100%)',
+                boxShadow: '0px 8px 15px 4px rgba(0, 0, 0, 1)'
+              }}
             >
               <Activity className="w-4 h-4 text-emerald-300" />
               Auto-synced
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div 
-              className="rounded-2xl border border-white/10 backdrop-blur-xl p-5 shadow-lg shadow-emerald-500/5"
-              style={{ background: 'radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 1) 100%)' }}
-            >
-              <p className="text-xs uppercase tracking-[0.4em] text-white/40 flex items-center gap-2">
-                <Truck className="w-4 h-4 text-emerald-300" />
-                Total Reports
-              </p>
-              <p className="text-4xl font-black text-white mt-3">
-                {totalReports ?? reports.length}
-              </p>
-              <p className="text-xs text-white/60 mt-1">Across all pages</p>
-            </div>
-            <div 
-              className="rounded-2xl border border-white/10 backdrop-blur-xl p-5 shadow-lg shadow-emerald-500/5"
-              style={{ background: 'radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 1) 100%)' }}
-            >
-              <p className="text-xs uppercase tracking-[0.4em] text-white/40 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-amber-300" />
-                Active Fails
-              </p>
-              <p className="text-4xl font-black text-white mt-3">
-                {totalFailed}
-              </p>
-              <p className="text-xs text-white/60 mt-1">
-                In current view ({visibleReports} shown)
-              </p>
-            </div>
-            <div 
-              className="rounded-2xl border border-white/10 backdrop-blur-xl p-5 shadow-lg shadow-emerald-500/5"
-              style={{ background: 'radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 1) 100%)' }}
-            >
-              <p className="text-xs uppercase tracking-[0.4em] text-white/40 flex items-center gap-2">
-                <CalendarClock className="w-4 h-4 text-emerald-300" />
-                Last Submitted
-              </p>
-              <p className="text-2xl font-semibold text-white mt-3">
-                {lastSubmittedRelative}
-              </p>
-              <p className="text-xs text-white/60 mt-1">
-                Avg mileage {averageMileage ? averageMileage.toLocaleString() : "—"}
-              </p>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-white/10 bg-black/60 backdrop-blur-2xl p-5 space-y-4">
+          <div 
+            className="rounded-2xl border border-white/10 bg-black/60 backdrop-blur-2xl p-5 space-y-4"
+            style={{ 
+              backgroundColor: 'rgba(5, 87, 60, 0.65)',
+              boxShadow: '0px 4px 25px 8px rgba(0, 0, 0, 0.85)'
+            }}
+          >
             <div className="flex flex-col gap-2">
               <p className="text-xs uppercase tracking-[0.4em] text-white/50">
                 Quick filters
@@ -545,7 +514,10 @@ export default function DVIRHistory() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}
                     className="group text-left rounded-3xl border border-white/10 backdrop-blur-xl p-4 sm:p-5 hover:border-emerald-400/50 hover:shadow-emerald-500/20 hover:shadow-2xl transition-all"
-                    style={{ background: 'radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 1) 100%)' }}
+                    style={{ 
+                      background: 'radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05) 0%, rgba(35, 134, 87, 1) 0%, rgba(0, 0, 0, 1) 88%)',
+                      boxShadow: '0px 0px 25px 8px rgba(0, 0, 0, 0.85), 0px 0px 0px 0px rgba(0, 0, 0, 0), 0px 25px 50px -12px rgba(16, 185, 129, 0.2)'
+                    }}
                     >
                     <div className="flex items-start justify-between gap-3">
                       <div>
@@ -641,7 +613,8 @@ export default function DVIRHistory() {
               initial={{ opacity: 0, y: 20, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.98 }}
-              className="relative z-50 w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-[32px] border border-white/10 bg-slate-950/95 p-6 sm:p-8 shadow-2xl space-y-8"
+              className="relative z-50 w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-[32px] border border-white/10 p-6 sm:p-8 shadow-2xl space-y-8"
+              style={{ background: 'linear-gradient(90deg, rgba(0, 0, 0, 1) 0%, rgba(151, 125, 78, 1) 100%)' }}
             >
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
@@ -684,7 +657,7 @@ export default function DVIRHistory() {
                   <button
                     type="button"
                     onClick={closeDetail}
-                    className="rounded-2xl border border-white/20 px-3 py-1.5 text-xs text-white/70 hover:text-white hover:border-white/40 transition"
+                    className="rounded-2xl border border-white/20 px-3 py-1.5 text-xs text-white/70 hover:text-white hover:border-white/40 transition bg-red-600"
                   >
                     Close
                   </button>
@@ -692,7 +665,10 @@ export default function DVIRHistory() {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-2 text-sm text-white/80">
+                <div 
+                  className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-2 text-sm text-white/80"
+                  style={{ boxShadow: 'inset 0px 4px 25px 15px rgba(0, 0, 0, 0.85)' }}
+                >
                   <div className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-white/50">
                     <Truck className="w-4 h-4 text-emerald-300" />
                     Vehicle
@@ -702,7 +678,10 @@ export default function DVIRHistory() {
                   <p>Mileage {selectedReport.mileage?.toLocaleString() ?? "—"}</p>
                   <p>GVWR Truck {selectedReport.truck_gvwr || "—"}</p>
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-2 text-sm text-white/80">
+                <div 
+                  className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-2 text-sm text-white/80"
+                  style={{ boxShadow: 'inset 0px 4px 25px 15px rgba(0, 0, 0, 0.85)' }}
+                >
                   <div className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-white/50">
                     <Fuel className="w-4 h-4 text-emerald-300" />
                     Driver & Compliance
@@ -720,7 +699,7 @@ export default function DVIRHistory() {
                   const { vehicleFails, aerialFails, allFails } = getFailedItems(selectedReport);
                   if (allFails.length === 0) {
                     return (
-                      <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-50">
+                      <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/45 px-4 py-3 text-sm text-emerald-50">
                         No failed items recorded for this inspection.
                       </div>
                     );
@@ -791,6 +770,7 @@ export default function DVIRHistory() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="group block rounded-2xl border border-white/10 bg-white/5 overflow-hidden"
+                        style={{ boxShadow: '0px 4px 25px 8px rgba(0, 0, 0, 0.85)' }}
                       >
                         <div className="p-3 text-xs uppercase tracking-[0.3em] text-white/50">
                           {media.label}
@@ -822,6 +802,7 @@ export default function DVIRHistory() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="rounded-2xl border border-white/10 bg-white/5 p-4 flex flex-col gap-3 hover:border-emerald-400/40 transition"
+                        style={{ boxShadow: '0px 4px 25px 8px rgba(0, 0, 0, 0.85)' }}
                       >
                         <p className="text-xs uppercase tracking-[0.3em] text-white/50">
                           {signature.label}

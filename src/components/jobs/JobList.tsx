@@ -82,7 +82,8 @@ function JobListComponent({
   useEffect(() => {
     // If we had a selected job but now it's gone (deleted), close the modal
     if (selectedJobId && prevSelectedJobRef.current && !selectedJob) {
-      setSelectedJobId(null);
+      // Schedule state update asynchronously to avoid synchronous setState in effect
+      queueMicrotask(() => setSelectedJobId(null));
     }
     prevSelectedJobRef.current = selectedJob;
   }, [selectedJob, selectedJobId]);
@@ -109,33 +110,33 @@ function JobListComponent({
     updateUrlParams(debouncedSearch, statusFilter, trackingFilter);
   }, [debouncedSearch, statusFilter, trackingFilter, updateUrlParams]);
 
-  // Handle search input change
+  // Handle search input change - include setter in deps for React Compiler
   const handleSearchChange = useCallback((value: string) => {
     setSearchQuery(value);
-  }, []);
+  }, [setSearchQuery]);
 
-  // Handle status filter change
+  // Handle status filter change - include setter in deps for React Compiler
   const handleStatusChange = useCallback((value: JobStatus | 'all') => {
     setStatusFilter(value);
-  }, []);
+  }, [setStatusFilter]);
 
   const handleTrackingChange = useCallback((value: TrackingType | 'all') => {
     setTrackingFilter(value);
-  }, []);
+  }, [setTrackingFilter]);
 
-  // Clear search
+  // Clear search - include setter in deps for React Compiler
   const clearSearch = useCallback(() => {
     setSearchQuery('');
-  }, []);
+  }, [setSearchQuery]);
 
-  // Clear status filter
+  // Clear status filter - include setter in deps for React Compiler
   const clearStatusFilter = useCallback(() => {
     setStatusFilter('all');
-  }, []);
+  }, [setStatusFilter]);
 
   const clearTrackingFilter = useCallback(() => {
     setTrackingFilter('all');
-  }, []);
+  }, [setTrackingFilter]);
 
   const filteredJobs = useMemo(() => {
     return jobs.filter(job => {

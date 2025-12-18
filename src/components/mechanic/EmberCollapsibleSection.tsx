@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, ReactNode, memo, useMemo } from 'react';
+import { useState, useCallback, ReactNode, memo, useMemo } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -67,17 +67,15 @@ function EmberCollapsibleSectionComponent({
   headerAction,
 }: EmberCollapsibleSectionProps) {
   const prefersReducedMotion = useReducedMotion();
-  const [isOpen, setIsOpen] = useState(defaultOpen);
-  const [hasHydrated, setHasHydrated] = useState(false);
-
-  // Read persisted state on mount
-  useEffect(() => {
+  // Use lazy initializer to read persisted state without useEffect setState
+  const [isOpen, setIsOpen] = useState(() => {
     if (storageKey) {
-      const persisted = getPersistedBool(storageKey, defaultOpen);
-      setIsOpen(persisted);
+      return getPersistedBool(storageKey, defaultOpen);
     }
-    setHasHydrated(true);
-  }, [storageKey, defaultOpen]);
+    return defaultOpen;
+  });
+  // Always true since we initialize synchronously now
+  const hasHydrated = true;
 
   // Toggle handler with persistence
   const toggle = useCallback(() => {

@@ -48,7 +48,11 @@ export function PaginationControls({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="flex flex-col sm:flex-row items-center justify-between px-6 py-5 border-t border-white/50 bg-[rgba(18,17,17,0.5)] rounded-3xl gap-4"
+      className="flex flex-col sm:flex-row items-center justify-between px-6 py-5 rounded-3xl gap-4"
+      style={{
+        background: 'radial-gradient(circle at 50% 50%, rgba(18, 17, 17, 0.5) 0%, rgba(8, 8, 8, 1) 0%, rgba(32, 121, 82, 1) 0%, rgba(15, 67, 50, 1) 100%)',
+        boxShadow: '0px 4px 25px 8px rgba(0, 0, 0, 0.85)'
+      }}
     >
       {/* Left: Item Range */}
       <div className="text-sm text-gray-300 text-center sm:text-left">

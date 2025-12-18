@@ -1,5 +1,15 @@
-import { ReactNode, useEffect, useState, memo } from 'react';
+import { ReactNode, useEffect, useState, memo, useSyncExternalStore } from 'react';
 import { cn } from '../lib/utils';
+
+// Custom hook to detect client-side mount without triggering the set-state-in-effect rule
+const emptySubscribe = () => () => {};
+function useHasMounted() {
+  return useSyncExternalStore(
+    emptySubscribe,
+    () => true,  // Client: always true
+    () => false  // Server: always false
+  );
+}
 
 interface AuroraBackgroundProps extends React.HTMLProps<HTMLDivElement> {
   children: ReactNode;
@@ -65,11 +75,9 @@ function AuroraBackgroundComponent({
   ...props
 }: AuroraBackgroundProps) {
   const [isMobile, setIsMobile] = useState(false);
-  const [hasMounted, setHasMounted] = useState(false);
+  const hasMounted = useHasMounted();
 
   useEffect(() => {
-    setHasMounted(true);
-    
     // Check for mobile viewport
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);

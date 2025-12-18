@@ -45,9 +45,15 @@ function EmberExpandableSectionComponent({
   icon,
   headerAction,
 }: EmberExpandableSectionProps) {
-  // Initialize with defaultOpen, will be updated in useEffect from localStorage
-  const [isOpen, setIsOpen] = useState(defaultOpen);
-  const [hasHydrated, setHasHydrated] = useState(false);
+  // Use lazy initializer to read persisted state without useEffect setState
+  const [isOpen, setIsOpen] = useState(() => {
+    if (storageKey) {
+      return getPersistedBool(storageKey, defaultOpen);
+    }
+    return defaultOpen;
+  });
+  // Always true since we initialize synchronously now
+  const hasHydrated = true;
   
   // Interactive states for avatar animations
   const [isHovered, setIsHovered] = useState(false);
@@ -61,15 +67,6 @@ function EmberExpandableSectionComponent({
   // Motion values for spring-based height animation
   const animatedHeight = useMotionValue(0);
   const smoothHeight = useSpring(animatedHeight, springConfig);
-
-  // Read persisted state on mount (in useEffect to avoid hydration mismatch)
-  useEffect(() => {
-    if (storageKey) {
-      const persisted = getPersistedBool(storageKey, defaultOpen);
-      setIsOpen(persisted);
-    }
-    setHasHydrated(true);
-  }, [storageKey, defaultOpen]);
 
   // Update animated height when expansion state or measured height changes
   useEffect(() => {

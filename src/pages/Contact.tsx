@@ -451,17 +451,19 @@ function ContactForm({ userId }: ContactFormProps) {
   );
 }
 
+// Generate confetti pieces once at module level to avoid impure function in render
+function generateConfettiPieces() {
+  return Array.from({ length: 14 }).map(() => ({
+    left: Math.random() * 100,
+    distance: 60 + Math.random() * 40,
+    rotation: Math.random() * 160,
+  }));
+}
+
 function ConfettiBurst() {
   const colors = ["#34d399", "#6ee7b7", "#bef264", "#fef3c7", "#bae6fd"];
-  const pieces = useMemo(
-    () =>
-      Array.from({ length: 14 }).map(() => ({
-        left: Math.random() * 100,
-        distance: 60 + Math.random() * 40,
-        rotation: Math.random() * 160,
-      })),
-    []
-  );
+  // Use useState with lazy initializer to generate pieces once per mount
+  const [pieces] = useState(() => generateConfettiPieces());
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">

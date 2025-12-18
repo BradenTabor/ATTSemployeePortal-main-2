@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, ReactNode, memo, cloneElement, isValidElement, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { getPersistedBool, setPersistedBool } from '../../lib/persistence';
@@ -70,9 +69,15 @@ function ExpandableSectionComponent({
   icon,
   headerAction,
 }: ExpandableSectionProps) {
-  // Initialize with defaultOpen, will be updated in useEffect from localStorage
-  const [isOpen, setIsOpen] = useState(defaultOpen);
-  const [hasHydrated, setHasHydrated] = useState(false);
+  // Use lazy initializer to read persisted state without useEffect setState
+  const [isOpen, setIsOpen] = useState(() => {
+    if (storageKey) {
+      return getPersistedBool(storageKey, defaultOpen);
+    }
+    return defaultOpen;
+  });
+  // Always true since we initialize synchronously now
+  const hasHydrated = true;
   
   // Interactive states for avatar animations
   const [isHovered, setIsHovered] = useState(false);
@@ -85,15 +90,6 @@ function ExpandableSectionComponent({
   // Get device capabilities and quality settings (cached)
   const caps = getDeviceCapabilities();
   const quality = getQualitySettings();
-
-  // Read persisted state on mount (in useEffect to avoid hydration mismatch)
-  useEffect(() => {
-    if (storageKey) {
-      const persisted = getPersistedBool(storageKey, defaultOpen);
-      setIsOpen(persisted);
-    }
-    setHasHydrated(true);
-  }, [storageKey, defaultOpen]);
 
   // Cleanup toggle timeout on unmount
   useEffect(() => {
@@ -344,23 +340,22 @@ function ExpandableSectionComponent({
             style={gridStyle}
           >
             <div className="overflow-hidden">
-              <AnimatePresence initial={false} mode="sync">
-                {(isOpen || !shouldAnimate) && hasHydrated && (
-                  <motion.div
-                    initial={shouldAnimate ? { opacity: 0 } : false}
-                    animate={{ opacity: 1 }}
-                    exit={shouldAnimate ? { opacity: 0 } : undefined}
-                    transition={{ duration: 0.2, delay: shouldAnimate ? 0.1 : 0 }}
-                  >
-                    {/* Divider line */}
-                    <div className="mx-4 md:mx-6 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />
-                    
-                    <div className="px-4 pb-4 md:px-6 md:pb-6 pt-4">
-                      {children}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {/* Simplified content wrapper - CSS-only opacity transition */}
+              {hasHydrated && (
+                <div
+                  className={cn(
+                    shouldAnimate && "transition-opacity duration-200",
+                    isOpen ? "opacity-100" : "opacity-0"
+                  )}
+                >
+                  {/* Divider line */}
+                  <div className="mx-4 md:mx-6 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />
+                  
+                  <div className="px-4 pb-4 md:px-6 md:pb-6 pt-4">
+                    {children}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </section>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 function getGreeting(): string {
@@ -8,17 +8,18 @@ function getGreeting(): string {
   return "Good evening";
 }
 
+// Safe localStorage getter for initial state
+function getSavedName(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("atts_name");
+}
+
 export default function GreetingHeader() {
-  const [greeting, setGreeting] = useState("");
-  const [name, setName] = useState<string | null>(null);
+  // Use lazy initializers to avoid setState in useEffect
+  const [greeting] = useState(() => getGreeting());
+  const [name, setName] = useState<string | null>(() => getSavedName());
   const [editing, setEditing] = useState(false);
   const [tempName, setTempName] = useState("");
-
-  useEffect(() => {
-    setGreeting(getGreeting());
-    const savedName = localStorage.getItem("atts_name");
-    if (savedName) setName(savedName);
-  }, []);
 
   const handleSave = () => {
     const clean = tempName.trim();

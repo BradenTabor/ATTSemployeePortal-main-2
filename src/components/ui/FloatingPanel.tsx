@@ -176,8 +176,8 @@ export function FloatingPanelContent({
               "fixed z-[9999] overflow-hidden max-h-[80vh]",
               // Premium glass morphism with emerald theme
               "bg-gradient-to-br from-[#04150f]/98 via-[#041812]/95 to-[#03120c]/98",
-              "border border-emerald-500/40",
-              "shadow-[0_0_60px_-12px_rgba(16,185,129,0.4)]",
+              "border border-emerald-500",
+              "shadow-[0_0_25px_4px_rgba(245,244,244,0.35),0_0_60px_-12px_rgba(16,185,129,0.4)]",
               "backdrop-blur-xl",
               className
             )}
@@ -217,7 +217,7 @@ function FloatingPanelTitle({ children }: FloatingPanelTitleProps) {
   return (
     <motion.div
       layoutId={`floating-panel-label-container-${uniqueId}`}
-      className="px-5 py-4 border-b border-emerald-500/20 bg-gradient-to-r from-emerald-500/5 to-transparent"
+      className="px-5 py-4 border-b border-emerald-500/20 bg-gradient-to-r from-emerald-500/5 to-transparent shadow-[0_0_25px_4px_rgba(15,15,15,0.35)]"
     >
       <motion.div
         layoutId={`floating-panel-label-${uniqueId}`}

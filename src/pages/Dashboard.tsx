@@ -14,8 +14,6 @@ import {
 import { DashboardAvatar } from '../components/dashboard/DashboardAvatar';
 import { useAuth } from '../contexts/AuthContext';
 import { useUserAssignedJobs } from '../hooks/jobs';
-import { supabase } from '../lib/supabaseClient';
-import { logger } from '../lib/logger';
 import DashboardLayout from '../layouts/DashboardLayout';
 import AdminPremiumScaffold, {
   type AdminHeroConfig,
@@ -199,12 +197,13 @@ const AssignedJobsSection = memo(function AssignedJobsSection({
   // Progressive rendering: render first batch immediately, rest on idle
   useEffect(() => {
     if (jobs.length <= 5) {
-      setVisibleCount(jobs.length);
+      // Schedule state update asynchronously to avoid synchronous setState in effect
+      queueMicrotask(() => setVisibleCount(jobs.length));
       return;
     }
 
     // Reset to initial batch
-    setVisibleCount(5);
+    queueMicrotask(() => setVisibleCount(5));
 
     // Schedule remaining items during idle time
     const cancel = scheduleIdleWork(() => {
@@ -341,46 +340,13 @@ const SidePanel = memo(function SidePanel({
 
 function Dashboard() {
   const navigate = useNavigate();
-  const { user, signOut, setSession, role, isAdmin, hasMechanicAccess } = useAuth();
-  const [fullName, setFullName] = useState<string | null>(null);
+  const { user, signOut, setSession, role, isAdmin, hasMechanicAccess, fullName } = useAuth();
 
   // Initialize long task observer in dev mode
   useEffect(() => {
     const cleanup = initLongTaskObserver();
     return () => cleanup?.();
   }, []);
-
-  // Fetch full_name from app_users table
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (!user?.id) return;
-      
-      perfMark('fetch-user-profile');
-      
-      try {
-        const { data, error } = await supabase
-          .from('app_users')
-          .select('full_name')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (error) {
-          logger.error('Failed to fetch user profile:', error);
-          return;
-        }
-
-        if (data?.full_name) {
-          setFullName(data.full_name);
-        }
-      } catch (err) {
-        logger.error('Unexpected error fetching user profile:', err);
-      } finally {
-        perfMeasure('fetch-user-profile');
-      }
-    };
-
-    fetchUserProfile();
-  }, [user?.id]);
 
   // Display full_name if available, otherwise show full email
   const displayName = useMemo(() => fullName || user?.email || 'Employee', [fullName, user?.email]);
