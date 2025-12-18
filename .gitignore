@@ -45,3 +45,4 @@ perf-summary.json
 
 # Heavy perf artifacts under performance-report
 performance-report/artifacts/
+supabase/.temp/

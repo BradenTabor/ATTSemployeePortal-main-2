@@ -10,7 +10,6 @@ import { DateField } from "../components/forms/GlassyPickers";
 import { EmberCollapsibleSection } from "../components/mechanic/EmberCollapsibleSection";
 import AdminPremiumScaffold, {
   type AdminHeroConfig,
-  type AdminStat,
 } from "../components/admin/AdminPremiumScaffold";
 import {
   AlertTriangle,
@@ -279,8 +278,12 @@ const ReportListItem = memo(function ReportListItem({
       className={`w-full text-left px-4 py-4 transition-colors duration-150 ${
         isSelected
           ? "bg-[#ff9350]/15 border-l-2 border-l-[#ff9350]"
-          : "hover:bg-white/5 border-l-2 border-l-transparent"
+          : "border-l-2 border-l-transparent"
       }`}
+      style={{
+        background: isSelected ? undefined : 'linear-gradient(90deg, rgba(5, 5, 5, 0.05) 0%, rgba(121, 72, 42, 1) 50%, rgba(255, 147, 80, 1) 100%)',
+        boxShadow: isSelected ? undefined : 'inset 0px 4px 25px 15px rgba(0, 0, 0, 0.85)',
+      }}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
@@ -329,7 +332,6 @@ export default function MechanicDVIRCenter() {
   // Pagination State
   const pageSize = 15;
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalReports, setTotalReports] = useState<number | null>(null);
 
   // Mechanic update form state
   const [updateTruckNumber, setUpdateTruckNumber] = useState("");
@@ -353,7 +355,7 @@ export default function MechanicDVIRCenter() {
       const from = (currentPage - 1) * pageSize;
       const to = from + pageSize - 1;
 
-      const { data, error: supabaseError, count } = await supabase
+      const { data, error: supabaseError } = await supabase
         .from("dvir_reports")
         .select(
           `
@@ -394,8 +396,7 @@ export default function MechanicDVIRCenter() {
             coolant_photo_path,
             damage_photo_path,
             detail_clean_truck_photo_path
-          `,
-          { count: "exact" }
+          `
         )
         .order("created_at", { ascending: false })
         .range(from, to);
@@ -403,12 +404,6 @@ export default function MechanicDVIRCenter() {
       if (supabaseError) throw supabaseError;
 
       setReports(data as DVIRReport[] || []);
-
-      if (typeof count === "number") {
-        setTotalReports(count);
-      } else {
-        setTotalReports(data?.length ?? 0);
-      }
     } catch (err) {
       logger.error("Error loading DVIR reports for mechanic center:", err);
       setError("Failed to load DVIR reports.");
@@ -614,27 +609,6 @@ export default function MechanicDVIRCenter() {
     [role]
   );
 
-  const heroStats = useMemo<AdminStat[]>(
-    () => [
-      {
-        label: "Total DVIRs",
-        value: (totalReports || 0).toString().padStart(2, "0"),
-        hint: "Reports on file",
-      },
-      {
-        label: "Need Review",
-        value: failedReports.length.toString().padStart(2, "0"),
-        hint: "Failed items",
-      },
-      {
-        label: "Mechanic Updates",
-        value: mechanicUpdatedCount.toString().padStart(2, "0"),
-        hint: "Fixes recorded",
-      },
-    ],
-    [totalReports, failedReports.length, mechanicUpdatedCount]
-  );
-
   // Side panel content
   const sidePanel = (
     <div className="space-y-6">
@@ -728,7 +702,6 @@ export default function MechanicDVIRCenter() {
       <div className="w-full min-h-screen bg-gradient-to-br from-[#1a0804] via-[#0f0402] to-[#0a0201]">
         <AdminPremiumScaffold
           hero={heroConfig}
-          stats={heroStats}
           sidePanel={sidePanel}
           theme="ember"
         >
