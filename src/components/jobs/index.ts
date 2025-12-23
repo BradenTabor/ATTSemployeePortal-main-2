@@ -10,4 +10,5 @@ export { JobTrackerErrorBoundary } from './JobTrackerErrorBoundary';
 export { CompactJobCard } from './CompactJobCard';
 export { JobDetailExpanded } from './JobDetailExpanded';
 export { JobProgressUpdateForm } from './JobProgressUpdateForm';
+export { StackedJobCard } from './StackedJobCard';
 

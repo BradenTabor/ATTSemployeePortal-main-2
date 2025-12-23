@@ -14,6 +14,8 @@ interface UseJobsReturn {
   deleteJob: (jobId: string) => Promise<{ success: boolean; error?: string }>;
   updateJobStatus: (jobId: string, status: JobStatus) => Promise<{ success: boolean; error?: string }>;
   toggleMilestone: (milestoneId: string, isCompleted: boolean, userId: string) => Promise<{ success: boolean; error?: string }>;
+  stackJobs: (jobIds: string[]) => Promise<{ success: boolean; error?: string; groupId?: string }>;
+  unstackJobs: (jobIds: string[]) => Promise<{ success: boolean; error?: string }>;
 }
 
 /**
@@ -342,6 +344,72 @@ export function useJobs(): UseJobsReturn {
     }
   }, [fetchJobs]);
 
+  /**
+   * Stack/group multiple jobs together by assigning them the same group_id
+   * @param jobIds - Array of job IDs to stack together
+   * @returns The generated groupId on success
+   */
+  const stackJobs = useCallback(async (
+    jobIds: string[]
+  ): Promise<{ success: boolean; error?: string; groupId?: string }> => {
+    try {
+      if (jobIds.length < 2) {
+        return { success: false, error: 'Need at least 2 jobs to stack' };
+      }
+
+      // Generate a new group ID
+      const groupId = crypto.randomUUID();
+
+      // Update all selected jobs with the same group_id
+      const { error } = await supabase
+        .from('job_progress_trackers')
+        .update({ job_group_id: groupId })
+        .in('id', jobIds);
+
+      if (error) {
+        logger.error('Failed to stack jobs:', error);
+        return { success: false, error: 'Failed to stack jobs' };
+      }
+
+      await fetchJobs();
+      return { success: true, groupId };
+    } catch (err) {
+      logger.error('Unexpected error stacking jobs:', err);
+      return { success: false, error: 'An unexpected error occurred' };
+    }
+  }, [fetchJobs]);
+
+  /**
+   * Unstack/ungroup jobs by removing their group_id
+   * @param jobIds - Array of job IDs to unstack (remove from group)
+   */
+  const unstackJobs = useCallback(async (
+    jobIds: string[]
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      if (jobIds.length === 0) {
+        return { success: false, error: 'No jobs specified' };
+      }
+
+      // Remove group_id from selected jobs
+      const { error } = await supabase
+        .from('job_progress_trackers')
+        .update({ job_group_id: null })
+        .in('id', jobIds);
+
+      if (error) {
+        logger.error('Failed to unstack jobs:', error);
+        return { success: false, error: 'Failed to unstack jobs' };
+      }
+
+      await fetchJobs();
+      return { success: true };
+    } catch (err) {
+      logger.error('Unexpected error unstacking jobs:', err);
+      return { success: false, error: 'An unexpected error occurred' };
+    }
+  }, [fetchJobs]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -407,6 +475,8 @@ export function useJobs(): UseJobsReturn {
     deleteJob,
     updateJobStatus,
     toggleMilestone,
+    stackJobs,
+    unstackJobs,
   };
 }
 

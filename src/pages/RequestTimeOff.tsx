@@ -208,10 +208,10 @@ export default function RequestTimeOff() {
   return (
     <DashboardLayout title="Request Time Off">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-        className="w-full max-w-3xl backdrop-blur-xl border rounded-[45px] p-8 text-white"
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="w-full max-w-2xl backdrop-blur-xl border rounded-3xl sm:rounded-[35px] p-5 sm:p-6 text-white"
         style={{
           background: 'linear-gradient(124.2deg, rgba(0, 0, 0, 0.7) 0%, rgba(16, 66, 42, 1) 100%)',
           borderColor: 'rgba(18, 222, 93, 0.3)',
@@ -219,53 +219,54 @@ export default function RequestTimeOff() {
         }}
       >
         <h2 
-          className="text-2xl font-semibold mb-6 text-center"
+          className="text-lg sm:text-xl font-semibold mb-4 text-center"
           style={{ color: 'rgba(9, 225, 121, 1)' }}
         >
           Submit a Time-Off Request
         </h2>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-white/80 mb-1">
-              Full Name
-            </label>
-            <input
-              type="text"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleChange}
-              required
-              className="w-full rounded-[25px] p-3 bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-green-600 transition-all"
-              placeholder="Enter your full name"
-            />
+        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+          {/* Name & Email in one row on larger screens */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-white/80 mb-1">
+                Full Name
+              </label>
+              <input
+                type="text"
+                name="fullName"
+                value={formData.fullName}
+                onChange={handleChange}
+                required
+                className="w-full rounded-xl sm:rounded-2xl px-3 py-2.5 text-sm bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-green-600 transition-all"
+                placeholder="Your full name"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-white/80 mb-1">
+                Email
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                readOnly
+                className="w-full rounded-xl sm:rounded-2xl px-3 py-2.5 text-sm bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-green-600 transition-all"
+                placeholder="you@atts.com"
+              />
+            </div>
           </div>
 
-          <div>
-  <label className="block text-sm font-medium text-white/80 mb-1">
-    Email
-  </label>
-  <input
-    type="email"
-    name="email"
-    value={formData.email}
-    // keep onChange if you want admins to be able to edit;
-    // if you want it fully locked, you can remove onChange.
-    onChange={handleChange}
-    required
-    readOnly // 🔒 locked so users don't change it
-    className="w-full rounded-[25px] p-3 bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-green-600 transition-all"
-    placeholder="you@atts.com"
-  />
-</div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Date & Time - all in one grid on larger screens */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
             <DateField
               label="Start Date"
               name="startDate"
               value={formData.startDate}
               onChange={handleChange}
-              helperText="First day away from work"
+              helperText="First day off"
               required
             />
             <DateField
@@ -273,67 +274,62 @@ export default function RequestTimeOff() {
               name="endDate"
               value={formData.endDate}
               onChange={handleChange}
-              helperText="Expected return on the next day"
+              helperText="Last day off"
               required
             />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <TimeField
               label={
                 <>
-                  Start Time<span className="text-red-400 ml-1">*</span>
+                  Start Time<span className="text-red-400 ml-0.5">*</span>
                 </>
               }
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              helperText="When coverage should begin"
+              helperText="Coverage begins"
               required
             />
             <TimeField
               label={
                 <>
-                  End Time<span className="text-red-400 ml-1">*</span>
+                  End Time<span className="text-red-400 ml-0.5">*</span>
                 </>
               }
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
-              helperText="Final hour of coverage"
+              helperText="Coverage ends"
               required
             />
           </div>
 
           {hasFullRange && (
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+              className="grid grid-cols-2 gap-2 sm:gap-3"
             >
-              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 flex items-center gap-4">
-                <div className="p-3 rounded-2xl bg-emerald-600/30 border border-emerald-400/40">
-                  <CalendarDays className="w-5 h-5 text-emerald-200" />
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-2.5 sm:p-3 flex items-center gap-2 sm:gap-3">
+                <div className="p-2 rounded-xl bg-emerald-600/30 border border-emerald-400/40">
+                  <CalendarDays className="w-4 h-4 text-emerald-200" />
                 </div>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-emerald-200/70">
+                <div className="min-w-0">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-emerald-200/70">
                     Starts
                   </p>
-                  <p className="text-base font-semibold text-white">
-                    {formatFriendlyDate(formData.startDate)} ·{" "}
-                    {formatFriendlyTime(startTime)}
+                  <p className="text-xs sm:text-sm font-semibold text-white truncate">
+                    {formatFriendlyDate(formData.startDate)} · {formatFriendlyTime(startTime)}
                   </p>
                 </div>
               </div>
-              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4 flex items-center gap-4">
-                <div className="p-3 rounded-2xl bg-emerald-600/20 border border-emerald-400/30">
-                  <Clock className="w-5 h-5 text-emerald-200" />
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-2.5 sm:p-3 flex items-center gap-2 sm:gap-3">
+                <div className="p-2 rounded-xl bg-emerald-600/20 border border-emerald-400/30">
+                  <Clock className="w-4 h-4 text-emerald-200" />
                 </div>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-emerald-200/70">
+                <div className="min-w-0">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-emerald-200/70">
                     Returns
                   </p>
-                  <p className="text-base font-semibold text-white">
-                    {formatFriendlyDate(formData.endDate)} ·{" "}
-                    {formatFriendlyTime(endTime)}
+                  <p className="text-xs sm:text-sm font-semibold text-white truncate">
+                    {formatFriendlyDate(formData.endDate)} · {formatFriendlyTime(endTime)}
                   </p>
                 </div>
               </div>
@@ -342,49 +338,51 @@ export default function RequestTimeOff() {
 
           {totalDuration && (
             <motion.div
-              initial={{ opacity: 0, y: -5 }}
+              initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-green-700/20 border border-green-700/40 rounded-lg p-3 text-center"
+              className="bg-green-700/20 border border-green-700/40 rounded-lg px-3 py-2 text-center"
             >
-              <p className="text-green-400 font-semibold">
-                Total Time Off: {totalDuration}
+              <p className="text-green-400 font-semibold text-sm">
+                Total: {totalDuration}
               </p>
             </motion.div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-white/80 mb-1">
-              Reason for Request
-            </label>
-            <textarea
-              name="reason"
-              value={formData.reason}
-              onChange={handleChange}
-              rows={3}
-              required
-              className="w-full rounded-[25px] p-3 bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-green-600 resize-none transition-all"
-              placeholder="Explain why you need time off"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-white/80 mb-1">
-              Additional Notes (optional)
-            </label>
-            <textarea
-              name="notes"
-              value={formData.notes}
-              onChange={handleChange}
-              rows={2}
-              className="w-full rounded-[25px] p-3 bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-green-600 resize-none transition-all"
-              placeholder="Any extra details (optional)"
-            />
+          {/* Reason & Notes side by side on larger screens */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-white/80 mb-1">
+                Reason for Request
+              </label>
+              <textarea
+                name="reason"
+                value={formData.reason}
+                onChange={handleChange}
+                rows={2}
+                required
+                className="w-full rounded-xl sm:rounded-2xl px-3 py-2.5 text-sm bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-green-600 resize-none transition-all"
+                placeholder="Why you need time off"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-white/80 mb-1">
+                Notes <span className="text-white/50">(optional)</span>
+              </label>
+              <textarea
+                name="notes"
+                value={formData.notes}
+                onChange={handleChange}
+                rows={2}
+                className="w-full rounded-xl sm:rounded-2xl px-3 py-2.5 text-sm bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-green-600 resize-none transition-all"
+                placeholder="Extra details"
+              />
+            </div>
           </div>
 
           <button
             type="submit"
             disabled={status === "loading"}
-            className="w-full py-3 rounded-[45px] font-semibold text-white shadow-md transition-all focus:ring-2 focus:ring-green-600 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
+            className="w-full py-2.5 sm:py-3 rounded-2xl sm:rounded-[35px] font-semibold text-sm sm:text-base text-white shadow-md transition-all focus:ring-2 focus:ring-green-600 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 touch-manipulation min-h-[44px]"
             style={{
               background: 'radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 1) 0%, rgba(16, 66, 42, 1) 100%)',
             }}
@@ -398,19 +396,19 @@ export default function RequestTimeOff() {
 
           {status === "success" && (
             <motion.p
-              initial={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-green-400 text-center mt-2 font-medium"
+              className="text-green-400 text-center text-sm font-medium"
             >
-              Your time-off request has been submitted successfully!
+              Request submitted successfully!
             </motion.p>
           )}
 
           {status === "error" && (
             <motion.p
-              initial={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-red-400 text-center mt-2 font-medium"
+              className="text-red-400 text-center text-sm font-medium"
             >
               Something went wrong. Please try again.
             </motion.p>

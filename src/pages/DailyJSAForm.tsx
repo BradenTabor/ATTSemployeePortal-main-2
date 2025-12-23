@@ -781,31 +781,30 @@ export default function DailyJSAForm() {
   return (
     <DashboardLayout title="Daily JSA">
       <div 
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+        className="max-w-6xl mx-auto px-3 sm:px-5 lg:px-6 py-5 sm:py-6"
         style={{
           background: 'linear-gradient(270.54deg, rgba(2, 59, 32, 1) 0%, rgba(1, 55, 29, 1) 12.5%, rgba(45, 67, 56, 1) 25%, rgba(10, 26, 18, 1) 50%, rgba(8, 53, 31, 1) 75%, rgba(0, 0, 0, 1) 100%)',
           boxShadow: '0px 4px 25px 8px rgba(0, 0, 0, 0.85), inset 0px 4px 25px 20px rgba(0, 0, 0, 0.75)',
-          borderRadius: '45px'
+          borderRadius: '30px'
         }}
       >
-        <div className="flex flex-col gap-3 mb-6 text-center sm:text-left">
-          <div className="inline-flex items-center gap-2 text-sm text-gray-400">
-            <ClipboardList className="w-5 h-5 text-emerald-400" />
-            {isEditMode ? "Editing existing JSA" : "Start a new job safety analysis"}
+        <div className="flex flex-col gap-2 mb-4 text-center sm:text-left">
+          <div className="inline-flex items-center gap-1.5 text-xs text-gray-400">
+            <ClipboardList className="w-4 h-4 text-emerald-400" />
+            {isEditMode ? "Editing JSA" : "New job safety analysis"}
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-white break-normal">
+          <h1 className="text-xl sm:text-2xl font-bold text-white break-normal">
             Daily Job Safety Analysis
           </h1>
-          <p className="text-gray-400 max-w-3xl">
-            Capture job site conditions, weather hazards, PPE checks, and span walk-through notes
-            so crews stay compliant and informed in the field.
+          <p className="text-xs sm:text-sm text-gray-400 max-w-2xl hidden sm:block">
+            Capture job site conditions, weather, PPE checks, and span walkthroughs.
           </p>
         </div>
 
         {(error || success) && (
           <div
             className={cn(
-              "mb-6 rounded-2xl border px-4 py-3 text-sm",
+              "mb-4 rounded-xl border px-3 py-2 text-xs sm:text-sm",
               error
                 ? "border-red-500/30 bg-red-500/10 text-red-200"
                 : "border-emerald-500/30 bg-emerald-500/10 text-emerald-100"
@@ -816,168 +815,161 @@ export default function DailyJSAForm() {
         )}
 
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl mb-6"
+          className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl mb-4"
           style={{
             background: 'radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.05) 0%, rgba(5, 5, 5, 1) 100%)'
           }}
         >
-          <div className="flex items-center gap-3 mb-4">
-            <HardHat className="w-6 h-6 text-emerald-400" />
+          <div className="flex items-center gap-2.5">
+            <HardHat className="w-5 h-5 text-emerald-400" />
             <div>
-              <p className="text-sm text-gray-400">Current focus</p>
-              <p className="text-lg font-semibold text-white">
+              <p className="text-[10px] sm:text-xs text-gray-400">Current focus</p>
+              <p className="text-sm sm:text-base font-semibold text-white">
                 {primaryJobLabel}
               </p>
             </div>
           </div>
-          <p className="text-sm text-gray-400">
-            Keep crews aligned by reviewing today’s plan first, then open or resume a JSA to
-            capture hazards, weather, and span walkthroughs.
-          </p>
         </motion.div>
 
         {formOpen && (
-          <div className="flex flex-wrap gap-2 mb-6">
+          <div className="flex flex-wrap gap-2 mb-4">
             <button
               type="button"
               onClick={handleStartNewJsa}
-              className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2 text-white text-sm font-semibold shadow-lg shadow-emerald-600/30 hover:bg-emerald-500 transition"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-white text-xs font-semibold shadow-lg shadow-emerald-600/30 hover:bg-emerald-500 transition touch-manipulation"
             >
-              <Plus className="w-4 h-4" />
-              Start Another JSA
+              <Plus className="w-3.5 h-3.5" />
+              New JSA
             </button>
             {!isEditMode ? (
               <button
                 type="button"
                 onClick={() => setFormOpen(false)}
-                className="inline-flex items-center gap-2 rounded-2xl border border-white/20 px-4 py-2 text-white text-sm hover:bg-white/10 transition"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 px-3 py-2 text-white text-xs hover:bg-white/10 transition touch-manipulation"
               >
-                <Trash2 className="w-4 h-4" />
-                Close Form
+                <Trash2 className="w-3.5 h-3.5" />
+                Close
               </button>
             ) : (
               <button
                 type="button"
                 onClick={() => navigate("/forms/jsa")}
-                className="inline-flex items-center gap-2 rounded-2xl border border-white/20 px-4 py-2 text-white text-sm hover:bg-white/10 transition"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 px-3 py-2 text-white text-xs hover:bg-white/10 transition touch-manipulation"
               >
-                <Trash2 className="w-4 h-4" />
-                Exit Edit Mode
+                <Trash2 className="w-3.5 h-3.5" />
+                Exit
               </button>
             )}
           </div>
         )}
 
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="grid gap-6 lg:grid-cols-2"
+          className="grid gap-4 lg:grid-cols-2"
         >
           <JsaListSection
-            title="In-Progress JSAs"
+            title="In-Progress"
             records={draftRecords}
             loading={draftLoading}
             count={draftCount}
             page={draftPage}
             onPageChange={setDraftPage}
             pageSize={listPageSize}
-            emptyMessage="No draft JSAs yet. Save one in Draft to keep editing later."
+            emptyMessage="No drafts yet."
           />
           <JsaListSection
-            title="Completed JSAs"
+            title="Completed"
             records={completedRecords}
             loading={completedLoading}
             count={completedCount}
             page={completedPage}
             onPageChange={setCompletedPage}
             pageSize={listPageSize}
-            emptyMessage="No completed JSAs yet. Once you finish a job, mark it completed to archive it here."
+            emptyMessage="No completed JSAs yet."
           />
         </motion.div>
 
         {!formOpen && !isEditMode ? (
           <div 
-            className="rounded-3xl border border-dashed border-emerald-400/40 bg-emerald-500/5 p-10 text-center"
+            className="rounded-2xl border border-dashed border-emerald-400/40 bg-emerald-500/5 p-6 sm:p-8 text-center mt-4"
             style={{
-              marginTop: '15px',
-              marginBottom: '15px',
               background: 'radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.05) 0%, rgb(5, 5, 5) 100%)'
             }}
           >
-            <h3 className="text-2xl font-semibold text-white mb-2">
-              Ready to document today’s job?
+            <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">
+              Ready to document today's job?
             </h3>
-            <p className="text-sm text-emerald-100 mb-6">
-              Review your crew details above, then create a new JSA to capture hazards,
-              weather, and span walkthroughs.
+            <p className="text-xs sm:text-sm text-emerald-100 mb-4">
+              Create a new JSA to capture hazards, weather, and span walkthroughs.
             </p>
             <button
               type="button"
               onClick={handleStartNewJsa}
-              className="inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-white font-semibold shadow-lg shadow-emerald-600/30 hover:opacity-80 transition"
+              className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm text-white font-semibold shadow-lg shadow-emerald-600/30 hover:opacity-80 transition touch-manipulation"
               style={{
                 background: 'linear-gradient(90deg, rgba(131, 109, 63, 1) 0%, rgba(0, 0, 0, 1) 100%)'
               }}
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="w-4 h-4" />
               Create New JSA
             </button>
           </div>
         ) : (
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)]">
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,2fr)] mt-4">
           <motion.form
             onSubmit={handleSubmit}
-            className="space-y-6"
-            initial={{ opacity: 0, y: 20 }}
+            className="space-y-4"
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
           >
             <SectionCard
               title="Job Information"
-              icon={<CalendarDays className="w-5 h-5 text-emerald-400" />}
-              description="Record when and where today’s work will take place."
-              badge={<span className={cn("px-3 py-1 rounded-full text-xs font-semibold", formattedStatus)}>{form.status}</span>}
+              icon={<CalendarDays className="w-4 h-4 text-emerald-400" />}
+              description="Record when and where today's work will take place."
+              badge={<span className={cn("px-2 py-0.5 rounded-full text-[10px] font-semibold", formattedStatus)}>{form.status}</span>}
             >
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid gap-2 sm:gap-3 grid-cols-3">
                 <DateField
                   label="Job Date"
                   value={form.jobDate || ""}
                   onValueChange={(value) => handleInputChange("jobDate", value)}
-                  helperText="The day this crew is on site"
+                  helperText="Crew on site"
                   required
                 />
                 <TimeField
-                  label="Call-in Time (AM)"
+                  label="Call-in"
                   value={form.callInTime || ""}
                   onValueChange={(value) => handleInputChange("callInTime", value)}
-                  helperText="Morning briefing / call-in"
+                  helperText="AM briefing"
                 />
                 <TimeField
-                  label="Call-out Time (PM)"
+                  label="Call-out"
                   value={form.callOutTime || ""}
                   onValueChange={(value) => handleInputChange("callOutTime", value)}
-                  helperText="Estimated completion"
+                  helperText="Est. completion"
                 />
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-2 sm:gap-3 grid-cols-2">
                 <InputField
                   label="Work Location"
                   icon={MapPin}
                   value={form.workLocation}
                   onChange={(value) => handleInputChange("workLocation", value)}
-                  placeholder="Street, city, or project reference"
+                  placeholder="Street, city, project"
                   required
                 />
                 <InputField
-                  label="Circuit Number"
+                  label="Circuit #"
                   value={form.circuitNumber}
                   onChange={(value) => handleInputChange("circuitNumber", value)}
                 />
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-2 sm:gap-3 grid-cols-2">
                 <InputField
                   label="Nearest Hospital"
                   value={form.nearestHospital}
@@ -990,17 +982,17 @@ export default function DailyJSAForm() {
                 />
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-2 sm:gap-3 grid-cols-2">
                 <InputField
-                  label="OC Name & Telephone"
+                  label="OC Contact"
                   type="tel"
                   required
                   value={form.ocContact}
                   onChange={(value) => handleInputChange("ocContact", value)}
-                  placeholder="Jane Supervisor · 870-555-1234"
+                  placeholder="Name · 870-555-1234"
                 />
                 <InputField
-                  label="DOC Telephone"
+                  label="DOC Tel"
                   type="tel"
                   required
                   value={form.docContact}
@@ -1008,20 +1000,20 @@ export default function DailyJSAForm() {
                   placeholder="870-555-5678"
                 />
                 <InputField
-                  label="GF & Telephone"
+                  label="GF Contact"
                   type="tel"
                   required
                   value={form.gfContact}
                   onChange={(value) => handleInputChange("gfContact", value)}
-                  placeholder="Officer Smith · 870-555-2468"
+                  placeholder="Name · 870-555-2468"
                 />
                 <InputField
-                  label="Safety & Telephone"
+                  label="Safety Tel"
                   type="tel"
                   required
                   value={form.safetyContact}
                   onChange={(value) => handleInputChange("safetyContact", value)}
-                  placeholder="Safety Desk · 870-555-1357"
+                  placeholder="870-555-1357"
                 />
               </div>
 
@@ -1034,15 +1026,15 @@ export default function DailyJSAForm() {
             </SectionCard>
 
             <SectionCard
-              title="Safety Topic & PPE"
-              icon={<HardHat className="w-5 h-5 text-emerald-400" />}
-              description="Select the work being performed and confirm PPE readiness."
+              title="Safety & PPE"
+              icon={<HardHat className="w-4 h-4 text-emerald-400" />}
+              description="Select jobs and confirm PPE readiness."
             >
               <div>
-                <p className="text-sm text-gray-300 mb-3 font-semibold">
+                <p className="text-xs text-gray-300 mb-2 font-semibold">
                   Jobs being performed
                 </p>
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-2 grid-cols-2 sm:grid-cols-3">
                   {JOB_OPTIONS.map((job) => {
                     const active = form.jobsPerformed.includes(job.key);
                     return (
@@ -1051,19 +1043,19 @@ export default function DailyJSAForm() {
                         key={job.key}
                         onClick={() => handleJobToggle(job.key)}
                         className={cn(
-                          "rounded-2xl border px-4 py-3 flex items-center gap-3 text-left transition-all",
+                          "rounded-xl border px-2.5 py-2 flex items-center gap-2 text-left text-xs transition-all touch-manipulation",
                           active
                             ? "border-emerald-500/50 bg-emerald-500/10 text-white"
-                            : "border-white/10 bg-black/20 text-gray-300 hover:border-white/30"
+                            : "border-white/10 bg-black/20 text-gray-300 active:bg-white/10"
                         )}
                       >
                         <CheckCircle2
                           className={cn(
-                            "w-5 h-5",
+                            "w-3.5 h-3.5 flex-shrink-0",
                             active ? "text-emerald-400" : "text-gray-500"
                           )}
                         />
-                        <span>{job.label}</span>
+                        <span className="truncate">{job.label}</span>
                       </button>
                     );
                   })}
@@ -1072,46 +1064,41 @@ export default function DailyJSAForm() {
                   label="Other job type"
                   value={form.jobsOther}
                   onChange={(value) => handleInputChange("jobsOther", value)}
-                  placeholder="Add optional custom job description"
-                  className="mt-4"
+                  placeholder="Custom job description"
+                  className="mt-3"
                 />
               </div>
 
-              <div className="mt-6">
-                <p className="text-sm text-gray-300 mb-3 font-semibold">
-                  Personal Protective Equipment
+              <div className="mt-4">
+                <p className="text-xs text-gray-300 mb-2 font-semibold">
+                  PPE Checklist
                 </p>
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
                   {PPE_ITEMS.map((item) => {
                     const state = form.ppe[item.key];
                     return (
                       <div
                         key={item.key}
-                        className="rounded-2xl border border-white/10 bg-black/30 p-4"
+                        className="rounded-xl border border-white/10 bg-black/30 p-3"
                       >
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <p className="text-white font-semibold">
-                              {item.label}
-                            </p>
-                            <p className="text-xs text-gray-400">
-                              Mark required gear and note condition
-                            </p>
-                          </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-xs text-white font-semibold">
+                            {item.label}
+                          </p>
                           <button
                             type="button"
                             onClick={() => handlePpeToggle(item.key)}
                             className={cn(
-                              "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border transition",
+                              "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold border transition touch-manipulation",
                               state?.required
                                 ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-200"
-                                : "bg-white/5 border-white/10 text-gray-300 hover:border-white/30"
+                                : "bg-white/5 border-white/10 text-gray-300"
                             )}
                           >
-                            {state?.required ? "Required" : "Optional"}
+                            {state?.required ? "Req" : "Opt"}
                           </button>
                         </div>
-                        <div className="flex gap-2 mt-4">
+                        <div className="flex gap-1.5 mt-2">
                           {(["good", "needs_replaced"] as ConditionState[]).map(
                             (condition) => (
                               <button
@@ -1121,10 +1108,10 @@ export default function DailyJSAForm() {
                                   handlePpeCondition(item.key, condition)
                                 }
                                 className={cn(
-                                  "flex-1 text-xs font-semibold rounded-lg border px-3 py-2 transition",
+                                  "flex-1 text-[10px] font-semibold rounded-lg border px-2 py-1.5 transition touch-manipulation",
                                   state?.condition === condition
                                     ? ""
-                                    : "border-white/10 bg-white/5 text-gray-400 hover:border-white/30"
+                                    : "border-white/10 bg-white/5 text-gray-400"
                                 )}
                                 style={state?.condition === condition ? {
                                   backgroundColor: 'rgba(233, 184, 7, 0.1)',
@@ -1132,9 +1119,7 @@ export default function DailyJSAForm() {
                                   color: 'rgba(255, 123, 0, 1)'
                                 } : undefined}
                               >
-                                {condition === "good"
-                                  ? "Good"
-                                  : "Needs Replaced"}
+                                {condition === "good" ? "Good" : "Replace"}
                               </button>
                             )
                           )}
@@ -1147,67 +1132,68 @@ export default function DailyJSAForm() {
             </SectionCard>
 
             <SectionCard
-              title="Weather & Surface Conditions"
-              icon={<CloudSun className="w-5 h-5 text-emerald-400" />}
-              description="Document current conditions and potential hazards."
+              title="Weather & Conditions"
+              icon={<CloudSun className="w-4 h-4 text-emerald-400" />}
+              description="Document conditions and hazards."
             >
-              <ToggleButtonGroup
-                title="Weather Conditions"
-                items={WEATHER_CONDITIONS}
-                state={form.weatherConditions}
-                onToggle={(key) => handleBooleanGroupChange("weatherConditions", key)}
-              />
-              <ToggleButtonGroup
-                title="Surface / Temperature"
-                items={WEATHER_MODIFIERS}
-                state={form.weatherModifiers}
-                onToggle={(key) => handleBooleanGroupChange("weatherModifiers", key)}
-                className="mt-4"
-              />
-              <div className="mt-4">
-                <label className="text-sm font-semibold text-white mb-2 block">
-                  Potential hazards & mitigation
+              <div className="grid gap-3 sm:grid-cols-2">
+                <ToggleButtonGroup
+                  title="Weather"
+                  items={WEATHER_CONDITIONS}
+                  state={form.weatherConditions}
+                  onToggle={(key) => handleBooleanGroupChange("weatherConditions", key)}
+                />
+                <ToggleButtonGroup
+                  title="Surface / Temp"
+                  items={WEATHER_MODIFIERS}
+                  state={form.weatherModifiers}
+                  onToggle={(key) => handleBooleanGroupChange("weatherModifiers", key)}
+                />
+              </div>
+              <div className="mt-3">
+                <label className="text-xs font-semibold text-white mb-1 block">
+                  Hazards & mitigation
                 </label>
                 <textarea
-                  rows={4}
+                  rows={2}
                   value={form.weatherHazards}
                   onChange={(e) =>
                     handleInputChange("weatherHazards", e.target.value)
                   }
-                  className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/60"
-                  placeholder="Describe weather-related hazards and mitigation steps..."
+                  className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/60"
+                  placeholder="Weather hazards and mitigation..."
                 />
               </div>
             </SectionCard>
 
             <SectionCard
-              title="Electrical Hazards & Structures"
-              icon={<AlertTriangle className="w-5 h-5 text-amber-400" />}
-              description="Confirm site readiness before work begins."
+              title="Electrical Hazards"
+              icon={<AlertTriangle className="w-4 h-4 text-amber-400" />}
+              description="Confirm site readiness."
             >
               <ToggleButtonGroup
-                title="Hazards Present & Damaged Structures"
+                title="Hazards & Structures"
                 items={HAZARD_ITEMS}
                 state={form.hazardsPresent}
                 onToggle={(key) => handleBooleanGroupChange("hazardsPresent", key)}
                 columns={2}
               />
 
-              <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Wind className="w-4 h-4 text-emerald-400" />
-                  <p className="text-sm font-semibold text-white">
-                    Nominal voltage reference (1910.269)
+              <div className="mt-3 rounded-xl border border-white/10 bg-black/20 p-3">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Wind className="w-3.5 h-3.5 text-emerald-400" />
+                  <p className="text-xs font-semibold text-white">
+                    Voltage reference (1910.269)
                   </p>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-300">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 text-[10px] text-gray-300">
                   {NOMINAL_VOLTAGE_GUIDE.map((row) => (
                     <div
                       key={row.range}
-                      className="flex justify-between rounded-xl border border-white/5 bg-black/30 px-3 py-2"
+                      className="flex justify-between rounded-lg border border-white/5 bg-black/30 px-2 py-1"
                     >
-                      <span>{row.range}</span>
-                      <span className="text-emerald-300 font-semibold">
+                      <span className="truncate">{row.range}</span>
+                      <span className="text-emerald-300 font-semibold ml-1">
                         {row.clearance}
                       </span>
                     </div>
@@ -1217,105 +1203,101 @@ export default function DailyJSAForm() {
             </SectionCard>
 
             <SectionCard
-              title="Traffic Hazards & Work Zone"
-              icon={<MapPin className="w-5 h-5 text-emerald-400" />}
-              description="Coordinate MOT (maintenance of traffic) before work begins."
+              title="Traffic & Work Zone"
+              icon={<MapPin className="w-4 h-4 text-emerald-400" />}
+              description="MOT coordination."
             >
-              <ToggleButtonGroup
-                title="Traffic Hazards Present"
-                items={TRAFFIC_HAZARDS}
-                state={form.trafficHazards}
-                onToggle={(key) => handleBooleanGroupChange("trafficHazards", key)}
-                columns={2}
-              />
+              <div className="grid gap-3 sm:grid-cols-2">
+                <ToggleButtonGroup
+                  title="Traffic Hazards"
+                  items={TRAFFIC_HAZARDS}
+                  state={form.trafficHazards}
+                  onToggle={(key) => handleBooleanGroupChange("trafficHazards", key)}
+                  columns={1}
+                />
+                <ToggleButtonGroup
+                  title="Work Zone Setup"
+                  items={TRAFFIC_SETUP}
+                  state={form.trafficSetup}
+                  onToggle={(key) => handleBooleanGroupChange("trafficSetup", key)}
+                  columns={1}
+                />
+              </div>
 
-              <ToggleButtonGroup
-                title="Job Site & Work Zone Setup"
-                items={TRAFFIC_SETUP}
-                state={form.trafficSetup}
-                onToggle={(key) => handleBooleanGroupChange("trafficSetup", key)}
-                className="mt-6"
-                columns={2}
-              />
-
-              <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <ClipboardList className="w-4 h-4 text-emerald-400" />
-                  <p className="text-sm font-semibold text-white">
-                    Cone separation & work zone size
+              <div className="mt-3 rounded-xl border border-white/10 bg-black/20 p-3">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <ClipboardList className="w-3.5 h-3.5 text-emerald-400" />
+                  <p className="text-xs font-semibold text-white">
+                    Cone separation guide
                   </p>
                 </div>
-                <div className="grid gap-2 text-xs text-gray-300">
+                <div className="grid grid-cols-2 gap-1.5 text-[10px] text-gray-300">
                   {CONE_GUIDE.map((row) => (
                     <div
                       key={row.speed}
-                      className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/5 bg-black/30 px-3 py-2"
+                      className="flex flex-col rounded-lg border border-white/5 bg-black/30 px-2 py-1.5"
                     >
-                      <span className="font-semibold text-white">
+                      <span className="font-semibold text-white text-xs">
                         {row.speed}
                       </span>
-                      <span>{row.cones}</span>
                       <span className="text-emerald-300">{row.workZone}</span>
                     </div>
                   ))}
                 </div>
-                <p className="mt-3 text-xs text-gray-400">
-                  Call General Foreman with any traffic control questions.
-                </p>
               </div>
             </SectionCard>
 
             <SectionCard
               title="Span Walk-through"
-              icon={<Wind className="w-5 h-5 text-emerald-400" />}
-              description="Log each span inspected, hazards found, and mitigation plans."
+              icon={<Wind className="w-4 h-4 text-emerald-400" />}
+              description="Log spans, hazards, and mitigation."
             >
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-sm text-gray-400">
-                  Start with 5 spans and add more (max {MAX_SPANS}) as needed.
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[10px] sm:text-xs text-gray-400">
+                  Max {MAX_SPANS} spans
                 </p>
                 <button
                   type="button"
                   onClick={handleAddSpan}
                   disabled={form.spans.length >= MAX_SPANS}
-                  className="inline-flex items-center gap-2 rounded-lg bg-emerald-600/80 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600/80 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40 touch-manipulation"
                 >
-                  <Plus className="w-4 h-4" />
-                  Add Span
+                  <Plus className="w-3.5 h-3.5" />
+                  Add
                 </button>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {visibleSpans.map((span, localIdx) => {
                   const globalIndex = spanStartIndex + localIdx;
                   return (
                   <div
                       key={span.spanNumber}
-                    className="rounded-2xl border border-white/10 bg-black/30 p-4 space-y-3"
+                    className="rounded-xl border border-white/10 bg-black/30 p-3 space-y-2"
                   >
                     <div className="flex items-center justify-between">
-                      <p className="text-white font-semibold">
+                      <p className="text-xs text-white font-semibold">
                         Span #{span.spanNumber}
                       </p>
                       {form.spans.length > 1 && (
                         <button
                           type="button"
                               onClick={() => handleRemoveSpan(globalIndex)}
-                          className="text-sm text-red-300 hover:text-red-200 inline-flex items-center gap-1"
+                          className="text-[10px] text-red-300 hover:text-red-200 inline-flex items-center gap-1 touch-manipulation"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3 h-3" />
                           Remove
                         </button>
                       )}
                     </div>
-                    <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="grid gap-2 grid-cols-2">
                       <InputField
                         label="Location"
                         value={span.location}
                         onChange={(value) =>
                           handleSpanChange(globalIndex, "location", value)
                         }
-                        placeholder="Pole, span, or structure reference"
+                        placeholder="Pole/span ref"
                       />
                       <InputField
                         label="Initials"
@@ -1323,19 +1305,19 @@ export default function DailyJSAForm() {
                         onChange={(value) =>
                           handleSpanChange(globalIndex, "initials", value)
                         }
-                        placeholder="Crew initials"
+                        placeholder="Initials"
                       />
                     </div>
-                    <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="grid gap-2 grid-cols-2">
                       <TextAreaField
-                        label="Hazards found"
+                        label="Hazards"
                         value={span.hazards}
                         onChange={(value) =>
                                 handleSpanChange(globalIndex, "hazards", value)
                         }
                       />
                       <TextAreaField
-                        label="Mitigation plans"
+                        label="Mitigation"
                         value={span.mitigation}
                         onChange={(value) =>
                                 handleSpanChange(
@@ -1369,51 +1351,46 @@ export default function DailyJSAForm() {
             </SectionCard>
 
             <SectionCard
-              title="TRAPS, Tools, & Signature"
-              icon={<AlertTriangle className="w-5 h-5 text-amber-400" />}
-              description="Reiterate the mental model and capture final sign-off."
+              title="TRAPS & Signature"
+              icon={<AlertTriangle className="w-4 h-4 text-amber-400" />}
+              description="Final sign-off."
             >
-              <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-amber-100 space-y-2">
-                <p>
-                  <span className="font-semibold">Discuss TRAPS:</span> Time Pressure,
-                  Overconfidence, Distractions, Vague Guidance.
-                </p>
-                <p>
-                  <span className="font-semibold">Use TOOLS:</span> Self-check,
-                  Questioning Attitude, Effective Communication, Peer Check.
-                </p>
+              <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-100 space-y-1">
+                <p><span className="font-semibold">TRAPS:</span> Time Pressure, Overconfidence, Distractions</p>
+                <p><span className="font-semibold">TOOLS:</span> Self-check, Peer Check, Communication</p>
               </div>
 
-              <TextAreaField
-                label="Additional Notes"
-                value={form.notes}
-                onChange={(value) => handleInputChange("notes", value)}
-                placeholder="Record any other information, reminders, or toolbox talk notes..."
-                rows={4}
-              />
-
-              <InputField
-                label="Employee Signature (typed)"
-                value={form.employeeSignature}
-                onChange={(value) => handleInputChange("employeeSignature", value)}
-                placeholder="Full name or initials for now – signature pad can be added later"
-              />
+              <div className="grid gap-2 sm:grid-cols-2">
+                <TextAreaField
+                  label="Notes"
+                  value={form.notes}
+                  onChange={(value) => handleInputChange("notes", value)}
+                  placeholder="Additional info..."
+                  rows={2}
+                />
+                <InputField
+                  label="Signature (typed)"
+                  value={form.employeeSignature}
+                  onChange={(value) => handleInputChange("employeeSignature", value)}
+                  placeholder="Name or initials"
+                />
+              </div>
             </SectionCard>
 
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <button
                 type="submit"
                 disabled={saving || !isFormValid}
-                className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-6 py-3 text-white font-semibold shadow-lg shadow-emerald-600/30 hover:bg-emerald-500 transition disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm text-white font-semibold shadow-lg shadow-emerald-600/30 hover:bg-emerald-500 transition disabled:opacity-50 touch-manipulation"
               >
                 {saving ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin" />
                     Saving...
                   </>
                 ) : (
                   <>
-                    <CheckCircle2 className="w-5 h-5" />
+                    <CheckCircle2 className="w-4 h-4" />
                     Save JSA
                   </>
                 )}
@@ -1422,45 +1399,36 @@ export default function DailyJSAForm() {
                 <button
                   type="button"
                   onClick={() => setForm(createInitialFormState())}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-white/20 px-6 py-3 text-white hover:bg-white/10 transition"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 px-4 py-2.5 text-sm text-white hover:bg-white/10 transition touch-manipulation"
                 >
                   <RefreshButton />
-                  Reset Form
+                  Reset
                 </button>
               )}
               {!isFormValid && (
-                <p className="text-xs text-red-300">
-                  Job date, work location, and signature are required before saving.
+                <p className="text-[10px] sm:text-xs text-red-300">
+                  Date, location & signature required.
                 </p>
               )}
             </div>
 
-            <div className="rounded-2xl border border-white/15 bg-black/40 p-5 space-y-4">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-white">JSA Status</p>
-                  <p className="text-xs text-gray-400">
-                    Draft keeps the form editable. Completed archives it for the
-                    day.
-                  </p>
-                </div>
+            <div className="rounded-xl border border-white/15 bg-black/40 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-white">JSA Status</p>
                 <span
                   className={cn(
-                    "px-3 py-1 rounded-full text-xs font-semibold",
+                    "px-2 py-0.5 rounded-full text-[10px] font-semibold",
                     formattedStatus
                   )}
                 >
                   {form.status === "completed" ? "Completed" : "Draft"}
                 </span>
               </div>
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-2 grid-cols-2">
                 {(
                   [
-                    { value: "draft", label: "Draft (keep editing)" },
-                    {
-                      value: "completed",
-                      label: "Completed (lock for day)",
-                    },
+                    { value: "draft", label: "Draft" },
+                    { value: "completed", label: "Complete" },
                   ] as const
                 ).map((option) => {
                   const active = form.status === option.value;
@@ -1472,15 +1440,15 @@ export default function DailyJSAForm() {
                         handleStatusChange(option.value as "draft" | "completed")
                       }
                       className={cn(
-                        "rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition flex items-center gap-3",
+                        "rounded-xl border px-3 py-2 text-left text-xs font-semibold transition flex items-center gap-2 touch-manipulation",
                         active
-                          ? "border-emerald-500/40 bg-emerald-500/10 text-white shadow-inner shadow-emerald-500/20"
-                          : "border-white/10 bg-white/5 text-gray-300 hover:border-white/30"
+                          ? "border-emerald-500/40 bg-emerald-500/10 text-white"
+                          : "border-white/10 bg-white/5 text-gray-300"
                       )}
                     >
                       <CheckCircle2
                         className={cn(
-                          "w-5 h-5",
+                          "w-3.5 h-3.5",
                           active ? "text-emerald-400" : "text-gray-500"
                         )}
                       />
@@ -1491,26 +1459,20 @@ export default function DailyJSAForm() {
               </div>
               {statusToast && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100 flex items-center gap-2"
+                  exit={{ opacity: 0, y: 8 }}
+                  className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-100 flex items-center gap-1.5"
                 >
-                  <Info className="w-4 h-4" />
+                  <Info className="w-3.5 h-3.5" />
                   {statusToast}
                 </motion.div>
               )}
-              <div className="grid gap-3 sm:grid-cols-2 text-xs text-gray-400">
+              <div className="grid gap-2 grid-cols-2 text-[10px] text-gray-400">
                 <StatusTimestamp label="Created" value={form.createdAt} />
-                <StatusTimestamp label="Last Saved" value={form.updatedAt} />
-                <StatusTimestamp
-                  label="Status Updated"
-                  value={form.statusChangedAt}
-                />
-                <StatusTimestamp
-                  label="Completed On"
-                  value={form.completedAt}
-                />
+                <StatusTimestamp label="Saved" value={form.updatedAt} />
+                <StatusTimestamp label="Status" value={form.statusChangedAt} />
+                <StatusTimestamp label="Completed" value={form.completedAt} />
               </div>
               {form.statusHistory.length > 0 && (
                 <StatusTimeline entries={form.statusHistory} />
@@ -1544,18 +1506,18 @@ function SectionCard({
   return (
     <div
       className={cn(
-        "rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 space-y-5",
+        "rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-4 sm:p-5 space-y-3 sm:space-y-4",
         className
       )}
     >
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             {icon}
-            <p className="text-xl font-semibold text-white">{title}</p>
+            <p className="text-base sm:text-lg font-semibold text-white">{title}</p>
           </div>
           {description && (
-            <p className="text-sm text-gray-400 mt-1">{description}</p>
+            <p className="text-xs text-gray-400 mt-0.5 hidden sm:block">{description}</p>
           )}
         </div>
         {badge}
@@ -1588,12 +1550,12 @@ function InputField({
 }: InputFieldProps) {
   return (
     <div className={className}>
-      <label className="block text-sm font-medium text-white mb-1">
+      <label className="block text-xs font-medium text-white mb-1">
         {label}
       </label>
       <div className="relative">
         {Icon && (
-          <Icon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+          <Icon className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-500" />
         )}
         <input
           type={type}
@@ -1602,8 +1564,8 @@ function InputField({
           placeholder={placeholder}
           required={required}
           className={cn(
-            "w-full rounded-2xl border border-white/10 bg-black/60 px-4 py-2.5 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/60",
-            Icon ? "pl-10" : ""
+            "w-full rounded-xl border border-white/10 bg-black/60 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/60",
+            Icon ? "pl-8" : ""
           )}
         />
       </div>
@@ -1624,11 +1586,11 @@ function TextAreaField({
   value,
   onChange,
   placeholder,
-  rows = 3,
+  rows = 2,
 }: TextAreaFieldProps) {
   return (
     <div>
-      <label className="block text-sm font-medium text-white mb-1">
+      <label className="block text-xs font-medium text-white mb-1">
         {label}
       </label>
       <textarea
@@ -1636,7 +1598,7 @@ function TextAreaField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-2xl border border-white/10 bg-black/60 px-4 py-2.5 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/60"
+        className="w-full rounded-xl border border-white/10 bg-black/60 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/60"
       />
     </div>
   );
@@ -1663,13 +1625,13 @@ function ToggleButtonGroup({
     columns === 1
       ? "grid-cols-1"
       : columns === 3
-      ? "sm:grid-cols-3"
-      : "sm:grid-cols-2";
+      ? "grid-cols-2 sm:grid-cols-3"
+      : "grid-cols-2";
 
   return (
     <div className={className}>
-      <p className="text-sm font-semibold text-white mb-2">{title}</p>
-      <div className={cn("grid gap-2", columnClass)}>
+      <p className="text-xs font-semibold text-white mb-1.5">{title}</p>
+      <div className={cn("grid gap-1.5", columnClass)}>
         {items.map((item) => {
           const active = state[item.key];
           return (
@@ -1678,10 +1640,10 @@ function ToggleButtonGroup({
               key={item.key}
               onClick={() => onToggle(item.key)}
               className={cn(
-                "rounded-2xl border px-4 py-2 text-left text-sm transition",
+                "rounded-xl border px-2.5 py-1.5 text-left text-xs transition touch-manipulation",
                 active
                   ? "border-emerald-500/40 bg-emerald-500/10 text-white"
-                  : "border-white/10 bg-white/5 text-gray-300 hover:border-white/30"
+                  : "border-white/10 bg-white/5 text-gray-300 active:bg-white/10"
               )}
             >
               {item.label}
@@ -1817,11 +1779,11 @@ function StatusTimestamp({
   value?: string | null;
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/30 px-3 py-2">
-      <p className="text-[11px] uppercase tracking-wide text-gray-500">
+    <div className="rounded-lg border border-white/10 bg-black/30 px-2 py-1.5">
+      <p className="text-[9px] uppercase tracking-wide text-gray-500">
         {label}
       </p>
-      <p className="text-sm text-white">{formatDateTime(value)}</p>
+      <p className="text-[11px] text-white truncate">{formatDateTime(value)}</p>
     </div>
   );
 }
@@ -1852,18 +1814,6 @@ function StatusTimeline({ entries }: { entries: StatusLogEntry[] }) {
   );
 }
 
-function getLatestStatusTimestamp(record: DailyJsaRecord): string | null {
-  const history = (record.status_history as StatusLogEntry[]) || [];
-  if (history.length > 0) {
-    const ordered = [...history].sort(
-      (a, b) =>
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-    );
-    return ordered[0].timestamp;
-  }
-  return record.status_changed_at || record.updated_at || record.created_at || null;
-}
-
 interface JsaListSectionProps {
   title: string;
   records: DailyJsaRecord[];
@@ -1889,70 +1839,59 @@ function JsaListSection({
 
   return (
     <div 
-      className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl"
+      className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl"
       style={{
         background: 'radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 1) 100%)'
       }}
     >
-      <div className="px-6 py-5 border-b border-white/10">
-        <p className="text-sm text-gray-400 uppercase tracking-wide">
+      <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
+        <p className="text-xs text-gray-400 uppercase tracking-wide">
           {title}
         </p>
-        <p className="text-lg text-white font-semibold">{count} total</p>
+        <p className="text-sm text-white font-semibold">{count}</p>
       </div>
       {loading ? (
-        <div className="p-6 flex items-center gap-2 text-gray-400">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          Loading JSAs...
+        <div className="p-4 flex items-center gap-2 text-xs text-gray-400">
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          Loading...
         </div>
       ) : records.length === 0 ? (
-        <div className="p-6 text-sm text-gray-400">{emptyMessage}</div>
+        <div className="p-4 text-xs text-gray-400">{emptyMessage}</div>
       ) : (
         <>
           <div className="divide-y divide-white/5">
             {records.map((record) => {
               const statusKey =
                 (record.status as "draft" | "completed") || "draft";
-              const latestStatusTime = getLatestStatusTimestamp(record);
 
               return (
-                <div key={record.id} className="p-6 space-y-3">
-                  <div className="flex items-center justify-between text-xs text-gray-400">
+                <div key={record.id} className="p-3 sm:p-4 space-y-2">
+                  <div className="flex items-center justify-between text-[10px] text-gray-400">
                     <span>{formatDate(record.job_date || record.created_at)}</span>
                     <span
                       className={cn(
-                        "px-2 py-0.5 rounded-full",
+                        "px-1.5 py-0.5 rounded-full text-[9px]",
                         statusChips[statusKey] ?? statusChips.draft
                       )}
                     >
                       {statusKey}
                     </span>
                   </div>
-                  <p className="text-[11px] uppercase tracking-wide text-gray-500">
-                    {statusKey === "completed" ? "Completed" : "Updated"}{" "}
-                    {formatDateTime(latestStatusTime)}
-                  </p>
-                  <p className="text-white font-semibold">
+                  <p className="text-sm text-white font-semibold truncate">
                     {record.work_location || "Location TBD"}
                   </p>
-                  <p className="text-xs text-gray-400 line-clamp-2">
+                  <p className="text-[10px] text-gray-400 line-clamp-1">
                     {summarizeJobs(record.jobs_performed)}
                   </p>
                   <Link
                     to={`/forms/jsa/${record.id}`}
-                    className="inline-flex items-center justify-center gap-2 hover:opacity-80 transition"
+                    className="inline-flex items-center justify-center gap-1.5 hover:opacity-80 transition touch-manipulation px-4 py-2 text-xs font-semibold text-white rounded-xl"
                     style={{
-                      width: '160px',
-                      height: '40px',
-                      fontSize: '25px',
-                      lineHeight: '30px',
-                      color: 'rgba(247, 247, 247, 1)',
                       background: 'linear-gradient(90deg, rgba(176, 133, 74, 1) 2%, rgba(0, 0, 0, 1) 100%)',
-                      borderRadius: '20px'
                     }}
                   >
                     View / Edit
-                    <CheckCircle2 className="w-4 h-4" />
+                    <CheckCircle2 className="w-3.5 h-3.5" />
                   </Link>
                 </div>
               );

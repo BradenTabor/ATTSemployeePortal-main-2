@@ -424,118 +424,98 @@ export default function DailyEquipmentInspectionForm() {
 
   return (
     <DashboardLayout title="Daily Equipment Inspection">
-      <div className="max-w-6xl mx-auto px-4 pb-16 space-y-8">
-        <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#0a2218] via-[#031510] to-[#010407] p-6 sm:p-8 shadow-[0_25px_80px_rgba(0,0,0,0.55)]">
+      <div className="max-w-5xl mx-auto px-3 sm:px-4 pb-10 space-y-4 sm:space-y-5">
+        <section className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#0a2218] via-[#031510] to-[#010407] p-4 sm:p-5 shadow-[0_25px_80px_rgba(0,0,0,0.55)]">
           <div className="pointer-events-none absolute inset-0">
-            <div className="absolute -top-24 -right-6 h-64 w-64 bg-emerald-500/15 blur-[120px]" />
-            <div className="absolute -bottom-20 left-0 h-64 w-64 bg-teal-400/10 blur-[100px]" />
+            <div className="absolute -top-24 -right-6 h-48 w-48 bg-emerald-500/15 blur-[100px]" />
           </div>
-          <div className="relative flex flex-wrap items-start justify-between gap-6">
-            <div className="space-y-4 max-w-3xl">
-              <p className="text-[10px] tracking-[0.5em] uppercase text-emerald-200/80">
-                Safety First
-              </p>
-              <h1 className="text-2xl sm:text-3xl font-semibold text-white">
-                Daily Equipment Inspection Log
-              </h1>
-              <p className="text-sm sm:text-base text-white/70">
-                Capture mechanical condition, checklist outcomes, and photographic evidence before
-                each shift. Uploads sync directly to the admin console via Supabase.
-              </p>
-              <ul className="space-y-2 text-xs sm:text-sm text-white/75">
-                <li className="flex items-start gap-2">
-                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-emerald-300" />
-                  Hydraulic fluid level photo is now mandatory for every submission.
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-emerald-300" />
-                  Select the equipment template to unlock device-specific checklist items.
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-emerald-300" />
-                  Document fails in the notes so mechanics can triage quickly.
-                </li>
-              </ul>
-            </div>
-            <div className="relative min-w-[230px] rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-5 text-sm text-white/75">
-              <p className="text-[10px] uppercase tracking-[0.35em] text-emerald-200 mb-3">
-                Submission Tips
-              </p>
-              <ul className="space-y-2 list-disc list-inside">
-                <li>Good lighting improves review quality.</li>
-                <li>Capture attachments that will run today.</li>
-                <li>Tap “Submit” once—uploads are async.</li>
-              </ul>
-            </div>
-          </div>
-          <div className="relative grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
-            {heroStats.map((stat) => (
-              <div
-                key={stat.label}
-                className="rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-5 text-white shadow-inner shadow-black/30"
-              >
-                <p className="text-[11px] uppercase tracking-[0.35em] text-white/60">
-                  {stat.label}
+          <div className="relative space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+              <div className="space-y-2">
+                <p className="text-[9px] tracking-[0.4em] uppercase text-emerald-200/80">
+                  Safety First
                 </p>
-                <p className="text-2xl font-semibold mt-2">{stat.value}</p>
-                <p className="text-xs text-white/70 mt-1">{stat.hint}</p>
+                <h1 className="text-lg sm:text-xl font-semibold text-white">
+                  Daily Equipment Inspection
+                </h1>
+                <p className="text-xs text-white/70 hidden sm:block max-w-xl">
+                  Capture condition, checklist outcomes, and photo evidence before each shift.
+                </p>
               </div>
-            ))}
+              <div className="hidden lg:block min-w-[180px] rounded-xl border border-white/15 bg-white/[0.04] px-3 py-3 text-[10px] text-white/75">
+                <p className="text-[9px] uppercase tracking-[0.3em] text-emerald-200 mb-2">Tips</p>
+                <ul className="space-y-1 list-disc list-inside">
+                  <li>Good lighting helps review</li>
+                  <li>Capture today's attachments</li>
+                </ul>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              {heroStats.map((stat) => (
+                <div
+                  key={stat.label}
+                  className="rounded-xl border border-white/10 bg-white/[0.05] px-3 py-3 text-white"
+                >
+                  <p className="text-[9px] uppercase tracking-[0.25em] text-white/60 truncate">
+                    {stat.label}
+                  </p>
+                  <p className="text-lg sm:text-xl font-semibold mt-1">{stat.value}</p>
+                  <p className="text-[10px] text-white/60 truncate">{stat.hint}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
         {error && (
-          <div className="rounded-2xl border border-rose-400/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+          <div className="rounded-xl border border-rose-400/40 bg-rose-500/10 px-3 py-2 text-xs text-rose-100">
             {error}
           </div>
         )}
         {success && (
-          <div className="rounded-2xl border border-emerald-400/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
+          <div className="rounded-xl border border-emerald-400/40 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-100">
             {success}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
           {/* Card: Equipment Info */}
-          <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#07140f] via-[#050a0f] to-[#020205] p-6 sm:p-8 space-y-6 shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
-            <div className="flex flex-wrap items-start justify-between gap-4">
+          <section className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#07140f] via-[#050a0f] to-[#020205] p-4 sm:p-5 space-y-4 shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
+            <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[10px] tracking-[0.4em] uppercase text-emerald-200/70">
-                  Step 1 · Equipment Info
+                <p className="text-[9px] tracking-[0.3em] uppercase text-emerald-200/70">
+                  Step 1 · Equipment
                 </p>
-                <h2 className="text-lg font-semibold text-white">Equipment Information</h2>
-                <p className="text-sm text-white/60">
-                  Identify the machine and load the correct checklist template.
-                </p>
+                <h2 className="text-sm sm:text-base font-semibold text-white">Equipment Info</h2>
               </div>
-              <span className="rounded-full border border-white/15 px-3 py-1 text-[11px] text-white/70">
+              <span className="rounded-full border border-white/15 px-2 py-0.5 text-[9px] text-white/70">
                 Required
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="sm:col-span-2">
-                <label className="block text-xs uppercase tracking-[0.35em] text-white/60 mb-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+              <div className="col-span-2 sm:col-span-1">
+                <label className="block text-[10px] uppercase tracking-[0.25em] text-white/60 mb-1">
                   Submitted By *
                 </label>
                 <input
                   value={submittedBy}
                   onChange={(e) => setSubmittedBy(e.target.value)}
-                  placeholder="Full name of the operator"
-                  className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
+                  placeholder="Operator name"
+                  className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
                 />
               </div>
 
               <div>
-                <label className="block text-xs uppercase tracking-[0.35em] text-white/60 mb-2">
-                  Equipment Type *
+                <label className="block text-[10px] uppercase tracking-[0.25em] text-white/60 mb-1">
+                  Type *
                 </label>
                 <select
                   value={equipmentType}
                   onChange={(e) => handleEquipmentTypeSelect(e.target.value as EquipmentTypeOption | "")}
-                  className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
+                  className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-2 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
                 >
-                  <option value="">Select equipment type</option>
+                  <option value="">Select type</option>
                   {EQUIPMENT_TYPE_OPTIONS.map((option) => (
                     <option key={option} value={option}>
                       {option}
@@ -545,92 +525,87 @@ export default function DailyEquipmentInspectionForm() {
               </div>
 
               <div>
-                <label className="block text-xs uppercase tracking-[0.35em] text-white/60 mb-2">
-                  Equipment Number *
+                <label className="block text-[10px] uppercase tracking-[0.25em] text-white/60 mb-1">
+                  Number *
                 </label>
                 <select
                   value={equipmentNumber}
                   onChange={(e) => setEquipmentNumber(e.target.value)}
                   disabled={!equipmentType}
-                  className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/60 disabled:opacity-40"
+                  className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-2 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/60 disabled:opacity-40"
                 >
-                  <option value="">
-                    {equipmentType ? "Select equipment number" : "Select type first"}
-                  </option>
+                  <option value="">{equipmentType ? "Select #" : "Type first"}</option>
                   {availableEquipmentNumbers.map((number) => (
-                    <option key={number} value={number}>
-                      {number}
-                    </option>
+                    <option key={number} value={number}>{number}</option>
                   ))}
                 </select>
               </div>
 
               <DateField
-                label="Inspection Date"
+                label="Date"
                 value={inspectionDate}
                 onValueChange={setInspectionDate}
-                helperText="Auto-filled to today"
+                helperText="Today"
                 containerClassName="text-white"
-                labelClassName="text-xs uppercase tracking-[0.35em] text-white/60 mb-2"
-                className="rounded-2xl border border-white/10 bg-white/[0.03] text-white placeholder:text-white/40 focus:ring-emerald-400/60 focus:border-emerald-400/60"
+                labelClassName="text-[10px] uppercase tracking-[0.25em] text-white/60 mb-1"
+                className="rounded-xl border border-white/10 bg-white/[0.03] text-white placeholder:text-white/40 focus:ring-emerald-400/60 focus:border-emerald-400/60"
               />
 
               <div>
-                <label className="block text-xs uppercase tracking-[0.35em] text-white/60 mb-2">
-                  Equipment Template
+                <label className="block text-[10px] uppercase tracking-[0.25em] text-white/60 mb-1">
+                  Template
                 </label>
                 <select
                   value={template}
                   onChange={(e) => setTemplate(e.target.value as EquipmentTemplate)}
-                  className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
+                  className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-2 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
                 >
-                  <option value="">Select template</option>
-                  <option value="sky_trim">Sky Trim / Jarraff</option>
-                  <option value="geo_boy">Geo Boy Mulcher</option>
-                  <option value="skid_steer">Skid Steer Mulcher / Grapple</option>
+                  <option value="">Select</option>
+                  <option value="sky_trim">Sky Trim/Jarraff</option>
+                  <option value="geo_boy">Geo Boy</option>
+                  <option value="skid_steer">Skid Steer</option>
                 </select>
               </div>
             </div>
           </section>
 
           {/* Card: General Checklist */}
-          <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#050b0f] via-[#04080c] to-[#010205] p-6 sm:p-8 space-y-5 shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+          <section className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#050b0f] via-[#04080c] to-[#010205] p-4 sm:p-5 space-y-3 shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
+            <div className="flex items-center justify-between gap-2">
               <div>
-                <p className="text-[10px] tracking-[0.4em] uppercase text-emerald-200/70">
-                  Step 2 · Section A
+                <p className="text-[9px] tracking-[0.3em] uppercase text-emerald-200/70">
+                  Step 2 · General
                 </p>
-                <h2 className="text-lg font-semibold text-white">General Equipment Checklist</h2>
-                <p className="text-sm text-white/60">Log P = Pass or F = Fail for each line item.</p>
+                <h2 className="text-sm sm:text-base font-semibold text-white">General Checklist</h2>
               </div>
-              <div className="text-right text-xs text-white/60">
-                <p>{generalCompleteCount}/{GENERAL_ITEMS.length} logged</p>
-                <p>{generalPercent}% complete</p>
+              <div className="text-right text-[10px] text-white/60">
+                <p>{generalCompleteCount}/{GENERAL_ITEMS.length}</p>
+                <p>{generalPercent}%</p>
               </div>
             </div>
-            <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
+            <div className="h-1 rounded-full bg-white/5 overflow-hidden">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-200 transition-all"
                 style={{ width: `${generalPercent}%` }}
               />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2">
               {GENERAL_ITEMS.map((item) => {
                 const value = generalChecklist[item.id] || "";
                 return (
                   <div
                     key={item.id}
-                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3"
+                    className="flex items-center justify-between gap-2 rounded-xl border border-white/5 bg-white/[0.02] px-3 py-2"
                   >
-                    <span className="text-sm text-white/80">{item.label}</span>
-                    <div className="inline-flex items-center gap-2">
+                    <span className="text-xs text-white/80 truncate">{item.label}</span>
+                    <div className="inline-flex items-center gap-1.5 flex-shrink-0">
                       <button
                         type="button"
                         onClick={() => handleChecklistChange("general", item.id, "P")}
-                        className={`px-4 py-1.5 rounded-xl border text-xs font-semibold transition ${
+                        className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation ${
                           value === "P"
                             ? "border-emerald-400 bg-emerald-500/20 text-emerald-100"
-                            : "border-white/10 bg-white/5 text-white/60 hover:border-white/30"
+                            : "border-white/10 bg-white/5 text-white/60"
                         }`}
                       >
                         Pass
@@ -638,10 +613,10 @@ export default function DailyEquipmentInspectionForm() {
                       <button
                         type="button"
                         onClick={() => handleChecklistChange("general", item.id, "F")}
-                        className={`px-4 py-1.5 rounded-xl border text-xs font-semibold transition ${
+                        className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation ${
                           value === "F"
                             ? "border-rose-400 bg-rose-500/20 text-rose-100"
-                            : "border-white/10 bg-white/5 text-white/60 hover:border-white/30"
+                            : "border-white/10 bg-white/5 text-white/60"
                         }`}
                       >
                         Fail
@@ -654,29 +629,20 @@ export default function DailyEquipmentInspectionForm() {
           </section>
 
           {/* Card: Specific Equipment Checklist */}
-          <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#050b11] via-[#04070b] to-[#010204] p-6 sm:p-8 space-y-5 shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+          <section className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#050b11] via-[#04070b] to-[#010204] p-4 sm:p-5 space-y-3 shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
+            <div className="flex items-center justify-between gap-2">
               <div>
-                <p className="text-[10px] tracking-[0.4em] uppercase text-emerald-200/70">
-                  Step 3 · Section B
+                <p className="text-[9px] tracking-[0.3em] uppercase text-emerald-200/70">
+                  Step 3 · Specific
                 </p>
-                <h2 className="text-lg font-semibold text-white">Specific Equipment Checklist</h2>
-                <p className="text-sm text-white/60">
-                  These items change based on the template you selected above.
-                </p>
+                <h2 className="text-sm sm:text-base font-semibold text-white">Equipment Specific</h2>
               </div>
-              <div className="text-right text-xs text-white/60">
-                <p>
-                  {specificCompleteCount}/{specificItems.length || 0} logged
-                </p>
-                <p>
-                  {specificItems.length === 0
-                    ? "Choose a template"
-                    : `${specificPercent}% complete`}
-                </p>
+              <div className="text-right text-[10px] text-white/60">
+                <p>{specificCompleteCount}/{specificItems.length || 0}</p>
+                <p>{specificItems.length === 0 ? "Select template" : `${specificPercent}%`}</p>
               </div>
             </div>
-            <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
+            <div className="h-1 rounded-full bg-white/5 overflow-hidden">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-emerald-200 transition-all"
                 style={{ width: `${specificItems.length === 0 ? 0 : specificPercent}%` }}
@@ -684,27 +650,27 @@ export default function DailyEquipmentInspectionForm() {
             </div>
 
             {specificItems.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-white/20 bg-white/[0.02] px-4 py-6 text-sm text-white/60">
-                Select an equipment template above to load device-specific checklist items.
+              <div className="rounded-xl border border-dashed border-white/20 bg-white/[0.02] px-3 py-4 text-xs text-white/60 text-center">
+                Select template above to load items
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2">
                 {specificItems.map((item) => {
                   const value = specificChecklist[item.id] || "";
                   return (
                     <div
                       key={item.id}
-                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3"
+                      className="flex items-center justify-between gap-2 rounded-xl border border-white/5 bg-white/[0.02] px-3 py-2"
                     >
-                      <span className="text-sm text-white/80">{item.label}</span>
-                      <div className="inline-flex items-center gap-2">
+                      <span className="text-xs text-white/80 truncate">{item.label}</span>
+                      <div className="inline-flex items-center gap-1.5 flex-shrink-0">
                         <button
                           type="button"
                           onClick={() => handleChecklistChange("specific", item.id, "P")}
-                          className={`px-4 py-1.5 rounded-xl border text-xs font-semibold transition ${
+                          className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation ${
                             value === "P"
                               ? "border-emerald-400 bg-emerald-500/20 text-emerald-100"
-                              : "border-white/10 bg-white/5 text-white/60 hover:border-white/30"
+                              : "border-white/10 bg-white/5 text-white/60"
                           }`}
                         >
                           Pass
@@ -712,10 +678,10 @@ export default function DailyEquipmentInspectionForm() {
                         <button
                           type="button"
                           onClick={() => handleChecklistChange("specific", item.id, "F")}
-                          className={`px-4 py-1.5 rounded-xl border text-xs font-semibold transition ${
+                          className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation ${
                             value === "F"
                               ? "border-rose-400 bg-rose-500/20 text-rose-100"
-                              : "border-white/10 bg-white/5 text-white/60 hover:border-white/30"
+                              : "border-white/10 bg-white/5 text-white/60"
                           }`}
                         >
                           Fail
@@ -729,23 +695,20 @@ export default function DailyEquipmentInspectionForm() {
           </section>
 
           {/* Card: Photos (Camera Capture) */}
-          <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#051313] via-[#040909] to-[#020405] p-6 sm:p-8 space-y-5 shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+          <section className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#051313] via-[#040909] to-[#020405] p-4 sm:p-5 space-y-3 shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
+            <div className="flex items-center justify-between gap-2">
               <div>
-                <p className="text-[10px] tracking-[0.4em] uppercase text-emerald-200/70">
-                  Step 4 · Photo Evidence
+                <p className="text-[9px] tracking-[0.3em] uppercase text-emerald-200/70">
+                  Step 4 · Photos
                 </p>
-                <h2 className="text-lg font-semibold text-white">Photos (Camera Capture)</h2>
-                <p className="text-sm text-white/60">
-                  Upload clear photos so mechanics and admins can verify the condition remotely.
-                </p>
+                <h2 className="text-sm sm:text-base font-semibold text-white">Photo Evidence</h2>
               </div>
-              <div className="text-right text-xs text-white/60">
-                <p>{photoProgress.captured}/{photoProgress.total} captured</p>
-                <p>{photoProgress.requiredCaptured}/{REQUIRED_PHOTO_KEYS.length} required</p>
+              <div className="text-right text-[10px] text-white/60">
+                <p>{photoProgress.captured}/{photoProgress.total}</p>
+                <p>{photoProgress.requiredCaptured}/{REQUIRED_PHOTO_KEYS.length} req</p>
               </div>
             </div>
-            <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
+            <div className="h-1 rounded-full bg-white/5 overflow-hidden">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-200 transition-all"
                 style={{ width: `${photoPercent}%` }}
@@ -769,7 +732,7 @@ export default function DailyEquipmentInspectionForm() {
               />
             ))}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               {PHOTO_DEFINITIONS.map((photo) => {
                 const captured = Boolean(photos[photo.key]);
                 return (
@@ -777,36 +740,27 @@ export default function DailyEquipmentInspectionForm() {
                     key={photo.key}
                     type="button"
                     onClick={() => photoRefs[photo.key].current?.click()}
-                    className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3 text-left transition hover:border-emerald-400/40"
+                    className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2.5 text-left transition hover:border-emerald-400/40 touch-manipulation"
                   >
-                    <span className="flex items-center gap-3">
-                      <span className="inline-flex items-center justify-center rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-2.5 text-emerald-200">
-                        <Camera className="w-4 h-4" />
-                      </span>
-                      <span className="flex flex-col">
-                        <span className="flex items-center gap-1 text-sm font-semibold text-white">
-                          {photo.label}
-                          {photo.required && (
-                            <span className="text-rose-300 text-[10px] font-semibold">
-                              * Required
-                            </span>
-                          )}
-                        </span>
-                        {photo.description && (
-                          <span className="text-xs text-white/60">{photo.description}</span>
-                        )}
-                      </span>
+                    <span className="inline-flex items-center justify-center rounded-lg border border-emerald-400/30 bg-emerald-500/10 p-1.5 text-emerald-200 flex-shrink-0">
+                      <Camera className="w-3.5 h-3.5" />
                     </span>
-                    <span
-                      className={`text-[11px] font-semibold ${
-                        captured
-                          ? "text-emerald-200"
-                          : photo.required
-                          ? "text-rose-300"
-                          : "text-white/40"
-                      }`}
-                    >
-                      {captured ? "Captured" : photo.required ? "Required" : "Optional"}
+                    <span className="flex flex-col min-w-0 flex-1">
+                      <span className="text-xs font-semibold text-white truncate">
+                        {photo.label}
+                        {photo.required && <span className="text-rose-300 ml-1">*</span>}
+                      </span>
+                      <span
+                        className={`text-[9px] font-medium ${
+                          captured
+                            ? "text-emerald-300"
+                            : photo.required
+                            ? "text-rose-300/80"
+                            : "text-white/40"
+                        }`}
+                      >
+                        {captured ? "✓ Done" : photo.required ? "Required" : "Optional"}
+                      </span>
                     </span>
                   </button>
                 );
@@ -814,54 +768,39 @@ export default function DailyEquipmentInspectionForm() {
             </div>
           </section>
 
-          {/* Card: Notes */}
-          <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#070f12] via-[#05080a] to-[#020305] p-6 sm:p-8 space-y-4 shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] tracking-[0.4em] uppercase text-emerald-200/70">
-                  Optional
-                </p>
-                <h2 className="text-lg font-semibold text-white">Notes & Deficiencies</h2>
-                <p className="text-sm text-white/60">
-                  Use this space to explain failed items, damage, or follow-up needs.
-                </p>
-              </div>
+          {/* Card: Notes & Submit Combined */}
+          <section className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#070f12] via-[#05080a] to-[#020305] p-4 sm:p-5 space-y-3 shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
+            <div>
+              <p className="text-[9px] tracking-[0.3em] uppercase text-emerald-200/70">
+                Optional
+              </p>
+              <h2 className="text-sm sm:text-base font-semibold text-white">Notes</h2>
             </div>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              rows={4}
-              className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
-              placeholder="Describe any deficiencies, damage, or required follow-up..."
+              rows={2}
+              className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
+              placeholder="Describe deficiencies, damage, or follow-ups..."
             />
-          </section>
-
-          {/* Submit */}
-          <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#041a12] via-[#020c08] to-[#020205] p-6 sm:p-8 space-y-4 shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
-            <div className="flex flex-col gap-4 text-sm text-white/70">
-              <div className="flex items-center gap-2">
-                <span
-                  className={`inline-flex h-2 w-2 rounded-full ${
-                    requiredPhotosComplete ? "bg-emerald-300" : "bg-rose-300"
-                  }`}
-                />
-                {requiredPhotosComplete
-                  ? "All required photos captured."
-                  : "Hydraulic fluid level photo still outstanding."}
+            
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-[10px] text-white/60 pt-1">
+              <div className="flex items-center gap-1.5">
+                <span className={`h-1.5 w-1.5 rounded-full ${requiredPhotosComplete ? "bg-emerald-300" : "bg-rose-300"}`} />
+                <span>{requiredPhotosComplete ? "Photos complete" : "Hydraulic photo needed"}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="inline-flex h-2 w-2 rounded-full bg-emerald-300" />
-                {generalCompleteCount + specificCompleteCount > 0
-                  ? "Checklist progress saved locally until submission."
-                  : "Complete the checklist to help mechanics triage."}
+              <div className="flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
+                <span>{generalCompleteCount + specificCompleteCount > 0 ? "Progress saved" : "Complete checklist"}</span>
               </div>
             </div>
+            
             <button
               type="submit"
               disabled={submitting}
-              className="w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 px-5 py-3 text-sm font-semibold text-black shadow-lg shadow-emerald-500/20 transition hover:shadow-emerald-400/40 disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 px-4 py-2.5 text-sm font-semibold text-black shadow-lg shadow-emerald-500/20 transition hover:shadow-emerald-400/40 disabled:cursor-not-allowed disabled:opacity-60 touch-manipulation"
             >
-              {submitting ? "Submitting..." : "Submit Daily Equipment Inspection"}
+              {submitting ? "Submitting..." : "Submit Inspection"}
             </button>
           </section>
         </form>

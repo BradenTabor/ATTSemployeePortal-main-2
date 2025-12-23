@@ -34,6 +34,8 @@ function AdminJobTracker() {
     deleteJob,
     updateJobStatus,
     toggleMilestone,
+    stackJobs,
+    unstackJobs,
   } = useJobs();
 
   const { crewMembers, loading: crewLoading } = useCrewMembers();
@@ -298,6 +300,8 @@ function AdminJobTracker() {
               onDelete={handleDeleteJob}
               onStatusChange={handleStatusChange}
               onToggleMilestone={handleToggleMilestone}
+              onStackJobs={stackJobs}
+              onUnstackJobs={unstackJobs}
               userId={userId}
             />
           </div>

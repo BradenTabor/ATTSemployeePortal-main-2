@@ -20,6 +20,7 @@ import { PageWrapper } from "./motion";
 const Home = lazy(() => import("./pages/Home"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
+const AssignedJobs = lazy(() => import("./pages/AssignedJobs"));
 const Forms = lazy(() => import("./pages/Forms"));
 const Announcements = lazy(() => import("./pages/Announcements"));
 const Resources = lazy(() => import("./pages/Resources"));
@@ -92,6 +93,18 @@ function AnimatedRoutes() {
                 <PageWrapper>
                   <ProtectedRoute>
                     <Dashboard />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            {/* Assigned Jobs Page */}
+            <Route
+              path="/assigned-jobs"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute>
+                    <AssignedJobs />
                   </ProtectedRoute>
                 </PageWrapper>
               }

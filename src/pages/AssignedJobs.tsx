@@ -1,0 +1,917 @@
+import { memo, useCallback, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useSearchParams } from 'react-router-dom';
+import {
+  Briefcase,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Circle,
+  ClipboardList,
+  FileText,
+  Inbox,
+  MapPin,
+  Plus,
+  RefreshCw,
+  Ruler,
+  Sparkles,
+  Target,
+  Wrench,
+  AlertTriangle,
+  X,
+} from 'lucide-react';
+import DashboardLayout from '../layouts/DashboardLayout';
+import AdminPremiumScaffold, {
+  type AdminHeroConfig,
+  type AdminStat,
+} from '../components/admin/AdminPremiumScaffold';
+import { useAuth } from '../contexts/AuthContext';
+import { useUserAssignedJobs } from '../hooks/jobs';
+import { cn } from '../lib/utils';
+import {
+  calculateJobProgress,
+  formatDateForDisplay,
+  calculateMilestoneProgress,
+  calculateSpanProgress,
+  formatSpanProgressLabel,
+  getSpanProgressColors,
+} from '../lib/jobProgressUtils';
+import { JobProgressBar } from '../components/jobs/JobProgressBar';
+import { JobProgressUpdateForm } from '../components/jobs/JobProgressUpdateForm';
+import { StackedJobCard } from '../components/jobs/StackedJobCard';
+import type { JobProgressTracker, JOB_STATUS_CONFIG, JobGroup } from '../types/jobs';
+
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
+const JOBS_PER_PAGE = 6;
+
+// ============================================================================
+// STATUS CONFIG
+// ============================================================================
+
+const statusConfig: typeof JOB_STATUS_CONFIG = {
+  active: {
+    label: 'Active',
+    bgColor: 'bg-emerald-500/15',
+    borderColor: 'border-emerald-500/30',
+    textColor: 'text-emerald-400',
+  },
+  completed: {
+    label: 'Completed',
+    bgColor: 'bg-[#f4c979]/15',
+    borderColor: 'border-[#f4c979]/30',
+    textColor: 'text-[#f4c979]',
+  },
+  paused: {
+    label: 'Paused',
+    bgColor: 'bg-amber-500/15',
+    borderColor: 'border-amber-500/30',
+    textColor: 'text-amber-400',
+  },
+  cancelled: {
+    label: 'Cancelled',
+    bgColor: 'bg-red-500/15',
+    borderColor: 'border-red-500/30',
+    textColor: 'text-red-400',
+  },
+};
+
+// ============================================================================
+// SKELETON LOADERS
+// ============================================================================
+
+const JobCardSkeleton = memo(function JobCardSkeleton() {
+  return (
+    <div className="rounded-xl border border-emerald-500/20 bg-[#041510]/80 p-4 animate-pulse min-h-[56px]">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex-1">
+          <div className="h-4 w-32 bg-white/10 rounded mb-1.5" />
+          <div className="h-3 w-20 bg-white/5 rounded" />
+        </div>
+        <div className="h-7 w-12 bg-emerald-500/10 rounded-lg" />
+      </div>
+    </div>
+  );
+});
+
+
+// ============================================================================
+// EMPTY & ERROR STATES
+// ============================================================================
+
+const EmptyJobsState = memo(function EmptyJobsState() {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+      <motion.div
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 flex items-center justify-center mb-5 border border-emerald-500/30"
+      >
+        <Inbox className="w-10 h-10 text-emerald-400/60" />
+      </motion.div>
+      <motion.p
+        initial={{ y: 10, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.1 }}
+        className="text-lg text-white/70 font-semibold"
+      >
+        No Active Assignments
+      </motion.p>
+      <motion.p
+        initial={{ y: 10, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.2 }}
+        className="text-sm text-white/40 mt-2 max-w-xs"
+      >
+        Jobs assigned to you will appear here. Check back later!
+      </motion.p>
+    </div>
+  );
+});
+
+interface ErrorStateProps {
+  message: string;
+  onRetry?: () => void;
+}
+
+const ErrorState = memo(function ErrorState({ message, onRetry }: ErrorStateProps) {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+      <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-4 border border-red-500/30">
+        <AlertTriangle className="w-8 h-8 text-red-400" />
+      </div>
+      <p className="text-base text-red-400 font-semibold">{message}</p>
+      {onRetry && (
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={onRetry}
+          className="mt-4 inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm font-medium min-h-[48px] touch-manipulation active:bg-red-500/20"
+        >
+          <RefreshCw className="w-4 h-4" />
+          Try Again
+        </motion.button>
+      )}
+    </div>
+  );
+});
+
+// ============================================================================
+// CIRCUIT FILTER - Mobile-optimized horizontal scroll
+// ============================================================================
+
+interface CircuitFilterProps {
+  circuits: string[];
+  activeCircuit: string;
+  onChange: (circuit: string) => void;
+}
+
+const CircuitFilter = memo(function CircuitFilter({
+  circuits,
+  activeCircuit,
+  onChange,
+}: CircuitFilterProps) {
+  if (circuits.length <= 1) return null;
+
+  return (
+    <div className="overflow-x-auto -mx-1 px-1 pb-2 scrollbar-hide">
+      <div className="flex gap-2 min-w-max">
+        <button
+          type="button"
+          onClick={() => onChange('All')}
+          className={cn(
+            'flex items-center gap-1.5 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all min-h-[44px] touch-manipulation whitespace-nowrap',
+            activeCircuit === 'All'
+              ? 'bg-emerald-500/25 text-emerald-300 border-emerald-500/50'
+              : 'bg-white/5 text-white/60 border-white/10 active:bg-white/10'
+          )}
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          All Jobs
+        </button>
+        {circuits.map((circuit) => (
+          <button
+            key={circuit}
+            type="button"
+            onClick={() => onChange(circuit)}
+            className={cn(
+              'flex items-center gap-1.5 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all min-h-[44px] touch-manipulation whitespace-nowrap',
+              activeCircuit === circuit
+                ? 'bg-emerald-500/25 text-emerald-300 border-emerald-500/50'
+                : 'bg-white/5 text-white/60 border-white/10 active:bg-white/10'
+            )}
+          >
+            <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+            {circuit}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+});
+
+// ============================================================================
+// PAGINATION - Large touch-friendly buttons
+// ============================================================================
+
+interface PaginationProps {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  pageSize: number;
+  onPrevious: () => void;
+  onNext: () => void;
+}
+
+const Pagination = memo(function Pagination({
+  currentPage,
+  totalPages,
+  totalItems,
+  pageSize,
+  onPrevious,
+  onNext,
+}: PaginationProps) {
+  if (totalPages <= 1) return null;
+
+  const startItem = (currentPage - 1) * pageSize + 1;
+  const endItem = Math.min(currentPage * pageSize, totalItems);
+
+  return (
+    <div className="flex items-center justify-between pt-4 mt-3 border-t border-white/10">
+      <span className="text-xs text-white/50">
+        {startItem}–{endItem} of {totalItems}
+      </span>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={onPrevious}
+          disabled={currentPage === 1}
+          className={cn(
+            'p-2.5 rounded-xl border transition-all min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation',
+            currentPage === 1
+              ? 'border-white/5 text-white/20 cursor-not-allowed'
+              : 'border-white/20 text-white/70 active:bg-white/10'
+          )}
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+        <span className="text-sm text-white/70 px-2 tabular-nums font-medium min-w-[48px] text-center">
+          {currentPage}/{totalPages}
+        </span>
+        <button
+          onClick={onNext}
+          disabled={currentPage === totalPages}
+          className={cn(
+            'p-2.5 rounded-xl border transition-all min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation',
+            currentPage === totalPages
+              ? 'border-white/5 text-white/20 cursor-not-allowed'
+              : 'border-white/20 text-white/70 active:bg-white/10'
+          )}
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
+      </div>
+    </div>
+  );
+});
+
+// ============================================================================
+// JOB LIST ITEM - Touch-friendly with min 48px height
+// ============================================================================
+
+interface JobListItemProps {
+  job: JobProgressTracker;
+  isSelected: boolean;
+  onSelect: (jobId: string) => void;
+}
+
+const JobListItem = memo(function JobListItem({
+  job,
+  isSelected,
+  onSelect,
+}: JobListItemProps) {
+  const isSpanBased = job.tracking_type === 'job_progress';
+
+  const spanProgress = useMemo(() => {
+    if (!isSpanBased) return null;
+    const progressUpdates = job.progress_updates || [];
+    const totalSpans = progressUpdates.reduce((sum, u) => sum + (u.spans_completed || 0), 0);
+    const totalFeet = progressUpdates.reduce((sum, u) => sum + (u.total_feet_completed || 0), 0);
+    return calculateSpanProgress(
+      totalSpans,
+      totalFeet,
+      job.estimated_total_spans,
+      job.estimated_total_feet,
+      job.span_progress_metric || 'spans'
+    );
+  }, [isSpanBased, job.progress_updates, job.estimated_total_spans, job.estimated_total_feet, job.span_progress_metric]);
+
+  const spanProgressColors = useMemo(() => {
+    if (!spanProgress) return null;
+    return getSpanProgressColors(spanProgress.percentage);
+  }, [spanProgress]);
+
+  const progress = isSpanBased
+    ? { percentage: spanProgress?.percentage ?? 0, status: 'in_progress' as const }
+    : calculateJobProgress(job.start_date, job.end_date);
+
+  const isExceeded = !isSpanBased && progress.status === 'exceeded';
+
+  return (
+    <button
+      onClick={() => onSelect(job.id)}
+      className={cn(
+        'w-full text-left rounded-xl border p-4 transition-all min-h-[56px] touch-manipulation',
+        'bg-gradient-to-br active:scale-[0.99]',
+        isSelected
+          ? 'border-emerald-400/60 from-[#0a2a1f]/90 via-[#041812]/95 to-[#03120c]/90 shadow-lg shadow-emerald-500/20 ring-2 ring-emerald-400/40'
+          : isSpanBased
+            ? 'border-blue-500/20 from-[#040815]/80 via-[#020509]/90 to-[#010204] active:border-blue-400/40'
+            : isExceeded
+              ? 'border-red-500/30 from-[#1a0808]/80 via-[#0d0505]/90 to-[#050302] active:border-red-500/50'
+              : 'border-emerald-500/20 from-[#041510]/80 via-[#020d09]/90 to-[#010604] active:border-emerald-400/40'
+      )}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <Briefcase
+              className={cn(
+                'w-4 h-4 flex-shrink-0',
+                isSelected ? 'text-emerald-300' : isExceeded && !isSpanBased ? 'text-red-400' : ''
+              )}
+              style={{
+                color: !isSelected && (isSpanBased ? 'rgb(231, 114, 4)' : isExceeded ? undefined : 'rgb(0, 219, 77)')
+              }}
+            />
+            <h4 className="font-semibold text-sm text-white truncate">
+              {job.job_name}
+            </h4>
+          </div>
+          {(job.job_location || (isSpanBased && spanProgress)) && (
+            <div className="flex items-center gap-2 mt-1 ml-6 text-xs text-white/50">
+              {job.job_location && <span className="truncate">{job.job_location}</span>}
+              {isSpanBased && spanProgress && (
+                <span className="text-white/40">
+                  • {spanProgress.completed}/{spanProgress.total > 0 ? spanProgress.total : '?'}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div
+          className={cn(
+            'flex-shrink-0 px-2.5 py-1 rounded-lg text-sm font-bold tabular-nums',
+            isSpanBased && spanProgressColors
+              ? cn(spanProgressColors.bg, 'border', spanProgressColors.border, spanProgressColors.text)
+              : isExceeded
+                ? 'bg-red-500/15 border border-red-500/30 text-red-400'
+                : 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400'
+          )}
+        >
+          {isSpanBased && spanProgress ? spanProgress.percentage : progress.percentage}%
+        </div>
+      </div>
+    </button>
+  );
+});
+
+// ============================================================================
+// JOB DETAIL PANEL - Compact and mobile-friendly
+// ============================================================================
+
+interface JobDetailPanelProps {
+  job: JobProgressTracker;
+  onJobUpdate: () => void;
+  onClose: () => void;
+}
+
+const JobDetailPanel = memo(function JobDetailPanel({
+  job,
+  onJobUpdate,
+  onClose,
+}: JobDetailPanelProps) {
+  const isSpanBased = job.tracking_type === 'job_progress';
+  const [showProgressForm, setShowProgressForm] = useState(false);
+  const [showAllMilestones, setShowAllMilestones] = useState(false);
+
+  const spanProgress = useMemo(() => {
+    if (!isSpanBased) return null;
+    const progressUpdates = job.progress_updates || [];
+    const totalSpans = progressUpdates.reduce((sum, u) => sum + (u.spans_completed || 0), 0);
+    const totalFeet = progressUpdates.reduce((sum, u) => sum + (u.total_feet_completed || 0), 0);
+    return calculateSpanProgress(
+      totalSpans,
+      totalFeet,
+      job.estimated_total_spans,
+      job.estimated_total_feet,
+      job.span_progress_metric || 'spans'
+    );
+  }, [isSpanBased, job.progress_updates, job.estimated_total_spans, job.estimated_total_feet, job.span_progress_metric]);
+
+  const spanProgressColors = useMemo(() => {
+    if (!spanProgress) return null;
+    return getSpanProgressColors(spanProgress.percentage);
+  }, [spanProgress]);
+
+  const progress = isSpanBased
+    ? { percentage: spanProgress?.percentage ?? 0, status: 'in_progress' as const }
+    : calculateJobProgress(job.start_date, job.end_date);
+  const milestoneProgress = calculateMilestoneProgress(job.milestones || []);
+
+  const isExceeded = !isSpanBased && progress.status === 'exceeded';
+  const status = statusConfig[job.status];
+
+  const displayedMilestones = showAllMilestones 
+    ? job.milestones 
+    : job.milestones?.slice(0, 3);
+
+  // Use portal to render at document body level to avoid parent container issues
+  return createPortal(
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+      style={{ 
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100vw',
+        height: '100vh',
+      }}
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        transition={{ duration: 0.2 }}
+        onClick={(e) => e.stopPropagation()}
+        className={cn(
+          'w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border shadow-2xl',
+          isSpanBased ? 'border-emerald-500/30' : isExceeded ? 'border-red-500/30' : 'border-emerald-500/30'
+        )}
+        style={{
+          background: isSpanBased
+            ? 'linear-gradient(135deg, rgba(4, 21, 15, 0.98) 0%, rgba(4, 24, 18, 0.95) 50%, rgba(3, 18, 12, 0.98) 100%)'
+            : isExceeded
+              ? 'linear-gradient(to bottom right, #1a0808, #0d0606, #050303)'
+              : 'linear-gradient(to bottom right, #04150f, #041812, #03120c)',
+        }}
+      >
+        <div className="p-4 sm:p-5">
+          {/* Close Button */}
+          <div className="flex justify-end mb-2">
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-colors"
+            >
+              <X className="w-5 h-5 text-white/60" />
+            </button>
+          </div>
+          
+          {/* Header */}
+          <div className="mb-4">
+            <div className="flex items-center flex-wrap gap-2 mb-3">
+              <span
+                className={cn(
+                  'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border',
+                  status.bgColor, status.borderColor, status.textColor
+                )}
+              >
+                <Briefcase className="w-3 h-3" />
+                {status.label}
+              </span>
+              {isSpanBased && (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-semibold border border-blue-500/40 bg-blue-500/10 text-blue-200">
+                  SPAN TRACKING
+                </span>
+              )}
+              {!isSpanBased && isExceeded && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-red-400 text-xs font-semibold">
+                  <AlertTriangle className="w-3 h-3" />
+                  Exceeded
+                </span>
+              )}
+            </div>
+            <h2 className="text-xl sm:text-2xl font-bold text-white leading-tight mb-1">
+              {job.job_name}
+            </h2>
+            {job.job_location && (
+              <p className="flex items-center gap-2 text-sm text-white/50">
+                <MapPin className="w-3.5 h-3.5 text-emerald-400/70" />
+                {job.job_location}
+              </p>
+            )}
+          </div>
+
+        {/* Span-based Progress */}
+        {isSpanBased && spanProgress && spanProgressColors && (
+          <div className={cn('rounded-xl border p-4 mb-4', spanProgressColors.border, spanProgressColors.bg)}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Ruler className="w-4 h-4 text-blue-400" />
+                <span className="text-sm font-medium text-white/70">
+                  {formatSpanProgressLabel(spanProgress)}
+                </span>
+              </div>
+              <span className={cn('text-lg font-bold', spanProgressColors.text)}>
+                {spanProgress.percentage}%
+              </span>
+            </div>
+            <div className={cn('relative w-full h-3 rounded-full overflow-hidden', spanProgressColors.bg)}>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${spanProgress.percentage}%` }}
+                transition={{ duration: 0.4 }}
+                className={cn('absolute inset-y-0 left-0 rounded-full bg-gradient-to-r', spanProgressColors.gradient)}
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-3 mt-4">
+              <div className="text-center p-2 rounded-lg bg-white/5">
+                <p className="text-[11px] text-white/50 mb-0.5">Done</p>
+                <p className="text-base font-bold text-emerald-400">{spanProgress.completed.toLocaleString()}</p>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-white/5">
+                <p className="text-[11px] text-white/50 mb-0.5">Goal</p>
+                <p className="text-base font-bold text-[#f4c979]">{spanProgress.total > 0 ? spanProgress.total.toLocaleString() : '—'}</p>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-white/5">
+                <p className="text-[11px] text-white/50 mb-0.5">Left</p>
+                <p className="text-base font-bold text-white/70">{spanProgress.total > 0 ? spanProgress.remaining.toLocaleString() : '—'}</p>
+              </div>
+            </div>
+            
+            {/* Add Update Button */}
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setShowProgressForm(true)}
+              className="w-full mt-4 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold min-h-[48px] touch-manipulation"
+              style={{
+                background: 'linear-gradient(135deg, rgba(247, 228, 189, 1) 0%, rgba(244, 201, 121, 0.85) 50%, rgba(215, 154, 50, 1) 100%)',
+                color: '#2e1b02',
+                boxShadow: '0 4px 16px rgba(244, 201, 121, 0.3)',
+              }}
+            >
+              <Plus className="w-4 h-4" />
+              Add Progress Update
+            </motion.button>
+          </div>
+        )}
+
+        {/* Timeline-based Progress */}
+        {!isSpanBased && (
+          <div className={cn('rounded-xl border p-4 mb-4', isExceeded ? 'border-red-500/20 bg-red-500/5' : 'border-emerald-500/20 bg-emerald-500/5')}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-white/70">Timeline</span>
+              <span className={cn('text-lg font-bold', isExceeded ? 'text-red-400' : 'text-emerald-400')}>
+                {progress.percentage}%
+              </span>
+            </div>
+            <JobProgressBar startDate={job.start_date} endDate={job.end_date} size="md" showLabel={false} showExceededBadge={false} />
+            <div className="flex items-center justify-between mt-3 text-xs text-white/50">
+              <span>{formatDateForDisplay(job.start_date)}</span>
+              <span>{formatDateForDisplay(job.end_date)}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Info Sections */}
+        <div className="space-y-3">
+          {job.job_description && (
+            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+              <div className="flex items-center gap-2 text-xs text-white/50 mb-2">
+                <FileText className="w-3.5 h-3.5" />
+                Description
+              </div>
+              <p className="text-sm text-white/70 leading-relaxed">
+                {job.job_description}
+              </p>
+            </div>
+          )}
+
+          {job.job_specs && (
+            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+              <div className="flex items-center gap-2 text-xs text-white/50 mb-2">
+                <Wrench className="w-3.5 h-3.5" />
+                Specifications
+              </div>
+              <p className="text-sm text-white/70 leading-relaxed whitespace-pre-wrap">
+                {job.job_specs}
+              </p>
+            </div>
+          )}
+
+          {job.milestones && job.milestones.length > 0 && (
+            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2 text-xs text-white/50">
+                  <Target className="w-3.5 h-3.5" />
+                  Milestones
+                </div>
+                <span className="text-xs font-semibold text-emerald-400">
+                  {milestoneProgress.completed}/{milestoneProgress.total}
+                </span>
+              </div>
+              <div className="space-y-2">
+                {displayedMilestones?.map((milestone) => (
+                  <div
+                    key={milestone.id}
+                    className={cn(
+                      'flex items-center gap-3 py-2 px-3 rounded-lg text-sm',
+                      milestone.is_completed ? 'bg-emerald-500/10' : 'bg-white/5'
+                    )}
+                  >
+                    {milestone.is_completed ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                    ) : (
+                      <Circle className="w-4 h-4 text-white/30 flex-shrink-0" />
+                    )}
+                    <span className={cn(milestone.is_completed ? 'text-white/50 line-through' : 'text-white/80')}>
+                      {milestone.title}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              {job.milestones.length > 3 && (
+                <button
+                  onClick={() => setShowAllMilestones(!showAllMilestones)}
+                  className="mt-3 text-xs text-emerald-400 active:text-emerald-300 min-h-[44px] px-3 -mx-3 touch-manipulation"
+                >
+                  {showAllMilestones ? 'Show less' : `Show ${job.milestones.length - 3} more`}
+                </button>
+              )}
+            </div>
+          )}
+
+          {job.notes && (
+            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+              <div className="flex items-center gap-2 text-xs text-white/50 mb-2">
+                <ClipboardList className="w-3.5 h-3.5" />
+                Notes
+              </div>
+              <p className="text-sm text-white/60 leading-relaxed">
+                {job.notes}
+              </p>
+            </div>
+          )}
+        </div>
+        </div>
+
+        {showProgressForm && (
+          <JobProgressUpdateForm
+            job={job}
+            onSubmit={() => {
+              setShowProgressForm(false);
+              onJobUpdate();
+            }}
+            onCancel={() => setShowProgressForm(false)}
+          />
+        )}
+      </motion.div>
+    </motion.div>,
+    document.body
+  );
+});
+
+// ============================================================================
+// MAIN PAGE COMPONENT
+// ============================================================================
+
+function AssignedJobs() {
+  const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedJobId = searchParams.get('job');
+  const [activeCircuit, setActiveCircuit] = useState('All');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const {
+    assignedJobs,
+    loading,
+    error,
+    refetch,
+  } = useUserAssignedJobs(user?.id);
+
+  // Extract unique circuits
+  const circuits = useMemo(() => {
+    const circuitSet = new Set<string>();
+    assignedJobs.forEach(job => {
+      const circuit = job.circuit || job.job_location;
+      if (circuit) circuitSet.add(circuit);
+    });
+    return Array.from(circuitSet).sort();
+  }, [assignedJobs]);
+
+  // Filter jobs by circuit
+  const filteredJobs = useMemo(() => {
+    if (activeCircuit === 'All') return assignedJobs;
+    return assignedJobs.filter(job => (job.circuit || job.job_location) === activeCircuit);
+  }, [assignedJobs, activeCircuit]);
+
+  // Group jobs by job_group_id for stacked display
+  // Returns: { groups: JobGroup[], displayItems }
+  const { jobGroups, displayItems } = useMemo(() => {
+    const groupMap = new Map<string, JobProgressTracker[]>();
+    const ungrouped: JobProgressTracker[] = [];
+    
+    filteredJobs.forEach(job => {
+      if (job.job_group_id) {
+        const existing = groupMap.get(job.job_group_id) || [];
+        existing.push(job);
+        groupMap.set(job.job_group_id, existing);
+      } else {
+        ungrouped.push(job);
+      }
+    });
+    
+    const groups: JobGroup[] = Array.from(groupMap.entries()).map(([groupId, jobs]) => ({
+      groupId,
+      jobs,
+    }));
+    
+    // Create a unified display list with proper ordering
+    // Each item is either a group or an individual job
+    type DisplayItem = 
+      | { type: 'group'; group: JobGroup }
+      | { type: 'job'; job: JobProgressTracker };
+    
+    const items: DisplayItem[] = [];
+    
+    // Add groups first (sorted by first job's created_at)
+    groups.sort((a, b) => {
+      const aDate = new Date(a.jobs[0]?.created_at || 0).getTime();
+      const bDate = new Date(b.jobs[0]?.created_at || 0).getTime();
+      return bDate - aDate;
+    });
+    groups.forEach(group => items.push({ type: 'group', group }));
+    
+    // Add ungrouped jobs
+    ungrouped.forEach(job => items.push({ type: 'job', job }));
+    
+    return { jobGroups: groups, displayItems: items };
+  }, [filteredJobs]);
+
+  // For pagination, count groups as 1 item each
+  const totalDisplayItems = displayItems.length;
+  const totalPages = Math.max(1, Math.ceil(totalDisplayItems / JOBS_PER_PAGE));
+  const paginatedDisplayItems = useMemo(() => {
+    const start = (currentPage - 1) * JOBS_PER_PAGE;
+    return displayItems.slice(start, start + JOBS_PER_PAGE);
+  }, [displayItems, currentPage]);
+
+  // Find selected job
+  const selectedJob = useMemo(() => {
+    if (!selectedJobId) return null;
+    return assignedJobs.find(job => job.id === selectedJobId) || null;
+  }, [assignedJobs, selectedJobId]);
+
+  // Note: Removed auto-select since job details now show as overlay
+  // Users tap a job to open the detail modal
+
+  const handleSelectJob = useCallback((jobId: string) => {
+    setSearchParams({ job: jobId });
+  }, [setSearchParams]);
+
+  const handleCloseJobDetail = useCallback(() => {
+    setSearchParams({}, { replace: true });
+  }, [setSearchParams]);
+
+  const handleCircuitChange = useCallback((circuit: string) => {
+    setActiveCircuit(circuit);
+    setCurrentPage(1); // Reset to first page when filter changes
+    const jobsInCircuit = circuit === 'All' 
+      ? assignedJobs 
+      : assignedJobs.filter(j => (j.circuit || j.job_location) === circuit);
+    if (jobsInCircuit.length > 0 && !jobsInCircuit.find(j => j.id === selectedJobId)) {
+      setSearchParams({ job: jobsInCircuit[0].id }, { replace: true });
+    }
+  }, [assignedJobs, selectedJobId, setSearchParams]);
+
+  // Hero config
+  const heroConfig = useMemo<AdminHeroConfig>(() => ({
+    heading: 'Your Jobs',
+    subheading: 'View details and submit progress',
+    accentText: assignedJobs.length > 0 ? `${assignedJobs.length} Active` : undefined,
+    accentIcon: assignedJobs.length > 0 ? <Sparkles className="w-4 h-4 text-emerald-400" /> : undefined,
+    bgImage: 'radial-gradient(circle at 20% 20%, rgba(16,185,129,0.12), transparent 40%)',
+  }), [assignedJobs.length]);
+
+  const heroStats = useMemo<AdminStat[]>(() => {
+    const stackedCount = jobGroups.length;
+    return [
+      { label: 'Jobs', value: assignedJobs.length.toString(), helper: 'Assigned to you', trend: 'flat' },
+      { label: 'Circuits', value: circuits.length.toString(), helper: 'Locations', trend: 'flat' },
+      { label: 'Stacked', value: stackedCount.toString(), helper: 'Job groups', trend: 'flat' },
+    ];
+  }, [assignedJobs.length, circuits.length, jobGroups.length]);
+
+  return (
+    <DashboardLayout title="My Jobs">
+      <AdminPremiumScaffold hero={heroConfig} stats={heroStats} theme="emerald">
+        <div className="space-y-4">
+          {error && <ErrorState message={error} onRetry={refetch} />}
+
+          {loading && !error && (
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <JobCardSkeleton key={`skeleton-${i}`} />
+              ))}
+            </div>
+          )}
+
+          {!loading && !error && assignedJobs.length === 0 && <EmptyJobsState />}
+
+          {!loading && !error && assignedJobs.length > 0 && (
+            <div className="space-y-4">
+              {/* Circuit Filter */}
+              {circuits.length > 1 && (
+                <CircuitFilter
+                  circuits={circuits}
+                  activeCircuit={activeCircuit}
+                  onChange={handleCircuitChange}
+                />
+              )}
+
+              {/* Job List */}
+              <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-[#04150f]/95 via-[#041812]/90 to-[#03120c]/95 p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Briefcase className="w-4 h-4 text-emerald-400" />
+                    <span className="text-xs uppercase tracking-widest text-emerald-200/70 font-medium">
+                      Select Job
+                    </span>
+                  </div>
+                  <span className="text-xs text-white/40">
+                    {filteredJobs.length} job{filteredJobs.length !== 1 ? 's' : ''}
+                  </span>
+                </div>
+
+                {displayItems.length > 0 ? (
+                  <>
+                    <div className="space-y-2">
+                      {paginatedDisplayItems.map((item) => {
+                        if (item.type === 'group') {
+                          // Render stacked job card for grouped jobs
+                          return (
+                            <StackedJobCard
+                              key={`group-${item.group.groupId}`}
+                              jobs={item.group.jobs}
+                              onSelectJob={handleSelectJob}
+                              selectedJobId={selectedJobId}
+                            />
+                          );
+                        } else {
+                          // Render regular job item for ungrouped jobs
+                          return (
+                            <JobListItem
+                              key={item.job.id}
+                              job={item.job}
+                              isSelected={item.job.id === selectedJobId}
+                              onSelect={handleSelectJob}
+                            />
+                          );
+                        }
+                      })}
+                    </div>
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      totalItems={totalDisplayItems}
+                      pageSize={JOBS_PER_PAGE}
+                      onPrevious={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      onNext={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    />
+                  </>
+                ) : (
+                  <div className="py-8 text-center">
+                    <p className="text-sm text-white/50">No jobs in this circuit</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Job Detail Overlay Modal */}
+        <AnimatePresence mode="wait">
+          {selectedJob && (
+            <JobDetailPanel
+              key={selectedJob.id}
+              job={selectedJob}
+              onJobUpdate={refetch}
+              onClose={handleCloseJobDetail}
+            />
+          )}
+        </AnimatePresence>
+      </AdminPremiumScaffold>
+    </DashboardLayout>
+  );
+}
+
+export default memo(AssignedJobs);

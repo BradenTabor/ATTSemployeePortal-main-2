@@ -11,6 +11,9 @@ import {
   RefreshCw,
   Inbox,
   AlertTriangle,
+  Layers,
+  Briefcase,
+  ChevronDown,
 } from 'lucide-react';
 import { DashboardAvatar } from '../components/dashboard/DashboardAvatar';
 import { useAuth } from '../contexts/AuthContext';
@@ -24,12 +27,6 @@ import { ExpandableSection } from '../components/dashboard/ExpandableSection';
 import { QuickActionsFAB, type QuickActionLink } from '../components/dashboard/QuickActionsFAB';
 import { CompactJobCard } from '../components/jobs';
 import {
-  ExpandableScreen,
-  ExpandableScreenTrigger,
-  ExpandableScreenContent,
-} from '../components/ui/ExpandableScreen';
-import { JobDetailExpanded } from '../components/jobs/JobDetailExpanded';
-import {
   getDeviceCapabilities,
   getQualitySettings,
   scheduleIdleWork,
@@ -37,6 +34,12 @@ import {
   perfMeasure,
   initLongTaskObserver,
 } from '../lib/mobilePerf';
+import {
+  calculateJobProgress,
+  calculateSpanProgress,
+  getSpanProgressColors,
+} from '../lib/jobProgressUtils';
+import { cn } from '../lib/utils';
 import type { JobProgressTracker } from '../types/jobs';
 
 // Lazy-loaded components for code splitting
@@ -132,30 +135,30 @@ const ErrorState = memo(function ErrorState({ message, onRetry }: ErrorStateProp
 });
 
 // ============================================================================
-// EXPANDABLE JOB CARD - Memoized with stable props
+// NAVIGABLE JOB CARD - Navigates to Assigned Jobs page on click
 // ============================================================================
 
-interface ExpandableJobCardProps {
+interface NavigableJobCardProps {
   job: JobProgressTracker;
-  onJobUpdate: () => void;
 }
 
-const ExpandableJobCard = memo(
-  function ExpandableJobCard({ job, onJobUpdate }: ExpandableJobCardProps) {
+const NavigableJobCard = memo(
+  function NavigableJobCard({ job }: NavigableJobCardProps) {
+    const navigate = useNavigate();
+
+    const handleClick = useCallback(() => {
+      navigate(`/assigned-jobs?job=${job.id}`);
+    }, [navigate, job.id]);
+
     return (
-      <ExpandableScreen
-        layoutId={`job-card-${job.id}`}
-        triggerRadius="16px"
-        contentRadius="24px"
-        animationDuration={0.35}
+      <motion.div
+        whileHover={{ scale: 1.01 }}
+        whileTap={{ scale: 0.99 }}
+        onClick={handleClick}
+        className="cursor-pointer"
       >
-        <ExpandableScreenTrigger>
-          <CompactJobCard job={job} />
-        </ExpandableScreenTrigger>
-        <ExpandableScreenContent className="bg-gradient-to-br from-[#0d6e51] via-[#05291c] to-[#010604]">
-          <JobDetailExpanded job={job} onJobUpdate={onJobUpdate} />
-        </ExpandableScreenContent>
-      </ExpandableScreen>
+        <CompactJobCard job={job} />
+      </motion.div>
     );
   },
   // Custom comparison to prevent unnecessary re-renders
@@ -164,7 +167,6 @@ const ExpandableJobCard = memo(
     return (
       prevProps.job.id === nextProps.job.id &&
       prevProps.job.status === nextProps.job.status &&
-      prevProps.onJobUpdate === nextProps.onJobUpdate &&
       // Check for progress changes
       JSON.stringify(prevProps.job.progress_updates?.length) === 
         JSON.stringify(nextProps.job.progress_updates?.length) &&
@@ -185,6 +187,143 @@ interface AssignedJobsSectionProps {
   onRefetch: () => void;
 }
 
+// Stacked job card for dashboard
+const DashboardStackedCard = memo(function DashboardStackedCard({
+  jobs,
+}: {
+  jobs: JobProgressTracker[];
+}) {
+  const navigate = useNavigate();
+  const [isExpanded, setIsExpanded] = useState(false);
+  const primaryJob = jobs[0];
+
+  const handleJobClick = useCallback((jobId: string) => {
+    navigate(`/assigned-jobs?job=${jobId}`);
+  }, [navigate]);
+
+  return (
+    <motion.div
+      layout
+      className="relative rounded-2xl overflow-hidden"
+    >
+      {/* Stacked card shadows */}
+      {!isExpanded && jobs.length > 1 && (
+        <>
+          {jobs.length >= 3 && (
+            <div 
+              className="absolute inset-x-2 top-2 h-full rounded-2xl border border-emerald-500/10 bg-[#041510]/40"
+              style={{ transform: 'translateY(6px)' }}
+            />
+          )}
+          <div 
+            className="absolute inset-x-1 top-1 h-full rounded-2xl border border-emerald-500/15 bg-[#041510]/60"
+            style={{ transform: 'translateY(3px)' }}
+          />
+        </>
+      )}
+      
+      {/* Main card */}
+      <div className="relative rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-[#041510]/90 via-[#020d09]/95 to-[#010604] overflow-hidden">
+        {/* Header - always visible */}
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="w-full text-left p-3 md:p-4"
+          style={{ background: 'radial-gradient(circle at 50% 50%, rgba(5, 77, 53, 0.6) 0%, rgba(10, 10, 10, 1) 100%)' }}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30">
+                  <Layers className="w-3 h-3 text-emerald-400" />
+                  <span className="text-xs font-bold text-emerald-300">{jobs.length}</span>
+                </div>
+                <span className="text-[10px] text-white/40 uppercase tracking-wider">Stacked</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Briefcase className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                <span className="text-sm font-semibold text-white truncate">{primaryJob.job_name}</span>
+                <span className="text-xs text-white/40">+{jobs.length - 1}</span>
+              </div>
+            </div>
+            <motion.div
+              animate={{ rotate: isExpanded ? 180 : 0 }}
+              className="p-1.5 rounded-lg bg-white/5"
+            >
+              <ChevronDown className="w-4 h-4 text-white/50" />
+            </motion.div>
+          </div>
+        </button>
+        
+        {/* Expanded content */}
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            className="border-t border-white/10 p-3 space-y-2"
+          >
+            {jobs.map((job) => {
+              // Calculate progress for this job
+              const isSpanBased = job.tracking_type === 'job_progress';
+              let progressPercent = 0;
+              let progressColors = null;
+              
+              if (isSpanBased) {
+                const progressUpdates = job.progress_updates || [];
+                const totalSpans = progressUpdates.reduce((sum, u) => sum + (u.spans_completed || 0), 0);
+                const totalFeet = progressUpdates.reduce((sum, u) => sum + (u.total_feet_completed || 0), 0);
+                const spanProgress = calculateSpanProgress(
+                  totalSpans,
+                  totalFeet,
+                  job.estimated_total_spans,
+                  job.estimated_total_feet,
+                  job.span_progress_metric || 'spans'
+                );
+                progressPercent = spanProgress.percentage;
+                progressColors = getSpanProgressColors(progressPercent);
+              } else {
+                const timelineProgress = calculateJobProgress(job.start_date, job.end_date);
+                progressPercent = timelineProgress.percentage;
+              }
+              
+              const isExceeded = !isSpanBased && progressPercent > 100;
+              
+              return (
+                <button
+                  key={job.id}
+                  onClick={() => handleJobClick(job.id)}
+                  className="w-full text-left p-2.5 rounded-xl border border-emerald-500/20 bg-[#041510]/50 hover:border-emerald-400/40 transition-colors"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <Briefcase 
+                        className="w-3 h-3 flex-shrink-0"
+                        style={{ color: isSpanBased ? 'rgb(231, 114, 4)' : 'rgb(0, 219, 77)' }}
+                      />
+                      <span className="text-sm text-white truncate">{job.job_name}</span>
+                    </div>
+                    <div
+                      className={cn(
+                        'flex-shrink-0 px-2 py-0.5 rounded-md text-xs font-bold tabular-nums',
+                        isSpanBased && progressColors
+                          ? cn(progressColors.bg, 'border', progressColors.border, progressColors.text)
+                          : isExceeded
+                            ? 'bg-red-500/15 border border-red-500/30 text-red-400'
+                            : 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400'
+                      )}
+                    >
+                      {progressPercent}%
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </motion.div>
+        )}
+      </div>
+    </motion.div>
+  );
+});
+
 const AssignedJobsSection = memo(function AssignedJobsSection({
   jobs,
   loading,
@@ -193,29 +332,57 @@ const AssignedJobsSection = memo(function AssignedJobsSection({
 }: AssignedJobsSectionProps) {
   const quality = getQualitySettings();
   const [visibleCount, setVisibleCount] = useState(5);
-  const hasMoreJobs = jobs.length > visibleCount;
+
+  // Group jobs by job_group_id
+  type DisplayItem = 
+    | { type: 'group'; groupId: string; jobs: JobProgressTracker[] }
+    | { type: 'job'; job: JobProgressTracker };
+  
+  const displayItems = useMemo<DisplayItem[]>(() => {
+    const groupMap = new Map<string, JobProgressTracker[]>();
+    const ungrouped: JobProgressTracker[] = [];
+    
+    jobs.forEach(job => {
+      if (job.job_group_id) {
+        const existing = groupMap.get(job.job_group_id) || [];
+        existing.push(job);
+        groupMap.set(job.job_group_id, existing);
+      } else {
+        ungrouped.push(job);
+      }
+    });
+    
+    const items: DisplayItem[] = [];
+    groupMap.forEach((groupJobs, groupId) => {
+      items.push({ type: 'group', groupId, jobs: groupJobs });
+    });
+    ungrouped.forEach(job => {
+      items.push({ type: 'job', job });
+    });
+    
+    return items;
+  }, [jobs]);
+
+  const hasMoreItems = displayItems.length > visibleCount;
 
   // Progressive rendering: render first batch immediately, rest on idle
   useEffect(() => {
-    if (jobs.length <= 5) {
-      // Schedule state update asynchronously to avoid synchronous setState in effect
-      queueMicrotask(() => setVisibleCount(jobs.length));
+    if (displayItems.length <= 5) {
+      queueMicrotask(() => setVisibleCount(displayItems.length));
       return;
     }
 
-    // Reset to initial batch
     queueMicrotask(() => setVisibleCount(5));
 
-    // Schedule remaining items during idle time
     const cancel = scheduleIdleWork(() => {
-      setVisibleCount(jobs.length);
+      setVisibleCount(displayItems.length);
     }, { timeout: 200 });
 
     return cancel;
-  }, [jobs.length]);
+  }, [displayItems.length]);
 
   // Virtualization threshold check
-  const shouldVirtualize = jobs.length > quality.virtualizationThreshold;
+  const shouldVirtualize = displayItems.length > quality.virtualizationThreshold;
 
   if (loading) {
     return (
@@ -235,29 +402,40 @@ const AssignedJobsSection = memo(function AssignedJobsSection({
     return <EmptyJobsState />;
   }
 
-  // Render visible jobs (progressive or virtualized)
-  const visibleJobs = shouldVirtualize ? jobs.slice(0, visibleCount) : jobs;
+  // Render visible items (progressive or virtualized)
+  const visibleItems = shouldVirtualize ? displayItems.slice(0, visibleCount) : displayItems;
 
   return (
     <div className="space-y-3">
-      {visibleJobs.map((job) => (
-        <ExpandableJobCard key={job.id} job={job} onJobUpdate={onRefetch} />
-      ))}
+      {visibleItems.map((item) => {
+        if (item.type === 'group') {
+          return (
+            <DashboardStackedCard 
+              key={`group-${item.groupId}`} 
+              jobs={item.jobs} 
+            />
+          );
+        } else {
+          return (
+            <NavigableJobCard key={item.job.id} job={item.job} />
+          );
+        }
+      })}
       
       {/* Show loading indicator for remaining items */}
-      {hasMoreJobs && !shouldVirtualize && (
+      {hasMoreItems && !shouldVirtualize && (
         <div className="text-center py-2">
           <span className="text-xs text-white/40">Loading more...</span>
         </div>
       )}
       
       {/* Virtualization notice */}
-      {shouldVirtualize && jobs.length > visibleCount && (
+      {shouldVirtualize && displayItems.length > visibleCount && (
         <button
-          onClick={() => setVisibleCount((prev) => Math.min(prev + 10, jobs.length))}
+          onClick={() => setVisibleCount((prev) => Math.min(prev + 10, displayItems.length))}
           className="w-full py-2 text-center text-xs text-emerald-400/70 hover:text-emerald-400 transition-colors min-h-[44px]"
         >
-          Show more ({jobs.length - visibleCount} remaining)
+          Show more ({displayItems.length - visibleCount} remaining)
         </button>
       )}
     </div>

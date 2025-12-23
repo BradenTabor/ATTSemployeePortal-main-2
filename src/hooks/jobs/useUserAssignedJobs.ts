@@ -75,6 +75,7 @@ export function useUserAssignedJobs(userId: string | undefined) {
             estimated_total_spans,
             estimated_total_feet,
             span_progress_metric,
+            job_group_id,
             milestones:job_milestones(
               id,
               job_id,

@@ -105,6 +105,8 @@ export interface JobProgressTracker {
   estimated_total_spans?: number | null;
   estimated_total_feet?: number | null;
   span_progress_metric?: SpanProgressMetric;
+  // Job grouping/stacking - jobs with same group_id display as stacked cards
+  job_group_id?: string | null;
   // Joined data
   milestones?: JobMilestone[];
   crew_assignments?: JobCrewAssignment[];
@@ -244,5 +246,20 @@ export function isJobProgressTracking(
   job: JobProgressTracker
 ): job is JobProgressTracker & { tracking_type: 'job_progress'; progress_updates: JobProgressUpdate[] } {
   return job.tracking_type === 'job_progress';
+}
+
+/**
+ * A group of stacked jobs for UI display
+ */
+export interface JobGroup {
+  groupId: string;
+  jobs: JobProgressTracker[];
+}
+
+/**
+ * Helper to check if a job is part of a group
+ */
+export function isJobGrouped(job: JobProgressTracker): boolean {
+  return !!job.job_group_id;
 }
 
