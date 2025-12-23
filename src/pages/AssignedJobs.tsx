@@ -432,14 +432,14 @@ const JobDetailPanel = memo(function JobDetailPanel({
     ? job.milestones 
     : job.milestones?.slice(0, 3);
 
-  // Use portal to render at document body level to avoid parent container issues
+  // Use portal to render at document body level - CENTERED modal
   return createPortal(
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-black/85 backdrop-blur-md"
+      className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-md"
       style={{ 
         position: 'fixed',
         top: 0,
@@ -448,21 +448,26 @@ const JobDetailPanel = memo(function JobDetailPanel({
         bottom: 0,
         width: '100vw',
         height: '100dvh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '12px',
       }}
       onClick={onClose}
     >
       <motion.div
-        initial={{ opacity: 0, y: 50, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 50, scale: 0.98 }}
-        transition={{ duration: 0.25, ease: [0.25, 0.8, 0.25, 1] }}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.2, ease: [0.25, 0.8, 0.25, 1] }}
         onClick={(e) => e.stopPropagation()}
         className={cn(
-          'w-full sm:max-w-lg max-h-[92vh] sm:max-h-[85vh] overflow-hidden flex flex-col',
-          'rounded-t-[1.75rem] sm:rounded-2xl border shadow-2xl',
+          'w-full max-w-md sm:max-w-lg overflow-hidden flex flex-col',
+          'rounded-2xl border shadow-2xl',
           isSpanBased ? 'border-emerald-500/30' : isExceeded ? 'border-red-500/30' : 'border-emerald-500/30'
         )}
         style={{
+          maxHeight: 'calc(100dvh - 48px)',
           background: isSpanBased
             ? 'linear-gradient(135deg, rgba(4, 21, 15, 0.99) 0%, rgba(4, 24, 18, 0.98) 50%, rgba(3, 18, 12, 0.99) 100%)'
             : isExceeded
@@ -470,21 +475,16 @@ const JobDetailPanel = memo(function JobDetailPanel({
               : 'linear-gradient(to bottom right, #04150f, #041812, #03120c)',
         }}
       >
-        {/* Mobile drag handle indicator */}
-        <div className="flex justify-center pt-3 pb-1 sm:hidden touch-manipulation" onClick={onClose}>
-          <div className="w-10 h-1.5 rounded-full bg-white/20" />
-        </div>
-        
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto overscroll-contain">
-          <div className="p-4 sm:p-5 pb-safe">
+          <div className="p-3.5 sm:p-5">
             {/* Close Button - positioned at top right */}
             <div className="flex justify-end mb-2">
               <button
                 onClick={onClose}
-                className="p-2.5 rounded-xl bg-white/5 border border-white/10 active:bg-white/15 active:border-white/25 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation"
+                className="p-2 sm:p-2.5 rounded-xl bg-white/5 border border-white/10 active:bg-white/15 active:border-white/25 transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center touch-manipulation"
               >
-                <X className="w-5 h-5 text-white/60" />
+                <X className="w-4 h-4 sm:w-5 sm:h-5 text-white/60" />
               </button>
             </div>
           
