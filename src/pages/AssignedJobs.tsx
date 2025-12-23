@@ -80,18 +80,18 @@ const statusConfig: typeof JOB_STATUS_CONFIG = {
 };
 
 // ============================================================================
-// SKELETON LOADERS
+// SKELETON LOADERS - Mobile-optimized
 // ============================================================================
 
 const JobCardSkeleton = memo(function JobCardSkeleton() {
   return (
-    <div className="rounded-xl border border-emerald-500/20 bg-[#041510]/80 p-4 animate-pulse min-h-[56px]">
-      <div className="flex items-center justify-between gap-3">
+    <div className="rounded-xl border border-emerald-500/20 bg-[#041510]/80 p-3 sm:p-4 animate-pulse min-h-[60px]">
+      <div className="flex items-center justify-between gap-2 sm:gap-3">
         <div className="flex-1">
-          <div className="h-4 w-32 bg-white/10 rounded mb-1.5" />
-          <div className="h-3 w-20 bg-white/5 rounded" />
+          <div className="h-4 w-28 sm:w-32 bg-white/10 rounded mb-1.5" />
+          <div className="h-3 w-16 sm:w-20 bg-white/5 rounded" />
         </div>
-        <div className="h-7 w-12 bg-emerald-500/10 rounded-lg" />
+        <div className="h-6 sm:h-7 w-10 sm:w-12 bg-emerald-500/10 rounded-lg" />
       </div>
     </div>
   );
@@ -99,24 +99,24 @@ const JobCardSkeleton = memo(function JobCardSkeleton() {
 
 
 // ============================================================================
-// EMPTY & ERROR STATES
+// EMPTY & ERROR STATES - Mobile-friendly
 // ============================================================================
 
 const EmptyJobsState = memo(function EmptyJobsState() {
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+    <div className="flex flex-col items-center justify-center py-12 sm:py-16 px-4 text-center">
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 flex items-center justify-center mb-5 border border-emerald-500/30"
+        className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 flex items-center justify-center mb-4 sm:mb-5 border border-emerald-500/30"
       >
-        <Inbox className="w-10 h-10 text-emerald-400/60" />
+        <Inbox className="w-8 h-8 sm:w-10 sm:h-10 text-emerald-400/60" />
       </motion.div>
       <motion.p
         initial={{ y: 10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.1 }}
-        className="text-lg text-white/70 font-semibold"
+        className="text-base sm:text-lg text-white/70 font-semibold"
       >
         No Active Assignments
       </motion.p>
@@ -124,7 +124,7 @@ const EmptyJobsState = memo(function EmptyJobsState() {
         initial={{ y: 10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
-        className="text-sm text-white/40 mt-2 max-w-xs"
+        className="text-sm text-white/40 mt-1.5 sm:mt-2 max-w-[280px] sm:max-w-xs"
       >
         Jobs assigned to you will appear here. Check back later!
       </motion.p>
@@ -139,16 +139,16 @@ interface ErrorStateProps {
 
 const ErrorState = memo(function ErrorState({ message, onRetry }: ErrorStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-      <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-4 border border-red-500/30">
-        <AlertTriangle className="w-8 h-8 text-red-400" />
+    <div className="flex flex-col items-center justify-center py-10 sm:py-12 px-4 text-center">
+      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-3 sm:mb-4 border border-red-500/30">
+        <AlertTriangle className="w-7 h-7 sm:w-8 sm:h-8 text-red-400" />
       </div>
-      <p className="text-base text-red-400 font-semibold">{message}</p>
+      <p className="text-sm sm:text-base text-red-400 font-semibold max-w-[280px] sm:max-w-none">{message}</p>
       {onRetry && (
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={onRetry}
-          className="mt-4 inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm font-medium min-h-[48px] touch-manipulation active:bg-red-500/20"
+          className="mt-4 inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm font-medium min-h-[48px] touch-manipulation active:bg-red-500/20 active:brightness-110"
         >
           <RefreshCw className="w-4 h-4" />
           Try Again
@@ -159,7 +159,7 @@ const ErrorState = memo(function ErrorState({ message, onRetry }: ErrorStateProp
 });
 
 // ============================================================================
-// CIRCUIT FILTER - Mobile-optimized horizontal scroll
+// CIRCUIT FILTER - Ultra-compact for very small screens
 // ============================================================================
 
 interface CircuitFilterProps {
@@ -176,20 +176,21 @@ const CircuitFilter = memo(function CircuitFilter({
   if (circuits.length <= 1) return null;
 
   return (
-    <div className="overflow-x-auto -mx-1 px-1 pb-2 scrollbar-hide">
-      <div className="flex gap-2 min-w-max">
+    <div className="overflow-x-auto -mx-3 sm:-mx-1 px-3 sm:px-1 pb-1.5 scrollbar-hide overscroll-x-contain snap-x snap-mandatory">
+      <div className="flex gap-1.5 sm:gap-2.5 min-w-max">
         <button
           type="button"
           onClick={() => onChange('All')}
           className={cn(
-            'flex items-center gap-1.5 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all min-h-[44px] touch-manipulation whitespace-nowrap',
+            'flex items-center gap-1 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl border text-[11px] sm:text-sm font-medium transition-all min-h-[40px] sm:min-h-[44px] touch-manipulation whitespace-nowrap snap-start',
+            'active:scale-[0.97] active:brightness-110',
             activeCircuit === 'All'
-              ? 'bg-emerald-500/25 text-emerald-300 border-emerald-500/50'
-              : 'bg-white/5 text-white/60 border-white/10 active:bg-white/10'
+              ? 'bg-emerald-500/25 text-emerald-300 border-emerald-500/50 shadow-lg shadow-emerald-500/10'
+              : 'bg-white/5 text-white/60 border-white/10 active:bg-white/15'
           )}
         >
-          <Sparkles className="w-3.5 h-3.5" />
-          All Jobs
+          <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+          All
         </button>
         {circuits.map((circuit) => (
           <button
@@ -197,14 +198,15 @@ const CircuitFilter = memo(function CircuitFilter({
             type="button"
             onClick={() => onChange(circuit)}
             className={cn(
-              'flex items-center gap-1.5 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all min-h-[44px] touch-manipulation whitespace-nowrap',
+              'flex items-center gap-1 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl border text-[11px] sm:text-sm font-medium transition-all min-h-[40px] sm:min-h-[44px] touch-manipulation whitespace-nowrap snap-start',
+              'active:scale-[0.97] active:brightness-110',
               activeCircuit === circuit
-                ? 'bg-emerald-500/25 text-emerald-300 border-emerald-500/50'
-                : 'bg-white/5 text-white/60 border-white/10 active:bg-white/10'
+                ? 'bg-emerald-500/25 text-emerald-300 border-emerald-500/50 shadow-lg shadow-emerald-500/10'
+                : 'bg-white/5 text-white/60 border-white/10 active:bg-white/15'
             )}
           >
-            <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
-            {circuit}
+            <MapPin className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
+            <span className="max-w-[80px] sm:max-w-none truncate">{circuit}</span>
           </button>
         ))}
       </div>
@@ -213,7 +215,7 @@ const CircuitFilter = memo(function CircuitFilter({
 });
 
 // ============================================================================
-// PAGINATION - Large touch-friendly buttons
+// PAGINATION - Mobile-first with large touch targets
 // ============================================================================
 
 interface PaginationProps {
@@ -239,34 +241,36 @@ const Pagination = memo(function Pagination({
   const endItem = Math.min(currentPage * pageSize, totalItems);
 
   return (
-    <div className="flex items-center justify-between pt-4 mt-3 border-t border-white/10">
-      <span className="text-xs text-white/50">
+    <div className="flex items-center justify-between pt-3 sm:pt-4 mt-2 sm:mt-3 border-t border-white/10">
+      <span className="text-[11px] sm:text-xs text-white/50">
         {startItem}–{endItem} of {totalItems}
       </span>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 sm:gap-2">
         <button
           onClick={onPrevious}
           disabled={currentPage === 1}
           className={cn(
-            'p-2.5 rounded-xl border transition-all min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation',
+            'p-2 sm:p-2.5 rounded-xl border transition-all min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation',
+            'active:scale-[0.95]',
             currentPage === 1
               ? 'border-white/5 text-white/20 cursor-not-allowed'
-              : 'border-white/20 text-white/70 active:bg-white/10'
+              : 'border-white/20 text-white/70 active:bg-white/15 active:border-white/30'
           )}
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <span className="text-sm text-white/70 px-2 tabular-nums font-medium min-w-[48px] text-center">
+        <span className="text-xs sm:text-sm text-white/70 px-1.5 sm:px-2 tabular-nums font-medium min-w-[40px] sm:min-w-[48px] text-center">
           {currentPage}/{totalPages}
         </span>
         <button
           onClick={onNext}
           disabled={currentPage === totalPages}
           className={cn(
-            'p-2.5 rounded-xl border transition-all min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation',
+            'p-2 sm:p-2.5 rounded-xl border transition-all min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation',
+            'active:scale-[0.95]',
             currentPage === totalPages
               ? 'border-white/5 text-white/20 cursor-not-allowed'
-              : 'border-white/20 text-white/70 active:bg-white/10'
+              : 'border-white/20 text-white/70 active:bg-white/15 active:border-white/30'
           )}
         >
           <ChevronRight className="w-5 h-5" />
@@ -277,7 +281,7 @@ const Pagination = memo(function Pagination({
 });
 
 // ============================================================================
-// JOB LIST ITEM - Touch-friendly with min 48px height
+// JOB LIST ITEM - Ultra-compact for very small screens
 // ============================================================================
 
 interface JobListItemProps {
@@ -322,8 +326,8 @@ const JobListItem = memo(function JobListItem({
     <button
       onClick={() => onSelect(job.id)}
       className={cn(
-        'w-full text-left rounded-xl border p-4 transition-all min-h-[56px] touch-manipulation',
-        'bg-gradient-to-br active:scale-[0.99]',
+        'w-full text-left rounded-lg sm:rounded-xl border p-2.5 sm:p-3 transition-all min-h-[52px] touch-manipulation overflow-hidden',
+        'bg-gradient-to-br active:scale-[0.98] active:brightness-110',
         isSelected
           ? 'border-emerald-400/60 from-[#0a2a1f]/90 via-[#041812]/95 to-[#03120c]/90 shadow-lg shadow-emerald-500/20 ring-2 ring-emerald-400/40'
           : isSpanBased
@@ -333,27 +337,27 @@ const JobListItem = memo(function JobListItem({
               : 'border-emerald-500/20 from-[#041510]/80 via-[#020d09]/90 to-[#010604] active:border-emerald-400/40'
       )}
     >
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-1.5 sm:gap-2">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <Briefcase
               className={cn(
-                'w-4 h-4 flex-shrink-0',
+                'w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0',
                 isSelected ? 'text-emerald-300' : isExceeded && !isSpanBased ? 'text-red-400' : ''
               )}
               style={{
                 color: !isSelected && (isSpanBased ? 'rgb(231, 114, 4)' : isExceeded ? undefined : 'rgb(0, 219, 77)')
               }}
             />
-            <h4 className="font-semibold text-sm text-white truncate">
+            <h4 className="font-semibold text-[12px] sm:text-sm text-white truncate leading-snug flex-1 min-w-0">
               {job.job_name}
             </h4>
           </div>
           {(job.job_location || (isSpanBased && spanProgress)) && (
-            <div className="flex items-center gap-2 mt-1 ml-6 text-xs text-white/50">
+            <div className="flex items-center gap-1 mt-0.5 ml-4 sm:ml-5 text-[10px] sm:text-[11px] text-white/50">
               {job.job_location && <span className="truncate">{job.job_location}</span>}
               {isSpanBased && spanProgress && (
-                <span className="text-white/40">
+                <span className="text-white/40 flex-shrink-0">
                   • {spanProgress.completed}/{spanProgress.total > 0 ? spanProgress.total : '?'}
                 </span>
               )}
@@ -363,7 +367,7 @@ const JobListItem = memo(function JobListItem({
 
         <div
           className={cn(
-            'flex-shrink-0 px-2.5 py-1 rounded-lg text-sm font-bold tabular-nums',
+            'flex-shrink-0 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs font-bold tabular-nums',
             isSpanBased && spanProgressColors
               ? cn(spanProgressColors.bg, 'border', spanProgressColors.border, spanProgressColors.text)
               : isExceeded
@@ -379,7 +383,7 @@ const JobListItem = memo(function JobListItem({
 });
 
 // ============================================================================
-// JOB DETAIL PANEL - Compact and mobile-friendly
+// JOB DETAIL PANEL - Mobile-first full-screen design
 // ============================================================================
 
 interface JobDetailPanelProps {
@@ -435,7 +439,7 @@ const JobDetailPanel = memo(function JobDetailPanel({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-black/85 backdrop-blur-md"
       style={{ 
         position: 'fixed',
         top: 0,
@@ -443,38 +447,46 @@ const JobDetailPanel = memo(function JobDetailPanel({
         right: 0,
         bottom: 0,
         width: '100vw',
-        height: '100vh',
+        height: '100dvh',
       }}
       onClick={onClose}
     >
       <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        transition={{ duration: 0.2 }}
+        initial={{ opacity: 0, y: 50, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 50, scale: 0.98 }}
+        transition={{ duration: 0.25, ease: [0.25, 0.8, 0.25, 1] }}
         onClick={(e) => e.stopPropagation()}
         className={cn(
-          'w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border shadow-2xl',
+          'w-full sm:max-w-lg max-h-[92vh] sm:max-h-[85vh] overflow-hidden flex flex-col',
+          'rounded-t-[1.75rem] sm:rounded-2xl border shadow-2xl',
           isSpanBased ? 'border-emerald-500/30' : isExceeded ? 'border-red-500/30' : 'border-emerald-500/30'
         )}
         style={{
           background: isSpanBased
-            ? 'linear-gradient(135deg, rgba(4, 21, 15, 0.98) 0%, rgba(4, 24, 18, 0.95) 50%, rgba(3, 18, 12, 0.98) 100%)'
+            ? 'linear-gradient(135deg, rgba(4, 21, 15, 0.99) 0%, rgba(4, 24, 18, 0.98) 50%, rgba(3, 18, 12, 0.99) 100%)'
             : isExceeded
               ? 'linear-gradient(to bottom right, #1a0808, #0d0606, #050303)'
               : 'linear-gradient(to bottom right, #04150f, #041812, #03120c)',
         }}
       >
-        <div className="p-4 sm:p-5">
-          {/* Close Button */}
-          <div className="flex justify-end mb-2">
-            <button
-              onClick={onClose}
-              className="p-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-colors"
-            >
-              <X className="w-5 h-5 text-white/60" />
-            </button>
-          </div>
+        {/* Mobile drag handle indicator */}
+        <div className="flex justify-center pt-3 pb-1 sm:hidden touch-manipulation" onClick={onClose}>
+          <div className="w-10 h-1.5 rounded-full bg-white/20" />
+        </div>
+        
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto overscroll-contain">
+          <div className="p-4 sm:p-5 pb-safe">
+            {/* Close Button - positioned at top right */}
+            <div className="flex justify-end mb-2">
+              <button
+                onClick={onClose}
+                className="p-2.5 rounded-xl bg-white/5 border border-white/10 active:bg-white/15 active:border-white/25 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation"
+              >
+                <X className="w-5 h-5 text-white/60" />
+              </button>
+            </div>
           
           {/* Header */}
           <div className="mb-4">
@@ -662,6 +674,7 @@ const JobDetailPanel = memo(function JobDetailPanel({
             </div>
           )}
         </div>
+          </div>
         </div>
 
         {showProgressForm && (
@@ -828,7 +841,7 @@ function AssignedJobs() {
           {!loading && !error && assignedJobs.length === 0 && <EmptyJobsState />}
 
           {!loading && !error && assignedJobs.length > 0 && (
-            <div className="space-y-4">
+            <div className="space-y-2.5 sm:space-y-4">
               {/* Circuit Filter */}
               {circuits.length > 1 && (
                 <CircuitFilter
@@ -838,23 +851,23 @@ function AssignedJobs() {
                 />
               )}
 
-              {/* Job List */}
-              <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-[#04150f]/95 via-[#041812]/90 to-[#03120c]/95 p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <Briefcase className="w-4 h-4 text-emerald-400" />
-                    <span className="text-xs uppercase tracking-widest text-emerald-200/70 font-medium">
+              {/* Job List Container - Ultra compact on small screens */}
+              <div className="rounded-lg sm:rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-[#04150f]/95 via-[#041812]/90 to-[#03120c]/95 p-2.5 sm:p-4">
+                <div className="flex items-center justify-between mb-2 sm:mb-3">
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    <Briefcase className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-400" />
+                    <span className="text-[9px] sm:text-xs uppercase tracking-widest text-emerald-200/70 font-medium">
                       Select Job
                     </span>
                   </div>
-                  <span className="text-xs text-white/40">
+                  <span className="text-[9px] sm:text-xs text-white/40">
                     {filteredJobs.length} job{filteredJobs.length !== 1 ? 's' : ''}
                   </span>
                 </div>
 
                 {displayItems.length > 0 ? (
                   <>
-                    <div className="space-y-2">
+                    <div className="space-y-2 sm:space-y-2.5">
                       {paginatedDisplayItems.map((item) => {
                         if (item.type === 'group') {
                           // Render stacked job card for grouped jobs
@@ -889,7 +902,7 @@ function AssignedJobs() {
                     />
                   </>
                 ) : (
-                  <div className="py-8 text-center">
+                  <div className="py-10 sm:py-8 text-center">
                     <p className="text-sm text-white/50">No jobs in this circuit</p>
                   </div>
                 )}

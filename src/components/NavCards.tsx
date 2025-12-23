@@ -6,6 +6,7 @@ import {
   Shield,
   FileSearch,
   Wrench,
+  Briefcase,
 } from "lucide-react";
 import BrandedNavCard from "./BrandedNavCard";
 import { motion } from "framer-motion";
@@ -13,6 +14,12 @@ import { useMemo } from "react";
 import { getDeviceCapabilities } from "../lib/mobilePerf";
 
 const userPages = [
+  {
+    label: "My Jobs",
+    path: "/assigned-jobs",
+    icon: Briefcase,
+    description: "View and track your assigned work"
+  },
   {
     label: "Company Forms",
     path: "/forms",
