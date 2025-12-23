@@ -148,21 +148,21 @@ export const scaleInBounce: Variants = {
   },
 };
 
-/** Page transition variant for route changes */
+/** Page transition variant for route changes - optimized for speed */
 export const pageTransition: Variants = {
   initial: { opacity: 0 },
   animate: { 
     opacity: 1,
     transition: {
-      duration: 0.3,
-      ease: 'easeInOut',
+      duration: 0.15,
+      ease: 'easeOut',
     },
   },
   exit: { 
     opacity: 0,
     transition: {
-      duration: 0.2,
-      ease: 'easeInOut',
+      duration: 0.1,
+      ease: 'easeIn',
     },
   },
 };

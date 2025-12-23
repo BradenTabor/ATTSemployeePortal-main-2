@@ -24,6 +24,62 @@ interface AuthContextType {
   setSession: (session: Session | null) => void;
 }
 
+// Session storage keys for profile caching
+const PROFILE_CACHE_KEY = 'atts_user_profile';
+const PROFILE_CACHE_EXPIRY_KEY = 'atts_user_profile_expiry';
+const PROFILE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes TTL
+
+interface CachedProfile {
+  userId: string;
+  role: UserRole;
+  fullName: string | null;
+}
+
+// Helper functions for profile caching
+function getCachedProfile(userId: string): CachedProfile | null {
+  try {
+    const expiryStr = sessionStorage.getItem(PROFILE_CACHE_EXPIRY_KEY);
+    const cachedStr = sessionStorage.getItem(PROFILE_CACHE_KEY);
+    
+    if (!expiryStr || !cachedStr) return null;
+    
+    const expiry = parseInt(expiryStr, 10);
+    if (Date.now() > expiry) {
+      // Cache expired
+      sessionStorage.removeItem(PROFILE_CACHE_KEY);
+      sessionStorage.removeItem(PROFILE_CACHE_EXPIRY_KEY);
+      return null;
+    }
+    
+    const cached = JSON.parse(cachedStr) as CachedProfile;
+    // Ensure cached profile matches current user
+    if (cached.userId !== userId) return null;
+    
+    return cached;
+  } catch {
+    return null;
+  }
+}
+
+function setCachedProfile(userId: string, role: UserRole, fullName: string | null): void {
+  try {
+    const profile: CachedProfile = { userId, role, fullName };
+    sessionStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(profile));
+    sessionStorage.setItem(PROFILE_CACHE_EXPIRY_KEY, String(Date.now() + PROFILE_CACHE_TTL));
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+function clearCachedProfile(): void {
+  try {
+    sessionStorage.removeItem(PROFILE_CACHE_KEY);
+    sessionStorage.removeItem(PROFILE_CACHE_EXPIRY_KEY);
+  } catch {
+    // Ignore storage errors
+  }
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -67,6 +123,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         logger.info(`[AuthContext] Fetching profile for user_id: ${userId}`);
         
+        // Check sessionStorage cache first for instant restore
+        const cached = getCachedProfile(userId);
+        if (cached) {
+          logger.info(`[AuthContext] Using cached profile for ${userId}`, { role: cached.role, fullName: cached.fullName });
+          return { role: cached.role, fullName: cached.fullName };
+        }
+        
         const timeoutSentinel = Symbol('profile-timeout');
         let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
@@ -83,7 +146,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return response;
           }),
           new Promise<typeof timeoutSentinel>((resolve) => {
-            timeoutId = setTimeout(() => resolve(timeoutSentinel), 5000);
+            // Reduced timeout from 5000ms to 2000ms for faster fallback
+            timeoutId = setTimeout(() => resolve(timeoutSentinel), 2000);
           }),
         ]);
 
@@ -124,6 +188,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (rawRole === 'admin' || rawRole === 'mechanic' || rawRole === 'employee' || rawRole === 'manager') {
           normalizedRole = rawRole;
         }
+
+        // Cache the profile in sessionStorage for instant restore on reload
+        setCachedProfile(userId, normalizedRole, rawFullName || null);
 
         return {
           role: normalizedRole,
@@ -180,9 +247,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setIsMechanic(isMechanicUser);
             setHasMechanicAccess(hasMechanicAccessUser);
           } else {
-            // No session - clear everything including last known values
+            // No session - clear everything including last known values and cache
             lastKnownRoleRef.current = null;
             lastKnownFullNameRef.current = null;
+            clearCachedProfile();
             setSessionState(null);
             setUser(null);
             setRole(null);
@@ -221,9 +289,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === 'SIGNED_OUT') {
         logger.info('[AuthContext] User signed out - cleaning up realtime channels');
         await cleanupRealtime();
-        // Clear last known values on sign out
+        // Clear last known values and cache on sign out
         lastKnownRoleRef.current = null;
         lastKnownFullNameRef.current = null;
+        clearCachedProfile();
       }
 
       if (mounted) {
@@ -266,9 +335,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             logger.info(`[AuthContext] User signed in with role: ${finalRole}`);
           }
         } else {
-          // No session - clear everything including last known values
+          // No session - clear everything including last known values and cache
           lastKnownRoleRef.current = null;
           lastKnownFullNameRef.current = null;
+          clearCachedProfile();
           setSessionState(null);
           setUser(null);
           setRole(null);
@@ -312,9 +382,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw error;
       }
 
-      // Clear last known values on sign out
+      // Clear last known values and cache on sign out
       lastKnownRoleRef.current = null;
       lastKnownFullNameRef.current = null;
+      clearCachedProfile();
       setUser(null);
       setSessionState(null);
       setRole(null);

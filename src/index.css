@@ -49,9 +49,20 @@
 }
 
 @layer base {
-  /* Global font family */
-  html, body {
+  /* Global font family and smooth scrolling */
+  html {
     font-family: Georgia, serif;
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    font-family: Georgia, serif;
+  }
+
+  /* Root element background - prevents extra scroll space */
+  #root {
+    background: linear-gradient(360deg, rgba(255, 255, 255, 1) 0%, rgba(0, 0, 0, 1) 100%);
+    min-height: 100vh;
   }
 
   /* Prevent word breaks in headings by default */
@@ -114,6 +125,21 @@
   /* GPU layer promotion for smooth animations */
   .gpu-layer {
     transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  /* Optimized scroll container for smooth scrolling performance */
+  .scroll-container {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    contain: layout style paint;
+  }
+
+  /* GPU acceleration utility for elements that animate frequently */
+  .gpu-accelerated {
+    transform: translateZ(0);
+    will-change: transform;
     backface-visibility: hidden;
   }
 

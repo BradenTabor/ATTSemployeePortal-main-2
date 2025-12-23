@@ -1,7 +1,7 @@
 import { memo, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Zap, ChevronRight } from 'lucide-react';
+import { Sparkles, ChevronRight } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
   FloatingPanelRoot,
@@ -32,12 +32,13 @@ interface QuickActionsFABProps {
 }
 
 /**
- * QuickActionsFAB - Floating Action Button for quick navigation
+ * QuickActionsFAB - Premium Floating Action Button for quick navigation
  * 
- * Mobile optimizations:
- * - Accounts for iOS safe-area-insets (notch/home indicator)
- * - Disables pulsing animation on mobile for battery savings
- * - Uses larger touch targets on mobile
+ * Features:
+ * - Fixed bottom-left positioning with safe area support
+ * - Multi-layered glow effects and premium animations
+ * - Mobile optimizations for battery savings
+ * - Large touch targets for accessibility
  */
 function QuickActionsFABComponent({ links, className }: QuickActionsFABProps) {
   const navigate = useNavigate();
@@ -52,132 +53,229 @@ function QuickActionsFABComponent({ links, className }: QuickActionsFABProps) {
   return (
     <FloatingPanelRoot 
       className={cn(
-        // Fixed positioning - bottom left with safe area handling
-        "fixed z-[9999]",
-        // Mobile: account for iOS safe area (home indicator)
-        // Using CSS max() to ensure minimum spacing even without safe area
-        "left-4",
-        // Tablet and up: more breathing room
-        "sm:left-6",
-        // Large screens
-        "lg:left-8",
+        // Fixed positioning - BOTTOM LEFT corner
+        "!fixed z-[9999]",
+        // Horizontal positioning
+        "left-5 sm:left-6 lg:left-8",
+        // Vertical positioning - bottom of viewport
+        "bottom-6 sm:bottom-8",
         className
       )}
-      style={{
-        // Safe area inset bottom with fallback minimum
-        bottom: `max(calc(20px + env(safe-area-inset-bottom, 0px)), 80px)`,
-      }}
     >
-      {/* FAB Trigger Button - 44px minimum touch target on mobile */}
+      {/* Premium FAB Trigger Button */}
       <FloatingPanelTrigger
         title="Quick Actions"
         className={cn(
-          // Remove default styles
-          "!border-0 !bg-transparent !p-0 !h-auto",
-          // FAB styling - 56px on mobile (meets 44px minimum), larger on desktop
-          "w-14 h-14 md:w-16 md:h-16 rounded-full",
+          // Reset default styles completely
+          "!border-0 !bg-transparent !p-0 !h-auto !min-h-0",
+          // Premium sizing - larger for better visibility
+          "w-16 h-16 md:w-[72px] md:h-[72px] rounded-2xl",
           "flex items-center justify-center",
-          // Premium emerald gradient
-          "bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700",
-          // Glow effect
-          "shadow-[0_0_30px_rgba(16,185,129,0.5)]",
-          "hover:shadow-[0_0_40px_rgba(16,185,129,0.7)]",
-          // Border accent
-          "ring-2 ring-emerald-400/50 ring-offset-2 ring-offset-[#04150f]",
-          // Transitions
-          "transition-all duration-300"
+          // Luxurious emerald gradient with depth
+          "bg-gradient-to-br from-emerald-400 via-emerald-500 to-emerald-700",
+          // Premium shadow layers for depth
+          "shadow-[0_8px_32px_rgba(16,185,129,0.4),0_0_60px_rgba(16,185,129,0.25),inset_0_1px_0_rgba(255,255,255,0.15)]",
+          // Hover glow enhancement
+          "hover:shadow-[0_12px_40px_rgba(16,185,129,0.5),0_0_80px_rgba(16,185,129,0.35),inset_0_1px_0_rgba(255,255,255,0.2)]",
+          // Premium border with glass effect
+          "ring-1 ring-white/20 ring-inset",
+          // Outer glow ring
+          "outline outline-2 outline-emerald-400/30 outline-offset-2",
+          // Smooth transitions
+          "transition-all duration-400 ease-out",
+          // Hover scale
+          "hover:scale-105 active:scale-95"
         )}
       >
-        {/* Icon animation - disabled on mobile to save battery */}
+        {/* Multi-layer background effects - desktop only */}
+        {!caps.isMobile && !caps.prefersReducedMotion && (
+          <>
+            {/* Outer pulse ring */}
+            <motion.div
+              className="absolute -inset-3 rounded-3xl opacity-40"
+              style={{
+                background: 'radial-gradient(circle, rgba(16,185,129,0.4) 0%, transparent 70%)',
+              }}
+              animate={{
+                scale: [1, 1.2, 1],
+                opacity: [0.4, 0.1, 0.4],
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
+            {/* Inner glow ring */}
+            <motion.div
+              className="absolute inset-0 rounded-2xl"
+              style={{
+                boxShadow: '0 0 20px rgba(52,211,153,0.5), inset 0 0 20px rgba(52,211,153,0.1)',
+              }}
+              animate={{
+                opacity: [0.6, 1, 0.6],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
+          </>
+        )}
+        
+        {/* Icon with animation */}
         {caps.isMobile || caps.prefersReducedMotion ? (
-          <div className="relative">
-            <Zap className="w-6 h-6 md:w-7 md:h-7 text-white" fill="currentColor" />
+          <div className="relative z-10">
+            <Sparkles className="w-7 h-7 md:w-8 md:h-8 text-white drop-shadow-lg" />
           </div>
         ) : (
           <motion.div
-            className="relative"
+            className="relative z-10"
             animate={{
-              scale: [1, 1.1, 1],
+              scale: [1, 1.08, 1],
+              rotate: [0, 5, -5, 0],
             }}
             transition={{
-              duration: 2,
+              duration: 3,
               repeat: Infinity,
               ease: "easeInOut",
             }}
           >
-            <Zap className="w-6 h-6 md:w-7 md:h-7 text-white" fill="currentColor" />
+            <Sparkles className="w-7 h-7 md:w-8 md:h-8 text-white drop-shadow-lg" />
+            {/* Sparkle accent */}
+            <motion.div
+              className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-white"
+              animate={{
+                scale: [0.8, 1.2, 0.8],
+                opacity: [0.5, 1, 0.5],
+              }}
+              transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
           </motion.div>
         )}
         
-        {/* Pulsing ring animation - only on desktop */}
+        {/* Floating particles - desktop only */}
         {!caps.isMobile && !caps.prefersReducedMotion && (
-          <motion.div
-            className="absolute inset-0 rounded-full border-2"
-            style={{ borderColor: 'rgba(7, 207, 84, 0.6)' }}
-            animate={{
-              scale: [1, 1.3, 1],
-              opacity: [0.6, 0, 0.6],
-            }}
-            transition={{
-              duration: 2.5,
-              repeat: Infinity,
-              ease: "easeOut",
-            }}
-          />
+          <>
+            <motion.div
+              className="absolute w-1 h-1 rounded-full bg-emerald-300"
+              style={{ top: '20%', left: '15%' }}
+              animate={{
+                y: [-2, 2, -2],
+                opacity: [0.3, 0.8, 0.3],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 0.2,
+              }}
+            />
+            <motion.div
+              className="absolute w-1.5 h-1.5 rounded-full bg-emerald-200"
+              style={{ bottom: '25%', right: '20%' }}
+              animate={{
+                y: [2, -2, 2],
+                opacity: [0.4, 0.9, 0.4],
+              }}
+              transition={{
+                duration: 2.5,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 0.5,
+              }}
+            />
+          </>
         )}
       </FloatingPanelTrigger>
 
-      {/* Floating Panel Content */}
-      <FloatingPanelContent className="w-[300px] md:w-[340px]">
+      {/* Premium Floating Panel Content */}
+      <FloatingPanelContent className="w-[320px] md:w-[360px]">
+        {/* Header with gradient accent */}
+        <div className="px-4 pt-4 pb-2">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white">Quick Actions</h3>
+              <p className="text-xs text-emerald-300/60">Navigate instantly</p>
+            </div>
+          </div>
+        </div>
+
         <FloatingPanelBody className="p-3 md:p-4 space-y-2">
           {links.map((link, index) => {
             const Icon = link.icon;
             return (
               <motion.div
                 key={link.path}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 + 0.1 }}
+                initial={{ opacity: 0, x: -15, scale: 0.95 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                transition={{ 
+                  delay: index * 0.06 + 0.1,
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 24
+                }}
               >
                 <FloatingPanelButton
                   onClick={() => navigate(link.path)}
-                  className="group"
+                  className="group relative overflow-hidden"
                 >
-                  {/* Icon container */}
+                  {/* Hover gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 via-emerald-500/5 to-emerald-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  
+                  {/* Icon container with enhanced styling */}
                   {Icon && (
                     <div
                       className={cn(
-                        'flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center',
-                        'transition-all duration-200 group-hover:scale-105',
-                        link.iconBg || 'bg-emerald-500/15 border border-emerald-500/30'
+                        'relative flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center',
+                        'transition-all duration-300 group-hover:scale-110 group-hover:rotate-3',
+                        'shadow-sm group-hover:shadow-md',
+                        link.iconBg || 'bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 border border-emerald-500/30'
                       )}
                     >
                       <Icon
                         className={cn(
-                          'w-5 h-5',
+                          'w-5 h-5 transition-transform duration-300 group-hover:scale-105',
                           link.iconColor || 'text-emerald-300'
                         )}
                       />
                     </div>
                   )}
 
-                  {/* Label and description */}
-                  <div className="flex-1 min-w-0">
+                  {/* Label and description with enhanced typography */}
+                  <div className="flex-1 min-w-0 relative">
                     <p className="text-sm font-semibold text-white group-hover:text-emerald-100 transition-colors truncate">
                       {link.label}
                     </p>
                     {link.description && (
-                      <p className="text-xs text-white/50 truncate mt-0.5">
+                      <p className="text-xs text-white/40 group-hover:text-white/60 truncate mt-0.5 transition-colors">
                         {link.description}
                       </p>
                     )}
                   </div>
 
-                  {/* Arrow */}
-                  <ChevronRight
-                    className="w-4 h-4 text-white/30 group-hover:text-emerald-300 group-hover:translate-x-1 transition-all flex-shrink-0"
-                    aria-hidden="true"
-                  />
+                  {/* Animated arrow with glow */}
+                  <div className="relative flex-shrink-0">
+                    <ChevronRight
+                      className="w-5 h-5 text-white/20 group-hover:text-emerald-400 group-hover:translate-x-1 transition-all duration-300"
+                      aria-hidden="true"
+                    />
+                    {/* Arrow glow on hover */}
+                    <div className="absolute inset-0 blur-sm opacity-0 group-hover:opacity-50 transition-opacity">
+                      <ChevronRight
+                        className="w-5 h-5 text-emerald-400 translate-x-1"
+                        aria-hidden="true"
+                      />
+                    </div>
+                  </div>
                 </FloatingPanelButton>
               </motion.div>
             );
@@ -186,8 +284,11 @@ function QuickActionsFABComponent({ links, className }: QuickActionsFABProps) {
 
         <FloatingPanelFooter>
           <FloatingPanelCloseButton />
-          <div className="flex items-center gap-2 text-xs text-emerald-200/50">
-            <span>{links.length} action{links.length !== 1 ? 's' : ''}</span>
+          <div className="flex items-center gap-2 text-xs">
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-300/70">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              {links.length} action{links.length !== 1 ? 's' : ''}
+            </span>
           </div>
         </FloatingPanelFooter>
       </FloatingPanelContent>

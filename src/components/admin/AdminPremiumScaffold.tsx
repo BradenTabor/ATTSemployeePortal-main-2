@@ -223,7 +223,7 @@ export default function AdminPremiumScaffold({
   const showEffects = quality.enableEffects && !caps.isLowEnd;
 
   return (
-    <div className={cn("w-full max-w-7xl mx-auto px-4 sm:px-6 py-8", themeStyles.mainContainer)}>
+    <div className={cn("w-full max-w-7xl mx-auto px-4 sm:px-6 pt-8 pb-4", themeStyles.mainContainer)}>
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="space-y-8 lg:col-span-2">
           <AdminHero 

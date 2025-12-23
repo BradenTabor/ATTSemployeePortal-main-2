@@ -5,10 +5,7 @@ import path from 'path';
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   plugins: [
-    react({
-      // Enable Fast Refresh for better dev experience
-      fastRefresh: true,
-    }),
+    react(),
   ],
   resolve: {
     alias: {
@@ -18,7 +15,8 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     minify: 'esbuild',
-    chunkSizeWarningLimit: 800,
+    // Reduced from 800kb to 500kb for stricter chunk size monitoring
+    chunkSizeWarningLimit: 500,
     sourcemap: false,
     // Enable CSS code splitting
     cssCodeSplit: true,
@@ -43,6 +41,15 @@ export default defineConfig(({ mode }) => ({
         // Optimize chunk file names for caching
         chunkFileNames: (chunkInfo) => {
           const facadeModuleId = chunkInfo.facadeModuleId || '';
+          
+          // BackgroundParticles gets its own chunk for lazy loading
+          if (facadeModuleId.includes('BackgroundParticles')) {
+            return 'assets/feature-particles-[hash].js';
+          }
+          // Admin pages get their own chunk
+          if (facadeModuleId.includes('/pages/Admin')) {
+            return 'assets/feature-admin-[hash].js';
+          }
           // Avatar components get their own chunk for lazy loading
           if (facadeModuleId.includes('avatar') || facadeModuleId.includes('Avatar')) {
             return 'assets/avatars-[hash].js';

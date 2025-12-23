@@ -62,7 +62,7 @@ function AnimatedRoutes() {
       <SessionOverlay isLoading={loading} />
 
       {/* Main App Content */}
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="popLayout">
         <Suspense fallback={<LoadingScreen />}>
           <Routes location={location} key={location.pathname}>
             {/* Public Home Page */}

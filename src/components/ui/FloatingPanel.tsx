@@ -21,18 +21,28 @@ const TRANSITION = {
 interface FloatingPanelRootProps {
   children: React.ReactNode
   className?: string
+  style?: React.CSSProperties
 }
 
 export function FloatingPanelRoot({
   children,
   className,
+  style,
 }: FloatingPanelRootProps) {
   const floatingPanelLogic = useFloatingPanelLogic()
+
+  // Check if className contains fixed positioning to avoid conflict with relative
+  const hasFixedPosition = className?.includes('fixed')
 
   return (
     <FloatingPanelContext.Provider value={floatingPanelLogic}>
       <MotionConfig transition={TRANSITION}>
-        <div className={cn("relative", className)}>{children}</div>
+        <div 
+          className={cn(!hasFixedPosition && "relative", className)} 
+          style={style}
+        >
+          {children}
+        </div>
       </MotionConfig>
     </FloatingPanelContext.Provider>
   )

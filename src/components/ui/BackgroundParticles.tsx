@@ -1,4 +1,5 @@
 import { memo, useEffect, useRef, useCallback } from 'react';
+import { getDeviceCapabilities } from '../../lib/mobilePerf';
 
 interface BackgroundParticlesProps {
   /** Number of particles to render */
@@ -112,6 +113,11 @@ const lerpColor = (
  * Premium canvas-based animated floating particles background effect.
  * Features: multi-layer parallax, organic noise motion, connecting lines,
  * shooting stars, sparkles, fireflies, mouse interaction, and luxurious glow effects.
+ * 
+ * Performance optimizations:
+ * - Visibility-based pausing (stops animation when tab is hidden)
+ * - FPS throttling on mobile (30fps vs 60fps on desktop)
+ * - Reduced connection check frequency on mobile
  */
 function EnhancedCanvasParticles({
   count = 80,
@@ -140,6 +146,16 @@ function EnhancedCanvasParticles({
   const timeRef = useRef(0);
   const dimensionsRef = useRef({ width: 0, height: 0 });
   const frameCountRef = useRef(0);
+  const isVisibleRef = useRef(true);
+  const lastFrameTimeRef = useRef(0);
+
+  // Get device capabilities for adaptive performance
+  const capabilities = getDeviceCapabilities();
+  const isMobile = capabilities.isMobile;
+  const targetFPS = isMobile ? 30 : 60;
+  const frameInterval = 1000 / targetFPS;
+  // Connection check frequency: every 4th frame on mobile, every 2nd on desktop
+  const connectionCheckInterval = isMobile ? 4 : 2;
 
   // Parse color to extract RGB values
   const parseColor = useCallback((colorStr: string) => {
@@ -267,8 +283,8 @@ function EnhancedCanvasParticles({
     const createSparkle = (x: number, y: number) => {
       if (sparklesRef.current.length > 20) return; // Limit sparkles
       
-      const count = Math.floor(Math.random() * 3) + 2;
-      for (let i = 0; i < count; i++) {
+      const sparkleCount = Math.floor(Math.random() * 3) + 2;
+      for (let i = 0; i < sparkleCount; i++) {
         sparklesRef.current.push({
           x: x + (Math.random() - 0.5) * 30,
           y: y + (Math.random() - 0.5) * 30,
@@ -283,15 +299,15 @@ function EnhancedCanvasParticles({
     };
 
     // Draw a 4-pointed star shape
-    const drawStar = (x: number, y: number, size: number, rotation: number, opacity: number, color: { r: number; g: number; b: number }) => {
+    const drawStar = (x: number, y: number, size: number, rotation: number, opacity: number, starColor: { r: number; g: number; b: number }) => {
       ctx.save();
       ctx.translate(x, y);
       ctx.rotate(rotation);
       
       const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 2);
       gradient.addColorStop(0, `rgba(255, 255, 255, ${opacity})`);
-      gradient.addColorStop(0.3, `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity * 0.8})`);
-      gradient.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, 0)`);
+      gradient.addColorStop(0.3, `rgba(${starColor.r}, ${starColor.g}, ${starColor.b}, ${opacity * 0.8})`);
+      gradient.addColorStop(1, `rgba(${starColor.r}, ${starColor.g}, ${starColor.b}, 0)`);
       
       ctx.beginPath();
       for (let i = 0; i < 4; i++) {
@@ -357,8 +373,19 @@ function EnhancedCanvasParticles({
       mouseRef.current.active = false;
     };
 
+    // Visibility change handler - pause animation when tab is hidden
+    const handleVisibilityChange = () => {
+      isVisibleRef.current = document.visibilityState === 'visible';
+      if (isVisibleRef.current && !animationRef.current) {
+        // Restart animation when tab becomes visible again
+        lastFrameTimeRef.current = performance.now();
+        animate(lastFrameTimeRef.current);
+      }
+    };
+
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     
     let resizeObserver: ResizeObserver | null = null;
     const parent = canvas.parentElement;
@@ -383,8 +410,22 @@ function EnhancedCanvasParticles({
       document.addEventListener('mouseleave', handleMouseLeave);
     }
 
-    // Main animation loop - optimized
-    const animate = () => {
+    // Main animation loop - optimized with visibility check and FPS throttling
+    const animate = (currentTime: number) => {
+      // Stop animation if tab is hidden
+      if (!isVisibleRef.current) {
+        animationRef.current = undefined;
+        return;
+      }
+
+      // FPS throttling
+      const elapsed = currentTime - lastFrameTimeRef.current;
+      if (elapsed < frameInterval) {
+        animationRef.current = requestAnimationFrame(animate);
+        return;
+      }
+      lastFrameTimeRef.current = currentTime - (elapsed % frameInterval);
+
       const { width, height } = dimensionsRef.current;
       if (width === 0 || height === 0) {
         animationRef.current = requestAnimationFrame(animate);
@@ -582,10 +623,10 @@ function EnhancedCanvasParticles({
           { radius: particle.size * 1.4, opacity: currentOpacity * 0.5 },
         ];
 
-        glowLayers.forEach(({ radius, opacity }) => {
+        glowLayers.forEach(({ radius, opacity: glowOpacity }) => {
           const gradient = ctx.createRadialGradient(drawX, drawY, 0, drawX, drawY, radius);
-          gradient.addColorStop(0, `rgba(${shiftedColor.r}, ${shiftedColor.g}, ${shiftedColor.b}, ${opacity})`);
-          gradient.addColorStop(0.6, `rgba(${shiftedColor.r}, ${shiftedColor.g}, ${shiftedColor.b}, ${opacity * 0.3})`);
+          gradient.addColorStop(0, `rgba(${shiftedColor.r}, ${shiftedColor.g}, ${shiftedColor.b}, ${glowOpacity})`);
+          gradient.addColorStop(0.6, `rgba(${shiftedColor.r}, ${shiftedColor.g}, ${shiftedColor.b}, ${glowOpacity * 0.3})`);
           gradient.addColorStop(1, `rgba(${shiftedColor.r}, ${shiftedColor.g}, ${shiftedColor.b}, 0)`);
 
           ctx.beginPath();
@@ -612,8 +653,8 @@ function EnhancedCanvasParticles({
         }
       });
 
-      // Draw connecting lines between nearby particles (optimized)
-      if (enableConnections && frameCountRef.current % 2 === 0) {
+      // Draw connecting lines between nearby particles (optimized with adaptive frequency)
+      if (enableConnections && frameCountRef.current % connectionCheckInterval === 0) {
         const connectionDistance = 110;
         ctx.lineWidth = 0.6;
         
@@ -659,10 +700,13 @@ function EnhancedCanvasParticles({
       animationRef.current = requestAnimationFrame(animate);
     };
 
-    animate();
+    // Start animation
+    lastFrameTimeRef.current = performance.now();
+    animate(lastFrameTimeRef.current);
 
     return () => {
       window.removeEventListener('resize', resizeCanvas);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       if (resizeObserver) {
         resizeObserver.disconnect();
       }
@@ -675,7 +719,7 @@ function EnhancedCanvasParticles({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [count, color, accentColor, minSize, maxSize, enableConnections, enableShootingStars, enableMouseInteraction, layers, enableSparkles, enableFireflies, parseColor]);
+  }, [count, color, accentColor, minSize, maxSize, enableConnections, enableShootingStars, enableMouseInteraction, layers, enableSparkles, enableFireflies, parseColor, frameInterval, connectionCheckInterval]);
 
   return (
     <canvas
