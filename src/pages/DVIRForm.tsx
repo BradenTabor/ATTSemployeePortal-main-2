@@ -1069,29 +1069,31 @@ export default function DVIRForm() {
               </div>
             </div>
 
-            {/* Medical card required */}
+            {/* Medical card required - 44px touch targets for mobile */}
             <div>
               <label className="block text-xs text-gray-300 mb-1">
                 IS A MEDICAL CARD REQUIRED
               </label>
-              <div className="flex gap-3 text-xs text-gray-200">
-                <label className="inline-flex items-center gap-1">
+              <div className="flex gap-2 text-xs text-gray-200">
+                <label className="inline-flex items-center gap-2 min-h-[44px] px-4 rounded-lg cursor-pointer hover:bg-white/5 transition-colors">
                   <input
                     type="radio"
                     name="medical_card_required"
                     value="YES"
                     checked={medicalCardRequired === "YES"}
                     onChange={() => setMedicalCardRequired("YES")}
+                    className="w-4 h-4 accent-emerald-500"
                   />
                   YES
                 </label>
-                <label className="inline-flex items-center gap-1">
+                <label className="inline-flex items-center gap-2 min-h-[44px] px-4 rounded-lg cursor-pointer hover:bg-white/5 transition-colors">
                   <input
                     type="radio"
                     name="medical_card_required"
                     value="NO"
                     checked={medicalCardRequired === "NO"}
                     onChange={() => setMedicalCardRequired("NO")}
+                    className="w-4 h-4 accent-emerald-500"
                   />
                   NO
                 </label>
@@ -1165,24 +1167,26 @@ export default function DVIRForm() {
                 <label className="block text-xs text-gray-300 mb-1">
                   DO YOU HAVE A MEDICAL CARD
                 </label>
-                <div className="flex gap-3 text-xs text-gray-200">
-                  <label className="inline-flex items-center gap-1">
+                <div className="flex gap-2 text-xs text-gray-200">
+                  <label className="inline-flex items-center gap-2 min-h-[44px] px-4 rounded-lg cursor-pointer hover:bg-white/5 transition-colors">
                     <input
                       type="radio"
                       name="has_medical_card"
                       value="YES"
                       checked={hasMedicalCard === "YES"}
                       onChange={() => setHasMedicalCard("YES")}
+                      className="w-4 h-4 accent-emerald-500"
                     />
                     YES
                   </label>
-                  <label className="inline-flex items-center gap-1">
+                  <label className="inline-flex items-center gap-2 min-h-[44px] px-4 rounded-lg cursor-pointer hover:bg-white/5 transition-colors">
                     <input
                       type="radio"
                       name="has_medical_card"
                       value="NO"
                       checked={hasMedicalCard === "NO"}
                       onChange={() => setHasMedicalCard("NO")}
+                      className="w-4 h-4 accent-emerald-500"
                     />
                     NO
                   </label>
@@ -1206,24 +1210,26 @@ export default function DVIRForm() {
                 <label className="block text-xs text-gray-300 mb-1">
                   COPY OF REGISTRATION
                 </label>
-                <div className="flex gap-3 text-xs text-gray-200">
-                  <label className="inline-flex items-center gap-1">
+                <div className="flex gap-2 text-xs text-gray-200">
+                  <label className="inline-flex items-center gap-2 min-h-[44px] px-4 rounded-lg cursor-pointer hover:bg-white/5 transition-colors">
                     <input
                       type="radio"
                       name="copy_registration"
                       value="YES"
                       checked={copyOfRegistration === "YES"}
                       onChange={() => setCopyOfRegistration("YES")}
+                      className="w-4 h-4 accent-emerald-500"
                     />
                     YES
                   </label>
-                  <label className="inline-flex items-center gap-1">
+                  <label className="inline-flex items-center gap-2 min-h-[44px] px-4 rounded-lg cursor-pointer hover:bg-white/5 transition-colors">
                     <input
                       type="radio"
                       name="copy_registration"
                       value="NO"
                       checked={copyOfRegistration === "NO"}
                       onChange={() => setCopyOfRegistration("NO")}
+                      className="w-4 h-4 accent-emerald-500"
                     />
                     NO
                   </label>
@@ -1234,24 +1240,26 @@ export default function DVIRForm() {
                 <label className="block text-xs text-gray-300 mb-1">
                   COPY OF INSURANCE
                 </label>
-                <div className="flex gap-3 text-xs text-gray-200">
-                  <label className="inline-flex items-center gap-1">
+                <div className="flex gap-2 text-xs text-gray-200">
+                  <label className="inline-flex items-center gap-2 min-h-[44px] px-4 rounded-lg cursor-pointer hover:bg-white/5 transition-colors">
                     <input
                       type="radio"
                       name="copy_insurance"
                       value="YES"
                       checked={copyOfInsurance === "YES"}
                       onChange={() => setCopyOfInsurance("YES")}
+                      className="w-4 h-4 accent-emerald-500"
                     />
                     YES
                   </label>
-                  <label className="inline-flex items-center gap-1">
+                  <label className="inline-flex items-center gap-2 min-h-[44px] px-4 rounded-lg cursor-pointer hover:bg-white/5 transition-colors">
                     <input
                       type="radio"
                       name="copy_insurance"
                       value="NO"
                       checked={copyOfInsurance === "NO"}
                       onChange={() => setCopyOfInsurance("NO")}
+                      className="w-4 h-4 accent-emerald-500"
                     />
                     NO
                   </label>
@@ -1290,6 +1298,7 @@ export default function DVIRForm() {
                     <span className="text-xs text-gray-100 pr-2">
                       {item.label}
                     </span>
+                    {/* Pass/Fail buttons - 44px minimum touch targets for mobile */}
                     <div className="flex items-center gap-1">
                       <button
                         type="button"
@@ -1297,15 +1306,17 @@ export default function DVIRForm() {
                           handleChecklistChange("vehicle", item.id, "P")
                         }
                         className={`
-                          px-2 py-1 text-[10px] rounded-md border
+                          min-w-[44px] min-h-[44px] px-3 text-xs rounded-lg border
                           transition-transform transition-colors duration-150
-                          active:scale-95 focus:outline-none focus:ring-1 focus:ring-emerald-400
+                          active:scale-95 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-1 focus:ring-offset-black
                           ${
                             value === "P"
                               ? "bg-emerald-600 border-emerald-400 text-white shadow-[0_0_10px_rgba(16,185,129,0.4)]"
                               : "bg-black/70 border-gray-600 text-gray-300 hover:border-emerald-400/70 hover:text-emerald-200"
                           }
                         `}
+                        aria-label={`Mark ${item.label} as Pass`}
+                        aria-pressed={value === "P"}
                       >
                         P
                       </button>
@@ -1315,15 +1326,17 @@ export default function DVIRForm() {
                           handleChecklistChange("vehicle", item.id, "F")
                         }
                         className={`
-                          px-2 py-1 text-[10px] rounded-md border
+                          min-w-[44px] min-h-[44px] px-3 text-xs rounded-lg border
                           transition-transform transition-colors duration-150
-                          active:scale-95 focus:outline-none focus:ring-1 focus:ring-red-400
+                          active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-1 focus:ring-offset-black
                           ${
                             value === "F"
                               ? "bg-red-600 border-red-400 text-white shadow-[0_0_10px_rgba(248,113,113,0.4)]"
                               : "bg-black/70 border-gray-600 text-gray-300 hover:border-red-400/70 hover:text-red-200"
                           }
                         `}
+                        aria-label={`Mark ${item.label} as Fail`}
+                        aria-pressed={value === "F"}
                       >
                         F
                       </button>
@@ -1466,6 +1479,7 @@ export default function DVIRForm() {
                     <span className="text-xs text-gray-100 pr-2">
                       {item.label}
                     </span>
+                    {/* Pass/Fail buttons - 44px minimum touch targets for mobile */}
                     <div className="flex items-center gap-1">
                       <button
                         type="button"
@@ -1473,15 +1487,17 @@ export default function DVIRForm() {
                           handleChecklistChange("aerial", item.id, "P")
                         }
                         className={`
-                          px-2 py-1 text-[10px] rounded-md border
+                          min-w-[44px] min-h-[44px] px-3 text-xs rounded-lg border
                           transition-transform transition-colors duration-150
-                          active:scale-95 focus:outline-none focus:ring-1 focus:ring-emerald-400
+                          active:scale-95 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-1 focus:ring-offset-black
                           ${
                             value === "P"
                               ? "bg-emerald-600 border-emerald-400 text-white shadow-[0_0_10px_rgba(16,185,129,0.4)]"
                               : "bg-black/70 border-gray-600 text-gray-300 hover:border-emerald-400/70 hover:text-emerald-200"
                           }
                         `}
+                        aria-label={`Mark ${item.label} as Pass`}
+                        aria-pressed={value === "P"}
                       >
                         P
                       </button>
@@ -1491,15 +1507,17 @@ export default function DVIRForm() {
                           handleChecklistChange("aerial", item.id, "F")
                         }
                         className={`
-                          px-2 py-1 text-[10px] rounded-md border
+                          min-w-[44px] min-h-[44px] px-3 text-xs rounded-lg border
                           transition-transform transition-colors duration-150
-                          active:scale-95 focus:outline-none focus:ring-1 focus:ring-red-400
+                          active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-1 focus:ring-offset-black
                           ${
                             value === "F"
                               ? "bg-red-600 border-red-400 text-white shadow-[0_0_10px_rgba(248,113,113,0.4)]"
                               : "bg-black/70 border-gray-600 text-gray-300 hover:border-red-400/70 hover:text-red-200"
                           }
                         `}
+                        aria-label={`Mark ${item.label} as Fail`}
+                        aria-pressed={value === "F"}
                       >
                         F
                       </button>

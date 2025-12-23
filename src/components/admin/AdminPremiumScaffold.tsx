@@ -1,8 +1,9 @@
-import { ReactNode } from "react";
+import { ReactNode, useMemo } from "react";
 import BrandedNavCard from "../BrandedNavCard";
 import { cn } from "../../lib/utils";
 import { GlowEffect } from "../ui/GlowEffect";
 import { TextEffect } from "../ui/TextEffect";
+import { getDeviceCapabilities, getQualitySettings } from "../../lib/mobilePerf";
 
 export type AdminHeroBadge = {
   label: string;
@@ -195,6 +196,15 @@ const THEME_STYLES: Record<
   },
 };
 
+/**
+ * AdminPremiumScaffold - Responsive admin layout with premium visual effects
+ * 
+ * Mobile optimizations:
+ * - Disables glow effects on low-end devices
+ * - Disables shimmer animations on mobile
+ * - Simplified side panel rendering on mobile
+ * - Respects prefers-reduced-motion preference
+ */
 export default function AdminPremiumScaffold({
   hero,
   stats,
@@ -204,12 +214,26 @@ export default function AdminPremiumScaffold({
   theme = "gold",
 }: AdminPremiumScaffoldProps) {
   const themeStyles = THEME_STYLES[theme] ?? THEME_STYLES.gold;
+  
+  // Get device capabilities (cached)
+  const caps = useMemo(() => getDeviceCapabilities(), []);
+  const quality = useMemo(() => getQualitySettings(), []);
+  
+  // Determine if we should show premium effects
+  const showEffects = quality.enableEffects && !caps.isLowEnd;
 
   return (
     <div className={cn("w-full max-w-7xl mx-auto px-4 sm:px-6 py-8", themeStyles.mainContainer)}>
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="space-y-8 lg:col-span-2">
-          <AdminHero hero={hero} stats={stats} themeStyles={themeStyles} />
+          <AdminHero 
+            hero={hero} 
+            stats={stats} 
+            themeStyles={themeStyles}
+            showEffects={showEffects}
+            isMobile={caps.isMobile}
+            prefersReducedMotion={caps.prefersReducedMotion}
+          />
 
           {navCards && navCards.length > 0 && (
             <div className="grid gap-6 sm:grid-cols-2">
@@ -231,9 +255,14 @@ export default function AdminPremiumScaffold({
 
         {sidePanel && (
           <div className={themeStyles.sidePanelContainer}>
-            <div className={themeStyles.sidePanelBorder} />
-            <div className={themeStyles.sidePanelGlowOne} />
-            <div className={themeStyles.sidePanelGlowTwo} />
+            {/* Only render decorative elements on capable devices */}
+            {showEffects && (
+              <>
+                <div className={themeStyles.sidePanelBorder} />
+                <div className={themeStyles.sidePanelGlowOne} />
+                <div className={themeStyles.sidePanelGlowTwo} />
+              </>
+            )}
             <div className="relative space-y-6">{sidePanel}</div>
           </div>
         )}
@@ -242,108 +271,130 @@ export default function AdminPremiumScaffold({
   );
 }
 
+interface AdminHeroProps {
+  hero: AdminHeroConfig;
+  stats?: AdminStat[];
+  themeStyles: (typeof THEME_STYLES)[AdminTheme];
+  showEffects: boolean;
+  isMobile: boolean;
+  prefersReducedMotion: boolean;
+}
+
 function AdminHero({
   hero,
   stats,
   themeStyles,
-}: {
-  hero: AdminHeroConfig;
-  stats?: AdminStat[];
-  themeStyles: (typeof THEME_STYLES)[AdminTheme];
-}) {
+  showEffects,
+  isMobile,
+  prefersReducedMotion,
+}: AdminHeroProps) {
+  // Disable animations on mobile or if user prefers reduced motion
+  const enableAnimations = !isMobile && !prefersReducedMotion;
+  
   return (
     <div className="relative">
-      {/* Background glow effect around the container */}
-      <div 
-        className="absolute -inset-3 rounded-[2rem] overflow-hidden"
-        style={{
-          boxShadow: '0px 4px 25px 8px rgba(0, 0, 0, 0.85)'
-        }}
-      >
-        <GlowEffect
-          colors={themeStyles.glowColors}
-          mode="breathe"
-          blur="stronger"
-          duration={6}
-          scale={1.15}
-          className="opacity-30"
-        />
-      </div>
+      {/* Background glow effect around the container - only on desktop with effects enabled */}
+      {showEffects && (
+        <div 
+          className="absolute -inset-3 rounded-[2rem] overflow-hidden"
+          style={{
+            boxShadow: '0px 4px 25px 8px rgba(0, 0, 0, 0.85)'
+          }}
+        >
+          <GlowEffect
+            colors={themeStyles.glowColors}
+            mode="breathe"
+            blur="stronger"
+            duration={6}
+            scale={1.15}
+            className="opacity-30"
+          />
+        </div>
+      )}
       
-      {/* Border glow pulse effect */}
-      <div 
-        className="pointer-events-none absolute -inset-[1px] rounded-3xl"
-        style={{
-          background: `linear-gradient(135deg, ${themeStyles.borderGlowColor}, transparent 40%, transparent 60%, ${themeStyles.borderGlowColor})`,
-          animation: "borderPulse 4s ease-in-out infinite",
-        }}
-      />
+      {/* Border glow pulse effect - only with animations */}
+      {enableAnimations && (
+        <div 
+          className="pointer-events-none absolute -inset-[1px] rounded-3xl"
+          style={{
+            background: `linear-gradient(135deg, ${themeStyles.borderGlowColor}, transparent 40%, transparent 60%, ${themeStyles.borderGlowColor})`,
+            animation: "borderPulse 4s ease-in-out infinite",
+          }}
+        />
+      )}
 
       <div className={themeStyles.heroContainer}>
         <div className={themeStyles.heroOverlayPrimary} />
         <div className={themeStyles.heroOverlaySecondary} />
         
-        {/* Enhanced multi-layer shimmer overlay */}
-        <div 
-          className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl"
-          style={{
-            background: `linear-gradient(
-              115deg,
-              transparent 15%,
-              ${themeStyles.shimmerColor} 35%,
-              ${themeStyles.shimmerColorAlt} 50%,
-              ${themeStyles.shimmerColor} 65%,
-              transparent 85%
-            )`,
-            backgroundSize: "250% 100%",
-            animation: "shimmerPrimary 7s ease-in-out infinite",
-          }}
-        />
+        {/* Shimmer effects - only on desktop with animations */}
+        {enableAnimations && (
+          <>
+            {/* Enhanced multi-layer shimmer overlay */}
+            <div 
+              className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl"
+              style={{
+                background: `linear-gradient(
+                  115deg,
+                  transparent 15%,
+                  ${themeStyles.shimmerColor} 35%,
+                  ${themeStyles.shimmerColorAlt} 50%,
+                  ${themeStyles.shimmerColor} 65%,
+                  transparent 85%
+                )`,
+                backgroundSize: "250% 100%",
+                animation: "shimmerPrimary 7s ease-in-out infinite",
+              }}
+            />
+            
+            {/* Secondary shimmer layer for depth */}
+            <div 
+              className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl opacity-60"
+              style={{
+                background: `linear-gradient(
+                  -65deg,
+                  transparent 20%,
+                  ${themeStyles.shimmerColorAlt} 45%,
+                  ${themeStyles.shimmerColorAlt} 55%,
+                  transparent 80%
+                )`,
+                backgroundSize: "200% 100%",
+                animation: "shimmerSecondary 11s ease-in-out infinite",
+              }}
+            />
+            
+            {/* Edge highlight effect */}
+            <div 
+              className="pointer-events-none absolute inset-0 rounded-3xl"
+              style={{
+                background: `linear-gradient(180deg, ${themeStyles.borderGlowColor} 0%, transparent 8%, transparent 92%, ${themeStyles.borderGlowColor} 100%)`,
+                animation: "edgeGlow 5s ease-in-out infinite alternate",
+              }}
+            />
+          </>
+        )}
         
-        {/* Secondary shimmer layer for depth */}
-        <div 
-          className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl opacity-60"
-          style={{
-            background: `linear-gradient(
-              -65deg,
-              transparent 20%,
-              ${themeStyles.shimmerColorAlt} 45%,
-              ${themeStyles.shimmerColorAlt} 55%,
-              transparent 80%
-            )`,
-            backgroundSize: "200% 100%",
-            animation: "shimmerSecondary 11s ease-in-out infinite",
-          }}
-        />
-        
-        {/* Edge highlight effect */}
-        <div 
-          className="pointer-events-none absolute inset-0 rounded-3xl"
-          style={{
-            background: `linear-gradient(180deg, ${themeStyles.borderGlowColor} 0%, transparent 8%, transparent 92%, ${themeStyles.borderGlowColor} 100%)`,
-            animation: "edgeGlow 5s ease-in-out infinite alternate",
-          }}
-        />
-        
-        {/* CSS keyframes for all animations */}
-        <style>{`
-          @keyframes shimmerPrimary {
-            0%, 100% { background-position: 250% 0; }
-            50% { background-position: -250% 0; }
-          }
-          @keyframes shimmerSecondary {
-            0%, 100% { background-position: -200% 0; }
-            50% { background-position: 200% 0; }
-          }
-          @keyframes borderPulse {
-            0%, 100% { opacity: 0.4; }
-            50% { opacity: 0.8; }
-          }
-          @keyframes edgeGlow {
-            0% { opacity: 0.3; }
-            100% { opacity: 0.6; }
-          }
-        `}</style>
+        {/* CSS keyframes for animations - only inject if animations are enabled */}
+        {enableAnimations && (
+          <style>{`
+            @keyframes shimmerPrimary {
+              0%, 100% { background-position: 250% 0; }
+              50% { background-position: -250% 0; }
+            }
+            @keyframes shimmerSecondary {
+              0%, 100% { background-position: -200% 0; }
+              50% { background-position: 200% 0; }
+            }
+            @keyframes borderPulse {
+              0%, 100% { opacity: 0.4; }
+              50% { opacity: 0.8; }
+            }
+            @keyframes edgeGlow {
+              0% { opacity: 0.3; }
+              100% { opacity: 0.6; }
+            }
+          `}</style>
+        )}
 
         <div className="relative flex flex-col gap-6">
           {/* Hero content with optional avatar */}
@@ -358,28 +409,39 @@ function AdminHero({
               )}
 
               <div className="relative">
-                {/* GlowEffect behind the heading */}
-                <div className="absolute -inset-4 -top-6 -bottom-2">
-                  <GlowEffect
-                    colors={themeStyles.glowColors}
-                    mode="breathe"
-                    blur="strong"
-                    duration={7}
-                    scale={1.1}
-                    className="opacity-50"
-                  />
-                </div>
-                {/* Upgraded heading with TextEffect animation */}
-                <TextEffect
-                  as="h2"
-                  preset="blurSlide"
-                  per="char"
-                  delay={0.1}
-                  className="relative text-2xl sm:text-3xl md:text-4xl font-black leading-tight tracking-tight text-white break-normal"
-                  segmentWrapperClassName={themeStyles.headingTextGlow}
-                >
-                  {hero.heading}
-                </TextEffect>
+                {/* GlowEffect behind the heading - only on desktop */}
+                {showEffects && (
+                  <div className="absolute -inset-4 -top-6 -bottom-2">
+                    <GlowEffect
+                      colors={themeStyles.glowColors}
+                      mode="breathe"
+                      blur="strong"
+                      duration={7}
+                      scale={1.1}
+                      className="opacity-50"
+                    />
+                  </div>
+                )}
+                {/* Heading - use simpler rendering on mobile */}
+                {prefersReducedMotion ? (
+                  <h2 className={cn(
+                    "relative text-2xl sm:text-3xl md:text-4xl font-black leading-tight tracking-tight text-white break-normal",
+                    themeStyles.headingTextGlow
+                  )}>
+                    {hero.heading}
+                  </h2>
+                ) : (
+                  <TextEffect
+                    as="h2"
+                    preset="blurSlide"
+                    per="char"
+                    delay={0.1}
+                    className="relative text-2xl sm:text-3xl md:text-4xl font-black leading-tight tracking-tight text-white break-normal"
+                    segmentWrapperClassName={themeStyles.headingTextGlow}
+                  >
+                    {hero.heading}
+                  </TextEffect>
+                )}
                 {hero.description && (
                   <p className={cn("relative mt-3", themeStyles.descriptionClass)}>{hero.description}</p>
                 )}
@@ -418,8 +480,13 @@ function AdminHero({
                   key={stat.label}
                   className={themeStyles.statsCard}
                 >
-                  <div className={themeStyles.statsOverlay} />
-                  <div className={themeStyles.statsGlow} />
+                  {/* Only render decorative overlays on capable devices */}
+                  {showEffects && (
+                    <>
+                      <div className={themeStyles.statsOverlay} />
+                      <div className={themeStyles.statsGlow} />
+                    </>
+                  )}
                   <div className="relative space-y-1.5">
                     <p className={themeStyles.statsLabel}>
                       {stat.label}
@@ -440,4 +507,3 @@ function AdminHero({
     </div>
   );
 }
-

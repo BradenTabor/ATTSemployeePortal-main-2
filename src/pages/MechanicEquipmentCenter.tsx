@@ -2,47 +2,11 @@ import { useState, useMemo } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { EquipmentInspectionControlCenter } from "../components/mechanic/EquipmentInspectionControlCenter";
-import { AlertTriangle, Wrench, ClipboardList, ClipboardCheck, Shield, Flame } from "lucide-react";
+import { AlertTriangle, Wrench, ClipboardCheck, Shield, Flame } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import AdminPremiumScaffold, {
   type AdminHeroConfig,
-  type AdminStat,
 } from "../components/admin/AdminPremiumScaffold";
-
-// Animation variants - optimized for performance
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.05,
-      delayChildren: 0.02,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 10 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.25,
-      ease: [0.4, 0, 0.2, 1],
-    },
-  },
-};
-
-// Reduced motion variants
-const containerVariantsReduced = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { duration: 0.1 } },
-};
-
-const itemVariantsReduced = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { duration: 0.1 } },
-};
 
 export default function MechanicEquipmentCenter() {
   const { role, session } = useAuth();
@@ -55,120 +19,83 @@ export default function MechanicEquipmentCenter() {
     awaitingFix: 0,
   });
 
+  // Compact hero config
   const heroConfig = useMemo<AdminHeroConfig>(
     () => ({
-      eyebrow: "Ember Fleet Ops",
-      eyebrowIcon: <Flame className="w-4 h-4 text-[#ff9350]" />,
-      heading: `Equipment Inspection Control`,
-      description:
-        "Access every Daily Equipment Inspection, review checklist outcomes, and record mechanic fixes from one workspace.",
+      eyebrow: "Fleet Ops",
+      eyebrowIcon: <Flame className="w-3.5 h-3.5 text-amber-400" />,
+      heading: "Equipment Center",
+      description: "Review inspections and log fixes",
       badges: [
         {
-          label: role === "admin" ? "ADMIN" : "MECHANIC",
-          icon: <Wrench className="w-4 h-4 text-[#ff9350]" />,
+          label: role === "admin" ? "ADMIN" : "MECH",
+          icon: <Wrench className="w-3.5 h-3.5 text-amber-400" />,
           variant: "solid",
-        },
-        {
-          label: "Real-time Updates",
-          icon: <ClipboardCheck className="w-4 h-4 text-[#ffb48a]" />,
-          variant: "outline",
         },
       ],
     }),
     [role]
   );
 
-  const heroStats = useMemo<AdminStat[]>(
-    () => [
-      {
-        label: "Total Inspections",
-        value: stats.total.toString().padStart(2, "0"),
-        hint: "Submitted to date",
-      },
-      {
-        label: "Needs Attention",
-        value: stats.needsAttention.toString().padStart(2, "0"),
-        hint: "Checklist failures",
-      },
-      {
-        label: "Fixes Logged",
-        value: stats.resolved.toString().padStart(2, "0"),
-        hint: "Mechanic updates",
-      },
-    ],
-    [stats]
-  );
-
-  // Side panel content with quick stats
+  // Compact side panel with stats grid
   const sidePanel = (
-    <div className="space-y-6">
-      <div>
-        <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#ff9350]/10 border border-[#ff9350]/30 rounded-full text-[0.65rem] font-semibold tracking-[0.3em] uppercase text-[#ffd4b8] mb-4">
-          <ClipboardList className="w-4 h-4 text-[#ff9350]" />
-          Quick Overview
-        </div>
-        <h3 className="text-xl font-semibold text-white">Inspection Status</h3>
-        <p className="text-sm text-[#ffd4b8]/80 mt-1">
-          Monitor fleet equipment health at a glance.
-        </p>
-      </div>
-
-      <div className="space-y-3">
+    <div className="space-y-4">
+      {/* Stats grid - compact */}
+      <div className="grid grid-cols-3 gap-2">
         {[
           {
-            label: "Awaiting Fix",
+            label: "Awaiting",
             value: stats.awaitingFix,
             icon: AlertTriangle,
-            color: "text-[#ffb199]",
-            bgColor: "bg-[#ff6b4a]/15",
-            borderColor: "border-[#ff6b4a]/30",
+            gradient: "from-red-500/20 to-red-600/10",
+            border: "border-red-500/30",
+            iconColor: "text-red-400",
+            valueColor: "text-red-300",
           },
           {
-            label: "Needs Attention",
+            label: "Attention",
             value: stats.needsAttention,
-            icon: ClipboardList,
-            color: "text-[#ffd4b8]",
-            bgColor: "bg-[#ff9350]/15",
-            borderColor: "border-[#ff9350]/30",
+            icon: ClipboardCheck,
+            gradient: "from-amber-500/20 to-amber-600/10",
+            border: "border-amber-500/30",
+            iconColor: "text-amber-400",
+            valueColor: "text-amber-300",
           },
           {
-            label: "Fixes Logged",
+            label: "Fixed",
             value: stats.resolved,
             icon: Wrench,
-            color: "text-[#7ef2c8]",
-            bgColor: "bg-[#10b981]/15",
-            borderColor: "border-[#10b981]/30",
+            gradient: "from-emerald-500/20 to-emerald-600/10",
+            border: "border-emerald-500/30",
+            iconColor: "text-emerald-400",
+            valueColor: "text-emerald-300",
           },
         ].map((stat, index) => (
           <motion.div
             key={stat.label}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.1 + 0.3 }}
-            className={`rounded-2xl border ${stat.borderColor} ${stat.bgColor} p-4 flex items-center justify-between`}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: index * 0.05 + 0.2 }}
+            className={`rounded-xl border ${stat.border} bg-gradient-to-br ${stat.gradient} p-2.5 text-center`}
           >
-            <div className="flex items-center gap-3">
-              <stat.icon className={`w-5 h-5 ${stat.color}`} />
-              <span className="text-sm text-white/90">{stat.label}</span>
-            </div>
-            <span className={`text-2xl font-bold ${stat.color}`}>{stat.value}</span>
+            <stat.icon className={`w-4 h-4 ${stat.iconColor} mx-auto mb-1`} />
+            <div className={`text-xl font-bold ${stat.valueColor}`}>{stat.value}</div>
+            <div className="text-[9px] uppercase tracking-wider text-white/50">{stat.label}</div>
           </motion.div>
         ))}
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-        <p className="text-xs text-[#ffd4b8]/70 leading-relaxed">
-          <strong className="text-[#ff9350]">Tip:</strong> Use the filters to focus on equipment that needs immediate attention. Log fixes promptly to keep records accurate.
+      {/* Quick tip - more subtle */}
+      <div className="rounded-xl border border-white/5 bg-black/20 p-3">
+        <p className="text-[11px] text-white/50 leading-relaxed">
+          <span className="text-amber-400 font-medium">Tip:</span> Focus on "Needs Attention" items first.
         </p>
       </div>
 
-      <div className="pt-2 border-t border-white/10">
-        <p className="text-xs text-[#ffd4b8]/60">
-          Logged in as <span className="text-[#ff9350] font-medium">{session?.user?.email?.split("@")[0] || "User"}</span>
-        </p>
-        <p className="text-xs text-[#ffd4b8]/60 mt-1">
-          Role: <span className="text-white/80 font-medium uppercase">{role}</span>
-        </p>
+      {/* User info - minimal */}
+      <div className="flex items-center justify-between text-[10px] text-white/40 pt-2 border-t border-white/5">
+        <span>{session?.user?.email?.split("@")[0] || "User"}</span>
+        <span className="uppercase font-medium text-amber-400/70">{role}</span>
       </div>
     </div>
   );
@@ -192,19 +119,16 @@ export default function MechanicEquipmentCenter() {
       <div className="w-full min-h-screen bg-gradient-to-br from-[#1a0804] via-[#0f0402] to-[#0a0201]">
         <AdminPremiumScaffold
           hero={heroConfig}
-          stats={heroStats}
           sidePanel={sidePanel}
           theme="ember"
         >
           <motion.div
-            className="space-y-6"
-            variants={prefersReducedMotion ? containerVariantsReduced : containerVariants}
-            initial="hidden"
-            animate="visible"
+            className="space-y-4"
+            initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
           >
-            <motion.div variants={prefersReducedMotion ? itemVariantsReduced : itemVariants}>
-              <EquipmentInspectionControlCenter onStatsUpdate={setStats} />
-            </motion.div>
+            <EquipmentInspectionControlCenter onStatsUpdate={setStats} />
           </motion.div>
         </AdminPremiumScaffold>
       </div>

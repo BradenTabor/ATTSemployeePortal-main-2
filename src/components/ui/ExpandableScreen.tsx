@@ -195,7 +195,13 @@ export function ExpandableScreenContent({
           {/* Content */}
           <div 
             className="fixed inset-0 flex items-center justify-center p-4 sm:p-6"
-            style={{ zIndex: 9999 }}
+            style={{ 
+              zIndex: 9999,
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              backgroundColor: 'rgba(255, 255, 255, 0.15)',
+              color: 'rgba(255, 255, 255, 1)',
+            }}
           >
             {/* Morphing container with shared layoutId */}
             <motion.div

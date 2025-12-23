@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Zap, ChevronRight } from 'lucide-react';
@@ -13,6 +13,7 @@ import {
   FloatingPanelButton,
 } from '../ui/FloatingPanel';
 import { cn } from '../../lib/utils';
+import { getDeviceCapabilities } from '../../lib/mobilePerf';
 
 export interface QuickActionLink {
   label: string;
@@ -30,8 +31,19 @@ interface QuickActionsFABProps {
   className?: string;
 }
 
+/**
+ * QuickActionsFAB - Floating Action Button for quick navigation
+ * 
+ * Mobile optimizations:
+ * - Accounts for iOS safe-area-insets (notch/home indicator)
+ * - Disables pulsing animation on mobile for battery savings
+ * - Uses larger touch targets on mobile
+ */
 function QuickActionsFABComponent({ links, className }: QuickActionsFABProps) {
   const navigate = useNavigate();
+  
+  // Get device capabilities (cached)
+  const caps = useMemo(() => getDeviceCapabilities(), []);
 
   if (links.length === 0) {
     return null;
@@ -40,24 +52,29 @@ function QuickActionsFABComponent({ links, className }: QuickActionsFABProps) {
   return (
     <FloatingPanelRoot 
       className={cn(
-        // Fixed positioning - bottom left
+        // Fixed positioning - bottom left with safe area handling
         "fixed z-[9999]",
-        // Mobile: more padding from edges, account for safe areas
-        "bottom-20 left-4",
+        // Mobile: account for iOS safe area (home indicator)
+        // Using CSS max() to ensure minimum spacing even without safe area
+        "left-4",
         // Tablet and up: more breathing room
-        "sm:bottom-8 sm:left-6",
+        "sm:left-6",
         // Large screens
-        "lg:bottom-10 lg:left-8",
+        "lg:left-8",
         className
       )}
+      style={{
+        // Safe area inset bottom with fallback minimum
+        bottom: `max(calc(20px + env(safe-area-inset-bottom, 0px)), 80px)`,
+      }}
     >
-      {/* FAB Trigger Button */}
+      {/* FAB Trigger Button - 44px minimum touch target on mobile */}
       <FloatingPanelTrigger
         title="Quick Actions"
         className={cn(
           // Remove default styles
           "!border-0 !bg-transparent !p-0 !h-auto",
-          // FAB styling
+          // FAB styling - 56px on mobile (meets 44px minimum), larger on desktop
           "w-14 h-14 md:w-16 md:h-16 rounded-full",
           "flex items-center justify-center",
           // Premium emerald gradient
@@ -71,34 +88,43 @@ function QuickActionsFABComponent({ links, className }: QuickActionsFABProps) {
           "transition-all duration-300"
         )}
       >
-        <motion.div
-          className="relative"
-          animate={{
-            scale: [1, 1.1, 1],
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        >
-          <Zap className="w-6 h-6 md:w-7 md:h-7 text-white" fill="currentColor" />
-        </motion.div>
+        {/* Icon animation - disabled on mobile to save battery */}
+        {caps.isMobile || caps.prefersReducedMotion ? (
+          <div className="relative">
+            <Zap className="w-6 h-6 md:w-7 md:h-7 text-white" fill="currentColor" />
+          </div>
+        ) : (
+          <motion.div
+            className="relative"
+            animate={{
+              scale: [1, 1.1, 1],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          >
+            <Zap className="w-6 h-6 md:w-7 md:h-7 text-white" fill="currentColor" />
+          </motion.div>
+        )}
         
-        {/* Pulsing ring animation */}
-        <motion.div
-          className="absolute inset-0 rounded-full border-2"
-          style={{ borderColor: 'rgba(7, 207, 84, 0.6)' }}
-          animate={{
-            scale: [1, 1.3, 1],
-            opacity: [0.6, 0, 0.6],
-          }}
-          transition={{
-            duration: 2.5,
-            repeat: Infinity,
-            ease: "easeOut",
-          }}
-        />
+        {/* Pulsing ring animation - only on desktop */}
+        {!caps.isMobile && !caps.prefersReducedMotion && (
+          <motion.div
+            className="absolute inset-0 rounded-full border-2"
+            style={{ borderColor: 'rgba(7, 207, 84, 0.6)' }}
+            animate={{
+              scale: [1, 1.3, 1],
+              opacity: [0.6, 0, 0.6],
+            }}
+            transition={{
+              duration: 2.5,
+              repeat: Infinity,
+              ease: "easeOut",
+            }}
+          />
+        )}
       </FloatingPanelTrigger>
 
       {/* Floating Panel Content */}
@@ -171,4 +197,3 @@ function QuickActionsFABComponent({ links, className }: QuickActionsFABProps) {
 
 export const QuickActionsFAB = memo(QuickActionsFABComponent);
 export default QuickActionsFAB;
-

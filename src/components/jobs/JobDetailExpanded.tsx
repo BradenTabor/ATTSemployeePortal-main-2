@@ -94,19 +94,16 @@ function JobDetailExpandedComponent({ job, onJobUpdate }: JobDetailExpandedProps
   const isExceeded = !isSpanBased && progress.status === 'exceeded';
   const status = statusConfig[job.status];
 
-  // Card styling - span-based jobs use emerald accent, never red
-  const bgColors = isSpanBased
-    ? 'from-[#238561] via-[#020509] to-[#010204]'
-    : isExceeded
-      ? 'from-[#1a0808] via-[#0d0606] to-[#050303]'
-      : 'from-[#041812] via-[#020d09] to-[#010604]';
-
   return (
     <div
-      className={cn(
-        'w-full bg-gradient-to-br p-6 sm:p-8',
-        bgColors
-      )}
+      className="w-full p-6 sm:p-8"
+      style={{
+        background: isSpanBased
+          ? 'linear-gradient(135deg, rgba(35, 133, 97, 0.1) 17%, rgba(2, 5, 9, 0.1) 54%, rgba(1, 2, 4, 1) 100%)'
+          : isExceeded
+            ? 'linear-gradient(to bottom right, #1a0808, #0d0606, #050303)'
+            : 'linear-gradient(to bottom right, #0d6e51, #05291c, #010604)',
+      }}
     >
       {/* Header */}
       <div className="mb-6">
@@ -170,7 +167,8 @@ function JobDetailExpandedComponent({ job, onJobUpdate }: JobDetailExpandedProps
               onClick={() => setShowProgressForm(true)}
               className="relative inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-[#f4c979]/50 text-[#fdf4db] text-sm font-bold ring-1 ring-[#f4c979]/20 hover:border-[#f4c979]/70 hover:ring-[#f4c979]/30 transition-all duration-300"
               style={{
-                background: 'linear-gradient(135deg, rgba(247, 228, 189, 0.35) 0%, rgba(244, 201, 121, 0.65) 50%, rgba(215, 154, 50, 0.45) 100%)',
+                width: '100px',
+                background: 'linear-gradient(135deg, rgba(247, 228, 189, 1) 0%, rgba(244, 201, 121, 0.65) 50%, rgba(215, 154, 50, 1) 100%)',
                 boxShadow: '0px 0px 0px 0px rgba(255, 255, 255, 1), 0px 0px 0px 1px rgba(244, 201, 121, 0.3), 0px 20px 25px -5px rgba(244, 201, 121, 0.25), 0px 8px 10px -6px rgba(244, 201, 121, 0.25), 0px 4px 12px 0px rgba(0, 0, 0, 0.15)',
                 backdropFilter: 'blur(8px)',
               }}

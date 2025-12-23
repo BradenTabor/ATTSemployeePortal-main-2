@@ -1,6 +1,7 @@
 import { useMemo, useState, FormEvent, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Shield, Megaphone, Sparkles, Inbox, X, Filter, LayoutGrid } from "lucide-react";
+import { ScrollReveal } from "../motion";
 import DashboardLayout from "../layouts/DashboardLayout";
 import AdminPremiumScaffold, {
   type AdminHeroConfig,
@@ -486,14 +487,9 @@ export default function AdminDashboard() {
           stats={stats}
           sidePanel={announcementPanel}
         >
-          <motion.div 
-            className="space-y-6"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-          >
+          <div className="space-y-6">
             {/* Collapsible Nav Cards Section */}
-            <motion.div variants={itemVariants}>
+            <ScrollReveal variant="fadeUp" delay={0}>
               <GoldCollapsibleSection
                 id="admin-nav-panels"
                 title="Admin Control Panels"
@@ -525,12 +521,12 @@ export default function AdminDashboard() {
                   ))}
                 </motion.div>
               </GoldCollapsibleSection>
-            </motion.div>
+            </ScrollReveal>
 
-            <motion.div variants={itemVariants}>
+            <ScrollReveal variant="fadeUp" delay={0.15}>
               {renderContactRequestsPanel()}
-            </motion.div>
-          </motion.div>
+            </ScrollReveal>
+          </div>
         </AdminPremiumScaffold>
 
         {expandedRequest && (

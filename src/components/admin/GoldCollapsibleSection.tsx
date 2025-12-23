@@ -1,5 +1,5 @@
-import { useState, useCallback, ReactNode, memo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useCallback, ReactNode, memo, useMemo } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { getPersistedBool, setPersistedBool } from '../../lib/persistence';
@@ -25,6 +25,37 @@ interface GoldCollapsibleSectionProps {
   headerAction?: ReactNode;
 }
 
+// Stable animation configs - defined outside component to prevent recreations
+const chevronTransition = { duration: 0.3, ease: 'easeInOut' as const };
+const chevronTransitionReduced = { duration: 0 };
+
+const expandAnimation = {
+  initial: { height: 0, opacity: 0 },
+  animate: { 
+    height: 'auto', 
+    opacity: 1,
+    transition: {
+      height: { duration: 0.35, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] },
+      opacity: { duration: 0.25, delay: 0.1 }
+    }
+  },
+  exit: { 
+    height: 0, 
+    opacity: 0,
+    transition: {
+      height: { duration: 0.25, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] },
+      opacity: { duration: 0.15 }
+    }
+  }
+};
+
+// Reduced motion variants - instant transitions
+const reducedMotionExpand = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1, transition: { duration: 0.1 } },
+  exit: { opacity: 0, transition: { duration: 0.1 } }
+};
+
 function GoldCollapsibleSectionComponent({
   id,
   title,
@@ -36,6 +67,9 @@ function GoldCollapsibleSectionComponent({
   icon,
   headerAction,
 }: GoldCollapsibleSectionProps) {
+  const prefersReducedMotion = useReducedMotion();
+  const shouldAnimate = !prefersReducedMotion;
+
   // Use lazy initializer to read persisted state without useEffect setState
   const [isOpen, setIsOpen] = useState(() => {
     if (storageKey) {
@@ -72,11 +106,17 @@ function GoldCollapsibleSectionComponent({
   const toggleId = `${id}-toggle`;
   const contentId = `${id}-content`;
 
+  // Select animation variant based on reduced motion preference
+  const animationVariant = useMemo(
+    () => prefersReducedMotion ? reducedMotionExpand : expandAnimation,
+    [prefersReducedMotion]
+  );
+
   return (
     <section
       className={cn(
         'relative rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] overflow-hidden transition-all shadow-[0_25px_50px_rgba(0,0,0,0.5)]',
-        isHovered && 'border-[#f6dcb2]/40 shadow-[0_30px_60px_rgba(0,0,0,0.6)]',
+        isHovered && shouldAnimate && 'border-[#f6dcb2]/40 shadow-[0_30px_60px_rgba(0,0,0,0.6)]',
         className
       )}
       onMouseEnter={() => setIsHovered(true)}
@@ -86,25 +126,27 @@ function GoldCollapsibleSectionComponent({
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(247,228,189,0.08),transparent_50%)] opacity-80" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(209,152,57,0.06),transparent_40%)]" />
       
-      {/* Shimmer effect on hover */}
-      <div 
-        className={cn(
-          "pointer-events-none absolute inset-0 overflow-hidden rounded-3xl transition-opacity duration-500",
-          isHovered ? "opacity-100" : "opacity-0"
-        )}
-        style={{
-          background: `linear-gradient(
-            115deg,
-            transparent 15%,
-            rgba(247,228,189,0.06) 35%,
-            rgba(244,201,121,0.04) 50%,
-            rgba(247,228,189,0.06) 65%,
-            transparent 85%
-          )`,
-          backgroundSize: '250% 100%',
-          animation: isHovered ? 'goldShimmer 3s ease-in-out infinite' : 'none',
-        }}
-      />
+      {/* Shimmer effect on hover - respects reduced motion */}
+      {shouldAnimate && (
+        <div 
+          className={cn(
+            "pointer-events-none absolute inset-0 overflow-hidden rounded-3xl transition-opacity duration-500",
+            isHovered ? "opacity-100" : "opacity-0"
+          )}
+          style={{
+            background: `linear-gradient(
+              115deg,
+              transparent 15%,
+              rgba(247,228,189,0.06) 35%,
+              rgba(244,201,121,0.04) 50%,
+              rgba(247,228,189,0.06) 65%,
+              transparent 85%
+            )`,
+            backgroundSize: '250% 100%',
+            animation: isHovered ? 'goldShimmer 3s ease-in-out infinite' : 'none',
+          }}
+        />
+      )}
 
       {/* Header - clickable toggle area */}
       <div className="relative p-5 md:p-6">
@@ -144,8 +186,8 @@ function GoldCollapsibleSectionComponent({
             {/* Animated chevron */}
             <motion.div
               animate={{ rotate: isOpen ? 180 : 0 }}
-              transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="flex-shrink-0 w-8 h-8 rounded-full bg-[#f4c979]/10 border border-[#f4c979]/30 flex items-center justify-center"
+              transition={prefersReducedMotion ? chevronTransitionReduced : chevronTransition}
+              className="flex-shrink-0 w-8 h-8 rounded-full bg-[#f4c979]/10 border border-[#f4c979]/30 flex items-center justify-center will-change-transform"
             >
               <ChevronDown
                 className="w-5 h-5 text-[#f4c979]"
@@ -162,29 +204,13 @@ function GoldCollapsibleSectionComponent({
       </div>
 
       {/* Collapsible content with spring animation */}
-      <AnimatePresence initial={false}>
+      <AnimatePresence initial={false} mode="sync">
         {isOpen && (
           <motion.div
             id={contentId}
             role="region"
             aria-labelledby={toggleId}
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ 
-              height: 'auto', 
-              opacity: 1,
-              transition: {
-                height: { duration: 0.35, ease: [0.4, 0, 0.2, 1] },
-                opacity: { duration: 0.25, delay: 0.1 }
-              }
-            }}
-            exit={{ 
-              height: 0, 
-              opacity: 0,
-              transition: {
-                height: { duration: 0.25, ease: [0.4, 0, 0.2, 1] },
-                opacity: { duration: 0.15 }
-              }
-            }}
+            {...animationVariant}
             className="overflow-hidden"
           >
             {/* Content divider line */}
@@ -203,6 +229,12 @@ function GoldCollapsibleSectionComponent({
           0%, 100% { background-position: 250% 0; }
           50% { background-position: -250% 0; }
         }
+        
+        @media (prefers-reduced-motion: reduce) {
+          .gold-shimmer {
+            animation: none !important;
+          }
+        }
       `}</style>
     </section>
   );
@@ -210,4 +242,3 @@ function GoldCollapsibleSectionComponent({
 
 export const GoldCollapsibleSection = memo(GoldCollapsibleSectionComponent);
 export default GoldCollapsibleSection;
-
