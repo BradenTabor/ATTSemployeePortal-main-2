@@ -249,6 +249,7 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
                 </label>
                 <select
                   id="equipment-select"
+                  title="Equipment Used"
                   value={formData.equipment}
                   onChange={(e) => setFormData(prev => ({ ...prev, equipment: e.target.value as Equipment }))}
                   className={cn(baseInput, 'pr-10')}

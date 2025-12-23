@@ -788,13 +788,12 @@ export default function AdminRTO() {
                 <Filter className="w-4 h-4 text-[#b59d72] absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <select
                   aria-label="Filter by status"
+                  title="Filter by status"
                   value={statusFilter || ""}
                   onChange={(e) => {
                     setStatusFilter(e.target.value || null);
                     setCurrentPage(1);
                   }}
-                  aria-label="Filter by status"
-                  title="Filter by status"
                   className="w-full rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 pl-10 pr-4 py-2.5 text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/50 appearance-none cursor-pointer"
                 >
                   <option value="">All Statuses</option>
@@ -809,13 +808,12 @@ export default function AdminRTO() {
                 <Calendar className="w-4 h-4 text-[#b59d72] absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <select
                   aria-label="Filter by month"
+                  title="Filter by month"
                   value={monthFilter || ""}
                   onChange={(e) => {
                     setMonthFilter(e.target.value || null);
                     setCurrentPage(1);
                   }}
-                  aria-label="Filter by month"
-                  title="Filter by month"
                   className="w-full rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 pl-10 pr-4 py-2.5 text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/50 appearance-none cursor-pointer"
                 >
                   <option value="">All Months</option>
