@@ -235,7 +235,7 @@ export default function Home() {
 
               {/* Form section */}
               <div className="relative p-6">
-                {/* Mode toggle */}
+                {/* Mode toggle - 44px minimum touch targets for mobile */}
                 <div className="flex justify-center mb-6">
                   <div className="inline-flex bg-white/[0.03] border border-white/[0.06] rounded-full p-1">
                     {(["login", "signup"] as AuthMode[]).map((option) => (
@@ -243,7 +243,7 @@ export default function Home() {
                         key={option}
                         type="button"
                         onClick={() => handleModeSwitch(option)}
-                        className={`px-5 py-2 text-sm font-medium rounded-full transition-all duration-300 ${
+                        className={`px-5 py-2.5 min-h-[44px] text-sm font-medium rounded-full transition-all duration-300 ${
                           mode === option
                             ? "bg-white/10 text-white shadow-lg shadow-black/20 border border-white/10"
                             : "text-white/40 hover:text-white/70"
@@ -309,7 +309,8 @@ export default function Home() {
                         <button
                           type="button"
                           onClick={() => setShowPassword((prev) => !prev)}
-                          className="absolute top-1/2 right-3 -translate-y-1/2 text-[11px] font-medium text-white/30 hover:text-white/60 transition-colors"
+                          className="absolute top-1/2 right-1 -translate-y-1/2 text-[11px] font-medium text-white/30 hover:text-white/60 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                          aria-label={showPassword ? "Hide password" : "Show password"}
                         >
                           {showPassword ? "Hide" : "Show"}
                         </button>
@@ -324,8 +325,8 @@ export default function Home() {
                         exit={{ opacity: 0, height: 0 }}
                         className="space-y-4 pt-2"
                       >
-                        {/* Full Name & License Number */}
-                        <div className="grid grid-cols-2 gap-3">
+                        {/* Full Name & License Number - stack on small phones (<640px) */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div className="space-y-2">
                             <label className={labelStyles}>Full Name</label>
                             <input
@@ -350,8 +351,8 @@ export default function Home() {
                           </div>
                         </div>
 
-                        {/* License Class & Expiration */}
-                        <div className="grid grid-cols-2 gap-3">
+                        {/* License Class & Expiration - stack on small phones (<640px) */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div className="space-y-2">
                             <label className={labelStyles}>License Class</label>
                             <select

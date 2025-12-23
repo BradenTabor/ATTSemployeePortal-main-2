@@ -8,6 +8,9 @@ import {
   Wrench,
 } from "lucide-react";
 import BrandedNavCard from "./BrandedNavCard";
+import { motion } from "framer-motion";
+import { useMemo } from "react";
+import { getDeviceCapabilities } from "../lib/mobilePerf";
 
 const userPages = [
   {
@@ -38,42 +41,91 @@ const userPages = [
 
 export default function NavCards() {
   const { isAdmin, hasMechanicAccess } = useAuth();
+  
+  // Get device capabilities for mobile optimization
+  const caps = useMemo(() => getDeviceCapabilities(), []);
+  const shouldReduceMotion = caps.prefersReducedMotion || caps.isLowEnd;
+
+  // Stagger animation - faster/simpler on mobile
+  const containerVariants = useMemo(() => ({
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: shouldReduceMotion ? 0 : (caps.isMobile ? 0.03 : 0.05),
+        delayChildren: shouldReduceMotion ? 0 : 0.05,
+      },
+    },
+  }), [caps.isMobile, shouldReduceMotion]);
+
+  const itemVariants = useMemo(() => ({
+    hidden: { 
+      opacity: 0, 
+      y: shouldReduceMotion ? 0 : 6 
+    },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: shouldReduceMotion ? { duration: 0.1 } : {
+        type: "spring",
+        stiffness: 500,
+        damping: 30,
+      }
+    },
+  }), [shouldReduceMotion]);
+
+  // Build the cards array dynamically
+  const allCards = [
+    ...userPages.map((page) => ({
+      key: page.path,
+      title: page.label,
+      description: page.description,
+      icon: page.icon,
+      to: page.path,
+      variant: "emerald" as const,
+      show: true,
+    })),
+    {
+      key: "/mechanic-dashboard",
+      title: "Mechanic Panel",
+      description: "Review DVIR queues and shop work",
+      icon: Wrench,
+      to: "/mechanic-dashboard",
+      variant: "ember" as const,
+      show: hasMechanicAccess,
+    },
+    {
+      key: "/admin",
+      title: "Admin Panel",
+      description: "Manage users and approvals",
+      icon: Shield,
+      to: "/admin",
+      variant: "gold" as const,
+      show: isAdmin,
+    },
+  ].filter(card => card.show);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8 w-full max-w-6xl mx-auto">
-      {userPages.map((page) => {
-        const Icon = page.icon;
+    <motion.div 
+      className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5 sm:gap-3 w-full"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {allCards.map((card) => {
+        const Icon = card.icon;
         return (
-          <BrandedNavCard
-            key={page.path}
-            title={page.label}
-            description={page.description}
-            icon={<Icon className="w-8 h-8 text-white" />}
-            to={page.path}
-            variant="emerald"
-          />
+          <motion.div key={card.key} variants={itemVariants}>
+            <BrandedNavCard
+              title={card.title}
+              description={card.description}
+              icon={<Icon />}
+              to={card.to}
+              variant={card.variant}
+            />
+          </motion.div>
         );
       })}
-
-      {hasMechanicAccess && (
-        <BrandedNavCard
-          title="Mechanic Panel"
-          description="Review DVIR queues, failed inspections, and shop work."
-          icon={<Wrench className="w-8 h-8 text-[#ffb48a]" />}
-          to="/mechanic-dashboard"
-          variant="ember"
-        />
-      )}
-
-      {isAdmin && (
-        <BrandedNavCard
-          title="Admin Panel"
-          description="Manage users, approvals, announcements, and more."
-          icon={<Shield className="w-8 h-8 text-[#f4c979]" />}
-          to="/admin"
-          variant="gold"
-        />
-      )}
-    </div>
+    </motion.div>
   );
 }

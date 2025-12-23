@@ -106,17 +106,17 @@ const formsCatalog: FormDefinition[] = [
     icon: DollarSign,
     category: "Finance & Procurement",
     type: "external",
-    url: "https://docs.google.com/forms/d/e/1FAIpQLSdozbTMe9qO1OuLZvHKJBOH7BDMMOsB_-tua1FRo6YXc0C4Zw/viewform",
+    url: "https://docs.google.com/forms/d/e/1FAIpQLSctviPAy1rRfp351BJHBeazBBq1ukpztoGmxb1pwxk9J0CHww/viewform",
     tag: "Finance",
   },
   {
     id: "receipts-form",
     title: "Receipts Form",
-    description: "Upload expense receipts for reimbursements.",
+    description: "Upload expense receipts.",
     icon: FileText,
     category: "Finance & Procurement",
     type: "external",
-    url: "https://docs.google.com/forms/d/e/1FAIpQLSdzpVGahh3Lautt3XBIBV-PSKJsfq2R5DY111N_KRO3RvJdIQ/viewform",
+    url: "https://docs.google.com/forms/d/e/1FAIpQLSeTwVhz3z3dOLE65MZ7_klz_W_R5da2gJo0JwEdkbZqspz5SQ/viewform",
     tag: "Receipts",
   },
   {
@@ -212,14 +212,7 @@ const FormCard = ({ form, index }: FormCardProps) => {
             </div>
           </div>
 
-          <p
-            className="text-sm text-white/70 leading-relaxed flex-1 overflow-hidden"
-            style={{
-              display: "-webkit-box",
-              WebkitLineClamp: 3,
-              WebkitBoxOrient: "vertical",
-            }}
-          >
+          <p className="text-sm text-white/70 leading-relaxed flex-1 overflow-hidden line-clamp-3">
             {form.description}
           </p>
 

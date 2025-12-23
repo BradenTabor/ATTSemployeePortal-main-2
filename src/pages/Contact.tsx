@@ -37,11 +37,11 @@ const CONTACT_CHANNELS = [
   },
   {
     title: "Safety & Field Ops",
-    owner: "Ops Hotline",
-    phone: "(870) 930-8000",
-    phoneHref: "tel:8709308000",
-    email: "safety@alltts.com",
-    emailHref: "mailto:safety@alltts.com",
+    owner: "Weston Martin",
+    phone: "(870) 719-4227",
+    phoneHref: "tel:8707194227",
+    email: "weston@alltts.com",
+    emailHref: "mailto:weston@alltts.com",
   },
 ];
 

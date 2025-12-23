@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useMemo, useState, useCallback, memo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar,
   Search,
@@ -8,15 +8,18 @@ import {
   CheckCircle2,
   AlertCircle,
   User,
-  Mail,
   Sparkles,
   Shield,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  FileText,
 } from "lucide-react";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../contexts/AuthContext";
 import { subscribeToTableChanges } from "../lib/realtime";
-import { PaginationControls } from "../components/PaginationControls";
 import { logger } from "../lib/logger";
 import TableSkeleton from "../components/skeletons/TableSkeleton";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
@@ -44,6 +47,7 @@ interface StatusConfig {
   borderColor: string;
   textColor: string;
   icon: React.ReactNode;
+  glowColor: string;
 }
 
 const STATUS_CONFIG: Record<string, StatusConfig> = {
@@ -51,30 +55,405 @@ const STATUS_CONFIG: Record<string, StatusConfig> = {
     label: "Pending",
     color: "amber",
     bgColor: "bg-[#f7dca8]/15",
-    borderColor: "border-[#f4c979]/30",
+    borderColor: "border-[#f4c979]/40",
     textColor: "text-[#fef3d1]",
-    icon: <Clock className="w-4 h-4" />,
+    icon: <Clock className="w-3.5 h-3.5" />,
+    glowColor: "shadow-[0_0_12px_rgba(244,201,121,0.2)]",
   },
   Approved: {
     label: "Approved",
     color: "emerald",
-    bgColor: "bg-[#1d2b1f]",
-    borderColor: "border-[#8ff2c7]/25",
-    textColor: "text-[#8ff2c7]",
-    icon: <CheckCircle2 className="w-4 h-4" />,
+    bgColor: "bg-emerald-500/15",
+    borderColor: "border-emerald-400/35",
+    textColor: "text-emerald-300",
+    icon: <CheckCircle2 className="w-3.5 h-3.5" />,
+    glowColor: "shadow-[0_0_12px_rgba(52,211,153,0.2)]",
   },
   Denied: {
     label: "Denied",
     color: "red",
-    bgColor: "bg-[#2a0b02]",
-    borderColor: "border-[#ff8a65]/35",
-    textColor: "text-[#ffc7b8]",
-    icon: <AlertCircle className="w-4 h-4" />,
+    bgColor: "bg-red-500/10",
+    borderColor: "border-red-400/30",
+    textColor: "text-red-300",
+    icon: <AlertCircle className="w-3.5 h-3.5" />,
+    glowColor: "shadow-[0_0_12px_rgba(248,113,113,0.15)]",
   },
 };
 
+// ============================================================================
+// ENHANCED GOLD PAGINATION COMPONENT
+// ============================================================================
+
+interface EnhancedPaginationProps {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number | null;
+  loading: boolean;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+}
+
+const EnhancedPagination = memo(function EnhancedPagination({
+  currentPage,
+  totalPages,
+  totalItems,
+  loading,
+  pageSize,
+  onPageChange,
+}: EnhancedPaginationProps) {
+  const startItem = (currentPage - 1) * pageSize + 1;
+  const endItem = Math.min(currentPage * pageSize, totalItems || 0);
+
+  // Generate page numbers to display
+  const pageNumbers = useMemo(() => {
+    const pages: (number | "ellipsis")[] = [];
+    const maxVisible = 5;
+
+    if (totalPages <= maxVisible + 2) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1);
+
+      if (currentPage > 3) {
+        pages.push("ellipsis");
+      }
+
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+
+      if (currentPage < totalPages - 2) {
+        pages.push("ellipsis");
+      }
+
+      if (totalPages > 1) {
+        pages.push(totalPages);
+      }
+    }
+
+    return pages;
+  }, [currentPage, totalPages]);
+
+  return (
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 sm:px-6 py-4">
+      {/* Item count */}
+      <div className="text-sm text-[#f8e5bb]/70 order-2 sm:order-1">
+        <span className="font-semibold text-[#f4c979]">{startItem}</span>
+        <span className="text-[#f8e5bb]/50"> – </span>
+        <span className="font-semibold text-[#f4c979]">{endItem}</span>
+        <span className="text-[#f8e5bb]/50"> of </span>
+        <span className="font-semibold text-[#f4c979]">{totalItems || 0}</span>
+        <span className="text-[#f8e5bb]/50 ml-1">requests</span>
+      </div>
+
+      {/* Page navigation */}
+      <div className="flex items-center gap-1.5 order-1 sm:order-2">
+        {/* Previous button */}
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          disabled={currentPage === 1 || loading}
+          onClick={() => onPageChange(currentPage - 1)}
+          className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-[#f4c979]/10 border border-[#f4c979]/25 text-[#f4c979] hover:bg-[#f4c979]/20 hover:border-[#f4c979]/40 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+          aria-label="Previous page"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </motion.button>
+
+        {/* Page numbers */}
+        <div className="flex items-center gap-1">
+          {pageNumbers.map((page, idx) =>
+            page === "ellipsis" ? (
+              <span
+                key={`ellipsis-${idx}`}
+                className="w-9 h-9 flex items-center justify-center text-[#f4c979]/50"
+              >
+                ⋯
+              </span>
+            ) : (
+              <motion.button
+                key={page}
+                whileHover={{ scale: 1.08 }}
+                whileTap={{ scale: 0.95 }}
+                disabled={loading}
+                onClick={() => onPageChange(page)}
+                className={`w-9 h-9 rounded-xl text-sm font-semibold transition-all ${
+                  currentPage === page
+                    ? "bg-gradient-to-br from-[#f4c979] to-[#d89d3e] text-[#1a1408] shadow-[0_4px_20px_rgba(244,201,121,0.35)]"
+                    : "bg-[#f4c979]/10 border border-[#f4c979]/20 text-[#f4c979] hover:bg-[#f4c979]/20 hover:border-[#f4c979]/35"
+                }`}
+              >
+                {page}
+              </motion.button>
+            )
+          )}
+        </div>
+
+        {/* Next button */}
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          disabled={currentPage >= totalPages || loading}
+          onClick={() => onPageChange(currentPage + 1)}
+          className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-[#f4c979]/10 border border-[#f4c979]/25 text-[#f4c979] hover:bg-[#f4c979]/20 hover:border-[#f4c979]/40 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+          aria-label="Next page"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </motion.button>
+      </div>
+    </div>
+  );
+});
+
+// ============================================================================
+// COMPACT REQUEST ROW (GOLD THEME)
+// ============================================================================
+
+interface CompactRequestRowProps {
+  request: RTORequest;
+  statusConfig: StatusConfig;
+  formatDateRange: (start: string, end: string) => string;
+  calculateInclusiveDays: (start: string, end: string) => number | null;
+  formatDateTime: (value: string) => string;
+  index: number;
+}
+
+const CompactRequestRow = memo(function CompactRequestRow({
+  request,
+  statusConfig,
+  formatDateRange,
+  calculateInclusiveDays,
+  formatDateTime,
+  index,
+}: CompactRequestRowProps) {
+  const days = calculateInclusiveDays(request.start_date, request.end_date);
+  const initials = request.full_name
+    ? request.full_name
+        .split(" ")
+        .slice(0, 2)
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+    : request.email?.charAt(0).toUpperCase() ?? "?";
+
+  return (
+    <motion.tr
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.02, duration: 0.25 }}
+      className="group hover:bg-[#f4c979]/5 transition-colors border-b border-[#f6dcb2]/10 last:border-b-0"
+    >
+      {/* Employee */}
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#f4c979] to-[#d89d3e] flex items-center justify-center text-[0.7rem] font-bold text-[#1a1408] shadow-[0_2px_10px_rgba(244,201,121,0.25)]">
+            {initials}
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-white truncate max-w-[140px]">
+              {request.full_name || "Unknown"}
+            </p>
+            <p className="text-[0.65rem] text-[#c7b696] truncate max-w-[140px]">
+              {request.email || "—"}
+            </p>
+          </div>
+        </div>
+      </td>
+
+      {/* Dates */}
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-2">
+          <CalendarDays className="w-3.5 h-3.5 text-[#f4c979]/60 flex-shrink-0" />
+          <div className="min-w-0">
+            <p className="text-sm text-white font-medium truncate">
+              {formatDateRange(request.start_date, request.end_date)}
+            </p>
+            {days && (
+              <p className="text-[0.65rem] text-[#c7b696]">
+                {days} day{days !== 1 ? "s" : ""}
+              </p>
+            )}
+          </div>
+        </div>
+      </td>
+
+      {/* Reason */}
+      <td className="px-4 py-3 max-w-[200px]">
+        <p className="text-sm text-[#fdf4db]/80 truncate">
+          {request.reason || "—"}
+        </p>
+      </td>
+
+      {/* Status */}
+      <td className="px-4 py-3">
+        <span
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[0.7rem] font-semibold ${statusConfig.bgColor} ${statusConfig.borderColor} ${statusConfig.textColor} border ${statusConfig.glowColor}`}
+        >
+          {statusConfig.icon}
+          {statusConfig.label}
+        </span>
+      </td>
+
+      {/* Submitted */}
+      <td className="px-4 py-3">
+        <p className="text-sm text-[#f0e2c7]">
+          {formatDateTime(request.submitted_at)}
+        </p>
+      </td>
+    </motion.tr>
+  );
+});
+
+// ============================================================================
+// COMPACT MOBILE CARD (GOLD THEME)
+// ============================================================================
+
+interface CompactMobileCardProps {
+  request: RTORequest;
+  statusConfig: StatusConfig;
+  formatDateRange: (start: string, end: string) => string;
+  calculateInclusiveDays: (start: string, end: string) => number | null;
+  formatDateTime: (value: string) => string;
+  index: number;
+}
+
+const CompactMobileCard = memo(function CompactMobileCard({
+  request,
+  statusConfig,
+  formatDateRange,
+  calculateInclusiveDays,
+  formatDateTime,
+  index,
+}: CompactMobileCardProps) {
+  const days = calculateInclusiveDays(request.start_date, request.end_date);
+  const initials = request.full_name
+    ? request.full_name
+        .split(" ")
+        .slice(0, 2)
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+    : request.email?.charAt(0).toUpperCase() ?? "?";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.04, duration: 0.3 }}
+      className="rounded-2xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914]/90 via-[#120f0c]/95 to-[#070605]/95 p-4 shadow-[0_8px_25px_rgba(0,0,0,0.4)]"
+    >
+      {/* Header: Avatar + Name + Status */}
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#f4c979] to-[#d89d3e] flex items-center justify-center text-sm font-bold text-[#1a1408] shadow-[0_4px_15px_rgba(244,201,121,0.3)]">
+            {initials}
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-white truncate">
+              {request.full_name || "Unknown"}
+            </p>
+            <p className="text-xs text-[#c7b696] truncate">
+              {request.email || "—"}
+            </p>
+          </div>
+        </div>
+        <span
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[0.65rem] font-semibold ${statusConfig.bgColor} ${statusConfig.borderColor} ${statusConfig.textColor} border flex-shrink-0`}
+        >
+          {statusConfig.icon}
+          {statusConfig.label}
+        </span>
+      </div>
+
+      {/* Details grid */}
+      <div className="grid grid-cols-2 gap-3 text-sm">
+        <div className="flex items-start gap-2">
+          <CalendarDays className="w-4 h-4 text-[#f4c979]/70 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="text-[0.65rem] uppercase tracking-wider text-[#d0bfa0] mb-0.5">
+              Dates
+            </p>
+            <p className="text-white font-medium text-xs">
+              {formatDateRange(request.start_date, request.end_date)}
+            </p>
+            {days && (
+              <p className="text-[0.6rem] text-[#c7b696] mt-0.5">
+                {days} day{days !== 1 ? "s" : ""}
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="flex items-start gap-2">
+          <Clock className="w-4 h-4 text-[#f4c979]/70 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="text-[0.65rem] uppercase tracking-wider text-[#d0bfa0] mb-0.5">
+              Submitted
+            </p>
+            <p className="text-white font-medium text-xs">
+              {formatDateTime(request.submitted_at)}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Reason */}
+      {request.reason && (
+        <div className="mt-3 pt-3 border-t border-[#f6dcb2]/15">
+          <p className="text-[0.65rem] uppercase tracking-wider text-[#d0bfa0] mb-1">
+            Reason
+          </p>
+          <p className="text-xs text-[#fdf4db]/80 line-clamp-2">
+            {request.reason}
+          </p>
+        </div>
+      )}
+    </motion.div>
+  );
+});
+
+// ============================================================================
+// FILTER CHIP (GOLD THEME)
+// ============================================================================
+
+interface FilterChipProps {
+  label: string;
+  value: string;
+  onClear: () => void;
+}
+
+const FilterChip = memo(function FilterChip({ label, value, onClear }: FilterChipProps) {
+  return (
+    <motion.span
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#f4c979]/15 border border-[#f4c979]/25 text-xs text-[#fef3d1]"
+    >
+      <span className="text-[#f4c979]/70">{label}:</span>
+      <span className="font-medium">{value}</span>
+      <button
+        type="button"
+        onClick={onClear}
+        aria-label="Clear filter"
+        title="Clear filter"
+        className="ml-1 hover:text-white transition-colors"
+      >
+        <X className="w-3 h-3" />
+      </button>
+    </motion.span>
+  );
+});
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
+
 export default function AdminRTO() {
-  // Use user and loading from AuthContext instead of redundant getUser() call
   const { role: currentUserRole, user, loading: authLoading } = useAuth();
   const [requests, setRequests] = useState<RTORequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,17 +462,17 @@ export default function AdminRTO() {
   const [monthFilter, setMonthFilter] = useState<string | null>(null);
   const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
 
-  // 🔢 Pagination State
-  const pageSize = 20;
+  // Pagination State
+  const pageSize = 15;
   const [currentPage, setCurrentPage] = useState(1);
   const [totalRequests, setTotalRequests] = useState<number | null>(null);
 
   const totalPages =
     totalRequests && totalRequests > 0
-      ?  Math.max(1, Math.ceil(totalRequests / pageSize))
+      ? Math.max(1, Math.ceil(totalRequests / pageSize))
       : 1;
 
-  // 📥 Fetch RTO requests with pagination
+  // Fetch RTO requests with pagination
   const fetchRTORequests = useCallback(
     async (showSpinner: boolean = true) => {
       if (!user) return;
@@ -152,17 +531,10 @@ export default function AdminRTO() {
         if (showSpinner) setLoading(false);
       }
     },
-    [
-      currentPage,
-      pageSize,
-      debouncedSearchQuery,
-      statusFilter,
-      monthFilter,
-      user,
-    ]
+    [currentPage, pageSize, debouncedSearchQuery, statusFilter, monthFilter, user]
   );
 
-  // 🔁 Load + Realtime subscribe
+  // Load + Realtime subscribe
   useEffect(() => {
     if (authLoading) return;
 
@@ -228,9 +600,9 @@ export default function AdminRTO() {
       pending: requests.filter((r) => r.status === "Pending").length,
       approved: requests.filter((r) => r.status === "Approved").length,
       denied: requests.filter((r) => r.status === "Denied").length,
-      total: requests.length,
+      total: totalRequests || requests.length,
     }),
-    [requests]
+    [requests, totalRequests]
   );
 
   const heroStats = useMemo<AdminStat[]>(
@@ -238,17 +610,17 @@ export default function AdminRTO() {
       {
         label: "Pending",
         value: String(requestStats.pending),
-        hint: "Awaiting action",
+        hint: "Awaiting review",
       },
       {
         label: "Approved",
         value: String(requestStats.approved),
-        hint: "Cleared PTO",
+        hint: "Time off granted",
       },
       {
         label: "Denied",
         value: String(requestStats.denied),
-        hint: "Requires follow-up",
+        hint: "Needs follow-up",
       },
     ],
     [requestStats]
@@ -268,7 +640,7 @@ export default function AdminRTO() {
         },
         {
           label: `${requestStats.total} total`,
-          icon: <Calendar className="w-4 h-4 text-[#f4c979]" />,
+          icon: <FileText className="w-4 h-4 text-[#f4c979]" />,
           variant: "outline",
         },
       ],
@@ -308,7 +680,6 @@ export default function AdminRTO() {
     return d.toLocaleString("en-US", {
       month: "short",
       day: "numeric",
-      year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
     });
@@ -316,10 +687,7 @@ export default function AdminRTO() {
 
   const formatDateWithWeekday = (dateStr: string) => {
     const date = new Date(dateStr);
-    if (Number.isNaN(date.getTime())) {
-      return null;
-    }
-
+    if (Number.isNaN(date.getTime())) return null;
     return date.toLocaleDateString("en-US", {
       weekday: "short",
       month: "short",
@@ -327,52 +695,27 @@ export default function AdminRTO() {
     });
   };
 
-  const formatDateRange = (startDate: string, endDate: string) => {
+  const formatDateRange = (startDate: string, endDate: string): string => {
     const startFormatted = formatDateWithWeekday(startDate);
     const endFormatted = formatDateWithWeekday(endDate);
 
-    if (!startFormatted && !endFormatted) {
-      return "—";
-    }
-
-    if (startFormatted && !endFormatted) {
-      return startFormatted;
-    }
-
-    if (!startFormatted && endFormatted) {
-      return endFormatted;
-    }
-
-    return `${startFormatted} → ${endFormatted}`;
+    if (!startFormatted && !endFormatted) return "—";
+    if (startFormatted && !endFormatted) return startFormatted;
+    if (!startFormatted && endFormatted) return endFormatted;
+    if (startFormatted && endFormatted && startFormatted === endFormatted) return startFormatted;
+    return `${startFormatted ?? ""} → ${endFormatted ?? ""}`;
   };
 
-  const calculateInclusiveDays = (
-    startDate: string,
-    endDate: string
-  ): number | null => {
+  const calculateInclusiveDays = (startDate: string, endDate: string): number | null => {
     const start = new Date(startDate);
     const end = new Date(endDate);
 
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-      return null;
-    }
-
-    if (end.getTime() < start.getTime()) {
-      return null;
-    }
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
+    if (end.getTime() < start.getTime()) return null;
 
     const diffInDays =
-      Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) +
-      1;
-
+      Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     return Math.max(diffInDays, 1);
-  };
-
-  const formatDurationLabel = (days: number | null) => {
-    if (!days) {
-      return "Estimated: —";
-    }
-    return `Estimated: ${days} day${days === 1 ? "" : "s"}`;
   };
 
   const monthOptions = useMemo(() => {
@@ -381,28 +724,16 @@ export default function AdminRTO() {
       const date = new Date(now.getFullYear(), now.getMonth() - index, 1);
       return {
         value: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`,
-        label: date.toLocaleDateString("en-US", {
-          month: "long",
-          year: "numeric",
-        }),
+        label: date.toLocaleDateString("en-US", { month: "long", year: "numeric" }),
       };
     });
   }, []);
 
-  const getInitials = (name?: string, email?: string) => {
-    if (name) {
-      return name
-        .split(" ")
-        .slice(0, 2)
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase();
-    }
-    if (email) {
-      return email.charAt(0).toUpperCase();
-    }
-    return "?";
-  };
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  }, [totalPages]);
+
+  const hasActiveFilters = searchQuery || statusFilter || monthFilter;
 
   if (currentUserRole !== "admin") {
     return (
@@ -428,36 +759,42 @@ export default function AdminRTO() {
         sidePanel={sidePanel}
         theme="gold"
       >
-        <div className="space-y-8">
+        <div className="space-y-5">
+          {/* Filters Section - Gold Theme */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] p-6 space-y-4 shadow-[0_25px_50px_rgba(0,0,0,0.55)]"
+            transition={{ duration: 0.35 }}
+            className="rounded-2xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914]/95 via-[#120f0c]/95 to-[#070605]/95 p-4 shadow-[0_15px_40px_rgba(0,0,0,0.5)]"
           >
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Search */}
               <div className="relative">
-                <Search className="w-4 h-4 text-[#b59d72] absolute left-4 top-1/2 -translate-y-1/2" />
+                <Search className="w-4 h-4 text-[#b59d72] absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Search email or name..."
+                  placeholder="Search name or email..."
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full rounded-2xl bg-[#050402]/70 border border-[#f4c979]/20 pl-11 pr-4 py-3 text-sm text-[#fdf4db] placeholder:text-[#bfa984] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60"
+                  className="w-full rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 pl-10 pr-4 py-2.5 text-sm text-[#fdf4db] placeholder:text-[#bfa984] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/50 focus:border-[#f4c979]/50 transition-all"
                 />
               </div>
+
+              {/* Status Filter */}
               <div className="relative">
-                <Filter className="w-4 h-4 text-[#b59d72] absolute left-4 top-1/2 -translate-y-1/2" />
+                <Filter className="w-4 h-4 text-[#b59d72] absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <select
                   value={statusFilter || ""}
                   onChange={(e) => {
                     setStatusFilter(e.target.value || null);
                     setCurrentPage(1);
                   }}
-                  className="w-full rounded-2xl bg-[#050402]/70 border border-[#f4c979]/20 pl-11 pr-4 py-3 text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 appearance-none cursor-pointer"
+                  aria-label="Filter by status"
+                  title="Filter by status"
+                  className="w-full rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 pl-10 pr-4 py-2.5 text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/50 appearance-none cursor-pointer"
                 >
                   <option value="">All Statuses</option>
                   <option value="Pending">Pending</option>
@@ -465,15 +802,19 @@ export default function AdminRTO() {
                   <option value="Denied">Denied</option>
                 </select>
               </div>
+
+              {/* Month Filter */}
               <div className="relative">
-                <Calendar className="w-4 h-4 text-[#b59d72] absolute left-4 top-1/2 -translate-y-1/2" />
+                <Calendar className="w-4 h-4 text-[#b59d72] absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <select
                   value={monthFilter || ""}
                   onChange={(e) => {
                     setMonthFilter(e.target.value || null);
                     setCurrentPage(1);
                   }}
-                  className="w-full rounded-2xl bg-[#050402]/70 border border-[#f4c979]/20 pl-11 pr-4 py-3 text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 appearance-none cursor-pointer"
+                  aria-label="Filter by month"
+                  title="Filter by month"
+                  className="w-full rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 pl-10 pr-4 py-2.5 text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/50 appearance-none cursor-pointer"
                 >
                   <option value="">All Months</option>
                   {monthOptions.map((option) => (
@@ -484,187 +825,123 @@ export default function AdminRTO() {
                 </select>
               </div>
             </div>
-            {(searchQuery || statusFilter || monthFilter) && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                className="flex flex-wrap gap-2 pt-2"
-              >
-                {searchQuery && (
-                  <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#f4c979]/30 bg-[#f4c979]/10 text-xs text-[#fef3d1]">
-                    <span>Search: {searchQuery}</span>
-                    <button
-                      type="button"
-                      onClick={() => setSearchQuery("")}
-                      className="hover:text-white"
-                    >
-                      ✕
-                    </button>
-                  </span>
-                )}
-                {statusFilter && (
-                  <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#f6dcb2]/30 bg-[#f6dcb2]/10 text-xs text-[#fef3d1]">
-                    <span>Status: {statusFilter}</span>
-                    <button
-                      type="button"
-                      onClick={() => setStatusFilter(null)}
-                      className="hover:text-white"
-                    >
-                      ✕
-                    </button>
-                  </span>
-                )}
-                {monthFilter && (
-                  <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#f4c979]/30 bg-[#f4c979]/10 text-xs text-[#fef3d1]">
-                    <span>
-                      Month:{" "}
-                      {
-                        monthOptions.find((option) => option.value === monthFilter)
-                          ?.label
-                      }
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setMonthFilter(null)}
-                      className="hover:text-white"
-                    >
-                      ✕
-                    </button>
-                  </span>
-                )}
-              </motion.div>
-            )}
+
+            {/* Active Filters */}
+            <AnimatePresence>
+              {hasActiveFilters && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-[#f6dcb2]/15"
+                >
+                  {searchQuery && (
+                    <FilterChip
+                      label="Search"
+                      value={searchQuery}
+                      onClear={() => setSearchQuery("")}
+                    />
+                  )}
+                  {statusFilter && (
+                    <FilterChip
+                      label="Status"
+                      value={statusFilter}
+                      onClear={() => setStatusFilter(null)}
+                    />
+                  )}
+                  {monthFilter && (
+                    <FilterChip
+                      label="Month"
+                      value={monthOptions.find((o) => o.value === monthFilter)?.label || monthFilter}
+                      onClear={() => setMonthFilter(null)}
+                    />
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
 
+          {/* Requests Table/Cards - Gold Theme */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, delay: 0.05 }}
-            className="rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] overflow-hidden shadow-[0_40px_80px_rgba(0,0,0,0.65)]"
+            transition={{ duration: 0.35, delay: 0.05 }}
+            className="rounded-2xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#14110d]/95 via-[#0b0906]/95 to-[#050403]/95 overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.55)]"
           >
             {loading ? (
               <TableSkeleton rows={6} columns={5} variant="gold" />
             ) : filteredRequests.length === 0 ? (
-              <div className="text-center py-24 space-y-3">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#211c15] border border-[#f6dcb2]/30 mx-auto">
-                  <Calendar className="w-7 h-7 text-[#f4c979]" />
+              <div className="text-center py-16 space-y-3">
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#211c15] border border-[#f6dcb2]/30 mx-auto">
+                  <Calendar className="w-6 h-6 text-[#f4c979]" />
                 </div>
-                <h3 className="text-xl font-semibold text-white">No Requests Found</h3>
+                <h3 className="text-lg font-semibold text-white">No Requests Found</h3>
                 <p className="text-sm text-[#f8e5bb]/70 max-w-sm mx-auto">
-                  {searchQuery || statusFilter
-                    ? "Adjust your filters or keywords to see additional records."
-                    : "No time-off requests are waiting at the moment."}
+                  {hasActiveFilters
+                    ? "Adjust your filters to see more results."
+                    : "No time-off requests have been submitted yet."}
                 </p>
               </div>
             ) : (
               <>
+                {/* Desktop Table */}
                 <div className="hidden lg:block overflow-x-auto">
                   <table className="w-full">
-                    <thead className="bg-gradient-to-r from-[#2b251b] to-[#1b1812] border-b border-[#f6dcb2]/15 text-[0.65rem] uppercase tracking-[0.3em] text-[#f4c979]/80">
-                      <tr>
-                        <th className="px-6 py-4 text-left">
-                          <span className="inline-flex items-center gap-2">
-                            <User className="w-4 h-4" />
+                    <thead className="bg-gradient-to-r from-[#2b251b] to-[#1b1812] border-b border-[#f6dcb2]/15">
+                      <tr className="text-[0.65rem] uppercase tracking-[0.25em] text-[#f4c979]/80">
+                        <th className="px-4 py-3 text-left font-semibold">
+                          <span className="inline-flex items-center gap-1.5">
+                            <User className="w-3.5 h-3.5" />
                             Employee
                           </span>
                         </th>
-                        <th className="px-6 py-4 text-left">
-                          <span className="inline-flex items-center gap-2">
-                            <Mail className="w-4 h-4" />
-                            Email
-                          </span>
-                        </th>
-                        <th className="px-6 py-4 text-left">
-                          <span className="inline-flex items-center gap-2">
-                            <Calendar className="w-4 h-4" />
+                        <th className="px-4 py-3 text-left font-semibold">
+                          <span className="inline-flex items-center gap-1.5">
+                            <CalendarDays className="w-3.5 h-3.5" />
                             Dates
                           </span>
                         </th>
-                        <th className="px-6 py-4 text-left">Reason</th>
-                        <th className="px-6 py-4 text-left">Status</th>
-                        <th className="px-6 py-4 text-left">
-                          <span className="inline-flex items-center gap-2">
-                            <Clock className="w-4 h-4" />
+                        <th className="px-4 py-3 text-left font-semibold">Reason</th>
+                        <th className="px-4 py-3 text-left font-semibold">Status</th>
+                        <th className="px-4 py-3 text-left font-semibold">
+                          <span className="inline-flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5" />
                             Submitted
                           </span>
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5 text-sm text-[#fdf4db]/90">
+                    <tbody>
                       {filteredRequests.map((request, index) => {
                         const statusConfig =
                           STATUS_CONFIG[request.status] || STATUS_CONFIG.Pending;
                         return (
-                          <motion.tr
+                          <CompactRequestRow
                             key={request.id}
-                            initial={{ opacity: 0, y: 12 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.03 }}
-                            className="hover:bg-white/5 transition-colors"
-                          >
-                            <td className="px-6 py-5">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#f4c979] to-[#d89d3e] flex items-center justify-center text-[#2d1c04] font-semibold">
-                                  {getInitials(request.full_name, request.email)}
-                                </div>
-                                <div>
-                                  <p className="font-semibold text-white">
-                                    {request.full_name || "Unknown"}
-                                  </p>
-                                  <p className="text-[0.65rem] text-[#c7b696]">
-                                    ID: {request.id.slice(0, 8)}…
-                                  </p>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-5 text-[#f0e2c7]">
-                              {request.email || "—"}
-                            </td>
-                            <td className="px-6 py-5">
-                              <div className="text-white font-semibold">
-                                {formatDateRange(request.start_date, request.end_date)}
-                              </div>
-                              <div className="text-xs text-[#f6dcb2]/80 flex items-center gap-1 mt-1">
-                                <Clock className="w-3 h-3" />
-                                {formatDurationLabel(
-                                  calculateInclusiveDays(
-                                    request.start_date,
-                                    request.end_date
-                                  )
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-6 py-5 text-[#f0e2c7] truncate max-w-sm">
-                              {request.reason || "—"}
-                            </td>
-                            <td className="px-6 py-5">
-                              <span
-                                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold ${statusConfig.bgColor} ${statusConfig.borderColor} ${statusConfig.textColor}`}
-                              >
-                                {statusConfig.icon}
-                                {statusConfig.label}
-                              </span>
-                            </td>
-                            <td className="px-6 py-5 text-[#f0e2c7]">
-                              {formatDateTime(request.submitted_at)}
-                            </td>
-                          </motion.tr>
+                            request={request}
+                            statusConfig={statusConfig}
+                            formatDateRange={formatDateRange}
+                            calculateInclusiveDays={calculateInclusiveDays}
+                            formatDateTime={formatDateTime}
+                            index={index}
+                          />
                         );
                       })}
                     </tbody>
                   </table>
                 </div>
-                <div className="lg:hidden space-y-4 px-4 pb-6 pt-2">
+
+                {/* Mobile Cards */}
+                <div className="lg:hidden space-y-3 p-4">
                   {filteredRequests.map((request, index) => {
                     const statusConfig =
                       STATUS_CONFIG[request.status] || STATUS_CONFIG.Pending;
                     return (
-                      <MobileRequestCard
+                      <CompactMobileCard
                         key={request.id}
                         request={request}
                         statusConfig={statusConfig}
                         formatDateRange={formatDateRange}
-                        formatDurationLabel={formatDurationLabel}
                         calculateInclusiveDays={calculateInclusiveDays}
                         formatDateTime={formatDateTime}
                         index={index}
@@ -672,20 +949,16 @@ export default function AdminRTO() {
                     );
                   })}
                 </div>
+
+                {/* Enhanced Gold Pagination */}
                 <div className="border-t border-[#f6dcb2]/15 bg-[#0c0a08]/80">
-                  <PaginationControls
+                  <EnhancedPagination
                     currentPage={currentPage}
                     totalPages={totalPages}
                     totalItems={totalRequests}
                     loading={loading}
                     pageSize={pageSize}
-                    onPreviousClick={() =>
-                      setCurrentPage((prev) => Math.max(1, prev - 1))
-                    }
-                    onNextClick={() =>
-                      setCurrentPage((prev) => Math.min(totalPages, prev + 1))
-                    }
-                    label="requests"
+                    onPageChange={handlePageChange}
                   />
                 </div>
               </>
@@ -694,94 +967,5 @@ export default function AdminRTO() {
         </div>
       </AdminPremiumScaffold>
     </DashboardLayout>
-  );
-}
-
-type MobileRequestCardProps = {
-  request: RTORequest;
-  statusConfig: StatusConfig;
-  formatDateRange: (start: string, end: string) => string;
-  formatDurationLabel: (days: number | null) => string;
-  calculateInclusiveDays: (start: string, end: string) => number | null;
-  formatDateTime: (value: string) => string;
-  index: number;
-};
-
-function MobileRequestCard({
-  request,
-  statusConfig,
-  formatDateRange,
-  formatDurationLabel,
-  calculateInclusiveDays,
-  formatDateTime,
-  index,
-}: MobileRequestCardProps) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
-      className="rounded-3xl border border-[#f6dcb2]/25 bg-gradient-to-br from-[#1b1914] via-[#0f0c09] to-[#050403] p-4 space-y-4 shadow-[0_12px_30px_rgba(0,0,0,0.55)]"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#f4c979] to-[#d89d3e] flex items-center justify-center text-[#2d1c04] font-semibold">
-            {request.full_name
-              ? request.full_name
-                  .split(" ")
-                  .slice(0, 2)
-                  .map((part) => part[0])
-                  .join("")
-                  .toUpperCase()
-              : request.email?.charAt(0).toUpperCase() ?? "?"}
-          </div>
-          <div className="min-w-0">
-            <p className="font-semibold text-white">{request.full_name || "Unknown"}</p>
-            <p className="text-xs text-[#c7b696] truncate">{request.email || "—"}</p>
-          </div>
-        </div>
-        <span
-          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold ${statusConfig.bgColor} ${statusConfig.borderColor} ${statusConfig.textColor}`}
-        >
-          {statusConfig.icon}
-          {statusConfig.label}
-        </span>
-      </div>
-      <div className="space-y-3 text-sm text-[#fdf4db]/85">
-        <div className="flex items-start gap-3">
-          <div className="p-2 rounded-2xl bg-[#251f16] border border-[#f6dcb2]/20">
-            <Calendar className="w-4 h-4 text-[#f4c979]" />
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-[#d0bfa0] mb-1">
-              Dates
-            </p>
-            <p className="font-semibold text-white">{formatDateRange(request.start_date, request.end_date)}</p>
-            <p className="text-xs text-[#c7b696]">
-              {formatDurationLabel(calculateInclusiveDays(request.start_date, request.end_date))}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-start gap-3">
-          <div className="p-2 rounded-2xl bg-[#251f16] border border-[#f6dcb2]/20">
-            <Clock className="w-4 h-4 text-[#f4c979]" />
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-[#d0bfa0] mb-1">
-              Submitted
-            </p>
-            <p className="font-semibold text-white">{formatDateTime(request.submitted_at)}</p>
-          </div>
-        </div>
-        {request.reason && (
-          <div className="rounded-2xl border border-[#f6dcb2]/20 bg-[#0c0906]/70 p-3">
-            <p className="text-xs uppercase tracking-[0.25em] text-[#d0bfa0] mb-1">
-              Reason
-            </p>
-            <p className="text-sm text-[#fdf4db]/90">{request.reason}</p>
-          </div>
-        )}
-      </div>
-    </motion.div>
   );
 }

@@ -102,6 +102,30 @@ export function FloatingPanelContent({
     useFloatingPanel()
   const contentRef = useRef<HTMLDivElement>(null)
 
+  // Lock body scroll when panel is open
+  useEffect(() => {
+    if (isOpen) {
+      // Store original overflow style
+      const originalOverflow = document.body.style.overflow
+      const originalPaddingRight = document.body.style.paddingRight
+      
+      // Calculate scrollbar width to prevent layout shift
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
+      
+      // Lock scroll
+      document.body.style.overflow = 'hidden'
+      if (scrollbarWidth > 0) {
+        document.body.style.paddingRight = `${scrollbarWidth}px`
+      }
+      
+      return () => {
+        // Restore original styles
+        document.body.style.overflow = originalOverflow
+        document.body.style.paddingRight = originalPaddingRight
+      }
+    }
+  }, [isOpen])
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -124,6 +148,7 @@ export function FloatingPanelContent({
   }, [closeFloatingPanel])
 
   // Calculate panel position - opens upward from bottom-left FAB
+  // Accounts for iOS safe-area-insets (notch/home indicator)
   const getPanelPosition = () => {
     if (!triggerRect) {
       return { left: 16, bottom: 16 }
@@ -133,9 +158,17 @@ export function FloatingPanelContent({
     const panelHeight = 400 // approximate max height
     const padding = 16
     
+    // Get safe area inset if available (for iOS devices with notch/home indicator)
+    // Note: This is computed at render time; CSS env() handles the actual value
+    const safeAreaBottom = parseInt(
+      getComputedStyle(document.documentElement)
+        .getPropertyValue('--safe-area-inset-bottom') || '0'
+    ) || 0
+    
     // Position panel above the trigger, aligned to the left
     let left = triggerRect.left
-    let bottom = window.innerHeight - triggerRect.top + 12 // 12px gap above trigger
+    // Add safe area inset to ensure panel clears the home indicator
+    let bottom = window.innerHeight - triggerRect.top + 12 + safeAreaBottom // 12px gap above trigger
     
     // Ensure panel doesn't overflow right edge
     if (left + panelWidth > window.innerWidth - padding) {
@@ -161,24 +194,27 @@ export function FloatingPanelContent({
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop with blur */}
+          {/* Backdrop with blur - prevents touch scroll propagation */}
           <motion.div
             initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
             animate={{ opacity: 1, backdropFilter: "blur(8px)" }}
             exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
-            className="fixed inset-0 z-[9998] bg-black/40"
+            className="fixed inset-0 z-[9998] bg-black/40 touch-none"
+            onTouchMove={(e) => e.preventDefault()}
           />
           {/* Panel */}
           <motion.div
             ref={contentRef}
             layoutId={`floating-panel-${uniqueId}`}
             className={cn(
-              "fixed z-[9999] overflow-hidden max-h-[80vh]",
+              "fixed z-[9999] overflow-hidden max-h-[80vh] flex flex-col",
               // Premium glass morphism with emerald theme
               "bg-gradient-to-br from-[#04150f]/98 via-[#041812]/95 to-[#03120c]/98",
               "border border-emerald-500",
               "shadow-[0_0_25px_4px_rgba(245,244,244,0.35),0_0_60px_-12px_rgba(16,185,129,0.4)]",
               "backdrop-blur-xl",
+              // Ensure panel content can be scrolled
+              "overscroll-contain",
               className
             )}
             style={{
@@ -346,7 +382,12 @@ export function FloatingPanelBody({
 }: FloatingPanelBodyProps) {
   return (
     <motion.div
-      className={cn("p-4", className)}
+      className={cn(
+        "p-4 overflow-y-auto overscroll-contain",
+        // Custom scrollbar styling for the emerald theme
+        "scrollbar-thin scrollbar-track-transparent scrollbar-thumb-emerald-500/30 hover:scrollbar-thumb-emerald-500/50",
+        className
+      )}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
@@ -367,7 +408,12 @@ export function FloatingPanelFooter({
 }: FloatingPanelFooterProps) {
   return (
     <motion.div
-      className={cn("flex justify-between px-5 py-4 border-t border-emerald-500/20", className)}
+      className={cn(
+        "flex justify-between px-5 py-4 border-t border-emerald-500/20",
+        // Add safe area padding for iOS home indicator
+        "pb-[max(1rem,env(safe-area-inset-bottom,0px))]",
+        className
+      )}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 }}

@@ -6,7 +6,7 @@ import {
 } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { Suspense, lazy } from "react";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SessionOverlay from "./components/SessionOverlay";
@@ -14,6 +14,7 @@ import LoadingScreen from "./components/LoadingScreen";
 import { useAuth } from "./contexts/AuthContext";
 import { Toaster } from "./components/ui/Toaster";
 import { queryClient } from "./lib/queryClient";
+import { PageWrapper } from "./motion";
 
 // Main pages
 const Home = lazy(() => import("./pages/Home"));
@@ -47,17 +48,9 @@ const DailyEquipmentInspectionForm = lazy(
 );
 const DailyJSAForm = lazy(() => import("./pages/DailyJSAForm"));
 
-// 🔹 Forms history pages
-const FormHistory = lazy(() => import("./pages/FormHistory")); // 👈 matches FormHistory.tsx
-const DVIRHistory = lazy(() => import("./pages/DVIRHistory")); // 👈 matches DVIRHistory.tsx
-
-// Page transition animation variants
-const pageTransition = {
-  initial: { opacity: 0 },
-  animate: { opacity: 1 },
-  exit: { opacity: 0 },
-  transition: { duration: 0.3, ease: "easeInOut" },
-};
+// Forms history pages
+const FormHistory = lazy(() => import("./pages/FormHistory"));
+const DVIRHistory = lazy(() => import("./pages/DVIRHistory"));
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -76,14 +69,9 @@ function AnimatedRoutes() {
             <Route
               path="/"
               element={
-                <motion.div
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  variants={pageTransition}
-                >
+                <PageWrapper>
                   <Home />
-                </motion.div>
+                </PageWrapper>
               }
             />
 
@@ -91,14 +79,9 @@ function AnimatedRoutes() {
             <Route
               path="/reset-password"
               element={
-                <motion.div
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  variants={pageTransition}
-                >
+                <PageWrapper>
                   <ResetPassword />
-                </motion.div>
+                </PageWrapper>
               }
             />
 
@@ -106,16 +89,11 @@ function AnimatedRoutes() {
             <Route
               path="/dashboard"
               element={
-                <motion.div
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  variants={pageTransition}
-                >
+                <PageWrapper>
                   <ProtectedRoute>
                     <Dashboard />
                   </ProtectedRoute>
-                </motion.div>
+                </PageWrapper>
               }
             />
 
@@ -123,16 +101,11 @@ function AnimatedRoutes() {
             <Route
               path="/forms"
               element={
-                <motion.div
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  variants={pageTransition}
-                >
+                <PageWrapper>
                   <ProtectedRoute>
                     <Forms />
                   </ProtectedRoute>
-                </motion.div>
+                </PageWrapper>
               }
             />
 
@@ -140,114 +113,79 @@ function AnimatedRoutes() {
             <Route
               path="/dashboard/forms/request-time-off"
               element={
-                <motion.div
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  variants={pageTransition}
-                >
+                <PageWrapper>
                   <ProtectedRoute>
                     <RequestTimeOff />
                   </ProtectedRoute>
-                </motion.div>
+                </PageWrapper>
               }
             />
 
             <Route
               path="/dashboard/forms/dvir"
               element={
-                <motion.div
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  variants={pageTransition}
-                >
+                <PageWrapper>
                   <ProtectedRoute>
                     <DVIRForm />
                   </ProtectedRoute>
-                </motion.div>
+                </PageWrapper>
               }
             />
 
             <Route
               path="/dashboard/forms/equipment-inspection"
               element={
-                <motion.div
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  variants={pageTransition}
-                >
+                <PageWrapper>
                   <ProtectedRoute>
                     <DailyEquipmentInspectionForm />
                   </ProtectedRoute>
-                </motion.div>
+                </PageWrapper>
               }
             />
 
             <Route
               path="/forms/jsa"
               element={
-                <motion.div
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  variants={pageTransition}
-                >
+                <PageWrapper>
                   <ProtectedRoute>
                     <DailyJSAForm />
                   </ProtectedRoute>
-                </motion.div>
+                </PageWrapper>
               }
             />
 
             <Route
               path="/forms/jsa/:id"
               element={
-                <motion.div
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  variants={pageTransition}
-                >
+                <PageWrapper>
                   <ProtectedRoute>
                     <DailyJSAForm />
                   </ProtectedRoute>
-                </motion.div>
+                </PageWrapper>
               }
             />
 
-            {/* 🔹 Forms History Hub */}
+            {/* Forms History Hub */}
             <Route
               path="/forms-history"
               element={
-                <motion.div
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  variants={pageTransition}
-                >
+                <PageWrapper>
                   <ProtectedRoute>
                     <FormHistory />
                   </ProtectedRoute>
-                </motion.div>
+                </PageWrapper>
               }
             />
 
-            {/* 🔹 DVIR History (per-user) */}
+            {/* DVIR History (per-user) */}
             <Route
               path="/forms-history/dvir"
               element={
-                <motion.div
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  variants={pageTransition}
-                >
+                <PageWrapper>
                   <ProtectedRoute>
                     <DVIRHistory />
                   </ProtectedRoute>
-                </motion.div>
+                </PageWrapper>
               }
             />
 
@@ -255,48 +193,33 @@ function AnimatedRoutes() {
             <Route
               path="/announcements"
               element={
-                <motion.div
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  variants={pageTransition}
-                >
+                <PageWrapper>
                   <ProtectedRoute>
                     <Announcements />
                   </ProtectedRoute>
-                </motion.div>
+                </PageWrapper>
               }
             />
 
             <Route
               path="/resources"
               element={
-                <motion.div
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  variants={pageTransition}
-                >
+                <PageWrapper>
                   <ProtectedRoute>
                     <Resources />
                   </ProtectedRoute>
-                </motion.div>
+                </PageWrapper>
               }
             />
 
             <Route
               path="/contact"
               element={
-                <motion.div
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  variants={pageTransition}
-                >
+                <PageWrapper>
                   <ProtectedRoute>
                     <Contact />
                   </ProtectedRoute>
-                </motion.div>
+                </PageWrapper>
               }
             />
 
@@ -304,16 +227,11 @@ function AnimatedRoutes() {
             <Route
               path="/mechanic-dashboard"
               element={
-                <motion.div
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  variants={pageTransition}
-                >
+                <PageWrapper>
                   <ProtectedRoute requireMechanicAccess={true}>
                     <MechanicDashboard />
                   </ProtectedRoute>
-                </motion.div>
+                </PageWrapper>
               }
             />
 
@@ -321,32 +239,22 @@ function AnimatedRoutes() {
             <Route
               path="/mechanic-dvir-center"
               element={
-                <motion.div
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  variants={pageTransition}
-                >
+                <PageWrapper>
                   <ProtectedRoute requireMechanicAccess={true}>
                     <MechanicDVIRCenter />
                   </ProtectedRoute>
-                </motion.div>
+                </PageWrapper>
               }
             />
 
             <Route
               path="/mechanic-equipment-center"
               element={
-                <motion.div
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  variants={pageTransition}
-                >
+                <PageWrapper>
                   <ProtectedRoute requireMechanicAccess={true}>
                     <MechanicEquipmentCenter />
                   </ProtectedRoute>
-                </motion.div>
+                </PageWrapper>
               }
             />
 
@@ -354,96 +262,66 @@ function AnimatedRoutes() {
             <Route
               path="/admin"
               element={
-                <motion.div
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  variants={pageTransition}
-                >
+                <PageWrapper>
                   <ProtectedRoute requiredRole="admin">
                     <AdminDashboard />
                   </ProtectedRoute>
-                </motion.div>
+                </PageWrapper>
               }
             />
 
             <Route
               path="/admin/rto"
               element={
-                <motion.div
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  variants={pageTransition}
-                >
+                <PageWrapper>
                   <ProtectedRoute requiredRole="admin">
                     <AdminRTO />
                   </ProtectedRoute>
-                </motion.div>
+                </PageWrapper>
               }
             />
 
             <Route
               path="/admin/users"
               element={
-                <motion.div
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  variants={pageTransition}
-                >
+                <PageWrapper>
                   <ProtectedRoute requiredRole="admin">
                     <AdminUsers />
                   </ProtectedRoute>
-                </motion.div>
+                </PageWrapper>
               }
             />
 
             <Route
               path="/admin/jsa"
               element={
-                <motion.div
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  variants={pageTransition}
-                >
+                <PageWrapper>
                   <ProtectedRoute requiredRole="admin">
                     <AdminJSA />
                   </ProtectedRoute>
-                </motion.div>
+                </PageWrapper>
               }
             />
 
             <Route
               path="/admin/jobs"
               element={
-                <motion.div
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  variants={pageTransition}
-                >
+                <PageWrapper>
                   <ProtectedRoute requiredRole="admin">
                     <AdminJobTracker />
                   </ProtectedRoute>
-                </motion.div>
+                </PageWrapper>
               }
             />
 
             <Route
               path="/admin/job-progress"
               element={
-                <motion.div
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  variants={pageTransition}
-                >
+                <PageWrapper>
                   <ProtectedRoute requiredRole="admin">
                     <AdminJobProgress />
                   </ProtectedRoute>
-                </motion.div>
+                </PageWrapper>
               }
             />
 
@@ -451,13 +329,7 @@ function AnimatedRoutes() {
             <Route
               path="*"
               element={
-                <motion.div
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  variants={pageTransition}
-                  className="min-h-screen bg-gradient-to-br from-neutral-900 via-black to-neutral-900 flex items-center justify-center"
-                >
+                <PageWrapper className="min-h-screen bg-gradient-to-br from-neutral-900 via-black to-neutral-900 flex items-center justify-center">
                   <div className="text-center">
                     <h1 className="text-6xl font-bold text-white mb-4">
                       404
@@ -470,7 +342,7 @@ function AnimatedRoutes() {
                       Go to Dashboard
                     </a>
                   </div>
-                </motion.div>
+                </PageWrapper>
               }
             />
           </Routes>

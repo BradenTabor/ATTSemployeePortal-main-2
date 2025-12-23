@@ -1,5 +1,5 @@
-import { useState, useCallback, ReactNode, memo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useCallback, ReactNode, memo, useMemo } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { getPersistedBool, setPersistedBool } from '../../lib/persistence';
@@ -25,6 +25,34 @@ interface CollapsibleSectionProps {
   headerAction?: ReactNode;
 }
 
+// Stable animation configs - defined outside component to prevent recreations
+const expandAnimation = {
+  initial: { height: 0, opacity: 0 },
+  animate: { 
+    height: 'auto', 
+    opacity: 1,
+    transition: {
+      height: { duration: 0.25, ease: 'easeOut' as const },
+      opacity: { duration: 0.2, delay: 0.05 }
+    }
+  },
+  exit: { 
+    height: 0, 
+    opacity: 0,
+    transition: {
+      height: { duration: 0.2, ease: 'easeIn' as const },
+      opacity: { duration: 0.1 }
+    }
+  }
+};
+
+// Reduced motion variants - instant transitions
+const reducedMotionExpand = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1, transition: { duration: 0.1 } },
+  exit: { opacity: 0, transition: { duration: 0.1 } }
+};
+
 function CollapsibleSectionComponent({
   id,
   title,
@@ -36,6 +64,9 @@ function CollapsibleSectionComponent({
   icon,
   headerAction,
 }: CollapsibleSectionProps) {
+  const prefersReducedMotion = useReducedMotion();
+  const shouldAnimate = !prefersReducedMotion;
+
   // Use lazy initializer to read persisted state without useEffect setState
   const [isOpen, setIsOpen] = useState(() => {
     if (storageKey) {
@@ -70,6 +101,12 @@ function CollapsibleSectionComponent({
 
   const toggleId = `${id}-toggle`;
   const contentId = `${id}-content`;
+
+  // Select animation variant based on reduced motion preference
+  const animationVariant = useMemo(
+    () => prefersReducedMotion ? reducedMotionExpand : expandAnimation,
+    [prefersReducedMotion]
+  );
 
   return (
     <section
@@ -113,14 +150,21 @@ function CollapsibleSectionComponent({
               )}
             </div>
 
-            {/* Chevron indicator */}
-            <ChevronDown
+            {/* Chevron indicator - CSS transform for better performance */}
+            <div
               className={cn(
-                'w-5 h-5 text-white/40 transition-transform duration-200 flex-shrink-0',
-                isOpen && 'rotate-180'
+                'w-5 h-5 text-white/40 flex-shrink-0 will-change-transform',
+                shouldAnimate ? 'transition-transform duration-200' : ''
               )}
-              aria-hidden="true"
-            />
+              style={{
+                transform: `rotate(${isOpen ? 180 : 0}deg)`,
+              }}
+            >
+              <ChevronDown
+                className="w-5 h-5"
+                aria-hidden="true"
+              />
+            </div>
           </button>
 
           {/* Optional header action (e.g., "View all" link) */}
@@ -131,29 +175,13 @@ function CollapsibleSectionComponent({
       </div>
 
       {/* Collapsible content */}
-      <AnimatePresence initial={false}>
+      <AnimatePresence initial={false} mode="sync">
         {isOpen && (
           <motion.div
             id={contentId}
             role="region"
             aria-labelledby={toggleId}
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ 
-              height: 'auto', 
-              opacity: 1,
-              transition: {
-                height: { duration: 0.25, ease: 'easeOut' },
-                opacity: { duration: 0.2, delay: 0.05 }
-              }
-            }}
-            exit={{ 
-              height: 0, 
-              opacity: 0,
-              transition: {
-                height: { duration: 0.2, ease: 'easeIn' },
-                opacity: { duration: 0.1 }
-              }
-            }}
+            {...animationVariant}
             className="overflow-hidden"
           >
             <div className="px-4 pb-4 md:px-6 md:pb-6 pt-0">
@@ -169,4 +197,3 @@ function CollapsibleSectionComponent({
 
 export const CollapsibleSection = memo(CollapsibleSectionComponent);
 export default CollapsibleSection;
-

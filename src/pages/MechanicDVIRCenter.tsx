@@ -1,37 +1,61 @@
 import { useEffect, useMemo, useState, useCallback, memo } from "react";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion, useInView } from "framer-motion";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabaseClient";
-import { PaginationControls } from "../components/PaginationControls";
 import CardListSkeleton from "../components/skeletons/CardListSkeleton";
 import TableSkeleton from "../components/skeletons/TableSkeleton";
 import { DateField } from "../components/forms/GlassyPickers";
-import { EmberCollapsibleSection } from "../components/mechanic/EmberCollapsibleSection";
 import AdminPremiumScaffold, {
   type AdminHeroConfig,
 } from "../components/admin/AdminPremiumScaffold";
 import {
   AlertTriangle,
   CheckCircle2,
-  Clock,
   Wrench,
   Loader2,
   Search,
   X,
   ChevronRight,
-  TrendingUp,
   Images,
   FileSignature,
   Truck,
   Shield,
   Flame,
-  Filter,
   ListChecks,
   ClipboardList,
+  ChevronLeft,
 } from "lucide-react";
 import { logger } from "../lib/logger";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
+import { useRef } from "react";
+
+// Scroll reveal wrapper component
+function ScrollRevealSection({ 
+  children, 
+  delay = 0,
+  className = "" 
+}: { 
+  children: React.ReactNode; 
+  delay?: number;
+  className?: string;
+}) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-50px" });
+  const prefersReducedMotion = useReducedMotion();
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 20 }}
+      animate={isInView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.4, delay, ease: [0.4, 0, 0.2, 1] }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
 
 type ChecklistValue = "" | "P" | "F";
 
@@ -198,22 +222,6 @@ function hasMechanicUpdate(report: DVIRReport) {
   );
 }
 
-const CHECKLIST_STATUS_STYLES = {
-  pass: "bg-[#052015] text-[#7ef2c8] border border-[#2a8a63]/50",
-  fail: "bg-[#2a0b02] text-[#ffb199] border border-[#ff6b4a]/40",
-  pending: "bg-white/5 text-white/60 border border-white/10",
-};
-
-function getChecklistStatusLabel(value?: ChecklistValue) {
-  if (value === "P") {
-    return { label: "Pass", className: CHECKLIST_STATUS_STYLES.pass };
-  }
-  if (value === "F") {
-    return { label: "Fail", className: CHECKLIST_STATUS_STYLES.fail };
-  }
-  return { label: "Not Checked", className: CHECKLIST_STATUS_STYLES.pending };
-}
-
 // Animation variants - defined outside component for stable references
 const listItemVariants = {
   hidden: { opacity: 0, x: -10 },
@@ -249,7 +257,7 @@ const pageTransitionReduced = {
   transition: { duration: 0.1 },
 };
 
-// Memoized report list item component for better performance
+// Memoized report list item component - COMPACT VERSION
 const ReportListItem = memo(function ReportListItem({
   report,
   index,
@@ -267,6 +275,7 @@ const ReportListItem = memo(function ReportListItem({
 }) {
   const { allFails } = getFailedItems(report);
   const mechanicFlag = hasMechanicUpdate(report);
+  const status = getStatus(report);
 
   return (
     <motion.button
@@ -275,42 +284,50 @@ const ReportListItem = memo(function ReportListItem({
       initial="hidden"
       animate="visible"
       onClick={onSelect}
-      className={`w-full text-left px-4 py-4 transition-colors duration-150 ${
+      className={`w-full text-left px-3 py-2.5 transition-all duration-150 flex items-center gap-2.5 group ${
         isSelected
-          ? "bg-[#ff9350]/15 border-l-2 border-l-[#ff9350]"
-          : "border-l-2 border-l-transparent"
+          ? "bg-gradient-to-r from-[#ff9350]/20 to-[#ff9350]/5 border-l-2 border-l-[#ff9350]"
+          : "border-l-2 border-l-transparent hover:bg-white/[0.03]"
       }`}
-      style={{
-        background: isSelected ? undefined : 'linear-gradient(90deg, rgba(5, 5, 5, 0.05) 0%, rgba(121, 72, 42, 1) 50%, rgba(255, 147, 80, 1) 100%)',
-        boxShadow: isSelected ? undefined : 'inset 0px 4px 25px 15px rgba(0, 0, 0, 0.85)',
-      }}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex-1 min-w-0">
-          <div className="font-semibold text-white truncate flex items-center gap-2">
-            <Truck className="w-4 h-4 text-[#ff9350]/70" />
-            Truck {report.truck_number || "N/A"}
-          </div>
-          <div className="text-xs text-white/65 truncate mt-1">
-            {report.drivers_name || "Unknown Driver"}
-          </div>
-          <div className="text-xs text-white/45 mt-1">
-            {formatDateTime(report.created_at)}
-          </div>
-          {allFails.length > 0 && (
-            <div className="text-xs text-[#ff8a65] mt-1">
-              {allFails.length} fail{allFails.length !== 1 ? "s" : ""}
-            </div>
-          )}
-        </div>
-        <div className="flex flex-col items-end gap-1 flex-shrink-0">
+      {/* Status indicator dot */}
+      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+        status === "failed" ? "bg-red-400" : "bg-emerald-400"
+      }`} />
+      
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5">
+          <span className="font-medium text-sm text-white truncate">
+            {report.truck_number || "N/A"}
+          </span>
           {mechanicFlag && (
-            <div className="inline-flex items-center gap-1 px-2 py-1 bg-[#ffde8b]/15 border border-[#ffde8b]/30 rounded-full text-[10px] text-[#ffeac1]">
-              <Clock className="w-3 h-3" />
-            </div>
+            <span className="inline-flex items-center px-1.5 py-0.5 bg-amber-500/20 border border-amber-500/30 rounded text-[9px] text-amber-300 font-medium">
+              Fixed
+            </span>
           )}
-          {isSelected && <ChevronRight className="w-5 h-5 text-[#ff9350]" />}
         </div>
+        <div className="flex items-center gap-2 mt-0.5">
+          <span className="text-[11px] text-white/50 truncate">
+            {report.drivers_name || "Unknown"}
+          </span>
+          <span className="text-[10px] text-white/30">•</span>
+          <span className="text-[10px] text-white/40">
+            {formatDateTime(report.created_at)}
+          </span>
+        </div>
+      </div>
+      
+      {/* Right side */}
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {allFails.length > 0 && (
+          <span className="text-[10px] font-medium text-red-300 bg-red-500/15 px-1.5 py-0.5 rounded">
+            {allFails.length}
+          </span>
+        )}
+        <ChevronRight className={`w-4 h-4 transition-all ${
+          isSelected ? "text-[#ff9350]" : "text-white/20 group-hover:text-white/40"
+        }`} />
       </div>
     </motion.button>
   );
@@ -585,100 +602,83 @@ export default function MechanicDVIRCenter() {
       ? Math.max(1, Math.ceil(filteredReports.length / pageSize))
       : 1;
 
-  // Hero configuration for AdminPremiumScaffold
+  // Hero configuration for AdminPremiumScaffold - Compact
   const heroConfig = useMemo<AdminHeroConfig>(
     () => ({
-      eyebrow: "Ember Mechanics",
-      eyebrowIcon: <Flame className="w-4 h-4 text-[#ff9350]" />,
-      heading: "DVIR Review Center",
-      description:
-        "Focused triage for failed inspections and quick mechanic sign-offs. Review driver vehicle inspection reports and document repairs.",
+      eyebrow: "Mechanics",
+      eyebrowIcon: <Flame className="w-3.5 h-3.5 text-amber-400" />,
+      heading: "DVIR Center",
+      description: "Review inspections and document repairs",
       badges: [
         {
-          label: role === "admin" ? "ADMIN" : "MECHANIC",
-          icon: <Wrench className="w-4 h-4 text-[#ff9350]" />,
+          label: role === "admin" ? "ADMIN" : "MECH",
+          icon: <Wrench className="w-3.5 h-3.5 text-amber-400" />,
           variant: "solid",
-        },
-        {
-          label: "Real-time Updates",
-          icon: <Truck className="w-4 h-4 text-[#ffb48a]" />,
-          variant: "outline",
         },
       ],
     }),
     [role]
   );
 
-  // Side panel content
+  // Side panel content - COMPACT with better color contrast
   const sidePanel = (
-    <div className="space-y-6">
-      <div>
-        <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#ff9350]/10 border border-[#ff9350]/30 rounded-full text-[0.65rem] font-semibold tracking-[0.3em] uppercase text-[#ffd4b8] mb-4">
-          <Truck className="w-4 h-4 text-[#ff9350]" />
-          Quick Stats
-        </div>
-        <h3 className="text-xl font-semibold text-white">DVIR Overview</h3>
-        <p className="text-sm text-[#ffd4b8]/80 mt-1">
-          Monitor fleet inspection status at a glance.
-        </p>
-      </div>
-
-      <div className="space-y-3">
+    <div className="space-y-4">
+      {/* Stats grid - compact */}
+      <div className="grid grid-cols-3 gap-2">
         {[
           {
-            label: "Need Review",
+            label: "Review",
             value: failedReports.length,
             icon: AlertTriangle,
-            color: "text-[#ffb199]",
-            bgColor: "bg-[#ff6b4a]/15",
-            borderColor: "border-[#ff6b4a]/30",
+            gradient: "from-red-500/20 to-red-600/10",
+            border: "border-red-500/30",
+            iconColor: "text-red-400",
+            valueColor: "text-red-300",
           },
           {
             label: "Passed",
             value: passedReports.length,
             icon: CheckCircle2,
-            color: "text-[#7ef2c8]",
-            bgColor: "bg-[#10b981]/15",
-            borderColor: "border-[#10b981]/30",
+            gradient: "from-emerald-500/20 to-emerald-600/10",
+            border: "border-emerald-500/30",
+            iconColor: "text-emerald-400",
+            valueColor: "text-emerald-300",
           },
           {
-            label: "Mechanic Updated",
+            label: "Fixed",
             value: mechanicUpdatedCount,
             icon: Wrench,
-            color: "text-[#ffd4b8]",
-            bgColor: "bg-[#ff9350]/15",
-            borderColor: "border-[#ff9350]/30",
+            gradient: "from-amber-500/20 to-amber-600/10",
+            border: "border-amber-500/30",
+            iconColor: "text-amber-400",
+            valueColor: "text-amber-300",
           },
         ].map((stat, index) => (
           <motion.div
             key={stat.label}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.1 + 0.3 }}
-            className={`rounded-2xl border ${stat.borderColor} ${stat.bgColor} p-4 flex items-center justify-between`}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: index * 0.05 + 0.2 }}
+            className={`rounded-xl border ${stat.border} bg-gradient-to-br ${stat.gradient} p-2.5 text-center`}
           >
-            <div className="flex items-center gap-3">
-              <stat.icon className={`w-5 h-5 ${stat.color}`} />
-              <span className="text-sm text-white/90">{stat.label}</span>
-            </div>
-            <span className={`text-2xl font-bold ${stat.color}`}>{stat.value}</span>
+            <stat.icon className={`w-4 h-4 ${stat.iconColor} mx-auto mb-1`} />
+            <div className={`text-xl font-bold ${stat.valueColor}`}>{stat.value}</div>
+            <div className="text-[9px] uppercase tracking-wider text-white/50">{stat.label}</div>
           </motion.div>
         ))}
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-        <p className="text-xs text-[#ffd4b8]/70 leading-relaxed">
-          <strong className="text-[#ff9350]">Tip:</strong> Focus on "Need Review" DVIRs first. Document all repairs clearly for driver visibility.
+      {/* Quick tip - more subtle */}
+      <div className="rounded-xl border border-white/5 bg-black/20 p-3">
+        <p className="text-[11px] text-white/50 leading-relaxed">
+          <span className="text-amber-400 font-medium">Tip:</span> Focus on "Need Review" DVIRs first.
         </p>
       </div>
 
-      <div className="pt-2 border-t border-white/10">
-        <p className="text-xs text-[#ffd4b8]/60">
-          Logged in as <span className="text-[#ff9350] font-medium">{session?.user?.email?.split("@")[0] || "User"}</span>
-        </p>
-        <p className="text-xs text-[#ffd4b8]/60 mt-1">
-          Role: <span className="text-white/80 font-medium uppercase">{role}</span>
-        </p>
+      {/* User info - minimal */}
+      <div className="flex items-center justify-between text-[10px] text-white/40 pt-2 border-t border-white/5">
+        <span>{session?.user?.email?.split("@")[0] || "User"}</span>
+        <span className="uppercase font-medium text-amber-400/70">{role}</span>
       </div>
     </div>
   );
@@ -705,83 +705,52 @@ export default function MechanicDVIRCenter() {
           sidePanel={sidePanel}
           theme="ember"
         >
-          <div className="space-y-6">
-            {/* Search & Filters Section */}
-            <EmberCollapsibleSection
-              id="dvir-filters"
-              title="Search & Filters"
-              subtitle="Filter DVIRs by status or search by truck/driver"
-              storageKey="dvir-filters-collapsed"
-              defaultOpen={true}
-              icon={<Filter className="w-5 h-5 md:w-6 md:h-6 text-[#ff9350]" />}
-              headerAction={
-                hasActiveFilters ? (
-                  <motion.button
-                    type="button"
-                    onClick={clearFilters}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-[#ff9350]/15 border border-[#ff9350]/30 text-[#ffb48a] hover:bg-[#ff9350]/25 transition-colors"
-                  >
-                    <X className="w-3 h-3" />
-                    Clear Filters
-                  </motion.button>
-                ) : undefined
-              }
-            >
-              <div className="grid gap-4 md:grid-cols-2">
-                {/* Status Tabs */}
-                <div className="space-y-2">
-                  <label className="text-xs uppercase tracking-[0.35em] text-[#ffd4b8]/60 block">
-                    Status Filter
-                  </label>
-                  <div className="flex gap-2 bg-[#0c0402]/80 rounded-xl border border-[#ff9350]/20 p-1.5">
+          <div className="space-y-4">
+            {/* Compact Filter Bar - Not collapsible for faster access */}
+            <ScrollRevealSection delay={0}>
+              <div className="rounded-xl border border-[#ff9350]/15 bg-gradient-to-r from-[#0c0402] to-[#120805] p-3">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  {/* Status Toggle */}
+                  <div className="flex gap-1 p-1 bg-black/30 rounded-lg border border-white/5">
                     {[
-                      { id: "failed", label: "Need Review", icon: AlertTriangle, count: failedReports.length },
-                      { id: "passed", label: "Passed", icon: CheckCircle2, count: passedReports.length },
-                    ].map(({ id, label, icon: Icon, count }) => (
-                      <motion.button
+                      { id: "failed", label: "Need Review", icon: AlertTriangle, count: failedReports.length, color: "text-red-400" },
+                      { id: "passed", label: "Passed", icon: CheckCircle2, count: passedReports.length, color: "text-emerald-400" },
+                    ].map(({ id, label, icon: Icon, count, color }) => (
+                      <button
                         key={id}
                         onClick={() => {
                           setActiveTab(id as "failed" | "passed");
                           setCurrentPage(1);
                         }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className={`flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all ${
+                        className={`flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-all ${
                           activeTab === id
-                            ? "bg-gradient-to-r from-[#ff9350] to-[#ffb48a] text-[#2a0d03] shadow-lg shadow-[#ff9350]/25"
-                            : "text-white/70 hover:text-white hover:bg-white/5"
+                            ? "bg-gradient-to-r from-[#ff9350] to-[#e87830] text-white shadow-md"
+                            : "text-white/60 hover:text-white hover:bg-white/5"
                         }`}
                       >
-                        <Icon className="w-4 h-4" />
-                        {label}
-                        <span className={`ml-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
-                          activeTab === id ? "bg-black/20 text-white" : "bg-white/10 text-white"
+                        <Icon className={`w-3.5 h-3.5 ${activeTab === id ? "text-white" : color}`} />
+                        <span className="hidden sm:inline">{label}</span>
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                          activeTab === id ? "bg-white/20" : "bg-white/10"
                         }`}>
                           {count}
                         </span>
-                      </motion.button>
+                      </button>
                     ))}
                   </div>
-                </div>
 
-                {/* Search */}
-                <div className="space-y-2">
-                  <label className="text-xs uppercase tracking-[0.35em] text-[#ffd4b8]/60 block">
-                    Search
-                  </label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#ff9350]/60" />
+                  {/* Search */}
+                  <div className="relative flex-1">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
                     <input
                       type="text"
-                      placeholder="Truck number or driver name..."
+                      placeholder="Search truck or driver..."
                       value={searchQuery}
                       onChange={(e) => {
                         setSearchQuery(e.target.value);
                         setCurrentPage(1);
                       }}
-                      className="w-full bg-[#0c0402]/80 border border-[#ff9350]/25 rounded-xl pl-11 pr-10 py-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#ff9350]/50 transition-all hover:border-[#ff9350]/40"
+                      className="w-full bg-black/30 border border-white/10 rounded-lg pl-8 pr-8 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-[#ff9350]/50 focus:border-[#ff9350]/30 transition-all"
                     />
                     {searchQuery && (
                       <button
@@ -789,30 +758,34 @@ export default function MechanicDVIRCenter() {
                           setSearchQuery("");
                           setCurrentPage(1);
                         }}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80 transition-colors"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
                       >
-                        <X className="w-5 h-5" />
+                        <X className="w-4 h-4" />
                       </button>
                     )}
                   </div>
+
+                  {/* Clear filters */}
+                  {hasActiveFilters && (
+                    <button
+                      onClick={clearFilters}
+                      className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium text-amber-400/80 hover:text-amber-300 hover:bg-amber-500/10 border border-amber-500/20 transition-all"
+                    >
+                      <X className="w-3 h-3" />
+                      Clear
+                    </button>
+                  )}
                 </div>
               </div>
-            </EmberCollapsibleSection>
+            </ScrollRevealSection>
 
-            {/* DVIR Records Section */}
-            <EmberCollapsibleSection
-              id="dvir-records"
-              title="DVIR Records"
-              subtitle={`${filteredReports.length} report${filteredReports.length !== 1 ? "s" : ""} found`}
-              storageKey="dvir-records-collapsed"
-              defaultOpen={true}
-              icon={<ListChecks className="w-5 h-5 md:w-6 md:h-6 text-[#ff9350]" />}
-            >
+            {/* DVIR Records Section - Compact */}
+            <ScrollRevealSection delay={0.1}>
               {/* Loading / Error */}
               {loading && (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div className="hidden lg:block">
-                    <TableSkeleton rows={6} columns={5} variant="ember" />
+                    <TableSkeleton rows={5} columns={4} variant="ember" />
                   </div>
                   <div className="lg:hidden">
                     <CardListSkeleton rows={4} variant="ember" />
@@ -821,47 +794,56 @@ export default function MechanicDVIRCenter() {
               )}
 
               {error && (
-                <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">
                   {error}
                 </div>
               )}
 
               {!loading && !error && (
-                <div className="grid gap-6 lg:grid-cols-3">
-                  {/* Left: Reports List */}
-                  <div className="rounded-2xl border border-[#ff9350]/20 bg-[#0a0302]/90 backdrop-blur-sm overflow-hidden flex flex-col">
-                    <div className="bg-gradient-to-r from-[#ff9350]/15 to-[#ffb48a]/10 px-4 py-3 border-b border-white/5">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                          <ClipboardList className="w-4 h-4 text-[#ff9350]" />
-                          {activeTab === "failed" ? "Need Review" : "Passed"} ({filteredReports.length})
-                        </h3>
-                        <span className="text-[0.65rem] uppercase tracking-[0.25em] text-white/50">
-                          {currentPage}/{totalPages}
+                <div className="grid gap-4 lg:grid-cols-3">
+                  {/* Left: Reports List - Compact */}
+                  <div className="rounded-xl border border-white/10 bg-[#080403] overflow-hidden flex flex-col">
+                    {/* Compact header */}
+                    <div className="flex items-center justify-between px-3 py-2 bg-gradient-to-r from-white/5 to-transparent border-b border-white/5">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${activeTab === "failed" ? "bg-red-400" : "bg-emerald-400"}`} />
+                        <span className="text-xs font-medium text-white/80">
+                          {activeTab === "failed" ? "Need Review" : "Passed"}
                         </span>
+                        <span className="text-[10px] text-white/40">({filteredReports.length})</span>
                       </div>
+                      {/* Compact pagination */}
+                      {filteredReports.length > 0 && (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                            disabled={currentPage === 1}
+                            className="p-1 rounded text-white/40 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                          >
+                            <ChevronLeft className="w-3.5 h-3.5" />
+                          </button>
+                          <span className="text-[10px] text-white/50 min-w-[40px] text-center">
+                            {currentPage}/{totalPages}
+                          </span>
+                          <button
+                            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                            disabled={currentPage === totalPages}
+                            className="p-1 rounded text-white/40 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                          >
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
                     </div>
 
-                    <div className="max-h-[720px] overflow-y-auto flex-1 divide-y divide-white/5">
+                    {/* Scrollable list - more compact */}
+                    <div className="max-h-[500px] overflow-y-auto flex-1 divide-y divide-white/[0.03]">
                       {filteredReports.length === 0 ? (
-                        <div className="p-6 text-center text-white/60">
-                          <CheckCircle2 className="w-12 h-12 text-white/30 mx-auto mb-3" />
-                          <p className="text-sm">
-                            {searchQuery
-                              ? "No reports match your search"
-                              : activeTab === "failed"
-                              ? "No DVIRs need review"
-                              : "No passed DVIRs"}
+                        <div className="p-4 text-center text-white/50">
+                          <CheckCircle2 className="w-8 h-8 text-white/20 mx-auto mb-2" />
+                          <p className="text-xs">
+                            {searchQuery ? "No matches" : activeTab === "failed" ? "All clear!" : "No records"}
                           </p>
-                          {hasActiveFilters && (
-                            <button
-                              type="button"
-                              onClick={clearFilters}
-                              className="mt-3 text-[#ff9350] hover:text-white text-xs font-semibold"
-                            >
-                              Clear all filters
-                            </button>
-                          )}
                         </div>
                       ) : (
                         filteredReports.map((report, index) => (
@@ -877,337 +859,327 @@ export default function MechanicDVIRCenter() {
                         ))
                       )}
                     </div>
-
-                    {filteredReports.length > pageSize && (
-                      <div className="border-t border-white/5">
-                        <PaginationControls
-                          currentPage={currentPage}
-                          totalPages={totalPages}
-                          totalItems={filteredReports.length}
-                          loading={loading}
-                          pageSize={pageSize}
-                          onPreviousClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                          onNextClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                          label="reports"
-                        />
-                      </div>
-                    )}
                   </div>
 
-                  {/* Right: Detail View */}
+                  {/* Right: Detail View - Compact */}
                   <div className="lg:col-span-2">
                     <AnimatePresence mode="wait">
                       {!selectedReport ? (
                         <motion.div
                           key="empty-state"
                           {...(prefersReducedMotion ? pageTransitionReduced : pageTransition)}
-                          className="h-full min-h-[400px] rounded-2xl border border-white/10 bg-[#0a0302]/80 p-10 flex flex-col items-center justify-center text-center"
+                          className="h-full min-h-[300px] rounded-xl border border-white/5 bg-[#050302] p-6 flex flex-col items-center justify-center text-center"
                         >
-                          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#ff9350]/10 border border-[#ff9350]/30 mb-4">
-                            <TrendingUp className="w-7 h-7 text-[#ffb48a]" />
+                          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 mb-3">
+                            <ClipboardList className="w-5 h-5 text-amber-400/70" />
                           </div>
-                          <p className="text-lg font-semibold text-white mb-1">
-                            Select a DVIR to Review
+                          <p className="text-sm font-medium text-white/80 mb-0.5">
+                            Select a DVIR
                           </p>
-                          <p className="text-sm text-white/60 max-w-md mx-auto">
-                            Choose a report from the list to view details and record mechanic updates.
+                          <p className="text-xs text-white/40">
+                            Choose a report to view details
                           </p>
                         </motion.div>
                       ) : (
                         <motion.div
                           key={selectedId}
                           {...(prefersReducedMotion ? pageTransitionReduced : pageTransition)}
-                          className="space-y-6"
+                          className="space-y-3"
                         >
-                          {/* Report Details Card */}
-                          <div className="rounded-2xl border border-[#ff9350]/20 bg-[#0a0302]/90 overflow-hidden">
-                            {/* Card Header */}
-                            <div className="bg-gradient-to-r from-[#ff9350]/10 to-transparent border-b border-white/5 px-6 py-5">
-                              <div className="flex items-start justify-between gap-4">
-                                <div>
-                                  <p className="text-xs uppercase tracking-[0.35em] text-[#ff9350]/80">
-                                    DVIR Summary
-                                  </p>
-                                  <h3 className="text-2xl font-bold text-white mt-1">
-                                    Truck {selectedReport.truck_number || "N/A"}
-                                  </h3>
-                                  <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-white/60">
-                                    <span>Driver: {selectedReport.drivers_name || "Unknown"}</span>
-                                    <span>•</span>
-                                    <span>Mileage: {selectedReport.mileage?.toLocaleString() || "N/A"}</span>
+                          {/* Report Details Card - Compact */}
+                          <div className="rounded-xl border border-white/10 bg-[#050302] overflow-hidden">
+                            {/* Card Header - Compact with contrast */}
+                            <div className="bg-gradient-to-r from-amber-500/8 to-transparent border-b border-white/5 px-4 py-3">
+                              <div className="flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
+                                    <Truck className="w-5 h-5 text-amber-400" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <h3 className="text-base font-semibold text-white truncate">
+                                      Truck {selectedReport.truck_number || "N/A"}
+                                    </h3>
+                                    <div className="flex items-center gap-2 text-xs text-white/50">
+                                      <span className="truncate">{selectedReport.drivers_name || "Unknown"}</span>
+                                      <span className="text-white/20">•</span>
+                                      <span>{selectedReport.mileage?.toLocaleString() || "—"} mi</span>
+                                    </div>
                                   </div>
                                 </div>
-                                <div className="flex flex-col items-end gap-2">
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  {hasMechanicUpdate(selectedReport) && (
+                                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-500/15 border border-amber-500/25 rounded text-[10px] font-medium text-amber-300">
+                                      <Wrench className="w-3 h-3" />
+                                      Fixed
+                                    </span>
+                                  )}
                                   <span
-                                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${
+                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${
                                       getStatus(selectedReport) === "failed"
-                                        ? "bg-[#2a0b02] text-[#ffb199] border border-[#ff6b4a]/40"
-                                        : "bg-[#052015] text-[#7ef2c8] border border-[#2a8a63]/40"
+                                        ? "bg-red-500/15 text-red-300 border border-red-500/25"
+                                        : "bg-emerald-500/15 text-emerald-300 border border-emerald-500/25"
                                     }`}
                                   >
                                     {getStatus(selectedReport) === "failed" ? (
                                       <>
-                                        <AlertTriangle className="w-4 h-4" />
-                                        Needs Review
+                                        <AlertTriangle className="w-3.5 h-3.5" />
+                                        Review
                                       </>
                                     ) : (
                                       <>
-                                        <CheckCircle2 className="w-4 h-4" />
-                                        All Passed
+                                        <CheckCircle2 className="w-3.5 h-3.5" />
+                                        Passed
                                       </>
                                     )}
                                   </span>
-                                  {hasMechanicUpdate(selectedReport) && (
-                                    <span className="inline-flex items-center gap-2 px-3 py-1 bg-[#ffde8b]/15 border border-[#ffde8b]/30 rounded-full text-xs font-medium text-[#ffeac1]">
-                                      <Clock className="w-3 h-3" />
-                                      Mechanic Updated
-                                    </span>
-                                  )}
                                 </div>
                               </div>
                             </div>
 
-                            {/* Card Body */}
-                            <div className="px-6 py-6 space-y-6">
-                              {/* Failed Items */}
+                            {/* Card Body - Compact */}
+                            <div className="px-4 py-4 space-y-4">
+                              {/* Failed Items - Compact */}
                               {(() => {
                                 const { vehicleFails, aerialFails, allFails } = getFailedItems(selectedReport);
 
                                 if (allFails.length === 0) {
                                   return (
-                                    <div className="rounded-xl border border-[#2a8a63]/40 bg-[#052015] p-4">
-                                      <div className="flex items-start gap-3">
-                                        <CheckCircle2 className="w-5 h-5 text-emerald-300 flex-shrink-0 mt-0.5" />
-                                        <div>
-                                          <h4 className="font-semibold text-white">All Items Passed ✓</h4>
-                                          <p className="text-sm text-white/70 mt-1">
-                                            No deficiencies recorded on this DVIR.
-                                          </p>
-                                        </div>
-                                      </div>
+                                    <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 flex items-center gap-2">
+                                      <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                                      <span className="text-sm text-emerald-300">All items passed</span>
                                     </div>
                                   );
                                 }
 
                                 return (
-                                  <div className="space-y-4">
-                                    <h4 className="font-semibold text-white flex items-center gap-2">
-                                      <AlertTriangle className="w-5 h-5 text-red-400" />
-                                      Failed Checklist Items ({allFails.length})
-                                    </h4>
+                                  <div className="space-y-2">
+                                    <div className="flex items-center gap-2 text-xs font-medium text-red-300">
+                                      <AlertTriangle className="w-3.5 h-3.5" />
+                                      {allFails.length} Failed Item{allFails.length !== 1 ? "s" : ""}
+                                    </div>
 
-                                    {vehicleFails.length > 0 && (
-                                      <div className="rounded-xl border border-[#ff6b4a]/30 bg-[#2a0b02]/60 p-4 max-h-60 overflow-y-auto">
-                                        <h5 className="font-medium text-[#ffb199] mb-3">Vehicle / Trailer</h5>
-                                        <ul className="space-y-2">
-                                          {vehicleFails.map((label) => (
-                                            <li key={label} className="flex items-start gap-2 text-sm text-[#ffd8cb]">
-                                              <span className="w-1.5 h-1.5 bg-[#ff6b4a] rounded-full mt-1.5 flex-shrink-0" />
-                                              {label}
-                                            </li>
-                                          ))}
-                                        </ul>
-                                      </div>
-                                    )}
+                                    <div className="grid gap-2 sm:grid-cols-2">
+                                      {vehicleFails.length > 0 && (
+                                        <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-2.5 max-h-40 overflow-y-auto">
+                                          <div className="text-[10px] uppercase tracking-wider text-red-300/70 mb-1.5">Vehicle / Trailer</div>
+                                          <ul className="space-y-1">
+                                            {vehicleFails.map((label) => (
+                                              <li key={label} className="flex items-start gap-1.5 text-xs text-red-200/80">
+                                                <span className="w-1 h-1 bg-red-400 rounded-full mt-1.5 flex-shrink-0" />
+                                                {label}
+                                              </li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      )}
 
-                                    {aerialFails.length > 0 && (
-                                      <div className="rounded-xl border border-orange-500/30 bg-[#2a1200]/60 p-4 max-h-60 overflow-y-auto">
-                                        <h5 className="font-medium text-orange-200 mb-3">Aerial Lift</h5>
-                                        <ul className="space-y-2">
-                                          {aerialFails.map((label) => (
-                                            <li key={label} className="flex items-start gap-2 text-sm text-orange-100">
-                                              <span className="w-1.5 h-1.5 bg-orange-400 rounded-full mt-1.5 flex-shrink-0" />
-                                              {label}
-                                            </li>
-                                          ))}
-                                        </ul>
-                                      </div>
-                                    )}
+                                      {aerialFails.length > 0 && (
+                                        <div className="rounded-lg border border-orange-500/20 bg-orange-500/5 p-2.5 max-h-40 overflow-y-auto">
+                                          <div className="text-[10px] uppercase tracking-wider text-orange-300/70 mb-1.5">Aerial Lift</div>
+                                          <ul className="space-y-1">
+                                            {aerialFails.map((label) => (
+                                              <li key={label} className="flex items-start gap-1.5 text-xs text-orange-200/80">
+                                                <span className="w-1 h-1 bg-orange-400 rounded-full mt-1.5 flex-shrink-0" />
+                                                {label}
+                                              </li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                 );
                               })()}
 
-                              {/* Driver Notes */}
-                              <div>
-                                <h4 className="font-semibold text-white mb-2">Driver Notes</h4>
-                                <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-white/80">
-                                  {selectedReport.notes?.trim() || "No additional notes provided."}
+                              {/* Driver Notes & Vehicle Details - Compact row */}
+                              <div className="grid gap-2 sm:grid-cols-2">
+                                <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2.5">
+                                  <div className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Driver Notes</div>
+                                  <p className="text-xs text-white/60 line-clamp-2">
+                                    {selectedReport.notes?.trim() || "No notes"}
+                                  </p>
+                                </div>
+                                <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2.5">
+                                  <div className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Vehicle Info</div>
+                                  <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10px] text-white/50">
+                                    <span>Chipper: {selectedReport.chipper_number || "—"}</span>
+                                    <span>Trailer: {selectedReport.trailer_number || "—"}</span>
+                                  </div>
                                 </div>
                               </div>
 
-                              {/* Vehicle Details */}
-                              <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-1 text-sm text-white/80">
-                                <p className="text-xs uppercase tracking-[0.3em] text-white/40 mb-2">Vehicle Details</p>
-                                <div className="grid grid-cols-2 gap-2">
-                                  <p>Chipper #: {selectedReport.chipper_number || "—"}</p>
-                                  <p>Trailer #: {selectedReport.trailer_number || "—"}</p>
-                                  <p>Truck GVWR: {selectedReport.truck_gvwr || "—"}</p>
-                                  <p>Trailer/Chipper GVWR: {selectedReport.trailer_chipper_gvwr || "—"}</p>
-                                </div>
-                              </div>
-
-                              {/* Full Checklist Review */}
-                              <div className="space-y-4">
-                                <h4 className="font-semibold text-white">Full Checklist Review</h4>
-                                <div className="grid gap-4 lg:grid-cols-2">
-                                  <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                                    <h5 className="text-sm font-semibold text-white mb-3">Vehicle / Trailer</h5>
-                                    <div className="max-h-80 overflow-y-auto divide-y divide-white/5">
+                              {/* Full Checklist Review - Collapsible & Compact */}
+                              <details className="group">
+                                <summary className="flex items-center justify-between cursor-pointer py-2 text-xs font-medium text-white/60 hover:text-white/80 transition-colors">
+                                  <span className="flex items-center gap-1.5">
+                                    <ListChecks className="w-3.5 h-3.5 text-amber-400/70" />
+                                    Full Checklist Review
+                                  </span>
+                                  <ChevronRight className="w-3.5 h-3.5 transition-transform group-open:rotate-90" />
+                                </summary>
+                                <div className="grid gap-2 sm:grid-cols-2 pt-2">
+                                  <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2.5">
+                                    <div className="text-[10px] uppercase tracking-wider text-white/30 mb-2">Vehicle / Trailer</div>
+                                    <div className="max-h-48 overflow-y-auto space-y-0.5">
                                       {VEHICLE_TRAILER_ITEMS.map((item) => {
                                         const value = selectedReport.vehicle_trailer_checklist?.[item.id];
-                                        const { label: statusLabel, className: chipClass } = getChecklistStatusLabel(value);
+                                        const status = value === "P" ? "pass" : value === "F" ? "fail" : "pending";
                                         return (
-                                          <div key={item.id} className="flex items-center justify-between py-2 text-sm text-white/80 gap-3">
-                                            <span className="pr-2">{item.label}</span>
-                                            <span className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${chipClass}`}>
-                                              {statusLabel}
-                                            </span>
+                                          <div key={item.id} className="flex items-center justify-between py-1 text-[11px] text-white/60 gap-2">
+                                            <span className="truncate">{item.label}</span>
+                                            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                              status === "pass" ? "bg-emerald-400" : status === "fail" ? "bg-red-400" : "bg-white/20"
+                                            }`} />
                                           </div>
                                         );
                                       })}
                                     </div>
                                   </div>
 
-                                  <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                                    <h5 className="text-sm font-semibold text-white mb-3">Aerial Lift</h5>
-                                    <div className="max-h-80 overflow-y-auto divide-y divide-white/5">
+                                  <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2.5">
+                                    <div className="text-[10px] uppercase tracking-wider text-white/30 mb-2">Aerial Lift</div>
+                                    <div className="max-h-48 overflow-y-auto space-y-0.5">
                                       {AERIAL_LIFT_ITEMS.map((item) => {
                                         const value = selectedReport.aerial_checklist?.[item.id];
-                                        const { label: statusLabel, className: chipClass } = getChecklistStatusLabel(value);
+                                        const status = value === "P" ? "pass" : value === "F" ? "fail" : "pending";
                                         return (
-                                          <div key={item.id} className="flex items-center justify-between py-2 text-sm text-white/80 gap-3">
-                                            <span className="pr-2">{item.label}</span>
-                                            <span className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${chipClass}`}>
-                                              {statusLabel}
-                                            </span>
+                                          <div key={item.id} className="flex items-center justify-between py-1 text-[11px] text-white/60 gap-2">
+                                            <span className="truncate">{item.label}</span>
+                                            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                              status === "pass" ? "bg-emerald-400" : status === "fail" ? "bg-red-400" : "bg-white/20"
+                                            }`} />
                                           </div>
                                         );
                                       })}
                                     </div>
                                   </div>
                                 </div>
-                              </div>
+                              </details>
 
-                              {/* Photos Section */}
-                              <div className="space-y-3">
-                                <h4 className="font-semibold text-white flex items-center gap-2">
-                                  <Images className="w-4 h-4 text-[#ffb48a]" />
-                                  Inspection Photos
-                                </h4>
+                              {/* Photos Section - Collapsible */}
+                              <details className="group">
+                                <summary className="flex items-center justify-between cursor-pointer py-2 text-xs font-medium text-white/60 hover:text-white/80 transition-colors">
+                                  <span className="flex items-center gap-1.5">
+                                    <Images className="w-3.5 h-3.5 text-amber-400/70" />
+                                    Photos ({mediaEntries.length})
+                                  </span>
+                                  <ChevronRight className="w-3.5 h-3.5 transition-transform group-open:rotate-90" />
+                                </summary>
                                 {mediaEntries.length === 0 ? (
-                                  <p className="text-sm text-white/60">No photos were uploaded with this DVIR.</p>
+                                  <p className="text-[11px] text-white/40 pt-1">No photos uploaded</p>
                                 ) : (
-                                  <div className="grid gap-4 sm:grid-cols-2">
+                                  <div className="grid grid-cols-3 gap-2 pt-2">
                                     {mediaEntries.map((media) => (
                                       <a
                                         key={media.label}
                                         href={media.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="group block rounded-xl border border-white/10 bg-white/5 overflow-hidden transition-all hover:border-[#ff9350]/30"
+                                        className="group/img block rounded-lg border border-white/5 bg-black/30 overflow-hidden transition-all hover:border-amber-500/30"
                                       >
-                                        <div className="p-3 text-xs uppercase tracking-[0.3em] text-white/50">{media.label}</div>
-                                        <img src={media.url} alt={media.label} className="h-48 w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" />
+                                        <img src={media.url} alt={media.label} className="h-20 w-full object-cover transition-transform duration-200 group-hover/img:scale-105" />
+                                        <div className="px-1.5 py-1 text-[9px] text-white/40 truncate">{media.label}</div>
                                       </a>
                                     ))}
                                   </div>
                                 )}
-                              </div>
+                              </details>
 
-                              {/* Signatures Section */}
-                              <div className="space-y-3">
-                                <h4 className="font-semibold text-white flex items-center gap-2">
-                                  <FileSignature className="w-4 h-4 text-[#ffb48a]" />
-                                  Signatures
-                                </h4>
+                              {/* Signatures Section - Collapsible */}
+                              <details className="group">
+                                <summary className="flex items-center justify-between cursor-pointer py-2 text-xs font-medium text-white/60 hover:text-white/80 transition-colors">
+                                  <span className="flex items-center gap-1.5">
+                                    <FileSignature className="w-3.5 h-3.5 text-amber-400/70" />
+                                    Signatures ({signatureEntries.length})
+                                  </span>
+                                  <ChevronRight className="w-3.5 h-3.5 transition-transform group-open:rotate-90" />
+                                </summary>
                                 {signatureEntries.length === 0 ? (
-                                  <p className="text-sm text-white/60">No signature files were attached to this DVIR.</p>
+                                  <p className="text-[11px] text-white/40 pt-1">No signatures</p>
                                 ) : (
-                                  <div className="grid gap-4 sm:grid-cols-2">
+                                  <div className="grid grid-cols-2 gap-2 pt-2">
                                     {signatureEntries.map((signature) => (
                                       <a
                                         key={signature.label}
                                         href={signature.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="rounded-xl border border-white/10 bg-white/5 p-4 flex flex-col gap-3 transition-all hover:border-[#ff9350]/30"
+                                        className="rounded-lg border border-white/5 bg-black/30 p-2 transition-all hover:border-amber-500/30"
                                       >
-                                        <p className="text-xs uppercase tracking-[0.3em] text-white/50">{signature.label}</p>
-                                        <img src={signature.url} alt={signature.label} className="h-32 w-full object-contain bg-black/30 rounded-lg" />
+                                        <div className="text-[9px] text-white/40 mb-1 truncate">{signature.label}</div>
+                                        <img src={signature.url} alt={signature.label} className="h-16 w-full object-contain" />
                                       </a>
                                     ))}
                                   </div>
                                 )}
-                              </div>
+                              </details>
                             </div>
                           </div>
 
-                          {/* Mechanic Update Form */}
-                          <div className="rounded-2xl border border-[#ff9350]/25 bg-gradient-to-br from-[#150602]/90 to-[#0a0201]/90 overflow-hidden">
-                            <div className="bg-gradient-to-r from-[#ff9350]/10 to-transparent border-b border-[#ff9350]/20 px-6 py-5">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <p className="text-xs uppercase tracking-[0.35em] text-[#ff9350]/80">Mechanic Fix Log</p>
-                                  <h3 className="text-lg font-bold text-white mt-1">Record Mechanic Fix</h3>
+                          {/* Mechanic Update Form - Compact with contrast */}
+                          <div className="rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-950/30 to-[#050302] overflow-hidden">
+                            <div className="flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-amber-500/10 to-transparent border-b border-amber-500/10">
+                              <div className="flex items-center gap-2">
+                                <div className="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/25 flex items-center justify-center">
+                                  <Wrench className="w-3.5 h-3.5 text-amber-400" />
                                 </div>
-                                <div className="w-10 h-10 rounded-xl bg-[#ff9350]/15 border border-[#ff9350]/30 flex items-center justify-center">
-                                  <Wrench className="w-5 h-5 text-[#ffb48a]" />
-                                </div>
+                                <span className="text-sm font-medium text-white">Record Fix</span>
                               </div>
                             </div>
 
-                            <div className="px-6 py-6 space-y-5">
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="px-4 py-3 space-y-3">
+                              <div className="grid grid-cols-2 gap-2">
                                 <div>
-                                  <label className="block text-sm font-medium text-white mb-2">Mechanic Truck Number</label>
+                                  <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Truck #</label>
                                   <input
                                     value={updateTruckNumber}
                                     onChange={(e) => setUpdateTruckNumber(e.target.value)}
-                                    placeholder="e.g., Truck 101"
-                                    className="w-full bg-[#0a0302]/80 border border-white/10 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#ff9350]/50 transition-all hover:border-[#ff9350]/30"
+                                    placeholder="e.g., 101"
+                                    className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all"
                                   />
                                 </div>
                                 <DateField
-                                  label="Service Date"
+                                  label="Date"
                                   value={updateDate}
                                   onValueChange={setUpdateDate}
-                                  helperText="When this repair occurred"
-                                  containerClassName="text-white"
-                                  className="bg-[#0a0302]/80 border-white/15 focus:ring-[#ff9350]/60 focus:border-[#ff9350]/40"
+                                  variant="ember"
+                                  containerClassName="text-white [&_label]:text-[10px] [&_label]:uppercase [&_label]:tracking-wider [&_label]:text-white/40 [&_label]:mb-1"
+                                  labelClassName="!text-[10px] !uppercase !tracking-wider !text-white/40"
+                                  className="!rounded-lg !py-2 !px-3 !text-sm border-amber-500/20"
                                 />
                               </div>
 
                               <div>
-                                <label className="block text-sm font-medium text-white mb-2">Deficiency Corrected</label>
+                                <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Fix Applied</label>
                                 <input
                                   value={updateDeficiencyCorrected}
                                   onChange={(e) => setUpdateDeficiencyCorrected(e.target.value)}
-                                  placeholder="e.g., Replaced brake pads, checked fluid levels..."
-                                  className="w-full bg-[#0a0302]/80 border border-white/10 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#ff9350]/50 transition-all hover:border-[#ff9350]/30"
+                                  placeholder="e.g., Replaced brake pads..."
+                                  className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all"
                                 />
                               </div>
 
                               <div>
-                                <label className="block text-sm font-medium text-white mb-2">Additional Remarks</label>
+                                <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Remarks</label>
                                 <textarea
                                   value={updateRemarks}
                                   onChange={(e) => setUpdateRemarks(e.target.value)}
-                                  rows={4}
-                                  placeholder="Document any additional details, parts used, or recommendations..."
-                                  className="w-full bg-[#0a0302]/80 border border-white/10 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#ff9350]/50 transition-all resize-none hover:border-[#ff9350]/30"
+                                  rows={2}
+                                  placeholder="Additional notes..."
+                                  className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all resize-none"
                                 />
                               </div>
 
                               <AnimatePresence>
                                 {saveMessage && (
                                   <motion.div
-                                    initial={{ opacity: 0, y: -10 }}
+                                    initial={{ opacity: 0, y: -5 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -10 }}
-                                    className={`rounded-xl p-3 text-sm font-medium ${
+                                    exit={{ opacity: 0, y: -5 }}
+                                    className={`rounded-lg px-3 py-2 text-xs font-medium ${
                                       saveMessage.includes("✅")
-                                        ? "bg-[#052015] border border-[#2a8a63]/40 text-[#7ef2c8]"
-                                        : "bg-[#2a0b02] border border-[#ff6b4a]/30 text-[#ffb199]"
+                                        ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-300"
+                                        : "bg-red-500/10 border border-red-500/20 text-red-300"
                                     }`}
                                   >
                                     {saveMessage}
@@ -1215,30 +1187,24 @@ export default function MechanicDVIRCenter() {
                                 )}
                               </AnimatePresence>
 
-                              <motion.button
-                                whileHover={{ scale: 1.01 }}
-                                whileTap={{ scale: 0.99 }}
+                              <button
                                 type="button"
                                 onClick={handleSaveUpdate}
                                 disabled={savingUpdate}
-                                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#ff9350] to-[#ffb48a] px-6 py-3 text-base font-semibold text-[#2a0d03] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_10px_25px_rgba(255,147,80,0.25)] hover:shadow-[0_15px_30px_rgba(255,147,80,0.35)]"
+                                className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg hover:shadow-amber-500/20"
                               >
                                 {savingUpdate ? (
                                   <>
-                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    <Loader2 className="w-4 h-4 animate-spin" />
                                     Saving...
                                   </>
                                 ) : (
                                   <>
-                                    <Wrench className="w-5 h-5" />
-                                    Save Mechanic Update
+                                    <CheckCircle2 className="w-4 h-4" />
+                                    Save Update
                                   </>
                                 )}
-                              </motion.button>
-
-                              <p className="text-xs text-white/60 text-center">
-                                Your updates will be visible to drivers in their DVIR history
-                              </p>
+                              </button>
                             </div>
                           </div>
                         </motion.div>
@@ -1247,7 +1213,7 @@ export default function MechanicDVIRCenter() {
                   </div>
                 </div>
               )}
-            </EmberCollapsibleSection>
+            </ScrollRevealSection>
           </div>
         </AdminPremiumScaffold>
       </div>

@@ -1,6 +1,7 @@
 import { useCallback, memo, useMemo, Suspense, lazy, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { ScrollReveal } from '../motion';
 import {
   LogOut,
   Calendar,
@@ -151,7 +152,7 @@ const ExpandableJobCard = memo(
         <ExpandableScreenTrigger>
           <CompactJobCard job={job} />
         </ExpandableScreenTrigger>
-        <ExpandableScreenContent className="bg-gradient-to-br from-[#041812] via-[#020d09] to-[#010604]">
+        <ExpandableScreenContent className="bg-gradient-to-br from-[#0d6e51] via-[#05291c] to-[#010604]">
           <JobDetailExpanded job={job} onJobUpdate={onJobUpdate} />
         </ExpandableScreenContent>
       </ExpandableScreen>
@@ -456,49 +457,55 @@ function Dashboard() {
         {/* Mobile-first Bento layout */}
         <div className="w-full space-y-4 md:space-y-6">
           {/* Section 1: Announcements */}
-          <ExpandableSection
-            id="dashboard-announcements"
-            title="Latest Announcements"
-            subtitle="Company news and updates"
-            icon={<DashboardAvatar variant="announcements" className="w-8 h-8 md:w-10 md:h-10" />}
-            storageKey={PERSISTENCE_KEYS.ANNOUNCEMENTS}
-            defaultOpen={true}
-          >
-            <Suspense fallback={<AnnouncementCardSkeleton />}>
-              <DashboardAnnouncementCard />
-            </Suspense>
-          </ExpandableSection>
+          <ScrollReveal variant="fadeUp" delay={0}>
+            <ExpandableSection
+              id="dashboard-announcements"
+              title="Latest Announcements"
+              subtitle="Company news and updates"
+              icon={<DashboardAvatar variant="announcements" className="w-8 h-8 md:w-10 md:h-10" />}
+              storageKey={PERSISTENCE_KEYS.ANNOUNCEMENTS}
+              defaultOpen={true}
+            >
+              <Suspense fallback={<AnnouncementCardSkeleton />}>
+                <DashboardAnnouncementCard />
+              </Suspense>
+            </ExpandableSection>
+          </ScrollReveal>
 
           {/* Section 2: Assigned Jobs - Isolated with progressive rendering */}
-          <ExpandableSection
-            id="dashboard-assigned-jobs"
-            title="Your Assigned Jobs"
-            subtitle={jobsSubtitle}
-            icon={<DashboardAvatar variant="jobs" className="w-8 h-8 md:w-10 md:h-10" />}
-            storageKey={PERSISTENCE_KEYS.ASSIGNED_JOBS}
-            defaultOpen={true}
-          >
-            <AssignedJobsSection
-              jobs={assignedJobs}
-              loading={jobsLoading}
-              error={jobsError}
-              onRefetch={refetchJobs}
-            />
-          </ExpandableSection>
+          <ScrollReveal variant="fadeUp" delay={0.1}>
+            <ExpandableSection
+              id="dashboard-assigned-jobs"
+              title="Your Assigned Jobs"
+              subtitle={jobsSubtitle}
+              icon={<DashboardAvatar variant="jobs" className="w-8 h-8 md:w-10 md:h-10" />}
+              storageKey={PERSISTENCE_KEYS.ASSIGNED_JOBS}
+              defaultOpen={true}
+            >
+              <AssignedJobsSection
+                jobs={assignedJobs}
+                loading={jobsLoading}
+                error={jobsError}
+                onRefetch={refetchJobs}
+              />
+            </ExpandableSection>
+          </ScrollReveal>
 
           {/* Section 3: All Tools & Features */}
-          <ExpandableSection
-            id="dashboard-all-tools"
-            title="All Tools & Features"
-            subtitle="Complete navigation menu"
-            icon={<DashboardAvatar variant="tools" className="w-8 h-8 md:w-10 md:h-10" />}
-            storageKey={PERSISTENCE_KEYS.ALL_TOOLS}
-            defaultOpen={false}
-          >
-            <Suspense fallback={<NavCardsSkeleton />}>
-              <NavCards />
-            </Suspense>
-          </ExpandableSection>
+          <ScrollReveal variant="fadeUp" delay={0.2}>
+            <ExpandableSection
+              id="dashboard-all-tools"
+              title="All Tools & Features"
+              subtitle="Complete navigation menu"
+              icon={<DashboardAvatar variant="tools" className="w-8 h-8 md:w-10 md:h-10" />}
+              storageKey={PERSISTENCE_KEYS.ALL_TOOLS}
+              defaultOpen={false}
+            >
+              <Suspense fallback={<NavCardsSkeleton />}>
+                <NavCards />
+              </Suspense>
+            </ExpandableSection>
+          </ScrollReveal>
         </div>
       </AdminPremiumScaffold>
 

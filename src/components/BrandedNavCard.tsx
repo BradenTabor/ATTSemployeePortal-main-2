@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { cn } from "../lib/utils";
-import { ReactNode } from "react";
-import AdaptiveCardWrapper from "./AdaptiveCardWrapper";
+import { ReactNode, useMemo, useState } from "react";
+import { getDeviceCapabilities } from "../lib/mobilePerf";
+import { ChevronRight } from "lucide-react";
 
 type CardVariant = "emerald" | "gold" | "ember";
 
@@ -14,52 +15,86 @@ interface BrandedNavCardProps {
   variant?: CardVariant;
 }
 
+// Premium gradient styles with enhanced icon treatment
 const VARIANT_STYLES = {
   emerald: {
-    outer:
-      "bg-gradient-to-br from-green-600/70 via-black/80 to-green-800/80 hover:from-green-500 hover:via-black hover:to-green-700",
-    inner:
-      "border border-[rgba(11,132,92,0.3)] items-center text-center text-white/80",
+    // Outer wrapper gradient border
+    outer: "bg-gradient-to-br from-green-600/70 via-black/80 to-green-800/80",
+    outerHover: "hover:from-green-500 hover:via-black hover:to-green-700",
+    // Inner card gradient background
     innerStyle: {
-      background:
-        "linear-gradient(90deg, rgba(0, 0, 0, 0.7) 0%, rgba(11, 132, 92, 1) 50%, rgba(12, 39, 19, 1) 100%)",
+      background: "linear-gradient(90deg, rgba(0, 0, 0, 0.7) 0%, rgba(11, 132, 92, 1) 50%, rgba(12, 39, 19, 1) 100%)",
     },
-    iconWrapper: "mb-3 text-green-400",
+    innerBorder: "border-[rgba(11,132,92,0.3)]",
+    // Premium icon styling
+    iconGradient: "from-emerald-500/30 via-emerald-400/20 to-emerald-600/30",
+    iconBorderGradient: "from-emerald-400/60 via-emerald-500/40 to-emerald-400/60",
+    iconGlow: "shadow-[0_0_20px_rgba(16,185,129,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)]",
+    iconGlowHover: "group-hover:shadow-[0_0_25px_rgba(16,185,129,0.5),inset_0_1px_2px_rgba(255,255,255,0.15)]",
+    iconColor: "text-emerald-300",
+    iconColorHover: "group-hover:text-emerald-200",
+    // Text colors
     title: "text-white",
     description: "text-white/80",
-    overlay: "bg-gradient-to-br from-green-500/10 to-transparent",
+    // Effects
+    glow: "group-hover:shadow-[0_0_35px_rgba(16,185,129,0.2)]",
+    shimmer: "from-green-400/0 via-green-400/40 to-green-400/0",
+    accent: "bg-gradient-to-r from-green-400 to-green-600",
+    arrow: "text-green-400/50",
   },
   gold: {
-    outer:
-      "bg-gradient-to-br from-[#f9e7c4]/20 via-[#0b0a07] to-[#1b150e] border border-[#f7ddb4]/30 hover:border-[#f6dcb2]/60 hover:shadow-[0_25px_50px_rgba(0,0,0,0.6)]",
-    inner:
-      "border border-[#f6dcb2]/25 items-start text-left text-[#f8e5bb]/80 shadow-[0_20px_45px_rgba(0,0,0,0.55)]",
+    outer: "bg-gradient-to-br from-[#f9e7c4]/20 via-[#0b0a07] to-[#1b150e]",
+    outerHover: "hover:border-[#f6dcb2]/60 hover:shadow-[0_25px_50px_rgba(0,0,0,0.6)]",
     innerStyle: {
       background: "linear-gradient(51.63deg, rgba(0, 0, 0, 1) 5%, rgba(147, 98, 6, 1) 11.25%, rgba(84, 55, 3, 1) 17.5%, rgba(104, 69, 3, 1) 30%, rgba(147, 98, 6, 1) 42%, rgba(189, 126, 10, 1) 54%, rgba(234, 216, 123, 1) 66.5%, rgba(244, 159, 1, 1) 79%, rgba(245, 245, 245, 1) 90%, rgba(251, 190, 75, 1) 100%)",
     },
-    iconWrapper:
-      "mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#fef3d1]/10 border border-[#f4c979]/40 text-[#f4c979]",
+    innerBorder: "border-[#f6dcb2]/25",
+    // Premium icon styling
+    iconGradient: "from-amber-500/30 via-yellow-400/25 to-amber-600/30",
+    iconBorderGradient: "from-amber-300/70 via-yellow-400/50 to-amber-400/70",
+    iconGlow: "shadow-[0_0_20px_rgba(251,191,36,0.25),inset_0_1px_1px_rgba(255,255,255,0.15)]",
+    iconGlowHover: "group-hover:shadow-[0_0_28px_rgba(251,191,36,0.45),inset_0_1px_2px_rgba(255,255,255,0.2)]",
+    iconColor: "text-amber-300",
+    iconColorHover: "group-hover:text-amber-200",
     title: "text-[#fff6dd]",
     description: "text-[#f8e5bb]/80",
-    overlay: "bg-gradient-to-br from-[#f4c979]/15 via-transparent to-transparent",
+    glow: "group-hover:shadow-[0_0_35px_rgba(244,201,121,0.15)]",
+    shimmer: "from-amber-400/0 via-amber-400/35 to-amber-400/0",
+    accent: "bg-gradient-to-r from-[#f4c979] to-[#d4a84a]",
+    arrow: "text-[#f4c979]/50",
   },
   ember: {
-    outer:
-      "bg-gradient-to-br from-[#341109]/80 via-[#120504] to-[#050201] border border-[#f59a71]/35 hover:border-[#ffb089]/60 hover:shadow-[0_25px_45px_rgba(0,0,0,0.65)]",
-    inner:
-      "border border-[#f38d57]/35 items-start text-left text-[#ffd4b8]/85 shadow-[0_20px_45px_rgba(0,0,0,0.6)]",
+    outer: "bg-gradient-to-br from-[#341109]/80 via-[#120504] to-[#050201]",
+    outerHover: "hover:border-[#ffb089]/60 hover:shadow-[0_25px_45px_rgba(0,0,0,0.65)]",
     innerStyle: {
-      background:
-        "linear-gradient(36.85deg, rgba(0, 0, 0, 1) 0%, rgba(71, 28, 6, 1) 12.5%, rgba(101, 39, 6, 1) 25%, rgba(137, 53, 11, 1) 37.5%, rgba(158, 59, 5, 1) 50%, rgba(228, 84, 7, 1) 62.5%, rgba(255, 129, 61, 1) 75%, rgba(255, 209, 184, 1) 100%)",
+      background: "linear-gradient(36.85deg, rgba(0, 0, 0, 1) 0%, rgba(71, 28, 6, 1) 12.5%, rgba(101, 39, 6, 1) 25%, rgba(137, 53, 11, 1) 37.5%, rgba(158, 59, 5, 1) 50%, rgba(228, 84, 7, 1) 62.5%, rgba(255, 129, 61, 1) 75%, rgba(255, 209, 184, 1) 100%)",
     },
-    iconWrapper:
-      "mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#ffb47a]/10 border border-[#ff9350]/40 text-[#ff9d5f]",
+    innerBorder: "border-[#f38d57]/35",
+    // Premium icon styling
+    iconGradient: "from-orange-500/30 via-orange-400/25 to-red-500/30",
+    iconBorderGradient: "from-orange-400/70 via-orange-500/50 to-red-400/70",
+    iconGlow: "shadow-[0_0_20px_rgba(249,115,22,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)]",
+    iconGlowHover: "group-hover:shadow-[0_0_28px_rgba(249,115,22,0.5),inset_0_1px_2px_rgba(255,255,255,0.15)]",
+    iconColor: "text-orange-300",
+    iconColorHover: "group-hover:text-orange-200",
     title: "text-[#ffe4c9]",
     description: "text-[#ffd4b8]/80",
-    overlay: "bg-gradient-to-br from-[#ff8f57]/15 via-transparent to-transparent",
+    glow: "group-hover:shadow-[0_0_35px_rgba(255,143,87,0.15)]",
+    shimmer: "from-orange-400/0 via-orange-400/35 to-orange-400/0",
+    accent: "bg-gradient-to-r from-[#ff9350] to-[#e85a07]",
+    arrow: "text-[#ff9d5f]/50",
   },
 };
 
+/**
+ * BrandedNavCard - Compact navigation card with original premium styling
+ * 
+ * Features:
+ * - Original gradient colors and styling restored
+ * - Compact horizontal layout
+ * - Premium hover animations (shimmer, glow, accent line)
+ * - Mobile-optimized touch states
+ */
 export default function BrandedNavCard({
   title,
   description,
@@ -68,50 +103,176 @@ export default function BrandedNavCard({
   variant = "emerald",
 }: BrandedNavCardProps) {
   const selected = VARIANT_STYLES[variant] ?? VARIANT_STYLES.emerald;
+  const [isHovered, setIsHovered] = useState(false);
+  
+  // Get device capabilities (cached)
+  const caps = useMemo(() => getDeviceCapabilities(), []);
+  
+  const canAnimate = !caps.prefersReducedMotion;
+  const canHover = !caps.isMobile && canAnimate;
+  const isMobile = caps.isMobile;
 
   return (
-    <Link to={to}>
-      <AdaptiveCardWrapper>
-        <motion.div
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.98 }}
+    <Link 
+      to={to}
+      onMouseEnter={() => canHover && setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className="block touch-manipulation"
+    >
+      <motion.div
+        className="group relative"
+        whileHover={canHover ? { y: -3, scale: 1.02 } : undefined}
+        whileTap={canAnimate ? { scale: 0.97 } : undefined}
+        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+      >
+        {/* Outer wrapper with gradient border - RESTORED ORIGINAL STYLING */}
+        <div
           className={cn(
-            "relative w-full max-w-sm p-[2px] rounded-2xl overflow-hidden shadow-lg transition-all duration-300 ease-out",
-            selected.outer
+            "relative w-full p-[2px] rounded-2xl overflow-hidden shadow-lg transition-all duration-300 ease-out",
+            selected.outer,
+            selected.outerHover,
+            selected.glow,
+            isMobile && "active:scale-[0.98] active:opacity-95"
           )}
         >
+          {/* Animated shimmer overlay - desktop only */}
+          {!caps.isLowEnd && !isMobile && (
+            <motion.div
+              className={cn(
+                "absolute inset-0 bg-gradient-to-r opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none",
+                selected.shimmer
+              )}
+              animate={isHovered ? {
+                backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+              } : {}}
+              transition={{
+                duration: 2.5,
+                repeat: Infinity,
+                ease: "linear"
+              }}
+              style={{
+                backgroundSize: "200% 100%",
+              }}
+            />
+          )}
+          
+          {/* Inner card with gradient background - RESTORED ORIGINAL STYLING */}
           <div
             className={cn(
-              "h-full w-full rounded-2xl p-6 flex flex-col gap-2 backdrop-blur-xl",
-              selected.inner
+              "relative h-full w-full rounded-2xl px-4 py-3.5 sm:px-5 sm:py-4",
+              "flex items-center gap-3.5",
+              "min-h-[60px]", // Touch target
+              "border transition-all duration-300",
+              selected.innerBorder,
+              !caps.isLowEnd && "backdrop-blur-xl"
             )}
             style={selected.innerStyle}
           >
-            {icon && <div className={selected.iconWrapper}>{icon}</div>}
-            <h3
-              className={cn(
-                "text-xl sm:text-2xl font-semibold tracking-wide",
-                selected.title
+            {/* Premium Icon Container */}
+            {icon && (
+              <motion.div
+                className="flex-shrink-0 relative"
+                animate={isHovered && canHover ? { 
+                  y: -3,
+                  scale: 1.1,
+                } : { 
+                  y: 0,
+                  scale: 1 
+                }}
+                transition={{ type: "spring", stiffness: 400, damping: 20 }}
+              >
+                {/* Outer glow ring */}
+                <div className={cn(
+                  "absolute -inset-0.5 rounded-xl bg-gradient-to-br opacity-60 blur-[2px] transition-opacity duration-300",
+                  "group-hover:opacity-100",
+                  selected.iconBorderGradient
+                )} />
+                
+                {/* Icon container with gradient background */}
+                <div
+                  className={cn(
+                    "relative flex items-center justify-center",
+                    "w-11 h-11 sm:w-12 sm:h-12",
+                    "rounded-xl transition-all duration-300",
+                    "bg-gradient-to-br",
+                    selected.iconGradient,
+                    selected.iconGlow,
+                    selected.iconGlowHover
+                  )}
+                >
+                  {/* Inner border highlight */}
+                  <div className={cn(
+                    "absolute inset-[1px] rounded-[10px] bg-gradient-to-br opacity-50",
+                    selected.iconGradient
+                  )} />
+                  
+                  {/* Icon */}
+                  <div className={cn(
+                    "relative z-10 w-5 h-5 sm:w-6 sm:h-6 transition-colors duration-300",
+                    "[&>svg]:w-full [&>svg]:h-full [&>svg]:drop-shadow-[0_0_3px_currentColor]",
+                    selected.iconColor,
+                    selected.iconColorHover
+                  )}>
+                    {icon}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+            
+            {/* Text content */}
+            <div className="flex-1 min-w-0">
+              <h3
+                className={cn(
+                  "text-sm sm:text-base font-semibold tracking-wide truncate",
+                  selected.title
+                )}
+              >
+                {title}
+              </h3>
+              {description && (
+                <p className={cn(
+                  "text-xs sm:text-sm mt-0.5 line-clamp-1 sm:line-clamp-2 opacity-90",
+                  selected.description
+                )}>
+                  {description}
+                </p>
               )}
+            </div>
+            
+            {/* Arrow indicator */}
+            <motion.div
+              className={cn(
+                "flex-shrink-0 transition-all duration-300",
+                isMobile ? selected.arrow : cn(
+                  "opacity-30 group-hover:opacity-100",
+                  selected.iconColor,
+                  selected.iconColorHover
+                )
+              )}
+              animate={isHovered && canHover ? { x: 4 } : { x: 0 }}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
             >
-              {title}
-            </h3>
-            {description && (
-              <p className={cn("text-sm max-w-xs", selected.description)}>
-                {description}
-              </p>
-            )}
+              <ChevronRight 
+                className="w-5 h-5 drop-shadow-[0_0_4px_currentColor]" 
+                strokeWidth={2.5} 
+              />
+            </motion.div>
           </div>
-
-          {/* Subtle glowing overlay */}
-          <div
-            className={cn(
-              "absolute inset-0 rounded-2xl pointer-events-none",
-              selected.overlay
-            )}
-          />
-        </motion.div>
-      </AdaptiveCardWrapper>
+          
+          {/* Bottom accent line on hover - desktop */}
+          {!isMobile && (
+            <motion.div
+              className={cn(
+                "absolute bottom-0 left-0 h-[2px] rounded-full",
+                selected.accent
+              )}
+              initial={{ width: "0%" }}
+              animate={isHovered ? { width: "100%" } : { width: "0%" }}
+              transition={{ duration: 0.35, ease: "easeOut" }}
+            />
+          )}
+        </div>
+      </motion.div>
     </Link>
   );
 }

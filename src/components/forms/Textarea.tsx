@@ -5,6 +5,13 @@ interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   error?: boolean;
 }
 
+/**
+ * Textarea - Accessible form textarea with proper focus handling
+ * 
+ * Accessibility features:
+ * - Visible focus ring for keyboard navigation
+ * - Improved placeholder contrast (50% vs 30%) for readability
+ */
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ className, error, ...props }, ref) => {
     return (
@@ -12,7 +19,9 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         ref={ref}
         className={cn(
           'w-full bg-[#050402]/80 border rounded-2xl px-4 py-3 text-white resize-none',
-          'placeholder:text-white/30',
+          // Improved placeholder contrast for accessibility (WCAG)
+          'placeholder:text-white/50',
+          // Visible focus ring for keyboard navigation
           'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#030201]',
           'transition-colors duration-200',
           error

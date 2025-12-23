@@ -14,6 +14,7 @@ import {
   type SpanLengthCategory,
 } from '../../types/jobs';
 import { logger } from '../../lib/logger';
+import './JobProgressUpdateForm.css';
 
 interface JobProgressUpdateFormProps {
   job: JobProgressTracker;
@@ -159,33 +160,21 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 10 }}
-        className={cn(
-          'fixed inset-0 z-50 flex items-center justify-center px-[1px]',
-          'bg-black/70 backdrop-blur-sm rounded-[25px]'
-        )}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/70 backdrop-blur-sm job-progress-overlay"
+        onClick={(e) => e.target === e.currentTarget && onCancel()}
       >
         <motion.div
-          initial={{ scale: 0.98, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.98, opacity: 0 }}
-          className={cn(
-            'w-full max-w-2xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden',
-            'max-h-[90vh] flex flex-col'
-          )}
-          style={{
-            background: 'linear-gradient(90deg, rgba(255, 255, 255, 0.35) 0%, rgba(0, 0, 0, 1) 100%)',
-          }}
+          initial={{ scale: 0.98, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.98, opacity: 0, y: 10 }}
+          className="w-full max-w-2xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden max-h-[85vh] flex flex-col job-progress-modal"
+          onClick={(e) => e.stopPropagation()}
         >
           <div 
-            className="flex items-center justify-between px-6 py-4 border-b border-white/10 mt-2.5 mb-2.5"
-            style={{
-              background: 'linear-gradient(37.51deg, rgb(243, 217, 164) 0%, rgb(211, 174, 100) 12.5%, rgb(230, 177, 71) 25%, rgb(197, 144, 38) 37.5%, rgb(143, 102, 20) 50%, rgb(243, 217, 164) 62.5%, rgb(117, 81, 11) 75%, rgb(148, 121, 66) 87.5%, rgb(0, 0, 0) 100%)',
-              boxShadow: '0px 4px 25px 8px rgba(0, 0, 0, 0.85)',
-              color: 'rgb(255, 255, 255)',
-            }}
+            className="flex items-center justify-between px-6 py-4 border-b border-white/10 mt-2.5 mb-2.5 job-progress-header"
           >
             <div>
               <p className="text-xs uppercase tracking-[0.3em] text-white/50">Submit Progress</p>
@@ -203,8 +192,7 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
             </div>
             <button
               onClick={onCancel}
-              className="text-white/70 hover:text-white rounded-lg px-4 py-2 text-sm font-medium mr-12 border border-white/10 hover:border-white/20 transition-all duration-200"
-              style={{ backgroundColor: 'rgba(255, 0, 0, 0.85)' }}
+              className="text-white/70 hover:text-white rounded-lg px-4 py-2 text-sm font-medium mr-12 border border-white/10 hover:border-white/20 transition-all duration-200 job-progress-close-btn"
             >
               Close
             </button>
@@ -237,11 +225,12 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
                 />
               </div>
               <div>
-                <label className={labelClass}>
+                <label htmlFor="work-date" className={labelClass}>
                   <Calendar className="w-4 h-4 text-[#f4c979]" />
                   Work Date
                 </label>
                 <input
+                  id="work-date"
                   type="date"
                   value={formData.date}
                   onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
@@ -254,11 +243,12 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className={labelClass}>
+                <label htmlFor="equipment-select" className={labelClass}>
                   <Shield className="w-4 h-4 text-[#f4c979]" />
                   Equipment Used
                 </label>
                 <select
+                  id="equipment-select"
                   value={formData.equipment}
                   onChange={(e) => setFormData(prev => ({ ...prev, equipment: e.target.value as Equipment }))}
                   className={cn(baseInput, 'pr-10')}
@@ -288,11 +278,12 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
             </div>
 
             <div>
-              <label className={labelClass}>
+              <label htmlFor="spans-completed" className={labelClass}>
                 <Ruler className="w-4 h-4 text-[#f4c979]" />
                 Spans Completed
               </label>
               <input
+                id="spans-completed"
                 type="number"
                 min={1}
                 value={formData.spans_completed}
@@ -316,12 +307,9 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
                     className={cn(
                       'flex items-start gap-3 rounded-2xl border p-3 cursor-pointer transition-all',
                       formData.span_length_category === option.value
-                        ? 'border-[#f4c979]/50 bg-[#f4c979]/5'
+                        ? 'border-[#f4c979]/50 bg-[#f4c979]/5 span-option-selected'
                         : 'border-white/10 hover:border-[#f4c979]/30'
                     )}
-                    style={formData.span_length_category === option.value ? {
-                      boxShadow: '0px 4px 25px 8px rgba(247, 247, 247, 0.85), inset 0px 4px 25px 8px rgba(0, 0, 0, 0.65)',
-                    } : undefined}
                   >
                     <input
                       type="radio"
@@ -360,10 +348,7 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
             </div>
 
             <div 
-              className="rounded-2xl border border-white/10 bg-white/5 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
-              style={{
-                boxShadow: '0px 4px 25px 8px rgba(237, 237, 237, 0.85), inset 0px 4px 25px 6px rgba(0, 0, 0, 0.65)',
-              }}
+              className="rounded-2xl border border-white/10 bg-white/5 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 job-progress-summary"
             >
               <div>
                 <p className="text-xs uppercase tracking-[0.3em] text-white/50">Summary</p>
@@ -377,16 +362,12 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-[50px] pb-[50px]">
+            <div className="flex items-center justify-end gap-3 pt-4 pb-2">
               <button
                 type="button"
                 onClick={onCancel}
                 disabled={submitting}
-                className="px-5 py-2.5 rounded-xl border border-white/20 text-white/80 text-sm font-semibold transition-colors disabled:opacity-50"
-                style={{ 
-                  backgroundColor: 'rgba(255, 0, 0, 1)',
-                  boxShadow: '0px 4px 25px 4px rgba(0, 0, 0, 0.85)',
-                }}
+                className="px-5 py-2.5 rounded-xl border border-white/20 text-white/80 text-sm font-semibold transition-colors disabled:opacity-50 job-progress-cancel-btn"
               >
                 Cancel
               </button>
@@ -399,11 +380,9 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
                   'inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all',
                   'bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#2e1b02]',
                   'hover:shadow-[0_0_20px_rgba(244,201,121,0.3)]',
-                  'disabled:opacity-50 disabled:cursor-not-allowed'
+                  'disabled:opacity-50 disabled:cursor-not-allowed',
+                  'job-progress-submit-btn'
                 )}
-                style={{
-                  boxShadow: '0px 0px 25px 8px rgba(0, 0, 0, 1), 0px 0px 0px 0px rgba(0, 0, 0, 0), 0px 0px 20px 0px rgba(244, 201, 121, 0.3)',
-                }}
               >
                 {submitting ? (
                   <>

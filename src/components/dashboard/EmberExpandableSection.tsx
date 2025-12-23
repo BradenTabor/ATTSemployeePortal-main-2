@@ -1,14 +1,12 @@
-import { useState, useEffect, useCallback, ReactNode, memo, cloneElement, isValidElement, useRef } from 'react';
-import { motion, AnimatePresence, useMotionValue, useSpring } from 'framer-motion';
-import useMeasure from 'react-use-measure';
+import { useState, useCallback, ReactNode, memo, cloneElement, isValidElement, useRef, useEffect } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { getPersistedBool, setPersistedBool } from '../../lib/persistence';
 import { GlowEffect } from '../ui/GlowEffect';
 import { ShimmerEffect } from '../ui/ShimmerEffect';
 import type { IconInteractionProps } from './ExpandableSection';
-
-const springConfig = { stiffness: 200, damping: 25, mass: 0.8 };
+import { getGridExpandStyles, getGridContentStyles, springSnappy, instant } from '../../motion';
 
 // Ember glow color palette
 const GLOW_COLORS = ['#f6b78f', '#ff6f3c', '#ffa366', '#ff9350'];
@@ -45,6 +43,10 @@ function EmberExpandableSectionComponent({
   icon,
   headerAction,
 }: EmberExpandableSectionProps) {
+  // Check reduced motion preference
+  const prefersReducedMotion = useReducedMotion();
+  const shouldAnimate = !prefersReducedMotion;
+
   // Use lazy initializer to read persisted state without useEffect setState
   const [isOpen, setIsOpen] = useState(() => {
     if (storageKey) {
@@ -52,30 +54,12 @@ function EmberExpandableSectionComponent({
     }
     return defaultOpen;
   });
-  // Always true since we initialize synchronously now
-  const hasHydrated = true;
   
   // Interactive states for avatar animations
   const [isHovered, setIsHovered] = useState(false);
   const [wasJustToggled, setWasJustToggled] = useState(false);
   const [toggleDirection, setToggleDirection] = useState<'expand' | 'collapse' | null>(null);
   const toggleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Measure content height for smooth animations
-  const [measureRef, { height: measuredHeight }] = useMeasure();
-  
-  // Motion values for spring-based height animation
-  const animatedHeight = useMotionValue(0);
-  const smoothHeight = useSpring(animatedHeight, springConfig);
-
-  // Update animated height when expansion state or measured height changes
-  useEffect(() => {
-    if (isOpen && hasHydrated) {
-      animatedHeight.set(measuredHeight);
-    } else {
-      animatedHeight.set(0);
-    }
-  }, [isOpen, measuredHeight, animatedHeight, hasHydrated]);
 
   // Cleanup toggle timeout on unmount
   useEffect(() => {
@@ -146,6 +130,14 @@ function EmberExpandableSectionComponent({
       })
     : icon;
 
+  // Get CSS Grid styles for performant height animation (no JS measurement needed)
+  const gridStyles = getGridExpandStyles(isOpen, shouldAnimate);
+  const contentOpacityStyles = getGridContentStyles(isOpen, shouldAnimate);
+
+  // Transition for motion elements
+  const chevronTransition = shouldAnimate ? springSnappy : instant;
+  const hoverTransition = shouldAnimate ? { type: 'spring' as const, stiffness: 300, damping: 20 } : instant;
+
   return (
     <div className={cn('relative', className)}>
       {/* Glow effect layer - behind the card */}
@@ -215,12 +207,12 @@ function EmberExpandableSectionComponent({
                       'overflow-visible relative'
                     )}
                     animate={{
-                      scale: isHovered ? 1.03 : 1,
+                      scale: isHovered && shouldAnimate ? 1.03 : 1,
                       boxShadow: isHovered 
                         ? '0 0 50px rgba(255, 147, 80, 0.4)' 
                         : '0 20px 25px -5px rgba(255, 147, 80, 0.2)',
                     }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                    transition={hoverTransition}
                   >
                     {/* Inner glow effect - intensifies on hover */}
                     <motion.div 
@@ -228,17 +220,17 @@ function EmberExpandableSectionComponent({
                       animate={{
                         opacity: isHovered ? 1.5 : 1,
                       }}
-                      transition={{ duration: 0.3 }}
+                      transition={{ duration: shouldAnimate ? 0.3 : 0 }}
                     />
                     {/* Subtle ambient light - pulses on toggle */}
                     <motion.div 
                       className="absolute -inset-2 rounded-3xl bg-gradient-to-b from-[#ffb48a]/8 to-transparent blur-md pointer-events-none"
                       animate={{
-                        scale: wasJustToggled ? [1, 1.2, 1] : 1,
-                        opacity: wasJustToggled ? [0.5, 1, 0.5] : 0.5,
+                        scale: wasJustToggled && shouldAnimate ? [1, 1.2, 1] : 1,
+                        opacity: wasJustToggled && shouldAnimate ? [0.5, 1, 0.5] : 0.5,
                       }}
                       transition={{ 
-                        duration: 0.6, 
+                        duration: shouldAnimate ? 0.6 : 0, 
                         ease: 'easeOut',
                       }}
                     />
@@ -264,12 +256,9 @@ function EmberExpandableSectionComponent({
                 <motion.div
                   animate={{ 
                     rotate: isOpen ? 180 : 0,
-                    scale: wasJustToggled ? [1, 1.15, 1] : 1,
+                    scale: wasJustToggled && shouldAnimate ? [1, 1.15, 1] : 1,
                   }}
-                  transition={{ 
-                    rotate: { duration: 0.3, ease: 'easeInOut' },
-                    scale: { duration: 0.4, ease: 'easeOut' },
-                  }}
+                  transition={chevronTransition}
                   className={cn(
                     'flex-shrink-0 w-8 h-8 rounded-lg',
                     'bg-[#ff9350]/10 border border-[#ff9350]/20',
@@ -290,62 +279,40 @@ function EmberExpandableSectionComponent({
             </div>
           </div>
 
-          {/* Collapsible content with spring animation */}
-          <motion.div
+          {/* Collapsible content with CSS Grid animation (no JS measurement) */}
+          <div
             id={contentId}
             role="region"
             aria-labelledby={toggleId}
-            style={{ height: smoothHeight, overflow: 'hidden' }}
+            style={gridStyles}
           >
-            <AnimatePresence initial={false}>
-              {isOpen && (
-                <motion.div
-                  ref={measureRef}
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ 
-                    opacity: 1, 
-                    y: 0,
-                    transition: {
-                      opacity: { duration: 0.3, delay: 0.1 },
-                      y: { duration: 0.3, delay: 0.05 }
-                    }
-                  }}
-                  exit={{ 
-                    opacity: 0,
-                    y: -5,
-                    transition: {
-                      opacity: { duration: 0.15 },
-                      y: { duration: 0.1 }
-                    }
-                  }}
-                >
-                  {/* Divider line */}
-                  <div className="mx-4 md:mx-6 h-px bg-gradient-to-r from-transparent via-[#ff9350]/30 to-transparent" />
-                  
-                  <div className="px-4 pb-4 md:px-6 md:pb-6 pt-4">
-                    {/* Staggered content reveal */}
-                    <motion.div
-                      initial="hidden"
-                      animate="visible"
-                      variants={{
-                        hidden: { opacity: 0 },
-                        visible: {
-                          opacity: 1,
-                          transition: {
-                            staggerChildren: 0.05,
-                            delayChildren: 0.1,
-                          },
-                        },
-                      }}
-                    >
-                      {/* Only render children after hydration to avoid flash */}
-                      {hasHydrated && children}
-                    </motion.div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
+            <div className="overflow-hidden">
+              <div style={contentOpacityStyles}>
+                {/* Divider line */}
+                <div className="mx-4 md:mx-6 h-px bg-gradient-to-r from-transparent via-[#ff9350]/30 to-transparent" />
+                
+                <div className="px-4 pb-4 md:px-6 md:pb-6 pt-4">
+                  {/* Staggered content reveal */}
+                  <motion.div
+                    initial={shouldAnimate ? "hidden" : false}
+                    animate={isOpen ? "visible" : "hidden"}
+                    variants={{
+                      hidden: { opacity: 0 },
+                      visible: {
+                        opacity: 1,
+                        transition: shouldAnimate ? {
+                          staggerChildren: 0.05,
+                          delayChildren: 0.1,
+                        } : { duration: 0 },
+                      },
+                    }}
+                  >
+                    {children}
+                  </motion.div>
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
       </ShimmerEffect>
     </div>
@@ -354,4 +321,3 @@ function EmberExpandableSectionComponent({
 
 export const EmberExpandableSection = memo(EmberExpandableSectionComponent);
 export default EmberExpandableSection;
-
