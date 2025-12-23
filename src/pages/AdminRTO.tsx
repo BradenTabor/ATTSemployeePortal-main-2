@@ -452,6 +452,7 @@ export default function AdminRTO() {
               <div className="relative">
                 <Filter className="w-4 h-4 text-[#b59d72] absolute left-4 top-1/2 -translate-y-1/2" />
                 <select
+                  aria-label="Filter by status"
                   value={statusFilter || ""}
                   onChange={(e) => {
                     setStatusFilter(e.target.value || null);
@@ -468,6 +469,7 @@ export default function AdminRTO() {
               <div className="relative">
                 <Calendar className="w-4 h-4 text-[#b59d72] absolute left-4 top-1/2 -translate-y-1/2" />
                 <select
+                  aria-label="Filter by month"
                   value={monthFilter || ""}
                   onChange={(e) => {
                     setMonthFilter(e.target.value || null);

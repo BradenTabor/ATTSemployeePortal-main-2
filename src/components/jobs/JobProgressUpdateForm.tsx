@@ -237,11 +237,12 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
                 />
               </div>
               <div>
-                <label className={labelClass}>
+                <label htmlFor="work-date" className={labelClass}>
                   <Calendar className="w-4 h-4 text-[#f4c979]" />
                   Work Date
                 </label>
                 <input
+                  id="work-date"
                   type="date"
                   value={formData.date}
                   onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
@@ -254,11 +255,12 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className={labelClass}>
+                <label htmlFor="equipment-used" className={labelClass}>
                   <Shield className="w-4 h-4 text-[#f4c979]" />
                   Equipment Used
                 </label>
                 <select
+                  id="equipment-used"
                   value={formData.equipment}
                   onChange={(e) => setFormData(prev => ({ ...prev, equipment: e.target.value as Equipment }))}
                   className={cn(baseInput, 'pr-10')}
@@ -288,11 +290,12 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
             </div>
 
             <div>
-              <label className={labelClass}>
+              <label htmlFor="spans-completed" className={labelClass}>
                 <Ruler className="w-4 h-4 text-[#f4c979]" />
                 Spans Completed
               </label>
               <input
+                id="spans-completed"
                 type="number"
                 min={1}
                 value={formData.spans_completed}
