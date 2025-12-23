@@ -53,15 +53,20 @@
   html {
     font-family: Georgia, serif;
     scroll-behavior: smooth;
+    /* Prevent white flash and ensure consistent dark background */
+    background-color: #010604;
   }
   
   body {
     font-family: Georgia, serif;
+    /* Match the dashboard's dark base color */
+    background-color: #010604;
+    min-height: 100vh;
   }
 
-  /* Root element background - prevents extra scroll space */
+  /* Root element background - premium dark gradient matching dashboard theme */
   #root {
-    background: linear-gradient(360deg, rgba(255, 255, 255, 1) 0%, rgba(0, 0, 0, 1) 100%);
+    background: linear-gradient(180deg, #041b14 0%, #03120c 50%, #010604 100%);
     min-height: 100vh;
   }
 
