@@ -1,6 +1,6 @@
 import { cn } from "../../lib/utils";
 
-type Variant = "emerald" | "gold" | "ember";
+export type Variant = "emerald" | "gold" | "ember" | "purple";
 
 const VARIANT_CLASSES: Record<
   Variant,
@@ -20,6 +20,11 @@ const VARIANT_CLASSES: Record<
     border: "border-[#ff9350]/30",
     background: "bg-[#140604]/85",
     shimmer: "bg-gradient-to-r from-[#ff9350]/20 via-transparent to-[#ffc19f]/20",
+  },
+  purple: {
+    border: "border-purple-500/30",
+    background: "bg-[#0f0a1a]/85",
+    shimmer: "bg-gradient-to-r from-purple-500/20 via-transparent to-purple-400/20",
   },
 };
 

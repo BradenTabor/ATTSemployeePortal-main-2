@@ -9,12 +9,11 @@ import {
   Send,
 } from "lucide-react";
 import DashboardLayout from "../layouts/DashboardLayout";
-import AdminPremiumScaffold, {
-  type AdminHeroConfig,
-} from "../components/admin/AdminPremiumScaffold";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../contexts/AuthContext";
 import { logger } from "../lib/logger";
+import { TextEffect } from "../components/ui/TextEffect";
+import { getDeviceCapabilities } from "../lib/mobilePerf";
 
 const COMPANY_EMAIL_REGEX = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
 
@@ -48,97 +47,109 @@ const CONTACT_CHANNELS = [
 export default function Contact() {
   const { user } = useAuth();
 
-  const heroConfig = useMemo<AdminHeroConfig>(
-    () => ({
-      eyebrow: "People & Support",
-      eyebrowIcon: <Headphones className="w-4 h-4 text-[#7ef2c8]" />,
-      heading: "Connect with ATTS leadership",
-      description:
-        "One touch to reach management, human resources, or the safety desk. We respond to most requests within 24–48 hours.",
-      badges: [
-        {
-          label: "Live support weekdays · 7a–6p CT",
-          icon: <Clock4 className="w-4 h-4 text-[#7ef2c8]" />,
-          variant: "solid",
-        },
-        {
-          label: "Emergency hotline 24/7",
-          icon: <Phone className="w-4 h-4 text-[#7ef2c8]" />,
-          variant: "outline",
-        },
-      ],
-    }),
-    []
-  );
-
-  const sidePanel = (
-    <div className="space-y-6">
-      <div className="rounded-3xl border border-white/15 bg-[#03150f]/85 p-5 space-y-3">
-        <p className="text-xs uppercase tracking-[0.35em] text-emerald-200/70">
-          Quick access
-        </p>
-        <p className="text-lg font-semibold text-white">
-          ATTS Support Desk
-        </p>
-        <p className="text-sm text-white/70">
-          We aim to confirm every message within one business day. Emergency
-          calls are routed instantly.
-        </p>
-        <div className="flex flex-col gap-3">
-          <a
-            href="tel:8709308000"
-            className="inline-flex items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-semibold text-black transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 min-h-[44px]"
-            style={{
-              background: 'radial-gradient(circle at 50% 50%, rgba(52, 211, 153, 1) 0%, rgba(5, 5, 5, 0.5) 100%)',
-              boxShadow: '0px 10px 15px -0.54px rgba(16, 185, 129, 0.45), 0px 4px 6px -4px rgba(16, 185, 129, 0.3)'
-            }}
-          >
-            <Phone className="w-4 h-4" />
-            Call emergency hotline
-          </a>
-          <a
-            href="mailto:support@alltts.com"
-            className="inline-flex items-center justify-center gap-2 rounded-full border border-white/20 px-4 py-3 text-sm font-semibold text-white/90 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70 min-h-[44px]"
-          >
-            <Mail className="w-4 h-4" />
-            Email support@alltts.com
-          </a>
-        </div>
-        <p className="text-xs text-white/60">
-          Response window: <span className="font-semibold">24–48h.</span> Please
-          note urgent items in the subject line.
-        </p>
-      </div>
-
-      <div 
-        className="rounded-3xl border border-white/10 bg-[#041b14]/85 p-5 space-y-3"
-        style={{ boxShadow: 'inset 0px 4px 20px 15px rgba(0, 0, 0, 0.45)' }}
-      >
-        <p className="text-xs uppercase tracking-[0.35em] text-emerald-200/70">
-          HQ & mail
-        </p>
-        <div className="flex items-start gap-3 text-white/80">
-          <MapPin className="w-5 h-5 text-emerald-300" />
-          <div>
-            <p>5399 US-65</p>
-            <p>Harrison, AR 72601</p>
-          </div>
-        </div>
-        <p className="text-xs text-white/60">
-          Deliveries accepted weekdays 8a–5p. Call ahead for oversized freight.
-        </p>
-      </div>
-    </div>
-  );
+  // Device capabilities for animation decisions
+  const caps = useMemo(() => getDeviceCapabilities(), []);
+  const enableAnimations = !caps.prefersReducedMotion && !caps.isMobile;
 
   return (
     <DashboardLayout title="Contact Management & HR">
-      <AdminPremiumScaffold
-        hero={heroConfig}
-        theme="emerald"
-        sidePanel={sidePanel}
-      >
-        <div className="space-y-10">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pb-4 pt-4 sm:pt-6">
+        {/* Premium Glass Header - Emerald Theme */}
+        <div className="mb-5 md:mb-6">
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="relative"
+          >
+            <div 
+              className="relative overflow-hidden rounded-2xl md:rounded-3xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
+              style={{
+                backdropFilter: 'blur(24px) saturate(180%)',
+                WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+                background: 'linear-gradient(145deg, rgba(4, 30, 21, 0.6) 0%, rgba(2, 15, 10, 0.5) 50%, rgba(1, 8, 5, 0.4) 100%)',
+                boxShadow: 'inset 0 0 15px rgba(125, 225, 180, 0.05), 0 8px 32px rgba(0,0,0,0.4)',
+              }}
+            >
+              <div className="absolute inset-0 opacity-70 pointer-events-none" style={{ background: 'linear-gradient(125deg, rgba(255,255,255,0.15) 0%, transparent 30%, transparent 70%, rgba(255,255,255,0.05) 100%)' }} />
+              <div className="absolute inset-0 opacity-50 pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 50%)' }} />
+              <div className="absolute top-0 left-0 w-24 h-24 rounded-full opacity-30 pointer-events-none" style={{ background: 'radial-gradient(circle at 50% 50%, rgba(125,225,180,0.3) 0%, transparent 70%)', filter: 'blur(15px)' }} />
+              <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-white/[0.15] to-transparent" />
+              <div className="absolute top-0 bottom-0 left-0 w-[1px] bg-gradient-to-b from-transparent via-white/[0.1] to-transparent" />
+              <div className="absolute top-0 bottom-0 right-0 w-[1px] bg-gradient-to-b from-transparent via-black/[0.1] to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-black/[0.15] to-transparent" />
+
+              <div className="relative px-5 py-4 md:px-7 md:py-5">
+                <div className="flex items-center gap-3 mb-3">
+                  <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.2 }} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30">
+                    <Headphones className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-emerald-200">People & Support</span>
+                  </motion.div>
+                  <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.3 }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#03150f]/60 border border-emerald-500/20">
+                    <Clock4 className="w-3 h-3 text-emerald-400" />
+                    <span className="text-[9px] uppercase tracking-wider font-semibold text-emerald-200/70">7a–6p CT</span>
+                  </motion.div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <motion.div initial={{ scaleY: 0, opacity: 0 }} animate={{ scaleY: 1, opacity: 1 }} transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }} className="w-1 h-14 md:h-16 rounded-full bg-gradient-to-b from-emerald-400 via-emerald-500 to-emerald-600 origin-top flex-shrink-0" style={{ boxShadow: '0 0 20px rgba(16, 185, 129, 0.4), 0 0 40px rgba(16, 185, 129, 0.2)' }} />
+                  <div className="flex-1 min-w-0">
+                    {enableAnimations ? (
+                      <TextEffect as="h1" preset="blurSlide" per="char" delay={0.15} className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight" segmentWrapperClassName="bg-gradient-to-r from-white via-emerald-100 to-white/90 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(125,225,180,0.3)]">
+                        Connect with ATTS leadership
+                      </TextEffect>
+                    ) : (
+                      <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight bg-gradient-to-r from-white via-emerald-100 to-white/90 bg-clip-text text-transparent">Connect with ATTS leadership</h1>
+                    )}
+                    <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.7 }} className="mt-1.5 md:mt-2 text-xs sm:text-sm text-emerald-200/50 font-medium leading-relaxed max-w-xl">
+                      One touch to reach management, HR, or the safety desk
+                    </motion.p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        <div className="space-y-6 md:space-y-10">
+          {/* Quick Access Support Bar */}
+          <section 
+            className="rounded-2xl border border-white/15 bg-[#03150f]/85 p-4 sm:p-5"
+            style={{ boxShadow: '0px 4px 25px 8px rgba(0, 0, 0, 0.65)' }}
+          >
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs uppercase tracking-[0.35em] text-emerald-200/70 mb-1">
+                  Quick access
+                </p>
+                <p className="text-lg font-semibold text-white">
+                  ATTS Support Desk
+                </p>
+                <p className="text-sm text-white/70 mt-1">
+                  We aim to confirm every message within one business day. Emergency calls are routed instantly.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0">
+                <a
+                  href="tel:8709308000"
+                  className="inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-black transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 min-h-[44px]"
+                  style={{
+                    background: 'radial-gradient(circle at 50% 50%, rgba(52, 211, 153, 1) 0%, rgba(5, 5, 5, 0.5) 100%)',
+                    boxShadow: '0px 10px 15px -0.54px rgba(16, 185, 129, 0.45), 0px 4px 6px -4px rgba(16, 185, 129, 0.3)'
+                  }}
+                >
+                  <Phone className="w-4 h-4" />
+                  Call emergency hotline
+                </a>
+                <a
+                  href="mailto:support@alltts.com"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-white/20 px-5 py-3 text-sm font-semibold text-white/90 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70 min-h-[44px]"
+                >
+                  <Mail className="w-4 h-4" />
+                  Email support@alltts.com
+                </a>
+              </div>
+            </div>
+          </section>
           <section 
             className="rounded-3xl border border-white/10 bg-[#03150f]/80 p-6 backdrop-blur"
             style={{
@@ -208,7 +219,7 @@ export default function Contact() {
           <ContactForm userId={user?.id ?? null} />
           <LazyMap />
         </div>
-      </AdminPremiumScaffold>
+      </div>
     </DashboardLayout>
   );
 }

@@ -11,6 +11,7 @@ import {
   ClipboardList,
   FileText,
   Inbox,
+  Lock,
   MapPin,
   Plus,
   RefreshCw,
@@ -22,12 +23,10 @@ import {
   X,
 } from 'lucide-react';
 import DashboardLayout from '../layouts/DashboardLayout';
-import AdminPremiumScaffold, {
-  type AdminHeroConfig,
-  type AdminStat,
-} from '../components/admin/AdminPremiumScaffold';
 import { useAuth } from '../contexts/AuthContext';
 import { useUserAssignedJobs } from '../hooks/jobs';
+import { TextEffect } from '../components/ui/TextEffect';
+import { getDeviceCapabilities } from '../lib/mobilePerf';
 import { cn } from '../lib/utils';
 import {
   calculateJobProgress,
@@ -40,6 +39,8 @@ import {
 import { JobProgressBar } from '../components/jobs/JobProgressBar';
 import { JobProgressUpdateForm } from '../components/jobs/JobProgressUpdateForm';
 import { StackedJobCard } from '../components/jobs/StackedJobCard';
+import { QuickProgressModal } from '../components/jobs/QuickProgressModal';
+import { useCanViewJobProgress } from '../hooks/useCanViewJobProgress';
 import type { JobProgressTracker, JOB_STATUS_CONFIG, JobGroup } from '../types/jobs';
 
 // ============================================================================
@@ -295,6 +296,7 @@ const JobListItem = memo(function JobListItem({
   isSelected,
   onSelect,
 }: JobListItemProps) {
+  const { canViewProgress } = useCanViewJobProgress();
   const isSpanBased = job.tracking_type === 'job_progress';
 
   const spanProgress = useMemo(() => {
@@ -346,17 +348,17 @@ const JobListItem = memo(function JobListItem({
                 isSelected ? 'text-emerald-300' : isExceeded && !isSpanBased ? 'text-red-400' : ''
               )}
               style={{
-                color: !isSelected && (isSpanBased ? 'rgb(231, 114, 4)' : isExceeded ? undefined : 'rgb(0, 219, 77)')
+                color: isSelected ? undefined : (isSpanBased ? 'rgb(231, 114, 4)' : isExceeded ? undefined : 'rgb(0, 219, 77)')
               }}
             />
             <h4 className="font-semibold text-[12px] sm:text-sm text-white truncate leading-snug flex-1 min-w-0">
               {job.job_name}
             </h4>
           </div>
-          {(job.job_location || (isSpanBased && spanProgress)) && (
+          {(job.job_location || (canViewProgress && isSpanBased && spanProgress)) && (
             <div className="flex items-center gap-1 mt-0.5 ml-4 sm:ml-5 text-[10px] sm:text-[11px] text-white/50">
               {job.job_location && <span className="truncate">{job.job_location}</span>}
-              {isSpanBased && spanProgress && (
+              {canViewProgress && isSpanBased && spanProgress && (
                 <span className="text-white/40 flex-shrink-0">
                   • {spanProgress.completed}/{spanProgress.total > 0 ? spanProgress.total : '?'}
                 </span>
@@ -365,18 +367,24 @@ const JobListItem = memo(function JobListItem({
           )}
         </div>
 
-        <div
-          className={cn(
-            'flex-shrink-0 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs font-bold tabular-nums',
-            isSpanBased && spanProgressColors
-              ? cn(spanProgressColors.bg, 'border', spanProgressColors.border, spanProgressColors.text)
-              : isExceeded
-                ? 'bg-red-500/15 border border-red-500/30 text-red-400'
-                : 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400'
-          )}
-        >
-          {isSpanBased && spanProgress ? spanProgress.percentage : progress.percentage}%
-        </div>
+        {canViewProgress ? (
+          <div
+            className={cn(
+              'flex-shrink-0 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs font-bold tabular-nums',
+              isSpanBased && spanProgressColors
+                ? cn(spanProgressColors.bg, 'border', spanProgressColors.border, spanProgressColors.text)
+                : isExceeded
+                  ? 'bg-red-500/15 border border-red-500/30 text-red-400'
+                  : 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400'
+            )}
+          >
+            {isSpanBased && spanProgress ? spanProgress.percentage : progress.percentage}%
+          </div>
+        ) : (
+          <div className="flex-shrink-0 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20">
+            <Lock className="w-3 h-3 text-emerald-400/60" />
+          </div>
+        )}
       </div>
     </button>
   );
@@ -397,6 +405,7 @@ const JobDetailPanel = memo(function JobDetailPanel({
   onJobUpdate,
   onClose,
 }: JobDetailPanelProps) {
+  const { canViewProgress } = useCanViewJobProgress();
   const isSpanBased = job.tracking_type === 'job_progress';
   const [showProgressForm, setShowProgressForm] = useState(false);
   const [showAllMilestones, setShowAllMilestones] = useState(false);
@@ -525,40 +534,51 @@ const JobDetailPanel = memo(function JobDetailPanel({
 
         {/* Span-based Progress */}
         {isSpanBased && spanProgress && spanProgressColors && (
-          <div className={cn('rounded-xl border p-4 mb-4', spanProgressColors.border, spanProgressColors.bg)}>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Ruler className="w-4 h-4 text-blue-400" />
-                <span className="text-sm font-medium text-white/70">
-                  {formatSpanProgressLabel(spanProgress)}
+          <div className={cn('rounded-xl border p-4 mb-4', canViewProgress ? cn(spanProgressColors.border, spanProgressColors.bg) : 'border-gray-500/30 bg-gray-500/15')}>
+            {canViewProgress ? (
+              <>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Ruler className="w-4 h-4 text-blue-400" />
+                    <span className="text-sm font-medium text-white/70">
+                      {formatSpanProgressLabel(spanProgress)}
+                    </span>
+                  </div>
+                  <span className={cn('text-lg font-bold', spanProgressColors.text)}>
+                    {spanProgress.percentage}%
+                  </span>
+                </div>
+                <div className={cn('relative w-full h-3 rounded-full overflow-hidden', spanProgressColors.bg)}>
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${spanProgress.percentage}%` }}
+                    transition={{ duration: 0.4 }}
+                    className={cn('absolute inset-y-0 left-0 rounded-full bg-gradient-to-r', spanProgressColors.gradient)}
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-3 mt-4">
+                  <div className="text-center p-2 rounded-lg bg-white/5">
+                    <p className="text-[11px] text-white/50 mb-0.5">Done</p>
+                    <p className="text-base font-bold text-emerald-400">{spanProgress.completed.toLocaleString()}</p>
+                  </div>
+                  <div className="text-center p-2 rounded-lg bg-white/5">
+                    <p className="text-[11px] text-white/50 mb-0.5">Goal</p>
+                    <p className="text-base font-bold text-[#f4c979]">{spanProgress.total > 0 ? spanProgress.total.toLocaleString() : '—'}</p>
+                  </div>
+                  <div className="text-center p-2 rounded-lg bg-white/5">
+                    <p className="text-[11px] text-white/50 mb-0.5">Left</p>
+                    <p className="text-base font-bold text-white/70">{spanProgress.total > 0 ? spanProgress.remaining.toLocaleString() : '—'}</p>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center justify-center gap-2 py-3">
+                <Lock className="w-4 h-4 text-emerald-400/60" />
+                <span className="text-sm text-emerald-400/70 font-medium">
+                  Progress visible to management only
                 </span>
               </div>
-              <span className={cn('text-lg font-bold', spanProgressColors.text)}>
-                {spanProgress.percentage}%
-              </span>
-            </div>
-            <div className={cn('relative w-full h-3 rounded-full overflow-hidden', spanProgressColors.bg)}>
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${spanProgress.percentage}%` }}
-                transition={{ duration: 0.4 }}
-                className={cn('absolute inset-y-0 left-0 rounded-full bg-gradient-to-r', spanProgressColors.gradient)}
-              />
-            </div>
-            <div className="grid grid-cols-3 gap-3 mt-4">
-              <div className="text-center p-2 rounded-lg bg-white/5">
-                <p className="text-[11px] text-white/50 mb-0.5">Done</p>
-                <p className="text-base font-bold text-emerald-400">{spanProgress.completed.toLocaleString()}</p>
-              </div>
-              <div className="text-center p-2 rounded-lg bg-white/5">
-                <p className="text-[11px] text-white/50 mb-0.5">Goal</p>
-                <p className="text-base font-bold text-[#f4c979]">{spanProgress.total > 0 ? spanProgress.total.toLocaleString() : '—'}</p>
-              </div>
-              <div className="text-center p-2 rounded-lg bg-white/5">
-                <p className="text-[11px] text-white/50 mb-0.5">Left</p>
-                <p className="text-base font-bold text-white/70">{spanProgress.total > 0 ? spanProgress.remaining.toLocaleString() : '—'}</p>
-              </div>
-            </div>
+            )}
             
             {/* Add Update Button */}
             <motion.button
@@ -579,12 +599,18 @@ const JobDetailPanel = memo(function JobDetailPanel({
 
         {/* Timeline-based Progress */}
         {!isSpanBased && (
-          <div className={cn('rounded-xl border p-4 mb-4', isExceeded ? 'border-red-500/20 bg-red-500/5' : 'border-emerald-500/20 bg-emerald-500/5')}>
+          <div className={cn('rounded-xl border p-4 mb-4', canViewProgress ? (isExceeded ? 'border-red-500/20 bg-red-500/5' : 'border-emerald-500/20 bg-emerald-500/5') : 'border-gray-500/30 bg-gray-500/15')}>
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-white/70">Timeline</span>
-              <span className={cn('text-lg font-bold', isExceeded ? 'text-red-400' : 'text-emerald-400')}>
-                {progress.percentage}%
-              </span>
+              {canViewProgress ? (
+                <span className={cn('text-lg font-bold', isExceeded ? 'text-red-400' : 'text-emerald-400')}>
+                  {progress.percentage}%
+                </span>
+              ) : (
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                  <Lock className="w-3 h-3 text-emerald-400/60" />
+                </div>
+              )}
             </div>
             <JobProgressBar startDate={job.start_date} endDate={job.end_date} size="md" showLabel={false} showExceededBadge={false} />
             <div className="flex items-center justify-between mt-3 text-xs text-white/50">
@@ -703,6 +729,7 @@ function AssignedJobs() {
   const selectedJobId = searchParams.get('job');
   const [activeCircuit, setActiveCircuit] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
+  const [showQuickProgress, setShowQuickProgress] = useState(false);
 
   const {
     assignedJobs,
@@ -729,7 +756,7 @@ function AssignedJobs() {
 
   // Group jobs by job_group_id for stacked display
   // Returns: { groups: JobGroup[], displayItems }
-  const { jobGroups, displayItems } = useMemo(() => {
+  const { displayItems } = useMemo(() => {
     const groupMap = new Map<string, JobProgressTracker[]>();
     const ungrouped: JobProgressTracker[] = [];
     
@@ -807,26 +834,89 @@ function AssignedJobs() {
   }, [assignedJobs, selectedJobId, setSearchParams]);
 
   // Hero config
-  const heroConfig = useMemo<AdminHeroConfig>(() => ({
-    heading: 'Your Jobs',
-    subheading: 'View details and submit progress',
-    accentText: assignedJobs.length > 0 ? `${assignedJobs.length} Active` : undefined,
-    accentIcon: assignedJobs.length > 0 ? <Sparkles className="w-4 h-4 text-emerald-400" /> : undefined,
-    bgImage: 'radial-gradient(circle at 20% 20%, rgba(16,185,129,0.12), transparent 40%)',
-  }), [assignedJobs.length]);
-
-  const heroStats = useMemo<AdminStat[]>(() => {
-    const stackedCount = jobGroups.length;
-    return [
-      { label: 'Jobs', value: assignedJobs.length.toString(), helper: 'Assigned to you', trend: 'flat' },
-      { label: 'Circuits', value: circuits.length.toString(), helper: 'Locations', trend: 'flat' },
-      { label: 'Stacked', value: stackedCount.toString(), helper: 'Job groups', trend: 'flat' },
-    ];
-  }, [assignedJobs.length, circuits.length, jobGroups.length]);
+  // Device capabilities for animation decisions
+  const caps = useMemo(() => getDeviceCapabilities(), []);
+  const enableAnimations = !caps.prefersReducedMotion && !caps.isMobile;
 
   return (
     <DashboardLayout title="My Jobs">
-      <AdminPremiumScaffold hero={heroConfig} stats={heroStats} theme="emerald">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pb-4 pt-4 sm:pt-6">
+        {/* Premium Glass Header - Emerald Theme */}
+        <div className="mb-5 md:mb-6">
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="relative"
+          >
+            <div 
+              className="relative overflow-hidden rounded-2xl md:rounded-3xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
+              style={{
+                backdropFilter: 'blur(24px) saturate(180%)',
+                WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+                background: 'linear-gradient(145deg, rgba(4, 30, 21, 0.6) 0%, rgba(2, 15, 10, 0.5) 50%, rgba(1, 8, 5, 0.4) 100%)',
+                boxShadow: 'inset 0 0 15px rgba(125, 225, 180, 0.05), 0 8px 32px rgba(0,0,0,0.4)',
+              }}
+            >
+              <div className="absolute inset-0 opacity-70 pointer-events-none" style={{ background: 'linear-gradient(125deg, rgba(255,255,255,0.15) 0%, transparent 30%, transparent 70%, rgba(255,255,255,0.05) 100%)' }} />
+              <div className="absolute inset-0 opacity-50 pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 50%)' }} />
+              <div className="absolute top-0 left-0 w-24 h-24 rounded-full opacity-30 pointer-events-none" style={{ background: 'radial-gradient(circle at 50% 50%, rgba(125,225,180,0.3) 0%, transparent 70%)', filter: 'blur(15px)' }} />
+              <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-white/[0.15] to-transparent" />
+              <div className="absolute top-0 bottom-0 left-0 w-[1px] bg-gradient-to-b from-transparent via-white/[0.1] to-transparent" />
+              <div className="absolute top-0 bottom-0 right-0 w-[1px] bg-gradient-to-b from-transparent via-black/[0.1] to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-black/[0.15] to-transparent" />
+
+              <div className="relative px-5 py-4 md:px-7 md:py-5">
+                <div className="flex items-center gap-3 mb-3">
+                  <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.2 }} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30">
+                    <Briefcase className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-emerald-200">My Jobs</span>
+                  </motion.div>
+                  {assignedJobs.length > 0 && (
+                    <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.3 }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#03150f]/60 border border-emerald-500/20">
+                      <Sparkles className="w-3 h-3 text-emerald-400" />
+                      <span className="text-[9px] uppercase tracking-wider font-semibold text-emerald-200/70">{assignedJobs.length} Active</span>
+                    </motion.div>
+                  )}
+                </div>
+                <div className="flex items-center gap-4">
+                  <motion.div initial={{ scaleY: 0, opacity: 0 }} animate={{ scaleY: 1, opacity: 1 }} transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }} className="w-1 h-14 md:h-16 rounded-full bg-gradient-to-b from-emerald-400 via-emerald-500 to-emerald-600 origin-top flex-shrink-0" style={{ boxShadow: '0 0 20px rgba(16, 185, 129, 0.4), 0 0 40px rgba(16, 185, 129, 0.2)' }} />
+                  <div className="flex-1 min-w-0">
+                    {enableAnimations ? (
+                      <TextEffect as="h1" preset="blurSlide" per="char" delay={0.15} className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight" segmentWrapperClassName="bg-gradient-to-r from-white via-emerald-100 to-white/90 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(125,225,180,0.3)]">
+                        Your Jobs
+                      </TextEffect>
+                    ) : (
+                      <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight bg-gradient-to-r from-white via-emerald-100 to-white/90 bg-clip-text text-transparent">Your Jobs</h1>
+                    )}
+                    <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.7 }} className="mt-1.5 md:mt-2 text-xs sm:text-sm text-emerald-200/50 font-medium leading-relaxed max-w-xl">
+                      View details and submit progress
+                    </motion.p>
+                  </div>
+                  {/* Quick Add Progress Button */}
+                  <motion.button
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.4, delay: 0.5 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => setShowQuickProgress(true)}
+                    className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold min-h-[44px] touch-manipulation"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(247, 228, 189, 1) 0%, rgba(244, 201, 121, 0.85) 50%, rgba(215, 154, 50, 1) 100%)',
+                      color: '#2e1b02',
+                      boxShadow: '0 4px 16px rgba(244, 201, 121, 0.3)',
+                    }}
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span className="hidden sm:inline">Add Progress</span>
+                    <span className="sm:hidden">Add</span>
+                  </motion.button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
         <div className="space-y-4">
           {error && <ErrorState message={error} onRetry={refetch} />}
 
@@ -922,7 +1012,15 @@ function AssignedJobs() {
             />
           )}
         </AnimatePresence>
-      </AdminPremiumScaffold>
+
+        {/* Quick Progress Modal */}
+        <QuickProgressModal
+          jobs={assignedJobs}
+          isOpen={showQuickProgress}
+          onClose={() => setShowQuickProgress(false)}
+          onJobUpdate={refetch}
+        />
+      </div>
     </DashboardLayout>
   );
 }

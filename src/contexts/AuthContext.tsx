@@ -4,8 +4,8 @@ import { supabase } from '../lib/supabaseClient';
 import { logger } from "../lib/logger";
 
 
-// Matches DB constraint: check (role in ('employee', 'admin', 'manager', 'mechanic'))
-type UserRole = "employee" | "admin" | "mechanic" | "manager" | null;
+// Matches DB constraint: check (role in ('employee', 'admin', 'manager', 'mechanic', 'general_foreman', 'safety_officer', 'foreman'))
+type UserRole = "employee" | "admin" | "mechanic" | "manager" | "general_foreman" | "safety_officer" | "foreman" | null;
 
 interface ExtendedSession extends Session {
   role?: string;
@@ -185,7 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Normalize role to known values (matches DB constraint)
         let normalizedRole: UserRole = 'employee';
-        if (rawRole === 'admin' || rawRole === 'mechanic' || rawRole === 'employee' || rawRole === 'manager') {
+        if (rawRole === 'admin' || rawRole === 'mechanic' || rawRole === 'employee' || rawRole === 'manager' || rawRole === 'general_foreman' || rawRole === 'safety_officer' || rawRole === 'foreman') {
           normalizedRole = rawRole;
         }
 

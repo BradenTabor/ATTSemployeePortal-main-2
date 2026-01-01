@@ -1,6 +1,6 @@
 import { cn } from "../../lib/utils";
 
-type TableSkeletonVariant = "emerald" | "gold" | "ember";
+export type TableSkeletonVariant = "emerald" | "gold" | "ember" | "purple";
 
 const VARIANT_STYLES: Record<
   TableSkeletonVariant,
@@ -20,6 +20,11 @@ const VARIANT_STYLES: Record<
     border: "border-[#ff9350]/30",
     background: "bg-[#1a0b05]/80",
     cell: "bg-[#ff9350]/30",
+  },
+  purple: {
+    border: "border-purple-500/30",
+    background: "bg-[#0f0a1a]/80",
+    cell: "bg-purple-500/30",
   },
 };
 

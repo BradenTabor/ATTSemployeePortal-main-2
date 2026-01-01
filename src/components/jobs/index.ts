@@ -11,4 +11,7 @@ export { CompactJobCard } from './CompactJobCard';
 export { JobDetailExpanded } from './JobDetailExpanded';
 export { JobProgressUpdateForm } from './JobProgressUpdateForm';
 export { StackedJobCard } from './StackedJobCard';
+export { ReadOnlyJobCard } from './ReadOnlyJobCard';
+export { CrewOversightJobList } from './CrewOversightJobList';
+export { QuickProgressModal } from './QuickProgressModal';
 

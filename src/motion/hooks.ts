@@ -381,7 +381,7 @@ export function useScrollReveal(options: UseScrollRevealOptions = {}): ScrollRev
 
   const isInView = useInView(ref, {
     amount: threshold,
-    margin,
+    margin: margin as `${number}px ${number}px ${number}px ${number}px`,
     once,
   });
 

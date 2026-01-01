@@ -7,6 +7,9 @@ import {
   FileSearch,
   Wrench,
   Briefcase,
+  HardHat,
+  Users,
+  History,
 } from "lucide-react";
 import BrandedNavCard from "./BrandedNavCard";
 import { motion } from "framer-motion";
@@ -25,6 +28,12 @@ const userPages = [
     path: "/forms",
     icon: FileText,
     description: "Access and submit required ATTS forms"
+  },
+  {
+    label: "Forms History",
+    path: "/forms-history",
+    icon: History,
+    description: "View your past form submissions"
   },
   {
     label: "Announcements",
@@ -47,7 +56,7 @@ const userPages = [
 ];
 
 export default function NavCards() {
-  const { isAdmin, hasMechanicAccess } = useAuth();
+  const { isAdmin, hasMechanicAccess, role } = useAuth();
   
   // Get device capabilities for mobile optimization
   const caps = useMemo(() => getDeviceCapabilities(), []);
@@ -74,7 +83,7 @@ export default function NavCards() {
       opacity: 1, 
       y: 0,
       transition: shouldReduceMotion ? { duration: 0.1 } : {
-        type: "spring",
+        type: "spring" as const,
         stiffness: 500,
         damping: 30,
       }
@@ -100,6 +109,33 @@ export default function NavCards() {
       to: "/mechanic-dashboard",
       variant: "ember" as const,
       show: hasMechanicAccess,
+    },
+    {
+      key: "/general-foreman-dashboard",
+      title: "General Foreman Panel",
+      description: "Oversee crews and safety compliance",
+      icon: HardHat,
+      to: "/general-foreman-dashboard",
+      variant: "purple" as const,
+      show: role === "general_foreman" || isAdmin,
+    },
+    {
+      key: "/safety-officer-dashboard",
+      title: "Safety Officer Panel",
+      description: "Manage incidents and compliance",
+      icon: Shield,
+      to: "/safety-officer-dashboard",
+      variant: "redwhite" as const,
+      show: role === "safety_officer" || isAdmin,
+    },
+    {
+      key: "/foreman-dashboard",
+      title: "Foreman Panel",
+      description: "Manage crew and daily reports",
+      icon: Users,
+      to: "/foreman-dashboard",
+      variant: "bluewhite" as const,
+      show: role === "foreman" || isAdmin,
     },
     {
       key: "/admin",

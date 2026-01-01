@@ -8,17 +8,45 @@ export default function ReturnButton() {
   const { role } = useAuth();
 
   const isAdmin = role === "admin";
+  const isGeneralForeman = role === "general_foreman";
+  const isSafetyOfficer = role === "safety_officer";
+  const isForeman = role === "foreman";
+  const isMechanic = role === "mechanic";
   const path = location.pathname;
 
   let label = "";
   let target = "";
 
-  if (!isAdmin) {
-    if (path.startsWith("/") && path !== "/dashboard" && path !== "/") {
-      label = "Return to Dashboard";
-      target = "/dashboard";
+  // General Foreman role-specific navigation
+  if (isGeneralForeman) {
+    if (path !== "/general-foreman-dashboard" && path !== "/") {
+      label = "Return to General Foreman Dashboard";
+      target = "/general-foreman-dashboard";
     }
-  } else {
+  }
+  // Safety Officer role-specific navigation
+  else if (isSafetyOfficer) {
+    if (path !== "/safety-officer-dashboard" && path !== "/") {
+      label = "Return to Safety Officer Dashboard";
+      target = "/safety-officer-dashboard";
+    }
+  }
+  // Mechanic role-specific navigation
+  else if (isMechanic) {
+    if (path !== "/mechanic-dashboard" && path !== "/") {
+      label = "Return to Mechanic Dashboard";
+      target = "/mechanic-dashboard";
+    }
+  }
+  // Foreman role-specific navigation
+  else if (isForeman) {
+    if (path !== "/foreman-dashboard" && path !== "/") {
+      label = "Return to Foreman Dashboard";
+      target = "/foreman-dashboard";
+    }
+  }
+  // Admin navigation (existing logic)
+  else if (isAdmin) {
     if (path.startsWith("/admin") && path !== "/admin") {
       label = "Return to Admin Dashboard";
       target = "/admin";
@@ -26,6 +54,13 @@ export default function ReturnButton() {
       label = "Return to General Dashboard";
       target = "/dashboard";
     } else if (path.startsWith("/") && path !== "/dashboard" && path !== "/") {
+      label = "Return to Dashboard";
+      target = "/dashboard";
+    }
+  }
+  // Default employee navigation (existing logic)
+  else {
+    if (path.startsWith("/") && path !== "/dashboard" && path !== "/") {
       label = "Return to Dashboard";
       target = "/dashboard";
     }

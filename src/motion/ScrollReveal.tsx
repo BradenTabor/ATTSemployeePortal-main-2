@@ -95,7 +95,7 @@ export const ScrollReveal = memo(function ScrollReveal({
   
   const isInView = useInView(ref, {
     amount: threshold,
-    margin,
+    margin: margin as `${number}px ${number}px ${number}px ${number}px`,
     once,
   });
 

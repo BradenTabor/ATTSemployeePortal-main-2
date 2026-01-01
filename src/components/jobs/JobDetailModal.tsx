@@ -20,6 +20,7 @@ import {
   Loader2,
   Undo2,
   Ruler,
+  Lock,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { 
@@ -32,6 +33,7 @@ import {
 } from '../../lib/jobProgressUtils';
 import { JobProgressBar } from './JobProgressBar';
 import { JobCreationForm } from './JobCreationForm';
+import { useCanViewJobProgress } from '../../hooks/useCanViewJobProgress';
 import type { JobProgressTracker, JobStatus, JobFormData, CrewMember } from '../../types/jobs';
 import { JOB_STATUS_CONFIG } from '../../types/jobs';
 
@@ -58,6 +60,7 @@ function JobDetailModalComponent({
   onToggleMilestone,
   userId,
 }: JobDetailModalProps) {
+  const { canViewProgress } = useCanViewJobProgress();
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -255,68 +258,79 @@ function JobDetailModalComponent({
                     </span>
                   </div>
                   
-                  {/* Progress bar */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className={cn('font-medium', spanProgressColors.text)}>
-                        {spanProgress.percentage}%
+                  {canViewProgress ? (
+                    <>
+                      {/* Progress bar */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className={cn('font-medium', spanProgressColors.text)}>
+                            {spanProgress.percentage}%
+                          </span>
+                          <span className="text-white/50">
+                            {formatSpanProgressLabel(spanProgress)}
+                          </span>
+                        </div>
+                        <div className={cn(
+                          'relative w-full h-4 rounded-full overflow-hidden',
+                          spanProgressColors.bg
+                        )}>
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${spanProgress.percentage}%` }}
+                            transition={{ duration: 0.6, ease: 'easeOut' }}
+                            className={cn(
+                              'absolute inset-y-0 left-0 rounded-full bg-gradient-to-r',
+                              spanProgressColors.gradient
+                            )}
+                          />
+                        </div>
+                      </div>
+                      
+                      {/* Stats grid */}
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-center">
+                          <p className="text-xs text-white/50 mb-1">Completed</p>
+                          <p className="text-lg font-bold text-emerald-400">
+                            {spanProgress.completed.toLocaleString()}
+                          </p>
+                          <p className="text-[10px] text-white/40">{spanProgress.metricLabel}</p>
+                        </div>
+                        <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-center">
+                          <p className="text-xs text-white/50 mb-1">Estimated</p>
+                          <p className="text-lg font-bold text-[#f4c979]">
+                            {spanProgress.total > 0 ? spanProgress.total.toLocaleString() : '—'}
+                          </p>
+                          <p className="text-[10px] text-white/40">{spanProgress.metricLabel}</p>
+                        </div>
+                        <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-center">
+                          <p className="text-xs text-white/50 mb-1">Remaining</p>
+                          <p className="text-lg font-bold text-white/80">
+                            {spanProgress.total > 0 ? spanProgress.remaining.toLocaleString() : '—'}
+                          </p>
+                          <p className="text-[10px] text-white/40">{spanProgress.metricLabel}</p>
+                        </div>
+                      </div>
+                      
+                      {/* No estimate warning */}
+                      {spanProgress.total === 0 && (
+                        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
+                          <p className="text-xs text-amber-300">
+                            No estimated total set. Edit this job to add an estimated total for accurate progress tracking.
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-center gap-2 py-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20">
+                      <Lock className="w-4 h-4 text-emerald-400/60" />
+                      <span className="text-sm text-emerald-400/70 font-medium">
+                        Progress visible to management only
                       </span>
-                      <span className="text-white/50">
-                        {formatSpanProgressLabel(spanProgress)}
-                      </span>
-                    </div>
-                    <div className={cn(
-                      'relative w-full h-4 rounded-full overflow-hidden',
-                      spanProgressColors.bg
-                    )}>
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${spanProgress.percentage}%` }}
-                        transition={{ duration: 0.6, ease: 'easeOut' }}
-                        className={cn(
-                          'absolute inset-y-0 left-0 rounded-full bg-gradient-to-r',
-                          spanProgressColors.gradient
-                        )}
-                      />
-                    </div>
-                  </div>
-                  
-                  {/* Stats grid */}
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-center">
-                      <p className="text-xs text-white/50 mb-1">Completed</p>
-                      <p className="text-lg font-bold text-emerald-400">
-                        {spanProgress.completed.toLocaleString()}
-                      </p>
-                      <p className="text-[10px] text-white/40">{spanProgress.metricLabel}</p>
-                    </div>
-                    <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-center">
-                      <p className="text-xs text-white/50 mb-1">Estimated</p>
-                      <p className="text-lg font-bold text-[#f4c979]">
-                        {spanProgress.total > 0 ? spanProgress.total.toLocaleString() : '—'}
-                      </p>
-                      <p className="text-[10px] text-white/40">{spanProgress.metricLabel}</p>
-                    </div>
-                    <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-center">
-                      <p className="text-xs text-white/50 mb-1">Remaining</p>
-                      <p className="text-lg font-bold text-white/80">
-                        {spanProgress.total > 0 ? spanProgress.remaining.toLocaleString() : '—'}
-                      </p>
-                      <p className="text-[10px] text-white/40">{spanProgress.metricLabel}</p>
-                    </div>
-                  </div>
-                  
-                  {/* No estimate warning */}
-                  {spanProgress.total === 0 && (
-                    <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
-                      <p className="text-xs text-amber-300">
-                        No estimated total set. Edit this job to add an estimated total for accurate progress tracking.
-                      </p>
                     </div>
                   )}
                 </div>
               ) : (
-                // Timeline-based progress display
+                // Timeline-based progress display (JobProgressBar handles its own restriction)
                 <>
                   <JobProgressBar
                     startDate={job.start_date}

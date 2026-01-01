@@ -1,8 +1,9 @@
 import { memo } from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Lock } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { calculateJobProgress, formatProgressLabel } from '../../lib/jobProgressUtils';
+import { useCanViewJobProgress } from '../../hooks/useCanViewJobProgress';
 import type { JobProgressResult } from '../../types/jobs';
 
 interface JobProgressBarProps {
@@ -39,6 +40,7 @@ function JobProgressBarComponent({
   showExceededBadge = true,
   size = 'md',
 }: JobProgressBarProps) {
+  const { canViewProgress } = useCanViewJobProgress();
   const progress = calculateJobProgress(startDate, endDate);
 
   const barHeight = {
@@ -52,6 +54,24 @@ function JobProgressBarComponent({
     md: 'text-xs',
     lg: 'text-sm',
   }[size];
+
+  // Show placeholder for restricted roles
+  if (!canViewProgress) {
+    return (
+      <div className={cn('w-full', className)}>
+        <div className={cn(
+          'flex items-center justify-center gap-2 py-2 px-3 rounded-lg',
+          'bg-emerald-500/5 border border-emerald-500/20',
+          fontSize
+        )}>
+          <Lock className="w-3 h-3 text-emerald-400/60" />
+          <span className="text-emerald-400/70 font-medium">
+            Progress visible to management only
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={cn('w-full space-y-1.5', className)}>

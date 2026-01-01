@@ -9,9 +9,11 @@ const BackgroundParticles = lazy(() => import("../components/ui/BackgroundPartic
 interface DashboardLayoutProps {
   title?: string;
   children: ReactNode;
+  /** Hide the header section (logo + title + return button) */
+  hideHeader?: boolean;
 }
 
-export default function DashboardLayout({ title, children }: DashboardLayoutProps) {
+export default function DashboardLayout({ title, children, hideHeader = false }: DashboardLayoutProps) {
   // Get device capabilities for adaptive particle settings
   const capabilities = getDeviceCapabilities();
   const { isLowEnd, isMobile, prefersReducedMotion } = capabilities;
@@ -57,37 +59,39 @@ export default function DashboardLayout({ title, children }: DashboardLayoutProp
       )}
 
       {/* Scrollable content wrapper */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 sm:px-8 pt-6 sm:pt-10 pb-6 relative z-10">
-        {/* Header Area */}
-        <header className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6 w-full">
-          {/* Left Section: Logo + Title */}
-          <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 text-center sm:text-left">
-            <img
-              src={logo}
-              alt="ATTS Logo"
-              fetchPriority="high"
-              className="w-[180px] sm:w-52 md:w-60 object-contain drop-shadow-lg"
-            />
-            {title && (
-              <h1
-                className="text-2xl sm:text-3xl font-bold tracking-wide text-transparent bg-clip-text break-normal gradient-animated"
-                style={{
-                  backgroundSize: "200% 200%",
-                  backgroundImage: "linear-gradient(90deg, rgba(247, 228, 189, 1) 0%, rgba(138, 99, 30, 1) 20%, rgba(244, 201, 121, 1) 50%, rgba(138, 99, 30, 1) 75%, rgba(215, 154, 50, 1) 100%)",
-                  WebkitBackgroundClip: "text",
-                  textShadow: "0 0 12px rgba(247,228,189,0.35)",
-                }}
-              >
-                {title}
-              </h1>
-            )}
-          </div>
+      <div className={`flex-1 overflow-y-auto overflow-x-hidden px-4 sm:px-8 ${hideHeader ? 'pt-0' : 'pt-6 sm:pt-10'} pb-6 relative z-10`}>
+        {/* Header Area - conditionally rendered */}
+        {!hideHeader && (
+          <header className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6 w-full">
+            {/* Left Section: Logo + Title */}
+            <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 text-center sm:text-left">
+              <img
+                src={logo}
+                alt="ATTS Logo"
+                fetchPriority="high"
+                className="w-[180px] sm:w-52 md:w-60 object-contain drop-shadow-lg"
+              />
+              {title && (
+                <h1
+                  className="text-2xl sm:text-3xl font-bold tracking-wide text-transparent bg-clip-text break-normal gradient-animated"
+                  style={{
+                    backgroundSize: "200% 200%",
+                    backgroundImage: "linear-gradient(90deg, rgba(247, 228, 189, 1) 0%, rgba(138, 99, 30, 1) 20%, rgba(244, 201, 121, 1) 50%, rgba(138, 99, 30, 1) 75%, rgba(215, 154, 50, 1) 100%)",
+                    WebkitBackgroundClip: "text",
+                    textShadow: "0 0 12px rgba(247,228,189,0.35)",
+                  }}
+                >
+                  {title}
+                </h1>
+              )}
+            </div>
 
-          {/* Right Section: Return Button */}
-          <div className="flex justify-center sm:justify-end w-full sm:w-auto">
-            <ReturnButton />
-          </div>
-        </header>
+            {/* Right Section: Return Button */}
+            <div className="flex justify-center sm:justify-end w-full sm:w-auto">
+              <ReturnButton />
+            </div>
+          </header>
+        )}
 
         {/* Main Content */}
         <main className="flex flex-col items-center justify-start w-full flex-1 pb-8">

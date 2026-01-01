@@ -4,7 +4,7 @@ import { queryKeys } from '../../lib/queryKeys';
 import { toast } from '../../lib/toast';
 import { logger } from '../../lib/logger';
 
-interface Announcement {
+export interface Announcement {
   id: string;
   title: string;
   message: string;
@@ -14,16 +14,25 @@ interface Announcement {
 }
 
 /**
- * Fetches all announcements
+ * Fetches announcements with optional limit
+ * @param limit - Optional number of announcements to fetch (defaults to all)
  */
-export function useAnnouncementsQuery() {
+export function useAnnouncementsQuery(limit?: number) {
   return useQuery({
-    queryKey: queryKeys.announcements.all,
+    queryKey: limit
+      ? [...queryKeys.announcements.all, { limit }]
+      : queryKeys.announcements.all,
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('announcements')
         .select('*')
         .order('date', { ascending: false });
+
+      if (limit) {
+        query = query.limit(limit);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         logger.error('Failed to fetch announcements:', error);
@@ -100,22 +109,49 @@ export function useUpdateAnnouncement() {
   return useMutation({
     mutationFn: async ({
       id,
-      ...data
+      ...updates
     }: Partial<Announcement> & { id: string }) => {
-      const { error } = await supabase
+      // Direct console.log for debugging
+      console.log('🔧 UPDATE: Attempting to update announcement');
+      console.log('🔧 UPDATE: ID:', id);
+      console.log('🔧 UPDATE: Updates:', JSON.stringify(updates, null, 2));
+      
+      // Only include fields that exist in the table
+      const updatePayload: Record<string, unknown> = {};
+      if (updates.title !== undefined) updatePayload.title = updates.title;
+      if (updates.message !== undefined) updatePayload.message = updates.message;
+      if (updates.author !== undefined) updatePayload.author = updates.author;
+      if (updates.date !== undefined) updatePayload.date = updates.date;
+      
+      console.log('🔧 UPDATE: Final payload:', JSON.stringify(updatePayload, null, 2));
+      
+      const { data: result, error } = await supabase
         .from('announcements')
-        .update(data)
-        .eq('id', id);
+        .update(updatePayload)
+        .eq('id', id)
+        .select();
+
+      console.log('🔧 UPDATE: Result:', result);
+      console.log('🔧 UPDATE: Error:', error);
 
       if (error) {
-        throw new Error('Failed to update announcement');
+        console.error('🔧 UPDATE ERROR:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+        });
+        throw new Error(`Failed to update announcement: ${error.message}`);
       }
+      
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.announcements.all });
       toast.success('Announcement updated');
     },
     onError: (error) => {
+      console.error('🔧 UPDATE MUTATION ERROR:', error);
       logger.error('Failed to update announcement:', error);
       toast.error('Failed to update announcement');
     },

@@ -32,27 +32,62 @@ export type AdminNavCardConfig = {
   description?: string;
   icon?: ReactNode;
   to: string;
-  variant?: "emerald" | "gold" | "ember";
+  variant?: "emerald" | "gold" | "ember" | "purple" | "redwhite" | "bluewhite";
   /** Mark as coming soon - disables link and shows badge */
   comingSoon?: boolean;
 };
 
-type AdminTheme = "gold" | "ember" | "emerald";
+type AdminTheme = "gold" | "ember" | "emerald" | "purple" | "redwhite" | "bluewhite";
 
 interface AdminPremiumScaffoldProps {
   hero: AdminHeroConfig;
   stats?: AdminStat[];
   navCards?: AdminNavCardConfig[];
-  sidePanel?: ReactNode;
   children?: ReactNode;
   theme?: AdminTheme;
+  /** Optional side panel content */
+  sidePanel?: ReactNode;
+  /** Enable compact mode for mobile-optimized header */
+  compact?: boolean;
 }
 
-const BADGE_STYLES: Record<string, string> = {
-  solid:
-    "inline-flex items-center space-x-2 px-4 py-2 bg-black/40 rounded-full border border-[#f7dca8]/40 text-sm text-[#fff5da]",
-  outline:
-    "inline-flex items-center space-x-2 px-4 py-2 rounded-full border border-[#fef3d1]/30 text-sm text-[#f8e4bb] bg-[#fef3d1]/10",
+const BADGE_STYLES: Record<AdminTheme, Record<string, string>> = {
+  gold: {
+    solid:
+      "inline-flex items-center space-x-2 px-4 py-2 bg-black/40 rounded-full border border-[#f7dca8]/40 text-sm text-[#fff5da]",
+    outline:
+      "inline-flex items-center space-x-2 px-4 py-2 rounded-full border border-[#fef3d1]/30 text-sm text-[#f8e4bb] bg-[#fef3d1]/10",
+  },
+  ember: {
+    solid:
+      "inline-flex items-center space-x-2 px-4 py-2 bg-black/40 rounded-full border border-amber-400/40 text-sm text-amber-100",
+    outline:
+      "inline-flex items-center space-x-2 px-4 py-2 rounded-full border border-amber-400/30 text-sm text-amber-200 bg-amber-500/10",
+  },
+  emerald: {
+    solid:
+      "inline-flex items-center space-x-2 px-3 py-1.5 bg-emerald-500/15 rounded-xl border border-emerald-400/30 text-xs text-emerald-100",
+    outline:
+      "inline-flex items-center space-x-2 px-3 py-1.5 rounded-xl border border-emerald-400/25 text-xs text-emerald-200/90 bg-emerald-500/10",
+  },
+  purple: {
+    solid:
+      "inline-flex items-center space-x-2 px-4 py-2 bg-[#2d1b4e]/60 rounded-full border border-[#c084fc]/40 text-sm text-[#e9d5ff]",
+    outline:
+      "inline-flex items-center space-x-2 px-4 py-2 rounded-full border border-[#c084fc]/30 text-sm text-[#e9d5ff] bg-[#c084fc]/10",
+  },
+  redwhite: {
+    solid:
+      "inline-flex items-center space-x-2 px-4 py-2 bg-[#450a0a]/60 rounded-full border border-[#fecaca]/40 text-sm text-[#fef2f2]",
+    outline:
+      "inline-flex items-center space-x-2 px-4 py-2 rounded-full border border-[#fecaca]/30 text-sm text-[#fef2f2] bg-[#fecaca]/10",
+  },
+  bluewhite: {
+    solid:
+      "inline-flex items-center space-x-2 px-4 py-2 bg-[#0a1628]/60 rounded-full border border-[#bfdbfe]/40 text-sm text-[#f0f9ff]",
+    outline:
+      "inline-flex items-center space-x-2 px-4 py-2 rounded-full border border-[#bfdbfe]/30 text-sm text-[#f0f9ff] bg-[#bfdbfe]/10",
+  },
 };
 
 const THEME_STYLES: Record<
@@ -70,11 +105,7 @@ const THEME_STYLES: Record<
     statsLabel: string;
     statsValue: string;
     statsHint: string;
-    navVariant: "emerald" | "gold" | "ember";
-    sidePanelContainer: string;
-    sidePanelBorder: string;
-    sidePanelGlowOne: string;
-    sidePanelGlowTwo: string;
+    navVariant: "emerald" | "gold" | "ember" | "purple" | "redwhite" | "bluewhite";
     glowColors: string[];
     shimmerColor: string;
     shimmerColorAlt: string;
@@ -105,14 +136,6 @@ const THEME_STYLES: Record<
     statsValue: "text-3xl font-black text-[#fff6dd] tracking-wide",
     statsHint: "text-xs text-[#f8e5bb]/70",
     navVariant: "gold",
-    sidePanelContainer:
-      "relative overflow-hidden rounded-3xl border border-[#f6dcb2]/25 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#070605] shadow-[0_40px_80px_rgba(0,0,0,0.65)] p-6",
-    sidePanelBorder:
-      "pointer-events-none absolute inset-0 rounded-3xl border border-[#f6dcb2]/10 opacity-40",
-    sidePanelGlowOne:
-      "pointer-events-none absolute -top-24 -right-10 h-56 w-56 bg-[radial-gradient(circle,rgba(247,223,179,0.35),transparent_60%)] blur-2xl",
-    sidePanelGlowTwo:
-      "pointer-events-none absolute -bottom-32 left-1/3 h-64 w-64 bg-[radial-gradient(circle,rgba(209,152,57,0.35),transparent_70%)] blur-3xl",
     glowColors: ["#f7e4bd", "#f4c979", "#d79a32", "#fef3d1"],
     shimmerColor: "rgba(247,228,189,0.08)",
     shimmerColorAlt: "rgba(244,201,121,0.05)",
@@ -142,14 +165,6 @@ const THEME_STYLES: Record<
     statsValue: "text-3xl font-black text-[#ffe7d0] tracking-wide",
     statsHint: "text-xs text-[#ffd7bc]/80",
     navVariant: "ember",
-    sidePanelContainer:
-      "relative overflow-hidden rounded-3xl border border-[#f28b53]/35 bg-gradient-to-br from-[#2b130a] via-[#170807] to-[#070303] shadow-[0_40px_80px_rgba(0,0,0,0.7)] p-6",
-    sidePanelBorder:
-      "pointer-events-none absolute inset-0 rounded-3xl border border-[#f5a06b]/25 opacity-40",
-    sidePanelGlowOne:
-      "pointer-events-none absolute -top-24 -right-10 h-56 w-56 bg-[radial-gradient(circle,rgba(255,166,102,0.4),transparent_60%)] blur-2xl",
-    sidePanelGlowTwo:
-      "pointer-events-none absolute -bottom-32 left-1/3 h-64 w-64 bg-[radial-gradient(circle,rgba(255,85,37,0.35),transparent_70%)] blur-3xl",
     glowColors: ["#f6b78f", "#ff6f3c", "#ffa366", "#ff9350"],
     shimmerColor: "rgba(246,183,143,0.08)",
     shimmerColorAlt: "rgba(255,111,60,0.05)",
@@ -179,20 +194,99 @@ const THEME_STYLES: Record<
     statsValue: "text-3xl font-black text-[#e5fff6] tracking-wide",
     statsHint: "text-xs text-[#c5ffe6]/75",
     navVariant: "emerald",
-    sidePanelContainer:
-      "relative overflow-hidden rounded-3xl border border-[#53d6a1]/35 bg-gradient-to-br from-[#08251a] via-[#02140d] to-[#000704] shadow-[0_40px_80px_rgba(0,0,0,0.65),0_4px_25px_8px_rgba(0,0,0,0.85)] p-6",
-    sidePanelBorder:
-      "pointer-events-none absolute inset-0 rounded-3xl border border-[#6fe9b7]/25 opacity-40",
-    sidePanelGlowOne:
-      "pointer-events-none absolute -top-24 -right-10 h-56 w-56 bg-[radial-gradient(circle,rgba(117,255,200,0.35),transparent_60%)] blur-2xl",
-    sidePanelGlowTwo:
-      "pointer-events-none absolute -bottom-32 left-1/3 h-64 w-64 bg-[radial-gradient(circle,rgba(31,166,118,0.35),transparent_70%)] blur-3xl",
     glowColors: ["#7de1b4", "#10b981", "#34d399", "#059669"],
     shimmerColor: "rgba(125,225,180,0.06)",
     shimmerColorAlt: "rgba(16,185,129,0.04)",
     borderGlowColor: "rgba(125,225,180,0.12)",
     headingGradient: "bg-gradient-to-r from-[#e5fff6] via-[#7de1b4] to-[#e5fff6]",
     headingTextGlow: "drop-shadow-[0_0_25px_rgba(125,225,180,0.5)]",
+  },
+  purple: {
+    mainContainer: "",
+    heroContainer:
+      "relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#2d1b4e] via-[#1a0f2e] to-[#0a0513] border border-[#c084fc]/20 shadow-[0_25px_60px_rgba(0,0,0,0.65)] p-8",
+    heroOverlayPrimary:
+      "pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(192,132,252,0.3),transparent_55%)] opacity-70",
+    heroOverlaySecondary:
+      "pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_80%,rgba(147,51,234,0.2),transparent_50%)]",
+    eyebrowClass:
+      "text-[#e9d5ff] uppercase text-[0.65rem] tracking-[0.35em] mb-2 flex items-center gap-2",
+    descriptionClass: "text-[#f3e8ff]/80 mt-2 max-w-2xl",
+    statsCard:
+      "relative overflow-hidden rounded-2xl border border-[#c084fc]/25 bg-[#2d1b4e]/60 px-5 py-4 shadow-[0_15px_35px_rgba(0,0,0,0.55)] transition hover:border-[#c084fc]/50",
+    statsOverlay:
+      "pointer-events-none absolute inset-0 bg-gradient-to-br from-[#c084fc]/10 to-transparent opacity-60",
+    statsGlow:
+      "pointer-events-none absolute right-4 top-3 h-10 w-10 rounded-full bg-[#9333ea]/25 blur-2xl",
+    statsLabel:
+      "text-[0.6rem] uppercase tracking-[0.35em] text-[#e9d5ff]/70",
+    statsValue: "text-3xl font-black text-white tracking-wide",
+    statsHint: "text-xs text-[#c084fc]/60",
+    navVariant: "emerald",
+    glowColors: ["#c084fc", "#9333ea", "#a855f7", "#7c3aed"],
+    shimmerColor: "rgba(192,132,252,0.06)",
+    shimmerColorAlt: "rgba(147,51,234,0.04)",
+    borderGlowColor: "rgba(192,132,252,0.12)",
+    headingGradient: "bg-gradient-to-r from-[#f3e8ff] via-[#c084fc] to-[#f3e8ff]",
+    headingTextGlow: "drop-shadow-[0_0_25px_rgba(192,132,252,0.5)]",
+  },
+  redwhite: {
+    mainContainer: "",
+    heroContainer:
+      "relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#450a0a] via-[#1c0a0a] to-[#0a0202] border border-[#fecaca]/25 shadow-[0_25px_60px_rgba(0,0,0,0.65)] p-8",
+    heroOverlayPrimary:
+      "pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(254,202,202,0.3),transparent_55%)] opacity-70",
+    heroOverlaySecondary:
+      "pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_80%,rgba(220,38,38,0.2),transparent_50%)]",
+    eyebrowClass:
+      "text-[#fef2f2] uppercase text-[0.65rem] tracking-[0.35em] mb-2 flex items-center gap-2",
+    descriptionClass: "text-[#fef2f2]/85 mt-2 max-w-2xl",
+    statsCard:
+      "relative overflow-hidden rounded-2xl border border-[#fecaca]/30 bg-[#450a0a]/60 px-5 py-4 shadow-[0_15px_35px_rgba(0,0,0,0.55)] transition hover:border-[#fecaca]/55",
+    statsOverlay:
+      "pointer-events-none absolute inset-0 bg-gradient-to-br from-[#fecaca]/12 to-transparent opacity-60",
+    statsGlow:
+      "pointer-events-none absolute right-4 top-3 h-10 w-10 rounded-full bg-[#dc2626]/25 blur-2xl",
+    statsLabel:
+      "text-[0.6rem] uppercase tracking-[0.35em] text-[#fef2f2]/75",
+    statsValue: "text-3xl font-black text-white tracking-wide",
+    statsHint: "text-xs text-[#fecaca]/65",
+    navVariant: "emerald",
+    glowColors: ["#fecaca", "#dc2626", "#ef4444", "#b91c1c"],
+    shimmerColor: "rgba(254,202,202,0.06)",
+    shimmerColorAlt: "rgba(220,38,38,0.04)",
+    borderGlowColor: "rgba(254,202,202,0.12)",
+    headingGradient: "bg-gradient-to-r from-[#fef2f2] via-[#fecaca] to-[#fef2f2]",
+    headingTextGlow: "drop-shadow-[0_0_25px_rgba(254,202,202,0.5)]",
+  },
+  bluewhite: {
+    mainContainer: "",
+    heroContainer:
+      "relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0a1628] via-[#0a1020] to-[#020408] border border-[#bfdbfe]/25 shadow-[0_25px_60px_rgba(0,0,0,0.65)] p-8",
+    heroOverlayPrimary:
+      "pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(191,219,254,0.3),transparent_55%)] opacity-70",
+    heroOverlaySecondary:
+      "pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_80%,rgba(37,99,235,0.2),transparent_50%)]",
+    eyebrowClass:
+      "text-[#f0f9ff] uppercase text-[0.65rem] tracking-[0.35em] mb-2 flex items-center gap-2",
+    descriptionClass: "text-[#f0f9ff]/85 mt-2 max-w-2xl",
+    statsCard:
+      "relative overflow-hidden rounded-2xl border border-[#bfdbfe]/30 bg-[#0a1628]/60 px-5 py-4 shadow-[0_15px_35px_rgba(0,0,0,0.55)] transition hover:border-[#bfdbfe]/55",
+    statsOverlay:
+      "pointer-events-none absolute inset-0 bg-gradient-to-br from-[#bfdbfe]/12 to-transparent opacity-60",
+    statsGlow:
+      "pointer-events-none absolute right-4 top-3 h-10 w-10 rounded-full bg-[#2563eb]/25 blur-2xl",
+    statsLabel:
+      "text-[0.6rem] uppercase tracking-[0.35em] text-[#f0f9ff]/75",
+    statsValue: "text-3xl font-black text-white tracking-wide",
+    statsHint: "text-xs text-[#bfdbfe]/65",
+    navVariant: "bluewhite",
+    glowColors: ["#bfdbfe", "#2563eb", "#3b82f6", "#1d4ed8"],
+    shimmerColor: "rgba(191,219,254,0.06)",
+    shimmerColorAlt: "rgba(37,99,235,0.04)",
+    borderGlowColor: "rgba(191,219,254,0.12)",
+    headingGradient: "bg-gradient-to-r from-[#f0f9ff] via-[#bfdbfe] to-[#f0f9ff]",
+    headingTextGlow: "drop-shadow-[0_0_25px_rgba(191,219,254,0.5)]",
   },
 };
 
@@ -202,17 +296,23 @@ const THEME_STYLES: Record<
  * Mobile optimizations:
  * - Disables glow effects on low-end devices
  * - Disables shimmer animations on mobile
- * - Simplified side panel rendering on mobile
  * - Respects prefers-reduced-motion preference
+ * 
+ * Responsive layout:
+ * - Full-width content that scales from mobile to large screens
+ * - Uses max-w-7xl container for comfortable reading on wide displays
  */
 export default function AdminPremiumScaffold({
   hero,
   stats,
   navCards,
-  sidePanel,
   children,
   theme = "gold",
+  sidePanel: _sidePanel,
+  compact = false,
 }: AdminPremiumScaffoldProps) {
+  // Note: sidePanel is defined in props interface for API compatibility but not yet implemented
+  void _sidePanel;
   const themeStyles = THEME_STYLES[theme] ?? THEME_STYLES.gold;
   
   // Get device capabilities (cached)
@@ -223,49 +323,39 @@ export default function AdminPremiumScaffold({
   const showEffects = quality.enableEffects && !caps.isLowEnd;
 
   return (
-    <div className={cn("w-full max-w-7xl mx-auto px-4 sm:px-6 pt-8 pb-4", themeStyles.mainContainer)}>
-      <div className="grid gap-8 lg:grid-cols-3">
-        <div className="space-y-8 lg:col-span-2">
-          <AdminHero 
-            hero={hero} 
-            stats={stats} 
-            themeStyles={themeStyles}
-            showEffects={showEffects}
-            isMobile={caps.isMobile}
-            prefersReducedMotion={caps.prefersReducedMotion}
-          />
+    <div className={cn(
+      "w-full max-w-7xl mx-auto px-4 sm:px-6 pb-4",
+      compact ? "pt-4 sm:pt-6" : "pt-8",
+      themeStyles.mainContainer
+    )}>
+      <div className={cn(compact ? "space-y-3 sm:space-y-4" : "space-y-6 md:space-y-8")}>
+        <AdminHero 
+          hero={hero} 
+          stats={stats} 
+          theme={theme}
+          themeStyles={themeStyles}
+          showEffects={showEffects}
+          isMobile={caps.isMobile}
+          prefersReducedMotion={caps.prefersReducedMotion}
+          compact={compact}
+        />
 
-          {navCards && navCards.length > 0 && (
-            <div className="grid gap-6 sm:grid-cols-2">
-              {navCards.map((card) => (
-                <BrandedNavCard
-                  key={card.to}
-                  title={card.title}
-                  description={card.description}
-                  icon={card.icon}
-                  to={card.to}
-                  variant={card.variant ?? themeStyles.navVariant}
-                />
-              ))}
-            </div>
-          )}
-
-          {children}
-        </div>
-
-        {sidePanel && (
-          <div className={themeStyles.sidePanelContainer}>
-            {/* Only render decorative elements on capable devices */}
-            {showEffects && (
-              <>
-                <div className={themeStyles.sidePanelBorder} />
-                <div className={themeStyles.sidePanelGlowOne} />
-                <div className={themeStyles.sidePanelGlowTwo} />
-              </>
-            )}
-            <div className="relative space-y-6">{sidePanel}</div>
+        {navCards && navCards.length > 0 && (
+          <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            {navCards.map((card) => (
+              <BrandedNavCard
+                key={card.to}
+                title={card.title}
+                description={card.description}
+                icon={card.icon}
+                to={card.to}
+                variant={card.variant ?? themeStyles.navVariant}
+              />
+            ))}
           </div>
         )}
+
+        {children}
       </div>
     </div>
   );
@@ -274,27 +364,34 @@ export default function AdminPremiumScaffold({
 interface AdminHeroProps {
   hero: AdminHeroConfig;
   stats?: AdminStat[];
+  theme: AdminTheme;
   themeStyles: (typeof THEME_STYLES)[AdminTheme];
   showEffects: boolean;
   isMobile: boolean;
   prefersReducedMotion: boolean;
+  compact?: boolean;
 }
 
 function AdminHero({
   hero,
   stats,
+  theme,
   themeStyles,
   showEffects,
   isMobile,
   prefersReducedMotion,
+  compact = false,
 }: AdminHeroProps) {
   // Disable animations on mobile or if user prefers reduced motion
   const enableAnimations = !isMobile && !prefersReducedMotion;
   
+  // In compact mode, disable glow effects
+  const showGlowEffects = showEffects && !compact;
+  
   return (
     <div className="relative">
-      {/* Background glow effect around the container - only on desktop with effects enabled */}
-      {showEffects && (
+      {/* Background glow effect around the container - only on desktop with effects enabled, not in compact mode */}
+      {showGlowEffects && (
         <div 
           className="absolute -inset-3 rounded-[2rem] overflow-hidden"
           style={{
@@ -323,12 +420,15 @@ function AdminHero({
         />
       )}
 
-      <div className={themeStyles.heroContainer}>
+      <div className={cn(
+        themeStyles.heroContainer,
+        compact && "!p-4 sm:!p-5 !rounded-2xl sm:!rounded-3xl"
+      )}>
         <div className={themeStyles.heroOverlayPrimary} />
         <div className={themeStyles.heroOverlaySecondary} />
         
-        {/* Shimmer effects - only on desktop with animations */}
-        {enableAnimations && (
+        {/* Shimmer effects - only on desktop with animations, not in compact mode */}
+        {enableAnimations && !compact && (
           <>
             {/* Enhanced multi-layer shimmer overlay */}
             <div 
@@ -396,21 +496,21 @@ function AdminHero({
           `}</style>
         )}
 
-        <div className="relative flex flex-col gap-6">
+        <div className={cn("relative flex flex-col", compact ? "gap-3 sm:gap-4" : "gap-6")}>
           {/* Hero content with optional avatar */}
-          <div className={cn("flex gap-6", hero.avatar ? "items-start" : "")}>
+          <div className={cn("flex", compact ? "gap-3 sm:gap-4" : "gap-6", hero.avatar ? "items-start" : "")}>
             {/* Text content */}
-            <div className="flex-1 flex flex-col gap-4">
+            <div className={cn("flex-1 flex flex-col", compact ? "gap-2 sm:gap-3" : "gap-4")}>
               {(hero.eyebrow || hero.eyebrowIcon) && (
-                <p className={themeStyles.eyebrowClass}>
+                <p className={cn(themeStyles.eyebrowClass, compact && "!text-[0.55rem] sm:!text-[0.6rem] !mb-1")}>
                   {hero.eyebrowIcon}
                   {hero.eyebrow}
                 </p>
               )}
 
               <div className="relative">
-                {/* GlowEffect behind the heading - only on desktop */}
-                {showEffects && (
+                {/* GlowEffect behind the heading - only on desktop, not in compact mode */}
+                {showEffects && !compact && (
                   <div className="absolute -inset-4 -top-6 -bottom-2">
                     <GlowEffect
                       colors={themeStyles.glowColors}
@@ -422,11 +522,12 @@ function AdminHero({
                     />
                   </div>
                 )}
-                {/* Heading - use simpler rendering on mobile */}
-                {prefersReducedMotion ? (
+                {/* Heading - use simpler rendering on mobile or compact mode */}
+                {prefersReducedMotion || compact ? (
                   <h2 className={cn(
-                    "relative text-2xl sm:text-3xl md:text-4xl font-black leading-tight tracking-tight text-white break-normal",
-                    themeStyles.headingTextGlow
+                    "relative font-black leading-tight tracking-tight text-white break-normal",
+                    compact ? "text-lg sm:text-xl md:text-2xl" : "text-2xl sm:text-3xl md:text-4xl",
+                    !compact && themeStyles.headingTextGlow
                   )}>
                     {hero.heading}
                   </h2>
@@ -443,18 +544,22 @@ function AdminHero({
                   </TextEffect>
                 )}
                 {hero.description && (
-                  <p className={cn("relative mt-3", themeStyles.descriptionClass)}>{hero.description}</p>
+                  <p className={cn(
+                    "relative",
+                    compact ? "mt-1 sm:mt-1.5 text-xs sm:text-sm !max-w-none" : "mt-3",
+                    themeStyles.descriptionClass
+                  )}>{hero.description}</p>
                 )}
               </div>
 
               {hero.badges && hero.badges.length > 0 && (
-                <div className="flex flex-wrap gap-3">
+                <div className={cn("flex flex-wrap", compact ? "gap-1.5 sm:gap-2" : "gap-3")}>
                   {hero.badges.map((badge, index) => (
                     <div
                       key={`${badge.label}-${index}`}
                       className={cn(
-                        BADGE_STYLES[badge.variant ?? "solid"],
-                        badge.variant === "outline" && "text-[#f8e4bb]"
+                        BADGE_STYLES[theme][badge.variant ?? "solid"],
+                        compact && "!px-2 sm:!px-3 !py-1 !text-[10px] sm:!text-xs !space-x-1"
                       )}
                     >
                       {badge.icon}
@@ -465,8 +570,8 @@ function AdminHero({
               )}
             </div>
 
-            {/* Avatar section */}
-            {hero.avatar && (
+            {/* Avatar section - hidden in compact mode */}
+            {hero.avatar && !compact && (
               <div className="hidden sm:block flex-shrink-0 w-28 h-36 md:w-36 md:h-44 lg:w-40 lg:h-48">
                 {hero.avatar}
               </div>
@@ -474,7 +579,10 @@ function AdminHero({
           </div>
 
           {stats && stats.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className={cn(
+              "grid grid-cols-1 sm:grid-cols-3",
+              compact ? "gap-2 sm:gap-3" : "gap-4"
+            )}>
               {stats.map((stat) => (
                 <div
                   key={stat.label}

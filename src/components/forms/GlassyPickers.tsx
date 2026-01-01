@@ -9,7 +9,7 @@ import { Calendar, Clock } from "lucide-react";
 import { cn } from "../../lib/utils";
 
 type PickerValueFormatter = (value: string) => string;
-type PickerVariant = "emerald" | "ember";
+type PickerVariant = "emerald" | "ember" | "gold";
 
 // Theme configurations for different variants
 const VARIANT_STYLES = {
@@ -32,6 +32,16 @@ const VARIANT_STYLES = {
     badge: "text-amber-300",
     border: "border-amber-500/25",
     hoverBorder: "hover:border-amber-400/40",
+  },
+  gold: {
+    iconColor: "text-[#f4c979]",
+    focusRing: "focus:ring-[#f4c979]/60",
+    shadow: "shadow-[0_0_20px_rgba(244,201,121,0.15)]",
+    background: "radial-gradient(ellipse at 30% 30%, rgba(27, 25, 20, 0.95) 0%, rgba(12, 10, 8, 1) 60%, rgba(7, 6, 5, 1) 100%)",
+    helperHighlight: "text-[#f6dcb2]",
+    badge: "text-[#f4c979]",
+    border: "border-[#f4c979]/30",
+    hoverBorder: "hover:border-[#f4c979]/50",
   },
 };
 

@@ -21,37 +21,49 @@ const Home = lazy(() => import("./pages/Home"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const AssignedJobs = lazy(() => import("./pages/AssignedJobs"));
-const Forms = lazy(() => import("./pages/Forms"));
+const Forms = lazy(() => import("./pages/forms/Forms"));
 const Announcements = lazy(() => import("./pages/Announcements"));
 const Resources = lazy(() => import("./pages/Resources"));
 const Contact = lazy(() => import("./pages/Contact"));
 
 // Admin pages
-const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
-const AdminRTO = lazy(() => import("./pages/AdminRTO"));
-const AdminUsers = lazy(() => import("./pages/AdminUsers"));
-const AdminJSA = lazy(() => import("./pages/AdminJSA"));
-const AdminJobTracker = lazy(() => import("./pages/AdminJobTracker"));
-const AdminJobProgress = lazy(() => import("./pages/AdminJobProgress"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const AdminRTO = lazy(() => import("./pages/admin/AdminRTO"));
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const AdminJSA = lazy(() => import("./pages/admin/AdminJSA"));
+const AdminJobTracker = lazy(() => import("./pages/admin/AdminJobTracker"));
+const AdminJobProgress = lazy(() => import("./pages/admin/AdminJobProgress"));
 
 // Mechanic pages
-const MechanicDashboard = lazy(() => import("./pages/MechanicDashboard"));
-const MechanicDVIRCenter = lazy(() => import("./pages/MechanicDVIRCenter"));
+const MechanicDashboard = lazy(() => import("./pages/mechanic/MechanicDashboard"));
+const MechanicDVIRCenter = lazy(() => import("./pages/mechanic/MechanicDVIRCenter"));
 const MechanicEquipmentCenter = lazy(
-  () => import("./pages/MechanicEquipmentCenter")
+  () => import("./pages/mechanic/MechanicEquipmentCenter")
 );
+const MechanicEquipmentLogs = lazy(() => import("./pages/mechanic/MechanicEquipmentLogs"));
 
-// Form pages - Files are directly in src/pages/
-const RequestTimeOff = lazy(() => import("./pages/RequestTimeOff"));
-const DVIRForm = lazy(() => import("./pages/DVIRForm"));
+// Foreman pages
+const ForemanDashboard = lazy(() => import("./pages/foreman/ForemanDashboard"));
+const ForemanDailyReports = lazy(() => import("./pages/foreman/ForemanDailyReports"));
+
+// General Foreman pages
+const GeneralForemanDashboard = lazy(() => import("./pages/general-foreman/GeneralForemanDashboard"));
+const CrewOversight = lazy(() => import("./pages/general-foreman/CrewOversight"));
+const GeneralForemanSafetyCompliance = lazy(() => import("./pages/general-foreman/GeneralForemanSafetyCompliance"));
+const GeneralForemanEquipmentLogs = lazy(() => import("./pages/general-foreman/GeneralForemanEquipmentLogs"));
+
+// Safety Officer pages
+const SafetyOfficerDashboard = lazy(() => import("./pages/safety-officer/SafetyOfficerDashboard"));
+
+// Form pages
+const RequestTimeOff = lazy(() => import("./pages/forms/RequestTimeOff"));
+const DVIRForm = lazy(() => import("./pages/forms/DVIRForm"));
 const DailyEquipmentInspectionForm = lazy(
-  () => import("./pages/DailyEquipmentInspectionForm")
+  () => import("./pages/forms/DailyEquipmentInspectionForm")
 );
-const DailyJSAForm = lazy(() => import("./pages/DailyJSAForm"));
-
-// Forms history pages
-const FormHistory = lazy(() => import("./pages/FormHistory"));
-const DVIRHistory = lazy(() => import("./pages/DVIRHistory"));
+const DailyJSAForm = lazy(() => import("./pages/forms/DailyJSAForm"));
+const FormHistory = lazy(() => import("./pages/forms/FormHistory"));
+const DVIRHistory = lazy(() => import("./pages/forms/DVIRHistory"));
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -266,6 +278,102 @@ function AnimatedRoutes() {
                 <PageWrapper>
                   <ProtectedRoute requireMechanicAccess={true}>
                     <MechanicEquipmentCenter />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            {/* Mechanic Fleet & Equipment Center (Combined) */}
+            <Route
+              path="/mechanic/equipment-logs"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute requireMechanicAccess={true}>
+                    <MechanicEquipmentLogs />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            {/* General Foreman Dashboard */}
+            <Route
+              path="/general-foreman-dashboard"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute>
+                    <GeneralForemanDashboard />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            {/* Crew Oversight - General Foreman Job Tracker */}
+            <Route
+              path="/crew-oversight"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute>
+                    <CrewOversight />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            {/* General Foreman Safety Compliance */}
+            <Route
+              path="/general-foreman/safety-compliance"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute>
+                    <GeneralForemanSafetyCompliance />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            {/* General Foreman Equipment Logs */}
+            <Route
+              path="/general-foreman/equipment-logs"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute>
+                    <GeneralForemanEquipmentLogs />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            {/* Safety Officer Dashboard */}
+            <Route
+              path="/safety-officer-dashboard"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute>
+                    <SafetyOfficerDashboard />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            {/* Foreman Dashboard */}
+            <Route
+              path="/foreman-dashboard"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute>
+                    <ForemanDashboard />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            {/* Foreman Daily Reports */}
+            <Route
+              path="/foreman/daily-reports"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute>
+                    <ForemanDailyReports />
                   </ProtectedRoute>
                 </PageWrapper>
               }

@@ -11,9 +11,27 @@ import { logger } from "../lib/logger";
 
 type AuthMode = "login" | "signup";
 
+// Helper function to get the appropriate dashboard for each role
+const getRoleDashboard = (role: string | null): string => {
+  switch (role) {
+    case 'admin':
+      return '/admin';
+    case 'mechanic':
+      return '/mechanic-dashboard';
+    case 'general_foreman':
+      return '/general-foreman-dashboard';
+    case 'safety_officer':
+      return '/safety-officer-dashboard';
+    case 'foreman':
+      return '/foreman-dashboard';
+    default:
+      return '/dashboard';
+  }
+};
+
 export default function Home() {
   const navigate = useNavigate();
-  const { session, isAdmin, hasMechanicAccess } = useAuth();
+  const { session, role } = useAuth();
   const [mode, setMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -59,15 +77,11 @@ export default function Home() {
   // Redirect to appropriate dashboard based on user role
   useEffect(() => {
     if (session) {
-      if (hasMechanicAccess && !isAdmin) {
-        logger.info("Mechanic session detected, redirecting to mechanic dashboard");
-        navigate("/mechanic-dashboard", { replace: true });
-      } else {
-        logger.info("Active session detected, redirecting to dashboard");
-        navigate("/dashboard", { replace: true });
-      }
+      const targetDashboard = getRoleDashboard(role);
+      logger.info(`Session detected (role: ${role}), redirecting to ${targetDashboard}`);
+      navigate(targetDashboard, { replace: true });
     }
-  }, [session, isAdmin, hasMechanicAccess, navigate]);
+  }, [session, role, navigate]);
 
   const handleModeSwitch = (newMode: AuthMode) => {
     logger.info(`Switching mode to: ${newMode}`);

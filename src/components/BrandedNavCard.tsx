@@ -5,7 +5,7 @@ import { ReactNode, useMemo, useState } from "react";
 import { getDeviceCapabilities } from "../lib/mobilePerf";
 import { ChevronRight } from "lucide-react";
 
-type CardVariant = "emerald" | "gold" | "ember";
+type CardVariant = "emerald" | "gold" | "ember" | "purple" | "redwhite" | "bluewhite";
 
 interface BrandedNavCardProps {
   title: string;
@@ -13,6 +13,8 @@ interface BrandedNavCardProps {
   icon?: ReactNode;
   to: string;
   variant?: CardVariant;
+  /** Mark as coming soon - disables link and shows badge */
+  comingSoon?: boolean;
 }
 
 // Premium gradient styles with enhanced icon treatment
@@ -84,6 +86,69 @@ const VARIANT_STYLES = {
     accent: "bg-gradient-to-r from-[#ff9350] to-[#e85a07]",
     arrow: "text-[#ff9d5f]/50",
   },
+  purple: {
+    outer: "bg-gradient-to-br from-[#2d1b4e]/80 via-[#1a0f2e] to-[#0a0513]",
+    outerHover: "hover:border-[#c084fc]/60 hover:shadow-[0_25px_45px_rgba(0,0,0,0.65)]",
+    innerStyle: {
+      background: "linear-gradient(90deg, rgba(10, 5, 19, 0.9) 0%, rgba(45, 27, 78, 1) 50%, rgba(26, 15, 46, 1) 100%)",
+    },
+    innerBorder: "border-[#c084fc]/35",
+    // Premium icon styling
+    iconGradient: "from-purple-500/30 via-purple-400/25 to-violet-500/30",
+    iconBorderGradient: "from-purple-400/70 via-purple-500/50 to-violet-400/70",
+    iconGlow: "shadow-[0_0_20px_rgba(192,132,252,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)]",
+    iconGlowHover: "group-hover:shadow-[0_0_28px_rgba(192,132,252,0.5),inset_0_1px_2px_rgba(255,255,255,0.15)]",
+    iconColor: "text-purple-300",
+    iconColorHover: "group-hover:text-purple-200",
+    title: "text-[#f3e8ff]",
+    description: "text-[#e9d5ff]/80",
+    glow: "group-hover:shadow-[0_0_35px_rgba(192,132,252,0.2)]",
+    shimmer: "from-purple-400/0 via-purple-400/35 to-purple-400/0",
+    accent: "bg-gradient-to-r from-[#c084fc] to-[#9333ea]",
+    arrow: "text-[#c084fc]/50",
+  },
+  redwhite: {
+    outer: "bg-gradient-to-br from-[#450a0a]/80 via-[#1c0a0a] to-[#0a0202]",
+    outerHover: "hover:border-[#fecaca]/60 hover:shadow-[0_25px_45px_rgba(0,0,0,0.65)]",
+    innerStyle: {
+      background: "linear-gradient(90deg, rgba(10, 2, 2, 0.9) 0%, rgba(69, 10, 10, 1) 50%, rgba(28, 10, 10, 1) 100%)",
+    },
+    innerBorder: "border-[#fecaca]/35",
+    // Premium icon styling
+    iconGradient: "from-red-500/30 via-red-400/25 to-rose-500/30",
+    iconBorderGradient: "from-red-400/70 via-red-300/50 to-rose-400/70",
+    iconGlow: "shadow-[0_0_20px_rgba(254,202,202,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)]",
+    iconGlowHover: "group-hover:shadow-[0_0_28px_rgba(254,202,202,0.5),inset_0_1px_2px_rgba(255,255,255,0.15)]",
+    iconColor: "text-red-200",
+    iconColorHover: "group-hover:text-red-100",
+    title: "text-[#fef2f2]",
+    description: "text-[#fecaca]/85",
+    glow: "group-hover:shadow-[0_0_35px_rgba(254,202,202,0.2)]",
+    shimmer: "from-red-300/0 via-red-300/35 to-red-300/0",
+    accent: "bg-gradient-to-r from-[#fecaca] to-[#dc2626]",
+    arrow: "text-[#fecaca]/50",
+  },
+  bluewhite: {
+    outer: "bg-gradient-to-br from-[#0a1628]/80 via-[#0a1020] to-[#020408]",
+    outerHover: "hover:border-[#bfdbfe]/60 hover:shadow-[0_25px_45px_rgba(0,0,0,0.65)]",
+    innerStyle: {
+      background: "linear-gradient(90deg, rgba(2, 4, 8, 0.9) 0%, rgba(30, 64, 175, 1) 50%, rgba(15, 23, 42, 1) 100%)",
+    },
+    innerBorder: "border-[#bfdbfe]/35",
+    // Premium icon styling
+    iconGradient: "from-blue-500/30 via-blue-400/25 to-sky-500/30",
+    iconBorderGradient: "from-blue-400/70 via-blue-300/50 to-sky-400/70",
+    iconGlow: "shadow-[0_0_20px_rgba(191,219,254,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)]",
+    iconGlowHover: "group-hover:shadow-[0_0_28px_rgba(191,219,254,0.5),inset_0_1px_2px_rgba(255,255,255,0.15)]",
+    iconColor: "text-blue-200",
+    iconColorHover: "group-hover:text-blue-100",
+    title: "text-[#f0f9ff]",
+    description: "text-[#bfdbfe]/85",
+    glow: "group-hover:shadow-[0_0_35px_rgba(191,219,254,0.2)]",
+    shimmer: "from-blue-300/0 via-blue-300/35 to-blue-300/0",
+    accent: "bg-gradient-to-r from-[#bfdbfe] to-[#2563eb]",
+    arrow: "text-[#bfdbfe]/50",
+  },
 };
 
 /**
@@ -101,6 +166,7 @@ export default function BrandedNavCard({
   icon,
   to,
   variant = "emerald",
+  comingSoon = false,
 }: BrandedNavCardProps) {
   const selected = VARIANT_STYLES[variant] ?? VARIANT_STYLES.emerald;
   const [isHovered, setIsHovered] = useState(false);
@@ -109,30 +175,48 @@ export default function BrandedNavCard({
   const caps = useMemo(() => getDeviceCapabilities(), []);
   
   const canAnimate = !caps.prefersReducedMotion;
-  const canHover = !caps.isMobile && canAnimate;
+  const canHover = !caps.isMobile && canAnimate && !comingSoon;
   const isMobile = caps.isMobile;
 
-  return (
-    <Link 
-      to={to}
-      onMouseEnter={() => canHover && setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className="block touch-manipulation"
-    >
+  // Common event handlers
+  const mouseHandlers = {
+    onMouseEnter: () => canHover && setIsHovered(true),
+    onMouseLeave: () => setIsHovered(false),
+  };
+
+  // Render content
+  const cardContent = (
+    <>
       <motion.div
         className="group relative"
         whileHover={canHover ? { y: -3, scale: 1.02 } : undefined}
         whileTap={canAnimate ? { scale: 0.97 } : undefined}
         transition={{ type: "spring", stiffness: 400, damping: 25 }}
       >
+        {/* Coming Soon Badge */}
+        {comingSoon && (
+          <div className="absolute -top-1 -right-1 z-20">
+            <div className={cn(
+              "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
+              "bg-gradient-to-r from-slate-800/95 to-slate-900/95",
+              "border border-slate-500/40",
+              "text-slate-300 shadow-lg",
+              "backdrop-blur-sm"
+            )}>
+              Coming Soon
+            </div>
+          </div>
+        )}
+
         {/* Outer wrapper with gradient border - RESTORED ORIGINAL STYLING */}
         <div
           className={cn(
             "relative w-full p-[2px] rounded-2xl overflow-hidden shadow-lg transition-all duration-300 ease-out",
             selected.outer,
-            selected.outerHover,
-            selected.glow,
-            isMobile && "active:scale-[0.98] active:opacity-95"
+            !comingSoon && selected.outerHover,
+            !comingSoon && selected.glow,
+            comingSoon && "opacity-50 grayscale-[30%]",
+            isMobile && !comingSoon && "active:scale-[0.98] active:opacity-95"
           )}
         >
           {/* Animated shimmer overlay - desktop only */}
@@ -273,6 +357,28 @@ export default function BrandedNavCard({
           )}
         </div>
       </motion.div>
+    </>
+  );
+
+  // Render with appropriate wrapper
+  if (comingSoon) {
+    return (
+      <div 
+        className="block touch-manipulation cursor-not-allowed"
+        {...mouseHandlers}
+      >
+        {cardContent}
+      </div>
+    );
+  }
+
+  return (
+    <Link 
+      to={to} 
+      className="block touch-manipulation"
+      {...mouseHandlers}
+    >
+      {cardContent}
     </Link>
   );
 }

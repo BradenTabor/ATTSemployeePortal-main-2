@@ -1,45 +1,28 @@
-import { useCallback, memo, useMemo, Suspense, lazy, useState, useEffect } from 'react';
+import { useCallback, memo, useMemo, Suspense, lazy, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ScrollReveal } from '../motion';
 import {
-  LogOut,
-  Calendar,
-  FileText,
-  Shield,
-  Wrench,
   RefreshCw,
   Inbox,
   AlertTriangle,
-  Layers,
   Briefcase,
-  ChevronDown,
 } from 'lucide-react';
 import { DashboardAvatar } from '../components/dashboard/DashboardAvatar';
+import ProfileBar from '../components/ProfileBar';
 import { useAuth } from '../contexts/AuthContext';
 import { useUserAssignedJobs } from '../hooks/jobs';
 import DashboardLayout from '../layouts/DashboardLayout';
-import AdminPremiumScaffold, {
-  type AdminHeroConfig,
-} from '../components/admin/AdminPremiumScaffold';
 import { PERSISTENCE_KEYS } from '../lib/persistence';
+import { TextEffect } from '../components/ui/TextEffect';
+import { getDeviceCapabilities } from '../lib/mobilePerf';
 import { ExpandableSection } from '../components/dashboard/ExpandableSection';
-import { QuickActionsFAB, type QuickActionLink } from '../components/dashboard/QuickActionsFAB';
 import { CompactJobCard } from '../components/jobs';
 import {
-  getDeviceCapabilities,
-  getQualitySettings,
-  scheduleIdleWork,
   perfMark,
   perfMeasure,
   initLongTaskObserver,
 } from '../lib/mobilePerf';
-import {
-  calculateJobProgress,
-  calculateSpanProgress,
-  getSpanProgressColors,
-} from '../lib/jobProgressUtils';
-import { cn } from '../lib/utils';
 import type { JobProgressTracker } from '../types/jobs';
 
 // Lazy-loaded components for code splitting
@@ -187,207 +170,19 @@ interface AssignedJobsSectionProps {
   onRefetch: () => void;
 }
 
-// Stacked job card for dashboard
-const DashboardStackedCard = memo(function DashboardStackedCard({
-  jobs,
-}: {
-  jobs: JobProgressTracker[];
-}) {
-  const navigate = useNavigate();
-  const [isExpanded, setIsExpanded] = useState(false);
-  const primaryJob = jobs[0];
-
-  const handleJobClick = useCallback((jobId: string) => {
-    navigate(`/assigned-jobs?job=${jobId}`);
-  }, [navigate]);
-
-  return (
-    <motion.div
-      layout
-      className="relative rounded-2xl overflow-hidden"
-    >
-      {/* Stacked card shadows */}
-      {!isExpanded && jobs.length > 1 && (
-        <>
-          {jobs.length >= 3 && (
-            <div 
-              className="absolute inset-x-2 top-2 h-full rounded-2xl border border-emerald-500/10 bg-[#041510]/40"
-              style={{ transform: 'translateY(6px)' }}
-            />
-          )}
-          <div 
-            className="absolute inset-x-1 top-1 h-full rounded-2xl border border-emerald-500/15 bg-[#041510]/60"
-            style={{ transform: 'translateY(3px)' }}
-          />
-        </>
-      )}
-      
-      {/* Main card */}
-      <div className="relative rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-[#041510]/90 via-[#020d09]/95 to-[#010604] overflow-hidden">
-        {/* Header - always visible */}
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full text-left p-3 md:p-4"
-          style={{ background: 'radial-gradient(circle at 50% 50%, rgba(5, 77, 53, 0.6) 0%, rgba(10, 10, 10, 1) 100%)' }}
-        >
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30">
-                  <Layers className="w-3 h-3 text-emerald-400" />
-                  <span className="text-xs font-bold text-emerald-300">{jobs.length}</span>
-                </div>
-                <span className="text-[10px] text-white/40 uppercase tracking-wider">Stacked</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Briefcase className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-                <span className="text-sm font-semibold text-white truncate">{primaryJob.job_name}</span>
-                <span className="text-xs text-white/40">+{jobs.length - 1}</span>
-              </div>
-            </div>
-            <motion.div
-              animate={{ rotate: isExpanded ? 180 : 0 }}
-              className="p-1.5 rounded-lg bg-white/5"
-            >
-              <ChevronDown className="w-4 h-4 text-white/50" />
-            </motion.div>
-          </div>
-        </button>
-        
-        {/* Expanded content */}
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            className="border-t border-white/10 p-3 space-y-2"
-          >
-            {jobs.map((job) => {
-              // Calculate progress for this job
-              const isSpanBased = job.tracking_type === 'job_progress';
-              let progressPercent = 0;
-              let progressColors = null;
-              
-              if (isSpanBased) {
-                const progressUpdates = job.progress_updates || [];
-                const totalSpans = progressUpdates.reduce((sum, u) => sum + (u.spans_completed || 0), 0);
-                const totalFeet = progressUpdates.reduce((sum, u) => sum + (u.total_feet_completed || 0), 0);
-                const spanProgress = calculateSpanProgress(
-                  totalSpans,
-                  totalFeet,
-                  job.estimated_total_spans,
-                  job.estimated_total_feet,
-                  job.span_progress_metric || 'spans'
-                );
-                progressPercent = spanProgress.percentage;
-                progressColors = getSpanProgressColors(progressPercent);
-              } else {
-                const timelineProgress = calculateJobProgress(job.start_date, job.end_date);
-                progressPercent = timelineProgress.percentage;
-              }
-              
-              const isExceeded = !isSpanBased && progressPercent > 100;
-              
-              return (
-                <button
-                  key={job.id}
-                  onClick={() => handleJobClick(job.id)}
-                  className="w-full text-left p-2.5 rounded-xl border border-emerald-500/20 bg-[#041510]/50 hover:border-emerald-400/40 transition-colors"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <Briefcase 
-                        className="w-3 h-3 flex-shrink-0"
-                        style={{ color: isSpanBased ? 'rgb(231, 114, 4)' : 'rgb(0, 219, 77)' }}
-                      />
-                      <span className="text-sm text-white truncate">{job.job_name}</span>
-                    </div>
-                    <div
-                      className={cn(
-                        'flex-shrink-0 px-2 py-0.5 rounded-md text-xs font-bold tabular-nums',
-                        isSpanBased && progressColors
-                          ? cn(progressColors.bg, 'border', progressColors.border, progressColors.text)
-                          : isExceeded
-                            ? 'bg-red-500/15 border border-red-500/30 text-red-400'
-                            : 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400'
-                      )}
-                    >
-                      {progressPercent}%
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </motion.div>
-        )}
-      </div>
-    </motion.div>
-  );
-});
-
 const AssignedJobsSection = memo(function AssignedJobsSection({
   jobs,
   loading,
   error,
   onRefetch,
 }: AssignedJobsSectionProps) {
-  const quality = getQualitySettings();
-  const [visibleCount, setVisibleCount] = useState(5);
-
-  // Group jobs by job_group_id
-  type DisplayItem = 
-    | { type: 'group'; groupId: string; jobs: JobProgressTracker[] }
-    | { type: 'job'; job: JobProgressTracker };
-  
-  const displayItems = useMemo<DisplayItem[]>(() => {
-    const groupMap = new Map<string, JobProgressTracker[]>();
-    const ungrouped: JobProgressTracker[] = [];
-    
-    jobs.forEach(job => {
-      if (job.job_group_id) {
-        const existing = groupMap.get(job.job_group_id) || [];
-        existing.push(job);
-        groupMap.set(job.job_group_id, existing);
-      } else {
-        ungrouped.push(job);
-      }
-    });
-    
-    const items: DisplayItem[] = [];
-    groupMap.forEach((groupJobs, groupId) => {
-      items.push({ type: 'group', groupId, jobs: groupJobs });
-    });
-    ungrouped.forEach(job => {
-      items.push({ type: 'job', job });
-    });
-    
-    return items;
-  }, [jobs]);
-
-  const hasMoreItems = displayItems.length > visibleCount;
-
-  // Progressive rendering: render first batch immediately, rest on idle
-  useEffect(() => {
-    if (displayItems.length <= 5) {
-      queueMicrotask(() => setVisibleCount(displayItems.length));
-      return;
-    }
-
-    queueMicrotask(() => setVisibleCount(5));
-
-    const cancel = scheduleIdleWork(() => {
-      setVisibleCount(displayItems.length);
-    }, { timeout: 200 });
-
-    return cancel;
-  }, [displayItems.length]);
-
-  // Virtualization threshold check
-  const shouldVirtualize = displayItems.length > quality.virtualizationThreshold;
+  const caps = getDeviceCapabilities();
+  const enableAnimations = !caps.prefersReducedMotion && !caps.isMobile;
 
   if (loading) {
     return (
-      <div className="space-y-3">
-        {Array.from({ length: 2 }).map((_, i) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+        {Array.from({ length: 3 }).map((_, i) => (
           <JobCardSkeleton key={`job-skeleton-${i}`} />
         ))}
       </div>
@@ -402,114 +197,147 @@ const AssignedJobsSection = memo(function AssignedJobsSection({
     return <EmptyJobsState />;
   }
 
-  // Render visible items (progressive or virtualized)
-  const visibleItems = shouldVirtualize ? displayItems.slice(0, visibleCount) : displayItems;
-
   return (
-    <div className="space-y-3">
-      {visibleItems.map((item) => {
-        if (item.type === 'group') {
-          return (
-            <DashboardStackedCard 
-              key={`group-${item.groupId}`} 
-              jobs={item.jobs} 
+    <motion.article
+      initial={{ opacity: 0, y: 16, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.5, type: "spring", stiffness: 120, damping: 20 }}
+      className="relative overflow-hidden rounded-xl sm:rounded-2xl md:rounded-[28px] border border-emerald-400/30 shadow-[0_4px_30px_-10px_rgba(16,185,129,0.35),0_2px_12px_-6px_rgba(0,0,0,0.4)] sm:shadow-[0_8px_60px_-15px_rgba(16,185,129,0.4),0_4px_20px_-8px_rgba(0,0,0,0.5)]"
+      style={{
+        background: 'linear-gradient(145deg, rgba(4, 30, 21, 0.98) 0%, rgba(2, 15, 10, 1) 50%, rgba(1, 8, 5, 1) 100%)',
+      }}
+    >
+      {/* Outer glow border effect - reduced on mobile */}
+      <div className="absolute -inset-[1px] rounded-[inherit] bg-gradient-to-br from-emerald-400/40 via-emerald-500/20 to-emerald-600/30 opacity-40 sm:opacity-50 blur-[1px] pointer-events-none" />
+      
+      {/* Animated rotating gradient ring - only with animations */}
+      {enableAnimations && (
+        <motion.div
+          className="absolute -inset-[2px] rounded-[inherit] opacity-40 pointer-events-none"
+          style={{
+            background: 'conic-gradient(from 0deg, transparent 0%, rgba(16, 185, 129, 0.5) 10%, transparent 25%, transparent 50%, rgba(52, 211, 153, 0.3) 60%, transparent 75%)',
+          }}
+          animate={{ rotate: 360 }}
+          transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
+        />
+      )}
+      
+      {/* Inner container with solid bg */}
+      <div 
+        className="relative rounded-[inherit] overflow-hidden"
+        style={{
+          background: 'linear-gradient(145deg, rgba(4, 30, 21, 0.99) 0%, rgba(2, 15, 10, 1) 50%, rgba(1, 8, 5, 1) 100%)',
+        }}
+      >
+        {/* Premium top shine line */}
+        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-300/60 to-transparent" />
+        
+        {/* Floating orbs - only on desktop */}
+        {enableAnimations && (
+          <>
+            <motion.div
+              className="absolute w-48 h-48 rounded-full pointer-events-none"
+              style={{
+                background: 'radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, transparent 70%)',
+                top: '-15%',
+                left: '-10%',
+                filter: 'blur(30px)',
+              }}
+              animate={{ 
+                x: [0, 15, 0],
+                y: [0, 10, 0],
+                scale: [1, 1.1, 1],
+              }}
+              transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
             />
-          );
-        } else {
-          return (
-            <NavigableJobCard key={item.job.id} job={item.job} />
-          );
-        }
-      })}
-      
-      {/* Show loading indicator for remaining items */}
-      {hasMoreItems && !shouldVirtualize && (
-        <div className="text-center py-2">
-          <span className="text-xs text-white/40">Loading more...</span>
+            <motion.div
+              className="absolute w-36 h-36 rounded-full pointer-events-none"
+              style={{
+                background: 'radial-gradient(circle, rgba(52, 211, 153, 0.15) 0%, transparent 70%)',
+                bottom: '-10%',
+                right: '-5%',
+                filter: 'blur(25px)',
+              }}
+              animate={{ 
+                x: [0, -10, 0],
+                y: [0, -8, 0],
+                scale: [1, 1.12, 1],
+              }}
+              transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+            />
+          </>
+        )}
+        
+        {/* Grid pattern overlay */}
+        <div 
+          className="absolute inset-0 opacity-[0.02] pointer-events-none"
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(16, 185, 129, 0.5) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(16, 185, 129, 0.5) 1px, transparent 1px)
+            `,
+            backgroundSize: '35px 35px',
+          }}
+        />
+        
+        {/* Corner accent decorations - hidden on smallest screens */}
+        <div className="hidden sm:block absolute top-2 sm:top-2.5 right-2 sm:right-2.5 w-8 sm:w-12 h-8 sm:h-12 pointer-events-none opacity-25 sm:opacity-30">
+          <div className="absolute top-0 right-0 w-4 sm:w-6 h-[1px] bg-gradient-to-l from-emerald-400/70 to-transparent" />
+          <div className="absolute top-0 right-0 w-[1px] h-4 sm:h-6 bg-gradient-to-b from-emerald-400/70 to-transparent" />
         </div>
-      )}
-      
-      {/* Virtualization notice */}
-      {shouldVirtualize && displayItems.length > visibleCount && (
-        <button
-          onClick={() => setVisibleCount((prev) => Math.min(prev + 10, displayItems.length))}
-          className="w-full py-2 text-center text-xs text-emerald-400/70 hover:text-emerald-400 transition-colors min-h-[44px]"
-        >
-          Show more ({displayItems.length - visibleCount} remaining)
-        </button>
-      )}
-    </div>
-  );
-});
-
-// ============================================================================
-// SIDE PANEL - Memoized to prevent re-renders
-// ============================================================================
-
-interface SidePanelProps {
-  email: string | undefined;
-  role: string | null;
-  quickLinksCount: number;
-  assignedJobsCount: number;
-  onSignOut: () => void;
-}
-
-const SidePanel = memo(function SidePanel({
-  email,
-  role,
-  quickLinksCount,
-  assignedJobsCount,
-  onSignOut,
-}: SidePanelProps) {
-  const caps = getDeviceCapabilities();
-  
-  return (
-    <div className="space-y-6">
-      {/* Profile card with sign out */}
-      <div className="rounded-3xl border border-white/10 bg-[#03150f]/80 p-5">
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-xs uppercase tracking-[0.35em] text-emerald-200/70">
-              Profile Snapshot
-            </p>
-            <p className="text-lg font-semibold text-white mt-2 truncate">
-              {email}
-            </p>
-            <p className="text-sm text-white/60 capitalize">{role}</p>
-          </div>
-          <motion.button
-            whileHover={caps.prefersReducedMotion ? undefined : { scale: 1.02 }}
-            whileTap={caps.prefersReducedMotion ? undefined : { scale: 0.96 }}
-            onClick={onSignOut}
-            className="flex-shrink-0 inline-flex items-center gap-2 rounded-full bg-[#ff0000] px-3 py-2 text-xs font-semibold border-4 border-[rgba(255,214,214,0.55)] hover:bg-red-600 transition-colors min-h-[44px]"
-          >
-            <LogOut className="w-4 h-4" />
-            Sign out
-          </motion.button>
+        <div className="hidden sm:block absolute bottom-2 sm:bottom-2.5 left-2 sm:left-2.5 w-8 sm:w-12 h-8 sm:h-12 pointer-events-none opacity-25 sm:opacity-30">
+          <div className="absolute bottom-0 left-0 w-4 sm:w-6 h-[1px] bg-gradient-to-r from-emerald-400/70 to-transparent" />
+          <div className="absolute bottom-0 left-0 w-[1px] h-4 sm:h-6 bg-gradient-to-t from-emerald-400/70 to-transparent" />
         </div>
-      </div>
 
-      {/* Quick stats - desktop side panel */}
-      <div className="hidden lg:block rounded-3xl border border-white/10 bg-[#03150f]/80 p-5 space-y-4">
-        <p className="text-xs uppercase tracking-[0.35em] text-emerald-200/70">
-          Quick Stats
-        </p>
-        <div className="space-y-3">
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-white/60">Quick Links</span>
-            <span className="text-sm font-semibold text-emerald-400">
-              {quickLinksCount}
-            </span>
+        {/* Content container - optimized for mobile */}
+        <div className="relative p-3 sm:p-4 md:p-6">
+          {/* Compact header row */}
+          <div className="flex items-center justify-between gap-2 mb-2.5 sm:mb-4">
+            <div className="flex items-center gap-1.5 sm:gap-2.5">
+              <motion.div 
+                className="relative"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.15, type: "spring", stiffness: 200 }}
+              >
+                {/* Badge glow - smaller on mobile */}
+                <div className="absolute -inset-0.5 sm:-inset-1 rounded-full bg-emerald-400/20 blur-sm sm:blur-md" />
+                <span className="relative inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border border-emerald-300/50 text-[9px] sm:text-xs font-bold tracking-[0.15em] sm:tracking-[0.25em] text-emerald-100 bg-gradient-to-r from-emerald-500/25 via-emerald-400/15 to-emerald-500/25 shadow-md shadow-emerald-500/15 backdrop-blur-sm">
+                  <motion.div
+                    animate={enableAnimations ? { rotate: [0, 15, -15, 0] } : undefined}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  >
+                    <Briefcase className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 text-emerald-200" />
+                  </motion.div>
+                  <span className="hidden xs:inline">ACTIVE</span> JOBS
+                </span>
+              </motion.div>
+              
+              {/* Compact count badge */}
+              <div className="flex items-center gap-1 text-[9px] sm:text-xs text-emerald-200/50 font-medium">
+                <div className="w-1 h-1 rounded-full bg-emerald-400/60 animate-pulse" />
+                <span className="tabular-nums">{jobs.length}</span>
+              </div>
+            </div>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-white/60">Active Jobs</span>
-            <span className="text-sm font-semibold text-emerald-400">
-              {assignedJobsCount}
-            </span>
+
+          {/* Jobs Grid - tighter spacing on mobile */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4">
+            {jobs.map((job, index) => (
+              <motion.div
+                key={job.id}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.03, duration: 0.25 }}
+              >
+                <NavigableJobCard job={job} />
+              </motion.div>
+            ))}
           </div>
         </div>
       </div>
-    </div>
+    </motion.article>
   );
 });
 
@@ -519,7 +347,7 @@ const SidePanel = memo(function SidePanel({
 
 function Dashboard() {
   const navigate = useNavigate();
-  const { user, signOut, setSession, role, isAdmin, hasMechanicAccess, fullName } = useAuth();
+  const { user, signOut, setSession, role, fullName } = useAuth();
 
   // Initialize long task observer in dev mode
   useEffect(() => {
@@ -552,121 +380,142 @@ function Dashboard() {
     }
   }, [navigate, setSession, signOut]);
 
-  // Memoized quick links
-  const quickLinks: QuickActionLink[] = useMemo(
-    () => [
-      {
-        label: 'View Forms History',
-        description: 'Review and export previous submissions',
-        icon: FileText,
-        path: '/forms-history',
-      },
-      ...(isAdmin
-        ? [
-            {
-              label: 'Manage RTO Requests',
-              description: 'Approve or deny time-off requests',
-              icon: Calendar,
-              path: '/admin/rto',
-              iconBg: 'bg-[#f6b96b]/15 border border-[#f6b96b]/30',
-              iconColor: 'text-[#ffd9a6]',
-            },
-            {
-              label: 'Manage App Users',
-              description: 'Update roles and permissions',
-              icon: Shield,
-              path: '/admin/users',
-              iconBg: 'bg-[#f7e4bd]/10 border border-[#f4c979]/30',
-              iconColor: 'text-[#f4c979]',
-            },
-          ]
-        : []),
-      ...(hasMechanicAccess
-        ? [
-            {
-              label: 'DVIR Control Center',
-              description: 'Inspect DVIR submissions',
-              icon: Wrench,
-              path: '/mechanic-dvir-center',
-              iconBg: 'bg-[#ff9350]/10 border border-[#ff9350]/30',
-              iconColor: 'text-[#ffb48a]',
-            },
-          ]
-        : []),
-    ],
-    [isAdmin, hasMechanicAccess]
-  );
-
-  // Memoized hero config
-  const heroConfig = useMemo<AdminHeroConfig>(
-    () => ({
-      heading: `Welcome back, ${displayName}`,
-    }),
-    [displayName]
-  );
-
-  // Memoized subtitle for jobs section
-  const jobsSubtitle = useMemo(
-    () => `${assignedJobs.length} active assignment${assignedJobs.length !== 1 ? 's' : ''}`,
-    [assignedJobs.length]
-  );
-
-  // Memoized side panel content
-  const sidePanelContent = useMemo(
-    () => (
-      <SidePanel
-        email={user?.email}
-        role={role}
-        quickLinksCount={quickLinks.length}
-        assignedJobsCount={assignedJobs.length}
-        onSignOut={handleSignOut}
-      />
-    ),
-    [user?.email, role, quickLinks.length, assignedJobs.length, handleSignOut]
-  );
+  // Device capabilities for animation decisions
+  const caps = useMemo(() => getDeviceCapabilities(), []);
+  const enableAnimations = !caps.prefersReducedMotion && !caps.isMobile;
 
   return (
     <DashboardLayout title="Employee Hub">
-      <AdminPremiumScaffold
-        hero={heroConfig}
-        theme="emerald"
-        sidePanel={sidePanelContent}
-      >
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pb-4 pt-6 sm:pt-8">
+        {/* Premium Animated Welcome Section with Glass Backdrop */}
+        <div className="mb-6 md:mb-8">
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="relative"
+          >
+            {/* Glass backdrop container */}
+            <div 
+              className="relative overflow-hidden rounded-2xl md:rounded-3xl border border-white/[0.12] shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.1)]"
+              style={{
+                background: 'linear-gradient(145deg, rgba(16, 185, 129, 0.1) 0%, rgba(4, 30, 21, 0.65) 40%, rgba(0, 0, 0, 0.75) 100%)',
+                backdropFilter: 'blur(24px) saturate(1.6)',
+                WebkitBackdropFilter: 'blur(24px) saturate(1.6)',
+              }}
+            >
+              {/* Realistic glass gloss - diagonal shine reflection */}
+              <div 
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background: 'linear-gradient(125deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 25%, transparent 50%, transparent 100%)',
+                }}
+              />
+              
+              {/* Secondary gloss layer - softer highlight */}
+              <div 
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background: 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 40%)',
+                }}
+              />
+              
+              {/* Inner emerald glow */}
+              <div 
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background: 'radial-gradient(ellipse at 25% 0%, rgba(16, 185, 129, 0.2) 0%, transparent 45%)',
+                }}
+              />
+              
+              {/* Specular highlight - corner gleam */}
+              <div 
+                className="absolute top-0 left-0 w-32 h-32 pointer-events-none"
+                style={{
+                  background: 'radial-gradient(circle at 20% 20%, rgba(255,255,255,0.12) 0%, transparent 50%)',
+                }}
+              />
+              
+              {/* Top edge highlight - brighter for glass effect */}
+              <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-white/5 via-white/25 to-white/5 rounded-t-[inherit]" />
+              
+              {/* Left edge highlight */}
+              <div className="absolute top-0 left-0 bottom-0 w-[1px] bg-gradient-to-b from-white/20 via-white/5 to-transparent rounded-l-[inherit]" />
+              
+              {/* Content area */}
+              <div className="relative px-5 py-4 md:px-7 md:py-5">
+                <div className="flex items-center gap-4">
+                  {/* Subtle gradient line accent */}
+                  <motion.div
+                    initial={{ scaleY: 0, opacity: 0 }}
+                    animate={{ scaleY: 1, opacity: 1 }}
+                    transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                    className="w-1 h-12 md:h-14 rounded-full bg-gradient-to-b from-emerald-400 via-emerald-500 to-emerald-600 origin-top flex-shrink-0"
+                    style={{
+                      boxShadow: '0 0 20px rgba(16, 185, 129, 0.5), 0 0 40px rgba(16, 185, 129, 0.25)',
+                    }}
+                  />
+                  
+                  {/* Text content */}
+                  <div className="flex-1 min-w-0">
+                    {enableAnimations ? (
+                      <TextEffect
+                        as="h1"
+                        preset="blurSlide"
+                        per="char"
+                        delay={0.15}
+                        className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black tracking-tight"
+                        segmentWrapperClassName="bg-gradient-to-r from-white via-emerald-100 to-white/90 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(125,225,180,0.35)]"
+                      >
+                        {`Welcome back, ${displayName}`}
+                      </TextEffect>
+                    ) : (
+                      <h1 
+                        className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black tracking-tight bg-gradient-to-r from-white via-emerald-100 to-white/90 bg-clip-text text-transparent"
+                      >
+                        {`Welcome back, ${displayName}`}
+                      </h1>
+                    )}
+                    
+                    {/* Subtle tagline with fade-in */}
+                    <motion.p
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.5, delay: 0.7, ease: 'easeOut' }}
+                      className="mt-1 md:mt-1.5 text-xs sm:text-sm md:text-base text-emerald-300/40 font-medium tracking-wide"
+                    >
+                      Your command center awaits
+                    </motion.p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Bottom edge - subtle dark line for depth */}
+              <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-black/30 to-transparent" />
+              
+              {/* Right edge subtle shadow for 3D depth */}
+              <div className="absolute top-0 right-0 bottom-0 w-[1px] bg-gradient-to-b from-transparent via-black/20 to-transparent" />
+            </div>
+          </motion.div>
+        </div>
+
         {/* Mobile-first Bento layout */}
         <div className="w-full space-y-4 md:space-y-6">
-          {/* Section 1: Announcements */}
+          {/* Section 1: Announcements - Clean direct display */}
           <ScrollReveal variant="fadeUp" delay={0}>
-            <ExpandableSection
-              id="dashboard-announcements"
-              title="Latest Announcements"
-              subtitle="Company news and updates"
-              icon={<DashboardAvatar variant="announcements" className="w-8 h-8 md:w-10 md:h-10" />}
-              storageKey={PERSISTENCE_KEYS.ANNOUNCEMENTS}
-              defaultOpen={true}
-            >
-              <Suspense fallback={<AnnouncementCardSkeleton />}>
-                <DashboardAnnouncementCard />
-              </Suspense>
-            </ExpandableSection>
+            <Suspense fallback={<AnnouncementCardSkeleton />}>
+              <DashboardAnnouncementCard />
+            </Suspense>
           </ScrollReveal>
 
-          {/* Section 2: Assigned Jobs - Isolated with progressive rendering */}
+          {/* Section 2: Assigned Jobs - Clean floating grid display */}
           <ScrollReveal variant="fadeUp" delay={0.1}>
-            <ExpandableSection
-              id="dashboard-assigned-jobs"
-              title="Your Assigned Jobs"
-              subtitle={jobsSubtitle}
-              icon={<DashboardAvatar variant="jobs" className="w-8 h-8 md:w-10 md:h-10" />}
-              storageKey={PERSISTENCE_KEYS.ASSIGNED_JOBS}
-              defaultOpen={true}
-            >
-              <AssignedJobsSection
-                jobs={assignedJobs}
-                loading={jobsLoading}
-                error={jobsError}
-                onRefetch={refetchJobs}
-              />
-            </ExpandableSection>
+            <AssignedJobsSection
+              jobs={assignedJobs}
+              loading={jobsLoading}
+              error={jobsError}
+              onRefetch={refetchJobs}
+            />
           </ScrollReveal>
 
           {/* Section 3: All Tools & Features */}
@@ -684,11 +533,18 @@ function Dashboard() {
               </Suspense>
             </ExpandableSection>
           </ScrollReveal>
-        </div>
-      </AdminPremiumScaffold>
 
-      {/* Quick Actions FAB */}
-      <QuickActionsFAB links={quickLinks} />
+          {/* Profile Bar - Bottom section */}
+          <ScrollReveal variant="fadeUp" delay={0.25}>
+            <ProfileBar
+              email={user?.email}
+              role={role}
+              onSignOut={handleSignOut}
+              theme="emerald"
+            />
+          </ScrollReveal>
+        </div>
+      </div>
     </DashboardLayout>
   );
 }

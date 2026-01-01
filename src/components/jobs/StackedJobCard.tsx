@@ -5,6 +5,7 @@ import {
   ChevronDown, 
   Briefcase, 
   MapPin,
+  Lock,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { 
@@ -12,6 +13,7 @@ import {
   calculateSpanProgress, 
   getSpanProgressColors 
 } from '../../lib/jobProgressUtils';
+import { useCanViewJobProgress } from '../../hooks/useCanViewJobProgress';
 import type { JobProgressTracker } from '../../types/jobs';
 
 interface StackedJobCardProps {
@@ -38,6 +40,7 @@ const StackedJobItem = memo(function StackedJobItem({
   isSelected: boolean;
   onSelect: () => void;
 }) {
+  const { canViewProgress } = useCanViewJobProgress();
   const isSpanBased = job.tracking_type === 'job_progress';
 
   const spanProgress = useMemo(() => {
@@ -92,7 +95,7 @@ const StackedJobItem = memo(function StackedJobItem({
                 isSelected ? 'text-emerald-300' : isExceeded && !isSpanBased ? 'text-red-400' : ''
               )}
               style={{
-                color: !isSelected && (isSpanBased ? 'rgb(231, 114, 4)' : isExceeded ? undefined : 'rgb(0, 219, 77)')
+                color: isSelected ? undefined : (isSpanBased ? 'rgb(231, 114, 4)' : isExceeded ? undefined : 'rgb(0, 219, 77)')
               }}
             />
             <h4 className="font-semibold text-[12px] sm:text-sm text-white truncate leading-snug flex-1 min-w-0">
@@ -107,18 +110,24 @@ const StackedJobItem = memo(function StackedJobItem({
           )}
         </div>
 
-        <div
-          className={cn(
-            'flex-shrink-0 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs font-bold tabular-nums',
-            isSpanBased && spanProgressColors
-              ? cn(spanProgressColors.bg, 'border', spanProgressColors.border, spanProgressColors.text)
-              : isExceeded
-                ? 'bg-red-500/15 border border-red-500/30 text-red-400'
-                : 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400'
-          )}
-        >
-          {isSpanBased && spanProgress ? spanProgress.percentage : progress.percentage}%
-        </div>
+        {canViewProgress ? (
+          <div
+            className={cn(
+              'flex-shrink-0 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs font-bold tabular-nums',
+              isSpanBased && spanProgressColors
+                ? cn(spanProgressColors.bg, 'border', spanProgressColors.border, spanProgressColors.text)
+                : isExceeded
+                  ? 'bg-red-500/15 border border-red-500/30 text-red-400'
+                  : 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400'
+            )}
+          >
+            {isSpanBased && spanProgress ? spanProgress.percentage : progress.percentage}%
+          </div>
+        ) : (
+          <div className="flex-shrink-0 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20">
+            <Lock className="w-3 h-3 text-emerald-400/60" />
+          </div>
+        )}
       </div>
     </motion.button>
   );
@@ -136,6 +145,7 @@ function StackedJobCardComponent({
   selectedJobId,
   className,
 }: StackedJobCardProps) {
+  const { canViewProgress } = useCanViewJobProgress();
   const [isExpanded, setIsExpanded] = useState(false);
   
   // Primary job is the first one in the stack
@@ -259,16 +269,22 @@ function StackedJobCardComponent({
             
             {/* Progress + Chevron */}
             <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
-              <div
-                className={cn(
-                  'px-1.5 py-0.5 sm:py-1 rounded-md sm:rounded-lg border text-[10px] sm:text-xs font-bold tabular-nums whitespace-nowrap',
-                  aggregateProgress.hasExceeded
-                    ? 'bg-red-500/15 border-red-500/30 text-red-400'
-                    : 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
-                )}
-              >
-                ~{aggregateProgress.averagePercentage}%
-              </div>
+              {canViewProgress ? (
+                <div
+                  className={cn(
+                    'px-1.5 py-0.5 sm:py-1 rounded-md sm:rounded-lg border text-[10px] sm:text-xs font-bold tabular-nums whitespace-nowrap',
+                    aggregateProgress.hasExceeded
+                      ? 'bg-red-500/15 border-red-500/30 text-red-400'
+                      : 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
+                  )}
+                >
+                  ~{aggregateProgress.averagePercentage}%
+                </div>
+              ) : (
+                <div className="px-1.5 py-0.5 sm:py-1 rounded-md sm:rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                  <Lock className="w-3 h-3 text-emerald-400/60" />
+                </div>
+              )}
               <motion.div
                 animate={{ rotate: isExpanded ? 180 : 0 }}
                 className="p-1 sm:p-1.5 rounded-md sm:rounded-lg bg-white/5 border border-white/10 flex items-center justify-center"
