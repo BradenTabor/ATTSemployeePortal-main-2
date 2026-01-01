@@ -88,34 +88,37 @@ export function JsaWizard({
 
   return (
     <div className="relative flex flex-col h-full overflow-hidden">
-      {/* Compact Header */}
+      {/* Premium Header - Mobile Optimized */}
       <div
-        className="flex-shrink-0 border-b border-white/10"
+        className="flex-shrink-0 border-b border-emerald-500/20"
         style={{
           background:
             "linear-gradient(180deg, rgba(5,30,18,0.98) 0%, rgba(0,15,8,0.95) 100%)",
         }}
       >
-        {/* Top bar */}
-        <div className="flex items-center justify-between px-4 py-2.5 sm:px-5">
-          <button
+        {/* Top bar - Enhanced for mobile visibility */}
+        <div className="flex items-center justify-between px-3 py-2 sm:px-5 sm:py-2.5 gap-2">
+          {/* Back Button - More visible */}
+          <motion.button
             type="button"
             onClick={onBack}
-            className="inline-flex items-center gap-1 text-sm text-white/60 hover:text-white transition-colors touch-manipulation"
+            whileTap={{ scale: 0.95 }}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg bg-white/5 border border-white/10 text-white/80 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all touch-manipulation active:bg-white/15"
           >
-            <ChevronLeft className="w-4 h-4" />
-            <span className="text-xs">Back</span>
-          </button>
+            <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="text-xs sm:text-sm font-medium">Back</span>
+          </motion.button>
 
-          <div className="flex items-center gap-2">
-            <h1 className="text-sm font-semibold text-white">{title}</h1>
+          {/* Center Title */}
+          <div className="flex items-center gap-2 flex-1 justify-center min-w-0">
+            <h1 className="text-xs sm:text-sm font-bold text-white truncate">{title}</h1>
             {isEditMode && (
               <span
                 className={cn(
-                  "px-1.5 py-0.5 rounded text-[9px] font-bold uppercase",
+                  "flex-shrink-0 px-1.5 py-0.5 rounded text-[8px] sm:text-[9px] font-bold uppercase tracking-wide",
                   status === "completed"
-                    ? "bg-emerald-500/20 text-emerald-300"
-                    : "bg-amber-500/20 text-amber-300"
+                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                    : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
                 )}
               >
                 {status}
@@ -123,14 +126,16 @@ export function JsaWizard({
             )}
           </div>
 
-          <button
+          {/* Edit My JSA's Button - Always visible, enhanced */}
+          <motion.button
             type="button"
             onClick={onOpenPicker}
-            className="inline-flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 transition-colors touch-manipulation"
+            whileTap={{ scale: 0.95 }}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/25 hover:border-emerald-400/40 transition-all touch-manipulation active:bg-emerald-500/30 shadow-sm shadow-emerald-900/20"
           >
-            <FolderOpen className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Load</span>
-          </button>
+            <FolderOpen className="w-4 h-4 flex-shrink-0" />
+            <span className="text-[10px] sm:text-xs font-semibold whitespace-nowrap">My JSA's</span>
+          </motion.button>
         </div>
 
         {/* Step Progress - Compact horizontal pills */}
