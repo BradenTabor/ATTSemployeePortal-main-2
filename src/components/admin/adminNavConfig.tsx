@@ -212,6 +212,7 @@ export const FOREMAN_NAV_CARDS: AdminNavCardConfig[] = [
     icon: <ClipboardList className="w-8 h-8 text-[#bfdbfe]" />,
     to: "/foreman/daily-reports",
     variant: "bluewhite",
+    comingSoon: true,
   },
 ];
 
