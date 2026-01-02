@@ -17,7 +17,7 @@ import { PERSISTENCE_KEYS } from '../lib/persistence';
 import { TextEffect } from '../components/ui/TextEffect';
 import { getDeviceCapabilities } from '../lib/mobilePerf';
 import { ExpandableSection } from '../components/dashboard/ExpandableSection';
-import { CompactJobCard } from '../components/jobs';
+import { CompactJobCard, StackedJobCard } from '../components/jobs';
 import {
   perfMark,
   perfMeasure,
@@ -160,6 +160,31 @@ const NavigableJobCard = memo(
 );
 
 // ============================================================================
+// NAVIGABLE STACKED JOB CARD - Stacked jobs that navigate to Assigned Jobs
+// ============================================================================
+
+interface NavigableStackedJobCardProps {
+  jobs: JobProgressTracker[];
+}
+
+const NavigableStackedJobCard = memo(function NavigableStackedJobCard({ 
+  jobs 
+}: NavigableStackedJobCardProps) {
+  const navigate = useNavigate();
+
+  const handleSelectJob = useCallback((jobId: string) => {
+    navigate(`/assigned-jobs?job=${jobId}`);
+  }, [navigate]);
+
+  return (
+    <StackedJobCard
+      jobs={jobs}
+      onSelectJob={handleSelectJob}
+    />
+  );
+});
+
+// ============================================================================
 // ASSIGNED JOBS SECTION - Isolated with progressive rendering
 // ============================================================================
 
@@ -170,6 +195,11 @@ interface AssignedJobsSectionProps {
   onRefetch: () => void;
 }
 
+// Type for display items (either a group of jobs or a single job)
+type JobDisplayItem = 
+  | { type: 'group'; groupId: string; jobs: JobProgressTracker[] }
+  | { type: 'job'; job: JobProgressTracker };
+
 const AssignedJobsSection = memo(function AssignedJobsSection({
   jobs,
   loading,
@@ -179,9 +209,44 @@ const AssignedJobsSection = memo(function AssignedJobsSection({
   const caps = getDeviceCapabilities();
   const enableAnimations = !caps.prefersReducedMotion && !caps.isMobile;
 
+  // Group jobs by job_group_id for stacked display
+  const displayItems = useMemo(() => {
+    const groupMap = new Map<string, JobProgressTracker[]>();
+    const ungrouped: JobProgressTracker[] = [];
+    
+    jobs.forEach(job => {
+      if (job.job_group_id) {
+        const existing = groupMap.get(job.job_group_id) || [];
+        existing.push(job);
+        groupMap.set(job.job_group_id, existing);
+      } else {
+        ungrouped.push(job);
+      }
+    });
+    
+    // Create a unified display list
+    const items: JobDisplayItem[] = [];
+    
+    // Add groups first (sorted by first job's created_at, newest first)
+    const groups = Array.from(groupMap.entries());
+    groups.sort((a, b) => {
+      const aDate = new Date(a[1][0]?.created_at || 0).getTime();
+      const bDate = new Date(b[1][0]?.created_at || 0).getTime();
+      return bDate - aDate;
+    });
+    groups.forEach(([groupId, groupJobs]) => {
+      items.push({ type: 'group', groupId, jobs: groupJobs });
+    });
+    
+    // Add ungrouped jobs
+    ungrouped.forEach(job => items.push({ type: 'job', job }));
+    
+    return items;
+  }, [jobs]);
+
   if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+      <div className="space-y-2 sm:space-y-3">
         {Array.from({ length: 3 }).map((_, i) => (
           <JobCardSkeleton key={`job-skeleton-${i}`} />
         ))}
@@ -322,16 +387,20 @@ const AssignedJobsSection = memo(function AssignedJobsSection({
             </div>
           </div>
 
-          {/* Jobs Grid - tighter spacing on mobile */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4">
-            {jobs.map((job, index) => (
+          {/* Jobs List - Vertical stacked layout for grouped jobs */}
+          <div className="space-y-2 sm:space-y-3">
+            {displayItems.map((item, index) => (
               <motion.div
-                key={job.id}
+                key={item.type === 'group' ? `group-${item.groupId}` : item.job.id}
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.03, duration: 0.25 }}
               >
-                <NavigableJobCard job={job} />
+                {item.type === 'group' ? (
+                  <NavigableStackedJobCard jobs={item.jobs} />
+                ) : (
+                  <NavigableJobCard job={item.job} />
+                )}
               </motion.div>
             ))}
           </div>
