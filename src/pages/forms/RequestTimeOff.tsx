@@ -147,17 +147,42 @@ export default function RequestTimeOff() {
     e.preventDefault();
     setStatus("loading");
     try {
+      // 1. Insert to Supabase FIRST and get the record ID
+      const { data: insertedRecord, error } = await supabase
+        .from("rto_requests")
+        .insert([
+          {
+            user_id: user?.id, // Required for RLS policy
+            full_name: formData.fullName,
+            email: formData.email,
+            phone_number: formData.phoneNumber,
+            start_date: formData.startDate,
+            end_date: formData.endDate,
+            start_time: startTime,
+            end_time: endTime,
+            total_duration: totalDuration,
+            reason: formData.reason,
+            notes: formData.notes,
+          },
+        ])
+        .select('id')
+        .single();
+
+      if (error) throw error;
+
+      // 2. Send to webhook WITH the record ID
+      if (!CONFIG.make.rtoWebhook) {
+        throw new Error("RTO webhook URL is not configured");
+      }
+
       const payload = {
         ...formData,
+        rtoRequestId: insertedRecord.id, // The Supabase record ID
         phoneNumber: formData.phoneNumber,
         startTime,
         endTime,
         totalDuration,
       };
-
-      if (!CONFIG.make.rtoWebhook) {
-        throw new Error("RTO webhook URL is not configured");
-      }
       
       const res = await fetch(
         CONFIG.make.rtoWebhook,
@@ -168,25 +193,9 @@ export default function RequestTimeOff() {
         }
       );
 
-      if (!res.ok) throw new Error("Webhook failed");
-
-      const { error } = await supabase.from("rto_requests").insert([
-        {
-          user_id: user?.id, // Required for RLS policy
-          full_name: formData.fullName,
-          email: formData.email,
-          phone_number: formData.phoneNumber,
-          start_date: formData.startDate,
-          end_date: formData.endDate,
-          start_time: startTime,
-          end_time: endTime,
-          total_duration: totalDuration,
-          reason: formData.reason,
-          notes: formData.notes,
-        },
-      ]);
-
-      if (error) throw error;
+      if (!res.ok) {
+        logger.warn("Webhook failed but record was saved:", insertedRecord.id);
+      }
 
       setStatus("success");
       setFormData({
