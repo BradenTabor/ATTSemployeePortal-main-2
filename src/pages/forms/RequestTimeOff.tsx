@@ -13,6 +13,7 @@ export default function RequestTimeOff() {
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
+    phoneNumber: "",
     startDate: "",
     endDate: "",
     reason: "",
@@ -148,6 +149,7 @@ export default function RequestTimeOff() {
     try {
       const payload = {
         ...formData,
+        phoneNumber: formData.phoneNumber,
         startTime,
         endTime,
         totalDuration,
@@ -173,6 +175,7 @@ export default function RequestTimeOff() {
           user_id: user?.id, // Required for RLS policy
           full_name: formData.fullName,
           email: formData.email,
+          phone_number: formData.phoneNumber,
           start_date: formData.startDate,
           end_date: formData.endDate,
           start_time: startTime,
@@ -189,6 +192,7 @@ export default function RequestTimeOff() {
       setFormData({
         fullName: "",
         email: "",
+        phoneNumber: "",
         startDate: "",
         endDate: "",
         reason: "",
@@ -226,8 +230,8 @@ export default function RequestTimeOff() {
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
-          {/* Name & Email in one row on larger screens */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Name, Email & Phone */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs font-medium text-white/80 mb-1">
                 Full Name
@@ -255,6 +259,20 @@ export default function RequestTimeOff() {
                 readOnly
                 className="w-full rounded-xl sm:rounded-2xl px-3 py-2.5 text-sm bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-green-600 transition-all"
                 placeholder="you@atts.com"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-white/80 mb-1">
+                Phone Number
+              </label>
+              <input
+                type="tel"
+                name="phoneNumber"
+                value={formData.phoneNumber}
+                onChange={handleChange}
+                required
+                className="w-full rounded-xl sm:rounded-2xl px-3 py-2.5 text-sm bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-green-600 transition-all"
+                placeholder="(555) 123-4567"
               />
             </div>
           </div>
