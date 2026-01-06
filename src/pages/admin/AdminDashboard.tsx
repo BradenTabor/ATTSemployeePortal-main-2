@@ -1,19 +1,22 @@
 import { useMemo, useState, FormEvent, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Shield, Megaphone, Sparkles, Inbox, X, Filter, LayoutGrid, Pencil } from "lucide-react";
+import { Shield, Megaphone, Sparkles, Inbox, X, Filter, LayoutGrid, Pencil, Bell } from "lucide-react";
 import { ScrollReveal } from "../../motion";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { ADMIN_CORE_NAV_CARDS } from "../../components/admin/adminNavConfig";
 import { TextEffect } from "../../components/ui/TextEffect";
 import { getDeviceCapabilities } from "../../lib/mobilePerf";
 import { GoldCollapsibleSection } from "../../components/admin/GoldCollapsibleSection";
+import { AdminNotificationTest } from "../../components/admin/AdminNotificationTest";
+import { EnableNotificationsButton } from "../../components/notifications";
 import BrandedNavCard from "../../components/BrandedNavCard";
 import ProfileBar from "../../components/ProfileBar";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
 import { subscribeToTableChanges } from "../../lib/realtime";
 import { logger } from "../../lib/logger";
+import { NotificationBuilders, createNotificationSilent } from "../../lib/pushNotifications";
 import { DateField } from "../../components/forms/GlassyPickers";
 import {
   useAnnouncementsQuery,
@@ -241,9 +244,19 @@ export default function AdminDashboard() {
           return;
         }
 
+        // Send notification to all users (non-blocking)
+        const notificationResult = await createNotificationSilent(
+          NotificationBuilders.announcement({
+            title: payload.title,
+            message: payload.message,
+          })
+        );
+
         setFeedback({
           type: "success",
-          message: "Announcement published successfully.",
+          message: notificationResult
+            ? `Announcement published and sent to ${notificationResult.dispatched} users!`
+            : "Announcement published successfully.",
         });
         setTitle("");
         setMessage("");
@@ -810,8 +823,29 @@ export default function AdminDashboard() {
               {renderContactRequestsPanel()}
             </ScrollReveal>
 
+            {/* Notification Test Panel - Admin Only */}
+            <ScrollReveal variant="fadeUp" delay={0.25}>
+              <GoldCollapsibleSection
+                id="admin-notification-test"
+                title="Push Notification Test"
+                subtitle="Send test notifications to verify the notification system"
+                storageKey="admin-notification-test-collapsed"
+                defaultOpen={false}
+                icon={<Bell className="w-5 h-5 md:w-6 md:h-6 text-[#f4c979]" />}
+              >
+                <AdminNotificationTest />
+              </GoldCollapsibleSection>
+            </ScrollReveal>
+
+            {/* Push Notifications Toggle */}
+            <ScrollReveal variant="fadeUp" delay={0.35}>
+              <div className="flex justify-center">
+                <EnableNotificationsButton variant="gold" />
+              </div>
+            </ScrollReveal>
+
             {/* Profile Bar - Bottom section */}
-            <ScrollReveal variant="fadeUp" delay={0.3}>
+            <ScrollReveal variant="fadeUp" delay={0.4}>
               <ProfileBar
                 email={session?.user?.email}
                 role={role}

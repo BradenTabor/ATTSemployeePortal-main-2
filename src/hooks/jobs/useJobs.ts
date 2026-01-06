@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { subscribeToTableChanges } from '../../lib/realtime';
 import { logger } from '../../lib/logger';
+import { NotificationBuilders, createNotificationSilent } from '../../lib/pushNotifications';
 import type { JobProgressTracker, JobFormData, JobStatus } from '../../types/jobs';
 
 interface UseJobsReturn {
@@ -192,6 +193,19 @@ export function useJobs(): UseJobsReturn {
         if (assignmentsError) {
           logger.error('Failed to create crew assignments:', assignmentsError);
           // Don't fail the whole operation, job was created
+        } else {
+          // 4. Notify assigned crew members (non-blocking)
+          const notificationResult = await createNotificationSilent(
+            NotificationBuilders.jobAssignment({
+              id: jobId,
+              job_name: formData.job_name,
+              job_location: formData.job_location || formData.circuit,
+              start_date: formData.start_date,
+            })
+          );
+          if (notificationResult) {
+            logger.info(`Job assignment notification sent: ${notificationResult.dispatched} dispatched, ${notificationResult.skipped} skipped`);
+          }
         }
       }
 
@@ -209,7 +223,16 @@ export function useJobs(): UseJobsReturn {
     userId: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      // 1. Update the job
+      // 1. Get existing crew assignments before updating (to detect new assignments)
+      const { data: existingAssignments } = await supabase
+        .from('job_crew_assignments')
+        .select('user_id')
+        .eq('job_id', jobId);
+      
+      const existingCrewIds = new Set(existingAssignments?.map(a => a.user_id) || []);
+      const newCrewIds = formData.crew_member_ids.filter(id => !existingCrewIds.has(id));
+
+      // 2. Update the job
       const { error: jobError } = await supabase
         .from('job_progress_trackers')
         .update({
@@ -234,7 +257,7 @@ export function useJobs(): UseJobsReturn {
         return { success: false, error: 'Failed to update job' };
       }
 
-      // 2. Delete existing milestones and recreate
+      // 3. Delete existing milestones and recreate
       await supabase.from('job_milestones').delete().eq('job_id', jobId);
       
       if (formData.milestones.length > 0) {
@@ -250,7 +273,7 @@ export function useJobs(): UseJobsReturn {
         await supabase.from('job_milestones').insert(milestonesWithJobId);
       }
 
-      // 3. Delete existing assignments and recreate
+      // 4. Delete existing assignments and recreate
       await supabase.from('job_crew_assignments').delete().eq('job_id', jobId);
       
       if (formData.crew_member_ids.length > 0) {
@@ -261,6 +284,21 @@ export function useJobs(): UseJobsReturn {
         }));
 
         await supabase.from('job_crew_assignments').insert(assignments);
+      }
+
+      // 5. Notify newly assigned crew members (only if there are new assignments)
+      if (newCrewIds.length > 0) {
+        const notificationResult = await createNotificationSilent(
+          NotificationBuilders.jobAssignment({
+            id: jobId,
+            job_name: formData.job_name,
+            job_location: formData.job_location || formData.circuit,
+            start_date: formData.start_date,
+          })
+        );
+        if (notificationResult) {
+          logger.info(`Job update assignment notification sent: ${notificationResult.dispatched} dispatched, ${notificationResult.skipped} skipped`);
+        }
       }
 
       await fetchJobs();
@@ -298,6 +336,13 @@ export function useJobs(): UseJobsReturn {
     status: JobStatus
   ): Promise<{ success: boolean; error?: string }> => {
     try {
+      // First, get the job name for the notification
+      const { data: jobData } = await supabase
+        .from('job_progress_trackers')
+        .select('job_name')
+        .eq('id', jobId)
+        .single();
+
       const { error } = await supabase
         .from('job_progress_trackers')
         .update({ status })
@@ -306,6 +351,14 @@ export function useJobs(): UseJobsReturn {
       if (error) {
         logger.error('Failed to update job status:', error);
         return { success: false, error: 'Failed to update status' };
+      }
+
+      // Notify crew members about the status change (non-blocking)
+      const notificationResult = await createNotificationSilent(
+        NotificationBuilders.jobStatusChange(jobId, status, jobData?.job_name)
+      );
+      if (notificationResult) {
+        logger.info(`Job status notification sent: ${notificationResult.dispatched} dispatched`);
       }
 
       await fetchJobs();

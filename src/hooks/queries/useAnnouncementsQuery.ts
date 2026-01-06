@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { queryKeys } from '../../lib/queryKeys';
 import { toast } from '../../lib/toast';
 import { logger } from '../../lib/logger';
+import { NotificationBuilders, createNotificationSilent } from '../../lib/pushNotifications';
 
 export interface Announcement {
   id: string;
@@ -89,9 +90,22 @@ export function useCreateAnnouncement() {
 
       return data;
     },
-    onSuccess: () => {
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.announcements.all });
-      toast.success('Announcement published');
+      
+      // Send notification to all users (non-blocking)
+      const notificationResult = await createNotificationSilent(
+        NotificationBuilders.announcement({
+          title: data.title,
+          message: data.message,
+        })
+      );
+      
+      if (notificationResult) {
+        toast.success(`Announcement published and sent to ${notificationResult.dispatched} users!`);
+      } else {
+        toast.success('Announcement published');
+      }
     },
     onError: (error) => {
       logger.error('Failed to create announcement:', error);

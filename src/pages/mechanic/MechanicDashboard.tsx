@@ -13,6 +13,7 @@ import { EmberExpandableSection } from "../../components/dashboard/EmberExpandab
 import { DashboardAvatar } from "../../components/dashboard/DashboardAvatar";
 import BrandedNavCard from "../../components/BrandedNavCard";
 import ProfileBar from "../../components/ProfileBar";
+import { EnableNotificationsButton } from "../../components/notifications";
 import { getDeviceCapabilities } from "../../lib/mobilePerf";
 import { TextEffect } from "../../components/ui/TextEffect";
 
@@ -444,8 +445,15 @@ export default function MechanicDashboard() {
             </EmberExpandableSection>
           </ScrollReveal>
 
-          {/* Profile Bar - Bottom section */}
+          {/* Push Notifications Toggle */}
           <ScrollReveal variant="fadeUp" delay={0.1}>
+            <div className="flex justify-center">
+              <EnableNotificationsButton variant="ember" />
+            </div>
+          </ScrollReveal>
+
+          {/* Profile Bar - Bottom section */}
+          <ScrollReveal variant="fadeUp" delay={0.15}>
             <ProfileBar
               email={user?.email}
               role={role}

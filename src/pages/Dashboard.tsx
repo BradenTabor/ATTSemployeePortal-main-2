@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { DashboardAvatar } from '../components/dashboard/DashboardAvatar';
 import ProfileBar from '../components/ProfileBar';
+import { EnableNotificationsButton } from '../components/notifications';
 import { useAuth } from '../contexts/AuthContext';
 import { useUserAssignedJobs } from '../hooks/jobs';
 import DashboardLayout from '../layouts/DashboardLayout';
@@ -603,8 +604,15 @@ function Dashboard() {
             </ExpandableSection>
           </ScrollReveal>
 
-          {/* Profile Bar - Bottom section */}
+          {/* Push Notifications Toggle */}
           <ScrollReveal variant="fadeUp" delay={0.25}>
+            <div className="flex justify-center">
+              <EnableNotificationsButton variant="green" />
+            </div>
+          </ScrollReveal>
+
+          {/* Profile Bar - Bottom section */}
+          <ScrollReveal variant="fadeUp" delay={0.3}>
             <ProfileBar
               email={user?.email}
               role={role}

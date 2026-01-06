@@ -8,6 +8,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { DashboardAvatar } from "../../components/dashboard/DashboardAvatar";
 import ProfileBar from "../../components/ProfileBar";
 import BrandedNavCard from "../../components/BrandedNavCard";
+import { EnableNotificationsButton } from "../../components/notifications";
 import { ScrollReveal } from "../../motion";
 import { getDeviceCapabilities } from "../../lib/mobilePerf";
 import { TextEffect } from "../../components/ui/TextEffect";
@@ -333,8 +334,15 @@ export default function ForemanDashboard() {
             </div>
           </ScrollReveal>
 
-          {/* Profile Bar - Bottom section */}
+          {/* Push Notifications Toggle */}
           <ScrollReveal variant="fadeUp" delay={0.4}>
+            <div className="flex justify-center">
+              <EnableNotificationsButton variant="bluewhite" />
+            </div>
+          </ScrollReveal>
+
+          {/* Profile Bar - Bottom section */}
+          <ScrollReveal variant="fadeUp" delay={0.45}>
             <ProfileBar
               email={user?.email}
               role={role}

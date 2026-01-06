@@ -13,6 +13,8 @@ import SessionOverlay from "./components/SessionOverlay";
 import LoadingScreen from "./components/LoadingScreen";
 import { useAuth } from "./contexts/AuthContext";
 import { Toaster } from "./components/ui/Toaster";
+import { PWAUpdatePrompt, PushNotificationPrompt } from "./components/notifications";
+import { IOSInstallPrompt } from "./components/pwa";
 import { queryClient } from "./lib/queryClient";
 import { PageWrapper } from "./motion";
 
@@ -480,6 +482,12 @@ export default function App() {
         <AnimatedRoutes />
       </Router>
       <Toaster />
+      {/* PWA Update Prompt - shows when new version available */}
+      <PWAUpdatePrompt position="bottom-right" />
+      {/* Push Notification Opt-in Prompt - shows for unsubscribed users */}
+      <PushNotificationPrompt />
+      {/* iOS Install Prompt - shows installation instructions for iOS Safari users */}
+      <IOSInstallPrompt />
       {/* DevTools - only renders in development */}
       {import.meta.env.DEV && (
         <ReactQueryDevtools
