@@ -22,6 +22,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
+import { toast } from '@/lib/toast';
 
 export interface UsePushNotificationsResult {
   /** Current browser notification permission status */
@@ -196,6 +197,7 @@ export function usePushNotifications(): UsePushNotificationsResult {
       }
 
       setIsSubscribed(true);
+      toast.success('Notifications enabled!', 'You\'ll receive alerts for important updates.');
       console.log('[usePushNotifications] Subscription saved successfully');
       return true;
 
@@ -205,9 +207,12 @@ export function usePushNotifications(): UsePushNotificationsResult {
       // iOS-friendly error messages
       const errorMessage = err instanceof Error ? err.message : 'Failed to subscribe';
       if (isIOS && errorMessage.includes('not allowed')) {
-        setError('Push notifications require the app to be installed to your home screen on iOS');
+        const iosError = 'Push notifications require the app to be installed to your home screen on iOS';
+        setError(iosError);
+        toast.error('Setup required', iosError);
       } else {
         setError(errorMessage);
+        toast.error('Failed to enable notifications', errorMessage);
       }
       return false;
     } finally {
@@ -271,9 +276,13 @@ export function usePushNotifications(): UsePushNotificationsResult {
       } else if (result === 'denied') {
         // iOS-specific denied message
         if (isIOS) {
-          setError('Notification permission denied. Go to Settings → ATTS Portal → Notifications to enable.');
+          const iosError = 'Notification permission denied. Go to Settings → ATTS Portal → Notifications to enable.';
+          setError(iosError);
+          toast.error('Permission denied', iosError);
         } else {
-          setError('Notification permission denied. Please enable in browser settings.');
+          const browserError = 'Notification permission denied. Please enable in browser settings.';
+          setError(browserError);
+          toast.error('Permission denied', browserError);
         }
         return false;
       }
@@ -281,7 +290,9 @@ export function usePushNotifications(): UsePushNotificationsResult {
       return false;
     } catch (err) {
       console.error('[usePushNotifications] Permission request failed:', err);
-      setError(err instanceof Error ? err.message : 'Failed to request permission');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to request permission';
+      setError(errorMessage);
+      toast.error('Failed to enable notifications', errorMessage);
       return false;
     } finally {
       setLoading(false);
@@ -302,13 +313,16 @@ export function usePushNotifications(): UsePushNotificationsResult {
       if (subscription) {
         await subscription.unsubscribe();
         setIsSubscribed(false);
+        toast.success('Notifications disabled', 'You won\'t receive push notifications anymore.');
         console.log('[usePushNotifications] Unsubscribed from push notifications');
       }
 
       return true;
     } catch (err) {
       console.error('[usePushNotifications] Unsubscribe failed:', err);
-      setError(err instanceof Error ? err.message : 'Failed to unsubscribe');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to unsubscribe';
+      setError(errorMessage);
+      toast.error('Failed to disable notifications', errorMessage);
       return false;
     } finally {
       setLoading(false);
