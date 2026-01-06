@@ -138,3 +138,4 @@ WHERE schemaname = 'public'
 --   SELECT COUNT(*) FROM daily_equipment_inspections; -- Should return all records
 */
 
+
