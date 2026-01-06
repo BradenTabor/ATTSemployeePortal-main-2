@@ -12,7 +12,7 @@
 
 import { memo } from 'react';
 import { motion } from 'framer-motion';
-import { Bell, BellOff, BellRing, Loader2, AlertTriangle, Smartphone, Share, Plus } from 'lucide-react';
+import { Bell, BellOff, Loader2, AlertTriangle, Smartphone, Share, Plus } from 'lucide-react';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 interface EnableNotificationsButtonProps {
@@ -103,44 +103,45 @@ function EnableNotificationsButtonComponent({
   }
 
   // Style variants - matches dashboard themes
+  // "subscribed" = red button to disable, "unsubscribed" = themed button to enable
   const variants = {
     default: {
-      enabled: 'bg-green-600 hover:bg-green-700 text-white border-green-500',
-      disabled: 'bg-blue-600 hover:bg-blue-700 text-white border-blue-500',
+      subscribed: 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 text-white border-red-500/50 shadow-lg shadow-red-500/20',
+      unsubscribed: 'bg-blue-600 hover:bg-blue-700 text-white border-blue-500',
       denied: 'bg-yellow-600/20 text-yellow-300 border-yellow-500/30',
     },
     gold: {
-      enabled: 'bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white border-emerald-500/50',
-      disabled: 'bg-gradient-to-r from-[#f4c979] via-[#f8e5bb] to-[#f4c979] hover:from-[#f8e5bb] hover:via-[#fff6dd] hover:to-[#f8e5bb] text-[#0c0b09] border-[#f4c979]/50',
+      subscribed: 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 text-white border-red-500/50 shadow-lg shadow-red-500/20',
+      unsubscribed: 'bg-gradient-to-r from-[#f4c979] via-[#f8e5bb] to-[#f4c979] hover:from-[#f8e5bb] hover:via-[#fff6dd] hover:to-[#f8e5bb] text-[#0c0b09] border-[#f4c979]/50',
       denied: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
     },
     green: {
-      enabled: 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border-emerald-500/50',
-      disabled: 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white border-emerald-400/50',
+      subscribed: 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 text-white border-red-500/50 shadow-lg shadow-red-500/20',
+      unsubscribed: 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white border-emerald-400/50',
       denied: 'bg-yellow-500/10 text-yellow-300 border-yellow-500/30',
     },
     // Mechanic Dashboard - Ember/Orange theme
     ember: {
-      enabled: 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border-emerald-500/50',
-      disabled: 'bg-gradient-to-r from-[#ff9350] to-[#ff6f3c] hover:from-[#ffb48a] hover:to-[#ff9350] text-white border-[#ff6f3c]/50',
+      subscribed: 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 text-white border-red-500/50 shadow-lg shadow-red-500/20',
+      unsubscribed: 'bg-gradient-to-r from-[#ff9350] to-[#ff6f3c] hover:from-[#ffb48a] hover:to-[#ff9350] text-white border-[#ff6f3c]/50',
       denied: 'bg-orange-500/10 text-orange-300 border-orange-500/30',
     },
     // Foreman Dashboard - Blue/White theme
     bluewhite: {
-      enabled: 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border-emerald-500/50',
-      disabled: 'bg-gradient-to-r from-[#3b82f6] to-[#2563eb] hover:from-[#60a5fa] hover:to-[#3b82f6] text-white border-[#3b82f6]/50',
+      subscribed: 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 text-white border-red-500/50 shadow-lg shadow-red-500/20',
+      unsubscribed: 'bg-gradient-to-r from-[#3b82f6] to-[#2563eb] hover:from-[#60a5fa] hover:to-[#3b82f6] text-white border-[#3b82f6]/50',
       denied: 'bg-blue-500/10 text-blue-300 border-blue-500/30',
     },
     // General Foreman Dashboard - Purple theme
     purple: {
-      enabled: 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border-emerald-500/50',
-      disabled: 'bg-gradient-to-r from-[#a855f7] to-[#9333ea] hover:from-[#c084fc] hover:to-[#a855f7] text-white border-[#a855f7]/50',
+      subscribed: 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 text-white border-red-500/50 shadow-lg shadow-red-500/20',
+      unsubscribed: 'bg-gradient-to-r from-[#a855f7] to-[#9333ea] hover:from-[#c084fc] hover:to-[#a855f7] text-white border-[#a855f7]/50',
       denied: 'bg-purple-500/10 text-purple-300 border-purple-500/30',
     },
     // Safety Officer Dashboard - Red/White theme
     redwhite: {
-      enabled: 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border-emerald-500/50',
-      disabled: 'bg-gradient-to-r from-[#ef4444] to-[#dc2626] hover:from-[#f87171] hover:to-[#ef4444] text-white border-[#ef4444]/50',
+      subscribed: 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 text-white border-red-500/50 shadow-lg shadow-red-500/20',
+      unsubscribed: 'bg-gradient-to-r from-[#ef4444] to-[#dc2626] hover:from-[#f87171] hover:to-[#ef4444] text-white border-[#ef4444]/50',
       denied: 'bg-red-500/10 text-red-300 border-red-500/30',
     },
   };
@@ -167,7 +168,7 @@ function EnableNotificationsButtonComponent({
     );
   }
 
-  // Subscribed state
+  // Subscribed state - show red "Disable Notifications" button
   if (permission === 'granted' && isSubscribed) {
     return (
       <div className={`space-y-2 ${className}`}>
@@ -176,23 +177,20 @@ function EnableNotificationsButtonComponent({
           disabled={loading}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className={`flex items-center gap-2 px-4 py-3 rounded-xl border transition-all disabled:opacity-50 disabled:cursor-not-allowed ${currentVariant.enabled}`}
+          className={`flex items-center gap-2 px-4 py-3 rounded-xl border transition-all disabled:opacity-50 disabled:cursor-not-allowed ${currentVariant.subscribed}`}
         >
           {loading ? (
             <Loader2 className="w-5 h-5 animate-spin" />
           ) : (
-            <BellRing className="w-5 h-5" />
+            <BellOff className="w-5 h-5" />
           )}
-          <span className="font-medium">
-            {compact ? 'Enabled' : 'Notifications Enabled'}
+          <span className="font-semibold">
+            {loading ? 'Disabling...' : compact ? 'Disable' : 'Disable Notifications'}
           </span>
         </motion.button>
         {!compact && (
-          <p className="text-xs text-center opacity-60">
-            {isIOS 
-              ? '📱 You\'ll receive alerts on your lock screen'
-              : 'Click to disable notifications'
-            }
+          <p className="text-xs text-center text-emerald-400/80">
+            ✓ Push notifications are enabled
           </p>
         )}
       </div>
@@ -207,7 +205,7 @@ function EnableNotificationsButtonComponent({
         disabled={loading}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
-        className={`flex items-center gap-2 px-4 py-3 rounded-xl border transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${currentVariant.disabled}`}
+        className={`flex items-center gap-2 px-4 py-3 rounded-xl border transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${currentVariant.unsubscribed}`}
       >
         {loading ? (
           <Loader2 className="w-5 h-5 animate-spin" />

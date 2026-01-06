@@ -63,6 +63,20 @@ export interface UsePushNotificationsResult {
  * Convert base64 URL-safe string to Uint8Array
  * Required for applicationServerKey in PushManager.subscribe
  */
+// Custom event for cross-component sync
+const PUSH_SUBSCRIPTION_CHANGE_EVENT = 'atts-push-subscription-change';
+
+/**
+ * Dispatch event to notify all hook instances of subscription change
+ */
+function notifySubscriptionChange(isSubscribed: boolean): void {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(PUSH_SUBSCRIPTION_CHANGE_EVENT, { 
+      detail: { isSubscribed } 
+    }));
+  }
+}
+
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding)
@@ -197,6 +211,7 @@ export function usePushNotifications(): UsePushNotificationsResult {
       }
 
       setIsSubscribed(true);
+      notifySubscriptionChange(true); // Notify other hook instances
       toast.success('Notifications enabled!', 'You\'ll receive alerts for important updates.');
       console.log('[usePushNotifications] Subscription saved successfully');
       return true;
@@ -239,6 +254,22 @@ export function usePushNotifications(): UsePushNotificationsResult {
     };
 
     checkStatus();
+
+    // Listen for subscription changes from other hook instances
+    const handleSubscriptionChange = (event: Event) => {
+      const customEvent = event as CustomEvent<{ isSubscribed: boolean }>;
+      setIsSubscribed(customEvent.detail.isSubscribed);
+      // Also update permission state
+      if (typeof Notification !== 'undefined') {
+        setPermission(Notification.permission);
+      }
+    };
+
+    window.addEventListener(PUSH_SUBSCRIPTION_CHANGE_EVENT, handleSubscriptionChange);
+
+    return () => {
+      window.removeEventListener(PUSH_SUBSCRIPTION_CHANGE_EVENT, handleSubscriptionChange);
+    };
   }, [isSupported, user]);
 
   /**
@@ -313,6 +344,7 @@ export function usePushNotifications(): UsePushNotificationsResult {
       if (subscription) {
         await subscription.unsubscribe();
         setIsSubscribed(false);
+        notifySubscriptionChange(false); // Notify other hook instances
         toast.success('Notifications disabled', 'You won\'t receive push notifications anymore.');
         console.log('[usePushNotifications] Unsubscribed from push notifications');
       }
