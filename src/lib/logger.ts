@@ -5,7 +5,8 @@ type LogLevel = "debug" | "info" | "warn" | "error";
 const isDev = import.meta.env.DEV;
 
 function log(level: LogLevel, ...args: unknown[]) {
-  if (!isDev) return; // 🔇 No logs in production by default
+  // Always log errors and warnings, even in production
+  if (!isDev && level !== "error" && level !== "warn") return;
 
   const prefix =
     level === "debug"

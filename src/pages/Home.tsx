@@ -318,6 +318,7 @@ export default function Home() {
                           required
                           placeholder={isSignup ? "Create password" : "Enter password"}
                           minLength={6}
+                          autoComplete={isSignup ? "new-password" : "current-password"}
                           className={`${inputStyles} pr-16`}
                         />
                         <button

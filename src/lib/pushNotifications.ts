@@ -11,7 +11,6 @@
  */
 
 import { supabase } from './supabaseClient';
-import { logger } from './logger';
 import type {
   CreateNotificationRequest,
   CreateNotificationResponse,
@@ -46,9 +45,11 @@ import type {
 export async function createNotification(
   request: CreateNotificationRequest
 ): Promise<CreateNotificationResponse> {
-  logger.debug('[pushNotifications] Sending notification:', {
+  // Always log notification attempts (even in production)
+  console.log('[pushNotifications] 📤 Calling admin-create-notification edge function:', {
     category: request.category,
     target_type: request.target_type,
+    target_ref: request.target_ref,
     title: request.title,
   });
 
@@ -59,22 +60,24 @@ export async function createNotification(
   });
 
   if (error) {
-    logger.error('[pushNotifications] Edge Function error:', error);
+    console.error('[pushNotifications] ❌ Edge Function error:', error);
     throw new Error(error.message || 'Failed to send notification');
   }
 
   if (!data) {
+    console.error('[pushNotifications] ❌ No response from notification server');
     throw new Error('No response from notification server');
   }
 
   // Check if response indicates failure
   if ('success' in data && data.success === false) {
     const errorData = data as CreateNotificationErrorResponse;
+    console.error('[pushNotifications] ❌ Server returned error:', errorData);
     throw new Error(errorData.error || 'Unknown notification error');
   }
 
   const successData = data as CreateNotificationResponse;
-  logger.info('[pushNotifications] Notification sent:', {
+  console.log('[pushNotifications] ✅ Notification sent successfully:', {
     event_id: successData.event_id,
     dispatched: successData.dispatched,
     skipped: successData.skipped,
@@ -117,11 +120,12 @@ export async function createNotificationSilent(
   try {
     return await createNotification(request);
   } catch (error) {
-    // Log the error with structured data for debugging
-    logger.warn('[pushNotifications] Notification failed (silent):', {
+    // Always log silent failures in production so we can debug
+    console.error('[pushNotifications] ⚠️ Notification failed (silent mode):', {
       error: error instanceof Error ? error.message : 'Unknown error',
       category: request.category,
       target_type: request.target_type,
+      target_ref: request.target_ref,
       title: request.title,
     });
     
@@ -263,4 +267,5 @@ export const NotificationBuilders = {
 
 // Export types for convenience
 export type { CreateNotificationRequest, CreateNotificationResponse };
+
 

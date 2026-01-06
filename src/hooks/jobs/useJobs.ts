@@ -192,9 +192,16 @@ export function useJobs(): UseJobsReturn {
 
         if (assignmentsError) {
           logger.error('Failed to create crew assignments:', assignmentsError);
+          console.error('[useJobs] Crew assignment failed - notifications will NOT be sent:', assignmentsError);
           // Don't fail the whole operation, job was created
         } else {
           // 4. Notify assigned crew members (non-blocking)
+          console.log('[useJobs] Sending push notification for job assignment...', {
+            jobId,
+            jobName: formData.job_name,
+            crewCount: formData.crew_member_ids.length,
+          });
+          
           const notificationResult = await createNotificationSilent(
             NotificationBuilders.jobAssignment({
               id: jobId,
@@ -203,8 +210,15 @@ export function useJobs(): UseJobsReturn {
               start_date: formData.start_date,
             })
           );
+          
           if (notificationResult) {
-            logger.info(`Job assignment notification sent: ${notificationResult.dispatched} dispatched, ${notificationResult.skipped} skipped`);
+            console.log('[useJobs] ✅ Push notification sent successfully:', {
+              dispatched: notificationResult.dispatched,
+              skipped: notificationResult.skipped,
+              eventId: notificationResult.event_id,
+            });
+          } else {
+            console.warn('[useJobs] ⚠️ Push notification failed silently - check edge function logs');
           }
         }
       }
