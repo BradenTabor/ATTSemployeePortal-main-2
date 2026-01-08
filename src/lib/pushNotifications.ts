@@ -263,6 +263,38 @@ export const NotificationBuilders = {
       entity_type: 'announcement',
     };
   },
+
+  /**
+   * Build a HIGH PRIORITY notification for AI-generated safety announcements.
+   * Notifies all users with requireInteraction behavior (won't auto-dismiss).
+   * 
+   * @param announcement - Safety announcement details
+   * @returns CreateNotificationRequest for safety announcement with high priority
+   */
+  safetyAnnouncement: (announcement: {
+    id?: string;
+    title: string;
+    body: string;
+    summary?: string;
+  }): CreateNotificationRequest => {
+    // Use summary if available (shorter), otherwise truncate body
+    const notificationBody = announcement.summary 
+      ? announcement.summary
+      : announcement.body.length > 200
+        ? announcement.body.substring(0, 197) + '...'
+        : announcement.body;
+
+    return {
+      category: 'safety_alert',
+      severity: 'high', // High priority - will require interaction and show prominently
+      target_type: 'all',
+      title: `⚠️ ${announcement.title}`,
+      body: notificationBody,
+      url: '/announcements',
+      entity_type: 'announcement',
+      entity_id: announcement.id,
+    };
+  },
 };
 
 // Export types for convenience

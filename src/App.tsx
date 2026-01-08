@@ -35,6 +35,7 @@ const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminJSA = lazy(() => import("./pages/admin/AdminJSA"));
 const AdminJobTracker = lazy(() => import("./pages/admin/AdminJobTracker"));
 const AdminJobProgress = lazy(() => import("./pages/admin/AdminJobProgress"));
+const AdminSafetyAgent = lazy(() => import("./pages/admin/AdminSafetyAgent"));
 
 // Mechanic pages
 const MechanicDashboard = lazy(() => import("./pages/mechanic/MechanicDashboard"));
@@ -443,6 +444,17 @@ function AnimatedRoutes() {
                 <PageWrapper>
                   <ProtectedRoute requiredRole="admin">
                     <AdminJobProgress />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            <Route
+              path="/admin/safety-agent"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminSafetyAgent />
                   </ProtectedRoute>
                 </PageWrapper>
               }

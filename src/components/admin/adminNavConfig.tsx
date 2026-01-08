@@ -13,6 +13,7 @@ import {
   FileSearch,
   Phone,
   History,
+  Bot,
 } from "lucide-react";
 import type { AdminNavCardConfig } from "./AdminPremiumScaffold";
 
@@ -116,6 +117,13 @@ export const ADMIN_CORE_NAV_CARDS: AdminNavCardConfig[] = [
     description: "Span-based production and week-over-week deltas.",
     icon: <TrendingUp className="w-8 h-8 text-[#f4c979]" />,
     to: "/admin/job-progress",
+    variant: "gold",
+  },
+  {
+    title: "Safety Agent",
+    description: "Test AI announcements and compliance webhooks.",
+    icon: <Bot className="w-8 h-8 text-[#f4c979]" />,
+    to: "/admin/safety-agent",
     variant: "gold",
   },
 ];
