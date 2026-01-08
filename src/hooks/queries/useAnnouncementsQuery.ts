@@ -94,6 +94,8 @@ export function useCreateAnnouncement() {
       queryClient.invalidateQueries({ queryKey: queryKeys.announcements.all });
       
       // Send notification to all users (non-blocking)
+      console.log('[Announcements] Sending push notification for new announcement:', data.title);
+      
       const notificationResult = await createNotificationSilent(
         NotificationBuilders.announcement({
           title: data.title,
@@ -102,8 +104,10 @@ export function useCreateAnnouncement() {
       );
       
       if (notificationResult) {
+        console.log('[Announcements] ✅ Create notification sent:', notificationResult);
         toast.success(`Announcement published and sent to ${notificationResult.dispatched} users!`);
       } else {
+        console.warn('[Announcements] ⚠️ Create notification failed silently');
         toast.success('Announcement published');
       }
     },
@@ -160,9 +164,31 @@ export function useUpdateAnnouncement() {
       
       return result;
     },
-    onSuccess: () => {
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.announcements.all });
-      toast.success('Announcement updated');
+      
+      // Send notification to all users about the updated announcement (non-blocking)
+      if (data && data.length > 0) {
+        const updatedAnnouncement = data[0];
+        console.log('[Announcements] Sending push notification for updated announcement:', updatedAnnouncement.title);
+        
+        const notificationResult = await createNotificationSilent(
+          NotificationBuilders.announcement({
+            title: `Updated: ${updatedAnnouncement.title}`,
+            message: updatedAnnouncement.message,
+          })
+        );
+        
+        if (notificationResult) {
+          console.log('[Announcements] ✅ Update notification sent:', notificationResult);
+          toast.success(`Announcement updated and sent to ${notificationResult.dispatched} users!`);
+        } else {
+          console.warn('[Announcements] ⚠️ Update notification failed silently');
+          toast.success('Announcement updated');
+        }
+      } else {
+        toast.success('Announcement updated');
+      }
     },
     onError: (error) => {
       console.error('🔧 UPDATE MUTATION ERROR:', error);
