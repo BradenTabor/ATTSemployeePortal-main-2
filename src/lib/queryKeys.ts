@@ -40,6 +40,15 @@ export const queryKeys = {
     latest: ['announcements', 'latest'] as const,
   },
 
+  // Announcement Rewards
+  rewards: {
+    all: ['announcement-rewards'] as const,
+    userRewards: (userId: string) => ['announcement-rewards', 'user', userId] as const,
+    totalPoints: (userId: string) => ['announcement-rewards', 'total-points', userId] as const,
+    claimed: (userId: string, announcementId: string) =>
+      ['announcement-rewards', 'claimed', userId, announcementId] as const,
+  },
+
   // Contact Requests
   contactRequests: {
     all: ['contactRequests'] as const,

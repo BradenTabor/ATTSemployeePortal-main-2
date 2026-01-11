@@ -10,24 +10,41 @@ This repo uses a 3-layer architecture that separates probabilistic language gene
 
 ## Mission
 
-### A) Safety Announcements (LLM-assisted)
-1. Pull recent JSA submissions from Supabase on a schedule (daily/weekly) or on-demand.
-2. Extract grounded trends (hazards, PPE, controls, near-misses, job context).
+### A) Safety Announcements (LLM-assisted) — 7:00 AM CST Daily
+1. Pull recent safety data from Supabase at **7:00 AM America/Chicago, Monday-Friday**:
+   - JSA (Job Safety Analysis) submissions
+   - DVIR (Daily Vehicle Inspection Reports)
+   - Daily Equipment Inspections
+2. Analyze **48-hour window** of data to extract grounded trends:
+   - Top hazards by frequency
+   - Equipment/vehicle deficiencies
+   - Near-miss incidents
+   - PPE requirements
+   - Weather conditions
 3. Generate safety announcements that are:
-   - Grounded in JSA data (no invented facts)
-   - Clear, short, and actionable
-   - Audience-aware (all employees vs segmented cohorts over time)
-4. Write announcements to Supabase with full audit metadata.
-5. Support human approval workflows (draft → review → publish), with optional full automation.
+   - Grounded in actual data (no invented facts)
+   - Clear, short, and actionable (body max 283 chars)
+   - Prioritized: near-misses > equipment failures > hazards > PPE
+4. Save announcements to `announcements` table with author "Safety AI"
+5. Send high-priority push notifications to all users
+6. Skip weekends automatically
+
+**Supabase Edge Function:** `generate-safety-announcement`
+**Cron Schedule:** `0 13 * * 1-5` (7 AM CST = 13:00 UTC, Mon-Fri)
 
 ### B) Compliance Notifications (Deterministic)
-1. At 9:00 AM America/Chicago each day, check whether required users have completed:
+1. At 9:00 AM America/Chicago each weekday (Mon-Fri), check whether required users have completed:
    - DVIR (public.dvir_reports)
    - Daily Equipment Inspection (public.daily_equipment_inspections)
+   - Daily JSA (public.daily_jsa)
 2. Identify missing submissions using deterministic logic.
-3. Write audit logs and deduplicated notification records.
-4. Send email reminders via Make.com webhook.
-5. Never spam: enforce idempotency and dedupe constraints.
+3. Generate a consolidated Admin Compliance Summary email listing all non-compliant employees.
+4. Send email directly via **raw SMTP** to Gmail (not via third-party libraries) to ATTS Administration recipients.
+5. Send data to Make.com webhook for Google Sheets logging/audit trail.
+6. Write audit logs to `public.compliance_runs`.
+7. Never spam: skip weekends, enforce idempotency.
+
+**Email Implementation Note:** The Edge Function uses Deno's native TLS sockets to connect directly to `smtp.gmail.com:465`, properly formatting MIME multipart emails with both text/plain and text/html parts. This avoids encoding issues that can occur with third-party SMTP libraries in serverless environments.
 
 ---
 
@@ -41,7 +58,8 @@ This repo uses a 3-layer architecture that separates probabilistic language gene
 **Key directives in this repo:**
 - `directives/daily_announcement.md`
 - `directives/weekly_trends.md`
-- `directives/compliance_dvir_equipment_9am.md`
+- `directives/admin_compliance_summary_9am.md` **(PRIMARY - Admin Summary Email)**
+- `directives/compliance_dvir_equipment_9am.md` *(deprecated - individual emails)*
 - `directives/grounding_and_safety.md`
 - `directives/notifications_email.md`
 - `directives/timezone_and_cutoffs.md`
@@ -151,31 +169,46 @@ Use server-to-server credentials (service role) in secure runtime only.
 
 ---
 
-## Compliance Requirements (DVIR + Equipment by 9:00 AM)
+## Compliance Requirements (DVIR + Equipment + JSA by 9:00 AM)
 
 ### Required users (v1 rule)
 Only these roles are required:
 - `app_users.role IN ('employee','foreman')`
 
-Users must have a non-null email to receive reminders.
+Users must have a non-null email to be included in compliance checks.
+
+### Required forms (all three)
+1. **DVIR** - Daily Vehicle Inspection Report (`public.dvir_reports`)
+2. **Equipment Inspection** - Daily Equipment Inspection (`public.daily_equipment_inspections`)
+3. **Daily JSA** - Job Safety Analysis (`public.daily_jsa`)
 
 ### Time rule
-- Cutoff: **9:00 AM America/Chicago** daily
+- Cutoff: **9:00 AM America/Chicago** weekdays only (Mon-Fri)
+- Skip weekends automatically
 - Determine `date_for` using America/Chicago local date
 - Consider submissions complete only if created before cutoff
 
-### DVIR note
-Prefer using `dvir_reports.report_date` for correctness and performance.
-If absent, derive date using `timezone('America/Chicago', created_at)::date` (slower, DST-sensitive).
+### Date field mapping
+| Form | Date Field | Notes |
+|------|------------|-------|
+| DVIR | `report_date` | Preferred for performance |
+| Equipment | `inspection_date` | Direct date field |
+| JSA | `created_at` | Convert to Chicago date |
 
-### Dedupe rule
-Never send more than one email per user per type per day:
-- `(date_for, user_id, notification_type)` unique
+### Admin Summary Email (Primary Mode)
+Instead of individual user emails, send a **consolidated summary** to ATTS Administration:
+- **FROM:** `allterraintreeservice.po@gmail.com`
+- **TO:** `bradenleetabor@gmail.com`, `shane@alltts.com`, `dusty@alltts.com`, `mike@alltts.com`, `weston@alltts.com`, `steve@alltts.com`
+- **Delivery:** Gmail SMTP (primary) + Make.com webhook (audit/logging)
 
-Notification types:
-- `missing_dvir`
-- `missing_equipment`
-- `missing_both`
+### Notification types (extended for JSA)
+- `missing_all` - Missing DVIR, Equipment, AND JSA
+- `missing_dvir_equipment` - Missing DVIR and Equipment
+- `missing_dvir_jsa` - Missing DVIR and JSA
+- `missing_equipment_jsa` - Missing Equipment and JSA
+- `missing_dvir` - Missing DVIR only
+- `missing_equipment` - Missing Equipment only
+- `missing_jsa` - Missing JSA only
 
 ---
 
@@ -198,9 +231,21 @@ Notification types:
 - "Focus areas" for toolbox talks
 - Optional segmentation if enabled
 
-### C) Compliance Email Reminder
+### C) Admin Compliance Summary Email (NEW - Primary)
+- **Subject:** `Daily Compliance Summary - {date}` or `🎉 Full Compliance - {date}`
+- **Recipients:** 6 ATTS admin emails (configured in env)
+- **Sections:**
+  1. Executive summary (total required, compliant, non-compliant)
+  2. Non-compliant employee table (name, role, missing forms)
+  3. Timestamp of report generation
+  4. Professional sign-off
+- HTML formatted for readability
+- Plain text fallback included
+- Sent via Gmail SMTP + Make.com webhook
+
+### D) Individual Compliance Email Reminder (DEPRECATED)
 - Short, direct, actionable
-- Must state what is missing (DVIR, equipment, or both)
+- Must state what is missing (DVIR, equipment, JSA, or combination)
 - Must include "If already submitted, ignore" safety clause
 - Must not include sensitive data
 
@@ -238,44 +283,73 @@ All behavior is driven by env/config flags (no hardcoding):
 - `MAKE_WEBHOOK_URL=https://hook.us2.make.com/...`
 - `APP_BASE_URL=https://your-app.com`
 
+**Gmail Configuration (for Admin Compliance Summary):**
+- `GMAIL_USER=allterraintreeservice.po@gmail.com`
+- `GMAIL_APP_PASSWORD=xxxx xxxx xxxx xxxx` (16-char App Password from Google)
+- `ADMIN_EMAIL_RECIPIENTS=email1@example.com,email2@example.com,...`
+
 **Dry-run mode** must:
 - Run queries and compute missing sets
 - Write run logs (optional)
-- Not send webhooks or publish announcements
+- Not send emails, webhooks, or publish announcements
 
 ---
 
 ## Common Workflows
 
-### 1) Daily Safety Announcement (cron or on-demand)
+### 1) Daily Safety Announcement at 7:00 AM (Mon-Fri)
 1. Load `directives/daily_announcement.md`
-2. Determine window (last 24h or since last run)
-3. Fetch JSAs deterministically
-4. Aggregate hazards/PPE/near-misses
-5. Generate announcement (prompt versioned)
-6. Validate grounding + formatting
-7. Insert as `draft`
-8. If `ANNOUNCEMENTS_MODE=auto_publish`, publish deterministically
-9. If notifications enabled, notify deterministically
-10. Write run audit record
+2. Check if today is a weekday (Mon-Fri); skip weekends silently
+3. Fetch data from all three sources (48-hour window):
+   - JSA forms (`daily_jsa`)
+   - DVIR reports (`dvir_reports`)
+   - Equipment inspections (`daily_equipment_inspections`)
+4. Aggregate safety trends:
+   - Top hazards with counts
+   - PPE requirements
+   - Near-miss incidents
+   - Vehicle/equipment issues
+5. Generate announcement via OpenAI (prompt v2)
+6. Validate character limits (body max 283, summary max 240)
+7. Validate grounding (all claims traceable to data)
+8. Save to `announcements` table with author "Safety AI"
+9. Create notification event and dispatch push notifications
+10. Return success with stats and announcement details
 
-### 2) Compliance Check (DVIR + Equipment) at 9:00 AM
-1. Load `directives/compliance_dvir_equipment_9am.md`
-2. Determine `date_for` and cutoff time (9:00 AM America/Chicago)
-3. Build required roster from `public.app_users` where role in ('employee','foreman') and email not null
-4. Query DVIR and equipment submissions for `date_for` up to cutoff
-5. Compute missing sets: DVIR missing, Equipment missing, Both missing
-6. Insert/update `public.compliance_runs` with counts + metadata
-7. For each missing user:
-   - Insert into `public.compliance_notifications` (idempotent; rely on unique constraint)
-   - If inserted and notifications enabled, send webhook to Make.com
-   - Update notification row with sent/failed status and webhook response
-8. Mark run success/fail; log errors deterministically
+**Non-negotiables:**
+- Only run on weekdays (Monday-Friday)
+- Use 48-hour data window
+- Body must be under 283 characters
+- All data must be grounded (no fabrication)
+- Send push notification to all users
+
+**Supabase Edge Function:** `generate-safety-announcement`
+**Cron Schedule:** `0 13 * * 1-5` (7 AM CST = 13:00 UTC, Mon-Fri)
+
+### 2) Admin Compliance Summary at 9:00 AM (Mon-Fri)
+1. Load `directives/admin_compliance_summary_9am.md`
+2. Check if today is a weekday (Mon-Fri); skip weekends silently
+3. Determine `date_for` and cutoff time (9:00 AM America/Chicago)
+4. Build required roster from `public.app_users` where role in ('employee','foreman') and email not null
+5. Query submissions for `date_for` up to cutoff:
+   - DVIR (by `report_date`)
+   - Equipment (by `inspection_date`)
+   - JSA (by `created_at` converted to Chicago date)
+6. Compute non-compliant users with specific missing forms
+7. Generate formatted compliance summary email (text + HTML)
+8. Send email via Gmail SMTP to 6 admin recipients
+9. Send data to Make.com webhook for Google Sheets logging
+10. Log run in `public.compliance_runs` with counts + metadata
 
 Non-negotiables:
-- Do not send duplicate emails (unique constraint + idempotent logic)
+- Only run on weekdays (Monday-Friday)
+- Check all three form types (DVIR, Equipment, JSA)
 - Do not use LLMs for compliance decisions
-- Always log run outcomes and notification results
+- Send consolidated admin email, not individual user emails
+- Always log run outcomes and send results
+
+**Supabase Edge Function:** `admin-compliance-cron`  
+**Cron Schedule:** `0 15 * * 1-5` (9 AM CST = 15:00 UTC, Mon-Fri)
 
 ---
 

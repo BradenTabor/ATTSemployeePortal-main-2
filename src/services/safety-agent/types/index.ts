@@ -56,6 +56,16 @@ export type NotificationType =
   | 'missing_equipment' 
   | 'missing_both';
 
+/** Extended notification type for admin summary (includes JSA) */
+export type AdminNotificationType =
+  | 'missing_all'           // Missing DVIR, Equipment, AND JSA
+  | 'missing_dvir_equipment' // Missing DVIR AND Equipment only
+  | 'missing_dvir_jsa'       // Missing DVIR AND JSA only
+  | 'missing_equipment_jsa'  // Missing Equipment AND JSA only
+  | 'missing_dvir'           // Missing DVIR only
+  | 'missing_equipment'      // Missing Equipment only
+  | 'missing_jsa';           // Missing JSA only
+
 export interface MissingSubmission {
   /** User's UUID from app_users.user_id */
   userId: string;
@@ -254,7 +264,10 @@ export interface GenerateAnnouncementOptions {
 export interface GenerateAnnouncementResult {
   success: boolean;
   announcement?: GeneratedAnnouncement;
+  /** ID of the announcement in the safety_announcements table */
   announcementId?: string;
+  /** ID of the announcement in the main announcements table (for rewards system) */
+  publicAnnouncementId?: string;
   error?: string;
   lowData?: boolean;
   /** Warning if body was truncated to meet character limit */
@@ -333,5 +346,145 @@ export interface SafetyDataAggregation {
     totalIssues: number;
     nearMissCount: number;
   };
+}
+
+// =============================================================================
+// ADMIN COMPLIANCE SUMMARY TYPES
+// =============================================================================
+
+/** A user who is missing one or more required forms */
+export interface NonCompliantUser {
+  /** User's UUID from app_users.user_id */
+  userId: string;
+  /** User's email address */
+  email: string;
+  /** User's full name (may be null if not set) */
+  fullName: string | null;
+  /** User's role (employee or foreman) */
+  role: string;
+  /** What type of submission(s) are missing */
+  missingType: AdminNotificationType;
+  /** Human-readable list of missing forms */
+  missingForms: string[];
+  /** Individual flags for each form type */
+  hasDvir: boolean;
+  hasEquipment: boolean;
+  hasJsa: boolean;
+}
+
+/** Summary statistics for compliance check */
+export interface AdminComplianceSummary {
+  /** The date that was checked (YYYY-MM-DD) */
+  dateFor: string;
+  /** ISO timestamp when the check was performed */
+  generatedAt: string;
+  /** Total users required to submit (employee + foreman with email) */
+  totalRequired: number;
+  /** Users who submitted all required forms */
+  totalCompliant: number;
+  /** Users missing at least one form */
+  totalNonCompliant: number;
+  /** Breakdown by missing form type */
+  missingDvirCount: number;
+  missingEquipmentCount: number;
+  missingJsaCount: number;
+  missingAllCount: number;
+  /** List of non-compliant users */
+  nonCompliantUsers: NonCompliantUser[];
+  /** Whether this was a weekend (skipped) */
+  skippedWeekend?: boolean;
+}
+
+/** Options for admin compliance check */
+export interface AdminComplianceCheckOptions extends ComplianceCheckOptions {
+  /** Whether to skip weekday check (for testing) */
+  skipWeekdayCheck?: boolean;
+}
+
+/** Result of admin compliance check and email send */
+export interface AdminComplianceRunResult {
+  /** UUID of the compliance_runs record */
+  runId: string;
+  /** The compliance summary data */
+  summary: AdminComplianceSummary;
+  /** Email send results */
+  emailResults: {
+    gmail: EmailSendResult;
+    webhook: WebhookResult;
+  };
+  /** Final status of the run */
+  status: 'success' | 'failed' | 'skipped';
+  /** Error message if status is 'failed' */
+  error?: string;
+  /** Whether this was a dry run */
+  dryRun: boolean;
+}
+
+/** Result of sending email via Gmail */
+export interface EmailSendResult {
+  /** Whether the email was sent successfully */
+  success: boolean;
+  /** Gmail message ID if successful */
+  messageId?: string;
+  /** Error message if failed */
+  error?: string;
+  /** Number of recipients */
+  recipientCount?: number;
+}
+
+/** Email content structure */
+export interface AdminEmailContent {
+  /** Email subject line */
+  subject: string;
+  /** Plain text body */
+  textBody: string;
+  /** HTML body (optional) */
+  htmlBody?: string;
+}
+
+/** Webhook payload for admin compliance summary */
+export interface AdminSummaryWebhookPayload {
+  /** Identifies this as an admin compliance summary */
+  type: 'admin_compliance_summary';
+  /** The date being checked (YYYY-MM-DD) */
+  dateFor: string;
+  /** ISO timestamp when generated */
+  generatedAt: string;
+  /** Summary statistics */
+  summary: {
+    totalRequired: number;
+    totalCompliant: number;
+    totalNonCompliant: number;
+    missingDvirCount: number;
+    missingEquipmentCount: number;
+    missingJsaCount: number;
+    missingAllCount: number;
+  };
+  /** List of non-compliant users */
+  nonCompliantUsers: Array<{
+    userId: string;
+    email: string;
+    fullName: string | null;
+    role: string;
+    missingForms: string[];
+    missingType: AdminNotificationType;
+  }>;
+  /** Email content that was sent */
+  emailContent: AdminEmailContent;
+  /** Results of send operations */
+  sendResults: {
+    gmail: { success: boolean; messageId?: string; error?: string };
+    webhook: { success: boolean; error?: string };
+  };
+}
+
+/** Gmail configuration */
+export interface GmailConfig {
+  /** Gmail address to send from */
+  user: string;
+  /** Gmail App Password (16 characters) */
+  appPassword: string;
+  /** List of recipient email addresses */
+  recipients: string[];
 }
 

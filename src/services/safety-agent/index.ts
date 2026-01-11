@@ -38,13 +38,55 @@ export type {
   EquipmentAggregation,
   // Combined aggregation
   SafetyDataAggregation,
+  // Admin Compliance Summary types
+  AdminNotificationType,
+  NonCompliantUser,
+  AdminComplianceSummary,
+  AdminComplianceCheckOptions,
+  AdminComplianceRunResult,
+  EmailSendResult,
+  AdminEmailContent,
+  AdminSummaryWebhookPayload,
+  GmailConfig,
 } from './types';
 
 // =============================================================================
-// COMPLIANCE CHECK (Main Function)
+// COMPLIANCE CHECK (Legacy - Per-User Notifications)
 // =============================================================================
 
+/**
+ * @deprecated Use runAdminComplianceSummary instead for consolidated admin emails.
+ * This function sends individual notifications to each non-compliant user.
+ */
 export { checkCompliance9am, computeMissingType } from './execution/checkCompliance9am';
+
+// =============================================================================
+// ADMIN COMPLIANCE SUMMARY (Recommended - Consolidated Admin Email)
+// =============================================================================
+
+export {
+  // Main orchestration function
+  runAdminComplianceSummary,
+  // Utility for retrying sends
+  sendAdminSummaryEmailOnly,
+} from './execution/sendAdminSummaryEmail';
+
+export {
+  // Core compliance check with JSA
+  checkAdminCompliance9am,
+  // Helper functions
+  isWeekday,
+  computeAdminMissingType,
+  getMissingFormsList,
+} from './execution/checkAdminCompliance9am';
+
+export {
+  // Email generation
+  generateAdminSummaryEmail,
+  generateTextBody,
+  generateHtmlBody,
+  generateSubject,
+} from './execution/generateAdminSummaryEmail';
 
 // =============================================================================
 // NOTIFICATION SENDING
@@ -95,6 +137,14 @@ export {
 // =============================================================================
 
 export { getSupabaseAdmin, createSupabaseAdmin } from './lib/supabaseAdmin';
+
+// Gmail sending
+export {
+  sendGmailEmail,
+  sendAdminComplianceEmail,
+  getGmailConfig,
+  isGmailConfigured,
+} from './lib/gmail';
 export { 
   getOpenAIClient, 
   createOpenAIClient,

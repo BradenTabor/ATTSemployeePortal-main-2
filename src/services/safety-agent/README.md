@@ -5,9 +5,18 @@ A modular service for managing safety communications and compliance enforcement 
 ## Overview
 
 This module provides:
-1. **Compliance Checking**: Deterministic 9:00 AM checks for DVIR and equipment inspection submissions
-2. **Webhook Notifications**: Send compliance reminders via Make.com
-3. **Safety Announcements**: LLM-assisted announcement generation from JSA data using OpenAI
+1. **Daily Safety Announcement** (7:00 AM CST, Mon-Fri): LLM-assisted announcement generation analyzing 48 hours of JSA, DVIR, and Equipment data with push notifications
+2. **Admin Compliance Summary** (9:00 AM CST, Mon-Fri): Daily consolidated email to ATTS Administration with all non-compliant employees
+3. **Compliance Checking**: Deterministic checks for DVIR, Equipment Inspection, and Daily JSA submissions
+4. **Dual Notification System**: Direct Gmail SMTP (raw socket) + Make.com webhook (audit/Google Sheets logging)
+
+### Email Architecture
+
+The Edge Function sends emails using **raw SMTP** directly to Gmail's servers (not via third-party libraries), ensuring:
+- ✅ Proper MIME multipart formatting (text/plain + text/html)
+- ✅ Reliable TLS connection to `smtp.gmail.com:465`
+- ✅ No encoding issues or raw MIME content in emails
+- ✅ Works natively in Deno/Supabase Edge Functions
 
 ## Architecture
 
@@ -37,7 +46,16 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 # Required for safety announcements (LLM generation)
 OPENAI_API_KEY=sk-your-api-key-here
 
-# Make.com webhook for notifications (use either name)
+# ======================
+# GMAIL CONFIGURATION (Admin Compliance Summary)
+# ======================
+GMAIL_USER=allterraintreeservice.po@gmail.com
+GMAIL_APP_PASSWORD=xxxx xxxx xxxx xxxx  # 16-char Google App Password (NOT your login password)
+ADMIN_EMAIL_RECIPIENTS=bradenleetabor@gmail.com,shane@alltts.com,dusty@alltts.com,mike@alltts.com,weston@alltts.com,steve@alltts.com
+
+# ======================
+# MAKE.COM WEBHOOK (for Google Sheets logging)
+# ======================
 VITE_MAKE_DEN_WEBHOOK_URL=https://hook.us2.make.com/hdty3eds1lpldxt2ne4amq1dgdohmvpc
 # Or for Edge Functions:
 # MAKE_WEBHOOK_URL=https://hook.us2.make.com/hdty3eds1lpldxt2ne4amq1dgdohmvpc
@@ -54,6 +72,17 @@ COMPLIANCE_CUTOFF=09:00
 # Optional: Announcement generation settings
 ANNOUNCEMENTS_MODE=draft  # or auto_publish
 ```
+
+### Getting Your Gmail App Password
+
+1. Go to [Google Account Security](https://myaccount.google.com/security)
+2. Enable **2-Step Verification** if not already enabled
+3. Go to **App Passwords** (search in settings)
+4. Select "Mail" and "Other (Custom name)" → enter "ATTS Safety Agent"
+5. Copy the 16-character password (format: `xxxx xxxx xxxx xxxx`)
+6. Add it to your `.env` as `GMAIL_APP_PASSWORD`
+
+**Important:** This is NOT your regular Gmail password!
 
 ### Getting Your OpenAI API Key
 
@@ -78,55 +107,80 @@ Or apply manually:
 1. `20260108000000_add_compliance_runs_and_notifications.sql`
 2. `20260108000001_add_dvir_report_date.sql`
 
-### 3. Deploy Edge Function
+### 3. Deploy Edge Functions
 
 ```bash
+# NEW: Admin Compliance Summary (recommended)
+supabase functions deploy admin-compliance-cron
+
+# Legacy: Individual user notifications (deprecated)
 supabase functions deploy check-compliance-9am
 ```
 
-### 4. Schedule the Function
+### 4. Add Edge Function Secrets
 
-In Supabase Dashboard → Database → Extensions, enable `pg_cron`.
+In Supabase Dashboard → Project Settings → Edge Functions → Secrets, add:
+
+| Secret | Value |
+|--------|-------|
+| `GMAIL_USER` | `allterraintreeservice.po@gmail.com` |
+| `GMAIL_APP_PASSWORD` | Your 16-character App Password |
+| `MAKE_WEBHOOK_URL` | Your Make.com webhook URL |
+
+### 5. Schedule the Function
+
+In Supabase Dashboard → Database → Extensions, enable `pg_cron` and `pg_net`.
 
 Then create a scheduled job:
 
 ```sql
--- Run at 9:00 AM Chicago time (14:00 or 15:00 UTC depending on DST)
--- Using 15:00 UTC for standard time (CST)
+-- Admin Compliance Summary: 9:00 AM Chicago time (Mon-Fri only)
+-- 15:00 UTC = 9:00 AM CST, 14:00 UTC = 9:00 AM CDT
 SELECT cron.schedule(
-  'compliance-check-9am',
-  '0 15 * * *',
+  'admin-compliance-9am',
+  '0 15 * * 1-5',  -- Mon-Fri at 15:00 UTC (9 AM CST)
   $$
   SELECT net.http_post(
-    url := 'https://your-project.supabase.co/functions/v1/check-compliance-9am',
-    headers := '{"Authorization": "Bearer your-anon-key"}'::jsonb,
+    url := 'https://your-project.supabase.co/functions/v1/admin-compliance-cron',
+    headers := '{"Content-Type": "application/json"}'::jsonb,
     body := '{}'::jsonb
   );
   $$
 );
 ```
 
+**Important:** Replace `your-project` with your actual Supabase project ID.
+
 Note: Adjust the hour for DST (14:00 UTC during CDT, 15:00 UTC during CST).
 
 ## Manual Testing
 
-### Test via cURL
+### Test Admin Compliance Summary via cURL
 
 ```bash
-# Dry run for today
+# Test the admin compliance summary (production)
 curl -X POST \
-  'https://your-project.supabase.co/functions/v1/check-compliance-9am?dry_run=true' \
-  -H 'Authorization: Bearer your-anon-key'
-
-# Specific date
-curl -X POST \
-  'https://your-project.supabase.co/functions/v1/check-compliance-9am' \
-  -H 'Authorization: Bearer your-anon-key' \
-  -H 'Content-Type: application/json' \
-  -d '{"dateFor": "2026-01-08", "dryRun": true}'
+  'https://your-project.supabase.co/functions/v1/admin-compliance-cron' \
+  -H 'Content-Type: application/json'
 ```
 
 ### Test Locally
+
+```typescript
+import { runAdminComplianceSummary } from './src/services/safety-agent';
+
+// Full workflow: check compliance + generate email + send via Gmail + webhook
+const result = await runAdminComplianceSummary({
+  dryRun: false,  // Set true to skip sending emails/webhooks
+});
+
+console.log(result.status);                    // 'success', 'failed', or 'skipped'
+console.log(result.summary.totalNonCompliant); // Number of non-compliant users
+console.log(result.gmailSent);                 // Gmail send result
+console.log(result.webhookSent);               // Webhook send result
+```
+
+### Test Legacy Individual Compliance (deprecated)
 
 ```typescript
 import { checkCompliance9am } from './src/services/safety-agent';
@@ -141,9 +195,89 @@ console.log(result);
 
 ## API Reference
 
-### checkCompliance9am(options)
+### runAdminComplianceSummary(options) — **PRIMARY**
 
-Run the compliance check for a given date.
+Run the full admin compliance workflow: check forms, generate email, send via Gmail + webhook.
+
+```typescript
+interface AdminComplianceSummaryOptions {
+  dateFor?: string;           // YYYY-MM-DD, default: today in Chicago
+  cutoffLocal?: string;       // HH:MM, default: '09:00'
+  timezone?: string;          // default: 'America/Chicago'
+  dryRun?: boolean;           // default: from env
+  supabase?: SupabaseClient;  // default: creates admin client
+}
+
+interface AdminComplianceSummaryResult {
+  status: 'success' | 'failed' | 'skipped';
+  dateFor: string;
+  isWeekend?: boolean;
+  summary: {
+    totalRequired: number;
+    totalCompliant: number;
+    totalNonCompliant: number;
+  };
+  nonCompliantUsers: NonCompliantUser[];
+  emailHtml?: string;
+  emailText?: string;
+  gmailSent?: { success: boolean; messageId?: string; error?: string };
+  webhookSent?: { success: boolean; webhookResponse?: any; error?: string };
+  durationMs: number;
+  error?: string;
+}
+```
+
+### checkAdminCompliance9am(options)
+
+Fetch required users and compute non-compliant list (deterministic, no sending).
+
+```typescript
+interface AdminComplianceCheckOptions {
+  dateFor?: string;           // YYYY-MM-DD
+  cutoffLocal?: string;       // HH:MM, default: '09:00'
+  timezone?: string;          // default: 'America/Chicago'
+  supabase?: SupabaseClient;
+}
+
+// Returns AdminComplianceSummary with nonCompliantUsers list
+```
+
+### generateAdminSummaryEmail(summary, dateFor)
+
+Generate HTML and plain text email from compliance summary (deterministic).
+
+```typescript
+interface GeneratedEmail {
+  subject: string;
+  html: string;
+  text: string;
+}
+```
+
+### sendAdminSummaryEmail(params)
+
+Send the compliance email via Gmail SMTP and Make.com webhook.
+
+```typescript
+interface SendAdminSummaryEmailParams {
+  summary: AdminComplianceSummary;
+  dateFor: string;
+  emailHtml: string;
+  emailText: string;
+  runId?: string;
+}
+
+interface AdminEmailSendResult {
+  gmail: { success: boolean; messageId?: string; error?: string };
+  webhook: { success: boolean; webhookResponse?: any; error?: string };
+}
+```
+
+---
+
+### checkCompliance9am(options) — **DEPRECATED**
+
+Run the legacy compliance check for a given date (individual user notifications).
 
 ```typescript
 interface ComplianceCheckOptions {
@@ -216,7 +350,37 @@ Individual notification records with dedupe constraint.
 | status | text | pending/sent/failed/skipped |
 | **UNIQUE** | | (date_for, user_id, notification_type) |
 
-## Make.com Webhook Payload
+## Make.com Webhook Payloads
+
+### Admin Compliance Summary (NEW)
+
+```json
+{
+  "type": "admin_compliance_summary",
+  "dateFor": "2026-01-08",
+  "subject": "Daily Compliance Summary - January 8, 2026",
+  "emailBody": "<html>...</html>",
+  "recipients": ["bradenleetabor@gmail.com", "shane@alltts.com", ...],
+  "summary": {
+    "totalRequired": 25,
+    "totalCompliant": 20,
+    "totalNonCompliant": 5
+  },
+  "nonCompliantUsers": [
+    {
+      "userId": "uuid",
+      "email": "user@example.com",
+      "fullName": "John Smith",
+      "role": "employee",
+      "missingForms": ["DVIR", "Daily JSA"],
+      "missingType": "missing_dvir_jsa"
+    }
+  ],
+  "timestamp": "2026-01-08T15:00:00.000Z"
+}
+```
+
+### Individual Compliance Reminder (DEPRECATED)
 
 ```json
 {
@@ -228,12 +392,25 @@ Individual notification records with dedupe constraint.
     "fullName": "John Smith",
     "role": "employee"
   },
-  "missingType": "missing_both",
-  "missingItems": ["DVIR", "Equipment Inspection"],
+  "missingType": "missing_all",
+  "missingItems": ["DVIR", "Equipment Inspection", "Daily JSA"],
   "appLink": "https://app.example.com/dashboard",
   "timestamp": "2026-01-08T15:00:00.000Z",
   "notificationId": "notification-uuid"
 }
+```
+
+### Notification Types (Extended for JSA)
+
+| Type | Description |
+|------|-------------|
+| `missing_all` | Missing DVIR, Equipment, AND JSA |
+| `missing_dvir_equipment` | Missing DVIR and Equipment |
+| `missing_dvir_jsa` | Missing DVIR and JSA |
+| `missing_equipment_jsa` | Missing Equipment and JSA |
+| `missing_dvir` | Missing DVIR only |
+| `missing_equipment` | Missing Equipment only |
+| `missing_jsa` | Missing JSA only |
 ```
 
 ## Troubleshooting
@@ -241,6 +418,27 @@ Individual notification records with dedupe constraint.
 ### "Missing SUPABASE_SERVICE_ROLE_KEY"
 
 The service role key is required for server-to-server operations. Set it in your environment or Supabase Edge Function secrets.
+
+### Email shows raw MIME content (encoding issues)
+
+If emails display raw MIME boundaries like `--boundary100` or encoded characters like `=3d`:
+
+**Cause:** Third-party SMTP libraries (like `denomailer`) can have MIME encoding bugs in Deno environments.
+
+**Solution:** The Edge Function uses **raw SMTP** directly via Deno's native TLS sockets, which properly formats multipart emails. Make sure you're using the latest version of `admin-compliance-cron`.
+
+The fixed implementation:
+- Builds raw MIME email with proper `multipart/alternative` structure
+- Connects directly to `smtp.gmail.com:465` using TLS
+- Handles `AUTH LOGIN` authentication properly
+- Sends both `text/plain` and `text/html` parts
+
+### Gmail authentication fails
+
+Ensure your `GMAIL_APP_PASSWORD`:
+1. Is a 16-character App Password (not your regular password)
+2. Has no spaces when stored in Supabase secrets
+3. Was generated after enabling 2-Step Verification
 
 ### Duplicate notifications not being skipped
 
@@ -257,18 +455,44 @@ Verify the `TIMEZONE` env var is set to `America/Chicago`. Check logs for the co
 
 ## Safety Announcements API
 
+### Scheduled Execution (7 AM CST)
+
+The safety announcement generates automatically at **7:00 AM Central Time, Monday-Friday** via pg_cron:
+
+```sql
+-- Cron schedule: 0 13 * * 1-5 (13:00 UTC = 7 AM CST)
+SELECT cron.schedule(
+  'safety-announcement-7am',
+  '0 13 * * 1-5',
+  $$
+  SELECT net.http_post(
+    url := 'https://[project].supabase.co/functions/v1/generate-safety-announcement',
+    headers := '{"Content-Type": "application/json"}'::jsonb,
+    body := '{"windowHours": 48}'::jsonb
+  );
+  $$
+);
+```
+
+### Data Sources
+
+The announcement aggregates data from three tables:
+- `daily_jsa` - Job Safety Analysis forms (hazards, PPE, near-misses)
+- `dvir_reports` - Vehicle inspection reports (deficiencies, issues)
+- `daily_equipment_inspections` - Equipment checks (failures, issues)
+
 ### generateDailySafetyAnnouncement(options)
 
-Generate a safety announcement from recent JSA submissions using OpenAI.
+Generate a safety announcement from recent safety data using OpenAI.
 
 ```typescript
 import { generateDailySafetyAnnouncement } from './src/services/safety-agent';
 
 const result = await generateDailySafetyAnnouncement({
-  windowHours: 24,        // Hours to look back for JSAs
-  minSubmissions: 3,      // Min JSAs before showing "low data" message
-  promptVersion: 'v1',    // Prompt version for auditability
-  mode: 'draft',          // 'draft' or 'auto_publish'
+  windowHours: 48,        // Hours to look back (default: 48)
+  minSubmissions: 3,      // Min total submissions before "low data" message
+  promptVersion: 'v2',    // Prompt version for auditability
+  mode: 'auto_publish',   // 'draft' or 'auto_publish'
   model: 'gpt-4o-mini',   // OpenAI model (cost-effective default)
   temperature: 0.3,       // Lower = more deterministic
 });
@@ -277,6 +501,9 @@ if (result.success) {
   console.log(result.announcement.title);
   console.log(result.announcement.body);  // Max 283 chars
   console.log(result.announcement.summary); // Max 240 chars
+  console.log(result.stats.jsaCount);      // JSA forms analyzed
+  console.log(result.stats.dvirCount);     // DVIR reports analyzed
+  console.log(result.stats.equipmentCount); // Equipment inspections analyzed
 }
 ```
 
@@ -284,10 +511,10 @@ if (result.success) {
 
 ```typescript
 interface GenerateAnnouncementOptions {
-  windowHours?: number;     // Default: 24
+  windowHours?: number;     // Default: 48
   minSubmissions?: number;  // Default: 3
-  promptVersion?: string;   // Default: 'v1'
-  mode?: 'draft' | 'auto_publish';  // Default: 'draft'
+  promptVersion?: string;   // Default: 'v2'
+  mode?: 'draft' | 'auto_publish';  // Default: 'auto_publish'
   model?: string;           // Default: 'gpt-4o-mini'
   temperature?: number;     // Default: 0.3
 }
@@ -348,8 +575,18 @@ if (jsonResult.success) {
 ## Future Work
 
 - [x] LLM-assisted safety announcements from JSA data
+- [x] Multi-source data aggregation (JSA + DVIR + Equipment)
+- [x] 7 AM CST scheduled safety announcements (Mon-Fri)
+- [x] 48-hour data window for announcements
+- [x] Push notifications for safety announcements
+- [x] Admin Compliance Summary email (consolidated report to administration)
+- [x] Daily JSA compliance checking (in addition to DVIR + Equipment)
+- [x] Direct Gmail SMTP integration
+- [x] Dual notification system (Gmail + Make.com webhook)
+- [x] Weekday-only scheduling (skip weekends)
 - [ ] Weekly trends reports
 - [ ] SMS notifications via Make.com
 - [ ] Dashboard for viewing compliance history
 - [ ] Human-in-the-loop approval workflow for announcements
+- [ ] DST-aware automatic UTC hour adjustment
 

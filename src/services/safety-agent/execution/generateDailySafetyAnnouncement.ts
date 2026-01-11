@@ -363,8 +363,9 @@ export function aggregateDvirData(reports: DvirReport[]): DvirAggregation {
       truckNumbers.add(dvir.truck_number);
     }
 
-    // Count deficiencies
-    if (dvir.deficiency_corrected === 'yes' || dvir.mechanic_remarks) {
+    // Count deficiencies - deficiency_corrected is a free-text field describing the correction
+    // Any non-empty value indicates a deficiency was noted and addressed
+    if (dvir.deficiency_corrected || dvir.mechanic_remarks) {
       deficiencyCount++;
     }
 
@@ -756,15 +757,23 @@ export async function generateDailySafetyAnnouncement(
 
     // Step 7: Optionally save to database (if mode is 'draft' or 'auto_publish')
     let announcementId: string | undefined;
+    let publicAnnouncementId: string | undefined;
     
     if (mode === 'draft' || mode === 'auto_publish') {
       announcementId = await saveAnnouncement(announcement, mode === 'auto_publish', aggregation);
+      
+      // Step 8: Also publish to main announcements table for visibility on dashboard
+      // This enables the rewards system for Safety AI announcements
+      if (mode === 'auto_publish') {
+        publicAnnouncementId = await publishToAnnouncementsTable(announcement);
+      }
     }
 
     return {
       success: true,
       announcement,
       announcementId,
+      publicAnnouncementId,
       lowData: isLowData,
       truncated,
     };
@@ -831,6 +840,55 @@ async function saveAnnouncement(
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     safetyLogger.warn('Failed to save announcement', { error: errorMessage });
+    return undefined;
+  }
+}
+
+/**
+ * Publish announcement to the main announcements table.
+ * This makes the Safety AI announcement visible on the dashboard
+ * and enables the rewards collection feature.
+ * 
+ * @param announcement - The generated announcement
+ * @returns The announcement ID if successful, undefined otherwise
+ */
+async function publishToAnnouncementsTable(
+  announcement: GeneratedAnnouncement
+): Promise<string | undefined> {
+  try {
+    const supabase = getSupabaseAdmin();
+    
+    const { data, error } = await supabase
+      .from('announcements')
+      .insert({
+        title: announcement.title,
+        message: announcement.body,
+        content: announcement.body,
+        author: 'Safety AI',
+        date: formatDateYMD(new Date()),
+        raw_data: {
+          source: 'safety_agent',
+          summary: announcement.summary,
+          sections: announcement.sections,
+          metadata: announcement.metadata,
+        },
+      })
+      .select('id')
+      .single();
+
+    if (error) {
+      safetyLogger.warn('Failed to publish to announcements table', { error: error.message });
+      return undefined;
+    }
+
+    safetyLogger.info('Announcement published to main announcements table', { 
+      id: data?.id,
+      author: 'Safety AI',
+    });
+    return data?.id;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    safetyLogger.warn('Failed to publish to announcements table', { error: errorMessage });
     return undefined;
   }
 }

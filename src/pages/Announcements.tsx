@@ -11,6 +11,7 @@ import {
   Search,
   Signal,
   Calendar,
+  Expand,
 } from "lucide-react";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { ExpandableSection } from "../components/dashboard/ExpandableSection";
@@ -19,6 +20,8 @@ import CardListSkeleton from "../components/skeletons/CardListSkeleton";
 import { cn } from "../lib/utils";
 import { TextEffect } from "../components/ui/TextEffect";
 import { getDeviceCapabilities } from "../lib/mobilePerf";
+import { CollectPointsButton } from "../components/CollectPointsButton";
+import { AnnouncementDetailModal } from "../components/AnnouncementDetailModal";
 
 interface Announcement {
   id: string;
@@ -101,15 +104,19 @@ const EmptyState = ({ searchTerm, onClearFilter }: { searchTerm: string; onClear
 interface FeaturedAnnouncementProps {
   announcement: Announcement;
   formatDate: (date: string) => string;
+  onClick?: () => void;
 }
 
-const FeaturedAnnouncementCard = ({ announcement, formatDate }: FeaturedAnnouncementProps) => (
+const FeaturedAnnouncementCard = ({ announcement, formatDate, onClick }: FeaturedAnnouncementProps) => (
   <motion.article
     layout
     initial={{ opacity: 0, y: 20, scale: 0.98 }}
     animate={{ opacity: 1, y: 0, scale: 1 }}
     transition={{ duration: 0.6, type: "spring", stiffness: 100, damping: 18 }}
-    className="relative overflow-hidden rounded-2xl md:rounded-[28px] border border-emerald-400/30 shadow-[0_8px_80px_-20px_rgba(16,185,129,0.5),0_4px_24px_-8px_rgba(0,0,0,0.6)]"
+    whileHover={{ y: -4 }}
+    whileTap={{ scale: 0.995 }}
+    onClick={onClick}
+    className="relative overflow-hidden rounded-2xl md:rounded-[28px] border border-emerald-400/30 shadow-[0_8px_80px_-20px_rgba(16,185,129,0.5),0_4px_24px_-8px_rgba(0,0,0,0.6)] cursor-pointer group/featured"
     style={{
       background: 'linear-gradient(145deg, rgba(4, 30, 21, 0.98) 0%, rgba(2, 15, 10, 1) 50%, rgba(1, 8, 5, 1) 100%)',
     }}
@@ -247,6 +254,17 @@ const FeaturedAnnouncementCard = ({ announcement, formatDate }: FeaturedAnnounce
           {announcement.message}
         </motion.p>
 
+        {/* Mobile tap hint - only shows when content might be truncated */}
+        <motion.div 
+          className="flex sm:hidden items-center justify-center gap-2 mt-3 py-2 px-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 opacity-70 group-hover/featured:opacity-100 transition-opacity"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.7 }}
+          transition={{ delay: 0.4 }}
+        >
+          <Expand className="w-3.5 h-3.5 text-emerald-300" />
+          <span className="text-[11px] text-emerald-200/80 font-medium tracking-wide">Tap to read full message</span>
+        </motion.div>
+
         {/* Premium author footer */}
         <motion.div 
           className="mt-6 pt-5 border-t border-emerald-400/15"
@@ -270,15 +288,30 @@ const FeaturedAnnouncementCard = ({ announcement, formatDate }: FeaturedAnnounce
                 Originator
               </p>
             </div>
-            {/* Decorative signal indicator */}
-            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-              <div className="flex gap-0.5">
-                <div className="w-1 h-3 rounded-full bg-emerald-400/60" />
-                <div className="w-1 h-4 rounded-full bg-emerald-400/80" />
-                <div className="w-1 h-5 rounded-full bg-emerald-400" />
+            {/* Collect Points Button - Only shows for Safety AI announcements */}
+            <CollectPointsButton 
+              announcementId={announcement.id}
+              author={announcement.author}
+              className="hidden sm:flex"
+            />
+            {/* Decorative signal indicator - hidden when rewards button shows */}
+            {announcement.author !== "Safety AI" && (
+              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                <div className="flex gap-0.5">
+                  <div className="w-1 h-3 rounded-full bg-emerald-400/60" />
+                  <div className="w-1 h-4 rounded-full bg-emerald-400/80" />
+                  <div className="w-1 h-5 rounded-full bg-emerald-400" />
+                </div>
+                <span className="text-[10px] text-emerald-300/60 font-medium tracking-wide">LIVE</span>
               </div>
-              <span className="text-[10px] text-emerald-300/60 font-medium tracking-wide">LIVE</span>
-            </div>
+            )}
+          </div>
+          {/* Mobile rewards button - shows below author info */}
+          <div className="mt-4 sm:hidden">
+            <CollectPointsButton 
+              announcementId={announcement.id}
+              author={announcement.author}
+            />
           </div>
         </motion.div>
       </div>
@@ -291,10 +324,11 @@ interface AnnouncementCardProps {
   announcement: Announcement;
   index: number;
   formatDate: (date: string) => string;
+  onClick?: () => void;
 }
 
 const AnnouncementCard = forwardRef<HTMLDivElement, AnnouncementCardProps>(
-  ({ announcement, index, formatDate }, ref) => (
+  ({ announcement, index, formatDate, onClick }, ref) => (
   <motion.div
     ref={ref}
     layout
@@ -303,7 +337,9 @@ const AnnouncementCard = forwardRef<HTMLDivElement, AnnouncementCardProps>(
     exit={{ opacity: 0, y: -16, transition: { duration: 0.2 } }}
     transition={{ delay: index * 0.05, duration: 0.3, ease: "easeOut" }}
     whileHover={{ y: -4, transition: { duration: 0.2 } }}
-    className="group relative overflow-hidden rounded-2xl border border-emerald-500/20 hover:border-emerald-400/40 transition-colors duration-300"
+    whileTap={{ scale: 0.98 }}
+    onClick={onClick}
+    className="group relative overflow-hidden rounded-2xl border border-emerald-500/20 hover:border-emerald-400/40 transition-colors duration-300 cursor-pointer"
     style={{
       background: 'linear-gradient(135deg, rgba(4, 21, 15, 0.9) 0%, rgba(2, 13, 9, 0.95) 100%)',
     }}
@@ -354,9 +390,10 @@ const AnnouncementCard = forwardRef<HTMLDivElement, AnnouncementCardProps>(
         </div>
         <motion.div
           whileHover={{ x: 2 }}
-          className="flex items-center gap-0.5 text-emerald-300/70 text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity"
+          className="flex items-center gap-0.5 text-emerald-300/70 text-xs font-semibold sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
         >
-          View
+          <span className="hidden sm:inline">View</span>
+          <span className="sm:hidden text-[10px]">Read</span>
           <ChevronRight className="w-3.5 h-3.5" />
         </motion.div>
       </div>
@@ -419,6 +456,7 @@ export default function Announcements() {
   const [refreshing, setRefreshing] = useState(false);
   const [newAnnouncementIndicator, setNewAnnouncementIndicator] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
 
   // Pagination State
   const pageSize = 8;
@@ -641,6 +679,7 @@ export default function Announcements() {
                 <FeaturedAnnouncementCard
                   announcement={latestAnnouncement}
                   formatDate={formatDate}
+                  onClick={() => setSelectedAnnouncement(latestAnnouncement)}
                 />
               )}
 
@@ -715,6 +754,7 @@ export default function Announcements() {
                             announcement={announcement}
                             index={idx}
                             formatDate={formatDate}
+                            onClick={() => setSelectedAnnouncement(announcement)}
                           />
                         ))}
                       </AnimatePresence>
@@ -748,6 +788,14 @@ export default function Announcements() {
           )}
         </div>
       </div>
+
+      {/* Announcement Detail Modal */}
+      <AnnouncementDetailModal
+        announcement={selectedAnnouncement}
+        isOpen={selectedAnnouncement !== null}
+        onClose={() => setSelectedAnnouncement(null)}
+        formatDate={formatDate}
+      />
     </DashboardLayout>
   );
 }

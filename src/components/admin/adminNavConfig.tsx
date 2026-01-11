@@ -13,7 +13,7 @@ import {
   FileSearch,
   Phone,
   History,
-  Bot,
+  Trophy,
 } from "lucide-react";
 import type { AdminNavCardConfig } from "./AdminPremiumScaffold";
 
@@ -120,10 +120,10 @@ export const ADMIN_CORE_NAV_CARDS: AdminNavCardConfig[] = [
     variant: "gold",
   },
   {
-    title: "Safety Agent",
-    description: "Test AI announcements and compliance webhooks.",
-    icon: <Bot className="w-8 h-8 text-[#f4c979]" />,
-    to: "/admin/safety-agent",
+    title: "Safety Rewards",
+    description: "View announcement reward claims and user points.",
+    icon: <Trophy className="w-8 h-8 text-[#f4c979]" />,
+    to: "/admin/rewards",
     variant: "gold",
   },
 ];
