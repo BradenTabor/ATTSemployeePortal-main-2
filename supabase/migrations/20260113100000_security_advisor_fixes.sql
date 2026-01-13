@@ -227,21 +227,23 @@ COMMENT ON FUNCTION public.get_recent_cron_failures IS
   'Returns recent cron job failures within the specified number of days (default: 7).';
 
 -- 2.6 trigger_safety_announcement (if exists)
+-- Must DROP and recreate because PostgreSQL doesn't allow changing return type via CREATE OR REPLACE
 DO $$
 BEGIN
-  IF EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'trigger_safety_announcement') THEN
-    EXECUTE $inner$
-      CREATE OR REPLACE FUNCTION public.trigger_safety_announcement()
-      RETURNS TRIGGER
-      LANGUAGE plpgsql
-      SET search_path = public
-      AS $func$
-      BEGIN
-        NEW.updated_at = now();
-        RETURN NEW;
-      END;
-      $func$;
-    $inner$;
+  IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid WHERE p.proname = 'trigger_safety_announcement' AND n.nspname = 'public') THEN
+    -- Drop existing function first (CASCADE to handle dependencies)
+    DROP FUNCTION IF EXISTS public.trigger_safety_announcement() CASCADE;
+    -- Recreate with proper search_path
+    CREATE FUNCTION public.trigger_safety_announcement()
+    RETURNS TRIGGER
+    LANGUAGE plpgsql
+    SET search_path = public
+    AS $func$
+    BEGIN
+      NEW.updated_at = now();
+      RETURN NEW;
+    END;
+    $func$;
   END IF;
 END $$;
 
@@ -266,23 +268,25 @@ END;
 $$;
 
 -- 2.8 set_safety_announcements_published_at (if exists)
+-- Must DROP and recreate because PostgreSQL doesn't allow changing return type via CREATE OR REPLACE
 DO $$
 BEGIN
-  IF EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'set_safety_announcements_published_at') THEN
-    EXECUTE $inner$
-      CREATE OR REPLACE FUNCTION public.set_safety_announcements_published_at()
-      RETURNS TRIGGER
-      LANGUAGE plpgsql
-      SET search_path = public
-      AS $func$
-      BEGIN
-        IF NEW.status = 'published' AND OLD.status != 'published' THEN
-          NEW.published_at = now();
-        END IF;
-        RETURN NEW;
-      END;
-      $func$;
-    $inner$;
+  IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid WHERE p.proname = 'set_safety_announcements_published_at' AND n.nspname = 'public') THEN
+    -- Drop existing function first (CASCADE to handle dependencies)
+    DROP FUNCTION IF EXISTS public.set_safety_announcements_published_at() CASCADE;
+    -- Recreate with proper search_path
+    CREATE FUNCTION public.set_safety_announcements_published_at()
+    RETURNS TRIGGER
+    LANGUAGE plpgsql
+    SET search_path = public
+    AS $func$
+    BEGIN
+      IF NEW.status = 'published' AND OLD.status != 'published' THEN
+        NEW.published_at = now();
+      END IF;
+      RETURN NEW;
+    END;
+    $func$;
   END IF;
 END $$;
 
