@@ -104,10 +104,11 @@ export function useSmartDefaults(formType: 'dvir' | 'jsa'): UseSmartDefaultsResu
     setError(null);
 
     try {
-      // 3-second timeout for responsive UX using Promise.race
+      // 5-second timeout for responsive UX using Promise.race
+      // Edge Functions can take 3-4s on cold start, so we allow 5s
       // (Supabase SDK doesn't natively support AbortController)
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Request timeout')), 3000);
+        setTimeout(() => reject(new Error('Request timeout')), 5000);
       });
 
       const fetchPromise = supabase.functions.invoke(
