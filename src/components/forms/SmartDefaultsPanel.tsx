@@ -194,7 +194,7 @@ export function SmartDefaultsPanel({
     onApplyField(field, value);
     setAppliedFields((prev) => new Set([...prev, field]));
 
-    const suggestion = suggestions[field];
+    const suggestion = suggestions?.[field];
     logger.info('smart_defaults_applied_field', {
       form_type: formType,
       field_name: field,
@@ -204,6 +204,7 @@ export function SmartDefaultsPanel({
   };
 
   const handleApplyAll = () => {
+    if (!suggestions) return;
     onApplyAll();
     setAppliedFields(new Set(Object.keys(suggestions)));
 
