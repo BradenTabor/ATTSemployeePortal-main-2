@@ -95,7 +95,8 @@ export interface UseSmartDefaultsResult {
  */
 export function useSmartDefaults(formType: 'dvir' | 'jsa'): UseSmartDefaultsResult {
   const [data, setData] = useState<SmartDefaultsResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  // Start with loading=true so the skeleton shows immediately on mount
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchSuggestions = useCallback(async () => {
