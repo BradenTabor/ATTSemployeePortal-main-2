@@ -17,6 +17,8 @@ import { CONFIG} from "../../lib/config";
 import { logger } from "../../lib/logger"; 
 import { cn } from "../../lib/utils";
 import { DateField } from "../../components/forms/GlassyPickers";
+import { useSmartDefaults } from "../../hooks/useSmartDefaults";
+import { SmartDefaultsPanel } from "../../components/forms/SmartDefaultsPanel";
 
 type ExtraPhotos = {
   tire?: File;
@@ -1011,6 +1013,50 @@ export default function DVIRForm() {
     setAerialChecklist({});
   }, []);
 
+  // Smart Defaults: Telemetry tracking
+  const formStartTime = useRef(Date.now());
+
+  // Smart Defaults: Fetch suggestions
+  const { suggestions, warnings, isLoading: suggestionsLoading } = useSmartDefaults('dvir');
+  const [suggestionsVisible, setSuggestionsVisible] = useState(true);
+
+  // Log form_started on mount for baseline metrics
+  useEffect(() => {
+    logger.info('form_started', {
+      form_type: 'dvir',
+      timestamp: new Date().toISOString(),
+    });
+  }, []);
+
+  // Smart Defaults: Apply a single suggestion
+  const handleApplySuggestion = useCallback((field: string, value: string | boolean) => {
+    const setters: Record<string, (val: string) => void> = {
+      truckNumber: setTruckNumber,
+      chipperNumber: setChipperNumber,
+      trailerNumber: setTrailerNumber,
+      truckGvwr: setTruckGvwr,
+      trailerChipperGvwr: setTrailerChipperGvwr,
+      medicalCardRequired: (val) => setMedicalCardRequired(val as "" | "YES" | "NO"),
+      hasMedicalCard: (val) => setHasMedicalCard(val as "" | "YES" | "NO"),
+      copyOfRegistration: (val) => setCopyOfRegistration(val as "" | "YES" | "NO"),
+      copyOfInsurance: (val) => setCopyOfInsurance(val as "" | "YES" | "NO"),
+    };
+
+    const setter = setters[field];
+    if (setter) {
+      const stringValue = typeof value === 'boolean' ? (value ? 'YES' : 'NO') : String(value);
+      setter(stringValue);
+    }
+  }, []);
+
+  // Smart Defaults: Apply all suggestions
+  const handleApplyAllSuggestions = useCallback(() => {
+    if (!suggestions) return;
+    Object.entries(suggestions).forEach(([field, suggestion]) => {
+      handleApplySuggestion(field, suggestion.value);
+    });
+  }, [suggestions, handleApplySuggestion]);
+
   // 🔔 Auto-hide toast messages after 4 seconds
   useEffect(() => {
     if (!success && !error) return;
@@ -1302,6 +1348,15 @@ export default function DVIRForm() {
         return;
       }
 
+      // Log form_submitted for baseline metrics (Smart Defaults ROI)
+      // IMPORTANT: Log immediately after successful DB insert, before webhook
+      logger.info('form_submitted', {
+        form_type: 'dvir',
+        duration_seconds: Math.round((Date.now() - formStartTime.current) / 1000),
+        smart_defaults_shown: Boolean(suggestions && Object.keys(suggestions).length > 0),
+        timestamp: new Date().toISOString(),
+      });
+
       logger.info("DVIR row inserted successfully. Sending to Make webhook...");
 
       // 8) THEN send to Make.com webhook (non-blocking for DB save)
@@ -1441,6 +1496,19 @@ export default function DVIRForm() {
             </div>
           </div>
         </motion.div>
+
+        {/* Smart Defaults Panel */}
+        {suggestionsVisible && (suggestionsLoading || (suggestions && Object.keys(suggestions).length > 0)) && (
+          <SmartDefaultsPanel
+            formType="dvir"
+            suggestions={suggestions}
+            warnings={warnings}
+            isLoading={suggestionsLoading}
+            onApplyField={handleApplySuggestion}
+            onApplyAll={handleApplyAllSuggestions}
+            onDismiss={() => setSuggestionsVisible(false)}
+          />
+        )}
 
         {error && (
           <motion.div 

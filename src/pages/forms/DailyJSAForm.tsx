@@ -1,10 +1,13 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
 import { cn } from "../../lib/utils";
+import { logger } from "../../lib/logger";
+import { useSmartDefaults } from "../../hooks/useSmartDefaults";
+import { SmartDefaultsPanel } from "../../components/forms/SmartDefaultsPanel";
 
 // Wizard components
 import { JsaWizard, type SaveMode } from "../../components/forms/JsaWizard";
@@ -337,6 +340,49 @@ export default function DailyJSAForm() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [spanPage, setSpanPage] = useState(1);
 
+  // Smart Defaults: Telemetry tracking
+  const formStartTime = useRef(Date.now());
+
+  // Smart Defaults: Fetch suggestions
+  const { suggestions, warnings, isLoading: suggestionsLoading } = useSmartDefaults('jsa');
+  const [suggestionsVisible, setSuggestionsVisible] = useState(true);
+
+  // Log form_started on mount for baseline metrics
+  useEffect(() => {
+    logger.info('form_started', {
+      form_type: 'jsa',
+      timestamp: new Date().toISOString(),
+    });
+  }, []);
+
+  // Smart Defaults: Apply a single suggestion (suggestions use camelCase keys)
+  const handleApplySuggestion = useCallback((field: string, value: string | boolean) => {
+    // Map to handleInputChange which expects camelCase keys
+    const keyMap: Record<string, keyof DailyJsaFormState> = {
+      workLocation: 'workLocation',
+      circuitNumber: 'circuitNumber',
+      nearestHospital: 'nearestHospital',
+      nearestClinic: 'nearestClinic',
+      ocContact: 'ocContact',
+      docContact: 'docContact',
+      gfContact: 'gfContact',
+      safetyContact: 'safetyContact',
+    };
+
+    const formKey = keyMap[field];
+    if (formKey) {
+      setForm((prev) => ({ ...prev, [formKey]: String(value) }));
+    }
+  }, []);
+
+  // Smart Defaults: Apply all suggestions
+  const handleApplyAllSuggestions = useCallback(() => {
+    if (!suggestions) return;
+    Object.entries(suggestions).forEach(([field, suggestion]) => {
+      handleApplySuggestion(field, suggestion.value);
+    });
+  }, [handleApplySuggestion, suggestions]);
+
   // Computed values
   const isFormValid = useMemo(
     () =>
@@ -643,6 +689,16 @@ export default function DailyJSAForm() {
           throw updateError;
         }
 
+        // Log form_submitted for baseline metrics (Smart Defaults ROI)
+        logger.info('form_submitted', {
+          form_type: 'jsa',
+          duration_seconds: Math.round((Date.now() - formStartTime.current) / 1000),
+          status: targetStatus,
+          is_edit: true,
+          smart_defaults_shown: Boolean(suggestions && Object.keys(suggestions).length > 0),
+          timestamp: new Date().toISOString(),
+        });
+
         setSuccess(targetStatus === "completed" ? "JSA completed successfully!" : "JSA draft saved successfully.");
         setForm((prev) => ({
           ...prev,
@@ -664,6 +720,16 @@ export default function DailyJSAForm() {
         if (insertError) {
           throw insertError;
         }
+
+        // Log form_submitted for baseline metrics (Smart Defaults ROI)
+        logger.info('form_submitted', {
+          form_type: 'jsa',
+          duration_seconds: Math.round((Date.now() - formStartTime.current) / 1000),
+          status: targetStatus,
+          is_edit: false,
+          smart_defaults_shown: Boolean(suggestions && Object.keys(suggestions).length > 0),
+          timestamp: new Date().toISOString(),
+        });
 
         setSuccess(targetStatus === "completed" ? "JSA completed successfully!" : "JSA draft created successfully.");
         setForm((prev) => ({
@@ -689,7 +755,7 @@ export default function DailyJSAForm() {
     } finally {
       setSaving(false);
     }
-  }, [user, form, isEditMode, id, persistedStatus, navigate]);
+  }, [user, form, isEditMode, id, persistedStatus, navigate, suggestions]);
 
   const handleComplete = useCallback(async () => {
     // Use the new save mode to complete
@@ -739,11 +805,25 @@ export default function DailyJSAForm() {
     switch (currentStep) {
       case 1:
         return (
-          <StepJobInfo
-            form={form}
-            onInputChange={handleInputChange}
-            isLoading={loadingRecord}
-          />
+          <>
+            {/* Smart Defaults Panel - Show only on Step 1 (Job Info) */}
+            {suggestionsVisible && (suggestionsLoading || (suggestions && Object.keys(suggestions).length > 0)) && (
+              <SmartDefaultsPanel
+                formType="jsa"
+                suggestions={suggestions}
+                warnings={warnings}
+                isLoading={suggestionsLoading}
+                onApplyField={handleApplySuggestion}
+                onApplyAll={handleApplyAllSuggestions}
+                onDismiss={() => setSuggestionsVisible(false)}
+              />
+            )}
+            <StepJobInfo
+              form={form}
+              onInputChange={handleInputChange}
+              isLoading={loadingRecord}
+            />
+          </>
         );
       case 2:
         return (
