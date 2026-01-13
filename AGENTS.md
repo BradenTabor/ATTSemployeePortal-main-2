@@ -63,6 +63,7 @@ This repo uses a 3-layer architecture that separates probabilistic language gene
 - `directives/grounding_and_safety.md`
 - `directives/notifications_email.md`
 - `directives/timezone_and_cutoffs.md`
+- `directives/smart_form_defaults.md` **(NEW - AI-assisted form defaults)**
 
 ### Layer 2: Orchestration (Decision making)
 - This is you. Your job is intelligent routing and safe decision-making.
@@ -401,6 +402,83 @@ Always use `dryRun: true` for testing to avoid:
 - Writing to announcements table
 - Creating notification events
 - Sending push notifications
+
+---
+
+---
+
+## Smart Form Defaults (AI-Assisted)
+
+### Overview
+The Smart Form Defaults feature suggests safe, non-critical default values for DVIR and JSA form fields based on user submission history. Uses a deterministic-first approach with optional AI tie-breaking.
+
+### Architecture
+- **Directive:** `directives/smart_form_defaults.md`
+- **Edge Function:** `supabase/functions/get-smart-defaults/index.ts`
+- **Execution Scripts:**
+  - `execution/getSmartDefaultsCandidates.ts` - Candidate extraction
+  - `execution/generateSmartDefaults.ts` - AI tie-breaking
+  - `execution/validateSmartDefaults.ts` - Allowlist enforcement
+- **Frontend:**
+  - `src/hooks/useSmartDefaults.ts` - React hook
+  - `src/components/forms/SmartDefaultsPanel.tsx` - UI component
+
+### Key Design Decisions
+1. **Deterministic-first:** AI is only called for ties between candidates
+2. **Contact field privacy:** Contact fields (oc_contact, etc.) are NEVER sent to AI
+3. **Field allowlist:** Only non-critical fields can receive suggestions
+4. **User control:** Suggestions are optional, never auto-applied
+
+### Eligible Fields
+
+**DVIR:**
+- truck_number, chipper_number, trailer_number
+- truck_gvwr, trailer_chipper_gvwr
+- medical_card_required, has_medical_card
+- copy_of_registration, copy_of_insurance
+
+**JSA:**
+- work_location, circuit_number
+- nearest_hospital, nearest_clinic
+- oc_contact, doc_contact, gf_contact, safety_contact
+
+### Forbidden Fields (Never Suggest)
+- hazards_present, ppe, weather_conditions (safety-critical)
+- vehicle_trailer_checklist, aerial_checklist (inspection data)
+- notes, signatures, photos (user content)
+- mileage (changes daily)
+
+### Environment Variables
+```bash
+SMART_DEFAULTS_ENABLED=true  # Feature flag (kill switch)
+DRY_RUN=false               # Skip AI calls for testing
+OPENAI_API_KEY=sk-...       # Required for AI tie-breaking
+```
+
+### Telemetry Events
+- `smart_defaults_shown` - Panel displayed to user
+- `smart_defaults_applied_field` - Single field applied
+- `smart_defaults_applied_all` - Apply All clicked
+- `smart_defaults_dismissed` - Panel dismissed
+
+### Testing
+```bash
+# Run unit tests
+npx vitest run src/services/safety-agent/tests/smartDefaults.test.ts
+
+# Test Edge Function (dry-run)
+curl -X POST "https://[project].supabase.co/functions/v1/get-smart-defaults" \
+  -H "Authorization: Bearer [user_token]" \
+  -H "Content-Type: application/json" \
+  -d '{"form_type": "dvir"}'
+```
+
+### ROI Measurement
+Baseline metrics are collected via telemetry events:
+- `form_started` - When user opens form
+- `form_submitted` - With duration_seconds and smart_defaults_shown
+
+See `docs/baseline_metrics.md` for ROI calculation methodology.
 
 ---
 
