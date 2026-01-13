@@ -365,7 +365,9 @@ export default function AdminJSA() {
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      let query = supabase.from("daily_jsa").select("*").order(sortField, { ascending: sortDirection === "asc" });
+      // Map user_name to user_id since user_name is a computed field from join
+      const dbSortField = sortField === "user_name" ? "user_id" : sortField;
+      let query = supabase.from("daily_jsa").select("*").order(dbSortField, { ascending: sortDirection === "asc" });
 
       if (statusFilter !== "all") query = query.eq("status", statusFilter);
       if (dateFilter) query = query.gte("job_date", dateFilter);
