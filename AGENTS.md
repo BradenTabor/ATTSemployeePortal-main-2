@@ -353,6 +353,57 @@ Non-negotiables:
 
 ---
 
+## Testing the Safety Announcement Feature
+
+### Test Suite Location
+- **Unit Tests:** `src/services/safety-agent/tests/safetyAnnouncement.test.ts`
+- **Test Results:** `src/services/safety-agent/SELF_ANNEALING_LOG.md`
+
+### Running Tests
+
+```bash
+# Run unit tests (Vitest)
+npx vitest run src/services/safety-agent/tests/safetyAnnouncement.test.ts
+
+# Run Edge Function integration test (cURL)
+curl -X POST "https://[project].supabase.co/functions/v1/generate-safety-announcement" \
+  -H "Content-Type: application/json" \
+  -d '{"windowHours": 48, "dryRun": true, "skipWeekendCheck": true}'
+```
+
+### Test Scenarios (10 Tests)
+
+| Test | Description | Key Validations |
+|------|-------------|-----------------|
+| 1 | Basic Happy Path (48h) | Data fetch, OpenAI call, char limits |
+| 2 | Normal Volume (24h) | Typical weekday data patterns |
+| 3 | Extended Window (168h) | Stress test, performance, token limits |
+| 4 | Low Data (1h) | Low data flag, fallback message |
+| 5 | Weekend Check | Weekend detection and skip logic |
+| 6 | Performance | Benchmark fetch/aggregation times |
+| 7 | OpenAI Failure | Error handling when API unavailable |
+| 8 | Character Overflow | Truncation at word/sentence boundaries |
+| 9 | Database Issues | Graceful handling of query failures |
+| 10 | Timezone | 7 AM CST = 13:00 UTC verification |
+
+### Expected Performance Thresholds
+
+| Metric | Threshold | Typical |
+|--------|-----------|---------|
+| Total execution time | < 55s | 1.5-3s |
+| OpenAI tokens | < 4096 | 600-700 |
+| Body char count | ≤ 283 | 230-240 |
+| Summary char count | ≤ 240 | 200-240 |
+
+### dryRun Mode
+
+Always use `dryRun: true` for testing to avoid:
+- Writing to announcements table
+- Creating notification events
+- Sending push notifications
+
+---
+
 ## Summary
 
 You sit between ATTS intent (directives) and deterministic execution (scripts). You do not guess. You ground safety outputs in JSA data, preserve auditability, and keep compliance enforcement deterministic with deduped notifications via Make.com webhook.

@@ -2,6 +2,7 @@ import type { ComponentType } from "react";
 import { MapPin, Loader2 } from "lucide-react";
 import { cn } from "../../../lib/utils";
 import { DateField, TimeField } from "../GlassyPickers";
+import { LocationInputField } from "../LocationInputField";
 
 type JobInfoFields = {
   jobDate: string;
@@ -131,16 +132,18 @@ export function StepJobInfo({ form, onInputChange, isLoading }: StepJobInfoProps
           />
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
-          <InputField
+          <LocationInputField
             label="Nearest Hospital"
             value={form.nearestHospital}
             onChange={(value) => onInputChange("nearestHospital", value)}
+            locationType="hospital"
             placeholder="Hospital name"
           />
-          <InputField
+          <LocationInputField
             label="Nearest Clinic"
             value={form.nearestClinic}
             onChange={(value) => onInputChange("nearestClinic", value)}
+            locationType="clinic"
             placeholder="Clinic name"
           />
         </div>

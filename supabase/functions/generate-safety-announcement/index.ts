@@ -7,14 +7,22 @@
  * a safety announcement using OpenAI. Saves to the main announcements table
  * and sends a high-priority push notification to all users.
  * 
- * Deploy: supabase functions deploy generate-safety-announcement
+ * ## Authentication (Required)
+ * This function requires authentication via ONE of:
+ * 1. Authorization header with service role key: `Authorization: Bearer <service_role_key>`
+ * 2. Internal secret header: `x-internal-secret: <internal_secret>`
  * 
- * Set secrets:
- *   supabase secrets set OPENAI_API_KEY=sk-your-key
- *   supabase secrets set INTERNAL_SECRET=your-internal-secret
+ * The pg_cron job uses the service role key for authentication.
  * 
- * Schedule (pg_cron):
- *   0 13 * * 1-5 -- 7 AM CST (13:00 UTC) Mon-Fri
+ * ## Deploy
+ * supabase functions deploy generate-safety-announcement
+ * 
+ * ## Set secrets
+ * supabase secrets set OPENAI_API_KEY=sk-your-key
+ * supabase secrets set INTERNAL_SECRET=your-internal-secret
+ * 
+ * ## Schedule (pg_cron)
+ * 0 13 * * 1-5 -- 7 AM CST (13:00 UTC) Mon-Fri
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
@@ -195,6 +203,46 @@ serve(async (req) => {
   console.log('[SafetyAnnouncement] Starting at', new Date().toISOString());
 
   try {
+    // =======================================================================
+    // Authentication: Accept service role key OR internal secret
+    // =======================================================================
+    const authHeader = req.headers.get('authorization');
+    const internalSecretHeader = req.headers.get('x-internal-secret');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const expectedInternalSecret = Deno.env.get('INTERNAL_SECRET');
+
+    // Extract bearer token safely
+    const bearerToken = authHeader?.startsWith('Bearer ') 
+      ? authHeader.slice(7) 
+      : null;
+
+    const isServiceRole = bearerToken && bearerToken === serviceRoleKey;
+    const isInternalSecret = internalSecretHeader && expectedInternalSecret && 
+                             internalSecretHeader === expectedInternalSecret;
+
+    // If neither auth method is valid, reject the request
+    if (!isServiceRole && !isInternalSecret) {
+      console.warn('[SafetyAnnouncement] Unauthorized request:', {
+        hasAuthHeader: !!authHeader,
+        hasInternalSecret: !!internalSecretHeader,
+        timestamp: new Date().toISOString()
+      });
+      
+      return new Response(
+        JSON.stringify({ 
+          error: 'Unauthorized',
+          hint: 'Provide either Authorization header (service role) or x-internal-secret header'
+        }), 
+        { 
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Log auth method for debugging
+    console.log('[SafetyAnnouncement] Authenticated via:', isServiceRole ? 'service_role' : 'internal_secret');
+
     // Parse request body with defaults
     const body = await req.json().catch(() => ({}));
     const windowHours = body.windowHours ?? DEFAULT_WINDOW_HOURS;

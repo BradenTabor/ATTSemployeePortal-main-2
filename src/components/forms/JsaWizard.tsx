@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback, useState } from "react";
+import { type ReactNode, useCallback, useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
@@ -8,16 +8,21 @@ import {
   FolderOpen,
   Loader2,
   Save,
+  FileText,
+  CheckCircle2,
+  X,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { JSA_STEPS } from "./jsaSteps";
+
+export type SaveMode = "draft" | "complete";
 
 interface JsaWizardProps {
   currentStep: number;
   setCurrentStep: (step: number) => void;
   completedSteps: Set<number>;
   children: ReactNode;
-  onSave: () => void;
+  onSave: (mode: SaveMode) => void;
   onComplete: () => void;
   onBack: () => void;
   onOpenPicker: () => void;
@@ -44,10 +49,38 @@ export function JsaWizard({
   title = "Daily JSA",
 }: JsaWizardProps) {
   const [direction, setDirection] = useState(0);
+  const [showSaveOptions, setShowSaveOptions] = useState(false);
+  const saveButtonRef = useRef<HTMLButtonElement>(null);
+  const saveMenuRef = useRef<HTMLDivElement>(null);
+  
   const totalSteps = JSA_STEPS.length;
   const isFirstStep = currentStep === 1;
   const isLastStep = currentStep === totalSteps;
   const currentStepData = JSA_STEPS[currentStep - 1];
+
+  // Close save menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        showSaveOptions &&
+        saveMenuRef.current &&
+        saveButtonRef.current &&
+        !saveMenuRef.current.contains(event.target as Node) &&
+        !saveButtonRef.current.contains(event.target as Node)
+      ) {
+        setShowSaveOptions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showSaveOptions]);
+
+  // Handle save with mode
+  const handleSave = useCallback((mode: SaveMode) => {
+    setShowSaveOptions(false);
+    onSave(mode);
+  }, [onSave]);
 
   const goToStep = useCallback(
     (step: number) => {
@@ -243,25 +276,125 @@ export function JsaWizard({
             <span className="hidden sm:inline">Back</span>
           </button>
 
-          {/* Center: Save */}
-          <button
-            type="button"
-            onClick={onSave}
-            disabled={saving}
-            className={cn(
-              "inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all touch-manipulation",
-              saving
-                ? "opacity-60 cursor-not-allowed bg-emerald-700/50 text-white/70"
-                : "bg-emerald-600 text-white hover:bg-emerald-500 shadow-lg shadow-emerald-900/30"
-            )}
-          >
-            {saving ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
-            <span>Save</span>
-          </button>
+          {/* Center: Save with Mode Selector */}
+          <div className="relative">
+            <button
+              ref={saveButtonRef}
+              type="button"
+              onClick={() => setShowSaveOptions(!showSaveOptions)}
+              disabled={saving}
+              className={cn(
+                "inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all touch-manipulation",
+                saving
+                  ? "opacity-60 cursor-not-allowed bg-emerald-700/50 text-white/70"
+                  : "bg-emerald-600 text-white hover:bg-emerald-500 shadow-lg shadow-emerald-900/30"
+              )}
+            >
+              {saving ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              <span>Save</span>
+            </button>
+
+            {/* Save Mode Selector Popover */}
+            <AnimatePresence>
+              {showSaveOptions && !saving && (
+                <motion.div
+                  ref={saveMenuRef}
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  transition={{ duration: 0.15, ease: "easeOut" }}
+                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 sm:w-72 z-50"
+                >
+                  <div className="bg-gray-900/98 backdrop-blur-xl border border-white/15 rounded-2xl shadow-2xl shadow-black/50 overflow-hidden">
+                    {/* Header */}
+                    <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10 bg-white/5">
+                      <span className="text-xs font-semibold text-white/80 uppercase tracking-wide">
+                        Choose Save Type
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setShowSaveOptions(false)}
+                        className="p-1 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Options */}
+                    <div className="p-2 space-y-1">
+                      {/* Save Draft Option */}
+                      <button
+                        type="button"
+                        onClick={() => handleSave("draft")}
+                        className="w-full flex items-start gap-3 p-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 hover:border-amber-500/40 transition-all group"
+                      >
+                        <div className="flex-shrink-0 p-2 rounded-lg bg-amber-500/20 group-hover:bg-amber-500/30 transition-colors">
+                          <FileText className="w-5 h-5 text-amber-400" />
+                        </div>
+                        <div className="flex-1 text-left">
+                          <p className="text-sm font-semibold text-amber-300 group-hover:text-amber-200">
+                            Save as Draft
+                          </p>
+                          <p className="text-[11px] text-white/50 mt-0.5 leading-tight">
+                            Save progress and continue later. Find saved drafts in{" "}
+                            <span className="text-emerald-400 font-medium">My JSA's</span>{" "}
+                            (top right).
+                          </p>
+                        </div>
+                      </button>
+
+                      {/* Save Complete Option */}
+                      <button
+                        type="button"
+                        onClick={() => handleSave("complete")}
+                        disabled={!isValid}
+                        className={cn(
+                          "w-full flex items-start gap-3 p-3 rounded-xl border transition-all group",
+                          isValid
+                            ? "bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/20 hover:border-emerald-500/40"
+                            : "bg-white/5 border-white/10 opacity-50 cursor-not-allowed"
+                        )}
+                      >
+                        <div className={cn(
+                          "flex-shrink-0 p-2 rounded-lg transition-colors",
+                          isValid
+                            ? "bg-emerald-500/20 group-hover:bg-emerald-500/30"
+                            : "bg-white/10"
+                        )}>
+                          <CheckCircle2 className={cn(
+                            "w-5 h-5",
+                            isValid ? "text-emerald-400" : "text-white/30"
+                          )} />
+                        </div>
+                        <div className="flex-1 text-left">
+                          <p className={cn(
+                            "text-sm font-semibold",
+                            isValid
+                              ? "text-emerald-300 group-hover:text-emerald-200"
+                              : "text-white/40"
+                          )}>
+                            Save as Complete
+                          </p>
+                          <p className="text-[11px] text-white/50 mt-0.5 leading-tight">
+                            {isValid
+                              ? "Mark as final submission. Ready for review."
+                              : "Fill required fields first (date, location, signature)."}
+                          </p>
+                        </div>
+                      </button>
+                    </div>
+
+                    {/* Arrow pointer */}
+                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 rotate-45 bg-gray-900/98 border-r border-b border-white/15" />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
           {/* Next / Complete */}
           {isLastStep ? (

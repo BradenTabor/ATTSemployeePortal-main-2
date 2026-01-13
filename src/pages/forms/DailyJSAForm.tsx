@@ -7,7 +7,7 @@ import { supabase } from "../../lib/supabaseClient";
 import { cn } from "../../lib/utils";
 
 // Wizard components
-import { JsaWizard } from "../../components/forms/JsaWizard";
+import { JsaWizard, type SaveMode } from "../../components/forms/JsaWizard";
 import { JsaPickerDrawer } from "../../components/forms/JsaPickerDrawer";
 
 // Step components
@@ -528,7 +528,7 @@ export default function DailyJSAForm() {
     []
   );
 
-  const handleSave = useCallback(async () => {
+  const handleSave = useCallback(async (mode: SaveMode = "draft") => {
     if (!user) {
       setError("You must be signed in to save a JSA.");
       return;
@@ -555,25 +555,28 @@ export default function DailyJSAForm() {
       }
     }
 
+    // Map SaveMode to status
+    const targetStatus: "draft" | "completed" = mode === "complete" ? "completed" : "draft";
+
     setSaving(true);
     setError(null);
     setSuccess(null);
 
     const nowIso = new Date().toISOString();
     const isNewRecord = !isEditMode || !form.createdAt;
-    const statusChanged = isNewRecord ? true : form.status !== persistedStatus;
+    const statusChanged = isNewRecord ? true : targetStatus !== persistedStatus;
     const nextStatusHistory = Array.isArray(form.statusHistory)
       ? [...form.statusHistory]
       : [];
     if (isNewRecord) {
-      nextStatusHistory.push({ status: form.status, timestamp: nowIso });
+      nextStatusHistory.push({ status: targetStatus, timestamp: nowIso });
     } else if (statusChanged) {
-      nextStatusHistory.push({ status: form.status, timestamp: nowIso });
+      nextStatusHistory.push({ status: targetStatus, timestamp: nowIso });
     }
     const statusChangedAt =
       statusChanged || !form.statusChangedAt ? nowIso : form.statusChangedAt;
     const completedAt =
-      form.status === "completed"
+      targetStatus === "completed"
         ? statusChanged || !form.completedAt
           ? nowIso
           : form.completedAt
@@ -619,7 +622,7 @@ export default function DailyJSAForm() {
         spans: form.spans,
         notes: form.notes || null,
         employee_signature: form.employeeSignature || null,
-        status: form.status,
+        status: targetStatus,
         updated_at: nowIso,
         status_changed_at: statusChangedAt,
         completed_at: completedAt,
@@ -640,16 +643,17 @@ export default function DailyJSAForm() {
           throw updateError;
         }
 
-        setSuccess("JSA saved successfully.");
+        setSuccess(targetStatus === "completed" ? "JSA completed successfully!" : "JSA draft saved successfully.");
         setForm((prev) => ({
           ...prev,
+          status: targetStatus,
           updatedAt: nowIso,
           statusChangedAt,
           completedAt,
           createdAt: prev.createdAt || (isNewRecord ? nowIso : prev.createdAt),
           statusHistory: nextStatusHistory,
         }));
-        setPersistedStatus(form.status);
+        setPersistedStatus(targetStatus);
       } else {
         const { data, error: insertError } = await supabase
           .from("daily_jsa")
@@ -661,16 +665,17 @@ export default function DailyJSAForm() {
           throw insertError;
         }
 
-        setSuccess("JSA created successfully.");
+        setSuccess(targetStatus === "completed" ? "JSA completed successfully!" : "JSA draft created successfully.");
         setForm((prev) => ({
           ...prev,
+          status: targetStatus,
           createdAt: nowIso,
           updatedAt: nowIso,
           statusChangedAt,
           completedAt,
           statusHistory: nextStatusHistory,
         }));
-        setPersistedStatus(form.status);
+        setPersistedStatus(targetStatus);
         if (data?.id) {
           navigate(`/forms/jsa/${data.id}`, { replace: true });
         }
@@ -687,12 +692,9 @@ export default function DailyJSAForm() {
   }, [user, form, isEditMode, id, persistedStatus, navigate]);
 
   const handleComplete = useCallback(async () => {
-    handleStatusChange("completed");
-    // Small delay to let state update
-    setTimeout(() => {
-      handleSave();
-    }, 100);
-  }, [handleStatusChange, handleSave]);
+    // Use the new save mode to complete
+    handleSave("complete");
+  }, [handleSave]);
 
   const handleBack = useCallback(() => {
     navigate("/dashboard");
