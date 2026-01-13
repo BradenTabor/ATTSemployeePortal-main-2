@@ -103,18 +103,23 @@ export function useSmartDefaults(formType: 'dvir' | 'jsa'): UseSmartDefaultsResu
     setError(null);
 
     try {
-      // 3-second timeout for responsive UX
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      // 3-second timeout for responsive UX using Promise.race
+      // (Supabase SDK doesn't natively support AbortController)
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Request timeout')), 3000);
+      });
 
-      const { data: response, error: fnError } = await supabase.functions.invoke(
+      const fetchPromise = supabase.functions.invoke(
         'get-smart-defaults',
         {
           body: { form_type: formType },
         }
       );
 
-      clearTimeout(timeoutId);
+      const { data: response, error: fnError } = await Promise.race([
+        fetchPromise,
+        timeoutPromise,
+      ]);
 
       if (fnError) throw fnError;
 

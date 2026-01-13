@@ -886,6 +886,15 @@ export default function DVIRForm() {
         return;
       }
 
+      // Log form_submitted for baseline metrics (Smart Defaults ROI)
+      // IMPORTANT: Log immediately after successful DB insert, before webhook
+      logger.info('form_submitted', {
+        form_type: 'dvir',
+        duration_seconds: Math.round((Date.now() - formStartTime.current) / 1000),
+        smart_defaults_shown: Boolean(suggestions && Object.keys(suggestions).length > 0),
+        timestamp: new Date().toISOString(),
+      });
+
       logger.info("DVIR row inserted successfully. Sending to Make webhook...");
 
       // 8) THEN send to Make.com webhook (non-blocking for DB save)
@@ -913,14 +922,6 @@ export default function DVIRForm() {
       }
 
       logger.info("Make webhook call succeeded.");
-
-      // Log form_submitted for baseline metrics (Smart Defaults ROI)
-      logger.info('form_submitted', {
-        form_type: 'dvir',
-        duration_seconds: Math.round((Date.now() - formStartTime.current) / 1000),
-        smart_defaults_shown: Boolean(suggestions && Object.keys(suggestions).length > 0),
-        timestamp: new Date().toISOString(),
-      });
 
       // ✅ Success – show message & reset form
       setSuccess("DVIR submitted successfully.");
