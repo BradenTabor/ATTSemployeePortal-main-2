@@ -106,6 +106,9 @@ function GoldCollapsibleSectionComponent({
   const toggleId = `${id}-toggle`;
   const contentId = `${id}-content`;
 
+  // Compute aria attributes to satisfy linter
+  const ariaProps = { 'aria-expanded': isOpen ? 'true' as const : 'false' as const };
+
   // Select animation variant based on reduced motion preference
   const animationVariant = useMemo(
     () => prefersReducedMotion ? reducedMotionExpand : expandAnimation,
@@ -156,7 +159,7 @@ function GoldCollapsibleSectionComponent({
             type="button"
             onClick={toggle}
             onKeyDown={handleKeyDown}
-            aria-expanded={isOpen}
+            {...ariaProps}
             aria-controls={contentId}
             className={cn(
               'flex-1 flex items-center gap-4 text-left',
@@ -214,9 +217,9 @@ function GoldCollapsibleSectionComponent({
             className="overflow-hidden"
           >
             {/* Content divider line */}
-            <div className="mx-5 md:mx-6 h-px bg-gradient-to-r from-transparent via-[#f4c979]/30 to-transparent" />
+            <div className="mx-3 sm:mx-5 md:mx-6 h-px bg-gradient-to-r from-transparent via-[#f4c979]/30 to-transparent" />
             
-            <div className="p-5 md:p-6 pt-4">
+            <div className="p-3 sm:p-5 md:p-6 pt-3 sm:pt-4">
               {hasHydrated && children}
             </div>
           </motion.div>

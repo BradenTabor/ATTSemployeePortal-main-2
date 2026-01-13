@@ -226,3 +226,4 @@ function UserRewardsDetailModalComponent({ user, isOpen, onClose }: UserRewardsD
 export const UserRewardsDetailModal = memo(UserRewardsDetailModalComponent);
 export default UserRewardsDetailModal;
 
+

@@ -513,6 +513,7 @@ export default function DailyEquipmentInspectionForm() {
                 <select
                   value={equipmentType}
                   onChange={(e) => handleEquipmentTypeSelect(e.target.value as EquipmentTypeOption | "")}
+                  aria-label="Equipment type"
                   className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-2 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
                 >
                   <option value="">Select type</option>
@@ -532,6 +533,7 @@ export default function DailyEquipmentInspectionForm() {
                   value={equipmentNumber}
                   onChange={(e) => setEquipmentNumber(e.target.value)}
                   disabled={!equipmentType}
+                  aria-label="Equipment number"
                   className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-2 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/60 disabled:opacity-40"
                 >
                   <option value="">{equipmentType ? "Select #" : "Type first"}</option>
@@ -558,6 +560,7 @@ export default function DailyEquipmentInspectionForm() {
                 <select
                   value={template}
                   onChange={(e) => setTemplate(e.target.value as EquipmentTemplate)}
+                  aria-label="Equipment template"
                   className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-2 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
                 >
                   <option value="">Select</option>
@@ -723,8 +726,8 @@ export default function DailyEquipmentInspectionForm() {
                 }}
                 type="file"
                 accept="image/*"
-                capture="environment"
-                className="hidden"
+                aria-label={`Upload ${photo.label} photo`}
+                className="sr-only"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   handlePhotoChange(photo.key, file);

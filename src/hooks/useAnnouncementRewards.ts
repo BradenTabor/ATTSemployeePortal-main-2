@@ -207,3 +207,4 @@ export function isRewardEligible(author: string | null | undefined): boolean {
   return author === 'Safety AI';
 }
 
+

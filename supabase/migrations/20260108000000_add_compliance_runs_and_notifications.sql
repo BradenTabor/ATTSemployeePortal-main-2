@@ -208,3 +208,4 @@ BEGIN
   RAISE NOTICE 'Compliance tables created successfully!';
 END $$;
 
+

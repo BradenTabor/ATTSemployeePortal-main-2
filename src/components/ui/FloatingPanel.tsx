@@ -82,7 +82,7 @@ export function FloatingPanelTrigger({
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       aria-haspopup="dialog"
-      aria-expanded={false}
+      aria-expanded="false"
     >
       <motion.div
         layoutId={`floating-panel-label-container-${uniqueId}`}
@@ -353,6 +353,8 @@ export function FloatingPanelTextarea({
       autoFocus
       value={note}
       onChange={(e) => setNote(e.target.value)}
+      aria-label="Note input"
+      placeholder="Enter your note..."
     />
   )
 }

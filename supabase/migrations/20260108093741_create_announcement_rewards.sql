@@ -107,3 +107,4 @@ GRANT EXECUTE ON FUNCTION public.get_user_total_points(uuid) TO authenticated;
 -- Comment on function
 COMMENT ON FUNCTION public.get_user_total_points IS 'Returns total reward points for a user (defaults to current user)';
 
+

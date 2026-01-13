@@ -27,8 +27,8 @@ import {
 // Storage key for persisting active tab
 const ACTIVE_TAB_STORAGE_KEY = "atts:admin:dashboard:activeTab";
 
-// Tab configuration
-const DASHBOARD_TABS: SegmentTab[] = [
+// Base tab configuration (counts added dynamically)
+const BASE_DASHBOARD_TABS = [
   { id: "control-panel", label: "Control Panel", shortLabel: "Control", icon: <LayoutGrid className="w-4 h-4" /> },
   { id: "announcements", label: "Announcements", shortLabel: "News", icon: <Megaphone className="w-4 h-4" /> },
   { id: "requests", label: "Contact Requests", shortLabel: "Requests", icon: <Inbox className="w-4 h-4" /> },
@@ -101,7 +101,7 @@ function getPersistedTab(): string {
   if (typeof window === 'undefined') return "control-panel";
   try {
     const stored = localStorage.getItem(ACTIVE_TAB_STORAGE_KEY);
-    if (stored && DASHBOARD_TABS.some(t => t.id === stored)) {
+    if (stored && BASE_DASHBOARD_TABS.some((t: { id: string }) => t.id === stored)) {
       return stored;
     }
   } catch {
@@ -177,6 +177,19 @@ export default function AdminDashboard() {
   
   // Display name
   const displayName = useMemo(() => session?.user?.email?.split("@")[0] || "Admin", [session?.user?.email]);
+
+  // Dynamic tabs with badge counts
+  const DASHBOARD_TABS: SegmentTab[] = useMemo(() => {
+    return BASE_DASHBOARD_TABS.map(tab => {
+      if (tab.id === "requests" && contactRequests.length > 0) {
+        return { ...tab, badgeCount: contactRequests.length };
+      }
+      if (tab.id === "announcements" && composerOpen) {
+        return { ...tab, hasNotification: true };
+      }
+      return tab;
+    });
+  }, [contactRequests.length, composerOpen]);
 
   // Fetch contact requests
   useEffect(() => {
@@ -425,7 +438,7 @@ export default function AdminDashboard() {
             onClick={() => setComposerOpen(true)}
             disabled={composerOpen}
             className="inline-flex items-center justify-center whitespace-nowrap rounded-full border border-transparent bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] px-5 py-2 text-sm font-semibold text-[#332308] shadow-[0_15px_30px_rgba(0,0,0,0.45)] transition hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c0b09] disabled:cursor-not-allowed disabled:opacity-60 min-h-[44px]"
-            aria-expanded={composerOpen}
+            aria-expanded={composerOpen ? "true" : "false"}
           >
             Create New Announcement
           </button>
@@ -552,41 +565,73 @@ export default function AdminDashboard() {
             icon={<Megaphone className="w-5 h-5 text-[#f4c979]" />}
           >
             {announcementsLoading ? (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="space-y-2 sm:grid sm:grid-cols-2 sm:gap-3 sm:space-y-0 lg:grid-cols-3">
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="h-16 rounded-xl bg-white/5 animate-pulse" />
+                  <div key={i} className="h-20 sm:h-16 rounded-xl bg-white/5 animate-pulse" />
                 ))}
               </div>
             ) : !announcements || announcements.length === 0 ? (
               <p className="text-sm text-[#f8e5bb]/70">No announcements yet.</p>
             ) : (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {announcements.map((announcement) => (
-                  <motion.div
-                    key={announcement.id}
-                    className={`flex items-center justify-between gap-4 p-3 rounded-xl border transition-colors ${
-                      editingAnnouncement?.id === announcement.id
-                        ? "border-[#f4c979]/50 bg-[#f4c979]/10"
-                        : "border-white/10 bg-black/30 hover:border-[#f4c979]/30"
-                    }`}
-                    whileHover={{ scale: 1.01 }}
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-white truncate">{announcement.title}</p>
-                      <p className="text-xs text-[#f8e5bb]/60">
-                        {announcement.date} · {announcement.author}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleEditAnnouncement(announcement)}
-                      className="shrink-0 p-2 rounded-lg border border-[#f4c979]/30 text-[#f4c979] hover:bg-[#f4c979]/10 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-                      aria-label={`Edit announcement: ${announcement.title}`}
+              <div className="space-y-2 sm:grid sm:grid-cols-2 sm:gap-3 sm:space-y-0 lg:grid-cols-3 max-h-[60vh] overflow-y-auto pr-1 -mr-1 scrollbar-thin scrollbar-thumb-[#f4c979]/20 scrollbar-track-transparent">
+                {announcements.map((announcement) => {
+                  const isEditing = editingAnnouncement?.id === announcement.id;
+                  // Format author - truncate email if too long
+                  const authorDisplay = announcement.author.includes('@') 
+                    ? announcement.author.split('@')[0] 
+                    : announcement.author;
+                  
+                  return (
+                    <motion.div
+                      key={announcement.id}
+                      className={`group relative rounded-xl border transition-all ${
+                        isEditing
+                          ? "border-[#f4c979]/50 bg-[#f4c979]/10 ring-1 ring-[#f4c979]/30"
+                          : "border-white/10 bg-black/30 hover:border-[#f4c979]/30 hover:bg-black/40"
+                      }`}
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.99 }}
                     >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                  </motion.div>
-                ))}
+                      {/* Mobile: Stacked layout */}
+                      <div className="flex flex-col p-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                        <div className="flex-1 min-w-0 mb-2 sm:mb-0">
+                          <p className="text-sm font-medium text-white line-clamp-2 sm:truncate leading-snug">
+                            {announcement.title}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1 text-[10px] sm:text-xs text-[#f8e5bb]/60">
+                            <span className="shrink-0">{announcement.date}</span>
+                            <span className="text-[#f4c979]/40">·</span>
+                            <span className="truncate">{authorDisplay}</span>
+                          </div>
+                        </div>
+                        
+                        {/* Edit button - full width on mobile, icon on desktop */}
+                        <button
+                          type="button"
+                          onClick={() => handleEditAnnouncement(announcement)}
+                          className={`shrink-0 flex items-center justify-center gap-2 rounded-lg border transition-all min-h-[44px] ${
+                            isEditing
+                              ? "border-[#f4c979]/50 bg-[#f4c979]/20 text-[#f4c979]"
+                              : "border-[#f4c979]/30 text-[#f4c979] hover:bg-[#f4c979]/10 active:bg-[#f4c979]/20"
+                          } w-full sm:w-auto sm:min-w-[44px] sm:p-2`}
+                          aria-label={`Edit announcement: ${announcement.title}`}
+                        >
+                          <Pencil className="w-4 h-4" />
+                          <span className="text-xs font-semibold sm:hidden">
+                            {isEditing ? "Editing" : "Edit"}
+                          </span>
+                        </button>
+                      </div>
+                      
+                      {/* Editing indicator */}
+                      {isEditing && (
+                        <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-[#f4c979] shadow-[0_0_8px_rgba(244,201,121,0.8)]">
+                          <span className="absolute inset-0 rounded-full bg-[#f4c979] animate-ping opacity-75" />
+                        </div>
+                      )}
+                    </motion.div>
+                  );
+                })}
               </div>
             )}
           </GoldCollapsibleSection>

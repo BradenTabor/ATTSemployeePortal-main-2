@@ -125,27 +125,20 @@ export default function Contact() {
                   ATTS Support Desk
                 </p>
                 <p className="text-sm text-white/70 mt-1">
-                  We aim to confirm every message within one business day. Emergency calls are routed instantly.
+                  We aim to respond to every message within one business day.
                 </p>
               </div>
-              <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0">
+              <div className="flex-shrink-0">
                 <a
-                  href="tel:8709308000"
+                  href="mailto:shane@alltts.com"
                   className="inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-black transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 min-h-[44px]"
                   style={{
                     background: 'radial-gradient(circle at 50% 50%, rgba(52, 211, 153, 1) 0%, rgba(5, 5, 5, 0.5) 100%)',
                     boxShadow: '0px 10px 15px -0.54px rgba(16, 185, 129, 0.45), 0px 4px 6px -4px rgba(16, 185, 129, 0.3)'
                   }}
                 >
-                  <Phone className="w-4 h-4" />
-                  Call emergency hotline
-                </a>
-                <a
-                  href="mailto:support@alltts.com"
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-white/20 px-5 py-3 text-sm font-semibold text-white/90 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70 min-h-[44px]"
-                >
                   <Mail className="w-4 h-4" />
-                  Email support@alltts.com
+                  Email shane@alltts.com
                 </a>
               </div>
             </div>
@@ -336,7 +329,7 @@ function ContactForm({ userId }: ContactFormProps) {
             onChange={handleChange}
             className="w-full rounded-2xl border border-white/15 bg-black/40 px-4 py-3 text-white placeholder:text-white/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
             placeholder="Jane Crewlead"
-            aria-invalid={Boolean(errors.name)}
+            aria-invalid={errors.name ? "true" : "false"}
             aria-describedby={errors.name ? "name-error" : undefined}
           />
           {errors.name && (
@@ -361,7 +354,7 @@ function ContactForm({ userId }: ContactFormProps) {
             onChange={handleChange}
             className="w-full rounded-2xl border border-white/15 bg-black/40 px-4 py-3 text-white placeholder:text-white/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
             placeholder="name@alltts.com"
-            aria-invalid={Boolean(errors.email)}
+            aria-invalid={errors.email ? "true" : "false"}
             aria-describedby={errors.email ? "email-error" : undefined}
           />
           {errors.email && (
@@ -416,7 +409,7 @@ function ContactForm({ userId }: ContactFormProps) {
             rows={5}
             className="w-full rounded-2xl border border-white/15 bg-black/40 px-4 py-3 text-white placeholder:text-white/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
             placeholder="Share details so we can route your request."
-            aria-invalid={Boolean(errors.message)}
+            aria-invalid={errors.message ? "true" : "false"}
             aria-describedby={errors.message ? "message-error" : undefined}
           />
           {errors.message && (

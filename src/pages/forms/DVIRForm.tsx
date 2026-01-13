@@ -7,9 +7,11 @@ import {
   FormEvent,
   ReactNode,
   useCallback,
+  useMemo,
 } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import DashboardLayout from "../../layouts/DashboardLayout";
-import { Camera, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Camera, CheckCircle2, AlertTriangle, Gauge, CheckCheck, RotateCcw, TrendingUp, Truck } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import { CONFIG} from "../../lib/config";
 import { logger } from "../../lib/logger"; 
@@ -161,10 +163,7 @@ interface SectionCardProps {
 
 const SectionCard = ({ title, subtitle, badge, children }: SectionCardProps) => (
   <section 
-    className="rounded-3xl border border-white/10 bg-gradient-to-br from-gray-900/80 via-gray-900/40 to-gray-900/10 p-6 space-y-5"
-    style={{
-      boxShadow: '0px 4px 25px 8px rgba(0, 0, 0, 0.65), 0px 20px 25px -5px rgba(0, 0, 0, 0.1), 0px 8px 10px -6px rgba(0, 0, 0, 0.1)',
-    }}
+    className="rounded-3xl border border-white/10 bg-gradient-to-br from-gray-900/80 via-gray-900/40 to-gray-900/10 p-6 space-y-5 shadow-2xl shadow-black/60"
   >
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div>
@@ -178,6 +177,364 @@ const SectionCard = ({ title, subtitle, badge, children }: SectionCardProps) => 
     <div className="space-y-4">{children}</div>
   </section>
 );
+
+/* ------------------------------------------------------------------
+   Enhanced Mileage Input Component
+-------------------------------------------------------------------*/
+
+interface MileageInputProps {
+  value: string;
+  onChange: (value: string) => void;
+  truckNumber?: string;
+  previousMileage?: number | null;
+}
+
+const MileageInput = ({ value, onChange, truckNumber, previousMileage }: MileageInputProps) => {
+  const [isFocused, setIsFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  
+  // Format number with commas for display
+  const formatWithCommas = (num: string) => {
+    const cleaned = num.replace(/[^\d]/g, '');
+    return cleaned.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  };
+  
+  // Calculate mileage difference from previous
+  const mileageDiff = useMemo(() => {
+    if (!previousMileage || !value) return null;
+    const current = parseInt(value.replace(/[^\d]/g, ''), 10);
+    if (isNaN(current)) return null;
+    return current - previousMileage;
+  }, [value, previousMileage]);
+  
+  // Validation state
+  const validation = useMemo(() => {
+    const num = parseInt(value.replace(/[^\d]/g, ''), 10);
+    if (!value) return { valid: true, message: '' };
+    if (isNaN(num)) return { valid: false, message: 'Enter a valid number' };
+    if (num < 1000) return { valid: false, message: 'Mileage seems too low' };
+    if (num > 999999) return { valid: false, message: 'Mileage seems too high' };
+    if (previousMileage && num < previousMileage) {
+      return { valid: false, message: 'Lower than previous reading' };
+    }
+    if (mileageDiff && mileageDiff > 500) {
+      return { valid: true, message: `+${mileageDiff.toLocaleString()} miles since last DVIR` };
+    }
+    return { valid: true, message: '' };
+  }, [value, previousMileage, mileageDiff]);
+  
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Only allow digits
+    const rawValue = e.target.value.replace(/[^\d]/g, '');
+    onChange(rawValue);
+  };
+  
+  const displayValue = isFocused ? value : formatWithCommas(value);
+
+  return (
+    <div className="space-y-2">
+      <label className="flex items-center gap-2 text-xs text-gray-300">
+        <Gauge className="w-3.5 h-3.5 text-emerald-400" />
+        ODOMETER READING *
+      </label>
+      
+      <div 
+        className={cn(
+          "relative rounded-xl transition-all duration-200",
+          isFocused && "ring-2 ring-emerald-400/50"
+        )}
+      >
+        {/* Odometer-style background */}
+        <div className={cn(
+          "absolute inset-0 rounded-xl bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 border transition-colors duration-200",
+          isFocused ? "border-emerald-500/50" : "border-gray-700",
+          !validation.valid && value && "border-red-500/50"
+        )} />
+        
+        {/* Input container */}
+        <div className="relative flex items-center">
+          {/* Truck icon indicator */}
+          <div className={cn(
+            "flex items-center justify-center w-12 h-12 rounded-l-xl border-r transition-colors",
+            isFocused ? "border-emerald-500/30 bg-emerald-500/10" : "border-gray-700 bg-black/30"
+          )}>
+            <Truck className={cn(
+              "w-5 h-5 transition-colors",
+              isFocused ? "text-emerald-400" : "text-gray-500"
+            )} />
+          </div>
+          
+          {/* Main input */}
+          <input
+            ref={inputRef}
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            value={displayValue}
+            onChange={handleChange}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            placeholder="123,456"
+            className={cn(
+              "flex-1 bg-transparent px-4 py-3 text-lg font-mono text-white tracking-wider",
+              "placeholder:text-gray-600 focus:outline-none",
+              "tabular-nums"
+            )}
+            aria-label="Vehicle mileage"
+          />
+          
+          {/* Unit label */}
+          <div className="px-4 text-xs text-gray-500 font-medium">
+            mi
+          </div>
+        </div>
+      </div>
+      
+      {/* Helper text and validation */}
+      <AnimatePresence mode="wait">
+        {validation.message && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            className={cn(
+              "flex items-center gap-1.5 text-xs",
+              validation.valid ? "text-emerald-400/80" : "text-red-400"
+            )}
+          >
+            {validation.valid ? (
+              <TrendingUp className="w-3 h-3" />
+            ) : (
+              <AlertTriangle className="w-3 h-3" />
+            )}
+            {validation.message}
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* Previous mileage hint */}
+      {truckNumber && previousMileage && (
+        <p className="text-[10px] text-gray-500">
+          Last recorded for {truckNumber}: {previousMileage.toLocaleString()} mi
+        </p>
+      )}
+    </div>
+  );
+};
+
+/* ------------------------------------------------------------------
+   Quick Actions for Checklist
+-------------------------------------------------------------------*/
+
+interface ChecklistQuickActionsProps {
+  onMarkAllPass: () => void;
+  onClearAll: () => void;
+  checkedCount: number;
+  totalCount: number;
+}
+
+const ChecklistQuickActions = ({ onMarkAllPass, onClearAll, checkedCount, totalCount }: ChecklistQuickActionsProps) => (
+  <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-black/30 border border-white/5">
+    <div className="flex items-center gap-2">
+      <div className="text-xs text-gray-400">
+        <span className="text-emerald-400 font-semibold">{checkedCount}</span>
+        <span className="text-gray-600"> / </span>
+        <span>{totalCount}</span>
+        <span className="ml-1 text-gray-600">checked</span>
+      </div>
+      {checkedCount === totalCount && checkedCount > 0 && (
+        <motion.span 
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+        >
+          Complete ✓
+        </motion.span>
+      )}
+    </div>
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={onMarkAllPass}
+        className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-medium text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 rounded-lg transition-colors"
+      >
+        <CheckCheck className="w-3 h-3" />
+        All Pass
+      </button>
+      <button
+        type="button"
+        onClick={onClearAll}
+        className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-medium text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition-colors"
+      >
+        <RotateCcw className="w-3 h-3" />
+        Clear
+      </button>
+    </div>
+  </div>
+);
+
+/* ------------------------------------------------------------------
+   Progress Indicator - Clean & Spacious Design
+-------------------------------------------------------------------*/
+
+interface ProgressStep {
+  id: string;
+  label: string;
+  icon?: ReactNode;
+  isComplete: boolean;
+  isCurrent: boolean;
+}
+
+interface FormProgressProps {
+  steps: ProgressStep[];
+}
+
+const FormProgress = ({ steps }: FormProgressProps) => {
+  const completedCount = steps.filter(s => s.isComplete).length;
+  const progress = (completedCount / steps.length) * 100;
+  
+  return (
+    <div className="sticky top-2 sm:top-4 z-40 mx-2 sm:mx-4">
+      <motion.div 
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-4xl mx-auto rounded-2xl bg-black/70 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/50 overflow-hidden"
+      >
+        {/* Subtle gradient border effect */}
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
+        
+        <div className="p-4 sm:p-5">
+          {/* Top row: Title + Percentage */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className={cn(
+                "w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
+                completedCount === steps.length 
+                  ? "bg-emerald-500/20 border border-emerald-500/40" 
+                  : "bg-white/5 border border-white/10"
+              )}>
+                {completedCount === steps.length ? (
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                ) : (
+                  <Gauge className="w-5 h-5 text-gray-400" />
+                )}
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-white">
+                  {completedCount === steps.length ? "Ready to Submit!" : "DVIR Progress"}
+                </h3>
+                <p className="text-xs text-gray-500">
+                  {completedCount} of {steps.length} sections complete
+                </p>
+              </div>
+            </div>
+            
+            {/* Circular percentage indicator */}
+            <div className="relative w-12 h-12">
+              <svg className="w-12 h-12 -rotate-90" viewBox="0 0 36 36">
+                {/* Background circle */}
+                <circle
+                  cx="18" cy="18" r="14"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  className="text-gray-800"
+                />
+                {/* Progress circle */}
+                <motion.circle
+                  cx="18" cy="18" r="14"
+                  fill="none"
+                  stroke="url(#progressGradient)"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeDasharray={`${progress * 0.88} 88`}
+                  initial={{ strokeDasharray: "0 88" }}
+                  animate={{ strokeDasharray: `${progress * 0.88} 88` }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                />
+                <defs>
+                  <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#10b981" />
+                    <stop offset="100%" stopColor="#34d399" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className={cn(
+                  "text-xs font-bold",
+                  progress === 100 ? "text-emerald-400" : "text-white"
+                )}>
+                  {Math.round(progress)}%
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Progress bar */}
+          <div className="relative h-1.5 bg-gray-800 rounded-full overflow-hidden mb-5">
+            <motion.div
+              className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400"
+              initial={{ width: 0 }}
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+            />
+          </div>
+          
+          {/* Step indicators - horizontal scroll on mobile */}
+          <div className="flex items-start justify-between gap-2 sm:gap-4">
+            {steps.map((step, index) => {
+              const isCompleted = step.isComplete;
+              const isCurrent = step.isCurrent && !step.isComplete;
+              const isPending = !step.isComplete && !step.isCurrent;
+              
+              return (
+                <div 
+                  key={step.id} 
+                  className="flex-1 flex flex-col items-center text-center min-w-0"
+                >
+                  {/* Step indicator */}
+                  <div className={cn(
+                    "w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center mb-2 transition-all duration-300",
+                    isCompleted && "bg-emerald-500 shadow-lg shadow-emerald-500/25",
+                    isCurrent && "bg-emerald-500/20 border-2 border-emerald-400 shadow-lg shadow-emerald-500/20",
+                    isPending && "bg-gray-800/80 border border-gray-700"
+                  )}>
+                    {isCompleted ? (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                      >
+                        <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                      </motion.div>
+                    ) : (
+                      <span className={cn(
+                        "text-xs sm:text-sm font-semibold",
+                        isCurrent ? "text-emerald-400" : "text-gray-500"
+                      )}>
+                        {index + 1}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* Step label */}
+                  <span className={cn(
+                    "text-[10px] sm:text-xs font-medium leading-tight transition-colors truncate w-full",
+                    isCompleted && "text-emerald-400",
+                    isCurrent && "text-white",
+                    isPending && "text-gray-500"
+                  )}>
+                    {step.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
 
 interface UploadTileProps {
   label: string;
@@ -423,6 +780,7 @@ export default function DVIRForm() {
   // SECTION A – Vehicle / Driver info
   const [truckNumber, setTruckNumber] = useState("");
   const [mileage, setMileage] = useState("");
+  const [previousMileage, setPreviousMileage] = useState<number | null>(null);
   const [chipperNumber, setChipperNumber] = useState("");
   const [trailerNumber, setTrailerNumber] = useState("");
   const [truckGvwr, setTruckGvwr] = useState("");
@@ -437,6 +795,41 @@ export default function DVIRForm() {
   const [driversLicenseRequired, setDriversLicenseRequired] = useState("");
   const [hasMedicalCard, setHasMedicalCard] = useState<"" | "YES" | "NO">("");
   const [medicalCardExp, setMedicalCardExp] = useState("");
+  
+  // 🔽 Fetch previous mileage when truck is selected
+  useEffect(() => {
+    const fetchPreviousMileage = async () => {
+      if (!truckNumber) {
+        setPreviousMileage(null);
+        return;
+      }
+      
+      try {
+        const { data, error } = await supabase
+          .from("dvir_reports")
+          .select("mileage")
+          .eq("truck_number", truckNumber)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        if (error) {
+          logger.warn("Could not fetch previous mileage:", error);
+          return;
+        }
+        
+        if (data?.mileage) {
+          setPreviousMileage(typeof data.mileage === 'number' ? data.mileage : parseInt(data.mileage, 10));
+        } else {
+          setPreviousMileage(null);
+        }
+      } catch (err) {
+        logger.error("Error fetching previous mileage:", err);
+      }
+    };
+    
+    fetchPreviousMileage();
+  }, [truckNumber]);
 
   // 🔽 Auto-populate driver info from app_users
   useEffect(() => {
@@ -548,6 +941,75 @@ export default function DVIRForm() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  
+  // 📊 Calculate form progress
+  const progressSteps = useMemo((): ProgressStep[] => {
+    const vehicleChecklistCount = Object.keys(vehicleTrailerChecklist).length;
+    const aerialChecklistCount = Object.keys(aerialChecklist).length;
+    
+    const step1Complete = Boolean(truckNumber && mileage && driversName);
+    const step2Complete = vehicleChecklistCount >= VEHICLE_TRAILER_ITEMS.length;
+    const step3Complete = Boolean(oilDipstickPhoto);
+    const step4Complete = aerialChecklistCount >= AERIAL_LIFT_ITEMS.length || (step3Complete && aerialChecklistCount === 0);
+    
+    return [
+      {
+        id: 'vehicle',
+        label: 'Vehicle',
+        isComplete: step1Complete,
+        isCurrent: !step1Complete,
+      },
+      {
+        id: 'checklist',
+        label: 'Inspect',
+        isComplete: step2Complete,
+        isCurrent: step1Complete && !step2Complete,
+      },
+      {
+        id: 'photos',
+        label: 'Photos',
+        isComplete: step3Complete,
+        isCurrent: step2Complete && !step3Complete,
+      },
+      {
+        id: 'aerial',
+        label: 'Aerial',
+        isComplete: step4Complete,
+        isCurrent: step3Complete && !step4Complete,
+      },
+      {
+        id: 'signatures',
+        label: 'Submit',
+        isComplete: false, // Completed when form is submitted
+        isCurrent: step4Complete,
+      },
+    ];
+  }, [truckNumber, mileage, driversName, vehicleTrailerChecklist, aerialChecklist, oilDipstickPhoto]);
+  
+  // Quick action handlers for checklists
+  const handleMarkAllVehiclePass = useCallback(() => {
+    const allPass: Record<string, ChecklistValue> = {};
+    VEHICLE_TRAILER_ITEMS.forEach(item => {
+      allPass[item.id] = "P";
+    });
+    setVehicleTrailerChecklist(allPass);
+  }, []);
+  
+  const handleClearVehicleChecklist = useCallback(() => {
+    setVehicleTrailerChecklist({});
+  }, []);
+  
+  const handleMarkAllAerialPass = useCallback(() => {
+    const allPass: Record<string, ChecklistValue> = {};
+    AERIAL_LIFT_ITEMS.forEach(item => {
+      allPass[item.id] = "P";
+    });
+    setAerialChecklist(allPass);
+  }, []);
+  
+  const handleClearAerialChecklist = useCallback(() => {
+    setAerialChecklist({});
+  }, []);
 
   // 🔔 Auto-hide toast messages after 4 seconds
   useEffect(() => {
@@ -927,45 +1389,82 @@ export default function DVIRForm() {
 
   return (
     <DashboardLayout title="Daily Vehicle Inspection (DVIR)">
-      <div className="max-w-4xl mx-auto">
+      {/* Progress indicator - floating card at top */}
+      <FormProgress steps={progressSteps} />
+      
+      <div className="max-w-4xl mx-auto pt-6 sm:pt-8">
         {/* Toast notifications */}
-        {(success || error) && (
-          <div className="fixed top-4 right-4 z-50">
-            <div
-              className={`rounded-lg px-4 py-3 text-sm shadow-lg ${
-                success
-                  ? "bg-emerald-600 text-white"
-                  : "bg-red-600 text-white"
-              }`}
+        <AnimatePresence>
+          {(success || error) && (
+            <motion.div 
+              initial={{ opacity: 0, y: -20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -20, scale: 0.95 }}
+              className="fixed top-16 right-4 z-50"
             >
-              {success || error}
-            </div>
-          </div>
-        )}
+              <div
+                className={cn(
+                  "rounded-xl px-4 py-3 text-sm shadow-2xl backdrop-blur-sm border",
+                  success
+                    ? "bg-emerald-600/90 text-white border-emerald-400/30"
+                    : "bg-red-600/90 text-white border-red-400/30"
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  {success ? (
+                    <CheckCircle2 className="w-4 h-4" />
+                  ) : (
+                    <AlertTriangle className="w-4 h-4" />
+                  )}
+                  {success || error}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Info banner */}
-        <div 
-          className="mb-4 rounded-3xl border-4 border-yellow-500 px-4 py-3 text-xs text-white"
-          style={{
-            backgroundColor: 'rgba(112, 84, 0, 0.45)',
-            boxShadow: '0px 4px 18px 4px rgba(0, 0, 0, 1)',
-          }}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-4 rounded-3xl border-4 border-yellow-500 px-4 py-3 text-xs text-white bg-yellow-900/45 shadow-2xl shadow-black"
         >
-          At the start of each shift, drivers must inspect their vehicles and
-          report any deficiency that could affect safety or result in a breakdown.
-          Complete Section A, then Section B, record any deficiencies in the Notes
-          section, and review with your supervisor. Oil dipstick photo is required.
-        </div>
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-medium text-yellow-200 mb-1">Pre-Trip Inspection Required</p>
+              <p className="text-white/80">
+                At the start of each shift, drivers must inspect their vehicles and
+                report any deficiency that could affect safety or result in a breakdown.
+                Complete all sections, capture the required photo, and sign off before operating.
+              </p>
+            </div>
+          </div>
+        </motion.div>
 
         {error && (
-          <div className="mb-4 rounded-md border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm text-red-100">
-            {error}
-          </div>
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            className="mb-4 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-100"
+          >
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-red-400" />
+              {error}
+            </div>
+          </motion.div>
         )}
         {success && (
-          <div className="mb-4 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-100">
-            {success}
-          </div>
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            className="mb-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100"
+          >
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              {success}
+            </div>
+          </motion.div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -975,17 +1474,24 @@ export default function DVIRForm() {
             subtitle="Complete before operating any ATTS vehicle. Fields marked with * are required."
             badge="Required"
           >
-            {/* Truck / Trailer / GVWR row */}
+            {/* Truck Selection - Full Width for prominence */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* TRUCK NUMBER as dropdown */}
-              <div>
-                <label className="block text-xs text-gray-300 mb-1">
-                  TRUCK NUMBER *
+              {/* TRUCK NUMBER as dropdown - Enhanced */}
+              <div className="sm:col-span-1">
+                <label className="flex items-center gap-2 text-xs text-gray-300 mb-1">
+                  <Truck className="w-3.5 h-3.5 text-emerald-400" />
+                  SELECT TRUCK *
                 </label>
                 <select
                   value={truckNumber}
                   onChange={(e) => setTruckNumber(e.target.value)}
-                  className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-sm text-white"
+                  className={cn(
+                    "w-full rounded-xl bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900",
+                    "border px-4 py-3 text-sm text-white font-medium",
+                    "focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all",
+                    truckNumber ? "border-emerald-500/40" : "border-gray-700"
+                  )}
+                  title="Select truck number"
                 >
                   <option value="">Select Truck Number</option>
                   {TRUCK_NUMBERS.map((num) => (
@@ -994,20 +1500,30 @@ export default function DVIRForm() {
                     </option>
                   ))}
                 </select>
+                {truckNumber && (
+                  <motion.p 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-[10px] text-emerald-400/70 mt-1"
+                  >
+                    ✓ Truck {truckNumber} selected
+                  </motion.p>
+                )}
               </div>
 
-              <div>
-                <label className="block text-xs text-gray-300 mb-1">
-                  MILEAGE *
-                </label>
-                <input
-                  type="number"
+              {/* Enhanced Mileage Input */}
+              <div className="sm:col-span-1">
+                <MileageInput
                   value={mileage}
-                  onChange={(e) => setMileage(e.target.value)}
-                  className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-sm text-white"
+                  onChange={setMileage}
+                  truckNumber={truckNumber}
+                  previousMileage={previousMileage}
                 />
               </div>
-
+            </div>
+            
+            {/* Equipment Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* CHIPPER NUMBER as dropdown */}
               <div>
                 <label className="block text-xs text-gray-300 mb-1">
@@ -1016,7 +1532,8 @@ export default function DVIRForm() {
                 <select
                   value={chipperNumber}
                   onChange={(e) => setChipperNumber(e.target.value)}
-                  className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-sm text-white"
+                  className="w-full rounded-xl bg-black/70 border border-gray-700 px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all"
+                  title="Select chipper number"
                 >
                   <option value="">Select Chipper Number</option>
                   {CHIPPER_NUMBERS.map((chip) => (
@@ -1035,7 +1552,8 @@ export default function DVIRForm() {
                 <select
                   value={trailerNumber}
                   onChange={(e) => setTrailerNumber(e.target.value)}
-                  className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-sm text-white"
+                  className="w-full rounded-xl bg-black/70 border border-gray-700 px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all"
+                  title="Select trailer number"
                 >
                   <option value="">Select Trailer Number</option>
                   {TRAILER_NUMBERS.map((trail) => (
@@ -1053,7 +1571,8 @@ export default function DVIRForm() {
                 <input
                   value={truckGvwr}
                   onChange={(e) => setTruckGvwr(e.target.value)}
-                  className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-sm text-white"
+                  placeholder="e.g., 26,000 lbs"
+                  className="w-full rounded-xl bg-black/70 border border-gray-700 px-3 py-2.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all"
                 />
               </div>
 
@@ -1064,7 +1583,8 @@ export default function DVIRForm() {
                 <input
                   value={trailerChipperGvwr}
                   onChange={(e) => setTrailerChipperGvwr(e.target.value)}
-                  className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-sm text-white"
+                  placeholder="e.g., 14,000 lbs"
+                  className="w-full rounded-xl bg-black/70 border border-gray-700 px-3 py-2.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all"
                 />
               </div>
             </div>
@@ -1103,43 +1623,50 @@ export default function DVIRForm() {
             {/* Driver + License fields */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs text-gray-300 mb-1">
+                <label htmlFor="driversName" className="block text-xs text-gray-300 mb-1">
                   DRIVERS NAME *
                 </label>
                 <input
+                  id="driversName"
                   value={driversName}
                   onChange={(e) => setDriversName(e.target.value)}
+                  placeholder="Enter full name"
                   className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-sm text-white"
                 />
               </div>
 
               <div>
-                <label className="block text-xs text-gray-300 mb-1">
+                <label htmlFor="driversLicenseNumber" className="block text-xs text-gray-300 mb-1">
                   DRIVERS LICENSE NUMBER
                 </label>
                 <input
+                  id="driversLicenseNumber"
                   value={driversLicenseNumber}
                   onChange={(e) => setDriversLicenseNumber(e.target.value)}
+                  placeholder="Enter license number"
                   className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-sm text-white"
                 />
               </div>
 
               <div>
-                <label className="block text-xs text-gray-300 mb-1">
+                <label htmlFor="driversLicenseClass" className="block text-xs text-gray-300 mb-1">
                   DRIVERS LICENSE CLASS
                 </label>
                 <input
+                  id="driversLicenseClass"
                   value={driversLicenseClass}
                   onChange={(e) => setDriversLicenseClass(e.target.value)}
+                  placeholder="e.g., Class A, B, C"
                   className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-sm text-white"
                 />
               </div>
 
               <div>
-                <label className="block text-xs text-gray-300 mb-1">
+                <label htmlFor="driversLicenseExp" className="block text-xs text-gray-300 mb-1">
                   DRIVERS LICENSE EXP. (MM/DD/YYYY)
                 </label>
                 <input
+                  id="driversLicenseExp"
                   value={driversLicenseExp}
                   onChange={(e) => setDriversLicenseExp(e.target.value)}
                   placeholder="MM/DD/YYYY"
@@ -1151,14 +1678,16 @@ export default function DVIRForm() {
             {/* License required + medical card */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs text-gray-300 mb-1">
+                <label htmlFor="driversLicenseRequired" className="block text-xs text-gray-300 mb-1">
                   DRIVERS LICENSE REQUIRED
                 </label>
                 <input
+                  id="driversLicenseRequired"
                   value={driversLicenseRequired}
                   onChange={(e) =>
                     setDriversLicenseRequired(e.target.value)
                   }
+                  placeholder="Enter requirement"
                   className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-sm text-white"
                 />
               </div>
@@ -1267,14 +1796,16 @@ export default function DVIRForm() {
               </div>
 
               <div>
-                <label className="block text-xs text-gray-300 mb-1">
+                <label htmlFor="driversSignatureSectionA" className="block text-xs text-gray-300 mb-1">
                   DRIVERS SIGNATURE (Section A) – printed name
                 </label>
                 <input
+                  id="driversSignatureSectionA"
                   value={driversSignatureSectionA}
                   onChange={(e) =>
                     setDriversSignatureSectionA(e.target.value)
                   }
+                  placeholder="Type your full name"
                   className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-sm text-white"
                 />
               </div>
@@ -1287,6 +1818,14 @@ export default function DVIRForm() {
             subtitle='Mark "P" for pass and "F" for fail. Describe deficiencies in the Notes section.'
             badge="Inspection"
           >
+            {/* Quick Actions */}
+            <ChecklistQuickActions
+              onMarkAllPass={handleMarkAllVehiclePass}
+              onClearAll={handleClearVehicleChecklist}
+              checkedCount={Object.keys(vehicleTrailerChecklist).length}
+              totalCount={VEHICLE_TRAILER_ITEMS.length}
+            />
+            
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {VEHICLE_TRAILER_ITEMS.map((item) => {
                 const value = vehicleTrailerChecklist[item.id] || "";
@@ -1315,8 +1854,7 @@ export default function DVIRForm() {
                               : "bg-black/70 border-gray-600 text-gray-300 hover:border-emerald-400/70 hover:text-emerald-200"
                           }
                         `}
-                        aria-label={`Mark ${item.label} as Pass`}
-                        aria-pressed={value === "P"}
+                        aria-label={`Mark ${item.label} as Pass${value === "P" ? " - currently selected" : ""}`}
                       >
                         P
                       </button>
@@ -1335,8 +1873,7 @@ export default function DVIRForm() {
                               : "bg-black/70 border-gray-600 text-gray-300 hover:border-red-400/70 hover:text-red-200"
                           }
                         `}
-                        aria-label={`Mark ${item.label} as Fail`}
-                        aria-pressed={value === "F"}
+                        aria-label={`Mark ${item.label} as Fail${value === "F" ? " - currently selected" : ""}`}
                       >
                         F
                       </button>
@@ -1353,13 +1890,13 @@ export default function DVIRForm() {
             subtitle="Capture the required oil dipstick photo plus any additional context that helps maintenance."
             badge="Media"
           >
-            {/* Hidden inputs */}
+            {/* Hidden file inputs - visually hidden but accessible */}
             <input
               ref={oilInputRef}
               type="file"
               accept="image/*"
-              capture="environment"
-              className="hidden"
+              aria-label="Upload oil dipstick photo"
+              className="sr-only"
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) setOilDipstickPhoto(file);
@@ -1369,8 +1906,8 @@ export default function DVIRForm() {
               ref={tireInputRef}
               type="file"
               accept="image/*"
-              capture="environment"
-              className="hidden"
+              aria-label="Upload tire tread photo"
+              className="sr-only"
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 handleExtraPhotoChange("tire", file);
@@ -1380,8 +1917,8 @@ export default function DVIRForm() {
               ref={coolantInputRef}
               type="file"
               accept="image/*"
-              capture="environment"
-              className="hidden"
+              aria-label="Upload coolant level photo"
+              className="sr-only"
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 handleExtraPhotoChange("coolant", file);
@@ -1391,8 +1928,8 @@ export default function DVIRForm() {
               ref={damageInputRef}
               type="file"
               accept="image/*"
-              capture="environment"
-              className="hidden"
+              aria-label="Upload vehicle damage photo"
+              className="sr-only"
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 handleExtraPhotoChange("damage", file);
@@ -1402,8 +1939,8 @@ export default function DVIRForm() {
               ref={mileageInputRef}
               type="file"
               accept="image/*"
-              capture="environment"
-              className="hidden"
+              aria-label="Upload detail clean truck photo"
+              className="sr-only"
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 handleExtraPhotoChange("mileage", file);
@@ -1453,7 +1990,9 @@ export default function DVIRForm() {
             subtitle="Describe every deficiency that needs attention. These notes appear in the mechanic review."
             badge="Documentation"
           >
+            <label htmlFor="dvirNotes" className="sr-only">Notes and deficiencies</label>
             <textarea
+              id="dvirNotes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={6}
@@ -1468,6 +2007,14 @@ export default function DVIRForm() {
             subtitle='Only complete for vehicles with aerial lifts. Mark "P" for pass and "F" for fail.'
             badge="Aerial"
           >
+            {/* Quick Actions */}
+            <ChecklistQuickActions
+              onMarkAllPass={handleMarkAllAerialPass}
+              onClearAll={handleClearAerialChecklist}
+              checkedCount={Object.keys(aerialChecklist).length}
+              totalCount={AERIAL_LIFT_ITEMS.length}
+            />
+            
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {AERIAL_LIFT_ITEMS.map((item) => {
                 const value = aerialChecklist[item.id] || "";
@@ -1496,8 +2043,7 @@ export default function DVIRForm() {
                               : "bg-black/70 border-gray-600 text-gray-300 hover:border-emerald-400/70 hover:text-emerald-200"
                           }
                         `}
-                        aria-label={`Mark ${item.label} as Pass`}
-                        aria-pressed={value === "P"}
+                        aria-label={`Mark ${item.label} as Pass${value === "P" ? " - currently selected" : ""}`}
                       >
                         P
                       </button>
@@ -1516,8 +2062,7 @@ export default function DVIRForm() {
                               : "bg-black/70 border-gray-600 text-gray-300 hover:border-red-400/70 hover:text-red-200"
                           }
                         `}
-                        aria-label={`Mark ${item.label} as Fail`}
-                        aria-pressed={value === "F"}
+                        aria-label={`Mark ${item.label} as Fail${value === "F" ? " - currently selected" : ""}`}
                       >
                         F
                       </button>
@@ -1528,11 +2073,13 @@ export default function DVIRForm() {
             </div>
 
             <div>
-              <label className="block text-xs text-white/70 mb-1">NOTES</label>
+              <label htmlFor="aerialNotes" className="block text-xs text-white/70 mb-1">NOTES</label>
               <textarea
+                id="aerialNotes"
                 value={aerialNotes}
                 onChange={(e) => setAerialNotes(e.target.value)}
                 rows={3}
+                placeholder="Enter any aerial lift notes..."
                 className="w-full rounded-2xl bg-black/60 border border-white/10 px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
               />
             </div>
@@ -1565,20 +2112,22 @@ export default function DVIRForm() {
             <button
               type="button"
               onClick={() => setIsMechanicOpen((prev) => !prev)}
+              aria-label={isMechanicOpen ? "Hide mechanic form section" : "Show mechanic form section"}
               className="w-full flex items-center justify-between rounded-2xl border border-white/5 bg-white/5 px-4 py-3 text-sm text-white/80 transition hover:border-emerald-400/30"
             >
               <span>{isMechanicOpen ? "Hide mechanic form" : "Open mechanic form"}</span>
-              <span className="text-xs text-white/60">{isMechanicOpen ? "▲" : "▼"}</span>
+              <span className="text-xs text-white/60" aria-hidden="true">{isMechanicOpen ? "▲" : "▼"}</span>
             </button>
 
             {isMechanicOpen && (
-              <div className="space-y-4">
+              <div id="mechanic-form-section" className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs text-white/70 mb-1">
+                    <label htmlFor="mechTruckNumber" className="block text-xs text-white/70 mb-1">
                       Truck Number
                     </label>
                     <select
+                      id="mechTruckNumber"
                       value={mechTruckNumber}
                       onChange={(e) => setMechTruckNumber(e.target.value)}
                       className="w-full rounded-2xl bg-black/60 border border-white/10 px-3 py-2 text-sm text-white"
@@ -1592,10 +2141,11 @@ export default function DVIRForm() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs text-white/70 mb-1">
+                    <label htmlFor="mechanicDate" className="block text-xs text-white/70 mb-1">
                       Date (MM/DD/YYYY)
                     </label>
                     <input
+                      id="mechanicDate"
                       value={mechanicDate}
                       onChange={(e) => setMechanicDate(e.target.value)}
                       placeholder="MM/DD/YYYY"
@@ -1605,24 +2155,28 @@ export default function DVIRForm() {
                 </div>
 
                 <div>
-                  <label className="block text-xs text-white/70 mb-1">
+                  <label htmlFor="deficiencyCorrected" className="block text-xs text-white/70 mb-1">
                     Noted Deficiency Corrected
                   </label>
                   <input
+                    id="deficiencyCorrected"
                     value={deficiencyCorrected}
                     onChange={(e) => setDeficiencyCorrected(e.target.value)}
+                    placeholder="Describe corrected deficiencies"
                     className="w-full rounded-2xl bg-black/60 border border-white/10 px-3 py-2 text-sm text-white"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs text-white/70 mb-1">
+                  <label htmlFor="mechanicRemarks" className="block text-xs text-white/70 mb-1">
                     Remarks by Mechanic
                   </label>
                   <textarea
+                    id="mechanicRemarks"
                     value={mechanicRemarks}
                     onChange={(e) => setMechanicRemarks(e.target.value)}
                     rows={2}
+                    placeholder="Enter mechanic remarks..."
                     className="w-full rounded-2xl bg-black/60 border border-white/10 px-3 py-2 text-sm text-white"
                   />
                 </div>
@@ -1649,10 +2203,7 @@ export default function DVIRForm() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full rounded-2xl px-4 py-3 text-sm font-semibold text-white transition disabled:opacity-60 disabled:cursor-not-allowed hover:opacity-90"
-              style={{
-                background: 'linear-gradient(90deg, rgba(16, 185, 129, 1) 0%, rgba(3, 3, 3, 1) 100%)',
-              }}
+              className="w-full rounded-2xl px-4 py-3 text-sm font-semibold text-white transition disabled:opacity-60 disabled:cursor-not-allowed hover:opacity-90 bg-gradient-to-r from-emerald-500 to-gray-950"
             >
               {submitting ? "Submitting..." : "Submit DVIR"}
             </button>

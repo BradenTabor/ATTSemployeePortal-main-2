@@ -39,3 +39,4 @@ COMMENT ON COLUMN public.rto_requests.end_time IS 'Time coverage ends, stored as
 COMMENT ON COLUMN public.rto_requests.total_duration IS 'Calculated duration string (e.g., "2 days · 16h 0m")';
 
 
+

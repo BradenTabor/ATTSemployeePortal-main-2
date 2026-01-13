@@ -180,7 +180,7 @@ function JobCrewSelectorComponent({
         type="button"
         onClick={() => !disabled && !loading && setIsOpen(!isOpen)}
         disabled={disabled || loading}
-        aria-expanded={isOpen}
+        aria-expanded={isOpen ? "true" : "false"}
         aria-haspopup="listbox"
         className={cn(
           'w-full flex items-center justify-between px-4 py-3 rounded-2xl border text-left transition-all',
@@ -236,7 +236,7 @@ function JobCrewSelectorComponent({
             </div>
 
             {/* Options list */}
-            <div ref={listRef} className="max-h-48 overflow-y-auto py-1">
+            <div ref={listRef} className="max-h-48 overflow-y-auto py-1" role="presentation">
               {filteredMembers.length === 0 ? (
                 <div className="px-4 py-6 text-center text-sm text-white/50">
                   {searchQuery ? 'No members match your search' : 'No team members available'}
@@ -253,7 +253,7 @@ function JobCrewSelectorComponent({
                       ref={el => { optionRefs.current[index] = el; }}
                       type="button"
                       role="option"
-                      aria-selected={isSelected}
+                      aria-selected={isSelected ? "true" : "false"}
                       onClick={() => toggleMember(member.user_id)}
                       onMouseEnter={() => setFocusedIndex(index)}
                       className={cn(

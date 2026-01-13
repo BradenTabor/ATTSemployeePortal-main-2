@@ -244,7 +244,7 @@ function ExpandableSectionComponent({
                 onKeyDown={handleKeyDown}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
-                aria-expanded={isOpen}
+                aria-expanded={isOpen ? "true" : "false"}
                 aria-controls={contentId}
                 className={cn(
                   'flex-1 flex items-center gap-3 text-left',

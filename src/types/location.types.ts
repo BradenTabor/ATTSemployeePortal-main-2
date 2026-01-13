@@ -72,3 +72,4 @@ export interface RecentLocation {
 export const LOCATION_CACHE_KEY = 'atts-recent-locations';
 export const MAX_RECENT_LOCATIONS = 5;
 
+

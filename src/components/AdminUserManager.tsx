@@ -24,32 +24,22 @@ export default function AdminUserManager() {
       setLoading(true);
       setError(null);
 
-      const { data: appUsersData, error: appUsersError } = await supabase
-        .from("app_users")
-        .select("id, user_id, role, created_at")
+      // Use user_profiles view which joins app_users with auth.users
+      // This avoids direct access to auth.users table
+      const { data: usersData, error: usersError } = await supabase
+        .from("user_profiles")
+        .select("id, user_id, email, role, created_at")
         .order("created_at", { ascending: false });
 
-      if (appUsersError) throw appUsersError;
+      if (usersError) throw usersError;
 
-      if (appUsersData && appUsersData.length > 0) {
-        const userIds = appUsersData.map(u => u.user_id);
-
-        const { data: authUsersData, error: authUsersError } = await supabase
-          .from("users")
-          .select("id, email")
-          .in("id", userIds);
-
-        if (authUsersError) {
-          logger.error("Error fetching auth users:", authUsersError);
-        }
-
-        const emailMap = new Map(
-          authUsersData?.map(u => [u.id, u.email]) || []
-        );
-
-        const usersWithEmails = appUsersData.map(user => ({
-          ...user,
-          email: emailMap.get(user.user_id) || "Unknown",
+      if (usersData && usersData.length > 0) {
+        const usersWithEmails = usersData.map(user => ({
+          id: user.id,
+          user_id: user.user_id,
+          role: user.role,
+          created_at: user.created_at,
+          email: user.email || "Unknown",
         }));
 
         setUsers(usersWithEmails);
@@ -220,6 +210,7 @@ export default function AdminUserManager() {
                         value={pendingRole}
                         onChange={(e) => handleRoleChange(user.id, e.target.value)}
                         disabled={isUpdating}
+                        aria-label={`Select role for ${user.email}`}
                         className="bg-gray-800 text-gray-200 border border-white/20 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <option value="employee">Employee</option>

@@ -246,3 +246,4 @@ function CollectPointsButtonComponent({
 export const CollectPointsButton = memo(CollectPointsButtonComponent);
 export default CollectPointsButton;
 
+

@@ -262,7 +262,7 @@ export default function Home() {
                             ? "bg-white/10 text-white shadow-lg shadow-black/20 border border-white/10"
                             : "text-white/40 hover:text-white/70"
                         }`}
-                        aria-pressed={mode === option}
+                        aria-pressed={mode === option ? "true" : "false"}
                       >
                         {option === "login" ? "Sign In" : "Sign Up"}
                       </button>
@@ -369,8 +369,9 @@ export default function Home() {
                         {/* License Class & Expiration - stack on small phones (<640px) */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div className="space-y-2">
-                            <label className={labelStyles}>License Class</label>
+                            <label htmlFor="license-class" className={labelStyles}>License Class</label>
                             <select
+                              id="license-class"
                               value={driversLicenseClass}
                               onChange={(e) => setDriversLicenseClass(e.target.value)}
                               required
@@ -387,8 +388,9 @@ export default function Home() {
                             </select>
                           </div>
                           <div className="space-y-2">
-                            <label className={labelStyles}>Expiration</label>
+                            <label htmlFor="license-expiration" className={labelStyles}>Expiration</label>
                             <input
+                              id="license-expiration"
                               type="date"
                               value={driversLicenseExpiration}
                               onChange={(e) => setDriversLicenseExpiration(e.target.value)}

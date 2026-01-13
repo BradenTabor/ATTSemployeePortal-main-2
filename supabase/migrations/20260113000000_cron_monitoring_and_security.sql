@@ -119,3 +119,4 @@ SELECT cron.schedule(
 -- SELECT * FROM public.get_recent_cron_failures(7);
 -- SELECT jobname, schedule, command FROM cron.job WHERE jobname = 'safety-announcement-7am';
 
+

@@ -126,7 +126,7 @@ function EmberCollapsibleSectionComponent({
             type="button"
             onClick={toggle}
             onKeyDown={handleKeyDown}
-            aria-expanded={isOpen}
+            aria-expanded={isOpen ? "true" : "false"}
             aria-controls={contentId}
             className={cn(
               'flex-1 flex items-center gap-4 text-left',

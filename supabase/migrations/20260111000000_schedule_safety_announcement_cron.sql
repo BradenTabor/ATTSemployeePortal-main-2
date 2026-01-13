@@ -111,3 +111,4 @@ COMMENT ON VIEW public.scheduled_cron_jobs IS
 -- Grant access to view for authenticated users (read-only)
 GRANT SELECT ON public.scheduled_cron_jobs TO authenticated;
 
+
