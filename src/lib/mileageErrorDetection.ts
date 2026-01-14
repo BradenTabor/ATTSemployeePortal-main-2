@@ -228,9 +228,18 @@ export function detectPotentialTypo(
       }
     }
     
-    // Exactly two adjacent digits swapped
+    // Exactly two adjacent digits that were actually swapped
     if (differences === 2 && Math.abs(diffPositions[0] - diffPositions[1]) === 1) {
-      return `Possible transposed digits: ${currentMileage.toLocaleString()} vs expected ~${previousMileage.toLocaleString()}`;
+      const pos1 = diffPositions[0];
+      const pos2 = diffPositions[1];
+      // Verify the digits were actually transposed (swapped), not just different
+      const isActualTransposition = 
+        previousStr[pos1] === currentStr[pos2] && 
+        previousStr[pos2] === currentStr[pos1];
+      
+      if (isActualTransposition) {
+        return `Possible transposed digits: ${currentMileage.toLocaleString()} vs expected ~${previousMileage.toLocaleString()}`;
+      }
     }
   }
   

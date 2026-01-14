@@ -481,6 +481,9 @@ export class DataExporter<T = Record<string, unknown>> {
     const headers = columns.map(col => col.header);
     const body = transformed.map(row => headers.map(h => row[h] || ''));
     
+    // Placeholder for total page count - will be replaced after all pages render
+    const totalPagesPlaceholder = '{total_pages}';
+    
     // Auto-table
     autoTable(doc, {
       head: [headers],
@@ -500,12 +503,11 @@ export class DataExporter<T = Record<string, unknown>> {
       },
       margin: { left: 10, right: 10 },
       didDrawPage: (pageData) => {
-        // Footer with page numbers
-        const pageCount = doc.getNumberOfPages();
+        // Footer with page numbers using placeholder for total
         doc.setFontSize(8);
         doc.setTextColor(150);
         doc.text(
-          `Page ${pageData.pageNumber} of ${pageCount}`,
+          `Page ${pageData.pageNumber} of ${totalPagesPlaceholder}`,
           pageWidth / 2,
           doc.internal.pageSize.getHeight() - 10,
           { align: 'center' }
@@ -521,6 +523,9 @@ export class DataExporter<T = Record<string, unknown>> {
         }
       },
     });
+    
+    // Replace placeholder with actual total page count after all pages are rendered
+    doc.putTotalPages(totalPagesPlaceholder);
     
     // Save
     const pdfFilename = filename.endsWith('.pdf') ? filename : `${filename}.pdf`;

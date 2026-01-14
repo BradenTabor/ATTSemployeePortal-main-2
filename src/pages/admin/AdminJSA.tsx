@@ -495,7 +495,8 @@ export default function AdminJSA() {
           });
           break;
         case "excel":
-          exporter.exportExcel({
+          // Must await async export methods to ensure loading state and error handling work correctly
+          await exporter.exportExcel({
             data: enrichedData,
             columns: jsaExportColumns,
             filename: filename.replace(".csv", ".xlsx"),
@@ -503,7 +504,8 @@ export default function AdminJSA() {
           });
           break;
         case "pdf":
-          exporter.exportPDF({
+          // Must await async export methods to ensure loading state and error handling work correctly
+          await exporter.exportPDF({
             data: enrichedData,
             columns: jsaExportColumns,
             filename: filename.replace(".csv", ".pdf"),

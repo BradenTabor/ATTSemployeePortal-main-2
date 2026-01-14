@@ -113,7 +113,9 @@ function formatMileage(mileage: number | null | undefined): string {
 }
 
 function getEffectiveCost(fix: UnifiedFix): number {
-  return fix.cost || fix.estimated_cost || 100;
+  // Use ?? (nullish coalescing) to correctly handle $0 costs (warranty repairs, no-charge fixes)
+  // || would treat 0 as falsy and fall through to estimated_cost or default
+  return fix.cost ?? fix.estimated_cost ?? 100;
 }
 
 // =============================================================================
@@ -702,9 +704,17 @@ interface TopAssetsTableProps {
 }
 
 function TopAssetsTable({ assets, title }: TopAssetsTableProps) {
-  const topTen = assets.slice(0, 10);
+  // Sort by total cost (recorded + estimated) to match "Expensive Assets" title
+  const sortedByCost = useMemo(() => 
+    [...assets].sort((a, b) => {
+      const costA = a.total_cost + a.estimated_cost;
+      const costB = b.total_cost + b.estimated_cost;
+      return costB - costA; // Descending by cost
+    }).slice(0, 10),
+    [assets]
+  );
   
-  if (topTen.length === 0) {
+  if (sortedByCost.length === 0) {
     return (
       <div className="rounded-lg sm:rounded-xl border border-white/10 bg-[#0a0804] p-4 sm:p-6 text-center">
         <Truck className="w-6 h-6 sm:w-8 sm:h-8 text-white/20 mx-auto mb-2" />
@@ -713,7 +723,8 @@ function TopAssetsTable({ assets, title }: TopAssetsTableProps) {
     );
   }
   
-  const maxCost = topTen[0]?.total_cost + topTen[0]?.estimated_cost || 1;
+  // Now maxCost is correctly the highest since we sorted by cost
+  const maxCost = sortedByCost[0]?.total_cost + sortedByCost[0]?.estimated_cost || 1;
   
   return (
     <div className="rounded-lg sm:rounded-xl border border-white/10 bg-[#0a0804] overflow-hidden">
@@ -724,7 +735,7 @@ function TopAssetsTable({ assets, title }: TopAssetsTableProps) {
         </h3>
       </div>
       <div className="divide-y divide-white/[0.03] max-h-[350px] sm:max-h-none overflow-y-auto">
-        {topTen.map((asset, i) => {
+        {sortedByCost.map((asset, i) => {
           const totalCost = asset.total_cost + asset.estimated_cost;
           const barWidth = (totalCost / maxCost) * 100;
           
@@ -781,8 +792,10 @@ function RecentFixesTable({ fixes, onSelectFix, selectedFixId }: RecentFixesTabl
       <div className="max-h-[300px] sm:max-h-[400px] overflow-y-auto divide-y divide-white/[0.03]">
         {fixes.slice(0, 20).map((fix, index) => {
           const sourceConfig = SOURCE_CONFIG[fix.source];
-          const effectiveCost = fix.cost || fix.estimated_cost || 0;
-          const isEstimated = !fix.cost && fix.estimated_cost;
+          // Use getEffectiveCost for consistency with aggregate metrics
+          const effectiveCost = getEffectiveCost(fix);
+          // Use == null to correctly handle $0 costs (warranty/no-charge repairs)
+          const isEstimated = fix.cost == null;
           
           return (
             <motion.button
@@ -848,8 +861,10 @@ function FixDetailPanel({ fix }: FixDetailPanelProps) {
   }
   
   const sourceConfig = SOURCE_CONFIG[fix.source];
-  const effectiveCost = fix.cost || fix.estimated_cost || 0;
-  const isEstimated = !fix.cost && fix.estimated_cost;
+  // Use getEffectiveCost for consistency with aggregate metrics
+  const effectiveCost = getEffectiveCost(fix);
+  // Use == null to correctly handle $0 costs (warranty/no-charge repairs)
+  const isEstimated = fix.cost == null;
   
   return (
     <motion.div
@@ -965,20 +980,32 @@ function ExportPanel({ fixes }: ExportPanelProps) {
   const handleExportCSV = useCallback(async () => {
     setIsExporting(true);
     try {
+      // Helper to properly escape CSV fields - handles commas, quotes, and newlines
+      const escapeCSV = (value: string | null | undefined): string => {
+        if (value == null || value === '') return '';
+        const str = String(value);
+        // If contains comma, quote, or newline, wrap in quotes and escape internal quotes
+        if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+          return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+      };
+      
       const headers = ['Date', 'Asset', 'Type', 'Source', 'Description', 'Cost', 'Mileage', 'Performed By'];
       const rows = fixes.map(fix => [
-        fix.fix_date,
-        fix.asset_number,
-        fix.asset_type,
-        fix.source,
-        `"${fix.description.replace(/"/g, '""')}"`,
+        escapeCSV(fix.fix_date),
+        escapeCSV(fix.asset_number),
+        escapeCSV(fix.asset_type),
+        escapeCSV(fix.source),
+        escapeCSV(fix.description),
         fix.cost?.toFixed(2) || '',
         fix.mileage_at_fix?.toString() || '',
-        fix.performed_by || '',
+        escapeCSV(fix.performed_by),
       ]);
       
-      const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-      const blob = new Blob([csv], { type: 'text/csv' });
+      // Add UTF-8 BOM for Excel compatibility
+      const csv = '\ufeff' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -1017,7 +1044,8 @@ interface FilterBarProps {
 
 function FilterBar({ filters, onFiltersChange, onClear }: FilterBarProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const hasActiveFilters = filters.search || filters.asset_type !== 'all' || filters.source !== 'all' || filters.date_from || filters.date_to;
+  // Include cost filters to ensure Clear button appears when cost range is set
+  const hasActiveFilters = filters.search || filters.asset_type !== 'all' || filters.source !== 'all' || filters.date_from || filters.date_to || filters.cost_min !== undefined || filters.cost_max !== undefined;
   
   return (
     <div className="rounded-lg sm:rounded-xl border border-[#f4c979]/15 bg-gradient-to-r from-[#0c0804] to-[#120a05] p-2.5 sm:p-3">
