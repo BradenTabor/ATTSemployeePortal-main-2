@@ -17,6 +17,14 @@ import {
   Flame,
   ListChecks,
   Loader2,
+  Download,
+  FileSpreadsheet,
+  Table,
+  FileDown,
+  DollarSign,
+  Plus,
+  Trash2,
+  Package,
 } from "lucide-react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useAuth } from "../../contexts/AuthContext";
@@ -27,6 +35,15 @@ import { TextEffect } from "../../components/ui/TextEffect";
 import { getDeviceCapabilities } from "../../lib/mobilePerf";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { logger } from "../../lib/logger";
+import {
+  DataExporter,
+  formatDateForExport,
+  formatMileage,
+  formatBoolean,
+  generateFilename,
+  type ExportColumn,
+  type ExportMetadata,
+} from "../../lib/exportUtils";
 
 // =============================================================================
 // TYPE DEFINITIONS
@@ -37,6 +54,14 @@ type ChecklistValue = "" | "P" | "F";
 interface ChecklistItem {
   id: string;
   label: string;
+}
+
+/** Part used in a repair/fix */
+interface MechanicPart {
+  part_name: string;
+  quantity: number;
+  part_number?: string;
+  cost?: number;
 }
 
 interface DVIRReport {
@@ -64,6 +89,9 @@ interface DVIRReport {
   general_foreman_signature: string | null;
   mechanic_signature: string | null;
   driver_approval_signature: string | null;
+  /** Cost tracking fields from migration 20260114000000 */
+  mechanic_cost: number | null;
+  mechanic_parts_used: MechanicPart[] | null;
 }
 
 interface EquipmentInspection {
@@ -83,6 +111,9 @@ interface EquipmentInspection {
   hydraulic_photo_path: string | null;
   mechanic_fixes: string | null;
   last_mechanic_updated_at: string | null;
+  /** Cost tracking fields from migration 20260114000000 */
+  mechanic_cost: number | null;
+  mechanic_parts_used: MechanicPart[] | null;
 }
 
 // =============================================================================
@@ -157,6 +188,198 @@ const SPECIFIC_ITEMS: Record<string, ChecklistItem[]> = {
 const EQUIPMENT_TYPE_OPTIONS = ["Geo-Boy", "Grapple", "Jarraff", "Mulcher", "Skidsteer"];
 
 // =============================================================================
+// EXPORT COLUMN DEFINITIONS
+// =============================================================================
+
+const dvirExportColumns: ExportColumn<DVIRReport>[] = [
+  {
+    header: "Date",
+    key: "created_at",
+    format: (value) => formatDateForExport(value as string, true),
+    width: 22,
+  },
+  {
+    header: "Truck Number",
+    key: "truck_number",
+    format: (value) => (value as string) || "N/A",
+    width: 14,
+  },
+  {
+    header: "Driver Name",
+    key: "drivers_name",
+    format: (value) => (value as string) || "Unknown",
+    width: 20,
+  },
+  {
+    header: "Mileage",
+    key: "mileage",
+    format: (value) => formatMileage(value as number | null),
+    width: 12,
+  },
+  {
+    header: "Chipper #",
+    key: "chipper_number",
+    format: (value) => (value as string) || "N/A",
+    width: 12,
+  },
+  {
+    header: "Trailer #",
+    key: "trailer_number",
+    format: (value) => (value as string) || "N/A",
+    width: 12,
+  },
+  {
+    header: "Vehicle Failures",
+    key: "vehicle_trailer_checklist",
+    format: (value) => {
+      const failures: string[] = [];
+      const checklist = value as Record<string, ChecklistValue> | null;
+      if (checklist) {
+        for (const item of VEHICLE_TRAILER_ITEMS) {
+          if (checklist[item.id] === "F") {
+            failures.push(item.label);
+          }
+        }
+      }
+      return failures.length > 0 ? failures.join(", ") : "None";
+    },
+    width: 40,
+  },
+  {
+    header: "Aerial Failures",
+    key: "aerial_checklist",
+    format: (value) => {
+      const failures: string[] = [];
+      const checklist = value as Record<string, ChecklistValue> | null;
+      if (checklist) {
+        for (const item of AERIAL_LIFT_ITEMS) {
+          if (checklist[item.id] === "F") {
+            failures.push(item.label);
+          }
+        }
+      }
+      return failures.length > 0 ? failures.join(", ") : "None";
+    },
+    width: 35,
+  },
+  {
+    header: "Has Mechanic Fix",
+    key: "deficiency_corrected",
+    format: (value, row) => {
+      const hasFix = Boolean(
+        (value as string) || row.mechanic_remarks || row.mechanic_date
+      );
+      return formatBoolean(hasFix);
+    },
+    width: 12,
+  },
+  {
+    header: "Fix Applied",
+    key: "deficiency_corrected",
+    format: (value) => (value as string) || "N/A",
+    width: 35,
+  },
+  {
+    header: "Mechanic Remarks",
+    key: "mechanic_remarks",
+    format: (value) => (value as string) || "N/A",
+    width: 30,
+  },
+  {
+    header: "Driver Notes",
+    key: "notes",
+    format: (value) => (value as string) || "N/A",
+    width: 30,
+  },
+];
+
+const equipmentExportColumns: ExportColumn<EquipmentInspection>[] = [
+  {
+    header: "Inspection Date",
+    key: "inspection_date",
+    format: (value) => formatDateForExport(value as string),
+    width: 14,
+  },
+  {
+    header: "Equipment Number",
+    key: "equipment_number",
+    format: (value) => (value as string) || "N/A",
+    width: 18,
+  },
+  {
+    header: "Equipment Type",
+    key: "equipment_type",
+    format: (value) => (value as string) || "N/A",
+    width: 14,
+  },
+  {
+    header: "Submitted By",
+    key: "submitted_by",
+    format: (value) => (value as string) || "Unknown",
+    width: 20,
+  },
+  {
+    header: "General Failures",
+    key: "general_checklist",
+    format: (value) => {
+      const failures: string[] = [];
+      const checklist = value as Record<string, ChecklistValue> | null;
+      if (checklist) {
+        for (const item of GENERAL_EQUIPMENT_ITEMS) {
+          if (checklist[item.id] === "F") {
+            failures.push(item.label);
+          }
+        }
+      }
+      return failures.length > 0 ? failures.join(", ") : "None";
+    },
+    width: 35,
+  },
+  {
+    header: "Specific Failures",
+    key: "specific_checklist",
+    format: (value, row) => {
+      const failures: string[] = [];
+      const checklist = value as Record<string, ChecklistValue> | null;
+      const templateItems = SPECIFIC_ITEMS[row.template as keyof typeof SPECIFIC_ITEMS] || [];
+      if (checklist) {
+        for (const item of templateItems) {
+          if (checklist[item.id] === "F") {
+            failures.push(item.label);
+          }
+        }
+      }
+      return failures.length > 0 ? failures.join(", ") : "None";
+    },
+    width: 35,
+  },
+  {
+    header: "Has Mechanic Fix",
+    key: "mechanic_fixes",
+    format: (value) => formatBoolean(Boolean((value as string)?.trim())),
+    width: 12,
+  },
+  {
+    header: "Mechanic Notes",
+    key: "mechanic_fixes",
+    format: (value) => (value as string)?.trim() || "N/A",
+    width: 40,
+  },
+  {
+    header: "Inspector Notes",
+    key: "notes",
+    format: (value) => (value as string) || "N/A",
+    width: 30,
+  },
+  {
+    header: "Last Updated",
+    key: "last_mechanic_updated_at",
+    format: (value) => (value as string) ? formatDateForExport(value as string, true) : "N/A",
+    width: 22,
+  },
+];
+
+// =============================================================================
 // HELPER FUNCTIONS
 // =============================================================================
 
@@ -180,19 +403,78 @@ function getFailedDVIRItems(report: DVIRReport) {
   return { vehicleFails, aerialFails, allFails: [...vehicleFails, ...aerialFails] };
 }
 
-function getDVIRStatus(report: DVIRReport) {
+/**
+ * Check if a DVIR has checklist failures
+ */
+function hasChecklistFailures(report: DVIRReport) {
   const { allFails } = getFailedDVIRItems(report);
-  return allFails.length > 0 ? "failed" : "passed";
+  return allFails.length > 0;
 }
 
+/**
+ * Check if a mechanic has recorded a fix for this DVIR
+ */
 function hasMechanicUpdate(report: DVIRReport) {
   return Boolean(report.deficiency_corrected || report.mechanic_remarks || report.mechanic_date);
 }
 
-function inspectionHasFailures(inspection: EquipmentInspection) {
+/**
+ * Get the effective status of a DVIR:
+ * - "failed" = has checklist failures AND no mechanic fix recorded
+ * - "passed" = no failures OR mechanic has recorded a fix
+ */
+function getDVIRStatus(report: DVIRReport) {
+  const hasFailures = hasChecklistFailures(report);
+  const hasBeenFixed = hasMechanicUpdate(report);
+  
+  // If there are no failures, it's passed
+  if (!hasFailures) return "passed";
+  
+  // If there are failures but mechanic recorded a fix, consider it passed (fixed)
+  if (hasBeenFixed) return "passed";
+  
+  // Has failures and no fix recorded = needs review
+  return "failed";
+}
+
+/**
+ * Check if an equipment inspection has checklist failures
+ */
+function inspectionHasChecklistFailures(inspection: EquipmentInspection) {
   const general = inspection.general_checklist || {};
   const specific = inspection.specific_checklist || {};
   return Object.values(general).some((v) => v === "F") || Object.values(specific).some((v) => v === "F");
+}
+
+/**
+ * Check if a mechanic has recorded a fix for this equipment inspection
+ */
+function equipmentHasMechanicFix(inspection: EquipmentInspection) {
+  return Boolean(inspection.mechanic_fixes?.trim());
+}
+
+/**
+ * Get the effective status of an equipment inspection:
+ * - Returns true if needs attention (has failures AND no mechanic fix)
+ * - Returns false if OK (no failures OR mechanic has recorded a fix)
+ */
+function inspectionNeedsAttention(inspection: EquipmentInspection) {
+  const hasFailures = inspectionHasChecklistFailures(inspection);
+  const hasBeenFixed = equipmentHasMechanicFix(inspection);
+  
+  // If there are no failures, doesn't need attention
+  if (!hasFailures) return false;
+  
+  // If there are failures but mechanic recorded a fix, doesn't need attention
+  if (hasBeenFixed) return false;
+  
+  // Has failures and no fix recorded = needs attention
+  return true;
+}
+
+// Keep the old function name for backwards compatibility but use new logic
+function inspectionHasFailures(inspection: EquipmentInspection) {
+  return inspectionNeedsAttention(inspection);
 }
 
 function getSpecificItems(template?: string | null) {
@@ -271,7 +553,7 @@ const detailTransitionReduced = {
 // =============================================================================
 
 export default function MechanicEquipmentLogs() {
-  const { role } = useAuth();
+  const { role, user } = useAuth();
   const prefersReducedMotion = useReducedMotion();
   const hasAccess = role === "mechanic" || role === "admin";
 
@@ -307,13 +589,21 @@ export default function MechanicEquipmentLogs() {
   const [dvirUpdateDate, setDvirUpdateDate] = useState("");
   const [dvirUpdateDeficiency, setDvirUpdateDeficiency] = useState("");
   const [dvirUpdateRemarks, setDvirUpdateRemarks] = useState("");
+  const [dvirUpdateCost, setDvirUpdateCost] = useState("");
+  const [dvirUpdateParts, setDvirUpdateParts] = useState<{ part_name: string; quantity: number; part_number: string }[]>([]);
   const [savingDvirUpdate, setSavingDvirUpdate] = useState(false);
   const [dvirSaveMessage, setDvirSaveMessage] = useState<string | null>(null);
 
   // Equipment Mechanic update form state
   const [equipmentMechanicNotes, setEquipmentMechanicNotes] = useState("");
+  const [equipmentUpdateCost, setEquipmentUpdateCost] = useState("");
+  const [equipmentUpdateParts, setEquipmentUpdateParts] = useState<{ part_name: string; quantity: number; part_number: string }[]>([]);
   const [savingEquipmentFix, setSavingEquipmentFix] = useState(false);
   const [equipmentSaveMessage, setEquipmentSaveMessage] = useState<string | null>(null);
+
+  // Export state
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportSuccess, setExportSuccess] = useState<string | null>(null);
 
   // Device capabilities
   const caps = useMemo(() => getDeviceCapabilities(), []);
@@ -466,22 +756,54 @@ export default function MechanicEquipmentLogs() {
       setDvirUpdateDate("");
       setDvirUpdateDeficiency("");
       setDvirUpdateRemarks("");
+      setDvirUpdateCost("");
+      setDvirUpdateParts([]);
       return;
     }
     setDvirUpdateTruckNumber(selectedDvir.mechanic_truck_number || "");
     setDvirUpdateDate(selectedDvir.mechanic_date || "");
     setDvirUpdateDeficiency(selectedDvir.deficiency_corrected || "");
     setDvirUpdateRemarks(selectedDvir.mechanic_remarks || "");
+    setDvirUpdateCost(selectedDvir.mechanic_cost?.toString() || "");
+    const existingParts = selectedDvir.mechanic_parts_used;
+    setDvirUpdateParts(existingParts?.map(p => ({ part_name: p.part_name, quantity: p.quantity, part_number: p.part_number || "" })) || []);
   }, [selectedDvir]);
 
   // Populate Equipment form when selection changes
   useEffect(() => {
     if (!selectedEquipment) {
       setEquipmentMechanicNotes("");
+      setEquipmentUpdateCost("");
+      setEquipmentUpdateParts([]);
       return;
     }
     setEquipmentMechanicNotes(selectedEquipment.mechanic_fixes || "");
+    setEquipmentUpdateCost(selectedEquipment.mechanic_cost?.toString() || "");
+    const existingParts = selectedEquipment.mechanic_parts_used;
+    setEquipmentUpdateParts(existingParts?.map(p => ({ part_name: p.part_name, quantity: p.quantity, part_number: p.part_number || "" })) || []);
   }, [selectedEquipment]);
+
+  // DVIR Parts handlers
+  const handleAddDvirPart = () => {
+    setDvirUpdateParts(prev => [...prev, { part_name: "", quantity: 1, part_number: "" }]);
+  };
+  const handleDvirPartChange = (index: number, part: { part_name: string; quantity: number; part_number: string }) => {
+    setDvirUpdateParts(prev => { const newParts = [...prev]; newParts[index] = part; return newParts; });
+  };
+  const handleDvirPartRemove = (index: number) => {
+    setDvirUpdateParts(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Equipment Parts handlers
+  const handleAddEquipmentPart = () => {
+    setEquipmentUpdateParts(prev => [...prev, { part_name: "", quantity: 1, part_number: "" }]);
+  };
+  const handleEquipmentPartChange = (index: number, part: { part_name: string; quantity: number; part_number: string }) => {
+    setEquipmentUpdateParts(prev => { const newParts = [...prev]; newParts[index] = part; return newParts; });
+  };
+  const handleEquipmentPartRemove = (index: number) => {
+    setEquipmentUpdateParts(prev => prev.filter((_, i) => i !== index));
+  };
 
   // Save DVIR mechanic update
   const handleSaveDvirUpdate = async () => {
@@ -489,11 +811,15 @@ export default function MechanicEquipmentLogs() {
     try {
       setSavingDvirUpdate(true);
       setDvirSaveMessage(null);
+      const validParts = dvirUpdateParts.filter(p => p.part_name.trim());
+      const costValue = dvirUpdateCost ? parseFloat(dvirUpdateCost) : null;
       const { error } = await supabase.from("dvir_reports").update({
         mechanic_truck_number: dvirUpdateTruckNumber || null,
         mechanic_date: dvirUpdateDate || null,
         deficiency_corrected: dvirUpdateDeficiency || null,
         mechanic_remarks: dvirUpdateRemarks || null,
+        mechanic_cost: costValue,
+        mechanic_parts_used: validParts.length > 0 ? validParts : null,
       }).eq("id", selectedDvir.id);
       if (error) throw error;
       setDvirReports((prev) => prev.map((r) => r.id === selectedDvir.id ? { ...r, mechanic_truck_number: dvirUpdateTruckNumber || null, mechanic_date: dvirUpdateDate || null, deficiency_corrected: dvirUpdateDeficiency || null, mechanic_remarks: dvirUpdateRemarks || null } : r));
@@ -514,9 +840,13 @@ export default function MechanicEquipmentLogs() {
     try {
       setSavingEquipmentFix(true);
       setEquipmentSaveMessage(null);
+      const validParts = equipmentUpdateParts.filter(p => p.part_name.trim());
+      const costValue = equipmentUpdateCost ? parseFloat(equipmentUpdateCost) : null;
       const { error } = await supabase.from("daily_equipment_inspections").update({
         mechanic_fixes: equipmentMechanicNotes.trim() || null,
         last_mechanic_updated_at: new Date().toISOString(),
+        mechanic_cost: costValue,
+        mechanic_parts_used: validParts.length > 0 ? validParts : null,
       }).eq("id", selectedEquipment.id);
       if (error) throw error;
       setEquipmentInspections((prev) => prev.map((i) => i.id === selectedEquipment.id ? { ...i, mechanic_fixes: equipmentMechanicNotes.trim() || null, last_mechanic_updated_at: new Date().toISOString() } : i));
@@ -531,17 +861,154 @@ export default function MechanicEquipmentLogs() {
     }
   };
 
+  // Export handlers
+  const handleExportDvir = useCallback(async (exportFormat: "csv" | "excel" | "pdf") => {
+    setIsExporting(true);
+    setExportSuccess(null);
+    
+    try {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      const exporter = new DataExporter<DVIRReport>();
+      const metadata: ExportMetadata = {
+        reportType: "DVIR Reports Export",
+        generatedAt: new Date(),
+        exportedBy: user?.email || "Unknown",
+        filters: {
+          "Status": dvirStatus === "failed" ? "Needs Review" : "Passed",
+          "Search": debouncedDvirSearch || "None",
+        },
+        totalRecords: filteredDvirReports.length,
+      };
+      
+      const filename = generateFilename("DVIR_Reports", dvirStatus);
+      
+      switch (exportFormat) {
+        case "csv":
+          exporter.exportCSV({
+            data: filteredDvirReports,
+            columns: dvirExportColumns,
+            filename,
+            metadata,
+          });
+          setExportSuccess("DVIR data exported to CSV!");
+          break;
+        case "excel":
+          exporter.exportExcel({
+            data: filteredDvirReports,
+            columns: dvirExportColumns,
+            filename: filename.replace(".csv", ".xlsx"),
+            metadata,
+          });
+          setExportSuccess("DVIR data exported to Excel!");
+          break;
+        case "pdf":
+          exporter.exportPDF({
+            data: filteredDvirReports,
+            columns: dvirExportColumns,
+            filename: filename.replace(".csv", ".pdf"),
+            metadata,
+            companyName: "All Terrain Tree Service",
+            subtitle: `Status: ${dvirStatus === "failed" ? "Needs Review" : "Passed"}`,
+            orientation: "landscape",
+          });
+          setExportSuccess("DVIR data exported to PDF!");
+          break;
+      }
+      
+      setTimeout(() => setExportSuccess(null), 3000);
+    } catch (err) {
+      logger.error("DVIR export failed:", err);
+    } finally {
+      setIsExporting(false);
+    }
+  }, [filteredDvirReports, dvirStatus, debouncedDvirSearch, user?.email]);
+
+  const handleExportEquipment = useCallback(async (exportFormat: "csv" | "excel" | "pdf") => {
+    setIsExporting(true);
+    setExportSuccess(null);
+    
+    try {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      const exporter = new DataExporter<EquipmentInspection>();
+      const metadata: ExportMetadata = {
+        reportType: "Equipment Inspections Export",
+        generatedAt: new Date(),
+        exportedBy: user?.email || "Unknown",
+        filters: {
+          "Status": equipmentStatus === "attention" ? "Needs Attention" : equipmentStatus === "passed" ? "Passed" : "All",
+          "Type": equipmentType || "All Types",
+          "Search": debouncedEquipmentSearch || "None",
+        },
+        totalRecords: filteredEquipmentInspections.length,
+      };
+      
+      const filename = generateFilename("Equipment_Inspections", equipmentType || equipmentStatus);
+      
+      switch (exportFormat) {
+        case "csv":
+          exporter.exportCSV({
+            data: filteredEquipmentInspections,
+            columns: equipmentExportColumns,
+            filename,
+            metadata,
+          });
+          setExportSuccess("Equipment data exported to CSV!");
+          break;
+        case "excel":
+          exporter.exportExcel({
+            data: filteredEquipmentInspections,
+            columns: equipmentExportColumns,
+            filename: filename.replace(".csv", ".xlsx"),
+            metadata,
+          });
+          setExportSuccess("Equipment data exported to Excel!");
+          break;
+        case "pdf":
+          exporter.exportPDF({
+            data: filteredEquipmentInspections,
+            columns: equipmentExportColumns,
+            filename: filename.replace(".csv", ".pdf"),
+            metadata,
+            companyName: "All Terrain Tree Service",
+            subtitle: equipmentType ? `Type: ${equipmentType}` : "All Equipment Types",
+            orientation: "landscape",
+          });
+          setExportSuccess("Equipment data exported to PDF!");
+          break;
+      }
+      
+      setTimeout(() => setExportSuccess(null), 3000);
+    } catch (err) {
+      logger.error("Equipment export failed:", err);
+    } finally {
+      setIsExporting(false);
+    }
+  }, [filteredEquipmentInspections, equipmentStatus, equipmentType, debouncedEquipmentSearch, user?.email]);
+
   // Stats
   const stats = useMemo(() => {
+    // DVIRs that still need review (have failures AND no mechanic fix)
     const dvirNeedsReview = dvirReports.filter((r) => getDVIRStatus(r) === "failed").length;
+    // All DVIRs with mechanic updates
     const dvirFixed = dvirReports.filter((r) => hasMechanicUpdate(r)).length;
-    const equipNeedsReview = equipmentInspections.filter((i) => inspectionHasFailures(i)).length;
-    const equipFixed = equipmentInspections.filter((i) => i.mechanic_fixes?.trim()).length;
+    
+    // Equipment that still needs attention (has failures AND no mechanic fix)
+    const equipNeedsReview = equipmentInspections.filter((i) => inspectionNeedsAttention(i)).length;
+    // All equipment with mechanic fixes
+    const equipFixed = equipmentInspections.filter((i) => equipmentHasMechanicFix(i)).length;
+    
     return {
       totalDvir: dvirReports.length,
       totalEquip: equipmentInspections.length,
       needsReview: dvirNeedsReview + equipNeedsReview,
       fixed: dvirFixed + equipFixed,
+      // Additional stats for clarity
+      dvirNeedsReview,
+      dvirFixed,
+      equipNeedsReview,
+      equipFixed,
     };
   }, [dvirReports, equipmentInspections]);
 
@@ -747,7 +1214,36 @@ export default function MechanicEquipmentLogs() {
                         </button>
                       )}
                     </div>
+                    {/* Export Dropdown */}
+                    <div className="relative group">
+                      <button
+                        disabled={isExporting || filteredDvirReports.length === 0}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-300 text-xs font-medium hover:bg-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                        Export
+                      </button>
+                      <div className="absolute right-0 top-full mt-1 w-32 bg-[#0c0402] border border-white/10 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20">
+                        <button onClick={() => handleExportDvir("csv")} disabled={isExporting} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/70 hover:text-white hover:bg-white/5 transition-colors rounded-t-lg">
+                          <FileSpreadsheet className="w-3.5 h-3.5" /> CSV
+                        </button>
+                        <button onClick={() => handleExportDvir("excel")} disabled={isExporting} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/70 hover:text-white hover:bg-white/5 transition-colors">
+                          <Table className="w-3.5 h-3.5" /> Excel
+                        </button>
+                        <button onClick={() => handleExportDvir("pdf")} disabled={isExporting} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/70 hover:text-white hover:bg-white/5 transition-colors rounded-b-lg">
+                          <FileDown className="w-3.5 h-3.5" /> PDF
+                        </button>
+                      </div>
+                    </div>
                   </div>
+                  {/* Export Success Message */}
+                  <AnimatePresence>
+                    {exportSuccess && activeTab === "dvir" && (
+                      <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="mt-2 text-[10px] text-emerald-400 flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" /> {exportSuccess}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </ScrollRevealSection>
 
@@ -990,7 +1486,7 @@ export default function MechanicEquipmentLogs() {
                               </div>
                             </div>
 
-                            {/* DVIR Mechanic Update Form */}
+                            {/* DVIR Mechanic Update Form - Enhanced */}
                             <div className="rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-950/30 to-[#050302] overflow-hidden">
                               <div className="flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-amber-500/10 to-transparent border-b border-amber-500/10">
                                 <div className="flex items-center gap-2">
@@ -1001,23 +1497,65 @@ export default function MechanicEquipmentLogs() {
                                 </div>
                               </div>
                               <div className="px-4 py-3 space-y-3">
+                                {/* Truck # & Date Row */}
                                 <div className="grid grid-cols-2 gap-2">
                                   <div>
                                     <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Truck #</label>
-                                    <input value={dvirUpdateTruckNumber} onChange={(e) => setDvirUpdateTruckNumber(e.target.value)} placeholder="e.g., 101" className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all" />
+                                    <input value={dvirUpdateTruckNumber} onChange={(e) => setDvirUpdateTruckNumber(e.target.value)} placeholder="e.g., 101" className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all min-h-[40px]" />
                                   </div>
                                   <div>
                                     <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Date</label>
-                                    <input type="date" value={dvirUpdateDate} onChange={(e) => setDvirUpdateDate(e.target.value)} className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all [color-scheme:dark]" />
+                                    <input type="date" value={dvirUpdateDate} onChange={(e) => setDvirUpdateDate(e.target.value)} className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all [color-scheme:dark] min-h-[40px]" />
                                   </div>
                                 </div>
+                                {/* Fix Description */}
                                 <div>
-                                  <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Fix Applied</label>
-                                  <input value={dvirUpdateDeficiency} onChange={(e) => setDvirUpdateDeficiency(e.target.value)} placeholder="e.g., Replaced brake pads..." className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all" />
+                                  <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Fix Applied *</label>
+                                  <textarea value={dvirUpdateDeficiency} onChange={(e) => setDvirUpdateDeficiency(e.target.value)} rows={2} placeholder="What was done? E.g., Replaced brake pads..." className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all resize-none" />
                                 </div>
+                                {/* Cost Input */}
                                 <div>
-                                  <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Remarks</label>
-                                  <textarea value={dvirUpdateRemarks} onChange={(e) => setDvirUpdateRemarks(e.target.value)} rows={2} placeholder="Additional notes..." className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all resize-none" />
+                                  <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Cost (Optional)</label>
+                                  <div className="relative">
+                                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                                    <input type="number" step="0.01" min="0" value={dvirUpdateCost} onChange={(e) => setDvirUpdateCost(e.target.value)} placeholder="0.00" className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all min-h-[40px]" />
+                                  </div>
+                                </div>
+                                {/* Parts Used */}
+                                <div>
+                                  <div className="flex items-center justify-between mb-2">
+                                    <label className="text-[10px] uppercase tracking-wider text-white/40">Parts Used (Optional)</label>
+                                    <button type="button" onClick={handleAddDvirPart} className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium text-amber-400/80 hover:text-amber-300 hover:bg-amber-500/10 transition-colors">
+                                      <Plus className="w-3 h-3" />Add Part
+                                    </button>
+                                  </div>
+                                  {dvirUpdateParts.length > 0 && (
+                                    <div className="space-y-2">
+                                      {dvirUpdateParts.map((part, index) => (
+                                        <div key={index} className="flex gap-1.5 items-start">
+                                          <div className="flex-1 grid grid-cols-3 gap-1.5">
+                                            <input type="text" placeholder="Part name" value={part.part_name} onChange={(e) => handleDvirPartChange(index, { ...part, part_name: e.target.value })} className="col-span-2 sm:col-span-1 bg-black/30 border border-white/10 text-white text-xs rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all min-h-[36px]" />
+                                            <input type="number" placeholder="Qty" min={1} value={part.quantity || ""} onChange={(e) => handleDvirPartChange(index, { ...part, quantity: parseInt(e.target.value) || 1 })} className="bg-black/30 border border-white/10 text-white text-xs rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all min-h-[36px]" />
+                                            <input type="text" placeholder="Part #" value={part.part_number || ""} onChange={(e) => handleDvirPartChange(index, { ...part, part_number: e.target.value })} className="bg-black/30 border border-white/10 text-white text-xs rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all min-h-[36px]" />
+                                          </div>
+                                          <button type="button" onClick={() => handleDvirPartRemove(index)} className="p-2 rounded-lg text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors min-h-[36px]">
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                          </button>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                  {dvirUpdateParts.length === 0 && (
+                                    <div className="rounded-lg border border-dashed border-white/10 p-3 text-center">
+                                      <Package className="w-5 h-5 text-white/20 mx-auto mb-1" />
+                                      <p className="text-[10px] text-white/30">No parts added yet</p>
+                                    </div>
+                                  )}
+                                </div>
+                                {/* Remarks */}
+                                <div>
+                                  <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Additional Notes (Optional)</label>
+                                  <textarea value={dvirUpdateRemarks} onChange={(e) => setDvirUpdateRemarks(e.target.value)} rows={2} placeholder="Any additional details..." className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all resize-none" />
                                 </div>
                                 <AnimatePresence>
                                   {dvirSaveMessage && (
@@ -1026,7 +1564,7 @@ export default function MechanicEquipmentLogs() {
                                     </motion.div>
                                   )}
                                 </AnimatePresence>
-                                <button type="button" onClick={handleSaveDvirUpdate} disabled={savingDvirUpdate} className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg hover:shadow-amber-500/20">
+                                <button type="button" onClick={handleSaveDvirUpdate} disabled={savingDvirUpdate} className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg hover:shadow-amber-500/20 min-h-[44px]">
                                   {savingDvirUpdate ? <><Loader2 className="w-4 h-4 animate-spin" />Saving...</> : <><CheckCircle2 className="w-4 h-4" />Save Update</>}
                                 </button>
                               </div>
@@ -1072,7 +1610,36 @@ export default function MechanicEquipmentLogs() {
                         </button>
                       )}
                     </div>
+                    {/* Export Dropdown */}
+                    <div className="relative group">
+                      <button
+                        disabled={isExporting || filteredEquipmentInspections.length === 0}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-300 text-xs font-medium hover:bg-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                        Export
+                      </button>
+                      <div className="absolute right-0 top-full mt-1 w-32 bg-[#0c0402] border border-white/10 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20">
+                        <button onClick={() => handleExportEquipment("csv")} disabled={isExporting} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/70 hover:text-white hover:bg-white/5 transition-colors rounded-t-lg">
+                          <FileSpreadsheet className="w-3.5 h-3.5" /> CSV
+                        </button>
+                        <button onClick={() => handleExportEquipment("excel")} disabled={isExporting} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/70 hover:text-white hover:bg-white/5 transition-colors">
+                          <Table className="w-3.5 h-3.5" /> Excel
+                        </button>
+                        <button onClick={() => handleExportEquipment("pdf")} disabled={isExporting} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/70 hover:text-white hover:bg-white/5 transition-colors rounded-b-lg">
+                          <FileDown className="w-3.5 h-3.5" /> PDF
+                        </button>
+                      </div>
+                    </div>
                   </div>
+                  {/* Export Success Message */}
+                  <AnimatePresence>
+                    {exportSuccess && activeTab === "equipment" && (
+                      <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="mt-2 text-[10px] text-emerald-400 flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" /> {exportSuccess}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </ScrollRevealSection>
 
@@ -1269,7 +1836,7 @@ export default function MechanicEquipmentLogs() {
                               </div>
                             </div>
 
-                            {/* Equipment Mechanic Fix Form */}
+                            {/* Equipment Mechanic Fix Form - Enhanced */}
                             <div className="rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-950/30 to-[#050302] overflow-hidden">
                               <div className="flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-amber-500/10 to-transparent border-b border-amber-500/10">
                                 <div className="flex items-center gap-2">
@@ -1283,7 +1850,50 @@ export default function MechanicEquipmentLogs() {
                                 )}
                               </div>
                               <div className="px-4 py-3 space-y-3">
-                                <textarea value={equipmentMechanicNotes} onChange={(e) => setEquipmentMechanicNotes(e.target.value)} rows={2} placeholder="Describe the fix, parts used, or follow-up needed..." className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all resize-none" />
+                                {/* Fix Description */}
+                                <div>
+                                  <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Fix Applied *</label>
+                                  <textarea value={equipmentMechanicNotes} onChange={(e) => setEquipmentMechanicNotes(e.target.value)} rows={2} placeholder="What was done? E.g., Replaced fuel filter..." className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all resize-none" />
+                                </div>
+                                {/* Cost Input */}
+                                <div>
+                                  <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Cost (Optional)</label>
+                                  <div className="relative">
+                                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                                    <input type="number" step="0.01" min="0" value={equipmentUpdateCost} onChange={(e) => setEquipmentUpdateCost(e.target.value)} placeholder="0.00" className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all min-h-[40px]" />
+                                  </div>
+                                </div>
+                                {/* Parts Used */}
+                                <div>
+                                  <div className="flex items-center justify-between mb-2">
+                                    <label className="text-[10px] uppercase tracking-wider text-white/40">Parts Used (Optional)</label>
+                                    <button type="button" onClick={handleAddEquipmentPart} className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium text-amber-400/80 hover:text-amber-300 hover:bg-amber-500/10 transition-colors">
+                                      <Plus className="w-3 h-3" />Add Part
+                                    </button>
+                                  </div>
+                                  {equipmentUpdateParts.length > 0 && (
+                                    <div className="space-y-2">
+                                      {equipmentUpdateParts.map((part, index) => (
+                                        <div key={index} className="flex gap-1.5 items-start">
+                                          <div className="flex-1 grid grid-cols-3 gap-1.5">
+                                            <input type="text" placeholder="Part name" value={part.part_name} onChange={(e) => handleEquipmentPartChange(index, { ...part, part_name: e.target.value })} className="col-span-2 sm:col-span-1 bg-black/30 border border-white/10 text-white text-xs rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all min-h-[36px]" />
+                                            <input type="number" placeholder="Qty" min={1} value={part.quantity || ""} onChange={(e) => handleEquipmentPartChange(index, { ...part, quantity: parseInt(e.target.value) || 1 })} className="bg-black/30 border border-white/10 text-white text-xs rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all min-h-[36px]" />
+                                            <input type="text" placeholder="Part #" value={part.part_number || ""} onChange={(e) => handleEquipmentPartChange(index, { ...part, part_number: e.target.value })} className="bg-black/30 border border-white/10 text-white text-xs rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all min-h-[36px]" />
+                                          </div>
+                                          <button type="button" onClick={() => handleEquipmentPartRemove(index)} className="p-2 rounded-lg text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors min-h-[36px]">
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                          </button>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                  {equipmentUpdateParts.length === 0 && (
+                                    <div className="rounded-lg border border-dashed border-white/10 p-3 text-center">
+                                      <Package className="w-5 h-5 text-white/20 mx-auto mb-1" />
+                                      <p className="text-[10px] text-white/30">No parts added yet</p>
+                                    </div>
+                                  )}
+                                </div>
                                 <AnimatePresence>
                                   {equipmentSaveMessage && (
                                     <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className={`rounded-lg px-3 py-2 text-xs font-medium ${equipmentSaveMessage.includes("success") ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-300" : "bg-red-500/10 border border-red-500/20 text-red-300"}`}>
@@ -1291,7 +1901,7 @@ export default function MechanicEquipmentLogs() {
                                     </motion.div>
                                   )}
                                 </AnimatePresence>
-                                <button type="button" onClick={handleSaveEquipmentFix} disabled={savingEquipmentFix} className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg hover:shadow-amber-500/20">
+                                <button type="button" onClick={handleSaveEquipmentFix} disabled={savingEquipmentFix} className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg hover:shadow-amber-500/20 min-h-[44px]">
                                   {savingEquipmentFix ? <><Loader2 className="w-4 h-4 animate-spin" />Saving...</> : <><CheckCircle2 className="w-4 h-4" />Save Update</>}
                                 </button>
                               </div>

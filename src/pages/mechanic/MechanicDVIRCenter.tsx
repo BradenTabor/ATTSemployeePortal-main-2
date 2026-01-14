@@ -22,6 +22,10 @@ import {
   ListChecks,
   ClipboardList,
   ChevronLeft,
+  DollarSign,
+  Plus,
+  Trash2,
+  Package,
 } from "lucide-react";
 import { logger } from "../../lib/logger";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
@@ -63,6 +67,14 @@ interface ChecklistItem {
   label: string;
 }
 
+/** Part used in a repair/fix */
+interface MechanicPart {
+  part_name: string;
+  quantity: number;
+  part_number?: string;
+  cost?: number;
+}
+
 interface DVIRReport {
   id: string;
   created_at: string;
@@ -101,6 +113,9 @@ interface DVIRReport {
   coolant_photo_path: string | null;
   damage_photo_path: string | null;
   detail_clean_truck_photo_path: string | null;
+  /** Cost tracking fields from migration 20260114000000 */
+  mechanic_cost: number | null;
+  mechanic_parts_used: MechanicPart[] | null;
 }
 
 const VEHICLE_TRAILER_ITEMS: ChecklistItem[] = [
@@ -354,6 +369,8 @@ export default function MechanicDVIRCenter() {
   const [updateDate, setUpdateDate] = useState("");
   const [updateDeficiencyCorrected, setUpdateDeficiencyCorrected] = useState("");
   const [updateRemarks, setUpdateRemarks] = useState("");
+  const [updateCost, setUpdateCost] = useState("");
+  const [updateParts, setUpdateParts] = useState<{ part_name: string; quantity: number; part_number: string }[]>([]);
   const [savingUpdate, setSavingUpdate] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
@@ -519,6 +536,8 @@ export default function MechanicDVIRCenter() {
       setUpdateDate("");
       setUpdateDeficiencyCorrected("");
       setUpdateRemarks("");
+      setUpdateCost("");
+      setUpdateParts([]);
       return;
     }
 
@@ -526,11 +545,31 @@ export default function MechanicDVIRCenter() {
     setUpdateDate(selectedReport.mechanic_date || "");
     setUpdateDeficiencyCorrected(selectedReport.deficiency_corrected || "");
     setUpdateRemarks(selectedReport.mechanic_remarks || "");
+    setUpdateCost(selectedReport.mechanic_cost?.toString() || "");
+    const existingParts = selectedReport.mechanic_parts_used;
+    setUpdateParts(existingParts?.map(p => ({ part_name: p.part_name, quantity: p.quantity, part_number: p.part_number || "" })) || []);
   }, [selectedReport]);
 
   const handleSelectReport = (reportId: string) => {
     setSaveMessage(null);
     setSelectedId((prev) => (prev === reportId ? null : reportId));
+  };
+
+  // Add/remove parts handlers
+  const handleAddPart = () => {
+    setUpdateParts(prev => [...prev, { part_name: "", quantity: 1, part_number: "" }]);
+  };
+
+  const handlePartChange = (index: number, part: { part_name: string; quantity: number; part_number: string }) => {
+    setUpdateParts(prev => {
+      const newParts = [...prev];
+      newParts[index] = part;
+      return newParts;
+    });
+  };
+
+  const handlePartRemove = (index: number) => {
+    setUpdateParts(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSaveUpdate = async () => {
@@ -540,6 +579,10 @@ export default function MechanicDVIRCenter() {
       setSavingUpdate(true);
       setSaveMessage(null);
 
+      // Filter out empty parts
+      const validParts = updateParts.filter(p => p.part_name.trim());
+      const costValue = updateCost ? parseFloat(updateCost) : null;
+
       const { error } = await supabase
         .from("dvir_reports")
         .update({
@@ -547,6 +590,8 @@ export default function MechanicDVIRCenter() {
           mechanic_date: updateDate || null,
           deficiency_corrected: updateDeficiencyCorrected || null,
           mechanic_remarks: updateRemarks || null,
+          mechanic_cost: costValue,
+          mechanic_parts_used: validParts.length > 0 ? validParts : null,
         })
         .eq("id", selectedReport.id);
 
@@ -1092,7 +1137,7 @@ export default function MechanicDVIRCenter() {
                             </div>
                           </div>
 
-                          {/* Mechanic Update Form - Compact with contrast */}
+                          {/* Mechanic Update Form - Enhanced with Cost & Parts */}
                           <div className="rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-950/30 to-[#050302] overflow-hidden">
                             <div className="flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-amber-500/10 to-transparent border-b border-amber-500/10">
                               <div className="flex items-center gap-2">
@@ -1104,6 +1149,7 @@ export default function MechanicDVIRCenter() {
                             </div>
 
                             <div className="px-4 py-3 space-y-3">
+                              {/* Truck # & Date Row */}
                               <div className="grid grid-cols-2 gap-2">
                                 <div>
                                   <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Truck #</label>
@@ -1111,7 +1157,7 @@ export default function MechanicDVIRCenter() {
                                     value={updateTruckNumber}
                                     onChange={(e) => setUpdateTruckNumber(e.target.value)}
                                     placeholder="e.g., 101"
-                                    className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all"
+                                    className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all min-h-[40px]"
                                   />
                                 </div>
                                 <DateField
@@ -1121,27 +1167,111 @@ export default function MechanicDVIRCenter() {
                                   variant="ember"
                                   containerClassName="text-white [&_label]:text-[10px] [&_label]:uppercase [&_label]:tracking-wider [&_label]:text-white/40 [&_label]:mb-1"
                                   labelClassName="!text-[10px] !uppercase !tracking-wider !text-white/40"
-                                  className="!rounded-lg !py-2 !px-3 !text-sm border-amber-500/20"
+                                  className="!rounded-lg !py-2 !px-3 !text-sm border-amber-500/20 !min-h-[40px]"
                                 />
                               </div>
 
+                              {/* Fix Description */}
                               <div>
-                                <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Fix Applied</label>
-                                <input
+                                <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Fix Applied *</label>
+                                <textarea
                                   value={updateDeficiencyCorrected}
                                   onChange={(e) => setUpdateDeficiencyCorrected(e.target.value)}
-                                  placeholder="e.g., Replaced brake pads..."
-                                  className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all"
+                                  placeholder="What was done? E.g., Replaced brake pads..."
+                                  rows={2}
+                                  className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all resize-none"
                                 />
                               </div>
 
+                              {/* Cost Input */}
                               <div>
-                                <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Remarks</label>
+                                <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Cost (Optional)</label>
+                                <div className="relative">
+                                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={updateCost}
+                                    onChange={(e) => setUpdateCost(e.target.value)}
+                                    placeholder="0.00"
+                                    className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all min-h-[40px]"
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Parts Used */}
+                              <div>
+                                <div className="flex items-center justify-between mb-2">
+                                  <label className="text-[10px] uppercase tracking-wider text-white/40">
+                                    Parts Used (Optional)
+                                  </label>
+                                  <button
+                                    type="button"
+                                    onClick={handleAddPart}
+                                    className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium text-amber-400/80 hover:text-amber-300 hover:bg-amber-500/10 transition-colors"
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                    Add Part
+                                  </button>
+                                </div>
+                                
+                                {updateParts.length > 0 && (
+                                  <div className="space-y-2">
+                                    {updateParts.map((part, index) => (
+                                      <div key={index} className="flex gap-1.5 items-start">
+                                        <div className="flex-1 grid grid-cols-3 gap-1.5">
+                                          <input
+                                            type="text"
+                                            placeholder="Part name"
+                                            value={part.part_name}
+                                            onChange={(e) => handlePartChange(index, { ...part, part_name: e.target.value })}
+                                            className="col-span-2 sm:col-span-1 bg-black/30 border border-white/10 text-white text-xs rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all min-h-[36px]"
+                                          />
+                                          <input
+                                            type="number"
+                                            placeholder="Qty"
+                                            min={1}
+                                            value={part.quantity || ""}
+                                            onChange={(e) => handlePartChange(index, { ...part, quantity: parseInt(e.target.value) || 1 })}
+                                            className="bg-black/30 border border-white/10 text-white text-xs rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all min-h-[36px]"
+                                          />
+                                          <input
+                                            type="text"
+                                            placeholder="Part #"
+                                            value={part.part_number || ""}
+                                            onChange={(e) => handlePartChange(index, { ...part, part_number: e.target.value })}
+                                            className="bg-black/30 border border-white/10 text-white text-xs rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all min-h-[36px]"
+                                          />
+                                        </div>
+                                        <button
+                                          type="button"
+                                          onClick={() => handlePartRemove(index)}
+                                          className="p-2 rounded-lg text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors min-h-[36px]"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                
+                                {updateParts.length === 0 && (
+                                  <div className="rounded-lg border border-dashed border-white/10 p-3 text-center">
+                                    <Package className="w-5 h-5 text-white/20 mx-auto mb-1" />
+                                    <p className="text-[10px] text-white/30">No parts added yet</p>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Remarks */}
+                              <div>
+                                <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Additional Notes (Optional)</label>
                                 <textarea
                                   value={updateRemarks}
                                   onChange={(e) => setUpdateRemarks(e.target.value)}
                                   rows={2}
-                                  placeholder="Additional notes..."
+                                  placeholder="Any additional details..."
                                   className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all resize-none"
                                 />
                               </div>
@@ -1167,7 +1297,7 @@ export default function MechanicDVIRCenter() {
                                 type="button"
                                 onClick={handleSaveUpdate}
                                 disabled={savingUpdate}
-                                className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg hover:shadow-amber-500/20"
+                                className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg hover:shadow-amber-500/20 min-h-[44px]"
                               >
                                 {savingUpdate ? (
                                   <>

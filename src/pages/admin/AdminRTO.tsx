@@ -100,10 +100,10 @@ const EnhancedPagination = memo(function EnhancedPagination({
   const startItem = (currentPage - 1) * pageSize + 1;
   const endItem = Math.min(currentPage * pageSize, totalItems || 0);
 
-  // Generate page numbers to display
+  // Generate page numbers to display - fewer on mobile
   const pageNumbers = useMemo(() => {
     const pages: (number | "ellipsis")[] = [];
-    const maxVisible = 5;
+    const maxVisible = 3; // Reduced for mobile
 
     if (totalPages <= maxVisible + 2) {
       for (let i = 1; i <= totalPages; i++) {
@@ -136,38 +136,38 @@ const EnhancedPagination = memo(function EnhancedPagination({
   }, [currentPage, totalPages]);
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 sm:px-6 py-4">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 px-3 sm:px-6 py-3 sm:py-4">
       {/* Item count */}
-      <div className="text-sm text-[#f8e5bb]/70 order-2 sm:order-1">
+      <div className="text-[10px] sm:text-sm text-[#f8e5bb]/70 order-2 sm:order-1">
         <span className="font-semibold text-[#f4c979]">{startItem}</span>
         <span className="text-[#f8e5bb]/50"> – </span>
         <span className="font-semibold text-[#f4c979]">{endItem}</span>
         <span className="text-[#f8e5bb]/50"> of </span>
         <span className="font-semibold text-[#f4c979]">{totalItems || 0}</span>
-        <span className="text-[#f8e5bb]/50 ml-1">requests</span>
+        <span className="text-[#f8e5bb]/50 ml-1 hidden xs:inline">requests</span>
       </div>
 
       {/* Page navigation */}
-      <div className="flex items-center gap-1.5 order-1 sm:order-2">
+      <div className="flex items-center gap-1 sm:gap-1.5 order-1 sm:order-2">
         {/* Previous button */}
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           disabled={currentPage === 1 || loading}
           onClick={() => onPageChange(currentPage - 1)}
-          className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-[#f4c979]/10 border border-[#f4c979]/25 text-[#f4c979] hover:bg-[#f4c979]/20 hover:border-[#f4c979]/40 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+          className="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-[#f4c979]/10 border border-[#f4c979]/25 text-[#f4c979] hover:bg-[#f4c979]/20 hover:border-[#f4c979]/40 active:bg-[#f4c979]/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all min-h-[32px] sm:min-h-[36px]"
           aria-label="Previous page"
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
         </motion.button>
 
-        {/* Page numbers */}
-        <div className="flex items-center gap-1">
+        {/* Page numbers - Hidden on smallest screens, show current/total instead */}
+        <div className="hidden xs:flex items-center gap-1">
           {pageNumbers.map((page, idx) =>
             page === "ellipsis" ? (
               <span
                 key={`ellipsis-${idx}`}
-                className="w-9 h-9 flex items-center justify-center text-[#f4c979]/50"
+                className="w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center text-[#f4c979]/50 text-xs sm:text-sm"
               >
                 ⋯
               </span>
@@ -178,10 +178,10 @@ const EnhancedPagination = memo(function EnhancedPagination({
                 whileTap={{ scale: 0.95 }}
                 disabled={loading}
                 onClick={() => onPageChange(page)}
-                className={`w-9 h-9 rounded-xl text-sm font-semibold transition-all ${
+                className={`w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all min-h-[28px] sm:min-h-[36px] ${
                   currentPage === page
                     ? "bg-gradient-to-br from-[#f4c979] to-[#d89d3e] text-[#1a1408] shadow-[0_4px_20px_rgba(244,201,121,0.35)]"
-                    : "bg-[#f4c979]/10 border border-[#f4c979]/20 text-[#f4c979] hover:bg-[#f4c979]/20 hover:border-[#f4c979]/35"
+                    : "bg-[#f4c979]/10 border border-[#f4c979]/20 text-[#f4c979] hover:bg-[#f4c979]/20 hover:border-[#f4c979]/35 active:bg-[#f4c979]/30"
                 }`}
               >
                 {page}
@@ -190,16 +190,23 @@ const EnhancedPagination = memo(function EnhancedPagination({
           )}
         </div>
 
+        {/* Mobile: Simple current/total display */}
+        <div className="xs:hidden flex items-center gap-1 px-2">
+          <span className="text-xs font-semibold text-[#f4c979]">{currentPage}</span>
+          <span className="text-[10px] text-[#f8e5bb]/50">/</span>
+          <span className="text-xs text-[#f8e5bb]/70">{totalPages}</span>
+        </div>
+
         {/* Next button */}
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           disabled={currentPage >= totalPages || loading}
           onClick={() => onPageChange(currentPage + 1)}
-          className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-[#f4c979]/10 border border-[#f4c979]/25 text-[#f4c979] hover:bg-[#f4c979]/20 hover:border-[#f4c979]/40 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+          className="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-[#f4c979]/10 border border-[#f4c979]/25 text-[#f4c979] hover:bg-[#f4c979]/20 hover:border-[#f4c979]/40 active:bg-[#f4c979]/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all min-h-[32px] sm:min-h-[36px]"
           aria-label="Next page"
         >
-          <ChevronRight className="w-4 h-4" />
+          <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
         </motion.button>
       </div>
     </div>
@@ -341,56 +348,56 @@ const CompactMobileCard = memo(function CompactMobileCard({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04, duration: 0.3 }}
-      className="rounded-2xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914]/90 via-[#120f0c]/95 to-[#070605]/95 p-4 shadow-[0_8px_25px_rgba(0,0,0,0.4)]"
+      className="rounded-xl sm:rounded-2xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914]/90 via-[#120f0c]/95 to-[#070605]/95 p-3 sm:p-4 shadow-[0_8px_25px_rgba(0,0,0,0.4)] active:bg-[#f4c979]/5 transition-colors"
     >
       {/* Header: Avatar + Name + Status */}
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#f4c979] to-[#d89d3e] flex items-center justify-center text-sm font-bold text-[#1a1408] shadow-[0_4px_15px_rgba(244,201,121,0.3)]">
+      <div className="flex items-start justify-between gap-2 sm:gap-3 mb-2.5 sm:mb-3">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-gradient-to-br from-[#f4c979] to-[#d89d3e] flex items-center justify-center text-xs sm:text-sm font-bold text-[#1a1408] shadow-[0_4px_15px_rgba(244,201,121,0.3)] flex-shrink-0">
             {initials}
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-white truncate">
+            <p className="text-xs sm:text-sm font-semibold text-white truncate">
               {request.full_name || "Unknown"}
             </p>
-            <p className="text-xs text-[#c7b696] truncate">
+            <p className="text-[10px] sm:text-xs text-[#c7b696] truncate">
               {request.email || "—"}
             </p>
           </div>
         </div>
         <span
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[0.65rem] font-semibold ${statusConfig.bgColor} ${statusConfig.borderColor} ${statusConfig.textColor} border flex-shrink-0`}
+          className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-[0.65rem] font-semibold ${statusConfig.bgColor} ${statusConfig.borderColor} ${statusConfig.textColor} border flex-shrink-0`}
         >
-          {statusConfig.icon}
-          {statusConfig.label}
+          <span className="[&>svg]:w-2.5 [&>svg]:h-2.5 sm:[&>svg]:w-3.5 sm:[&>svg]:h-3.5">{statusConfig.icon}</span>
+          <span className="hidden xs:inline">{statusConfig.label}</span>
         </span>
       </div>
 
       {/* Details grid */}
-      <div className="grid grid-cols-2 gap-3 text-sm">
-        <div className="flex items-start gap-2">
-          <CalendarDays className="w-4 h-4 text-[#f4c979]/70 mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="text-[0.65rem] uppercase tracking-wider text-[#d0bfa0] mb-0.5">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 text-sm">
+        <div className="flex items-start gap-1.5 sm:gap-2">
+          <CalendarDays className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#f4c979]/70 mt-0.5 flex-shrink-0" />
+          <div className="min-w-0">
+            <p className="text-[9px] sm:text-[0.65rem] uppercase tracking-wider text-[#d0bfa0] mb-0.5">
               Dates
             </p>
-            <p className="text-white font-medium text-xs">
+            <p className="text-white font-medium text-[10px] sm:text-xs truncate">
               {formatDateRange(request.start_date, request.end_date)}
             </p>
             {days && (
-              <p className="text-[0.6rem] text-[#c7b696] mt-0.5">
+              <p className="text-[9px] sm:text-[0.6rem] text-[#c7b696] mt-0.5">
                 {days} day{days !== 1 ? "s" : ""}
               </p>
             )}
           </div>
         </div>
-        <div className="flex items-start gap-2">
-          <Clock className="w-4 h-4 text-[#f4c979]/70 mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="text-[0.65rem] uppercase tracking-wider text-[#d0bfa0] mb-0.5">
+        <div className="flex items-start gap-1.5 sm:gap-2">
+          <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#f4c979]/70 mt-0.5 flex-shrink-0" />
+          <div className="min-w-0">
+            <p className="text-[9px] sm:text-[0.65rem] uppercase tracking-wider text-[#d0bfa0] mb-0.5">
               Submitted
             </p>
-            <p className="text-white font-medium text-xs">
+            <p className="text-white font-medium text-[10px] sm:text-xs truncate">
               {formatDateTime(request.submitted_at)}
             </p>
           </div>
@@ -399,11 +406,11 @@ const CompactMobileCard = memo(function CompactMobileCard({
 
       {/* Reason */}
       {request.reason && (
-        <div className="mt-3 pt-3 border-t border-[#f6dcb2]/15">
-          <p className="text-[0.65rem] uppercase tracking-wider text-[#d0bfa0] mb-1">
+        <div className="mt-2.5 sm:mt-3 pt-2.5 sm:pt-3 border-t border-[#f6dcb2]/15">
+          <p className="text-[9px] sm:text-[0.65rem] uppercase tracking-wider text-[#d0bfa0] mb-0.5 sm:mb-1">
             Reason
           </p>
-          <p className="text-xs text-[#fdf4db]/80 line-clamp-2">
+          <p className="text-[10px] sm:text-xs text-[#fdf4db]/80 line-clamp-2">
             {request.reason}
           </p>
         </div>
@@ -746,12 +753,12 @@ export default function AdminRTO() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
-            className="rounded-2xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914]/95 via-[#120f0c]/95 to-[#070605]/95 p-4 shadow-[0_15px_40px_rgba(0,0,0,0.5)]"
+            className="rounded-xl sm:rounded-2xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914]/95 via-[#120f0c]/95 to-[#070605]/95 p-3 sm:p-4 shadow-[0_15px_40px_rgba(0,0,0,0.5)]"
           >
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
               {/* Search */}
-              <div className="relative">
-                <Search className="w-4 h-4 text-[#b59d72] absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <div className="relative sm:col-span-1">
+                <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#b59d72] absolute left-3 sm:left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="Search name or email..."
@@ -760,50 +767,53 @@ export default function AdminRTO() {
                     setSearchQuery(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 pl-10 pr-4 py-2.5 text-sm text-[#fdf4db] placeholder:text-[#bfa984] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/50 focus:border-[#f4c979]/50 transition-all"
+                  className="w-full rounded-lg sm:rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#fdf4db] placeholder:text-[#bfa984] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/50 focus:border-[#f4c979]/50 transition-all min-h-[40px] sm:min-h-[44px]"
                 />
               </div>
 
-              {/* Status Filter */}
-              <div className="relative">
-                <Filter className="w-4 h-4 text-[#b59d72] absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <select
-                  aria-label="Filter by status"
-                  title="Filter by status"
-                  value={statusFilter || ""}
-                  onChange={(e) => {
-                    setStatusFilter(e.target.value || null);
-                    setCurrentPage(1);
-                  }}
-                  className="w-full rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 pl-10 pr-4 py-2.5 text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/50 appearance-none cursor-pointer"
-                >
-                  <option value="">All Statuses</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Approved">Approved</option>
-                  <option value="Denied">Denied</option>
-                </select>
-              </div>
+              {/* Status & Month - side by side on mobile */}
+              <div className="grid grid-cols-2 gap-2 sm:contents">
+                {/* Status Filter */}
+                <div className="relative">
+                  <Filter className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#b59d72] absolute left-3 sm:left-3.5 top-1/2 -translate-y-1/2" />
+                  <select
+                    aria-label="Filter by status"
+                    title="Filter by status"
+                    value={statusFilter || ""}
+                    onChange={(e) => {
+                      setStatusFilter(e.target.value || null);
+                      setCurrentPage(1);
+                    }}
+                    className="w-full rounded-lg sm:rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 pl-9 sm:pl-10 pr-6 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/50 appearance-none cursor-pointer min-h-[40px] sm:min-h-[44px]"
+                  >
+                    <option value="">All Status</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Denied">Denied</option>
+                  </select>
+                </div>
 
-              {/* Month Filter */}
-              <div className="relative">
-                <Calendar className="w-4 h-4 text-[#b59d72] absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <select
-                  aria-label="Filter by month"
-                  title="Filter by month"
-                  value={monthFilter || ""}
-                  onChange={(e) => {
-                    setMonthFilter(e.target.value || null);
-                    setCurrentPage(1);
-                  }}
-                  className="w-full rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 pl-10 pr-4 py-2.5 text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/50 appearance-none cursor-pointer"
-                >
-                  <option value="">All Months</option>
-                  {monthOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                {/* Month Filter */}
+                <div className="relative">
+                  <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#b59d72] absolute left-3 sm:left-3.5 top-1/2 -translate-y-1/2" />
+                  <select
+                    aria-label="Filter by month"
+                    title="Filter by month"
+                    value={monthFilter || ""}
+                    onChange={(e) => {
+                      setMonthFilter(e.target.value || null);
+                      setCurrentPage(1);
+                    }}
+                    className="w-full rounded-lg sm:rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 pl-9 sm:pl-10 pr-6 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/50 appearance-none cursor-pointer min-h-[40px] sm:min-h-[44px]"
+                  >
+                    <option value="">All Months</option>
+                    {monthOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
 

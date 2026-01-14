@@ -60,7 +60,7 @@ interface AggregatedRow {
 
 const pageSize = 8;
 
-// Compact inline pagination component
+// Compact inline pagination component - Mobile optimized
 function CompactPagination({
   currentPage,
   totalPages,
@@ -81,27 +81,27 @@ function CompactPagination({
   if (totalPages <= 1) return null;
   
   return (
-    <div className="flex items-center justify-between px-3 py-2 bg-black/30 border-t border-white/5">
-      <span className="text-[11px] text-white/40">
+    <div className="flex items-center justify-between px-2 sm:px-3 py-2 sm:py-2.5 bg-black/30 border-t border-white/5">
+      <span className="text-[9px] sm:text-[11px] text-white/40">
         {totalItems} {label}
       </span>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-0.5 sm:gap-1">
         <button
           disabled={currentPage === 1 || loading}
           onClick={onPrev}
-          className="p-1.5 rounded-lg bg-white/5 text-white/60 hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          className="p-2 sm:p-1.5 rounded-lg bg-white/5 text-white/60 hover:bg-white/10 hover:text-white active:bg-white/15 disabled:opacity-30 disabled:cursor-not-allowed transition-all min-h-[32px] sm:min-h-[28px] min-w-[32px] sm:min-w-[28px] flex items-center justify-center"
         >
-          <ChevronLeft className="w-3.5 h-3.5" />
+          <ChevronLeft className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
         </button>
-        <span className="text-[11px] text-white/50 px-2 min-w-[50px] text-center">
+        <span className="text-[9px] sm:text-[11px] text-white/50 px-1.5 sm:px-2 min-w-[40px] sm:min-w-[50px] text-center">
           {currentPage} / {totalPages}
         </span>
         <button
           disabled={currentPage >= totalPages || loading}
           onClick={onNext}
-          className="p-1.5 rounded-lg bg-white/5 text-white/60 hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          className="p-2 sm:p-1.5 rounded-lg bg-white/5 text-white/60 hover:bg-white/10 hover:text-white active:bg-white/15 disabled:opacity-30 disabled:cursor-not-allowed transition-all min-h-[32px] sm:min-h-[28px] min-w-[32px] sm:min-w-[28px] flex items-center justify-center"
         >
-          <ChevronRight className="w-3.5 h-3.5" />
+          <ChevronRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
         </button>
       </div>
     </div>

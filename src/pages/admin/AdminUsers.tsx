@@ -71,22 +71,22 @@ const MobileUserCard = ({
   <motion.article
     initial={{ opacity: 0, y: 8 }}
     animate={{ opacity: 1, y: 0 }}
-    className="rounded-2xl border border-[#f6dcb2]/15 bg-gradient-to-br from-[#1b1914]/80 to-[#120f0c]/60 p-4 space-y-3"
+    className="rounded-xl sm:rounded-2xl border border-[#f6dcb2]/15 bg-gradient-to-br from-[#1b1914]/80 to-[#120f0c]/60 p-3 sm:p-4 space-y-2.5 sm:space-y-3 active:bg-[#f4c979]/5 transition-colors"
   >
     {/* User Avatar & Email */}
-    <div className="flex items-start gap-3">
-      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#f4c979] to-[#d89d3e] flex items-center justify-center text-[#2d1c04] font-semibold flex-shrink-0">
+    <div className="flex items-start gap-2.5 sm:gap-3">
+      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-[#f4c979] to-[#d89d3e] flex items-center justify-center text-[#2d1c04] font-semibold text-sm sm:text-base flex-shrink-0">
         {user.email.charAt(0).toUpperCase()}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-white text-sm truncate">{user.email}</p>
-        <p className="text-[0.65rem] text-[#c7b696]">ID: {user.id.slice(0, 8)}…</p>
+        <p className="font-semibold text-white text-xs sm:text-sm truncate">{user.email}</p>
+        <p className="text-[9px] sm:text-[0.65rem] text-[#c7b696]">ID: {user.id.slice(0, 8)}…</p>
       </div>
     </div>
 
     {/* Role Section */}
-    <div className="space-y-2">
-      <p className="text-xs uppercase tracking-wider text-[#f4c979]/70">Role</p>
+    <div className="space-y-1.5 sm:space-y-2">
+      <p className="text-[9px] sm:text-xs uppercase tracking-wider text-[#f4c979]/70">Role</p>
       
       {editingRoleUserId === user.id ? (
         <div className="space-y-2">
@@ -95,7 +95,7 @@ const MobileUserCard = ({
             value={pendingRole}
             onChange={(e) => onRoleChange(e.target.value)}
             disabled={savingRole}
-            className="w-full rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-3 py-2 text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60"
+            className="w-full rounded-lg sm:rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-2.5 sm:px-3 py-2 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 min-h-[40px] sm:min-h-[44px]"
           >
             <option value="employee">Employee</option>
             <option value="admin">Admin</option>
@@ -111,27 +111,27 @@ const MobileUserCard = ({
             <button
               onClick={() => onSaveRole(user.id, user.email)}
               disabled={savingRole}
-              className="flex-1 px-3 py-2 rounded-xl bg-[#f4c979]/20 border border-[#f4c979]/40 text-xs font-semibold text-[#fef3d1] hover:bg-[#f4c979]/30 disabled:opacity-50 transition-colors"
+              className="flex-1 px-2.5 sm:px-3 py-2 rounded-lg sm:rounded-xl bg-[#f4c979]/20 border border-[#f4c979]/40 text-[10px] sm:text-xs font-semibold text-[#fef3d1] hover:bg-[#f4c979]/30 active:bg-[#f4c979]/40 disabled:opacity-50 transition-colors min-h-[40px] sm:min-h-[44px]"
             >
               {savingRole ? 'Saving...' : 'Save'}
             </button>
             <button
               onClick={onCancelEdit}
               disabled={savingRole}
-              className="flex-1 px-3 py-2 rounded-xl border border-[#f6dcb2]/25 text-xs font-semibold text-[#fdf4db] hover:bg-white/5 disabled:opacity-50 transition-colors"
+              className="flex-1 px-2.5 sm:px-3 py-2 rounded-lg sm:rounded-xl border border-[#f6dcb2]/25 text-[10px] sm:text-xs font-semibold text-[#fdf4db] hover:bg-white/5 active:bg-white/10 disabled:opacity-50 transition-colors min-h-[40px] sm:min-h-[44px]"
             >
               Cancel
             </button>
           </div>
         </div>
       ) : (
-        <div className="flex items-center justify-between">
-          <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${getRoleBadgeClass(user.role)}`}>
+        <div className="flex items-center justify-between gap-2">
+          <span className={`inline-flex items-center px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-semibold ${getRoleBadgeClass(user.role)}`}>
             {user.role.charAt(0).toUpperCase() + user.role.slice(1).replace('_', ' ')}
           </span>
           <button
             onClick={() => onEditRole(user.id, user.role)}
-            className="px-3 py-1.5 rounded-xl border border-[#f6dcb2]/25 text-xs font-semibold text-[#fdf4db] hover:bg-white/5 transition-colors"
+            className="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border border-[#f6dcb2]/25 text-[10px] sm:text-xs font-semibold text-[#fdf4db] hover:bg-white/5 active:bg-white/10 transition-colors min-h-[36px] sm:min-h-[40px]"
           >
             Edit
           </button>
@@ -140,9 +140,9 @@ const MobileUserCard = ({
     </div>
 
     {/* Joined Date */}
-    <div className="pt-2 border-t border-white/5">
-      <p className="text-xs text-[#f0e2c7]">{formatJoinedDate(user.created_at)}</p>
-      <p className="text-[0.7rem] text-[#c7b696]">{formatJoinedTime(user.created_at)}</p>
+    <div className="pt-1.5 sm:pt-2 border-t border-white/5">
+      <p className="text-[10px] sm:text-xs text-[#f0e2c7]">{formatJoinedDate(user.created_at)}</p>
+      <p className="text-[9px] sm:text-[0.7rem] text-[#c7b696]">{formatJoinedTime(user.created_at)}</p>
     </div>
   </motion.article>
 );
@@ -403,16 +403,16 @@ function AdminUsers() {
           </motion.div>
         </div>
 
-        <div className="space-y-8">
+        <div className="space-y-4 sm:space-y-6 md:space-y-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] p-6 space-y-4 shadow-[0_25px_50px_rgba(0,0,0,0.55)]"
+            className="rounded-2xl sm:rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 shadow-[0_25px_50px_rgba(0,0,0,0.55)]"
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
               <div className="relative">
-                <Search className="w-4 h-4 text-[#b59d72] absolute left-4 top-1/2 -translate-y-1/2" />
+                <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#b59d72] absolute left-3 sm:left-4 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="Search by email..."
@@ -421,18 +421,18 @@ function AdminUsers() {
                     setSearchQuery(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full rounded-2xl bg-[#050402]/70 border border-[#f4c979]/20 pl-11 pr-4 py-3 text-sm text-[#fdf4db] placeholder:text-[#bfa984] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60"
+                  className="w-full rounded-xl sm:rounded-2xl bg-[#050402]/70 border border-[#f4c979]/20 pl-9 sm:pl-11 pr-3 sm:pr-4 py-2.5 sm:py-3 text-xs sm:text-sm text-[#fdf4db] placeholder:text-[#bfa984] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 min-h-[42px] sm:min-h-[48px]"
                 />
               </div>
               <div className="relative">
-                <Filter className="w-4 h-4 text-[#b59d72] absolute left-4 top-1/2 -translate-y-1/2" />
+                <Filter className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#b59d72] absolute left-3 sm:left-4 top-1/2 -translate-y-1/2" />
                 <select
                   value={roleFilter || ""}
                   onChange={(e) => {
                     setRoleFilter(e.target.value || null);
                     setCurrentPage(1);
                   }}
-                  className="w-full rounded-2xl bg-[#050402]/70 border border-[#f4c979]/20 pl-11 pr-4 py-3 text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 appearance-none cursor-pointer"
+                  className="w-full rounded-xl sm:rounded-2xl bg-[#050402]/70 border border-[#f4c979]/20 pl-9 sm:pl-11 pr-8 sm:pr-4 py-2.5 sm:py-3 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 appearance-none cursor-pointer min-h-[42px] sm:min-h-[48px]"
                 >
                   <option value="">All Roles</option>
                   <option value="employee">Employee</option>
@@ -449,27 +449,27 @@ function AdminUsers() {
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
-                className="flex flex-wrap gap-2 pt-2"
+                className="flex flex-wrap gap-1.5 sm:gap-2 pt-1.5 sm:pt-2"
               >
                 {searchQuery && (
-                  <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#f4c979]/30 bg-[#f4c979]/10 text-xs text-[#fef3d1]">
-                    <span>Email: {searchQuery}</span>
+                  <span className="inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 rounded-full border border-[#f4c979]/30 bg-[#f4c979]/10 text-[10px] sm:text-xs text-[#fef3d1]">
+                    <span className="truncate max-w-[120px] sm:max-w-none">Email: {searchQuery}</span>
                     <button
                       type="button"
                       onClick={() => setSearchQuery("")}
-                      className="hover:text-white"
+                      className="hover:text-white active:text-white/80 min-w-[16px] min-h-[16px] flex items-center justify-center"
                     >
                       ✕
                     </button>
                   </span>
                 )}
                 {roleFilter && (
-                  <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#f6dcb2]/30 bg-[#f6dcb2]/10 text-xs text-[#fef3d1]">
-                    <span>Role: {roleFilter}</span>
+                  <span className="inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 rounded-full border border-[#f6dcb2]/30 bg-[#f6dcb2]/10 text-[10px] sm:text-xs text-[#fef3d1]">
+                    <span>Role: {roleFilter.replace('_', ' ')}</span>
                     <button
                       type="button"
                       onClick={() => setRoleFilter(null)}
-                      className="hover:text-white"
+                      className="hover:text-white active:text-white/80 min-w-[16px] min-h-[16px] flex items-center justify-center"
                     >
                       ✕
                     </button>
@@ -643,8 +643,8 @@ function AdminUsers() {
                   ))}
                 </div>
                 <div className="border-t border-[#f6dcb2]/15 bg-[#0c0a08]/80">
-                  <div className="flex items-center justify-between px-6 py-4 text-sm text-[#f0e2c7]">
-                    <div>
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-[#f0e2c7]">
+                    <div className="text-[10px] sm:text-sm">
                       <span className="text-[#f4c979]">{(currentPage - 1) * pageSize + 1}</span> –
                       <span className="text-[#f4c979]">
                         {" "}
@@ -653,20 +653,23 @@ function AdminUsers() {
                       of
                       <span className="text-[#f4c979]"> {totalUsers || 0}</span> users
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
                       <button
                         disabled={currentPage === 1 || loading}
                         onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                        className="px-4 py-2 rounded-2xl border border-[#f6dcb2]/25 text-xs font-semibold text-[#fdf4db] disabled:opacity-40"
+                        className="px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl border border-[#f6dcb2]/25 text-[10px] sm:text-xs font-semibold text-[#fdf4db] disabled:opacity-40 hover:bg-white/5 active:bg-white/10 transition-colors min-h-[36px] sm:min-h-[40px]"
                       >
-                        ← Previous
+                        <span className="hidden xs:inline">←</span> Prev
                       </button>
+                      <span className="text-[10px] sm:text-xs text-[#c7b696] px-1 sm:px-2">
+                        {currentPage} / {totalPages}
+                      </span>
                       <button
                         disabled={currentPage >= totalPages || loading}
                         onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                        className="px-4 py-2 rounded-2xl border border-[#f6dcb2]/25 text-xs font-semibold text-[#fdf4db] disabled:opacity-40"
+                        className="px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl border border-[#f6dcb2]/25 text-[10px] sm:text-xs font-semibold text-[#fdf4db] disabled:opacity-40 hover:bg-white/5 active:bg-white/10 transition-colors min-h-[36px] sm:min-h-[40px]"
                       >
-                        Next →
+                        Next <span className="hidden xs:inline">→</span>
                       </button>
                     </div>
                   </div>

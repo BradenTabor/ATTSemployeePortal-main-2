@@ -36,6 +36,7 @@ const AdminJSA = lazy(() => import("./pages/admin/AdminJSA"));
 const AdminJobTracker = lazy(() => import("./pages/admin/AdminJobTracker"));
 const AdminJobProgress = lazy(() => import("./pages/admin/AdminJobProgress"));
 const AdminRewards = lazy(() => import("./pages/admin/AdminRewards"));
+const AdminPartsFixesOverview = lazy(() => import("./pages/admin/AdminPartsFixesOverview"));
 
 // Mechanic pages
 const MechanicDashboard = lazy(() => import("./pages/mechanic/MechanicDashboard"));
@@ -44,6 +45,7 @@ const MechanicEquipmentCenter = lazy(
   () => import("./pages/mechanic/MechanicEquipmentCenter")
 );
 const MechanicEquipmentLogs = lazy(() => import("./pages/mechanic/MechanicEquipmentLogs"));
+const MechanicPartsRepairsLog = lazy(() => import("./pages/mechanic/MechanicPartsRepairsLog"));
 
 // Foreman pages
 const ForemanDashboard = lazy(() => import("./pages/foreman/ForemanDashboard"));
@@ -298,6 +300,18 @@ function AnimatedRoutes() {
               }
             />
 
+            {/* Mechanic Parts & Repairs Log */}
+            <Route
+              path="/mechanic/parts-repairs"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute requireMechanicAccess={true}>
+                    <MechanicPartsRepairsLog />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
             {/* General Foreman Dashboard */}
             <Route
               path="/general-foreman-dashboard"
@@ -456,6 +470,17 @@ function AnimatedRoutes() {
                 <PageWrapper>
                   <ProtectedRoute requiredRole="admin">
                     <AdminRewards />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            <Route
+              path="/admin/parts-fixes"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminPartsFixesOverview />
                   </ProtectedRoute>
                 </PageWrapper>
               }

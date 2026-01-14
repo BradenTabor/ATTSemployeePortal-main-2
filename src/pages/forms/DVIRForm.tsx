@@ -166,18 +166,18 @@ interface SectionCardProps {
 
 const SectionCard = ({ title, subtitle, badge, children }: SectionCardProps) => (
   <section 
-    className="rounded-3xl border border-white/10 bg-gradient-to-br from-gray-900/80 via-gray-900/40 to-gray-900/10 p-6 space-y-5 shadow-2xl shadow-black/60"
+    className="rounded-2xl sm:rounded-3xl border border-white/10 bg-gradient-to-br from-gray-900/80 via-gray-900/40 to-gray-900/10 p-4 sm:p-6 space-y-4 sm:space-y-5 shadow-2xl shadow-black/60"
   >
-    <div className="flex flex-wrap items-start justify-between gap-3">
-      <div>
-        <p className="text-[10px] tracking-[0.3em] uppercase text-emerald-200/70">
+    <div className="flex flex-wrap items-start justify-between gap-2 sm:gap-3">
+      <div className="min-w-0">
+        <p className="text-[9px] sm:text-[10px] tracking-[0.2em] sm:tracking-[0.3em] uppercase text-emerald-200/70">
           {badge || "DOT COMPLIANT"}
         </p>
-        <h2 className="text-lg font-semibold text-white">{title}</h2>
-        {subtitle && <p className="text-sm text-white/70 mt-1 max-w-2xl">{subtitle}</p>}
+        <h2 className="text-base sm:text-lg font-semibold text-white">{title}</h2>
+        {subtitle && <p className="text-xs sm:text-sm text-white/70 mt-0.5 sm:mt-1 max-w-2xl">{subtitle}</p>}
       </div>
     </div>
-    <div className="space-y-4">{children}</div>
+    <div className="space-y-3 sm:space-y-4">{children}</div>
   </section>
 );
 
@@ -337,40 +337,40 @@ interface ChecklistQuickActionsProps {
 }
 
 const ChecklistQuickActions = ({ onMarkAllPass, onClearAll, checkedCount, totalCount }: ChecklistQuickActionsProps) => (
-  <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-black/30 border border-white/5">
-    <div className="flex items-center gap-2">
-      <div className="text-xs text-gray-400">
+  <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg sm:rounded-xl bg-black/30 border border-white/5">
+    <div className="flex items-center gap-1.5 sm:gap-2">
+      <div className="text-[10px] sm:text-xs text-gray-400">
         <span className="text-emerald-400 font-semibold">{checkedCount}</span>
         <span className="text-gray-600"> / </span>
         <span>{totalCount}</span>
-        <span className="ml-1 text-gray-600">checked</span>
+        <span className="ml-1 text-gray-600 hidden xs:inline">checked</span>
       </div>
       {checkedCount === totalCount && checkedCount > 0 && (
         <motion.span 
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+          className="text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
         >
-          Complete ✓
+          ✓
         </motion.span>
       )}
     </div>
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5 sm:gap-2 w-full xs:w-auto">
       <button
         type="button"
         onClick={onMarkAllPass}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-medium text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 rounded-lg transition-colors"
+        className="flex-1 xs:flex-none flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2 sm:py-1.5 text-[10px] sm:text-[10px] font-medium text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 active:bg-emerald-500/30 border border-emerald-500/30 rounded-lg transition-colors min-h-[36px] sm:min-h-[32px]"
       >
         <CheckCheck className="w-3 h-3" />
-        All Pass
+        <span>All Pass</span>
       </button>
       <button
         type="button"
         onClick={onClearAll}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-medium text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition-colors"
+        className="flex-1 xs:flex-none flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2 sm:py-1.5 text-[10px] sm:text-[10px] font-medium text-gray-400 hover:text-white active:text-white bg-white/5 hover:bg-white/10 active:bg-white/15 border border-white/10 rounded-lg transition-colors min-h-[36px] sm:min-h-[32px]"
       >
         <RotateCcw className="w-3 h-3" />
-        Clear
+        <span>Clear</span>
       </button>
     </div>
   </div>
@@ -551,35 +551,35 @@ const UploadTile = ({ label, description, required, status, onClick }: UploadTil
   <button
     type="button"
     onClick={onClick}
-    className="group flex items-center justify-between gap-4 rounded-2xl border border-white/5 bg-white/[0.04] px-4 py-3 text-left transition-all hover:border-emerald-400/40 hover:bg-white/[0.07]"
+    className="group flex items-center justify-between gap-2 sm:gap-4 rounded-xl sm:rounded-2xl border border-white/5 bg-white/[0.04] px-3 sm:px-4 py-3 text-left transition-all hover:border-emerald-400/40 hover:bg-white/[0.07] active:bg-white/[0.1] min-h-[60px] sm:min-h-[64px]"
   >
-    <div className="flex items-center gap-3">
-      <span className="inline-flex items-center justify-center rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-2.5 text-emerald-200">
-        <Camera className="w-4 h-4" />
+    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+      <span className="inline-flex items-center justify-center rounded-xl sm:rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-2 sm:p-2.5 text-emerald-200 flex-shrink-0">
+        <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
       </span>
-      <div>
-        <p className="text-sm font-semibold text-white flex items-center gap-1">
-          {label}
-          {required && <span className="text-rose-300 text-[11px]">* Required</span>}
+      <div className="min-w-0">
+        <p className="text-xs sm:text-sm font-semibold text-white flex items-center gap-1 flex-wrap">
+          <span className="truncate">{label}</span>
+          {required && <span className="text-rose-300 text-[9px] sm:text-[11px]">*</span>}
         </p>
-        {description && <p className="text-xs text-white/60">{description}</p>}
+        {description && <p className="text-[10px] sm:text-xs text-white/60 truncate">{description}</p>}
       </div>
     </div>
     <span
       className={cn(
-        "inline-flex items-center gap-1 text-xs font-semibold transition-colors",
+        "inline-flex items-center gap-1 text-[10px] sm:text-xs font-semibold transition-colors flex-shrink-0",
         status ? "text-emerald-300" : "text-amber-200"
       )}
     >
       {status ? (
         <>
-          <CheckCircle2 className="w-4 h-4" />
-          Captured
+          <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <span className="hidden xs:inline">Captured</span>
         </>
       ) : (
         <>
-          <AlertTriangle className="w-4 h-4" />
-          Pending
+          <AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <span className="hidden xs:inline">Pending</span>
         </>
       )}
     </span>

@@ -19,6 +19,8 @@ import {
   Calendar,
   SortDesc,
   X,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useAuth } from "../../contexts/AuthContext";
@@ -127,6 +129,7 @@ export default function GeneralForemanSafetyCompliance() {
   const [dateFilter, setDateFilter] = useState("");
   const [signatureFilter, setSignatureFilter] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [isDetailFullscreen, setIsDetailFullscreen] = useState(false);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
@@ -460,7 +463,8 @@ export default function GeneralForemanSafetyCompliance() {
           </motion.div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[2fr,1fr] mt-6">
+        {/* Main Content */}
+        <div className="mt-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -494,8 +498,9 @@ export default function GeneralForemanSafetyCompliance() {
                         return (
                           <tr
                             key={record.id}
-                            className={`border-b border-[#c084fc]/15 text-sm text-[#f3e8ff]/85 transition ${
-                              isSelected ? "bg-white/5" : "hover:bg-white/5"
+                            onClick={() => setSelectedId(record.id)}
+                            className={`border-b border-[#c084fc]/15 text-sm text-[#f3e8ff]/85 transition cursor-pointer ${
+                              isSelected ? "bg-[#c084fc]/10 border-l-2 border-l-[#c084fc]" : "hover:bg-white/5"
                             }`}
                           >
                             <td className="px-6 py-4">{formatDate(record.job_date)}</td>
@@ -549,12 +554,21 @@ export default function GeneralForemanSafetyCompliance() {
                             <td className="px-6 py-4 text-right">
                               <button
                                 type="button"
-                                onClick={() => setSelectedId(record.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedId(record.id);
+                                }}
                                 className={`text-sm font-semibold ${
                                   isSelected ? "text-[#f3e8ff]" : "text-[#c084fc] hover:text-[#f3e8ff]"
                                 }`}
                               >
-                                {isSelected ? "Selected" : "View"}
+                                {isSelected ? (
+                                  <span className="flex items-center gap-1">
+                                    <CheckCircle2 className="w-4 h-4" />
+                                  </span>
+                                ) : (
+                                  <ChevronRight className="w-4 h-4" />
+                                )}
                               </button>
                             </td>
                           </tr>
@@ -592,25 +606,50 @@ export default function GeneralForemanSafetyCompliance() {
               </>
             )}
           </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.15 }}
-            className="rounded-3xl border border-[#c084fc]/20 bg-gradient-to-br from-[#2d1b4e] via-[#1a0f2e] to-[#0a0513] backdrop-blur-xl p-6 min-h-[360px] shadow-[0_35px_60px_rgba(0,0,0,0.6)]"
-          >
-            {loading ? (
-              <CardListSkeleton rows={2} variant="purple" />
-            ) : selectedRecord ? (
-              <SelectedJsaDetail record={selectedRecord} onClose={() => setSelectedId(null)} />
-            ) : (
-              <div className="h-full flex flex-col items-center justify-center text-center text-[#e9d5ff]/70 gap-3">
-                <ClipboardList className="w-10 h-10 text-[#c084fc]" />
-                <p className="text-sm">Select a JSA to view its details.</p>
-              </div>
-            )}
-          </motion.div>
         </div>
+
+        {/* Detail Panel - Overlay Modal */}
+        <AnimatePresence mode="wait">
+          {selectedRecord && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => setSelectedId(null)}
+                className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40"
+              />
+              {/* Modal */}
+              <motion.div
+                key={isDetailFullscreen ? "fullscreen" : "modal"}
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                className={`fixed z-50 rounded-3xl border border-[#c084fc]/20 bg-gradient-to-br from-[#2d1b4e] via-[#1a0f2e] to-[#0a0513] backdrop-blur-xl shadow-[0_35px_60px_rgba(0,0,0,0.6)] overflow-auto ${
+                  isDetailFullscreen
+                    ? "inset-2 sm:inset-4"
+                    : "inset-3 sm:inset-6 md:inset-8 lg:inset-12 xl:inset-x-[15%] xl:inset-y-8 max-h-[calc(100vh-24px)] sm:max-h-[calc(100vh-48px)]"
+                }`}
+              >
+                {loading ? (
+                  <div className="p-4 sm:p-6">
+                    <CardListSkeleton rows={2} variant="purple" />
+                  </div>
+                ) : (
+                  <SelectedJsaDetail 
+                    record={selectedRecord} 
+                    onClose={() => setSelectedId(null)}
+                    isFullscreen={isDetailFullscreen}
+                    onToggleFullscreen={() => setIsDetailFullscreen(!isDetailFullscreen)}
+                  />
+                )}
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </div>
     </DashboardLayout>
   );
@@ -652,9 +691,13 @@ function formatDateTime(value?: string | null) {
 function SelectedJsaDetail({
   record,
   onClose,
+  isFullscreen,
+  onToggleFullscreen,
 }: {
   record: GFJsaRow;
   onClose: () => void;
+  isFullscreen: boolean;
+  onToggleFullscreen: () => void;
 }) {
   // Use employee_signature as fallback for name if profile data unavailable
   const ownerName = record.user_name || record.employee_signature?.trim() || "Unknown User";
@@ -672,117 +715,124 @@ function SelectedJsaDetail({
   const spanEntries = (record.spans as JsaSpan[] | undefined) ?? [];
 
   return (
-    <div className="space-y-6 text-sm text-[#f3e8ff]/90">
-      <div className="flex items-center justify-between gap-3">
+    <div className={`space-y-5 text-sm text-[#f3e8ff]/90 ${isFullscreen ? "p-6 max-w-4xl mx-auto" : "p-6"}`}>
+      <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="p-3 bg-[#2d1b4e] rounded-2xl border border-[#c084fc]/30">
             <ClipboardList className="w-5 h-5 text-[#c084fc]" />
           </div>
           <div>
-            <p className="text-xs uppercase tracking-wide text-[#a78bfa]">Selected JSA</p>
+            <p className="text-xs uppercase tracking-wide text-[#a78bfa]">JSA Details</p>
             <p className="text-lg font-semibold text-white">
               {record.work_location || "Untitled location"}
             </p>
             <p className="text-xs text-[#a78bfa]">{record.circuit_number || "No circuit noted"}</p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="inline-flex items-center gap-2 text-xs text-[#a78bfa] hover:text-white"
-        >
-          <AlignLeft className="w-4 h-4" />
-          Collapse
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onToggleFullscreen}
+            className="p-2 rounded-lg bg-[#0a0513]/70 border border-[#c084fc]/25 text-[#c084fc] hover:bg-[#c084fc]/10 transition-all"
+            title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+          >
+            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 rounded-lg bg-[#0a0513]/70 border border-[#c084fc]/25 text-[#a78bfa] hover:text-white hover:bg-[#c084fc]/10 transition-all"
+            title="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
-      <DetailCard title="Owner & Job" icon={<User className="w-4 h-4" />}>
-        <div className="grid grid-cols-1 gap-3 text-xs text-[#e9d5ff]">
-          <DetailRow label="Owner" value={ownerName} />
-          <DetailRow label="Email" value={ownerEmail} />
-          <DetailRow label="Job Date" value={formatDate(record.job_date)} />
-          <DetailRow label="Call Times" value={`${record.call_in_time || "—"} → ${record.call_out_time || "—"}`} />
-          <DetailRow label="Status" value={record.status} />
-          <DetailRow label="Updated" value={formatDateTime(record.updated_at)} />
-          <DetailRow label="Driver Signature" value={record.employee_signature?.trim() || "—"} />
-        </div>
-      </DetailCard>
-
-      <DetailCard title="Emergency & Supervisors" icon={<Shield className="w-4 h-4" />}>
-        <div className="grid grid-cols-1 gap-2 text-xs text-[#e9d5ff]">
-          <DetailRow label="Nearest Hospital" value={record.nearest_hospital || "—"} />
-          <DetailRow label="Nearest Clinic" value={record.nearest_clinic || "—"} />
-          <DetailRow label="OC Contact" value={record.oc_contact || "—"} />
-          <DetailRow label="DOC Contact" value={record.doc_contact || "—"} />
-          <DetailRow label="GF Contact" value={record.gf_contact || "—"} />
-          <DetailRow label="Safety Contact" value={record.safety_contact || "—"} />
-        </div>
-      </DetailCard>
-
-      <DetailCard title="Jobs & Weather" icon={<Thermometer className="w-4 h-4" />}>
-        <ChipSection title="Jobs Performed" chips={jobs.map((job) => job.label ?? job.key)} emptyText="No jobs selected." />
-        <ChipSection title="Conditions" chips={weatherConditions} />
-        <ChipSection title="Surface" chips={weatherModifiers} />
-        <p className="text-xs text-[#e9d5ff]">
-          <span className="font-semibold text-white">Weather hazards: </span>
-          {record.weather_hazards?.trim() || "None provided."}
-        </p>
-      </DetailCard>
-
-      <DetailCard title="Hazards & Traffic" icon={<AlertTriangle className="w-4 h-4" />}>
-        <ChipSection title="Electrical / Structural" chips={hazardLabels} emptyText="No hazards flagged." />
-        <ChipSection title="Traffic Hazards" chips={trafficHazards} emptyText="No traffic hazards flagged." />
-        <ChipSection title="Work Zone Setup" chips={trafficSetup} emptyText="No setup details flagged." />
-      </DetailCard>
-
-      <DetailCard title="Span Walk-through" icon={<Wind className="w-4 h-4" />}>
-        {spanEntries.length === 0 ? (
-          <p className="text-xs text-[#a78bfa]">No spans documented.</p>
-        ) : (
-          <div className="space-y-3">
-            {spanEntries.slice(0, 5).map((span) => (
-              <div
-                key={span.spanNumber}
-                className="rounded-2xl border border-[#c084fc]/20 bg-[#1a0f2e]/70 p-3 text-xs text-[#f3e8ff]/85 space-y-1"
-              >
-                <div className="flex items-center justify-between text-[#e9d5ff]">
-                  <span className="font-semibold text-white">Span #{span.spanNumber}</span>
-                  <span className="text-[#a78bfa]">{span.location || "No location"}</span>
-                </div>
-                <p>
-                  <span className="text-[#a78bfa] uppercase tracking-wide">Hazards:</span>{" "}
-                  {span.hazards?.trim() || "None"}
-                </p>
-                <p>
-                  <span className="text-[#a78bfa] uppercase tracking-wide">Mitigation:</span>{" "}
-                  {span.mitigation?.trim() || "None"}
-                </p>
-                {span.initials && (
-                  <p className="text-[#a78bfa]">
-                    Initials: <span className="text-white">{span.initials}</span>
-                  </p>
-                )}
-              </div>
-            ))}
-            {spanEntries.length > 5 && (
-              <p className="text-[0.7rem] uppercase tracking-wide text-[#a78bfa]">
-                + {spanEntries.length - 5} more spans logged
-              </p>
-            )}
+      <div className={`space-y-4 ${isFullscreen ? "grid md:grid-cols-2 gap-4 space-y-0" : ""}`}>
+        <DetailCard title="Owner & Job" icon={<User className="w-4 h-4" />}>
+          <div className="grid grid-cols-1 gap-1 text-xs text-[#e9d5ff]">
+            <DetailRow label="Owner" value={ownerName} />
+            <DetailRow label="Email" value={ownerEmail} />
+            <DetailRow label="Job Date" value={formatDate(record.job_date)} />
+            <DetailRow label="Call Times" value={`${record.call_in_time || "—"} → ${record.call_out_time || "—"}`} />
+            <DetailRow label="Status" value={record.status} />
+            <DetailRow label="Updated" value={formatDateTime(record.updated_at)} />
+            <DetailRow label="Driver Signature" value={record.employee_signature?.trim() || "—"} />
           </div>
-        )}
-      </DetailCard>
+        </DetailCard>
 
-      <DetailCard title="Notes & Signature" icon={<AlignLeft className="w-4 h-4" />}>
-        <p className="text-xs text-[#e9d5ff]">
-          <span className="font-semibold text-white">Signature:</span>{" "}
-          {record.employee_signature || "Not captured"}
-        </p>
-        <p className="text-xs text-[#a78bfa]">
-          <span className="font-semibold text-white">Notes:</span>{" "}
-          {record.notes?.trim() || "No notes provided for this JSA."}
-        </p>
-      </DetailCard>
+        <DetailCard title="Emergency & Supervisors" icon={<Shield className="w-4 h-4" />}>
+          <div className="grid grid-cols-1 gap-1 text-xs text-[#e9d5ff]">
+            <DetailRow label="Nearest Hospital" value={record.nearest_hospital || "—"} />
+            <DetailRow label="Nearest Clinic" value={record.nearest_clinic || "—"} />
+            <DetailRow label="OC Contact" value={record.oc_contact || "—"} />
+            <DetailRow label="DOC Contact" value={record.doc_contact || "—"} />
+            <DetailRow label="GF Contact" value={record.gf_contact || "—"} />
+            <DetailRow label="Safety Contact" value={record.safety_contact || "—"} />
+          </div>
+        </DetailCard>
+
+        <DetailCard title="Jobs & Weather" icon={<Thermometer className="w-4 h-4" />}>
+          <ChipSection title="Jobs Performed" chips={jobs.map((job) => job.label ?? job.key)} emptyText="No jobs selected." />
+          <ChipSection title="Conditions" chips={weatherConditions} />
+          <ChipSection title="Surface" chips={weatherModifiers} />
+          <p className="text-xs text-[#e9d5ff] pt-2">
+            <span className="font-semibold text-white">Weather hazards: </span>
+            {record.weather_hazards?.trim() || "None provided."}
+          </p>
+        </DetailCard>
+
+        <DetailCard title="Hazards & Traffic" icon={<AlertTriangle className="w-4 h-4" />}>
+          <ChipSection title="Electrical / Structural" chips={hazardLabels} emptyText="No hazards flagged." />
+          <ChipSection title="Traffic Hazards" chips={trafficHazards} emptyText="No traffic hazards flagged." />
+          <ChipSection title="Work Zone Setup" chips={trafficSetup} emptyText="No setup details flagged." />
+        </DetailCard>
+
+        <DetailCard title="Span Walk-through" icon={<Wind className="w-4 h-4" />} className={isFullscreen ? "md:col-span-2" : ""}>
+          {spanEntries.length === 0 ? (
+            <p className="text-xs text-[#a78bfa]">No spans documented.</p>
+          ) : (
+            <div className={`grid gap-3 ${isFullscreen ? "md:grid-cols-2 lg:grid-cols-3" : ""}`}>
+              {spanEntries.map((span) => (
+                <div
+                  key={span.spanNumber}
+                  className="rounded-2xl border border-[#c084fc]/20 bg-[#1a0f2e]/70 p-3 text-xs text-[#f3e8ff]/85 space-y-1"
+                >
+                  <div className="flex items-center justify-between text-[#e9d5ff]">
+                    <span className="font-semibold text-white">Span #{span.spanNumber}</span>
+                    <span className="text-[#a78bfa]">{span.location || "No location"}</span>
+                  </div>
+                  <p>
+                    <span className="text-[#a78bfa] uppercase tracking-wide">Hazards:</span>{" "}
+                    {span.hazards?.trim() || "None"}
+                  </p>
+                  <p>
+                    <span className="text-[#a78bfa] uppercase tracking-wide">Mitigation:</span>{" "}
+                    {span.mitigation?.trim() || "None"}
+                  </p>
+                  {span.initials && (
+                    <p className="text-[#a78bfa]">
+                      Initials: <span className="text-white">{span.initials}</span>
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </DetailCard>
+
+        <DetailCard title="Notes & Signature" icon={<AlignLeft className="w-4 h-4" />} className={isFullscreen ? "md:col-span-2" : ""}>
+          <p className="text-xs text-[#e9d5ff]">
+            <span className="font-semibold text-white">Signature:</span>{" "}
+            {record.employee_signature || "Not captured"}
+          </p>
+          <p className="text-xs text-[#a78bfa] mt-2">
+            <span className="font-semibold text-white">Notes:</span>{" "}
+            {record.notes?.trim() || "No notes provided for this JSA."}
+          </p>
+        </DetailCard>
+      </div>
     </div>
   );
 }
@@ -860,13 +910,15 @@ function DetailCard({
   title,
   icon,
   children,
+  className = "",
 }: {
   title: string;
   icon: React.ReactNode;
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-[#c084fc]/20 bg-[#1a0f2e]/70 p-4 space-y-3">
+    <div className={`rounded-2xl border border-[#c084fc]/20 bg-[#1a0f2e]/70 p-4 space-y-3 ${className}`}>
       <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-[#c084fc]">
         {icon}
         {title}

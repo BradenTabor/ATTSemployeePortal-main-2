@@ -17,8 +17,9 @@ import { EnableNotificationsButton } from "../../components/notifications";
 import { getDeviceCapabilities } from "../../lib/mobilePerf";
 import { TextEffect } from "../../components/ui/TextEffect";
 
-// Lazy-loaded announcement card
+// Lazy-loaded components
 const ThemedAnnouncementCard = lazy(() => import("../../components/ThemedAnnouncementCard"));
+const FleetAiSummary = lazy(() => import("./components/FleetAiSummary"));
 
 // Persistence keys for section states
 const PERSISTENCE_KEYS = {
@@ -428,6 +429,28 @@ export default function MechanicDashboard() {
               </div>
             }>
               <ThemedAnnouncementCard theme="ember" />
+            </Suspense>
+          </ScrollReveal>
+
+          {/* Fleet AI Summary Section */}
+          <ScrollReveal variant="fadeUp" delay={0.025}>
+            <Suspense fallback={
+              <div className="rounded-2xl border border-purple-500/20 bg-purple-900/10 p-5 space-y-3 animate-pulse">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-purple-500/20" />
+                  <div className="space-y-1.5">
+                    <div className="h-3 w-40 bg-white/10 rounded-full" />
+                    <div className="h-2 w-28 bg-white/10 rounded-full" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="h-16 rounded-xl bg-white/5" />
+                  <div className="h-16 rounded-xl bg-white/5" />
+                  <div className="h-16 rounded-xl bg-white/5" />
+                </div>
+              </div>
+            }>
+              <FleetAiSummary />
             </Suspense>
           </ScrollReveal>
 

@@ -1,48 +1,55 @@
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout";
-import { FileText, ClipboardList } from "lucide-react";
+import { FileText, ClipboardList, ChevronRight } from "lucide-react";
 
 export default function FormsHistory() {
   const navigate = useNavigate();
 
   return (
     <DashboardLayout title="Forms History">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <p className="text-sm text-gray-300">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-4 sm:space-y-6">
+        <p className="text-xs sm:text-sm text-gray-300">
           View the history of forms you&apos;ve submitted. Select a form type
           below to see your previous submissions.
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           {/* DVIR History Card */}
           <button
             onClick={() => navigate("/forms-history/dvir")}
-            className="flex flex-col items-start rounded-2xl border border-green-700/40 bg-black/60 px-4 py-4 text-left hover:border-green-400/70 hover:bg-black/80 transition"
+            className="flex items-center justify-between gap-3 rounded-xl sm:rounded-2xl border border-green-700/40 bg-black/60 px-3 sm:px-4 py-3 sm:py-4 text-left hover:border-green-400/70 hover:bg-black/80 active:bg-black/90 transition min-h-[72px] sm:min-h-[80px]"
           >
-            <div className="flex items-center gap-2 mb-2">
-              <FileText className="w-5 h-5 text-green-400" />
-              <h2 className="text-sm font-semibold text-white">
-                Daily Vehicle Inspection (DVIR)
-              </h2>
+            <div className="flex items-start gap-2.5 sm:gap-3 min-w-0">
+              <div className="p-2 rounded-lg sm:rounded-xl bg-green-500/10 border border-green-500/30 flex-shrink-0">
+                <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-xs sm:text-sm font-semibold text-white truncate">
+                  Daily Vehicle Inspection (DVIR)
+                </h2>
+                <p className="text-[10px] sm:text-xs text-gray-300 line-clamp-2 mt-0.5">
+                  Review your previously submitted DVIR forms
+                </p>
+              </div>
             </div>
-            <p className="text-xs text-gray-300">
-              Review your previously submitted DVIR forms, including photos and
-              signatures.
-            </p>
+            <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-green-400/60 flex-shrink-0" />
           </button>
 
           {/* Placeholder for future forms */}
-          <div className="flex flex-col items-start rounded-2xl border border-gray-700/40 bg-black/40 px-4 py-4">
-            <div className="flex items-center gap-2 mb-2">
-              <ClipboardList className="w-5 h-5 text-gray-400" />
-              <h2 className="text-sm font-semibold text-gray-200">
-                Other Forms (Coming Soon)
-              </h2>
+          <div className="flex items-center justify-between gap-3 rounded-xl sm:rounded-2xl border border-gray-700/40 bg-black/40 px-3 sm:px-4 py-3 sm:py-4 opacity-60 min-h-[72px] sm:min-h-[80px]">
+            <div className="flex items-start gap-2.5 sm:gap-3 min-w-0">
+              <div className="p-2 rounded-lg sm:rounded-xl bg-gray-500/10 border border-gray-500/30 flex-shrink-0">
+                <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-xs sm:text-sm font-semibold text-gray-200 truncate">
+                  Other Forms
+                </h2>
+                <p className="text-[10px] sm:text-xs text-gray-400 line-clamp-2 mt-0.5">
+                  Coming soon: RTO Requests, Incident Reports
+                </p>
+              </div>
             </div>
-            <p className="text-xs text-gray-400">
-              This space is reserved for future form history pages (RTO Requests,
-              Incident Reports, etc.).
-            </p>
           </div>
         </div>
       </div>

@@ -31,6 +31,9 @@ import {
   Filter,
   ChevronDown,
   ArrowUpDown,
+  FileSpreadsheet,
+  Table,
+  FileDown,
 } from "lucide-react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useAuth } from "../../contexts/AuthContext";
@@ -40,6 +43,13 @@ import TableSkeleton from "../../components/skeletons/TableSkeleton";
 import CardListSkeleton from "../../components/skeletons/CardListSkeleton";
 import { TextEffect } from "../../components/ui/TextEffect";
 import { getDeviceCapabilities } from "../../lib/mobilePerf";
+import {
+  DataExporter,
+  formatDateForExport,
+  generateFilename,
+  type ExportColumn,
+  type ExportMetadata,
+} from "../../lib/exportUtils";
 
 type AdminJsaRow = DailyJsaRecord & {
   user_email?: string | null;
@@ -120,6 +130,73 @@ const statusFilters = [
   { label: "All", value: "all" },
   { label: "Draft", value: "draft" },
   { label: "Completed", value: "completed" },
+];
+
+// Export column definitions
+const jsaExportColumns: ExportColumn<AdminJsaRow>[] = [
+  {
+    header: "Job Date",
+    key: "job_date",
+    format: (value) => formatDateForExport(value as string),
+    width: 14,
+  },
+  {
+    header: "Location",
+    key: "work_location",
+    format: (value) => (value as string) || "N/A",
+    width: 30,
+  },
+  {
+    header: "Circuit Number",
+    key: "circuit_number",
+    format: (value) => (value as string) || "N/A",
+    width: 15,
+  },
+  {
+    header: "Submitted By",
+    key: "user_name",
+    format: (value) => (value as string) || "Unknown",
+    width: 20,
+  },
+  {
+    header: "Status",
+    key: "status",
+    format: (value) => {
+      const status = value as string;
+      return status === "completed" ? "Completed" : status === "draft" ? "Draft" : status || "N/A";
+    },
+    width: 12,
+  },
+  {
+    header: "Employee Signature",
+    key: "employee_signature",
+    format: (value) => (value as string) || "Not signed",
+    width: 20,
+  },
+  {
+    header: "Nearest Hospital",
+    key: "nearest_hospital",
+    format: (value) => (value as string) || "N/A",
+    width: 25,
+  },
+  {
+    header: "Nearest Clinic",
+    key: "nearest_clinic",
+    format: (value) => (value as string) || "N/A",
+    width: 25,
+  },
+  {
+    header: "Notes",
+    key: "notes",
+    format: (value) => (value as string) || "N/A",
+    width: 40,
+  },
+  {
+    header: "Updated",
+    key: "updated_at",
+    format: (value) => formatDateForExport(value as string, true),
+    width: 22,
+  },
 ];
 
 const statusBadge: Record<string, string> = {
@@ -361,8 +438,8 @@ export default function AdminJSA() {
     }
   };
 
-  // Export to CSV
-  const handleExport = async () => {
+  // Export JSA records
+  const handleExport = useCallback(async (exportFormat: "csv" | "excel" | "pdf") => {
     setIsExporting(true);
     try {
       // Map user_name to user_id since user_name is a computed field from join
@@ -380,34 +457,67 @@ export default function AdminJSA() {
       if (userFilter) query = query.eq("user_id", userFilter);
 
       const { data } = await query;
-      if (!data) return;
+      if (!data || data.length === 0) return;
 
-      const headers = ["ID", "Job Date", "Location", "Circuit", "Status", "Updated", "Signer", "Notes"];
-      const csvContent = [
-        headers.join(","),
-        ...data.map((r) =>
-          [
-            r.id,
-            r.job_date || "",
-            `"${(r.work_location || "").replace(/"/g, '""')}"`,
-            `"${(r.circuit_number || "").replace(/"/g, '""')}"`,
-            r.status || "",
-            r.updated_at || "",
-            `"${(r.employee_signature || "").replace(/"/g, '""')}"`,
-            `"${(r.notes || "").replace(/"/g, '""')}"`,
-          ].join(",")
-        ),
-      ].join("\n");
+      // Enrich with user names
+      const enrichedData: AdminJsaRow[] = data.map((record) => {
+        const userMeta = allUsers.find((u) => u.id === record.user_id);
+        return {
+          ...record,
+          user_name: userMeta?.name || "Unknown",
+          user_email: userMeta?.email || null,
+        };
+      });
 
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `jsa_export_${new Date().toISOString().split("T")[0]}.csv`;
-      link.click();
+      const exporter = new DataExporter<AdminJsaRow>();
+      const metadata: ExportMetadata = {
+        reportType: "Daily JSA Records Export",
+        generatedAt: new Date(),
+        exportedBy: "Admin Portal",
+        filters: {
+          "Status": statusFilter === "all" ? "All" : statusFilter === "completed" ? "Completed" : "Draft",
+          "Date Range": dateFilter || dateEndFilter ? `${dateFilter || "Start"} to ${dateEndFilter || "End"}` : "All Time",
+          "Search": searchQuery.trim() || "None",
+        },
+        totalRecords: enrichedData.length,
+      };
+
+      const dateContext = dateFilter || dateEndFilter ? `${dateFilter || "start"}_to_${dateEndFilter || "now"}` : undefined;
+      const filename = generateFilename("JSA_Records_Export", dateContext);
+
+      switch (exportFormat) {
+        case "csv":
+          exporter.exportCSV({
+            data: enrichedData,
+            columns: jsaExportColumns,
+            filename,
+            metadata,
+          });
+          break;
+        case "excel":
+          exporter.exportExcel({
+            data: enrichedData,
+            columns: jsaExportColumns,
+            filename: filename.replace(".csv", ".xlsx"),
+            metadata,
+          });
+          break;
+        case "pdf":
+          exporter.exportPDF({
+            data: enrichedData,
+            columns: jsaExportColumns,
+            filename: filename.replace(".csv", ".pdf"),
+            metadata,
+            companyName: "All Terrain Tree Service",
+            subtitle: `Status: ${statusFilter === "all" ? "All" : statusFilter === "completed" ? "Completed" : "Draft"}`,
+            orientation: "landscape",
+          });
+          break;
+      }
     } finally {
       setIsExporting(false);
     }
-  };
+  }, [sortField, sortDirection, statusFilter, dateFilter, dateEndFilter, searchQuery, signatureFilter, userFilter, allUsers]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -615,13 +725,13 @@ export default function AdminJSA() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5"
+          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 mb-4 sm:mb-5"
         >
-          <StatCard icon={<FileText className="w-5 h-5" />} label="Total JSAs" value={stats.total} color="gold" />
-          <StatCard icon={<FileEdit className="w-5 h-5" />} label="Drafts" value={stats.drafts} color="amber" />
-          <StatCard icon={<CheckCircle2 className="w-5 h-5" />} label="Completed" value={stats.completed} color="emerald" />
-          <StatCard icon={<Calendar className="w-5 h-5" />} label="Today" value={stats.todayCount} color="blue" />
-          <StatCard icon={<TrendingUp className="w-5 h-5" />} label="This Week" value={stats.weekCount} color="purple" />
+          <StatCard icon={<FileText />} label="Total JSAs" value={stats.total} color="gold" />
+          <StatCard icon={<FileEdit />} label="Drafts" value={stats.drafts} color="amber" />
+          <StatCard icon={<CheckCircle2 />} label="Completed" value={stats.completed} color="emerald" />
+          <StatCard icon={<Calendar />} label="Today" value={stats.todayCount} color="blue" />
+          <StatCard icon={<TrendingUp />} label="This Week" value={stats.weekCount} color="purple" />
         </motion.div>
 
         <div className="space-y-4">
@@ -630,9 +740,10 @@ export default function AdminJSA() {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="flex flex-wrap items-center justify-between gap-3"
+            className="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
           >
-            <div className="flex flex-wrap items-center gap-2">
+            {/* Status Filter Buttons - Scrollable on mobile */}
+            <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 sm:pb-0 -mx-2 px-2 sm:mx-0 sm:px-0 scrollbar-thin scrollbar-thumb-[#f4c979]/20">
               {statusFilters.map((filter) => {
                 const isActive = statusFilter === filter.value;
                 const count =
@@ -646,16 +757,17 @@ export default function AdminJSA() {
                     onClick={() => setStatusFilter(filter.value as "all" | "draft" | "completed")}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-semibold transition-all duration-200 ${
+                    className={`inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-semibold transition-all duration-200 min-h-[40px] sm:min-h-[44px] flex-shrink-0 ${
                       isActive
                         ? "bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#2e1b02] shadow-[0_8px_25px_rgba(244,201,121,0.35)]"
-                        : "bg-[#0c0a08]/70 border border-[#f6dcb2]/20 text-[#f8e5bb]/80 hover:border-[#f4c979]/40 hover:text-white"
+                        : "bg-[#0c0a08]/70 border border-[#f6dcb2]/20 text-[#f8e5bb]/80 hover:border-[#f4c979]/40 hover:text-white active:bg-[#f4c979]/10"
                     }`}
                   >
-                    <Icon className="w-4 h-4" />
-                    {filter.label}
+                    <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <span className="hidden xs:inline">{filter.label}</span>
+                    <span className="xs:hidden">{filter.label.slice(0, 3)}</span>
                     <span
-                      className={`px-2 py-0.5 rounded-full text-xs ${
+                      className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs ${
                         isActive ? "bg-[#2e1b02]/20 text-[#2e1b02]" : "bg-white/10 text-[#f8e5bb]"
                       }`}
                     >
@@ -666,28 +778,43 @@ export default function AdminJSA() {
               })}
             </div>
 
-            <div className="flex items-center gap-2">
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2 flex-shrink-0">
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setShowFilters(!showFilters)}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium bg-[#0c0a08]/70 border border-[#f6dcb2]/20 text-[#f8e5bb]/80 hover:border-[#f4c979]/40 hover:text-white transition-all"
+                className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium bg-[#0c0a08]/70 border border-[#f6dcb2]/20 text-[#f8e5bb]/80 hover:border-[#f4c979]/40 hover:text-white active:bg-[#f4c979]/10 transition-all min-h-[40px] sm:min-h-[44px]"
               >
-                <Filter className="w-4 h-4" />
-                {showFilters ? "Hide" : "Show"} Filters
-                <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? "rotate-180" : ""}`} />
+                <Filter className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">{showFilters ? "Hide" : "Show"} Filters</span>
+                <span className="sm:hidden">Filter</span>
+                <ChevronDown className={`w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform ${showFilters ? "rotate-180" : ""}`} />
               </motion.button>
 
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleExport}
-                disabled={isExporting}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium bg-[#0c0a08]/70 border border-[#f6dcb2]/20 text-[#f8e5bb]/80 hover:border-[#f4c979]/40 hover:text-white transition-all disabled:opacity-50"
-              >
-                <Download className="w-4 h-4" />
-                {isExporting ? "Exporting..." : "Export CSV"}
-              </motion.button>
+              {/* Export Dropdown */}
+              <div className="relative group">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  disabled={isExporting}
+                  className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium bg-[#0c0a08]/70 border border-[#f6dcb2]/20 text-[#f8e5bb]/80 hover:border-[#f4c979]/40 hover:text-white active:bg-[#f4c979]/10 transition-all disabled:opacity-50 min-h-[40px] sm:min-h-[44px]"
+                >
+                  <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">{isExporting ? "Exporting..." : "Export"}</span>
+                </motion.button>
+                <div className="absolute right-0 top-full mt-1 w-28 sm:w-32 bg-[#0c0a08] border border-[#f6dcb2]/20 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20">
+                  <button onClick={() => handleExport("csv")} disabled={isExporting} className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-[#f8e5bb]/70 hover:text-white hover:bg-white/5 active:bg-white/10 transition-colors rounded-t-xl min-h-[40px]">
+                    <FileSpreadsheet className="w-3.5 h-3.5" /> CSV
+                  </button>
+                  <button onClick={() => handleExport("excel")} disabled={isExporting} className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-[#f8e5bb]/70 hover:text-white hover:bg-white/5 active:bg-white/10 transition-colors min-h-[40px]">
+                    <Table className="w-3.5 h-3.5" /> Excel
+                  </button>
+                  <button onClick={() => handleExport("pdf")} disabled={isExporting} className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-[#f8e5bb]/70 hover:text-white hover:bg-white/5 active:bg-white/10 transition-colors rounded-b-xl min-h-[40px]">
+                    <FileDown className="w-3.5 h-3.5" /> PDF
+                  </button>
+                </div>
+              </div>
             </div>
           </motion.div>
 
@@ -701,12 +828,13 @@ export default function AdminJSA() {
                 transition={{ duration: 0.3 }}
                 className="overflow-hidden"
               >
-                <div className="rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] p-5 space-y-4 shadow-[0_25px_50px_rgba(0,0,0,0.55)]">
+                <div className="rounded-2xl sm:rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] p-3 sm:p-5 space-y-3 sm:space-y-4 shadow-[0_25px_50px_rgba(0,0,0,0.55)]">
                   {/* Filter Header */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-[#f4c979]">
-                      <Search className="w-4 h-4" />
-                      Search & Filter
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs uppercase tracking-[0.2em] sm:tracking-[0.3em] text-[#f4c979]">
+                      <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <span className="hidden xs:inline">Search & Filter</span>
+                      <span className="xs:hidden">Filters</span>
                     </div>
                     <AnimatePresence>
                       {hasActiveFilters && (
@@ -716,37 +844,38 @@ export default function AdminJSA() {
                           exit={{ opacity: 0, x: 10 }}
                           type="button"
                           onClick={clearAllFilters}
-                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold text-[#f8e5bb]/80 hover:text-white bg-white/5 border border-white/10 hover:border-[#f4c979]/40 transition-all"
+                          className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-semibold text-[#f8e5bb]/80 hover:text-white active:text-white bg-white/5 border border-white/10 hover:border-[#f4c979]/40 active:bg-[#f4c979]/10 transition-all min-h-[32px] sm:min-h-[36px]"
                         >
                           <X className="w-3 h-3" />
-                          Clear all filters
+                          <span className="hidden sm:inline">Clear all</span>
+                          <span className="sm:hidden">Clear</span>
                         </motion.button>
                       )}
                     </AnimatePresence>
                   </div>
 
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+                  <div className="grid gap-2 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                     {/* Search Input */}
-                    <div className="relative lg:col-span-2">
-                      <Search className="w-4 h-4 text-[#b59d72] absolute left-3 top-1/2 -translate-y-1/2" />
+                    <div className="relative sm:col-span-2 lg:col-span-2">
+                      <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#b59d72] absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2" />
                       <input
                         type="text"
                         placeholder="Location, circuit, notes..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full rounded-2xl bg-[#050402]/70 border border-[#f4c979]/25 pl-10 pr-4 py-2.5 text-sm text-[#fdf4db] placeholder:text-[#bfa984] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60"
+                        className="w-full rounded-xl sm:rounded-2xl bg-[#050402]/70 border border-[#f4c979]/25 pl-8 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#fdf4db] placeholder:text-[#bfa984] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 min-h-[40px] sm:min-h-[44px]"
                       />
                     </div>
 
                     {/* User Filter Dropdown */}
                     <div className="relative">
-                      <Users className="w-4 h-4 text-[#b59d72] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                      <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#b59d72] absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
                       <select
                         value={userFilter}
                         onChange={(e) => setUserFilter(e.target.value)}
                         aria-label="Filter by user"
                         title="Filter by user"
-                        className="w-full rounded-2xl bg-[#050402]/70 border border-[#f4c979]/25 pl-10 pr-4 py-2.5 text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 appearance-none cursor-pointer"
+                        className="w-full rounded-xl sm:rounded-2xl bg-[#050402]/70 border border-[#f4c979]/25 pl-8 sm:pl-10 pr-8 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 appearance-none cursor-pointer min-h-[40px] sm:min-h-[44px]"
                       >
                         <option value="">All Users</option>
                         {allUsers.map((user) => (
@@ -755,42 +884,45 @@ export default function AdminJSA() {
                           </option>
                         ))}
                       </select>
-                      <ChevronDown className="w-4 h-4 text-[#b59d72] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#b59d72] absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                     </div>
 
-                    {/* Date Start Filter */}
-                    <div className="relative">
-                      <Calendar className="w-4 h-4 text-[#b59d72] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
-                      <input
-                        type="date"
-                        value={dateFilter}
-                        onChange={(e) => setDateFilter(e.target.value)}
-                        title="Start date"
-                        className="w-full rounded-2xl bg-[#050402]/70 border border-[#f4c979]/25 pl-10 pr-4 py-2.5 text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 [color-scheme:dark]"
-                      />
-                    </div>
+                    {/* Date Filters - Side by side on mobile */}
+                    <div className="grid grid-cols-2 gap-2 sm:contents">
+                      {/* Date Start Filter */}
+                      <div className="relative">
+                        <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#b59d72] absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                        <input
+                          type="date"
+                          value={dateFilter}
+                          onChange={(e) => setDateFilter(e.target.value)}
+                          title="Start date"
+                          className="w-full rounded-xl sm:rounded-2xl bg-[#050402]/70 border border-[#f4c979]/25 pl-8 sm:pl-10 pr-2 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 [color-scheme:dark] min-h-[40px] sm:min-h-[44px]"
+                        />
+                      </div>
 
-                    {/* Date End Filter */}
-                    <div className="relative">
-                      <Calendar className="w-4 h-4 text-[#b59d72] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
-                      <input
-                        type="date"
-                        value={dateEndFilter}
-                        onChange={(e) => setDateEndFilter(e.target.value)}
-                        title="End date"
-                        className="w-full rounded-2xl bg-[#050402]/70 border border-[#f4c979]/25 pl-10 pr-4 py-2.5 text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 [color-scheme:dark]"
-                      />
+                      {/* Date End Filter */}
+                      <div className="relative">
+                        <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#b59d72] absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                        <input
+                          type="date"
+                          value={dateEndFilter}
+                          onChange={(e) => setDateEndFilter(e.target.value)}
+                          title="End date"
+                          className="w-full rounded-xl sm:rounded-2xl bg-[#050402]/70 border border-[#f4c979]/25 pl-8 sm:pl-10 pr-2 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 [color-scheme:dark] min-h-[40px] sm:min-h-[44px]"
+                        />
+                      </div>
                     </div>
 
                     {/* Signer Filter */}
                     <div className="relative">
-                      <User className="w-4 h-4 text-[#b59d72] absolute left-3 top-1/2 -translate-y-1/2" />
+                      <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#b59d72] absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2" />
                       <input
                         type="text"
-                        placeholder="Filter by signer name…"
+                        placeholder="Signer name…"
                         value={signatureFilter}
                         onChange={(e) => setSignatureFilter(e.target.value)}
-                        className="w-full rounded-2xl bg-[#050402]/70 border border-[#f4c979]/25 pl-10 pr-4 py-2.5 text-sm text-[#fdf4db] placeholder:text-[#bfa984] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60"
+                        className="w-full rounded-xl sm:rounded-2xl bg-[#050402]/70 border border-[#f4c979]/25 pl-8 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#fdf4db] placeholder:text-[#bfa984] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 min-h-[40px] sm:min-h-[44px]"
                       />
                     </div>
                   </div>
@@ -807,16 +939,15 @@ export default function AdminJSA() {
         </div>
 
         {/* Main Content Grid */}
-        <div className={`grid gap-6 mt-6 ${isDetailFullscreen ? "" : "lg:grid-cols-[1fr,400px] xl:grid-cols-[1fr,450px]"}`}>
+        <div className="mt-6">
           {/* Table Section */}
-          {!isDetailFullscreen && (
-            <motion.div
-              ref={tableRef}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.1 }}
-              className="rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] backdrop-blur-xl shadow-[0_35px_60px_rgba(0,0,0,0.6)] flex flex-col"
-            >
+          <motion.div
+            ref={tableRef}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+            className="rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] backdrop-blur-xl shadow-[0_35px_60px_rgba(0,0,0,0.6)] flex flex-col"
+          >
               {loading ? (
                 <div className="p-4 sm:p-6">
                   <TableSkeleton rows={6} columns={6} variant="gold" />
@@ -957,19 +1088,24 @@ export default function AdminJSA() {
                     ))}
                   </div>
 
-                  {/* Enhanced Pagination */}
-                  <div className="border-t border-[#f6dcb2]/20 p-4">
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                      {/* Left: Page Size & Info */}
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 text-sm text-[#c7b696]">
-                          <span>Show</span>
+                  {/* Enhanced Pagination - Mobile optimized */}
+                  <div className="border-t border-[#f6dcb2]/20 p-3 sm:p-4">
+                    <div className="flex flex-col gap-3 sm:gap-4">
+                      {/* Mobile: Compact info row */}
+                      <div className="flex items-center justify-between sm:hidden">
+                        <span className="text-[10px] sm:text-xs text-[#c7b696]">
+                          <span className="text-[#f4c979] font-semibold">
+                            {(page - 1) * pageSize + 1}-{Math.min(page * pageSize, total)}
+                          </span>{" "}
+                          of {total}
+                        </span>
+                        <div className="flex items-center gap-1.5">
                           <select
                             value={pageSize}
                             onChange={(e) => setPageSize(Number(e.target.value))}
                             aria-label="Items per page"
                             title="Items per page"
-                            className="rounded-lg bg-[#050402]/70 border border-[#f4c979]/25 px-2 py-1 text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60"
+                            className="rounded-md bg-[#050402]/70 border border-[#f4c979]/25 px-2 py-1 text-[10px] text-[#fdf4db] focus:outline-none"
                           >
                             {PAGE_SIZE_OPTIONS.map((size) => (
                               <option key={size} value={size}>
@@ -977,137 +1113,164 @@ export default function AdminJSA() {
                               </option>
                             ))}
                           </select>
-                          <span>per page</span>
+                          <span className="text-[10px] text-[#c7b696]">/ page</span>
                         </div>
-                        <span className="text-sm text-[#c7b696] hidden sm:inline">
-                          Showing{" "}
-                          <span className="text-[#f4c979] font-semibold">
-                            {(page - 1) * pageSize + 1}-{Math.min(page * pageSize, total)}
-                          </span>{" "}
-                          of <span className="text-[#f4c979] font-semibold">{total}</span>
-                        </span>
                       </div>
 
-                      {/* Right: Navigation */}
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setPage(1)}
-                          disabled={page === 1 || loading}
-                          className="p-2 rounded-lg bg-[#050402]/70 border border-[#f4c979]/25 text-[#f4c979] hover:bg-[#f4c979]/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                          title="First page"
-                        >
-                          <ChevronsLeft className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setPage((p) => Math.max(1, p - 1))}
-                          disabled={page === 1 || loading}
-                          className="p-2 rounded-lg bg-[#050402]/70 border border-[#f4c979]/25 text-[#f4c979] hover:bg-[#f4c979]/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                          title="Previous page"
-                        >
-                          <ChevronLeft className="w-4 h-4" />
-                        </button>
-
-                        {/* Page Number Display / Jump */}
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-[#c7b696]">Page</span>
-                          <input
-                            type="text"
-                            value={jumpToPage || page}
-                            onChange={(e) => setJumpToPage(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                handleJumpToPage();
-                              }
-                            }}
-                            onBlur={handleJumpToPage}
-                            aria-label="Jump to page"
-                            title="Jump to page"
-                            className="w-12 rounded-lg bg-[#050402]/70 border border-[#f4c979]/25 px-2 py-1 text-sm text-[#fdf4db] text-center focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60"
-                          />
-                          <span className="text-sm text-[#c7b696]">of {totalPages}</span>
+                      <div className="flex items-center justify-between gap-3 sm:gap-4">
+                        {/* Desktop: Page Size & Info */}
+                        <div className="hidden sm:flex items-center gap-4">
+                          <div className="flex items-center gap-2 text-xs sm:text-sm text-[#c7b696]">
+                            <span>Show</span>
+                            <select
+                              value={pageSize}
+                              onChange={(e) => setPageSize(Number(e.target.value))}
+                              aria-label="Items per page"
+                              title="Items per page"
+                              className="rounded-lg bg-[#050402]/70 border border-[#f4c979]/25 px-2 py-1 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60"
+                            >
+                              {PAGE_SIZE_OPTIONS.map((size) => (
+                                <option key={size} value={size}>
+                                  {size}
+                                </option>
+                              ))}
+                            </select>
+                            <span>per page</span>
+                          </div>
+                          <span className="text-xs sm:text-sm text-[#c7b696]">
+                            Showing{" "}
+                            <span className="text-[#f4c979] font-semibold">
+                              {(page - 1) * pageSize + 1}-{Math.min(page * pageSize, total)}
+                            </span>{" "}
+                            of <span className="text-[#f4c979] font-semibold">{total}</span>
+                          </span>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                          disabled={page >= totalPages || loading}
-                          className="p-2 rounded-lg bg-[#050402]/70 border border-[#f4c979]/25 text-[#f4c979] hover:bg-[#f4c979]/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                          title="Next page"
-                        >
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setPage(totalPages)}
-                          disabled={page >= totalPages || loading}
-                          className="p-2 rounded-lg bg-[#050402]/70 border border-[#f4c979]/25 text-[#f4c979] hover:bg-[#f4c979]/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                          title="Last page"
-                        >
-                          <ChevronsRight className="w-4 h-4" />
-                        </button>
+                        {/* Navigation - responsive */}
+                        <div className="flex items-center gap-1 sm:gap-2 w-full sm:w-auto justify-center sm:justify-end">
+                          <button
+                            type="button"
+                            onClick={() => setPage(1)}
+                            disabled={page === 1 || loading}
+                            className="p-1.5 sm:p-2 rounded-md sm:rounded-lg bg-[#050402]/70 border border-[#f4c979]/25 text-[#f4c979] hover:bg-[#f4c979]/10 active:bg-[#f4c979]/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all min-h-[36px] sm:min-h-[40px] min-w-[36px] sm:min-w-[40px] flex items-center justify-center"
+                            title="First page"
+                          >
+                            <ChevronsLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPage((p) => Math.max(1, p - 1))}
+                            disabled={page === 1 || loading}
+                            className="p-1.5 sm:p-2 rounded-md sm:rounded-lg bg-[#050402]/70 border border-[#f4c979]/25 text-[#f4c979] hover:bg-[#f4c979]/10 active:bg-[#f4c979]/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all min-h-[36px] sm:min-h-[40px] min-w-[36px] sm:min-w-[40px] flex items-center justify-center"
+                            title="Previous page"
+                          >
+                            <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          </button>
+
+                          {/* Page Number Display / Jump */}
+                          <div className="flex items-center gap-1 sm:gap-2">
+                            <span className="text-[10px] sm:text-sm text-[#c7b696] hidden xs:inline">Page</span>
+                            <input
+                              type="text"
+                              value={jumpToPage || page}
+                              onChange={(e) => setJumpToPage(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  handleJumpToPage();
+                                }
+                              }}
+                              onBlur={handleJumpToPage}
+                              aria-label="Jump to page"
+                              title="Jump to page"
+                              className="w-10 sm:w-12 rounded-md sm:rounded-lg bg-[#050402]/70 border border-[#f4c979]/25 px-1 sm:px-2 py-1 text-xs sm:text-sm text-[#fdf4db] text-center focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 min-h-[36px] sm:min-h-[40px]"
+                            />
+                            <span className="text-[10px] sm:text-sm text-[#c7b696]">/ {totalPages}</span>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                            disabled={page >= totalPages || loading}
+                            className="p-1.5 sm:p-2 rounded-md sm:rounded-lg bg-[#050402]/70 border border-[#f4c979]/25 text-[#f4c979] hover:bg-[#f4c979]/10 active:bg-[#f4c979]/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all min-h-[36px] sm:min-h-[40px] min-w-[36px] sm:min-w-[40px] flex items-center justify-center"
+                            title="Next page"
+                          >
+                            <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPage(totalPages)}
+                            disabled={page >= totalPages || loading}
+                            className="p-1.5 sm:p-2 rounded-md sm:rounded-lg bg-[#050402]/70 border border-[#f4c979]/25 text-[#f4c979] hover:bg-[#f4c979]/10 active:bg-[#f4c979]/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all min-h-[36px] sm:min-h-[40px] min-w-[36px] sm:min-w-[40px] flex items-center justify-center"
+                            title="Last page"
+                          >
+                            <ChevronsRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </>
               )}
             </motion.div>
-          )}
+        </div>
 
-          {/* Detail Panel */}
-          <AnimatePresence mode="wait">
-            {(selectedRecord || isDetailFullscreen) && (
+        {/* Detail Panel - Overlay Modal */}
+        <AnimatePresence mode="wait">
+          {selectedRecord && (
+            <>
+              {/* Backdrop */}
               <motion.div
-                key={isDetailFullscreen ? "fullscreen" : "panel"}
-                initial={{ opacity: 0, x: isDetailFullscreen ? 0 : 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: isDetailFullscreen ? 0 : 20 }}
-                transition={{ duration: 0.3 }}
-                className={`rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#070605] backdrop-blur-xl shadow-[0_35px_60px_rgba(0,0,0,0.6)] ${
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => setSelectedId(null)}
+                className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40"
+              />
+              {/* Modal */}
+              <motion.div
+                key={isDetailFullscreen ? "fullscreen" : "modal"}
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                className={`fixed z-50 rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#070605] backdrop-blur-xl shadow-[0_35px_60px_rgba(0,0,0,0.6)] overflow-auto ${
                   isDetailFullscreen
-                    ? "fixed inset-4 z-50 overflow-auto"
-                    : "p-6 min-h-[500px] max-h-[calc(100vh-200px)] overflow-auto sticky top-24"
+                    ? "inset-2 sm:inset-4"
+                    : "inset-3 sm:inset-6 md:inset-8 lg:inset-12 xl:inset-x-[15%] xl:inset-y-8 max-h-[calc(100vh-24px)] sm:max-h-[calc(100vh-48px)]"
                 }`}
               >
                 {loading ? (
-                  <div className={isDetailFullscreen ? "p-6" : ""}>
+                  <div className="p-4 sm:p-6">
                     <CardListSkeleton rows={2} variant="gold" />
                   </div>
-                ) : selectedRecord ? (
+                ) : (
                   <SelectedJsaDetail
                     record={selectedRecord}
                     onClose={() => setSelectedId(null)}
                     isFullscreen={isDetailFullscreen}
                     onToggleFullscreen={() => setIsDetailFullscreen(!isDetailFullscreen)}
                   />
-                ) : (
-                  <div className="h-full flex flex-col items-center justify-center text-center text-[#f8e5bb]/70 gap-3 py-12">
-                    <ClipboardList className="w-10 h-10 text-[#f4c979]" />
-                    <p className="text-sm">Select a JSA to view its details.</p>
-                  </div>
                 )}
               </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+            </>
+          )}
+        </AnimatePresence>
 
-        {/* Keyboard shortcut hint */}
-        <div className="mt-4 text-center text-xs text-[#c7b696]/60">
-          <span className="hidden sm:inline">
-            Use <kbd className="px-1.5 py-0.5 rounded bg-[#1b1914] border border-[#f6dcb2]/20">←</kbd>{" "}
-            <kbd className="px-1.5 py-0.5 rounded bg-[#1b1914] border border-[#f6dcb2]/20">→</kbd> for pages,{" "}
-            <kbd className="px-1.5 py-0.5 rounded bg-[#1b1914] border border-[#f6dcb2]/20">↑</kbd>{" "}
-            <kbd className="px-1.5 py-0.5 rounded bg-[#1b1914] border border-[#f6dcb2]/20">↓</kbd> for rows,{" "}
-            <kbd className="px-1.5 py-0.5 rounded bg-[#1b1914] border border-[#f6dcb2]/20">Esc</kbd> to exit fullscreen
-          </span>
+        {/* Keyboard shortcut hint - Desktop only */}
+        <div className="hidden sm:block mt-4 text-center text-[10px] sm:text-xs text-[#c7b696]/60">
+          Use <kbd className="px-1 sm:px-1.5 py-0.5 rounded bg-[#1b1914] border border-[#f6dcb2]/20 text-[9px] sm:text-xs">←</kbd>{" "}
+          <kbd className="px-1 sm:px-1.5 py-0.5 rounded bg-[#1b1914] border border-[#f6dcb2]/20 text-[9px] sm:text-xs">→</kbd> for pages,{" "}
+          <kbd className="px-1 sm:px-1.5 py-0.5 rounded bg-[#1b1914] border border-[#f6dcb2]/20 text-[9px] sm:text-xs">↑</kbd>{" "}
+          <kbd className="px-1 sm:px-1.5 py-0.5 rounded bg-[#1b1914] border border-[#f6dcb2]/20 text-[9px] sm:text-xs">↓</kbd> for rows,{" "}
+          <kbd className="px-1 sm:px-1.5 py-0.5 rounded bg-[#1b1914] border border-[#f6dcb2]/20 text-[9px] sm:text-xs">Esc</kbd> to exit fullscreen
         </div>
       </div>
     </DashboardLayout>
   );
 }
 
-// Stat Card Component
+// Stat Card Component - Mobile optimized
 function StatCard({
   icon,
   label,
@@ -1129,12 +1292,12 @@ function StatCard({
 
   return (
     <div
-      className={`rounded-2xl border bg-gradient-to-br ${colorClasses[color]} p-4 flex items-center gap-3`}
+      className={`rounded-xl sm:rounded-2xl border bg-gradient-to-br ${colorClasses[color]} p-2.5 sm:p-4 flex items-center gap-2 sm:gap-3`}
     >
-      <div className={`p-2 rounded-xl bg-black/20`}>{icon}</div>
-      <div>
-        <p className="text-2xl font-bold text-white">{value.toLocaleString()}</p>
-        <p className="text-xs text-[#c7b696]">{label}</p>
+      <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-black/20 [&>svg]:w-4 [&>svg]:h-4 sm:[&>svg]:w-5 sm:[&>svg]:h-5">{icon}</div>
+      <div className="min-w-0">
+        <p className="text-lg sm:text-2xl font-bold text-white truncate">{value.toLocaleString()}</p>
+        <p className="text-[9px] sm:text-xs text-[#c7b696] truncate">{label}</p>
       </div>
     </div>
   );
@@ -1329,45 +1492,45 @@ function MobileJsaCard({
   return (
     <div
       onClick={onSelect}
-      className={`rounded-2xl border ${
-        isSelected ? "border-[#f4c979] bg-[#f4c979]/5" : "border-[#f6dcb2]/20"
-      } bg-[#120f0c]/70 p-4 space-y-3 shadow-lg shadow-black/30 cursor-pointer transition-all active:scale-[0.98]`}
+      className={`rounded-xl sm:rounded-2xl border ${
+        isSelected ? "border-[#f4c979] bg-[#f4c979]/5 border-l-2 border-l-[#f4c979]" : "border-[#f6dcb2]/20"
+      } bg-[#120f0c]/70 p-3 sm:p-4 space-y-2.5 sm:space-y-3 shadow-lg shadow-black/30 cursor-pointer transition-all active:scale-[0.98] active:bg-[#f4c979]/5`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-[#f4c979]/80 mb-1">{formatDate(record.job_date)}</p>
-          <p className="text-base font-semibold text-white">{record.work_location || "Untitled location"}</p>
-          <p className="text-xs text-[#c7b696]">{record.circuit_number || "Circuit pending"}</p>
+      <div className="flex items-start justify-between gap-2 sm:gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-[9px] sm:text-xs uppercase tracking-[0.2em] sm:tracking-[0.3em] text-[#f4c979]/80 mb-0.5 sm:mb-1">{formatDate(record.job_date)}</p>
+          <p className="text-sm sm:text-base font-semibold text-white truncate">{record.work_location || "Untitled location"}</p>
+          <p className="text-[10px] sm:text-xs text-[#c7b696] truncate">{record.circuit_number || "Circuit pending"}</p>
         </div>
         <span
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[0.65rem] font-semibold ${
+          className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-[0.65rem] font-semibold flex-shrink-0 ${
             statusBadge[record.status || "draft"] || statusBadge.draft
           }`}
         >
-          {record.status === "completed" ? <CheckCircle2 className="w-3 h-3" /> : <FileEdit className="w-3 h-3" />}
-          {record.status || "draft"}
+          {record.status === "completed" ? <CheckCircle2 className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> : <FileEdit className="w-2.5 h-2.5 sm:w-3 sm:h-3" />}
+          <span className="hidden xs:inline">{record.status || "draft"}</span>
         </span>
       </div>
 
-      <div className="text-xs text-[#c7b696] space-y-1.5">
-        <div className="flex items-center gap-2">
-          <User className="w-3.5 h-3.5 text-[#f4c979]" />
-          <span className="text-white/90">{record.user_name || record.user_email || record.user_id}</span>
+      <div className="text-[10px] sm:text-xs text-[#c7b696] space-y-1 sm:space-y-1.5">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <User className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#f4c979] flex-shrink-0" />
+          <span className="text-white/90 truncate">{record.user_name || record.user_email || record.user_id}</span>
         </div>
-        <div className="flex items-center gap-2">
-          <User className="w-3.5 h-3.5 text-[#9cf6d2]" />
-          <span className="text-white/80">Signer: {record.employee_signature?.trim() || "—"}</span>
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <User className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#9cf6d2] flex-shrink-0" />
+          <span className="text-white/80 truncate">Signer: {record.employee_signature?.trim() || "—"}</span>
         </div>
-        <div className="flex items-center gap-2">
-          <Clock className="w-3.5 h-3.5 text-[#9cf6d2]" />
-          <span>{formatDateTime(record.updated_at || record.created_at)}</span>
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#9cf6d2] flex-shrink-0" />
+          <span className="truncate">{formatDateTime(record.updated_at || record.created_at)}</span>
         </div>
       </div>
 
-      <div className="flex items-center justify-end pt-2">
-        <span className="inline-flex items-center gap-2 text-sm font-semibold text-[#f4c979]">
-          {isSelected ? "Selected" : "View detail"}
-          <ChevronRight className="w-4 h-4" />
+      <div className="flex items-center justify-end pt-1.5 sm:pt-2">
+        <span className="inline-flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold text-[#f4c979]">
+          {isSelected ? "Selected" : "View"}
+          <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
         </span>
       </div>
     </div>
