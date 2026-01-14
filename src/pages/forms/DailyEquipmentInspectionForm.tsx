@@ -10,6 +10,7 @@ import {
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { Camera } from "lucide-react";
 import { logger } from "../../lib/logger";
+import { toast } from "../../lib/toast";
 import { DateField } from "../../components/forms/GlassyPickers";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../contexts/AuthContext";
@@ -180,8 +181,6 @@ export default function DailyEquipmentInspectionForm() {
   const submitterPrefilledRef = useRef(false);
 
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   function handleChecklistChange(
     type: "general" | "specific",
@@ -243,34 +242,32 @@ export default function DailyEquipmentInspectionForm() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setError(null);
-    setSuccess(null);
 
     const submitterName = submittedBy.trim();
     if (!submitterName) {
-      setError("Submitted By is required.");
+      toast.error("Submitted By is required.");
       return;
     }
 
     if (!equipmentType) {
-      setError("Select an equipment type.");
+      toast.error("Select an equipment type.");
       return;
     }
 
     const trimmedNumber = equipmentNumber.trim();
     if (!trimmedNumber || !availableEquipmentNumbers.includes(trimmedNumber)) {
-      setError("Select a valid equipment number for the chosen type.");
+      toast.error("Select a valid equipment number for the chosen type.");
       return;
     }
 
     if (!user?.id) {
-      setError("You must be signed in to submit an inspection.");
+      toast.error("You must be signed in to submit an inspection.");
       return;
     }
 
     const missingRequired = REQUIRED_PHOTO_KEYS.filter((key) => !photos[key]);
     if (missingRequired.length > 0) {
-      setError("Hydraulic fluid level photo is required before submitting.");
+      toast.error("Hydraulic fluid level photo is required before submitting.");
       return;
     }
 
@@ -312,7 +309,7 @@ export default function DailyEquipmentInspectionForm() {
         throw insertError;
       }
 
-      setSuccess("Daily equipment inspection submitted.");
+      toast.success("Daily equipment inspection submitted.");
       setSubmittedBy(defaultSubmitterName);
       setEquipmentType("");
       setEquipmentNumber("");
@@ -326,7 +323,7 @@ export default function DailyEquipmentInspectionForm() {
       if (uploadedPaths.length) {
         await supabase.storage.from(BUCKET_NAME).remove(uploadedPaths);
       }
-      setError(
+      toast.error(
         err instanceof Error
           ? err.message
           : "Something went wrong submitting the inspection."
@@ -466,17 +463,6 @@ export default function DailyEquipmentInspectionForm() {
             </div>
           </div>
         </section>
-
-        {error && (
-          <div className="rounded-xl border border-rose-400/40 bg-rose-500/10 px-3 py-2 text-xs text-rose-100">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="rounded-xl border border-emerald-400/40 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-100">
-            {success}
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
           {/* Card: Equipment Info */}

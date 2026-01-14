@@ -222,6 +222,28 @@ interface SmartDefaultsResponse {
 | `smart_defaults_dismissed` | Panel dismissed | form_type, suggestions_count, applied_count |
 | `smart_defaults_fetch_failed` | API error | form_type, error |
 
+## User Notification Behavior
+
+### Toast Notification
+When suggestions load successfully:
+- **Toast appears**: "Smart Suggestions Ready" with count (e.g., "5 field suggestions available")
+- **Position**: Bottom-right corner (app default)
+- **Duration**: 4 seconds (app default)
+- **Condition**: Only shown if suggestions exist (not on empty response)
+
+### Scroll-to-Panel
+After suggestions load:
+- Page automatically scrolls to `#smart-defaults-panel`
+- Uses smooth scroll behavior
+- 300ms delay to allow panel animation to complete
+- Ensures users who scrolled down don't miss suggestions
+
+### Silent Failures
+On API error or empty response:
+- No toast shown (avoid disrupting form UX)
+- Form continues to work normally
+- Error logged to telemetry for debugging
+
 ## Feature Flag
 
 ### Environment Variable

@@ -19,6 +19,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { logger } from '../lib/logger';
+import { toast } from '../lib/toast';
 import { mapSuggestionsToFormKeys } from '../services/safety-agent/lib/fieldNameMap';
 
 // =============================================================================
@@ -129,12 +130,28 @@ export function useSmartDefaults(formType: 'dvir' | 'jsa'): UseSmartDefaultsResu
 
       // Telemetry: suggestions loaded
       if (response?.suggestions && Object.keys(response.suggestions).length > 0) {
+        const suggestionCount = Object.keys(response.suggestions).length;
+        
         logger.info('smart_defaults_shown', {
           form_type: formType,
-          suggestion_count: Object.keys(response.suggestions).length,
+          suggestion_count: suggestionCount,
           method: response.method,
           from_cache: response.meta?.from_cache,
         });
+
+        // Show toast notification so user doesn't miss suggestions
+        toast.info(
+          'Smart Suggestions Ready',
+          `${suggestionCount} field ${suggestionCount === 1 ? 'suggestion' : 'suggestions'} available`
+        );
+
+        // Scroll to panel after short delay (let animation complete)
+        setTimeout(() => {
+          const panel = document.getElementById('smart-defaults-panel');
+          if (panel) {
+            panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 300);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load suggestions';

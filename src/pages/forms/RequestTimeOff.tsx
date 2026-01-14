@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { CONFIG } from "../../lib/config";
 import { logger } from "../../lib/logger";
+import { toast } from "../../lib/toast";
 import { DateField, TimeField } from "../../components/forms/GlassyPickers";
 import { CalendarDays, Clock } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
@@ -198,6 +199,7 @@ export default function RequestTimeOff() {
       }
 
       setStatus("success");
+      toast.success("Time off request submitted successfully!");
       setFormData({
         fullName: "",
         email: "",
@@ -214,6 +216,7 @@ export default function RequestTimeOff() {
     } catch (err) {
       logger.error("Submission error:", err);
       setStatus("error");
+      toast.error("Something went wrong. Please try again.");
       setTimeout(() => setStatus("idle"), 3000);
     }
   };
@@ -421,25 +424,6 @@ export default function RequestTimeOff() {
               : "Submit Request"}
           </button>
 
-          {status === "success" && (
-            <motion.p
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-green-400 text-center text-sm font-medium"
-            >
-              Request submitted successfully!
-            </motion.p>
-          )}
-
-          {status === "error" && (
-            <motion.p
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-red-400 text-center text-sm font-medium"
-            >
-              Something went wrong. Please try again.
-            </motion.p>
-          )}
         </form>
       </motion.div>
     </DashboardLayout>

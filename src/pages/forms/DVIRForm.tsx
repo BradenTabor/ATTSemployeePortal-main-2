@@ -19,6 +19,7 @@ import { cn } from "../../lib/utils";
 import { DateField } from "../../components/forms/GlassyPickers";
 import { useSmartDefaults } from "../../hooks/useSmartDefaults";
 import { SmartDefaultsPanel } from "../../components/forms/SmartDefaultsPanel";
+import { toast } from "../../lib/toast";
 
 type ExtraPhotos = {
   tire?: File;
@@ -215,8 +216,6 @@ const MileageInput = ({ value, onChange, truckNumber, previousMileage }: Mileage
     const num = parseInt(value.replace(/[^\d]/g, ''), 10);
     if (!value) return { valid: true, message: '' };
     if (isNaN(num)) return { valid: false, message: 'Enter a valid number' };
-    if (num < 1000) return { valid: false, message: 'Mileage seems too low' };
-    if (num > 999999) return { valid: false, message: 'Mileage seems too high' };
     if (previousMileage && num < previousMileage) {
       return { valid: false, message: 'Lower than previous reading' };
     }
@@ -272,7 +271,6 @@ const MileageInput = ({ value, onChange, truckNumber, previousMileage }: Mileage
             ref={inputRef}
             type="text"
             inputMode="numeric"
-            pattern="[0-9]*"
             value={displayValue}
             onChange={handleChange}
             onFocus={() => setIsFocused(true)}
@@ -598,10 +596,11 @@ interface SignaturePadHandle {
 
 interface SignaturePadProps {
   label: string;
+  onDrawingChange?: (hasDrawing: boolean) => void;
 }
 
 const SignaturePad = forwardRef<SignaturePadHandle, SignaturePadProps>(
-  ({ label }, ref) => {
+  ({ label, onDrawingChange }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
     const strokesRef = useRef<{ x: number; y: number }[][]>([]);
@@ -659,13 +658,16 @@ const SignaturePad = forwardRef<SignaturePadHandle, SignaturePadProps>(
       currentStrokeRef.current = null;
       redraw();
       setHasDrawing(false);
+      onDrawingChange?.(false);
     };
 
     const handleUndo = () => {
       if (!strokesRef.current.length) return;
       strokesRef.current.pop();
       redraw();
-      setHasDrawing(strokesRef.current.length > 0);
+      const newHasDrawing = strokesRef.current.length > 0;
+      setHasDrawing(newHasDrawing);
+      onDrawingChange?.(newHasDrawing);
     };
 
     useImperativeHandle(ref, () => ({
@@ -713,7 +715,12 @@ const SignaturePad = forwardRef<SignaturePadHandle, SignaturePadProps>(
       ctx.lineTo(point.x, point.y);
       ctx.stroke();
       currentStrokeRef.current.push(point);
-      setHasDrawing(true);
+      
+      // Notify parent when drawing state changes
+      if (!hasDrawing) {
+        setHasDrawing(true);
+        onDrawingChange?.(true);
+      }
     };
 
     const handlePointerUp = () => {
@@ -795,7 +802,7 @@ export default function DVIRForm() {
   const [driversLicenseNumber, setDriversLicenseNumber] = useState("");
   const [driversLicenseClass, setDriversLicenseClass] = useState("");
   const [driversLicenseExp, setDriversLicenseExp] = useState("");
-  const [driversLicenseRequired, setDriversLicenseRequired] = useState("");
+  const [driversLicenseRequired, setDriversLicenseRequired] = useState<"" | "YES" | "NO">("");
   const [hasMedicalCard, setHasMedicalCard] = useState<"" | "YES" | "NO">("");
   const [medicalCardExp, setMedicalCardExp] = useState("");
   
@@ -942,8 +949,10 @@ export default function DVIRForm() {
   const driverApprovalSigRef = useRef<SignaturePadHandle | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  
+  // Track signature state for progress bar (refs don't trigger re-renders)
+  const [hasDriverSignature, setHasDriverSignature] = useState(false);
+  const [hasForemanSignature, setHasForemanSignature] = useState(false);
   
   // 📊 Calculate form progress
   const progressSteps = useMemo((): ProgressStep[] => {
@@ -954,6 +963,7 @@ export default function DVIRForm() {
     const step2Complete = vehicleChecklistCount >= VEHICLE_TRAILER_ITEMS.length;
     const step3Complete = Boolean(oilDipstickPhoto);
     const step4Complete = aerialChecklistCount >= AERIAL_LIFT_ITEMS.length || (step3Complete && aerialChecklistCount === 0);
+    const step5Complete = hasDriverSignature || hasForemanSignature;
     
     return [
       {
@@ -983,11 +993,11 @@ export default function DVIRForm() {
       {
         id: 'signatures',
         label: 'Submit',
-        isComplete: false, // Completed when form is submitted
-        isCurrent: step4Complete,
+        isComplete: step5Complete,
+        isCurrent: step4Complete && !step5Complete,
       },
     ];
-  }, [truckNumber, mileage, driversName, vehicleTrailerChecklist, aerialChecklist, oilDipstickPhoto]);
+  }, [truckNumber, mileage, driversName, vehicleTrailerChecklist, aerialChecklist, oilDipstickPhoto, hasDriverSignature, hasForemanSignature]);
   
   // Quick action handlers for checklists
   const handleMarkAllVehiclePass = useCallback(() => {
@@ -1058,18 +1068,6 @@ export default function DVIRForm() {
     });
   }, [suggestions, handleApplySuggestion]);
 
-  // 🔔 Auto-hide toast messages after 4 seconds
-  useEffect(() => {
-    if (!success && !error) return;
-
-    const timer = setTimeout(() => {
-      setSuccess(null);
-      setError(null);
-    }, 4000);
-
-    return () => clearTimeout(timer);
-  }, [success, error]);
-
   function handleExtraPhotoChange(type: keyof ExtraPhotos, file?: File) {
     setExtraPhotos((prev) => ({
       ...prev,
@@ -1132,22 +1130,80 @@ export default function DVIRForm() {
   // 🔐 Submit handler with explicit session check so RLS auth.uid() works
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setError(null);
-    setSuccess(null);
 
-    // Basic front-end checks
+    // Prevent multiple submissions - MUST be first check
+    if (submitting) {
+      logger.warn("DVIR submission already in progress, ignoring duplicate submit");
+      return;
+    }
+
+    // Set submitting immediately to prevent double-clicks
+    setSubmitting(true);
+
+    // 1. Truck number validation
+    if (!truckNumber.trim()) {
+      toast.error("Please select a truck number.");
+      setSubmitting(false);
+      return;
+    }
+
+    // 2. Driver's name validation
+    if (!driversName.trim()) {
+      toast.error("Driver's name is required.");
+      setSubmitting(false);
+      return;
+    }
+
+    // 3. Mileage format validation
+    if (!mileage.trim()) {
+      toast.error("Odometer reading is required.");
+      setSubmitting(false);
+      return;
+    }
+
+    const mileageNum = parseInt(mileage.replace(/[^\d]/g, ''), 10);
+    if (isNaN(mileageNum)) {
+      toast.error("Please enter a valid numeric odometer reading.");
+      setSubmitting(false);
+      return;
+    }
+
+    // 4. Previous mileage validation
+    if (previousMileage && mileageNum < previousMileage) {
+      toast.error(
+        `Odometer reading (${mileageNum.toLocaleString()} mi) cannot be lower than previous (${previousMileage.toLocaleString()} mi).`
+      );
+      setSubmitting(false);
+      return;
+    }
+
+    // 6. Oil dipstick photo validation
     if (!oilDipstickPhoto) {
-      setError("Oil dipstick photo is required.");
+      toast.error("Oil dipstick photo is required.");
+      setSubmitting(false);
       return;
     }
 
-    if (!truckNumber.trim() || !mileage.trim() || !driversName.trim()) {
-      setError("Truck number, mileage, and driver's name are required.");
+    // 7. Vehicle checklist validation
+    const vehicleChecklistCount = Object.keys(vehicleTrailerChecklist).length;
+    if (vehicleChecklistCount < VEHICLE_TRAILER_ITEMS.length) {
+      toast.error(
+        `Complete vehicle inspection: ${vehicleChecklistCount}/${VEHICLE_TRAILER_ITEMS.length} items checked.`
+      );
+      setSubmitting(false);
       return;
     }
 
+    // 8. Signature validation
+    if (!hasDriverSignature && !hasForemanSignature) {
+      toast.error("At least one signature (Driver or Foreman) is required.");
+      setSubmitting(false);
+      return;
+    }
+
+    // All validation passed - proceed with submission
     try {
-      setSubmitting(true);
+      // Note: setSubmitting(true) is already called at the start of handleSubmit
 
       // 1) Ensure we have an authenticated user
       const {
@@ -1157,13 +1213,13 @@ export default function DVIRForm() {
 
       if (userError) {
         logger.error("Auth error in DVIR submit (getUser):", userError);
-        setError(`Unable to load user: ${userError.message}`);
+        toast.error(`Unable to load user: ${userError.message}`);
         return;
       }
 
       if (!user) {
         logger.error("No authenticated user in DVIR submit");
-        setError("You must be logged in to submit a DVIR.");
+        toast.error("You must be logged in to submit a DVIR.");
         return;
       }
 
@@ -1175,13 +1231,13 @@ export default function DVIRForm() {
 
       if (sessionError) {
         logger.error("Auth session error in DVIR submit (getSession):", sessionError);
-        setError("Unable to verify your session. Please refresh the page and try again.");
+        toast.error("Unable to verify your session. Please refresh the page and try again.");
         return;
       }
 
       if (!session) {
         logger.warn("No active session in DVIR submit – auth still hydrating?");
-        setError("Your session is still loading. Please wait a moment and try again.");
+        toast.error("Your session is still loading. Please wait a moment and try again.");
         return;
       }
 
@@ -1345,7 +1401,7 @@ export default function DVIRForm() {
 
       if (insertError) {
         logger.error("Supabase insert error (dvir_reports):", insertError);
-        setError(`Failed to save DVIR to the database: ${insertError.message}`);
+        toast.error(`Failed to save DVIR to the database: ${insertError.message}`);
         return;
       }
 
@@ -1378,7 +1434,7 @@ export default function DVIRForm() {
         const text = await webhookRes.text();
         logger.error("Make webhook error:", text);
         // Don't undo the successful DB insert, just warn the user
-        setError(
+        toast.warning(
           "DVIR was saved, but there was an issue sending data to the automation webhook."
         );
         return;
@@ -1387,7 +1443,7 @@ export default function DVIRForm() {
       logger.info("Make webhook call succeeded.");
 
       // ✅ Success – show message & reset form
-      setSuccess("DVIR submitted successfully.");
+      toast.success("DVIR submitted successfully.");
       window.scrollTo({ top: 0, behavior: "smooth" });
 
       // Reset Section A
@@ -1431,13 +1487,17 @@ export default function DVIRForm() {
       generalForemanSigRef.current?.clear();
       mechanicSigRef.current?.clear();
       driverApprovalSigRef.current?.clear();
+      
+      // Reset signature tracking state
+      setHasDriverSignature(false);
+      setHasForemanSignature(false);
     } catch (err: unknown) {
       logger.error("Unexpected error in DVIR handleSubmit:", err);
       const message =
         err instanceof Error
           ? err.message
           : "Something went wrong submitting the DVIR (unexpected error).";
-      setError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
@@ -1449,36 +1509,6 @@ export default function DVIRForm() {
       <FormProgress steps={progressSteps} />
       
       <div className="max-w-4xl mx-auto pt-6 sm:pt-8">
-        {/* Toast notifications */}
-        <AnimatePresence>
-          {(success || error) && (
-            <motion.div 
-              initial={{ opacity: 0, y: -20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -20, scale: 0.95 }}
-              className="fixed top-16 right-4 z-50"
-            >
-              <div
-                className={cn(
-                  "rounded-xl px-4 py-3 text-sm shadow-2xl backdrop-blur-sm border",
-                  success
-                    ? "bg-emerald-600/90 text-white border-emerald-400/30"
-                    : "bg-red-600/90 text-white border-red-400/30"
-                )}
-              >
-                <div className="flex items-center gap-2">
-                  {success ? (
-                    <CheckCircle2 className="w-4 h-4" />
-                  ) : (
-                    <AlertTriangle className="w-4 h-4" />
-                  )}
-                  {success || error}
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* Info banner */}
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
@@ -1509,31 +1539,6 @@ export default function DVIRForm() {
             onApplyAll={handleApplyAllSuggestions}
             onDismiss={() => setSuggestionsVisible(false)}
           />
-        )}
-
-        {error && (
-          <motion.div 
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            className="mb-4 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-100"
-          >
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-red-400" />
-              {error}
-            </div>
-          </motion.div>
-        )}
-        {success && (
-          <motion.div 
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            className="mb-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100"
-          >
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              {success}
-            </div>
-          </motion.div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -1747,18 +1752,33 @@ export default function DVIRForm() {
             {/* License required + medical card */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="driversLicenseRequired" className="block text-xs text-gray-300 mb-1">
+                <label className="block text-xs text-gray-300 mb-1">
                   DRIVERS LICENSE REQUIRED
                 </label>
-                <input
-                  id="driversLicenseRequired"
-                  value={driversLicenseRequired}
-                  onChange={(e) =>
-                    setDriversLicenseRequired(e.target.value)
-                  }
-                  placeholder="Enter requirement"
-                  className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-sm text-white"
-                />
+                <div className="flex gap-2 text-xs text-gray-200">
+                  <label className="inline-flex items-center gap-2 min-h-[44px] px-4 rounded-lg cursor-pointer hover:bg-white/5 transition-colors">
+                    <input
+                      type="radio"
+                      name="drivers_license_required"
+                      value="YES"
+                      checked={driversLicenseRequired === "YES"}
+                      onChange={() => setDriversLicenseRequired("YES")}
+                      className="w-4 h-4 accent-emerald-500"
+                    />
+                    YES
+                  </label>
+                  <label className="inline-flex items-center gap-2 min-h-[44px] px-4 rounded-lg cursor-pointer hover:bg-white/5 transition-colors">
+                    <input
+                      type="radio"
+                      name="drivers_license_required"
+                      value="NO"
+                      checked={driversLicenseRequired === "NO"}
+                      onChange={() => setDriversLicenseRequired("NO")}
+                      className="w-4 h-4 accent-emerald-500"
+                    />
+                    NO
+                  </label>
+                </div>
               </div>
 
               <div>
@@ -2164,10 +2184,12 @@ export default function DVIRForm() {
               <SignaturePad
                 ref={finalDriverSigRef}
                 label="Driver Signature (draw)"
+                onDrawingChange={setHasDriverSignature}
               />
               <SignaturePad
                 ref={generalForemanSigRef}
                 label="General Foreman Signature (draw)"
+                onDrawingChange={setHasForemanSignature}
               />
             </div>
           </SectionCard>

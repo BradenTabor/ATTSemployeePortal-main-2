@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
-import { cn } from "../../lib/utils";
 import { logger } from "../../lib/logger";
+import { toast } from "../../lib/toast";
 import { useSmartDefaults } from "../../hooks/useSmartDefaults";
 import { SmartDefaultsPanel } from "../../components/forms/SmartDefaultsPanel";
 
@@ -329,8 +328,6 @@ export default function DailyJSAForm() {
   );
   const [loadingRecord, setLoadingRecord] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [persistedStatus, setPersistedStatus] =
     useState<"draft" | "completed">("draft");
 
@@ -406,7 +403,6 @@ export default function DailyJSAForm() {
 
     const fetchRecord = async () => {
       setLoadingRecord(true);
-      setError(null);
       let query = supabase.from("daily_jsa").select("*").eq("id", id);
       if (!isAdmin) {
         query = query.eq("user_id", user?.id ?? "");
@@ -414,13 +410,13 @@ export default function DailyJSAForm() {
       const { data, error: fetchError } = await query.maybeSingle();
 
       if (fetchError) {
-        setError("Unable to load JSA record. Please try again.");
+        toast.error("Unable to load JSA record. Please try again.");
         setLoadingRecord(false);
         return;
       }
 
       if (!data) {
-        setError("JSA not found or you do not have permission to view it.");
+        toast.error("JSA not found or you do not have permission to view it.");
         setLoadingRecord(false);
         return;
       }
@@ -436,16 +432,6 @@ export default function DailyJSAForm() {
     };
     fetchRecord();
   }, [id, user, isAdmin]);
-
-  // Clear messages after timeout
-  useEffect(() => {
-    if (!error && !success) return;
-    const timeout = setTimeout(() => {
-      setError(null);
-      setSuccess(null);
-    }, 5000);
-    return () => clearTimeout(timeout);
-  }, [error, success]);
 
   // Handlers
   const handleInputChange = useCallback(
@@ -576,7 +562,7 @@ export default function DailyJSAForm() {
 
   const handleSave = useCallback(async (mode: SaveMode = "draft") => {
     if (!user) {
-      setError("You must be signed in to save a JSA.");
+      toast.error("You must be signed in to save a JSA.");
       return;
     }
 
@@ -590,12 +576,12 @@ export default function DailyJSAForm() {
     for (const contact of requiredContacts) {
       const trimmed = contact.value.trim();
       if (!trimmed) {
-        setError("All emergency contact fields are required.");
+        toast.error("All emergency contact fields are required.");
         setCurrentStep(1);
         return;
       }
       if (!PHONE_PATTERN.test(trimmed)) {
-        setError(`Enter a valid phone number for ${contact.label}.`);
+        toast.error(`Enter a valid phone number for ${contact.label}.`);
         setCurrentStep(1);
         return;
       }
@@ -605,8 +591,6 @@ export default function DailyJSAForm() {
     const targetStatus: "draft" | "completed" = mode === "complete" ? "completed" : "draft";
 
     setSaving(true);
-    setError(null);
-    setSuccess(null);
 
     const nowIso = new Date().toISOString();
     const isNewRecord = !isEditMode || !form.createdAt;
@@ -699,7 +683,7 @@ export default function DailyJSAForm() {
           timestamp: new Date().toISOString(),
         });
 
-        setSuccess(targetStatus === "completed" ? "JSA completed successfully!" : "JSA draft saved successfully.");
+        toast.success(targetStatus === "completed" ? "JSA completed successfully!" : "JSA draft saved successfully.");
         setForm((prev) => ({
           ...prev,
           status: targetStatus,
@@ -731,7 +715,7 @@ export default function DailyJSAForm() {
           timestamp: new Date().toISOString(),
         });
 
-        setSuccess(targetStatus === "completed" ? "JSA completed successfully!" : "JSA draft created successfully.");
+        toast.success(targetStatus === "completed" ? "JSA completed successfully!" : "JSA draft created successfully.");
         setForm((prev) => ({
           ...prev,
           status: targetStatus,
@@ -751,7 +735,7 @@ export default function DailyJSAForm() {
         submitError instanceof Error
           ? submitError.message
           : "Unable to save JSA.";
-      setError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -885,25 +869,6 @@ export default function DailyJSAForm() {
             "linear-gradient(180deg, rgba(3,18,12,1) 0%, rgba(0,8,4,1) 50%, rgba(0,0,0,1) 100%)",
         }}
       >
-        {/* Error/Success Toast */}
-        <AnimatePresence>
-          {(error || success) && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className={cn(
-                "absolute top-2 left-4 right-4 z-50 rounded-xl border px-4 py-3 text-sm shadow-xl",
-                error
-                  ? "border-red-500/40 bg-red-900/90 text-red-100"
-                  : "border-emerald-500/40 bg-emerald-900/90 text-emerald-100"
-              )}
-            >
-              {error || success}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* Wizard - takes full height */}
         <JsaWizard
           currentStep={currentStep}
