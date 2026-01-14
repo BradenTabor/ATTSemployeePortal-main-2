@@ -64,8 +64,10 @@ COMMENT ON VIEW public.user_profiles IS
 -- The security advisor migration dropped the INSERT policy and only created
 -- an UPDATE policy. Users need INSERT to claim rewards.
 
--- Drop the incorrectly named UPDATE-only policy if it exists
+-- Drop any existing policies that might conflict
 DROP POLICY IF EXISTS "Rewards claim own" ON public.announcement_rewards;
+DROP POLICY IF EXISTS "Rewards insert own" ON public.announcement_rewards;
+DROP POLICY IF EXISTS "Rewards update own" ON public.announcement_rewards;
 
 -- Recreate with both INSERT and UPDATE capabilities
 -- Policy for INSERT: Users can claim their own rewards
