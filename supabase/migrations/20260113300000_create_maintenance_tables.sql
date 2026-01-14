@@ -68,7 +68,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Apply normalization trigger
+-- Apply normalization trigger (drop first for idempotency)
+DROP TRIGGER IF EXISTS trg_normalize_maintenance_truck_number ON public.vehicle_maintenance_log;
 CREATE TRIGGER trg_normalize_maintenance_truck_number
   BEFORE INSERT OR UPDATE ON public.vehicle_maintenance_log
   FOR EACH ROW EXECUTE FUNCTION public.normalize_truck_number();
@@ -111,7 +112,8 @@ CREATE TABLE IF NOT EXISTS public.maintenance_schedules (
 COMMENT ON TABLE public.maintenance_schedules IS 
   'Stores maintenance intervals and last service tracking per vehicle. Includes AI summary caching.';
 
--- Apply normalization trigger
+-- Apply normalization trigger (drop first for idempotency)
+DROP TRIGGER IF EXISTS trg_normalize_schedule_truck_number ON public.maintenance_schedules;
 CREATE TRIGGER trg_normalize_schedule_truck_number
   BEFORE INSERT OR UPDATE ON public.maintenance_schedules
   FOR EACH ROW EXECUTE FUNCTION public.normalize_truck_number();
@@ -143,7 +145,8 @@ CREATE TABLE IF NOT EXISTS public.mileage_anomalies (
 COMMENT ON TABLE public.mileage_anomalies IS 
   'Tracks flagged odometer reading anomalies for mechanic review and resolution.';
 
--- Apply normalization trigger
+-- Apply normalization trigger (drop first for idempotency)
+DROP TRIGGER IF EXISTS trg_normalize_anomaly_truck_number ON public.mileage_anomalies;
 CREATE TRIGGER trg_normalize_anomaly_truck_number
   BEFORE INSERT OR UPDATE ON public.mileage_anomalies
   FOR EACH ROW EXECUTE FUNCTION public.normalize_truck_number();
@@ -346,6 +349,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+DROP TRIGGER IF EXISTS trg_update_schedule_on_maintenance_log ON public.vehicle_maintenance_log;
 CREATE TRIGGER trg_update_schedule_on_maintenance_log
   AFTER INSERT ON public.vehicle_maintenance_log
   FOR EACH ROW EXECUTE FUNCTION public.update_maintenance_schedule_on_log();
@@ -394,6 +398,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+DROP TRIGGER IF EXISTS trg_update_schedule_from_dvir ON public.dvir_reports;
 CREATE TRIGGER trg_update_schedule_from_dvir
   AFTER INSERT ON public.dvir_reports
   FOR EACH ROW EXECUTE FUNCTION public.update_schedule_mileage_from_dvir();

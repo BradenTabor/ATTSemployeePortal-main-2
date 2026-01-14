@@ -22,12 +22,14 @@ ADD COLUMN IF NOT EXISTS mechanic_cost numeric DEFAULT NULL;
 ALTER TABLE public.dvir_reports 
 ADD COLUMN IF NOT EXISTS mechanic_parts_used jsonb DEFAULT '[]'::jsonb;
 
--- Constraint for valid cost
+-- Constraint for valid cost (drop first for idempotency)
+ALTER TABLE public.dvir_reports DROP CONSTRAINT IF EXISTS dvir_mechanic_cost_positive;
 ALTER TABLE public.dvir_reports 
 ADD CONSTRAINT dvir_mechanic_cost_positive 
 CHECK (mechanic_cost IS NULL OR mechanic_cost >= 0);
 
--- Constraint for parts_used array
+-- Constraint for parts_used array (drop first for idempotency)
+ALTER TABLE public.dvir_reports DROP CONSTRAINT IF EXISTS dvir_parts_used_is_array;
 ALTER TABLE public.dvir_reports 
 ADD CONSTRAINT dvir_parts_used_is_array 
 CHECK (mechanic_parts_used IS NULL OR jsonb_typeof(mechanic_parts_used) = 'array');
@@ -48,12 +50,14 @@ ADD COLUMN IF NOT EXISTS mechanic_cost numeric DEFAULT NULL;
 ALTER TABLE public.daily_equipment_inspections 
 ADD COLUMN IF NOT EXISTS mechanic_parts_used jsonb DEFAULT '[]'::jsonb;
 
--- Constraint for valid cost
+-- Constraint for valid cost (drop first for idempotency)
+ALTER TABLE public.daily_equipment_inspections DROP CONSTRAINT IF EXISTS equipment_mechanic_cost_positive;
 ALTER TABLE public.daily_equipment_inspections 
 ADD CONSTRAINT equipment_mechanic_cost_positive 
 CHECK (mechanic_cost IS NULL OR mechanic_cost >= 0);
 
--- Constraint for parts_used array
+-- Constraint for parts_used array (drop first for idempotency)
+ALTER TABLE public.daily_equipment_inspections DROP CONSTRAINT IF EXISTS equipment_parts_used_is_array;
 ALTER TABLE public.daily_equipment_inspections 
 ADD CONSTRAINT equipment_parts_used_is_array 
 CHECK (mechanic_parts_used IS NULL OR jsonb_typeof(mechanic_parts_used) = 'array');
