@@ -12,8 +12,87 @@ import {
   withWillChange,
 } from '../../lib/mobilePerf';
 
-// Emerald glow color palette
-const GLOW_COLORS = ['#10b981', '#059669', '#34d399', '#047857'];
+// ============================================================================
+// THEME CONFIGURATION
+// ============================================================================
+
+export type ExpandableSectionTheme = 'emerald' | 'blue';
+
+interface ThemeConfig {
+  glowColors: string[];
+  cardBg: string;
+  borderColor: string;
+  shadow: string;
+  shadowMobile: string;
+  innerGlowAccent: string;
+  headerBg: string;
+  focusRing: string;
+  hoverBg: string;
+  iconContainerBg: string;
+  iconContainerBorder: string;
+  iconContainerShadow: string;
+  iconContainerShadowMobile: string;
+  iconContainerRing: string;
+  iconGlowHover: string;
+  iconGlowDefault: string;
+  titleGradient: string;
+  subtitleColor: string;
+  chevronBg: string;
+  chevronBorder: string;
+  chevronColor: string;
+  dividerGradient: string;
+}
+
+const themeConfig: Record<ExpandableSectionTheme, ThemeConfig> = {
+  emerald: {
+    glowColors: ['#10b981', '#059669', '#34d399', '#047857'],
+    cardBg: 'bg-gradient-to-br from-[#04150f]/95 via-[#041812]/90 to-[#03120c]/95',
+    borderColor: 'border-emerald-500/30',
+    shadow: 'shadow-[0_0_40px_-12px_rgba(16,185,129,0.25)] shadow-emerald-500/10',
+    shadowMobile: 'shadow-lg shadow-emerald-500/10',
+    innerGlowAccent: 'bg-gradient-to-b from-emerald-500/5 via-transparent to-transparent',
+    headerBg: 'radial-gradient(circle at 50% 50%, rgba(16, 66, 42, 1) 0%, rgba(0, 0, 0, 1) 100%)',
+    focusRing: 'focus-visible:ring-emerald-400/50 focus-visible:ring-offset-[#04150f]',
+    hoverBg: 'hover:bg-emerald-500/5',
+    iconContainerBg: 'bg-gradient-to-br from-emerald-500/15 via-emerald-600/8 to-transparent',
+    iconContainerBorder: 'border-emerald-400/30',
+    iconContainerShadow: 'shadow-xl shadow-emerald-500/20',
+    iconContainerShadowMobile: 'shadow-lg shadow-emerald-500/15',
+    iconContainerRing: 'ring-emerald-300/5',
+    iconGlowHover: 'from-emerald-500/8 via-transparent to-emerald-400/3',
+    iconGlowDefault: 'from-emerald-500/8 via-transparent to-emerald-400/3',
+    titleGradient: 'from-white via-emerald-100 to-white/80',
+    subtitleColor: 'text-emerald-200/60',
+    chevronBg: 'bg-emerald-500/10',
+    chevronBorder: 'border-emerald-500/20',
+    chevronColor: 'text-emerald-400/70',
+    dividerGradient: 'from-transparent via-emerald-500/30 to-transparent',
+  },
+  blue: {
+    glowColors: ['#3b82f6', '#2563eb', '#60a5fa', '#1d4ed8'],
+    cardBg: 'bg-gradient-to-br from-[#040815]/95 via-[#041020]/90 to-[#03080c]/95',
+    borderColor: 'border-blue-500/30',
+    shadow: 'shadow-[0_0_40px_-12px_rgba(59,130,246,0.25)] shadow-blue-500/10',
+    shadowMobile: 'shadow-lg shadow-blue-500/10',
+    innerGlowAccent: 'bg-gradient-to-b from-blue-500/5 via-transparent to-transparent',
+    headerBg: 'radial-gradient(circle at 50% 50%, rgba(16, 42, 66, 1) 0%, rgba(0, 0, 0, 1) 100%)',
+    focusRing: 'focus-visible:ring-blue-400/50 focus-visible:ring-offset-[#040815]',
+    hoverBg: 'hover:bg-blue-500/5',
+    iconContainerBg: 'bg-gradient-to-br from-blue-500/15 via-blue-600/8 to-transparent',
+    iconContainerBorder: 'border-blue-400/30',
+    iconContainerShadow: 'shadow-xl shadow-blue-500/20',
+    iconContainerShadowMobile: 'shadow-lg shadow-blue-500/15',
+    iconContainerRing: 'ring-blue-300/5',
+    iconGlowHover: 'from-blue-500/8 via-transparent to-blue-400/3',
+    iconGlowDefault: 'from-blue-500/8 via-transparent to-blue-400/3',
+    titleGradient: 'from-white via-blue-100 to-white/80',
+    subtitleColor: 'text-blue-200/60',
+    chevronBg: 'bg-blue-500/10',
+    chevronBorder: 'border-blue-500/20',
+    chevronColor: 'text-blue-400/70',
+    dividerGradient: 'from-transparent via-blue-500/30 to-transparent',
+  },
+};
 
 // Props that will be passed to icon components (like DashboardAvatar)
 export interface IconInteractionProps {
@@ -46,6 +125,10 @@ interface ExpandableSectionProps {
   icon?: ReactNode;
   /** Header action button/element (e.g., "View all" link) */
   headerAction?: ReactNode;
+  /** Accessible label for the toggle button (provides additional context for screen readers) */
+  ariaLabel?: string;
+  /** Color theme - defaults to emerald */
+  theme?: ExpandableSectionTheme;
 }
 
 /**
@@ -68,7 +151,12 @@ function ExpandableSectionComponent({
   className,
   icon,
   headerAction,
+  ariaLabel,
+  theme = 'emerald',
 }: ExpandableSectionProps) {
+  // Get theme styles
+  const themeStyles = themeConfig[theme];
+  
   // Use lazy initializer to read persisted state without useEffect setState
   const [isOpen, setIsOpen] = useState(() => {
     if (storageKey) {
@@ -195,7 +283,7 @@ function ExpandableSectionComponent({
       {showEffects && (
         <div className="absolute -inset-3 opacity-40">
           <GlowEffect
-            colors={GLOW_COLORS}
+            colors={themeStyles.glowColors}
             mode="static"
             blur="stronger"
             scale={1.1}
@@ -209,13 +297,12 @@ function ExpandableSectionComponent({
           ref={sectionRef}
           className={cn(
             'relative rounded-3xl transition-colors duration-300',
-            // Premium glass morphism styling
-            'bg-gradient-to-br from-[#04150f]/95 via-[#041812]/90 to-[#03120c]/95',
-            'border border-emerald-500/30',
+            // Premium glass morphism styling - theme-aware
+            themeStyles.cardBg,
+            'border',
+            themeStyles.borderColor,
             // Reduced shadow on mobile for performance
-            caps.isMobile
-              ? 'shadow-lg shadow-emerald-500/10'
-              : 'shadow-[0_0_40px_-12px_rgba(16,185,129,0.25)] shadow-emerald-500/10',
+            caps.isMobile ? themeStyles.shadowMobile : themeStyles.shadow,
             // Layout containment for rendering isolation
             'contain-layout'
           )}
@@ -226,14 +313,14 @@ function ExpandableSectionComponent({
         >
           {/* Inner glow accent (simplified on mobile) */}
           {showEffects && (
-            <div className="absolute inset-0 rounded-3xl bg-gradient-to-b from-emerald-500/5 via-transparent to-transparent pointer-events-none" />
+            <div className={cn('absolute inset-0 rounded-3xl pointer-events-none', themeStyles.innerGlowAccent)} />
           )}
 
           {/* Header - clickable toggle area */}
           <div 
             className="relative p-4 md:p-6 rounded-[inherit]"
             style={{
-              background: 'radial-gradient(circle at 50% 50%, rgba(16, 66, 42, 1) 0%, rgba(0, 0, 0, 1) 100%)',
+              background: themeStyles.headerBg,
             }}
           >
             <div className="flex items-center justify-between gap-3">
@@ -246,11 +333,13 @@ function ExpandableSectionComponent({
                 onMouseLeave={handleMouseLeave}
                 aria-expanded={isOpen ? "true" : "false"}
                 aria-controls={contentId}
+                aria-label={ariaLabel}
                 className={cn(
                   'flex-1 flex items-center gap-3 text-left',
-                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#04150f]',
+                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+                  themeStyles.focusRing,
                   'rounded-xl -m-2 p-2 transition-colors duration-200',
-                  'hover:bg-emerald-500/5',
+                  themeStyles.hoverBg,
                   // Touch-friendly sizing
                   'min-h-[44px]'
                 )}
@@ -260,14 +349,14 @@ function ExpandableSectionComponent({
                   <div
                     className={cn(
                       'flex-shrink-0 w-16 h-20 md:w-18 md:h-22 rounded-2xl',
-                      'bg-gradient-to-br from-emerald-500/15 via-emerald-600/8 to-transparent',
-                      'border border-emerald-400/30',
+                      themeStyles.iconContainerBg,
+                      'border',
+                      themeStyles.iconContainerBorder,
                       'flex items-center justify-center',
                       // Simplified shadow on mobile
-                      caps.isMobile
-                        ? 'shadow-lg shadow-emerald-500/15'
-                        : 'shadow-xl shadow-emerald-500/20',
-                      'ring-1 ring-inset ring-emerald-300/5',
+                      caps.isMobile ? themeStyles.iconContainerShadowMobile : themeStyles.iconContainerShadow,
+                      'ring-1 ring-inset',
+                      themeStyles.iconContainerRing,
                       'overflow-visible relative',
                       // Scale on hover (desktop only, respects reduced motion)
                       shouldAnimate && !caps.isMobile && 'transition-transform duration-200',
@@ -278,7 +367,8 @@ function ExpandableSectionComponent({
                     {showEffects && (
                       <div 
                         className={cn(
-                          'absolute inset-0 rounded-2xl bg-gradient-to-t from-emerald-500/8 via-transparent to-emerald-400/3 pointer-events-none transition-opacity duration-300',
+                          'absolute inset-0 rounded-2xl bg-gradient-to-t pointer-events-none transition-opacity duration-300',
+                          themeStyles.iconGlowHover,
                           isHovered ? 'opacity-100' : 'opacity-70'
                         )}
                       />
@@ -290,12 +380,12 @@ function ExpandableSectionComponent({
                 {/* Title and subtitle */}
                 <div className="flex-1 min-w-0">
                   <h3 className="text-base md:text-lg font-bold text-white flex items-center gap-2">
-                    <span className="bg-gradient-to-r from-white via-emerald-100 to-white/80 bg-clip-text text-transparent">
+                    <span className={cn('bg-gradient-to-r bg-clip-text text-transparent', themeStyles.titleGradient)}>
                       {title}
                     </span>
                   </h3>
                   {subtitle && (
-                    <p className="text-xs md:text-sm text-emerald-200/60 mt-0.5 line-clamp-1">
+                    <p className={cn('text-xs md:text-sm mt-0.5 line-clamp-1', themeStyles.subtitleColor)}>
                       {subtitle}
                     </p>
                   )}
@@ -305,7 +395,9 @@ function ExpandableSectionComponent({
                 <div
                   className={cn(
                     'flex-shrink-0 w-8 h-8 rounded-lg',
-                    'bg-emerald-500/10 border border-emerald-500/20',
+                    themeStyles.chevronBg,
+                    'border',
+                    themeStyles.chevronBorder,
                     'flex items-center justify-center',
                     // CSS transform for chevron rotation (GPU-accelerated)
                     'transition-transform duration-300',
@@ -318,7 +410,7 @@ function ExpandableSectionComponent({
                   }}
                 >
                   <ChevronDown
-                    className="w-4 h-4 text-emerald-400/70"
+                    className={cn('w-4 h-4', themeStyles.chevronColor)}
                     aria-hidden="true"
                   />
                 </div>
@@ -349,7 +441,7 @@ function ExpandableSectionComponent({
                   )}
                 >
                   {/* Divider line */}
-                  <div className="mx-4 md:mx-6 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />
+                  <div className={cn('mx-4 md:mx-6 h-px bg-gradient-to-r', themeStyles.dividerGradient)} />
                   
                   <div className="px-4 pb-4 md:px-6 md:pb-6 pt-4">
                     {children}

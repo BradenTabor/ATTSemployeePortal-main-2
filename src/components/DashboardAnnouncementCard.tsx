@@ -4,6 +4,7 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useLatestAnnouncementQuery } from "../hooks/queries/useAnnouncementsQuery";
 import { getDeviceCapabilities } from "../lib/mobilePerf";
+import { useAnnouncementTracking } from "../hooks/useAnnouncementTracking";
 
 /**
  * DashboardAnnouncementCard - Ultra Premium announcement card for the dashboard
@@ -18,6 +19,14 @@ function DashboardAnnouncementCardComponent() {
   const { data: latestAnnouncement, isLoading } = useLatestAnnouncementQuery();
   const navigate = useNavigate();
   const caps = getDeviceCapabilities();
+
+  // Telemetry: track when dashboard announcement becomes visible
+  // Only create tracking ref if we have an announcement to track
+  const trackingRef = useAnnouncementTracking(
+    latestAnnouncement?.id || '',
+    latestAnnouncement?.author === 'Safety AI',
+    { source: 'dashboard' }
+  );
 
   if (isLoading || !latestAnnouncement) return null;
 
@@ -45,6 +54,7 @@ function DashboardAnnouncementCardComponent() {
 
   return (
     <motion.article
+      ref={trackingRef}
       initial={{ opacity: 0, y: 20, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.6, type: "spring", stiffness: 100, damping: 18 }}

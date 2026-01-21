@@ -190,12 +190,10 @@ export interface EquipmentInspection {
 export interface JsaSubmission {
   id: string;
   user_id: string;
-  job_site: string | null;
-  hazards: string[] | null;
-  ppe_required: string[] | null;
-  controls: string[] | null;
-  weather_conditions: string | null;
-  near_miss: boolean | null;
+  work_location: string | null;
+  hazards_present: Record<string, boolean> | null;
+  ppe: Record<string, { required: boolean; condition: string }> | null;
+  weather_conditions: { conditions: Record<string, boolean>; modifiers: Record<string, boolean> } | null;
   notes: string | null;
   created_at: string;
 }

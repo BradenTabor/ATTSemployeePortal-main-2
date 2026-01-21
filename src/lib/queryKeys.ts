@@ -79,5 +79,29 @@ export const queryKeys = {
       ['equipment', 'list', filters] as const,
     detail: (equipmentId: string) => ['equipment', 'detail', equipmentId] as const,
   },
+
+  // Compliance Status (for dashboard)
+  compliance: {
+    today: (userId: string, date: string) => ['compliance', 'today', userId, date] as const,
+  },
+
+  // Risk Calibration (for admin dashboard)
+  riskCalibration: {
+    autoTuningConfig: ['riskCalibration', 'autoTuningConfig'] as const,
+    tuningDecisions: (limit: number) => ['riskCalibration', 'tuningDecisions', limit] as const,
+    tuningRuns: ['riskCalibration', 'tuningRuns'] as const,
+    accuracyStats: (days: number) => ['riskCalibration', 'accuracy', days] as const,
+    riskHistory: (dateRange: { start: string; end: string }) => 
+      ['riskCalibration', 'history', dateRange] as const,
+    activeConfig: ['riskCalibration', 'activeConfig'] as const,
+  },
+
+  // Safety Incidents (for risk calibration)
+  safetyIncidents: {
+    all: ['safetyIncidents'] as const,
+    list: (dateRange: { start: string; end: string }) => 
+      ['safetyIncidents', 'list', dateRange] as const,
+    detail: (incidentId: string) => ['safetyIncidents', 'detail', incidentId] as const,
+  },
 };
 

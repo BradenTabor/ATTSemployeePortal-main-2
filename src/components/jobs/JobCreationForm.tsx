@@ -1,4 +1,4 @@
-import { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Briefcase,
@@ -12,12 +12,30 @@ import {
   Save,
   Target,
   Ruler,
+  Users,
+  Building2,
+  ChevronDown,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { isValidDateRange, getTodayDateString } from '../../lib/jobProgressUtils';
 import { JobCrewSelector } from './JobCrewSelector';
 import { JobMilestoneEditor } from './JobMilestoneEditor';
+import { useCrews, useCrewDetails } from '../../hooks/useCrews';
+import { supabase } from '../../lib/supabaseClient';
+import { formToast } from '../../lib/formToast';
+import { FormSuccessCelebration } from '../forms/FormSuccessCelebration';
+import { useAuth } from '../../contexts/AuthContext';
 import type { JobFormData, MilestoneInput, CrewMember, JobProgressTracker, SpanProgressMetric } from '../../types/jobs';
+
+interface WorkSite {
+  id: string;
+  name: string;
+  address: string | null;
+  latitude: number;
+  longitude: number;
+  is_active: boolean;
+  crew_id: string | null;
+}
 
 interface JobCreationFormProps {
   crewMembers: CrewMember[];
@@ -43,6 +61,8 @@ const EMPTY_FORM: JobFormData = {
   estimated_total_spans: null,
   estimated_total_feet: null,
   span_progress_metric: 'spans',
+  work_site_id: null,
+  crew_id: null,
 };
 
 function JobCreationFormComponent({
@@ -53,6 +73,12 @@ function JobCreationFormComponent({
   initialData,
   isEditing = false,
 }: JobCreationFormProps) {
+  const { fullName } = useAuth();
+  
+  // Success celebration state
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [createdJobName, setCreatedJobName] = useState('');
+  
   // Initialize form with existing data if editing
   const [formData, setFormData] = useState<JobFormData>(() => {
     if (initialData) {
@@ -76,6 +102,8 @@ function JobCreationFormComponent({
         estimated_total_spans: initialData.estimated_total_spans ?? null,
         estimated_total_feet: initialData.estimated_total_feet ?? null,
         span_progress_metric: initialData.span_progress_metric || 'spans',
+        work_site_id: initialData.work_site_id ?? null,
+        crew_id: initialData.crew_id ?? null,
       };
     }
     return EMPTY_FORM;
@@ -84,6 +112,89 @@ function JobCreationFormComponent({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  // Work Sites integration
+  const [workSites, setWorkSites] = useState<WorkSite[]>([]);
+  const [sitesLoading, setSitesLoading] = useState(true);
+  const [selectedSiteId, setSelectedSiteId] = useState<string | null>(
+    initialData?.work_site_id ?? null
+  );
+
+  // Crews integration
+  const { crews, loading: crewsLoading } = useCrews();
+  const [selectedCrewId, setSelectedCrewId] = useState<string | null>(
+    initialData?.crew_id ?? null
+  );
+  const { crew: selectedCrewDetails } = useCrewDetails(selectedCrewId);
+
+  // Fetch work sites on mount
+  useEffect(() => {
+    const fetchSites = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('work_sites')
+          .select('*')
+          .eq('is_active', true)
+          .order('name');
+        if (error) throw error;
+        setWorkSites(data || []);
+      } catch (err) {
+        console.error('Failed to fetch work sites:', err);
+        formToast.error('Load Failed', 'Failed to load work sites. You can still create a job manually.');
+      } finally {
+        setSitesLoading(false);
+      }
+    };
+    fetchSites();
+  }, []);
+
+  // Auto-fill job_location when work site is selected
+  const handleSiteChange = useCallback((siteId: string | null) => {
+    setSelectedSiteId(siteId);
+    if (siteId) {
+      const site = workSites.find(s => s.id === siteId);
+      if (site) {
+        setFormData(prev => ({
+          ...prev,
+          job_location: site.address || site.name,
+          work_site_id: siteId, // Link job to work site for Safety Forecast
+        }));
+      }
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        work_site_id: null,
+      }));
+    }
+  }, [workSites]);
+
+  // Auto-fill crew_member_ids when crew is selected
+  // Must also handle crews with zero members to avoid stale data from previous selection
+  useEffect(() => {
+    // Only update when:
+    // 1. We have a selected crew ID
+    // 2. The crew details are loaded
+    // 3. The loaded details actually belong to the selected crew (prevents race condition
+    //    where selectedCrewId changes but selectedCrewDetails still has stale data)
+    if (selectedCrewId && selectedCrewDetails && selectedCrewDetails.id === selectedCrewId) {
+      const memberIds = selectedCrewDetails.members?.map(m => m.user_id) || [];
+      setFormData(prev => ({
+        ...prev,
+        crew_member_ids: memberIds,
+      }));
+    }
+  }, [selectedCrewId, selectedCrewDetails]);
+
+  const handleCrewChange = useCallback((crewId: string | null) => {
+    setSelectedCrewId(crewId);
+    if (!crewId) {
+      // Clear crew members and crew_id if no crew selected
+      setFormData(prev => ({ ...prev, crew_member_ids: [], crew_id: null }));
+    } else {
+      // Set crew_id for Safety Forecast integration
+      setFormData(prev => ({ ...prev, crew_id: crewId }));
+    }
+  }, []);
 
   const updateField = useCallback(<K extends keyof JobFormData>(
     field: K,
@@ -151,15 +262,38 @@ function JobCreationFormComponent({
 
     setSubmitting(true);
     setError(null);
+    
+    // Show loading toast
+    formToast.submitting(isEditing ? 'Saving changes...' : 'Creating job...');
 
     const result = await onSubmit(formData);
 
     if (!result.success) {
       setError(result.error || 'An error occurred');
+      formToast.error(
+        isEditing ? 'Update Failed' : 'Creation Failed',
+        result.error || 'An error occurred. Please try again.',
+        { onRetry: () => handleSubmit(e) }
+      );
+    } else {
+      // Dismiss loading toast before showing celebration
+      formToast.dismiss();
+      
+      // Store job name for celebration message
+      setCreatedJobName(formData.job_name);
+      
+      // Show success celebration
+      setShowCelebration(true);
     }
 
     setSubmitting(false);
   };
+  
+  // Handle celebration continue
+  const handleCelebrationContinue = useCallback(() => {
+    setShowCelebration(false);
+    onCancel(); // Close the form after celebration
+  }, [onCancel]);
 
   const inputClassName = cn(
     'w-full bg-[#050402]/80 border border-[#f6dcb2]/20 rounded-2xl px-4 py-3',
@@ -171,12 +305,26 @@ function JobCreationFormComponent({
   const labelClassName = 'text-xs uppercase tracking-[0.3em] text-[#f3d9a4]/70 flex items-center gap-2 mb-2';
 
   return (
-    <motion.form
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      onSubmit={handleSubmit}
-      className="space-y-6"
-    >
+    <>
+      {/* Success Celebration */}
+      <FormSuccessCelebration
+        isVisible={showCelebration}
+        formType="equipment" // Using 'equipment' for green theme
+        title={isEditing ? "Job Updated!" : "Job Created!"}
+        message={isEditing 
+          ? `"${createdJobName}" has been successfully updated.`
+          : `"${createdJobName}" has been created and is ready for tracking.`
+        }
+        onContinue={handleCelebrationContinue}
+        userName={fullName || undefined}
+      />
+      
+      <motion.form
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        onSubmit={handleSubmit}
+        className="space-y-6"
+      >
       {/* Header */}
       <div className="flex items-center justify-between pb-4 border-b border-white/10">
         <h3 className="text-xl font-bold text-white flex items-center gap-2">
@@ -187,6 +335,7 @@ function JobCreationFormComponent({
           type="button"
           onClick={onCancel}
           className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/5 transition-colors"
+          aria-label="Close job form"
         >
           <X className="w-5 h-5" />
         </button>
@@ -221,6 +370,91 @@ function JobCreationFormComponent({
           <p className="mt-1 text-xs text-red-400">{validationErrors.job_name}</p>
         )}
       </div>
+
+      {/* Quick Assignment Section */}
+      {!isEditing && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          className="rounded-2xl border border-[#f4c979]/20 bg-[#f4c979]/5 p-4 space-y-4"
+        >
+          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-[#f4c979]/80">
+            <Target className="w-4 h-4" />
+            Quick Assignment (Optional)
+          </div>
+          <p className="text-xs text-white/50 -mt-2">
+            Select a work site and/or crew to auto-fill location and team members.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Work Site Dropdown */}
+            <div>
+              <label className={labelClassName}>
+                <Building2 className="w-4 h-4 text-[#f4c979]" />
+                Work Site
+              </label>
+              <div className="relative">
+                <select
+                  value={selectedSiteId || ''}
+                  onChange={(e) => handleSiteChange(e.target.value || null)}
+                  disabled={submitting || sitesLoading}
+                  className={cn(
+                    inputClassName,
+                    'appearance-none cursor-pointer pr-10',
+                    !selectedSiteId && 'text-white/30'
+                  )}
+                >
+                  <option value="">Select work site...</option>
+                  {workSites.map(site => (
+                    <option key={site.id} value={site.id}>
+                      {site.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#f4c979]/60 pointer-events-none" />
+              </div>
+              {selectedSiteId && (
+                <p className="mt-1 text-xs text-emerald-400/80">
+                  Location will be set from site address
+                </p>
+              )}
+            </div>
+
+            {/* Crew Dropdown */}
+            <div>
+              <label className={labelClassName}>
+                <Users className="w-4 h-4 text-[#f4c979]" />
+                Assign Crew
+              </label>
+              <div className="relative">
+                <select
+                  value={selectedCrewId || ''}
+                  onChange={(e) => handleCrewChange(e.target.value || null)}
+                  disabled={submitting || crewsLoading}
+                  className={cn(
+                    inputClassName,
+                    'appearance-none cursor-pointer pr-10',
+                    !selectedCrewId && 'text-white/30'
+                  )}
+                >
+                  <option value="">Select crew...</option>
+                  {crews.filter(c => c.is_active).map(crew => (
+                    <option key={crew.id} value={crew.id}>
+                      {crew.name} ({crew.member_count || 0} members)
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#f4c979]/60 pointer-events-none" />
+              </div>
+              {selectedCrewId && selectedCrewDetails && (
+                <p className="mt-1 text-xs text-emerald-400/80">
+                  {selectedCrewDetails.members?.length || 0} member(s) will be assigned
+                </p>
+              )}
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Tracking Mode */}
       <div>
@@ -550,6 +784,7 @@ function JobCreationFormComponent({
         </motion.button>
       </div>
     </motion.form>
+    </>
   );
 }
 

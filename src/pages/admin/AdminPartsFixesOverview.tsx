@@ -14,7 +14,6 @@ import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, useInView } from 'framer-motion';
 import {
   Package,
-  Wrench,
   DollarSign,
   TrendingUp,
   TrendingDown,
@@ -27,14 +26,13 @@ import {
   FileSpreadsheet,
   Calendar,
   Truck,
-  Cog,
-  ClipboardCheck,
   BarChart3,
   Sparkles,
   RefreshCw,
   Loader2,
   Shield,
   Crown,
+  Cog,
 } from 'lucide-react';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { useAuth } from '../../contexts/AuthContext';
@@ -53,70 +51,15 @@ import type {
   FixesAiSummary,
 } from '../mechanic/types/maintenance.types';
 
-// =============================================================================
-// CONSTANTS
-// =============================================================================
-
-const SOURCE_CONFIG: Record<FixSource, { label: string; color: string; bgColor: string; icon: React.ReactNode }> = {
-  repairs_log: { 
-    label: 'Repair Log', 
-    color: 'text-amber-300', 
-    bgColor: 'bg-amber-500/20 border-amber-500/30',
-    icon: <Wrench className="w-3.5 h-3.5" /> 
-  },
-  dvir: { 
-    label: 'DVIR', 
-    color: 'text-blue-300', 
-    bgColor: 'bg-blue-500/20 border-blue-500/30',
-    icon: <ClipboardCheck className="w-3.5 h-3.5" /> 
-  },
-  equipment: { 
-    label: 'Equipment', 
-    color: 'text-purple-300', 
-    bgColor: 'bg-purple-500/20 border-purple-500/30',
-    icon: <Cog className="w-3.5 h-3.5" /> 
-  },
-};
-
-const ASSET_TYPE_CONFIG: Record<AssetType, { label: string; color: string }> = {
-  truck: { label: 'Truck', color: 'text-amber-400' },
-  chipper: { label: 'Chipper', color: 'text-emerald-400' },
-  trailer: { label: 'Trailer', color: 'text-blue-400' },
-  equipment: { label: 'Equipment', color: 'text-purple-400' },
-};
-
-// =============================================================================
-// HELPER FUNCTIONS
-// =============================================================================
-
-function formatCurrency(amount: number | null | undefined): string {
-  if (!amount) return '$0';
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
-
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
-
-function formatMileage(mileage: number | null | undefined): string {
-  if (!mileage) return '—';
-  return mileage.toLocaleString() + ' mi';
-}
-
-function getEffectiveCost(fix: UnifiedFix): number {
-  // Use ?? (nullish coalescing) to correctly handle $0 costs (warranty repairs, no-charge fixes)
-  // || would treat 0 as falsy and fall through to estimated_cost or default
-  return fix.cost ?? fix.estimated_cost ?? 100;
-}
+// Import from extracted module
+import {
+  SOURCE_CONFIG,
+  ASSET_TYPE_CONFIG,
+  formatCurrency,
+  formatDate,
+  formatMileage,
+  getEffectiveCost,
+} from './admin-parts-fixes';
 
 // =============================================================================
 // SCROLL REVEAL COMPONENT

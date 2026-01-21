@@ -492,6 +492,7 @@ const JobDetailPanel = memo(function JobDetailPanel({
               <button
                 onClick={onClose}
                 className="p-2 sm:p-2.5 rounded-xl bg-white/5 border border-white/10 active:bg-white/15 active:border-white/25 transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center touch-manipulation"
+                aria-label="Close job detail"
               >
                 <X className="w-4 h-4 sm:w-5 sm:h-5 text-white/60" />
               </button>

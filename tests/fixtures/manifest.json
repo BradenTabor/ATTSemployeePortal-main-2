@@ -1,0 +1,65 @@
+{
+  "generated": "2026-01-17T01:59:05.559Z",
+  "fixtures": [
+    {
+      "name": "oil-dipstick.jpg",
+      "size": 51200,
+      "description": "Oil Dipstick"
+    },
+    {
+      "name": "tire.jpg",
+      "size": 51200,
+      "description": "Tire Photo"
+    },
+    {
+      "name": "coolant.jpg",
+      "size": 51200,
+      "description": "Coolant Level"
+    },
+    {
+      "name": "damage.jpg",
+      "size": 51200,
+      "description": "Damage Photo"
+    },
+    {
+      "name": "detail-clean.jpg",
+      "size": 51200,
+      "description": "Detail Clean"
+    },
+    {
+      "name": "hydraulic.jpg",
+      "size": 51200,
+      "description": "Hydraulic Level"
+    },
+    {
+      "name": "overview.jpg",
+      "size": 51200,
+      "description": "Equipment Overview"
+    },
+    {
+      "name": "attachments.jpg",
+      "size": 51200,
+      "description": "Attachments"
+    },
+    {
+      "name": "large-image.jpg",
+      "size": 5120000,
+      "description": "Large image for size testing"
+    },
+    {
+      "name": "huge-image.jpg",
+      "size": 15360000,
+      "description": "Huge image for rejection testing"
+    },
+    {
+      "name": "invalid-file.pdf",
+      "size": 40,
+      "description": "Invalid file type"
+    },
+    {
+      "name": "special-chars (1).jpg",
+      "size": 30720,
+      "description": "Special chars in name"
+    }
+  ]
+}

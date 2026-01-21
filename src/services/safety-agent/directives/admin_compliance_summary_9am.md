@@ -20,7 +20,7 @@ Generate a consolidated compliance summary email listing all employees and forem
 | Setting | Value |
 |---------|-------|
 | **FROM** | `allterraintreeservice.po@gmail.com` |
-| **TO** | `bradenleetabor@gmail.com`, `shane@alltts.com`, `dusty@alltts.com`, `mike@alltts.com`, `weston@alltts.com`, `steve@alltts.com` |
+| **TO** | `bradenleetabor@gmail.com`, `shane@alltts.com`, `dusty@alltts.com`, `mike@alltts.com`, `steve@alltts.com`, `brandon@alltts.com`, `weston@alltts.com` |
 | **Subject** | `[ATTS] Daily Safety Form Compliance Report - {dateFor}` |
 | **Primary Send** | Gmail API via Nodemailer |
 | **Secondary Send** | Make.com Webhook (backup/audit) |

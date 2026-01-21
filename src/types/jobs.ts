@@ -107,6 +107,9 @@ export interface JobProgressTracker {
   span_progress_metric?: SpanProgressMetric;
   // Job grouping/stacking - jobs with same group_id display as stacked cards
   job_group_id?: string | null;
+  // Work site and crew linking (for Safety Forecast integration)
+  work_site_id?: string | null;
+  crew_id?: string | null;
   // Joined data
   milestones?: JobMilestone[];
   crew_assignments?: JobCrewAssignment[];
@@ -167,6 +170,9 @@ export interface JobFormData {
   estimated_total_spans: number | null;
   estimated_total_feet: number | null;
   span_progress_metric: SpanProgressMetric;
+  // Work site and crew linking (for Safety Forecast integration)
+  work_site_id?: string | null;
+  crew_id?: string | null;
 }
 
 /**
@@ -187,6 +193,8 @@ export const EMPTY_JOB_FORM_DATA: JobFormData = {
   estimated_total_spans: null,
   estimated_total_feet: null,
   span_progress_metric: 'spans',
+  work_site_id: null,
+  crew_id: null,
 };
 
 /**

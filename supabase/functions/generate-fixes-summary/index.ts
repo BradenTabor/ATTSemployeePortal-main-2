@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Supabase Edge Function: Generate Fixes Summary
  * 

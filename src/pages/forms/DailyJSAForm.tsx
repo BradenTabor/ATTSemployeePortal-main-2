@@ -4,9 +4,19 @@ import DashboardLayout from "../../layouts/DashboardLayout";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
 import { logger } from "../../lib/logger";
-import { toast } from "../../lib/toast";
+import { formToast } from "../../lib/formToast";
 import { useSmartDefaults } from "../../hooks/useSmartDefaults";
+import { useFormPersistence } from "../../hooks/useFormPersistence";
 import { SmartDefaultsPanel } from "../../components/forms/SmartDefaultsPanel";
+import { FormSuccessCelebration } from "../../components/forms/FormSuccessCelebration";
+import { DraftRecoveryModal } from "../../components/forms/DraftRecoveryModal";
+import { useComplianceToast, type RemainingForm } from "../../hooks/useComplianceToast";
+import {
+  trackFormStarted,
+  trackFormSubmitted,
+  trackFormSubmitError,
+  createFormTimer,
+} from "../../lib/telemetry";
 
 // Wizard components
 import { JsaWizard, type SaveMode } from "../../components/forms/JsaWizard";
@@ -320,7 +330,15 @@ export default function DailyJSAForm() {
   const { id } = useParams<{ id?: string }>();
   const isEditMode = Boolean(id);
   const navigate = useNavigate();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, fullName } = useAuth();
+
+  // Extract user initials from full name for span auto-fill
+  const userInitials = useMemo(() => {
+    if (!fullName) return '';
+    const parts = fullName.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return parts.map(p => p[0]).join('').substring(0, 3).toUpperCase();
+  }, [fullName]);
 
   // Form state
   const [form, setForm] = useState<DailyJsaFormState>(() =>
@@ -337,8 +355,93 @@ export default function DailyJSAForm() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [spanPage, setSpanPage] = useState(1);
 
+  // Success celebration state
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [showDraftModal, setShowDraftModal] = useState(false);
+  const [remainingForms, setRemainingForms] = useState<RemainingForm[]>([]);
+  
+  // Compliance toast for nudging and full celebration
+  const { 
+    checkAndCelebrate, 
+    FullCelebration, 
+    celebrationProps 
+  } = useComplianceToast();
+
   // Smart Defaults: Telemetry tracking
   const formStartTime = useRef(Date.now());
+  const formTimer = useRef(createFormTimer());
+
+  // Form persistence (auto-save drafts)
+  const {
+    hasDraft,
+    draftData,
+    lastSaved,
+    hasUnsavedChanges,
+    saveDraft,
+    clearDraft,
+    dismissDraft,
+    markAsSaved,
+  } = useFormPersistence<DailyJsaFormState>({
+    formType: 'jsa',
+    userId: user?.id,
+    createInitialState: createInitialFormState,
+    isEditMode,
+    debounceMs: 500,
+  });
+
+  // Show draft recovery modal if draft exists
+  useEffect(() => {
+    if (hasDraft && draftData && !isEditMode) {
+      setShowDraftModal(true);
+    }
+  }, [hasDraft, draftData, isEditMode]);
+
+  // Handle draft restoration
+  const handleRestoreDraft = useCallback(() => {
+    if (draftData) {
+      setForm(draftData.form);
+      setCurrentStep(draftData.currentStep);
+      setCompletedSteps(new Set(draftData.completedSteps));
+      setShowDraftModal(false);
+      formToast.success("Draft Restored", "Your previous progress has been restored.");
+    }
+  }, [draftData]);
+
+  // Handle draft dismissal
+  const handleDismissDraft = useCallback(() => {
+    dismissDraft();
+    setShowDraftModal(false);
+  }, [dismissDraft]);
+
+  // Auto-save form changes
+  useEffect(() => {
+    if (!isEditMode && user?.id) {
+      saveDraft(form, currentStep, completedSteps);
+    }
+  }, [form, currentStep, completedSteps, isEditMode, user?.id, saveDraft]);
+
+  // Warn before closing browser/tab with unsaved changes (beforeunload)
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges && !isEditMode && !showCelebration) {
+        e.preventDefault();
+        // Most browsers ignore custom messages, but setting returnValue is required
+        e.returnValue = 'You have unsaved changes. Your draft is auto-saved locally.';
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges, isEditMode, showCelebration]);
+
+  // Track form_started on mount (only for new forms)
+  useEffect(() => {
+    if (!isEditMode) {
+      trackFormStarted({ form_type: 'jsa' });
+      formTimer.current.reset();
+    }
+  }, [isEditMode]);
 
   // Smart Defaults: Fetch suggestions
   const { suggestions, warnings, isLoading: suggestionsLoading } = useSmartDefaults('jsa');
@@ -389,6 +492,89 @@ export default function DailyJSAForm() {
     [form.jobDate, form.workLocation, form.employeeSignature]
   );
 
+  // Calculate step completion status for visual badges
+  const stepCompletionStatus = useMemo(() => {
+    // Step 1: Job Info - Required fields
+    const step1 = Boolean(
+      form.jobDate &&
+      form.workLocation?.trim() &&
+      form.ocContact?.trim() &&
+      form.docContact?.trim() &&
+      form.gfContact?.trim() &&
+      form.safetyContact?.trim()
+    );
+    
+    // Step 2: PPE - At least one job and one PPE selected
+    const step2 = Boolean(
+      (form.jobsPerformed.length > 0 || form.jobsOther.trim()) &&
+      Object.values(form.ppe).some(p => p.required)
+    );
+    
+    // Step 3: Weather - At least one condition selected
+    const step3 = Object.values(form.weatherConditions).some(Boolean) ||
+      Object.values(form.weatherModifiers).some(Boolean);
+    
+    // Step 4: Hazards - Considered complete if reviewed (any selection or explicitly left unchecked)
+    const step4 = Object.values(form.hazardsPresent).some(Boolean) ||
+      Object.values(form.trafficHazards).some(Boolean) ||
+      Object.values(form.trafficSetup).some(Boolean);
+    
+    // Step 5: Spans - At least one span filled
+    const step5 = form.spans.some(s => s.location.trim() || s.hazards.trim());
+    
+    // Step 6: Signature provided
+    const step6 = Boolean(form.employeeSignature?.trim());
+    
+    return { step1, step2, step3, step4, step5, step6 };
+  }, [form]);
+
+  // Calculate form completion progress (0-100)
+  const formProgress = useMemo(() => {
+    let filled = 0;
+    let total = 0;
+
+    // Step 1: Job Info (weight: 25%)
+    const step1Fields = [
+      form.jobDate,
+      form.workLocation,
+      form.ocContact,
+      form.docContact,
+      form.gfContact,
+      form.safetyContact,
+    ];
+    total += step1Fields.length;
+    filled += step1Fields.filter(f => f?.trim?.()).length;
+
+    // Step 2: PPE (weight: 15%)
+    const hasJobsSelected = form.jobsPerformed.length > 0 || form.jobsOther.trim();
+    const hasPpeSelected = Object.values(form.ppe).some(p => p.required);
+    total += 2;
+    filled += (hasJobsSelected ? 1 : 0) + (hasPpeSelected ? 1 : 0);
+
+    // Step 3: Weather (weight: 15%)
+    const hasWeatherSelected = Object.values(form.weatherConditions).some(Boolean) ||
+      Object.values(form.weatherModifiers).some(Boolean);
+    total += 1;
+    filled += hasWeatherSelected ? 1 : 0;
+
+    // Step 4: Hazards (weight: 15%)
+    const hasHazardsSelected = Object.values(form.hazardsPresent).some(Boolean) ||
+      Object.values(form.trafficHazards).some(Boolean);
+    total += 1;
+    filled += hasHazardsSelected ? 1 : 0;
+
+    // Step 5: Spans (weight: 15%)
+    const filledSpans = form.spans.filter(s => s.location.trim() || s.hazards.trim());
+    total += 1;
+    filled += filledSpans.length > 0 ? 1 : 0;
+
+    // Step 6: Signature (weight: 15%)
+    total += 1;
+    filled += form.employeeSignature.trim() ? 1 : 0;
+
+    return Math.round((filled / total) * 100);
+  }, [form]);
+
   // Load record if editing
   useEffect(() => {
     if (!id) {
@@ -410,13 +596,13 @@ export default function DailyJSAForm() {
       const { data, error: fetchError } = await query.maybeSingle();
 
       if (fetchError) {
-        toast.error("Unable to load JSA record. Please try again.");
+        formToast.error("Load Error", "Unable to load JSA record. Please try again.");
         setLoadingRecord(false);
         return;
       }
 
       if (!data) {
-        toast.error("JSA not found or you do not have permission to view it.");
+        formToast.error("Not Found", "JSA not found or you do not have permission to view it.");
         setLoadingRecord(false);
         return;
       }
@@ -562,7 +748,7 @@ export default function DailyJSAForm() {
 
   const handleSave = useCallback(async (mode: SaveMode = "draft") => {
     if (!user) {
-      toast.error("You must be signed in to save a JSA.");
+      formToast.error("Authentication Required", "You must be signed in to save a JSA.");
       return;
     }
 
@@ -576,12 +762,12 @@ export default function DailyJSAForm() {
     for (const contact of requiredContacts) {
       const trimmed = contact.value.trim();
       if (!trimmed) {
-        toast.error("All emergency contact fields are required.");
+        formToast.error("Validation Error", "All emergency contact fields are required.");
         setCurrentStep(1);
         return;
       }
       if (!PHONE_PATTERN.test(trimmed)) {
-        toast.error(`Enter a valid phone number for ${contact.label}.`);
+        formToast.error("Validation Error", `Enter a valid phone number for ${contact.label}.`);
         setCurrentStep(1);
         return;
       }
@@ -682,8 +868,29 @@ export default function DailyJSAForm() {
           smart_defaults_shown: Boolean(suggestions && Object.keys(suggestions).length > 0),
           timestamp: new Date().toISOString(),
         });
+        
+        // Telemetry: track successful submission
+        trackFormSubmitted({
+          form_type: 'jsa',
+          duration_seconds: formTimer.current.getDuration(),
+        });
 
-        toast.success(targetStatus === "completed" ? "JSA completed successfully!" : "JSA draft saved successfully.");
+        // Dismiss loading toast before showing celebration
+        formToast.dismiss();
+
+        // Clear draft and mark as saved
+        clearDraft();
+        markAsSaved();
+
+        if (targetStatus === "completed") {
+          // Show celebration for completed forms
+          setShowCelebration(true);
+        } else {
+          formToast.success(
+            "Draft Saved",
+            "Your JSA draft has been saved."
+          );
+        }
         setForm((prev) => ({
           ...prev,
           status: targetStatus,
@@ -714,8 +921,20 @@ export default function DailyJSAForm() {
           smart_defaults_shown: Boolean(suggestions && Object.keys(suggestions).length > 0),
           timestamp: new Date().toISOString(),
         });
+        
+        // Telemetry: track successful submission
+        trackFormSubmitted({
+          form_type: 'jsa',
+          duration_seconds: formTimer.current.getDuration(),
+        });
 
-        toast.success(targetStatus === "completed" ? "JSA completed successfully!" : "JSA draft created successfully.");
+        // Dismiss loading toast before showing celebration
+        formToast.dismiss();
+
+        // Clear draft and mark as saved
+        clearDraft();
+        markAsSaved();
+
         setForm((prev) => ({
           ...prev,
           status: targetStatus,
@@ -726,8 +945,25 @@ export default function DailyJSAForm() {
           statusHistory: nextStatusHistory,
         }));
         setPersistedStatus(targetStatus);
-        if (data?.id) {
-          navigate(`/forms/jsa/${data.id}`, { replace: true });
+
+        if (targetStatus === "completed") {
+          // Check compliance status and get remaining forms for nudge
+          const { allComplete, remaining } = await checkAndCelebrate('jsa');
+          setRemainingForms(remaining);
+          
+          // If all complete, the full celebration will show via celebrationProps
+          // Otherwise show the individual form celebration with remaining forms nudge
+          if (!allComplete) {
+            setShowCelebration(true);
+          }
+        } else {
+          formToast.success(
+            "Draft Created",
+            "Your JSA draft has been created."
+          );
+          if (data?.id) {
+            navigate(`/forms/jsa/${data.id}`, { replace: true });
+          }
         }
       }
     } catch (submitError: unknown) {
@@ -735,11 +971,19 @@ export default function DailyJSAForm() {
         submitError instanceof Error
           ? submitError.message
           : "Unable to save JSA.";
-      toast.error(message);
+      formToast.error("Submission Failed", message, {
+        onRetry: () => handleSave(mode),
+      });
+      
+      // Telemetry: track server/network error
+      trackFormSubmitError({
+        form_type: 'jsa',
+        error_code: submitError instanceof Error && submitError.message.includes('network') ? 'NETWORK_ERROR' : 'SERVER_ERROR',
+      });
     } finally {
       setSaving(false);
     }
-  }, [user, form, isEditMode, id, persistedStatus, navigate, suggestions]);
+  }, [user, form, isEditMode, id, persistedStatus, navigate, suggestions, clearDraft, markAsSaved, checkAndCelebrate]);
 
   const handleComplete = useCallback(async () => {
     // Use the new save mode to complete
@@ -843,6 +1087,7 @@ export default function DailyJSAForm() {
             onRemoveSpan={handleRemoveSpan}
             spanPage={spanPage}
             setSpanPage={setSpanPage}
+            userInitials={userInitials}
           />
         );
       case 6:
@@ -859,6 +1104,12 @@ export default function DailyJSAForm() {
         return null;
     }
   };
+
+  // Handle celebration continue
+  const handleCelebrationContinue = useCallback(() => {
+    setShowCelebration(false);
+    navigate("/dashboard");
+  }, [navigate]);
 
   return (
     <DashboardLayout title="Daily JSA" hideHeader>
@@ -882,6 +1133,10 @@ export default function DailyJSAForm() {
           isValid={isFormValid}
           isEditMode={isEditMode}
           status={form.status}
+          progress={formProgress}
+          lastSaved={lastSaved}
+          hasUnsavedChanges={hasUnsavedChanges}
+          stepCompletionStatus={stepCompletionStatus}
         >
           {renderStep()}
         </JsaWizard>
@@ -894,6 +1149,33 @@ export default function DailyJSAForm() {
           onCreateNew={handleCreateNew}
           currentJsaId={id}
         />
+
+        {/* Draft Recovery Modal */}
+        <DraftRecoveryModal
+          isOpen={showDraftModal}
+          draft={draftData}
+          formType="jsa"
+          onRestore={handleRestoreDraft}
+          onDiscard={handleDismissDraft}
+        />
+
+        {/* Success Celebration with Remaining Forms Nudge */}
+        <FormSuccessCelebration
+          isVisible={showCelebration}
+          formType="jsa"
+          onContinue={handleCelebrationContinue}
+          stats={{
+            hazardsCount: Object.values(form.hazardsPresent).filter(Boolean).length +
+              Object.values(form.trafficHazards).filter(Boolean).length,
+            ppeCount: Object.values(form.ppe).filter(p => p.required).length,
+            spansCount: form.spans.filter(s => s.location.trim() || s.hazards.trim()).length,
+          }}
+          remainingForms={remainingForms}
+          userName={fullName || undefined}
+        />
+        
+        {/* Full Compliance Celebration (when all 3 forms complete) */}
+        <FullCelebration {...celebrationProps} />
       </div>
     </DashboardLayout>
   );

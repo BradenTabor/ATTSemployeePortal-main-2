@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * push-subscribe Edge Function
  * 

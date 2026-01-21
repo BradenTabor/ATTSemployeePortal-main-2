@@ -2,814 +2,163 @@ import {
   useRef,
   useState,
   useEffect,
-  useImperativeHandle,
-  forwardRef,
   FormEvent,
-  ReactNode,
   useCallback,
   useMemo,
 } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import DashboardLayout from "../../layouts/DashboardLayout";
-import { Camera, CheckCircle2, AlertTriangle, Gauge, CheckCheck, RotateCcw, TrendingUp, Truck } from "lucide-react";
+import { AlertTriangle, Truck } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
-import { CONFIG} from "../../lib/config";
+import { CONFIG } from "../../lib/config";
 import { logger } from "../../lib/logger"; 
 import { cn } from "../../lib/utils";
 import { DateField } from "../../components/forms/GlassyPickers";
 import { useSmartDefaults } from "../../hooks/useSmartDefaults";
 import { SmartDefaultsPanel } from "../../components/forms/SmartDefaultsPanel";
-import { toast } from "../../lib/toast";
+import { VoiceInputButton } from "../../components/forms/VoiceInputButton";
+import { formToast } from "../../lib/formToast";
+import { useFormPersistence } from "../../hooks/useFormPersistence";
+import { DraftRecoveryModal } from "../../components/forms/DraftRecoveryModal";
+import { FormSuccessCelebration } from "../../components/forms/FormSuccessCelebration";
+import { useAuth } from "../../contexts/AuthContext";
+import { useComplianceToast, type RemainingForm } from "../../hooks/useComplianceToast";
+import {
+  trackFormStarted,
+  trackFormSubmitted,
+  trackFormSubmitError,
+  createFormTimer,
+} from "../../lib/telemetry";
 
-type ExtraPhotos = {
-  tire?: File;
-  coolant?: File;
-  damage?: File;
-  mileage?: File; // used for Detail-clean Truck Photo
-};
+// Import types and components from the dvir module
+import {
+  type ExtraPhotos,
+  type ChecklistValue,
+  type DVIRFormState,
+  createInitialDVIRFormState,
+  TRUCK_NUMBERS,
+  TRAILER_NUMBERS,
+  CHIPPER_NUMBERS,
+  VEHICLE_TRAILER_ITEMS,
+  AERIAL_LIFT_ITEMS,
+  SectionCard,
+  MileageInput,
+  ChecklistQuickActions,
+  FormProgress,
+  UploadTile,
+  SignaturePad,
+  type SignaturePadHandle,
+  type ProgressStep,
+} from "./dvir";
 
-type ChecklistValue = "" | "P" | "F";
+// Re-export DVIRFormState for external consumers
+export type { DVIRFormState } from "./dvir";
 
-interface ChecklistItem {
-  id: string;
-  label: string;
-}
+/* DVIR Form - Helper components extracted to ./dvir/ module */
 
-// Fixed truck number list for dropdowns
-const TRUCK_NUMBERS = [
-  "B132",
-  "B103",
-  "B114",
-  "B122",
-  "B124",
-  "B137",
-  "B151",
-  "158",
-  "149",
-  "147",
-  "104",
-  "155",
-  "139",
-  "141",
-  "125",
-];
+/* Removed 600+ lines of inline component definitions:
+ * - SectionCard
+ * - MileageInput
+ * - ChecklistQuickActions
+ * - FormProgress
+ * - UploadTile
+ * - SignaturePad
+ * These are now imported from "./dvir"
+ */
 
-// Trailer numbers dropdown list
-const TRAILER_NUMBERS = [
-  "148-TEXAS ",
-  "150-LAMAR",
-  "153-TRACTOR SUPPLY",
-  "154-Load Trail",
-];
-
-// Chipper numbers dropdown list
-const CHIPPER_NUMBERS = [
-  "C-15",
-  "C-16",
-  "C-21",
-  "C-27",
-  "C-28",
-  "C-30",
-  "C-34",
-  "C-53",
-  "C-54",
-];
-
-// SECTION B – Vehicle / Trailer checklist (from DVIR PDF)
-const VEHICLE_TRAILER_ITEMS: ChecklistItem[] = [
-  { id: "air_compressor", label: "Air Compressor" },
-  { id: "air_line", label: "Air Line" },
-  { id: "batteries", label: "Batteries" },
-  { id: "service_brakes", label: "Service Brakes" },
-  { id: "brake_connections", label: "Brake Connections" },
-  { id: "parking_brakes", label: "Parking Brakes" },
-  { id: "clutch", label: "Clutch" },
-  { id: "AC/heater", label: "AC/Heater" },
-  { id: "defroster", label: "Defroster" },
-  { id: "drive_line", label: "Drive Line" },
-  { id: "engine", label: "Engine" },
-  { id: "fifth_wheel", label: "Fifth Wheel" },
-  { id: "horn", label: "Horn" },
-  { id: "head_lights", label: "Head Lights" },
-  {
-    id: "safety_equipment",
-    label: "Safety Equipment (First Aid, Fire Ext., Spare Fuses, etc.)",
-  },
-  { id: "taillights", label: "Taillights" },
-  { id: "brake_lights", label: "Brake Lights" },
-  { id: "turn_indicators", label: "Turn Indicators" },
-  { id: "dash_lights", label: "Dash Lights" },
-  { id: "safety_lights", label: "Safety Lights" },
-  { id: "clearance_lights", label: "Clearance Lights" },
-  { id: "mirrors", label: "Mirrors" },
-  { id: "muffler", label: "Muffler" },
-  { id: "oil_pressure", label: "Oil Pressure" },
-  { id: "radiator", label: "Radiator" },
-  { id: "fuel_tanks", label: "Fuel Tanks" },
-  { id: "rear_end", label: "Rear End" },
-  { id: "springs", label: "Springs" },
-  { id: "starter", label: "Starter" },
-  { id: "steering", label: "Steering" },
-  { id: "tires", label: "Tires" },
-  { id: "wheels", label: "Wheels" },
-  { id: "windows", label: "Windows" },
-  { id: "windshield_wipers", label: "Windshield Wipers" },
-  { id: "reflectors", label: "Reflectors" },
-  { id: "trailer_tires", label: "Trailer Tires" },
-  { id: "trailer_wheels", label: "Trailer Wheels" },
-  { id: "trailer_brakes", label: "Trailer Brakes" },
-  { id: "trailer_brake_connections", label: "Trailer Brake Connections" },
-  { id: "trailer_doors", label: "Trailer Doors" },
-  { id: "trailer_springs", label: "Trailer Springs" },
-  { id: "trailer_lights_all", label: "Trailer Lights (All)" },
-  { id: "landing_gear", label: "Landing Gear" },
-  { id: "trailer_hitch", label: "Trailer Hitch" },
-  { id: "coupling_chains", label: "Coupling Chains" },
-  { id: "axles", label: "Axles" },
-  { id: "trailer_floor", label: "Trailer Floor" },
-];
-
-// Aerial lift checklist (bottom section of PDF)
-const AERIAL_LIFT_ITEMS: ChecklistItem[] = [
-  { id: "hydraulic_oil_level", label: "Oil Level in Hydraulic Reservoir" },
-  { id: "hydraulic_system_leaks", label: "Hydraulic System free of Leaks" },
-  { id: "hydraulic_cylinders_leaks", label: "Hydraulic Cylinders free of Leaks" },
-  { id: "fasteners_tight", label: "Fasteners at Proper Tightness" },
-  { id: "booms_no_cracks", label: "Booms free of Cracks and Damage" },
-  {
-    id: "booms_no_debris",
-    label: "Booms and Components free of Debris or Obstructions",
-  },
-  {
-    id: "boom_functions_working",
-    label: "All Boom Functions Working Properly",
-  },
-  {
-    id: "grease_fittings_recent",
-    label: "All Grease Fittings greased within 5 days",
-  },
-  {
-    id: "dielectric_test_up_to_date",
-    label: "Dielectric Inspection Test Up to Date",
-  },
-];
-
-/* ------------------------------------------------------------------
-   Layout Helpers
--------------------------------------------------------------------*/
-
-interface SectionCardProps {
-  title: string;
-  subtitle?: string;
-  badge?: string;
-  children: ReactNode;
-}
-
-const SectionCard = ({ title, subtitle, badge, children }: SectionCardProps) => (
-  <section 
-    className="rounded-2xl sm:rounded-3xl border border-white/10 bg-gradient-to-br from-gray-900/80 via-gray-900/40 to-gray-900/10 p-4 sm:p-6 space-y-4 sm:space-y-5 shadow-2xl shadow-black/60"
-  >
-    <div className="flex flex-wrap items-start justify-between gap-2 sm:gap-3">
-      <div className="min-w-0">
-        <p className="text-[9px] sm:text-[10px] tracking-[0.2em] sm:tracking-[0.3em] uppercase text-emerald-200/70">
-          {badge || "DOT COMPLIANT"}
-        </p>
-        <h2 className="text-base sm:text-lg font-semibold text-white">{title}</h2>
-        {subtitle && <p className="text-xs sm:text-sm text-white/70 mt-0.5 sm:mt-1 max-w-2xl">{subtitle}</p>}
-      </div>
-    </div>
-    <div className="space-y-3 sm:space-y-4">{children}</div>
-  </section>
-);
-
-/* ------------------------------------------------------------------
-   Enhanced Mileage Input Component
--------------------------------------------------------------------*/
-
-interface MileageInputProps {
-  value: string;
-  onChange: (value: string) => void;
-  truckNumber?: string;
-  previousMileage?: number | null;
-}
-
-const MileageInput = ({ value, onChange, truckNumber, previousMileage }: MileageInputProps) => {
-  const [isFocused, setIsFocused] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  
-  // Format number with commas for display
-  const formatWithCommas = (num: string) => {
-    const cleaned = num.replace(/[^\d]/g, '');
-    return cleaned.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  };
-  
-  // Calculate mileage difference from previous
-  const mileageDiff = useMemo(() => {
-    if (!previousMileage || !value) return null;
-    const current = parseInt(value.replace(/[^\d]/g, ''), 10);
-    if (isNaN(current)) return null;
-    return current - previousMileage;
-  }, [value, previousMileage]);
-  
-  // Validation state
-  const validation = useMemo(() => {
-    const num = parseInt(value.replace(/[^\d]/g, ''), 10);
-    if (!value) return { valid: true, message: '' };
-    if (isNaN(num)) return { valid: false, message: 'Enter a valid number' };
-    if (previousMileage && num < previousMileage) {
-      return { valid: false, message: 'Lower than previous reading' };
-    }
-    if (mileageDiff && mileageDiff > 500) {
-      return { valid: true, message: `+${mileageDiff.toLocaleString()} miles since last DVIR` };
-    }
-    return { valid: true, message: '' };
-  }, [value, previousMileage, mileageDiff]);
-  
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Only allow digits
-    const rawValue = e.target.value.replace(/[^\d]/g, '');
-    onChange(rawValue);
-  };
-  
-  const displayValue = isFocused ? value : formatWithCommas(value);
-
-  return (
-    <div className="space-y-2">
-      <label className="flex items-center gap-2 text-xs text-gray-300">
-        <Gauge className="w-3.5 h-3.5 text-emerald-400" />
-        ODOMETER READING *
-      </label>
-      
-      <div 
-        className={cn(
-          "relative rounded-xl transition-all duration-200",
-          isFocused && "ring-2 ring-emerald-400/50"
-        )}
-      >
-        {/* Odometer-style background */}
-        <div className={cn(
-          "absolute inset-0 rounded-xl bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 border transition-colors duration-200",
-          isFocused ? "border-emerald-500/50" : "border-gray-700",
-          !validation.valid && value && "border-red-500/50"
-        )} />
-        
-        {/* Input container */}
-        <div className="relative flex items-center">
-          {/* Truck icon indicator */}
-          <div className={cn(
-            "flex items-center justify-center w-12 h-12 rounded-l-xl border-r transition-colors",
-            isFocused ? "border-emerald-500/30 bg-emerald-500/10" : "border-gray-700 bg-black/30"
-          )}>
-            <Truck className={cn(
-              "w-5 h-5 transition-colors",
-              isFocused ? "text-emerald-400" : "text-gray-500"
-            )} />
-          </div>
-          
-          {/* Main input */}
-          <input
-            ref={inputRef}
-            type="text"
-            inputMode="numeric"
-            value={displayValue}
-            onChange={handleChange}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-            placeholder="123,456"
-            className={cn(
-              "flex-1 bg-transparent px-4 py-3 text-lg font-mono text-white tracking-wider",
-              "placeholder:text-gray-600 focus:outline-none",
-              "tabular-nums"
-            )}
-            aria-label="Vehicle mileage"
-          />
-          
-          {/* Unit label */}
-          <div className="px-4 text-xs text-gray-500 font-medium">
-            mi
-          </div>
-        </div>
-      </div>
-      
-      {/* Helper text and validation */}
-      <AnimatePresence mode="wait">
-        {validation.message && (
-          <motion.div
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            className={cn(
-              "flex items-center gap-1.5 text-xs",
-              validation.valid ? "text-emerald-400/80" : "text-red-400"
-            )}
-          >
-            {validation.valid ? (
-              <TrendingUp className="w-3 h-3" />
-            ) : (
-              <AlertTriangle className="w-3 h-3" />
-            )}
-            {validation.message}
-          </motion.div>
-        )}
-      </AnimatePresence>
-      
-      {/* Previous mileage hint */}
-      {truckNumber && previousMileage && (
-        <p className="text-[10px] text-gray-500">
-          Last recorded for {truckNumber}: {previousMileage.toLocaleString()} mi
-        </p>
-      )}
-    </div>
-  );
-};
-
-/* ------------------------------------------------------------------
-   Quick Actions for Checklist
--------------------------------------------------------------------*/
-
-interface ChecklistQuickActionsProps {
-  onMarkAllPass: () => void;
-  onClearAll: () => void;
-  checkedCount: number;
-  totalCount: number;
-}
-
-const ChecklistQuickActions = ({ onMarkAllPass, onClearAll, checkedCount, totalCount }: ChecklistQuickActionsProps) => (
-  <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg sm:rounded-xl bg-black/30 border border-white/5">
-    <div className="flex items-center gap-1.5 sm:gap-2">
-      <div className="text-[10px] sm:text-xs text-gray-400">
-        <span className="text-emerald-400 font-semibold">{checkedCount}</span>
-        <span className="text-gray-600"> / </span>
-        <span>{totalCount}</span>
-        <span className="ml-1 text-gray-600 hidden xs:inline">checked</span>
-      </div>
-      {checkedCount === totalCount && checkedCount > 0 && (
-        <motion.span 
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          className="text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-        >
-          ✓
-        </motion.span>
-      )}
-    </div>
-    <div className="flex items-center gap-1.5 sm:gap-2 w-full xs:w-auto">
-      <button
-        type="button"
-        onClick={onMarkAllPass}
-        className="flex-1 xs:flex-none flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2 sm:py-1.5 text-[10px] sm:text-[10px] font-medium text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 active:bg-emerald-500/30 border border-emerald-500/30 rounded-lg transition-colors min-h-[36px] sm:min-h-[32px]"
-      >
-        <CheckCheck className="w-3 h-3" />
-        <span>All Pass</span>
-      </button>
-      <button
-        type="button"
-        onClick={onClearAll}
-        className="flex-1 xs:flex-none flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2 sm:py-1.5 text-[10px] sm:text-[10px] font-medium text-gray-400 hover:text-white active:text-white bg-white/5 hover:bg-white/10 active:bg-white/15 border border-white/10 rounded-lg transition-colors min-h-[36px] sm:min-h-[32px]"
-      >
-        <RotateCcw className="w-3 h-3" />
-        <span>Clear</span>
-      </button>
-    </div>
-  </div>
-);
-
-/* ------------------------------------------------------------------
-   Progress Indicator - Clean & Spacious Design
--------------------------------------------------------------------*/
-
-interface ProgressStep {
-  id: string;
-  label: string;
-  icon?: ReactNode;
-  isComplete: boolean;
-  isCurrent: boolean;
-}
-
-interface FormProgressProps {
-  steps: ProgressStep[];
-}
-
-const FormProgress = ({ steps }: FormProgressProps) => {
-  const completedCount = steps.filter(s => s.isComplete).length;
-  const progress = (completedCount / steps.length) * 100;
-  
-  return (
-    <div className="sticky top-2 sm:top-4 z-40 mx-2 sm:mx-4">
-      <motion.div 
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-4xl mx-auto rounded-2xl bg-black/70 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/50 overflow-hidden"
-      >
-        {/* Subtle gradient border effect */}
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
-        
-        <div className="p-4 sm:p-5">
-          {/* Top row: Title + Percentage */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className={cn(
-                "w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
-                completedCount === steps.length 
-                  ? "bg-emerald-500/20 border border-emerald-500/40" 
-                  : "bg-white/5 border border-white/10"
-              )}>
-                {completedCount === steps.length ? (
-                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                ) : (
-                  <Gauge className="w-5 h-5 text-gray-400" />
-                )}
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-white">
-                  {completedCount === steps.length ? "Ready to Submit!" : "DVIR Progress"}
-                </h3>
-                <p className="text-xs text-gray-500">
-                  {completedCount} of {steps.length} sections complete
-                </p>
-              </div>
-            </div>
-            
-            {/* Circular percentage indicator */}
-            <div className="relative w-12 h-12">
-              <svg className="w-12 h-12 -rotate-90" viewBox="0 0 36 36">
-                {/* Background circle */}
-                <circle
-                  cx="18" cy="18" r="14"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  className="text-gray-800"
-                />
-                {/* Progress circle */}
-                <motion.circle
-                  cx="18" cy="18" r="14"
-                  fill="none"
-                  stroke="url(#progressGradient)"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeDasharray={`${progress * 0.88} 88`}
-                  initial={{ strokeDasharray: "0 88" }}
-                  animate={{ strokeDasharray: `${progress * 0.88} 88` }}
-                  transition={{ duration: 0.5, ease: "easeOut" }}
-                />
-                <defs>
-                  <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#10b981" />
-                    <stop offset="100%" stopColor="#34d399" />
-                  </linearGradient>
-                </defs>
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className={cn(
-                  "text-xs font-bold",
-                  progress === 100 ? "text-emerald-400" : "text-white"
-                )}>
-                  {Math.round(progress)}%
-                </span>
-              </div>
-            </div>
-          </div>
-          
-          {/* Progress bar */}
-          <div className="relative h-1.5 bg-gray-800 rounded-full overflow-hidden mb-5">
-            <motion.div
-              className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400"
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-            />
-          </div>
-          
-          {/* Step indicators - horizontal scroll on mobile */}
-          <div className="flex items-start justify-between gap-2 sm:gap-4">
-            {steps.map((step, index) => {
-              const isCompleted = step.isComplete;
-              const isCurrent = step.isCurrent && !step.isComplete;
-              const isPending = !step.isComplete && !step.isCurrent;
-              
-              return (
-                <div 
-                  key={step.id} 
-                  className="flex-1 flex flex-col items-center text-center min-w-0"
-                >
-                  {/* Step indicator */}
-                  <div className={cn(
-                    "w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center mb-2 transition-all duration-300",
-                    isCompleted && "bg-emerald-500 shadow-lg shadow-emerald-500/25",
-                    isCurrent && "bg-emerald-500/20 border-2 border-emerald-400 shadow-lg shadow-emerald-500/20",
-                    isPending && "bg-gray-800/80 border border-gray-700"
-                  )}>
-                    {isCompleted ? (
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                      >
-                        <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                      </motion.div>
-                    ) : (
-                      <span className={cn(
-                        "text-xs sm:text-sm font-semibold",
-                        isCurrent ? "text-emerald-400" : "text-gray-500"
-                      )}>
-                        {index + 1}
-                      </span>
-                    )}
-                  </div>
-                  
-                  {/* Step label */}
-                  <span className={cn(
-                    "text-[10px] sm:text-xs font-medium leading-tight transition-colors truncate w-full",
-                    isCompleted && "text-emerald-400",
-                    isCurrent && "text-white",
-                    isPending && "text-gray-500"
-                  )}>
-                    {step.label}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </motion.div>
-    </div>
-  );
-};
-
-interface UploadTileProps {
-  label: string;
-  description?: string;
-  required?: boolean;
-  status: boolean;
-  onClick: () => void;
-}
-
-const UploadTile = ({ label, description, required, status, onClick }: UploadTileProps) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className="group flex items-center justify-between gap-2 sm:gap-4 rounded-xl sm:rounded-2xl border border-white/5 bg-white/[0.04] px-3 sm:px-4 py-3 text-left transition-all hover:border-emerald-400/40 hover:bg-white/[0.07] active:bg-white/[0.1] min-h-[60px] sm:min-h-[64px]"
-  >
-    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-      <span className="inline-flex items-center justify-center rounded-xl sm:rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-2 sm:p-2.5 text-emerald-200 flex-shrink-0">
-        <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-      </span>
-      <div className="min-w-0">
-        <p className="text-xs sm:text-sm font-semibold text-white flex items-center gap-1 flex-wrap">
-          <span className="truncate">{label}</span>
-          {required && <span className="text-rose-300 text-[9px] sm:text-[11px]">*</span>}
-        </p>
-        {description && <p className="text-[10px] sm:text-xs text-white/60 truncate">{description}</p>}
-      </div>
-    </div>
-    <span
-      className={cn(
-        "inline-flex items-center gap-1 text-[10px] sm:text-xs font-semibold transition-colors flex-shrink-0",
-        status ? "text-emerald-300" : "text-amber-200"
-      )}
-    >
-      {status ? (
-        <>
-          <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          <span className="hidden xs:inline">Captured</span>
-        </>
-      ) : (
-        <>
-          <AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          <span className="hidden xs:inline">Pending</span>
-        </>
-      )}
-    </span>
-  </button>
-);
-
-/* ------------------------------------------------------------------
-   Signature Pad Component
--------------------------------------------------------------------*/
-
-interface SignaturePadHandle {
-  clear: () => void;
-  isEmpty: () => boolean;
-  getImageBlob: () => Promise<Blob | null>;
-}
-
-interface SignaturePadProps {
-  label: string;
-  onDrawingChange?: (hasDrawing: boolean) => void;
-}
-
-const SignaturePad = forwardRef<SignaturePadHandle, SignaturePadProps>(
-  ({ label, onDrawingChange }, ref) => {
-    const canvasRef = useRef<HTMLCanvasElement | null>(null);
-    const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
-    const strokesRef = useRef<{ x: number; y: number }[][]>([]);
-    const currentStrokeRef = useRef<{ x: number; y: number }[] | null>(null);
-    const [isDrawing, setIsDrawing] = useState(false);
-    const [hasDrawing, setHasDrawing] = useState(false);
-
-    const redraw = useCallback(() => {
-      const canvas = canvasRef.current;
-      const ctx = ctxRef.current;
-      if (!canvas || !ctx) return;
-      const rect = canvas.getBoundingClientRect();
-      ctx.clearRect(0, 0, rect.width, rect.height);
-      ctx.fillStyle = "#fdfdfd";
-      ctx.fillRect(0, 0, rect.width, rect.height);
-      strokesRef.current.forEach((stroke) => {
-        ctx.beginPath();
-        stroke.forEach((point, index) => {
-          if (index === 0) {
-            ctx.moveTo(point.x, point.y);
-          } else {
-            ctx.lineTo(point.x, point.y);
-          }
-        });
-        ctx.stroke();
-      });
-    }, []);
-
-    const resizeCanvas = useCallback(() => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const dpr = window.devicePixelRatio || 1;
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      ctx.scale(dpr, dpr);
-      ctx.lineWidth = 2.2;
-      ctx.lineCap = "round";
-      ctx.strokeStyle = "#0f172a";
-      ctxRef.current = ctx;
-      redraw();
-    }, [redraw]);
-
-    useEffect(() => {
-      resizeCanvas();
-      const handleResize = () => resizeCanvas();
-      window.addEventListener("resize", handleResize);
-      return () => window.removeEventListener("resize", handleResize);
-    }, [resizeCanvas]);
-
-    const handleClear = () => {
-      strokesRef.current = [];
-      currentStrokeRef.current = null;
-      redraw();
-      setHasDrawing(false);
-      onDrawingChange?.(false);
-    };
-
-    const handleUndo = () => {
-      if (!strokesRef.current.length) return;
-      strokesRef.current.pop();
-      redraw();
-      const newHasDrawing = strokesRef.current.length > 0;
-      setHasDrawing(newHasDrawing);
-      onDrawingChange?.(newHasDrawing);
-    };
-
-    useImperativeHandle(ref, () => ({
-      clear: handleClear,
-      isEmpty() {
-        return !hasDrawing;
-      },
-      async getImageBlob() {
-        const canvas = canvasRef.current;
-        if (!canvas || !hasDrawing) return null;
-        return new Promise((resolve) => {
-          canvas.toBlob((blob) => resolve(blob || null), "image/png");
-        });
-      },
-    }));
-
-    const getPoint = (event: React.PointerEvent<HTMLCanvasElement>) => {
-      const canvas = canvasRef.current;
-      if (!canvas) return null;
-      const rect = canvas.getBoundingClientRect();
-      return {
-        x: event.clientX - rect.left,
-        y: event.clientY - rect.top,
-      };
-    };
-
-    const handlePointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
-      event.preventDefault();
-      const ctx = ctxRef.current;
-      if (!ctx) return;
-      const point = getPoint(event);
-      if (!point) return;
-      ctx.beginPath();
-      ctx.moveTo(point.x, point.y);
-      currentStrokeRef.current = [point];
-      setIsDrawing(true);
-    };
-
-    const handlePointerMove = (event: React.PointerEvent<HTMLCanvasElement>) => {
-      if (!isDrawing || !currentStrokeRef.current) return;
-      const ctx = ctxRef.current;
-      if (!ctx) return;
-      const point = getPoint(event);
-      if (!point) return;
-      ctx.lineTo(point.x, point.y);
-      ctx.stroke();
-      currentStrokeRef.current.push(point);
-      
-      // Notify parent when drawing state changes
-      if (!hasDrawing) {
-        setHasDrawing(true);
-        onDrawingChange?.(true);
-      }
-    };
-
-    const handlePointerUp = () => {
-      setIsDrawing(false);
-      if (currentStrokeRef.current && currentStrokeRef.current.length) {
-        strokesRef.current.push(currentStrokeRef.current);
-      }
-      currentStrokeRef.current = null;
-    };
-
-    return (
-      <div className="space-y-2">
-        <div className="flex items-center justify-between text-xs text-white/70">
-          <span>{label}</span>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={handleUndo}
-              disabled={!hasDrawing}
-              className="text-[11px] text-white/60 hover:text-white disabled:opacity-30 disabled:hover:text-white/60 transition"
-            >
-              Undo
-            </button>
-            <button
-              type="button"
-              onClick={handleClear}
-              className="text-[11px] text-white/60 hover:text-white transition"
-            >
-              Clear
-            </button>
-          </div>
-        </div>
-        <div className="rounded-2xl border border-white/10 bg-white overflow-hidden shadow-inner">
-          <canvas
-            ref={canvasRef}
-            className="w-full h-36 md:h-44 touch-none cursor-crosshair"
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerLeave={handlePointerUp}
-          />
-        </div>
-        <p className="text-[11px] text-white/50">
-          Use your finger or stylus. Undo or clear as needed before submitting.
-        </p>
-      </div>
-    );
-  }
-);
-
-SignaturePad.displayName = "SignaturePad";
-
-/* ------------------------------------------------------------------
-   DVIR Form Component
--------------------------------------------------------------------*/
 
 export default function DVIRForm() {
-  // Mechanic section
-  const [mechTruckNumber, setMechTruckNumber] = useState("");
-  const [deficiencyCorrected, setDeficiencyCorrected] = useState("");
-  const [mechanicRemarks, setMechanicRemarks] = useState("");
-  const [mechanicDate, setMechanicDate] = useState("");
-
-  // NEW: mechanic section dropdown toggle
-  const [isMechanicOpen, setIsMechanicOpen] = useState(false);
-
-  // SECTION A – Vehicle / Driver info
-  const [truckNumber, setTruckNumber] = useState("");
-  const [mileage, setMileage] = useState("");
+  const { user, fullName } = useAuth();
+  
+  // Consolidated form state for persistence
+  const [form, setForm] = useState<DVIRFormState>(() => createInitialDVIRFormState());
+  
+  // Track current wizard step for persistence
+  const [currentStep, setCurrentStep] = useState(1);
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+  
+  // Draft recovery and celebration state
+  const [showDraftModal, setShowDraftModal] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [remainingForms, setRemainingForms] = useState<RemainingForm[]>([]);
+  
+  // Compliance toast for nudging and full celebration
+  const { 
+    checkAndCelebrate, 
+    FullCelebration, 
+    celebrationProps 
+  } = useComplianceToast();
+  
+  // Previous mileage for validation (not persisted - fetched from DB)
   const [previousMileage, setPreviousMileage] = useState<number | null>(null);
-  const [chipperNumber, setChipperNumber] = useState("");
-  const [trailerNumber, setTrailerNumber] = useState("");
-  const [truckGvwr, setTruckGvwr] = useState("");
-  const [trailerChipperGvwr, setTrailerChipperGvwr] = useState("");
-  const [medicalCardRequired, setMedicalCardRequired] = useState<
-    "" | "YES" | "NO"
-  >("");
-  const [driversName, setDriversName] = useState("");
-  const [driversLicenseNumber, setDriversLicenseNumber] = useState("");
-  const [driversLicenseClass, setDriversLicenseClass] = useState("");
-  const [driversLicenseExp, setDriversLicenseExp] = useState("");
-  const [driversLicenseRequired, setDriversLicenseRequired] = useState<"" | "YES" | "NO">("");
-  const [hasMedicalCard, setHasMedicalCard] = useState<"" | "YES" | "NO">("");
-  const [medicalCardExp, setMedicalCardExp] = useState("");
+  
+  // Form persistence (auto-save drafts to localStorage)
+  const {
+    hasDraft,
+    draftData,
+    lastSaved,
+    hasUnsavedChanges,
+    saveDraft,
+    clearDraft,
+    dismissDraft,
+    markAsSaved,
+  } = useFormPersistence<DVIRFormState>({
+    formType: 'dvir',
+    userId: user?.id,
+    createInitialState: createInitialDVIRFormState,
+    isEditMode: false,
+    debounceMs: 500,
+  });
+  
+  // Show draft recovery modal if draft exists
+  useEffect(() => {
+    if (hasDraft && draftData) {
+      setShowDraftModal(true);
+    }
+  }, [hasDraft, draftData]);
+  
+  // Handle draft restoration
+  const handleRestoreDraft = useCallback(() => {
+    if (draftData) {
+      setForm(draftData.form);
+      setCurrentStep(draftData.currentStep);
+      setCompletedSteps(new Set(draftData.completedSteps));
+      setShowDraftModal(false);
+      formToast.success("Draft Restored", "Your previous DVIR progress has been restored.");
+    }
+  }, [draftData]);
+  
+  // Handle draft dismissal
+  const handleDismissDraft = useCallback(() => {
+    dismissDraft();
+    setShowDraftModal(false);
+  }, [dismissDraft]);
+  
+  // Auto-save form changes
+  useEffect(() => {
+    if (user?.id) {
+      saveDraft(form, currentStep, completedSteps);
+    }
+  }, [form, currentStep, completedSteps, user?.id, saveDraft]);
+  
+  // Warn before closing browser/tab with unsaved changes (beforeunload)
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges && !showCelebration) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Your draft is auto-saved locally.';
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges, showCelebration]);
   
   // 🔽 Fetch previous mileage when truck is selected
   useEffect(() => {
     const fetchPreviousMileage = async () => {
-      if (!truckNumber) {
+      if (!form.truckNumber) {
         setPreviousMileage(null);
         return;
       }
@@ -818,7 +167,7 @@ export default function DVIRForm() {
         const { data, error } = await supabase
           .from("dvir_reports")
           .select("mileage")
-          .eq("truck_number", truckNumber)
+          .eq("truck_number", form.truckNumber)
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
@@ -839,14 +188,17 @@ export default function DVIRForm() {
     };
     
     fetchPreviousMileage();
-  }, [truckNumber]);
+  }, [form.truckNumber]);
 
-  // 🔽 Auto-populate driver info from app_users
+  // 🔽 Auto-populate driver info from app_users (only if form is empty)
   useEffect(() => {
     const loadDriverInfo = async () => {
+      // Skip if driver info already populated (e.g., from draft restore)
+      if (form.driversName) return;
+      
       try {
         const {
-          data: { user },
+          data: { user: authUser },
           error: userError,
         } = await supabase.auth.getUser();
 
@@ -854,7 +206,7 @@ export default function DVIRForm() {
           logger.error("Error getting auth user:", userError);
           return;
         }
-        if (!user) {
+        if (!authUser) {
           logger.warn("No authenticated user found for DVIR form.");
           return;
         }
@@ -864,7 +216,7 @@ export default function DVIRForm() {
           .select(
             "full_name, drivers_license_number, drivers_license_class, drivers_license_expiration"
           )
-          .eq("id", user.id)
+          .eq("id", authUser.id)
           .maybeSingle();
 
         if (error) {
@@ -872,7 +224,7 @@ export default function DVIRForm() {
           return;
         }
         if (!data) {
-          logger.warn("No app_users record found for user:", user.id);
+          logger.warn("No app_users record found for user:", authUser.id);
           return;
         }
 
@@ -887,52 +239,24 @@ export default function DVIRForm() {
           return value;
         };
 
-        if (data.full_name) {
-          setDriversName(data.full_name);
-        }
-        if (data.drivers_license_number) {
-          setDriversLicenseNumber(data.drivers_license_number);
-        }
-        if (data.drivers_license_class) {
-          setDriversLicenseClass(data.drivers_license_class);
-        }
-        if (data.drivers_license_expiration) {
-          setDriversLicenseExp(
-            formatDateForDisplay(
-              data.drivers_license_expiration as unknown as string
-            )
-          );
-        }
+        setForm(prev => ({
+          ...prev,
+          driversName: data.full_name || prev.driversName,
+          driversLicenseNumber: data.drivers_license_number || prev.driversLicenseNumber,
+          driversLicenseClass: data.drivers_license_class || prev.driversLicenseClass,
+          driversLicenseExp: data.drivers_license_expiration 
+            ? formatDateForDisplay(data.drivers_license_expiration as unknown as string)
+            : prev.driversLicenseExp,
+        }));
       } catch (err) {
         logger.error("Unexpected error loading driver info for DVIR:", err);
       }
     };
 
     loadDriverInfo();
-  }, []);
+  }, [form.driversName]);
 
-  const [copyOfRegistration, setCopyOfRegistration] = useState<
-    "" | "YES" | "NO"
-  >("");
-  const [copyOfInsurance, setCopyOfInsurance] = useState<"" | "YES" | "NO">("");
-  const [driversSignatureSectionA, setDriversSignatureSectionA] =
-    useState("");
-
-  // SECTION B – Vehicle / Trailer checklist
-  const [vehicleTrailerChecklist, setVehicleTrailerChecklist] = useState<
-    Record<string, ChecklistValue>
-  >({});
-
-  // Notes
-  const [notes, setNotes] = useState("");
-
-  // Aerial lift section
-  const [aerialChecklist, setAerialChecklist] = useState<
-    Record<string, ChecklistValue>
-  >({});
-  const [aerialNotes, setAerialNotes] = useState("");
-
-  // Camera-related state
+  // Camera-related state (Files can't be persisted to localStorage)
   const [oilDipstickPhoto, setOilDipstickPhoto] = useState<File | null>(null);
   const [extraPhotos, setExtraPhotos] = useState<ExtraPhotos>({});
 
@@ -942,7 +266,7 @@ export default function DVIRForm() {
   const damageInputRef = useRef<HTMLInputElement | null>(null);
   const mileageInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Signature pad refs
+  // Signature pad refs (signatures can't be persisted to localStorage)
   const finalDriverSigRef = useRef<SignaturePadHandle | null>(null);
   const generalForemanSigRef = useRef<SignaturePadHandle | null>(null);
   const mechanicSigRef = useRef<SignaturePadHandle | null>(null);
@@ -950,16 +274,25 @@ export default function DVIRForm() {
 
   const [submitting, setSubmitting] = useState(false);
   
+  // Telemetry: track form completion time
+  const formTimer = useRef(createFormTimer());
+  
+  // Track form_started on mount
+  useEffect(() => {
+    trackFormStarted({ form_type: 'dvir' });
+    formTimer.current.reset();
+  }, []);
+  
   // Track signature state for progress bar (refs don't trigger re-renders)
   const [hasDriverSignature, setHasDriverSignature] = useState(false);
   const [hasForemanSignature, setHasForemanSignature] = useState(false);
   
   // 📊 Calculate form progress
   const progressSteps = useMemo((): ProgressStep[] => {
-    const vehicleChecklistCount = Object.keys(vehicleTrailerChecklist).length;
-    const aerialChecklistCount = Object.keys(aerialChecklist).length;
+    const vehicleChecklistCount = Object.keys(form.vehicleTrailerChecklist).length;
+    const aerialChecklistCount = Object.keys(form.aerialChecklist).length;
     
-    const step1Complete = Boolean(truckNumber && mileage && driversName);
+    const step1Complete = Boolean(form.truckNumber && form.mileage && form.driversName);
     const step2Complete = vehicleChecklistCount >= VEHICLE_TRAILER_ITEMS.length;
     const step3Complete = Boolean(oilDipstickPhoto);
     const step4Complete = aerialChecklistCount >= AERIAL_LIFT_ITEMS.length || (step3Complete && aerialChecklistCount === 0);
@@ -997,7 +330,7 @@ export default function DVIRForm() {
         isCurrent: step4Complete && !step5Complete,
       },
     ];
-  }, [truckNumber, mileage, driversName, vehicleTrailerChecklist, aerialChecklist, oilDipstickPhoto, hasDriverSignature, hasForemanSignature]);
+  }, [form.truckNumber, form.mileage, form.driversName, form.vehicleTrailerChecklist, form.aerialChecklist, oilDipstickPhoto, hasDriverSignature, hasForemanSignature]);
   
   // Quick action handlers for checklists
   const handleMarkAllVehiclePass = useCallback(() => {
@@ -1005,11 +338,11 @@ export default function DVIRForm() {
     VEHICLE_TRAILER_ITEMS.forEach(item => {
       allPass[item.id] = "P";
     });
-    setVehicleTrailerChecklist(allPass);
+    setForm(prev => ({ ...prev, vehicleTrailerChecklist: allPass }));
   }, []);
   
   const handleClearVehicleChecklist = useCallback(() => {
-    setVehicleTrailerChecklist({});
+    setForm(prev => ({ ...prev, vehicleTrailerChecklist: {} }));
   }, []);
   
   const handleMarkAllAerialPass = useCallback(() => {
@@ -1017,11 +350,11 @@ export default function DVIRForm() {
     AERIAL_LIFT_ITEMS.forEach(item => {
       allPass[item.id] = "P";
     });
-    setAerialChecklist(allPass);
+    setForm(prev => ({ ...prev, aerialChecklist: allPass }));
   }, []);
   
   const handleClearAerialChecklist = useCallback(() => {
-    setAerialChecklist({});
+    setForm(prev => ({ ...prev, aerialChecklist: {} }));
   }, []);
 
   // Smart Defaults: Telemetry tracking
@@ -1041,22 +374,24 @@ export default function DVIRForm() {
 
   // Smart Defaults: Apply a single suggestion
   const handleApplySuggestion = useCallback((field: string, value: string | boolean) => {
-    const setters: Record<string, (val: string) => void> = {
-      truckNumber: setTruckNumber,
-      chipperNumber: setChipperNumber,
-      trailerNumber: setTrailerNumber,
-      truckGvwr: setTruckGvwr,
-      trailerChipperGvwr: setTrailerChipperGvwr,
-      medicalCardRequired: (val) => setMedicalCardRequired(val as "" | "YES" | "NO"),
-      hasMedicalCard: (val) => setHasMedicalCard(val as "" | "YES" | "NO"),
-      copyOfRegistration: (val) => setCopyOfRegistration(val as "" | "YES" | "NO"),
-      copyOfInsurance: (val) => setCopyOfInsurance(val as "" | "YES" | "NO"),
+    const stringValue = typeof value === 'boolean' ? (value ? 'YES' : 'NO') : String(value);
+    
+    // Map field to form state key
+    const fieldMap: Record<string, keyof DVIRFormState> = {
+      truckNumber: 'truckNumber',
+      chipperNumber: 'chipperNumber',
+      trailerNumber: 'trailerNumber',
+      truckGvwr: 'truckGvwr',
+      trailerChipperGvwr: 'trailerChipperGvwr',
+      medicalCardRequired: 'medicalCardRequired',
+      hasMedicalCard: 'hasMedicalCard',
+      copyOfRegistration: 'copyOfRegistration',
+      copyOfInsurance: 'copyOfInsurance',
     };
 
-    const setter = setters[field];
-    if (setter) {
-      const stringValue = typeof value === 'boolean' ? (value ? 'YES' : 'NO') : String(value);
-      setter(stringValue);
+    const formKey = fieldMap[field];
+    if (formKey) {
+      setForm(prev => ({ ...prev, [formKey]: stringValue }));
     }
   }, []);
 
@@ -1081,9 +416,15 @@ export default function DVIRForm() {
     value: ChecklistValue
   ) {
     if (section === "vehicle") {
-      setVehicleTrailerChecklist((prev) => ({ ...prev, [id]: value }));
+      setForm(prev => ({
+        ...prev,
+        vehicleTrailerChecklist: { ...prev.vehicleTrailerChecklist, [id]: value }
+      }));
     } else {
-      setAerialChecklist((prev) => ({ ...prev, [id]: value }));
+      setForm(prev => ({
+        ...prev,
+        aerialChecklist: { ...prev.aerialChecklist, [id]: value }
+      }));
     }
   }
 
@@ -1141,67 +482,79 @@ export default function DVIRForm() {
     setSubmitting(true);
 
     // 1. Truck number validation
-    if (!truckNumber.trim()) {
-      toast.error("Please select a truck number.");
+    if (!form.truckNumber.trim()) {
+      formToast.error("Validation Error", "Please select a truck number.");
+      trackFormSubmitError({ form_type: 'dvir', error_code: 'VALIDATION_FAILED', field_name: 'truckNumber' });
       setSubmitting(false);
       return;
     }
 
     // 2. Driver's name validation
-    if (!driversName.trim()) {
-      toast.error("Driver's name is required.");
+    if (!form.driversName.trim()) {
+      formToast.error("Validation Error", "Driver's name is required.");
+      trackFormSubmitError({ form_type: 'dvir', error_code: 'VALIDATION_FAILED', field_name: 'driversName' });
       setSubmitting(false);
       return;
     }
 
     // 3. Mileage format validation
-    if (!mileage.trim()) {
-      toast.error("Odometer reading is required.");
+    if (!form.mileage.trim()) {
+      formToast.error("Validation Error", "Odometer reading is required.");
+      trackFormSubmitError({ form_type: 'dvir', error_code: 'VALIDATION_FAILED', field_name: 'mileage' });
       setSubmitting(false);
       return;
     }
 
-    const mileageNum = parseInt(mileage.replace(/[^\d]/g, ''), 10);
+    const mileageNum = parseInt(form.mileage.replace(/[^\d]/g, ''), 10);
     if (isNaN(mileageNum)) {
-      toast.error("Please enter a valid numeric odometer reading.");
+      formToast.error("Validation Error", "Please enter a valid numeric odometer reading.");
+      trackFormSubmitError({ form_type: 'dvir', error_code: 'VALIDATION_FAILED', field_name: 'mileage' });
       setSubmitting(false);
       return;
     }
 
     // 4. Previous mileage validation
     if (previousMileage && mileageNum < previousMileage) {
-      toast.error(
+      formToast.error(
+        "Validation Error",
         `Odometer reading (${mileageNum.toLocaleString()} mi) cannot be lower than previous (${previousMileage.toLocaleString()} mi).`
       );
+      trackFormSubmitError({ form_type: 'dvir', error_code: 'VALIDATION_FAILED', field_name: 'mileage' });
       setSubmitting(false);
       return;
     }
 
     // 6. Oil dipstick photo validation
     if (!oilDipstickPhoto) {
-      toast.error("Oil dipstick photo is required.");
+      formToast.error("Validation Error", "Oil dipstick photo is required.");
+      trackFormSubmitError({ form_type: 'dvir', error_code: 'VALIDATION_FAILED', field_name: 'oilDipstickPhoto' });
       setSubmitting(false);
       return;
     }
 
     // 7. Vehicle checklist validation
-    const vehicleChecklistCount = Object.keys(vehicleTrailerChecklist).length;
+    const vehicleChecklistCount = Object.keys(form.vehicleTrailerChecklist).length;
     if (vehicleChecklistCount < VEHICLE_TRAILER_ITEMS.length) {
-      toast.error(
+      formToast.error(
+        "Validation Error",
         `Complete vehicle inspection: ${vehicleChecklistCount}/${VEHICLE_TRAILER_ITEMS.length} items checked.`
       );
+      trackFormSubmitError({ form_type: 'dvir', error_code: 'VALIDATION_FAILED', field_name: 'vehicleTrailerChecklist' });
       setSubmitting(false);
       return;
     }
 
     // 8. Signature validation
     if (!hasDriverSignature && !hasForemanSignature) {
-      toast.error("At least one signature (Driver or Foreman) is required.");
+      formToast.error("Validation Error", "At least one signature (Driver or Foreman) is required.");
+      trackFormSubmitError({ form_type: 'dvir', error_code: 'VALIDATION_FAILED', field_name: 'signature' });
       setSubmitting(false);
       return;
     }
 
     // All validation passed - proceed with submission
+    formToast.submitting("Submitting DVIR report...");
+
     try {
       // Note: setSubmitting(true) is already called at the start of handleSubmit
 
@@ -1213,13 +566,13 @@ export default function DVIRForm() {
 
       if (userError) {
         logger.error("Auth error in DVIR submit (getUser):", userError);
-        toast.error(`Unable to load user: ${userError.message}`);
+        formToast.error("Authentication Error", `Unable to load user: ${userError.message}`);
         return;
       }
 
       if (!user) {
         logger.error("No authenticated user in DVIR submit");
-        toast.error("You must be logged in to submit a DVIR.");
+        formToast.error("Authentication Error", "You must be logged in to submit a DVIR.");
         return;
       }
 
@@ -1231,13 +584,13 @@ export default function DVIRForm() {
 
       if (sessionError) {
         logger.error("Auth session error in DVIR submit (getSession):", sessionError);
-        toast.error("Unable to verify your session. Please refresh the page and try again.");
+        formToast.error("Session Error", "Unable to verify your session. Please refresh the page and try again.");
         return;
       }
 
       if (!session) {
         logger.warn("No active session in DVIR submit – auth still hydrating?");
-        toast.error("Your session is still loading. Please wait a moment and try again.");
+        formToast.error("Session Error", "Your session is still loading. Please wait a moment and try again.");
         return;
       }
 
@@ -1301,37 +654,37 @@ export default function DVIRForm() {
         created_at: new Date().toISOString(),
 
         // Section A
-        truck_number: truckNumber,
-        mileage,
-        chipper_number: chipperNumber || null,
-        trailer_number: trailerNumber || null,
-        truck_gvwr: truckGvwr || null,
-        trailer_chipper_gvwr: trailerChipperGvwr || null,
-        medical_card_required: medicalCardRequired || null,
-        drivers_name: driversName,
-        drivers_license_number: driversLicenseNumber || null,
-        drivers_license_class: driversLicenseClass || null,
-        drivers_license_exp: driversLicenseExp || null,
-        drivers_license_required: driversLicenseRequired || null,
-        has_medical_card: hasMedicalCard || null,
-        medical_card_exp: medicalCardExp || null,
-        copy_of_registration: copyOfRegistration || null,
-        copy_of_insurance: copyOfInsurance || null,
-        drivers_signature_section_a: driversSignatureSectionA || null,
+        truck_number: form.truckNumber,
+        mileage: form.mileage,
+        chipper_number: form.chipperNumber || null,
+        trailer_number: form.trailerNumber || null,
+        truck_gvwr: form.truckGvwr || null,
+        trailer_chipper_gvwr: form.trailerChipperGvwr || null,
+        medical_card_required: form.medicalCardRequired || null,
+        drivers_name: form.driversName,
+        drivers_license_number: form.driversLicenseNumber || null,
+        drivers_license_class: form.driversLicenseClass || null,
+        drivers_license_exp: form.driversLicenseExp || null,
+        drivers_license_required: form.driversLicenseRequired || null,
+        has_medical_card: form.hasMedicalCard || null,
+        medical_card_exp: form.medicalCardExp || null,
+        copy_of_registration: form.copyOfRegistration || null,
+        copy_of_insurance: form.copyOfInsurance || null,
+        drivers_signature_section_a: form.driversSignatureSectionA || null,
 
         // Checklists & notes
-        vehicle_trailer_checklist: vehicleTrailerChecklist,
-        notes: notes || null,
-        aerial_checklist: aerialChecklist,
-        aerial_notes: aerialNotes || null,
+        vehicle_trailer_checklist: form.vehicleTrailerChecklist,
+        notes: form.notes || null,
+        aerial_checklist: form.aerialChecklist,
+        aerial_notes: form.aerialNotes || null,
 
         // Signatures
         final_driver_signature: finalDriverSigPath,
         general_foreman_signature: generalForemanSigPath,
-        mechanic_truck_number: mechTruckNumber || null,
-        mechanic_date: mechanicDate || null,
-        deficiency_corrected: deficiencyCorrected || null,
-        mechanic_remarks: mechanicRemarks || null,
+        mechanic_truck_number: form.mechTruckNumber || null,
+        mechanic_date: form.mechanicDate || null,
+        deficiency_corrected: form.deficiencyCorrected || null,
+        mechanic_remarks: form.mechanicRemarks || null,
         mechanic_signature: mechanicSigPath,
         driver_approval_signature: driverApprovalSigPath,
 
@@ -1351,43 +704,43 @@ export default function DVIRForm() {
     // ✅ Do NOT send user_id – DB will default it to auth.uid()
 
     // Section A
-    truck_number: truckNumber,
-    mileage: Number(mileage),
-    chipper_number: chipperNumber || null,
-    trailer_number: trailerNumber || null,
-    truck_gvwr: truckGvwr || null,
-    trailer_chipper_gvwr: trailerChipperGvwr || null,
-    medical_card_required: medicalCardRequired || null,
-    drivers_name: driversName,
-    drivers_license_number: driversLicenseNumber || null,
-    drivers_license_class: driversLicenseClass || null,
-    drivers_license_exp: driversLicenseExp || null,
-    drivers_license_required: driversLicenseRequired || null,
-    has_medical_card: hasMedicalCard || null,
-    medical_card_exp: medicalCardExp || null,
-    copy_of_registration: copyOfRegistration || null,
-    copy_of_insurance: copyOfInsurance || null,
-    drivers_signature_section_a: driversSignatureSectionA || null,
+    truck_number: form.truckNumber,
+    mileage: Number(form.mileage),
+    chipper_number: form.chipperNumber || null,
+    trailer_number: form.trailerNumber || null,
+    truck_gvwr: form.truckGvwr || null,
+    trailer_chipper_gvwr: form.trailerChipperGvwr || null,
+    medical_card_required: form.medicalCardRequired || null,
+    drivers_name: form.driversName,
+    drivers_license_number: form.driversLicenseNumber || null,
+    drivers_license_class: form.driversLicenseClass || null,
+    drivers_license_exp: form.driversLicenseExp || null,
+    drivers_license_required: form.driversLicenseRequired || null,
+    has_medical_card: form.hasMedicalCard || null,
+    medical_card_exp: form.medicalCardExp || null,
+    copy_of_registration: form.copyOfRegistration || null,
+    copy_of_insurance: form.copyOfInsurance || null,
+    drivers_signature_section_a: form.driversSignatureSectionA || null,
 
     // Vehicle / Trailer checklist
-    vehicle_trailer_checklist: vehicleTrailerChecklist,
+    vehicle_trailer_checklist: form.vehicleTrailerChecklist,
 
     // Notes
-    notes: notes || null,
+    notes: form.notes || null,
 
     // Aerial lift
-    aerial_checklist: aerialChecklist,
-    aerial_notes: aerialNotes || null,
+    aerial_checklist: form.aerialChecklist,
+    aerial_notes: form.aerialNotes || null,
 
     // Final sign-off (store signature image paths)
     final_driver_signature: finalDriverSigPath,
     general_foreman_signature: generalForemanSigPath,
 
     // Mechanic section
-    mechanic_truck_number: mechTruckNumber || null,
-    mechanic_date: mechanicDate || null,
-    deficiency_corrected: deficiencyCorrected || null,
-    mechanic_remarks: mechanicRemarks || null,
+    mechanic_truck_number: form.mechTruckNumber || null,
+    mechanic_date: form.mechanicDate || null,
+    deficiency_corrected: form.deficiencyCorrected || null,
+    mechanic_remarks: form.mechanicRemarks || null,
     mechanic_signature: mechanicSigPath,
     driver_approval_signature: driverApprovalSigPath,
 
@@ -1401,7 +754,7 @@ export default function DVIRForm() {
 
       if (insertError) {
         logger.error("Supabase insert error (dvir_reports):", insertError);
-        toast.error(`Failed to save DVIR to the database: ${insertError.message}`);
+        formToast.error("Database Error", `Failed to save DVIR to the database: ${insertError.message}`);
         return;
       }
 
@@ -1417,68 +770,67 @@ export default function DVIRForm() {
       logger.info("DVIR row inserted successfully. Sending to Make webhook...");
 
       // 8) THEN send to Make.com webhook (non-blocking for DB save)
-      if (!CONFIG.make.dvirWebhook) {
-        throw new Error("DVIR webhook URL is not configured");
-      }
+      // NOTE: Webhook is optional - if not configured or fails, we still show success since data was saved
+      let webhookSuccess = false;
+      if (CONFIG.make.dvirWebhook) {
+        try {
+          const webhookRes = await fetch(
+            CONFIG.make.dvirWebhook,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(commonPayload),
+            }
+          );
 
-      const webhookRes = await fetch(
-        CONFIG.make.dvirWebhook,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(commonPayload),
+          if (!webhookRes.ok) {
+            const text = await webhookRes.text();
+            logger.error("Make webhook error:", text);
+          } else {
+            webhookSuccess = true;
+            logger.info("Make webhook call succeeded.");
+          }
+        } catch (webhookErr) {
+          logger.error("Make webhook fetch error:", webhookErr);
         }
-      );
-
-      if (!webhookRes.ok) {
-        const text = await webhookRes.text();
-        logger.error("Make webhook error:", text);
-        // Don't undo the successful DB insert, just warn the user
-        toast.warning(
-          "DVIR was saved, but there was an issue sending data to the automation webhook."
-        );
-        return;
+      } else {
+        logger.warn("DVIR webhook URL is not configured - skipping webhook (data was saved to database)");
       }
 
-      logger.info("Make webhook call succeeded.");
+      // Log if webhook had issues but don't fail the submission
+      if (!webhookSuccess && CONFIG.make.dvirWebhook) {
+        logger.warn("DVIR saved but webhook call failed - data is safe in database");
+      }
 
-      // ✅ Success – show message & reset form
-      toast.success("DVIR submitted successfully.");
+      // ✅ Telemetry: track successful submission with duration
+      trackFormSubmitted({
+        form_type: 'dvir',
+        duration_seconds: formTimer.current.getDuration(),
+      });
+
+      // ✅ Dismiss loading toast before showing celebration
+      formToast.dismiss();
+
+      // ✅ Clear draft after successful submission
+      clearDraft();
+      markAsSaved();
+
+      // ✅ Check compliance status and get remaining forms for nudge
+      const { allComplete, remaining } = await checkAndCelebrate('dvir');
+      setRemainingForms(remaining);
+      
+      // If all complete, the full celebration will show via celebrationProps
+      // Otherwise show the individual form celebration with remaining forms nudge
+      if (!allComplete) {
+        setShowCelebration(true);
+      }
+      
       window.scrollTo({ top: 0, behavior: "smooth" });
 
-      // Reset Section A
-      setTruckNumber("");
-      setMileage("");
-      setChipperNumber("");
-      setTrailerNumber("");
-      setTruckGvwr("");
-      setTrailerChipperGvwr("");
-      setMedicalCardRequired("");
-      setDriversName("");
-      setDriversLicenseNumber("");
-      setDriversLicenseClass("");
-      setDriversLicenseExp("");
-      setDriversLicenseRequired("");
-      setHasMedicalCard("");
-      setMedicalCardExp("");
-      setCopyOfRegistration("");
-      setCopyOfInsurance("");
-      setDriversSignatureSectionA("");
+      // Reset form to initial state
+      setForm(createInitialDVIRFormState());
 
-      // Reset checklists & notes
-      setVehicleTrailerChecklist({});
-      setNotes("");
-      setAerialChecklist({});
-      setAerialNotes("");
-
-      // Reset mechanic section
-      setMechTruckNumber("");
-      setMechanicDate("");
-      setDeficiencyCorrected("");
-      setMechanicRemarks("");
-      setIsMechanicOpen(false);
-
-      // Reset photos
+      // Reset photos (can't be persisted anyway)
       setOilDipstickPhoto(null);
       setExtraPhotos({});
 
@@ -1491,13 +843,25 @@ export default function DVIRForm() {
       // Reset signature tracking state
       setHasDriverSignature(false);
       setHasForemanSignature(false);
+      
+      // Reset step tracking
+      setCurrentStep(1);
+      setCompletedSteps(new Set());
     } catch (err: unknown) {
       logger.error("Unexpected error in DVIR handleSubmit:", err);
       const message =
         err instanceof Error
           ? err.message
           : "Something went wrong submitting the DVIR (unexpected error).";
-      toast.error(message);
+      formToast.error("Submission Failed", message, {
+        onRetry: () => handleSubmit({ preventDefault: () => {} } as React.FormEvent),
+      });
+      
+      // Telemetry: track server/network error
+      trackFormSubmitError({
+        form_type: 'dvir',
+        error_code: err instanceof Error && err.message.includes('network') ? 'NETWORK_ERROR' : 'SERVER_ERROR',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -1506,7 +870,11 @@ export default function DVIRForm() {
   return (
     <DashboardLayout title="Daily Vehicle Inspection (DVIR)">
       {/* Progress indicator - floating card at top */}
-      <FormProgress steps={progressSteps} />
+      <FormProgress 
+        steps={progressSteps} 
+        lastSaved={lastSaved}
+        hasUnsavedChanges={hasUnsavedChanges}
+      />
       
       <div className="max-w-4xl mx-auto pt-6 sm:pt-8">
         {/* Info banner */}
@@ -1557,13 +925,13 @@ export default function DVIRForm() {
                   SELECT TRUCK *
                 </label>
                 <select
-                  value={truckNumber}
-                  onChange={(e) => setTruckNumber(e.target.value)}
+                  value={form.truckNumber}
+                  onChange={(e) => setForm(prev => ({ ...prev, truckNumber: e.target.value }))}
                   className={cn(
                     "w-full rounded-xl bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900",
                     "border px-4 py-3 text-sm text-white font-medium",
                     "focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all",
-                    truckNumber ? "border-emerald-500/40" : "border-gray-700"
+                    form.truckNumber ? "border-emerald-500/40" : "border-gray-700"
                   )}
                   title="Select truck number"
                 >
@@ -1574,13 +942,13 @@ export default function DVIRForm() {
                     </option>
                   ))}
                 </select>
-                {truckNumber && (
+                {form.truckNumber && (
                   <motion.p 
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     className="text-[10px] text-emerald-400/70 mt-1"
                   >
-                    ✓ Truck {truckNumber} selected
+                    ✓ Truck {form.truckNumber} selected
                   </motion.p>
                 )}
               </div>
@@ -1588,9 +956,9 @@ export default function DVIRForm() {
               {/* Enhanced Mileage Input */}
               <div className="sm:col-span-1">
                 <MileageInput
-                  value={mileage}
-                  onChange={setMileage}
-                  truckNumber={truckNumber}
+                  value={form.mileage}
+                  onChange={(val) => setForm(prev => ({ ...prev, mileage: val }))}
+                  truckNumber={form.truckNumber}
                   previousMileage={previousMileage}
                 />
               </div>
@@ -1604,8 +972,8 @@ export default function DVIRForm() {
                   CHIPPER NUMBER
                 </label>
                 <select
-                  value={chipperNumber}
-                  onChange={(e) => setChipperNumber(e.target.value)}
+                  value={form.chipperNumber}
+                  onChange={(e) => setForm(prev => ({ ...prev, chipperNumber: e.target.value }))}
                   className="w-full rounded-xl bg-black/70 border border-gray-700 px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all"
                   title="Select chipper number"
                 >
@@ -1624,8 +992,8 @@ export default function DVIRForm() {
                   TRAILER NUMBER
                 </label>
                 <select
-                  value={trailerNumber}
-                  onChange={(e) => setTrailerNumber(e.target.value)}
+                  value={form.trailerNumber}
+                  onChange={(e) => setForm(prev => ({ ...prev, trailerNumber: e.target.value }))}
                   className="w-full rounded-xl bg-black/70 border border-gray-700 px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all"
                   title="Select trailer number"
                 >
@@ -1643,8 +1011,8 @@ export default function DVIRForm() {
                   TRUCK GVWR
                 </label>
                 <input
-                  value={truckGvwr}
-                  onChange={(e) => setTruckGvwr(e.target.value)}
+                  value={form.truckGvwr}
+                  onChange={(e) => setForm(prev => ({ ...prev, truckGvwr: e.target.value }))}
                   placeholder="e.g., 26,000 lbs"
                   className="w-full rounded-xl bg-black/70 border border-gray-700 px-3 py-2.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all"
                 />
@@ -1655,8 +1023,8 @@ export default function DVIRForm() {
                   TRAILER / CHIPPER GVWR
                 </label>
                 <input
-                  value={trailerChipperGvwr}
-                  onChange={(e) => setTrailerChipperGvwr(e.target.value)}
+                  value={form.trailerChipperGvwr}
+                  onChange={(e) => setForm(prev => ({ ...prev, trailerChipperGvwr: e.target.value }))}
                   placeholder="e.g., 14,000 lbs"
                   className="w-full rounded-xl bg-black/70 border border-gray-700 px-3 py-2.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all"
                 />
@@ -1674,8 +1042,8 @@ export default function DVIRForm() {
                     type="radio"
                     name="medical_card_required"
                     value="YES"
-                    checked={medicalCardRequired === "YES"}
-                    onChange={() => setMedicalCardRequired("YES")}
+                    checked={form.medicalCardRequired === "YES"}
+                    onChange={() => setForm(prev => ({ ...prev, medicalCardRequired: "YES" }))}
                     className="w-4 h-4 accent-emerald-500"
                   />
                   YES
@@ -1685,8 +1053,8 @@ export default function DVIRForm() {
                     type="radio"
                     name="medical_card_required"
                     value="NO"
-                    checked={medicalCardRequired === "NO"}
-                    onChange={() => setMedicalCardRequired("NO")}
+                    checked={form.medicalCardRequired === "NO"}
+                    onChange={() => setForm(prev => ({ ...prev, medicalCardRequired: "NO" }))}
                     className="w-4 h-4 accent-emerald-500"
                   />
                   NO
@@ -1702,8 +1070,8 @@ export default function DVIRForm() {
                 </label>
                 <input
                   id="driversName"
-                  value={driversName}
-                  onChange={(e) => setDriversName(e.target.value)}
+                  value={form.driversName}
+                  onChange={(e) => setForm(prev => ({ ...prev, driversName: e.target.value }))}
                   placeholder="Enter full name"
                   className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-sm text-white"
                 />
@@ -1715,8 +1083,8 @@ export default function DVIRForm() {
                 </label>
                 <input
                   id="driversLicenseNumber"
-                  value={driversLicenseNumber}
-                  onChange={(e) => setDriversLicenseNumber(e.target.value)}
+                  value={form.driversLicenseNumber}
+                  onChange={(e) => setForm(prev => ({ ...prev, driversLicenseNumber: e.target.value }))}
                   placeholder="Enter license number"
                   className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-sm text-white"
                 />
@@ -1728,8 +1096,8 @@ export default function DVIRForm() {
                 </label>
                 <input
                   id="driversLicenseClass"
-                  value={driversLicenseClass}
-                  onChange={(e) => setDriversLicenseClass(e.target.value)}
+                  value={form.driversLicenseClass}
+                  onChange={(e) => setForm(prev => ({ ...prev, driversLicenseClass: e.target.value }))}
                   placeholder="e.g., Class A, B, C"
                   className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-sm text-white"
                 />
@@ -1741,8 +1109,8 @@ export default function DVIRForm() {
                 </label>
                 <input
                   id="driversLicenseExp"
-                  value={driversLicenseExp}
-                  onChange={(e) => setDriversLicenseExp(e.target.value)}
+                  value={form.driversLicenseExp}
+                  onChange={(e) => setForm(prev => ({ ...prev, driversLicenseExp: e.target.value }))}
                   placeholder="MM/DD/YYYY"
                   className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-sm text-white"
                 />
@@ -1761,8 +1129,8 @@ export default function DVIRForm() {
                       type="radio"
                       name="drivers_license_required"
                       value="YES"
-                      checked={driversLicenseRequired === "YES"}
-                      onChange={() => setDriversLicenseRequired("YES")}
+                      checked={form.driversLicenseRequired === "YES"}
+                      onChange={() => setForm(prev => ({ ...prev, driversLicenseRequired: "YES" }))}
                       className="w-4 h-4 accent-emerald-500"
                     />
                     YES
@@ -1772,8 +1140,8 @@ export default function DVIRForm() {
                       type="radio"
                       name="drivers_license_required"
                       value="NO"
-                      checked={driversLicenseRequired === "NO"}
-                      onChange={() => setDriversLicenseRequired("NO")}
+                      checked={form.driversLicenseRequired === "NO"}
+                      onChange={() => setForm(prev => ({ ...prev, driversLicenseRequired: "NO" }))}
                       className="w-4 h-4 accent-emerald-500"
                     />
                     NO
@@ -1791,8 +1159,8 @@ export default function DVIRForm() {
                       type="radio"
                       name="has_medical_card"
                       value="YES"
-                      checked={hasMedicalCard === "YES"}
-                      onChange={() => setHasMedicalCard("YES")}
+                      checked={form.hasMedicalCard === "YES"}
+                      onChange={() => setForm(prev => ({ ...prev, hasMedicalCard: "YES" }))}
                       className="w-4 h-4 accent-emerald-500"
                     />
                     YES
@@ -1802,8 +1170,8 @@ export default function DVIRForm() {
                       type="radio"
                       name="has_medical_card"
                       value="NO"
-                      checked={hasMedicalCard === "NO"}
-                      onChange={() => setHasMedicalCard("NO")}
+                      checked={form.hasMedicalCard === "NO"}
+                      onChange={() => setForm(prev => ({ ...prev, hasMedicalCard: "NO" }))}
                       className="w-4 h-4 accent-emerald-500"
                     />
                     NO
@@ -1816,8 +1184,8 @@ export default function DVIRForm() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <DateField
                 label="MEDICAL CARD EXPIRATION (MM/DD/YYYY)"
-                value={medicalCardExp}
-                onValueChange={setMedicalCardExp}
+                value={form.medicalCardExp}
+                onValueChange={(val) => setForm(prev => ({ ...prev, medicalCardExp: val }))}
                 helperText="Required for DOT compliance"
                 containerClassName="text-white"
                 labelClassName="text-xs tracking-wide text-gray-300"
@@ -1834,8 +1202,8 @@ export default function DVIRForm() {
                       type="radio"
                       name="copy_registration"
                       value="YES"
-                      checked={copyOfRegistration === "YES"}
-                      onChange={() => setCopyOfRegistration("YES")}
+                      checked={form.copyOfRegistration === "YES"}
+                      onChange={() => setForm(prev => ({ ...prev, copyOfRegistration: "YES" }))}
                       className="w-4 h-4 accent-emerald-500"
                     />
                     YES
@@ -1845,8 +1213,8 @@ export default function DVIRForm() {
                       type="radio"
                       name="copy_registration"
                       value="NO"
-                      checked={copyOfRegistration === "NO"}
-                      onChange={() => setCopyOfRegistration("NO")}
+                      checked={form.copyOfRegistration === "NO"}
+                      onChange={() => setForm(prev => ({ ...prev, copyOfRegistration: "NO" }))}
                       className="w-4 h-4 accent-emerald-500"
                     />
                     NO
@@ -1864,8 +1232,8 @@ export default function DVIRForm() {
                       type="radio"
                       name="copy_insurance"
                       value="YES"
-                      checked={copyOfInsurance === "YES"}
-                      onChange={() => setCopyOfInsurance("YES")}
+                      checked={form.copyOfInsurance === "YES"}
+                      onChange={() => setForm(prev => ({ ...prev, copyOfInsurance: "YES" }))}
                       className="w-4 h-4 accent-emerald-500"
                     />
                     YES
@@ -1875,8 +1243,8 @@ export default function DVIRForm() {
                       type="radio"
                       name="copy_insurance"
                       value="NO"
-                      checked={copyOfInsurance === "NO"}
-                      onChange={() => setCopyOfInsurance("NO")}
+                      checked={form.copyOfInsurance === "NO"}
+                      onChange={() => setForm(prev => ({ ...prev, copyOfInsurance: "NO" }))}
                       className="w-4 h-4 accent-emerald-500"
                     />
                     NO
@@ -1890,10 +1258,8 @@ export default function DVIRForm() {
                 </label>
                 <input
                   id="driversSignatureSectionA"
-                  value={driversSignatureSectionA}
-                  onChange={(e) =>
-                    setDriversSignatureSectionA(e.target.value)
-                  }
+                  value={form.driversSignatureSectionA}
+                  onChange={(e) => setForm(prev => ({ ...prev, driversSignatureSectionA: e.target.value }))}
                   placeholder="Type your full name"
                   className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-sm text-white"
                 />
@@ -1911,13 +1277,13 @@ export default function DVIRForm() {
             <ChecklistQuickActions
               onMarkAllPass={handleMarkAllVehiclePass}
               onClearAll={handleClearVehicleChecklist}
-              checkedCount={Object.keys(vehicleTrailerChecklist).length}
+              checkedCount={Object.keys(form.vehicleTrailerChecklist).length}
               totalCount={VEHICLE_TRAILER_ITEMS.length}
             />
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {VEHICLE_TRAILER_ITEMS.map((item) => {
-                const value = vehicleTrailerChecklist[item.id] || "";
+                const value = form.vehicleTrailerChecklist[item.id] || "";
                 return (
                   <div
                     key={item.id}
@@ -1984,6 +1350,7 @@ export default function DVIRForm() {
               ref={oilInputRef}
               type="file"
               accept="image/*"
+              capture="environment"
               aria-label="Upload oil dipstick photo"
               className="sr-only"
               onChange={(e) => {
@@ -1995,6 +1362,7 @@ export default function DVIRForm() {
               ref={tireInputRef}
               type="file"
               accept="image/*"
+              capture="environment"
               aria-label="Upload tire tread photo"
               className="sr-only"
               onChange={(e) => {
@@ -2006,6 +1374,7 @@ export default function DVIRForm() {
               ref={coolantInputRef}
               type="file"
               accept="image/*"
+              capture="environment"
               aria-label="Upload coolant level photo"
               className="sr-only"
               onChange={(e) => {
@@ -2017,6 +1386,7 @@ export default function DVIRForm() {
               ref={damageInputRef}
               type="file"
               accept="image/*"
+              capture="environment"
               aria-label="Upload vehicle damage photo"
               className="sr-only"
               onChange={(e) => {
@@ -2028,6 +1398,7 @@ export default function DVIRForm() {
               ref={mileageInputRef}
               type="file"
               accept="image/*"
+              capture="environment"
               aria-label="Upload detail clean truck photo"
               className="sr-only"
               onChange={(e) => {
@@ -2080,14 +1451,24 @@ export default function DVIRForm() {
             badge="Documentation"
           >
             <label htmlFor="dvirNotes" className="sr-only">Notes and deficiencies</label>
-            <textarea
-              id="dvirNotes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={6}
-              className="w-full rounded-2xl bg-black/60 border border-white/10 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
-              placeholder="Example: Right tail light not functioning, noted during inspection."
-            />
+            <div className="relative">
+              <textarea
+                id="dvirNotes"
+                value={form.notes}
+                onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
+                rows={6}
+                className="w-full rounded-2xl bg-black/60 border border-white/10 px-4 py-3 pr-14 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
+                placeholder="Example: Right tail light not functioning, noted during inspection."
+              />
+              <div className="absolute top-3 right-3">
+                <VoiceInputButton
+                  onTranscript={(text) => setForm(prev => ({ ...prev, notes: text }))}
+                  currentValue={form.notes}
+                  appendMode={true}
+                  size="md"
+                />
+              </div>
+            </div>
           </SectionCard>
 
           {/* Aerial Lift Section */}
@@ -2100,13 +1481,13 @@ export default function DVIRForm() {
             <ChecklistQuickActions
               onMarkAllPass={handleMarkAllAerialPass}
               onClearAll={handleClearAerialChecklist}
-              checkedCount={Object.keys(aerialChecklist).length}
+              checkedCount={Object.keys(form.aerialChecklist).length}
               totalCount={AERIAL_LIFT_ITEMS.length}
             />
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {AERIAL_LIFT_ITEMS.map((item) => {
-                const value = aerialChecklist[item.id] || "";
+                const value = form.aerialChecklist[item.id] || "";
                 return (
                   <div
                     key={item.id}
@@ -2163,14 +1544,24 @@ export default function DVIRForm() {
 
             <div>
               <label htmlFor="aerialNotes" className="block text-xs text-white/70 mb-1">NOTES</label>
-              <textarea
-                id="aerialNotes"
-                value={aerialNotes}
-                onChange={(e) => setAerialNotes(e.target.value)}
-                rows={3}
-                placeholder="Enter any aerial lift notes..."
-                className="w-full rounded-2xl bg-black/60 border border-white/10 px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
-              />
+              <div className="relative">
+                <textarea
+                  id="aerialNotes"
+                  value={form.aerialNotes}
+                  onChange={(e) => setForm(prev => ({ ...prev, aerialNotes: e.target.value }))}
+                  rows={3}
+                  placeholder="Enter any aerial lift notes..."
+                  className="w-full rounded-2xl bg-black/60 border border-white/10 px-4 py-2 pr-14 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
+                />
+                <div className="absolute top-2 right-3">
+                  <VoiceInputButton
+                    onTranscript={(text) => setForm(prev => ({ ...prev, aerialNotes: text }))}
+                    currentValue={form.aerialNotes}
+                    appendMode={true}
+                    size="sm"
+                  />
+                </div>
+              </div>
             </div>
           </SectionCard>
 
@@ -2202,15 +1593,15 @@ export default function DVIRForm() {
           >
             <button
               type="button"
-              onClick={() => setIsMechanicOpen((prev) => !prev)}
-              aria-label={isMechanicOpen ? "Hide mechanic form section" : "Show mechanic form section"}
+              onClick={() => setForm(prev => ({ ...prev, isMechanicOpen: !prev.isMechanicOpen }))}
+              aria-label={form.isMechanicOpen ? "Hide mechanic form section" : "Show mechanic form section"}
               className="w-full flex items-center justify-between rounded-2xl border border-white/5 bg-white/5 px-4 py-3 text-sm text-white/80 transition hover:border-emerald-400/30"
             >
-              <span>{isMechanicOpen ? "Hide mechanic form" : "Open mechanic form"}</span>
-              <span className="text-xs text-white/60" aria-hidden="true">{isMechanicOpen ? "▲" : "▼"}</span>
+              <span>{form.isMechanicOpen ? "Hide mechanic form" : "Open mechanic form"}</span>
+              <span className="text-xs text-white/60" aria-hidden="true">{form.isMechanicOpen ? "▲" : "▼"}</span>
             </button>
 
-            {isMechanicOpen && (
+            {form.isMechanicOpen && (
               <div id="mechanic-form-section" className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
@@ -2219,8 +1610,8 @@ export default function DVIRForm() {
                     </label>
                     <select
                       id="mechTruckNumber"
-                      value={mechTruckNumber}
-                      onChange={(e) => setMechTruckNumber(e.target.value)}
+                      value={form.mechTruckNumber}
+                      onChange={(e) => setForm(prev => ({ ...prev, mechTruckNumber: e.target.value }))}
                       className="w-full rounded-2xl bg-black/60 border border-white/10 px-3 py-2 text-sm text-white"
                     >
                       <option value="">Select Truck Number</option>
@@ -2237,8 +1628,8 @@ export default function DVIRForm() {
                     </label>
                     <input
                       id="mechanicDate"
-                      value={mechanicDate}
-                      onChange={(e) => setMechanicDate(e.target.value)}
+                      value={form.mechanicDate}
+                      onChange={(e) => setForm(prev => ({ ...prev, mechanicDate: e.target.value }))}
                       placeholder="MM/DD/YYYY"
                       className="w-full rounded-2xl bg-black/60 border border-white/10 px-3 py-2 text-sm text-white"
                     />
@@ -2251,8 +1642,8 @@ export default function DVIRForm() {
                   </label>
                   <input
                     id="deficiencyCorrected"
-                    value={deficiencyCorrected}
-                    onChange={(e) => setDeficiencyCorrected(e.target.value)}
+                    value={form.deficiencyCorrected}
+                    onChange={(e) => setForm(prev => ({ ...prev, deficiencyCorrected: e.target.value }))}
                     placeholder="Describe corrected deficiencies"
                     className="w-full rounded-2xl bg-black/60 border border-white/10 px-3 py-2 text-sm text-white"
                   />
@@ -2264,8 +1655,8 @@ export default function DVIRForm() {
                   </label>
                   <textarea
                     id="mechanicRemarks"
-                    value={mechanicRemarks}
-                    onChange={(e) => setMechanicRemarks(e.target.value)}
+                    value={form.mechanicRemarks}
+                    onChange={(e) => setForm(prev => ({ ...prev, mechanicRemarks: e.target.value }))}
                     rows={2}
                     placeholder="Enter mechanic remarks..."
                     className="w-full rounded-2xl bg-black/60 border border-white/10 px-3 py-2 text-sm text-white"
@@ -2301,6 +1692,31 @@ export default function DVIRForm() {
           </SectionCard>
         </form>
       </div>
+      
+      {/* Draft Recovery Modal */}
+      <DraftRecoveryModal
+        isOpen={showDraftModal}
+        draft={draftData}
+        formType="dvir"
+        onRestore={handleRestoreDraft}
+        onDiscard={handleDismissDraft}
+      />
+      
+      {/* Success Celebration with Remaining Forms Nudge */}
+      <FormSuccessCelebration
+        isVisible={showCelebration}
+        formType="dvir"
+        onContinue={() => setShowCelebration(false)}
+        stats={{
+          checklistItemsCount: Object.keys(form.vehicleTrailerChecklist).length + 
+            Object.keys(form.aerialChecklist).length,
+        }}
+        remainingForms={remainingForms}
+        userName={fullName || undefined}
+      />
+      
+      {/* Full Compliance Celebration (when all 3 forms complete) */}
+      <FullCelebration {...celebrationProps} />
     </DashboardLayout>
   );
 }

@@ -1,8 +1,11 @@
 import type { ComponentType } from "react";
-import { MapPin, Loader2 } from "lucide-react";
+import { MapPin, Loader2, CheckCircle2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "../../../lib/utils";
 import { DateField, TimeField } from "../GlassyPickers";
 import { LocationInputField } from "../LocationInputField";
+import { ContactTemplatePicker } from "../ContactTemplatePicker";
+import { SavedLocationPicker } from "../SavedLocationPicker";
 
 type JobInfoFields = {
   jobDate: string;
@@ -25,6 +28,25 @@ interface StepJobInfoProps {
   isLoading?: boolean;
 }
 
+// Animated checkmark for completed fields
+function FieldCheckmark({ visible }: { visible: boolean }) {
+  return (
+    <AnimatePresence>
+      {visible && (
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0, opacity: 0 }}
+          transition={{ type: "spring", stiffness: 400, damping: 20 }}
+          className="absolute right-3 top-1/2 -translate-y-1/2"
+        >
+          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 interface InputFieldProps {
   label: string;
   value: string;
@@ -34,6 +56,7 @@ interface InputFieldProps {
   icon?: ComponentType<{ className?: string }>;
   required?: boolean;
   className?: string;
+  showCheckmark?: boolean;
 }
 
 function InputField({
@@ -45,16 +68,34 @@ function InputField({
   icon: Icon,
   required,
   className,
+  showCheckmark = true,
 }: InputFieldProps) {
+  const isFilled = value?.trim().length > 0;
+  
   return (
     <div className={className}>
-      <label className="block text-[11px] font-medium text-white/70 mb-1 uppercase tracking-wide">
-        {label}
-        {required && <span className="text-emerald-400 ml-0.5">*</span>}
+      <label className="flex items-center gap-1 text-[10px] sm:text-[11px] font-medium text-white/70 mb-0.5 sm:mb-1 uppercase tracking-wide">
+        <span>
+          {label}
+          {required && <span className="text-emerald-400 ml-0.5">*</span>}
+        </span>
+        {/* Mini checkmark next to label when filled */}
+        {isFilled && showCheckmark && (
+          <motion.span
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="text-emerald-400"
+          >
+            <CheckCircle2 className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+          </motion.span>
+        )}
       </label>
       <div className="relative">
         {Icon && (
-          <Icon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-500/50" />
+          <Icon className={cn(
+            "absolute left-2.5 sm:left-3 top-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 -translate-y-1/2 transition-colors",
+            isFilled ? "text-emerald-500" : "text-emerald-500/50"
+          )} />
         )}
         <input
           type={type}
@@ -63,10 +104,13 @@ function InputField({
           placeholder={placeholder}
           required={required}
           className={cn(
-            "w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2.5 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 focus:border-emerald-500/30 transition-all",
-            Icon ? "pl-9" : ""
+            "w-full rounded-lg border bg-black/50 px-2.5 py-2 sm:px-3 sm:py-2.5 text-xs sm:text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 focus:border-emerald-500/30 transition-all",
+            Icon ? "pl-8 sm:pl-9" : "",
+            isFilled && showCheckmark ? "pr-8 sm:pr-9 border-emerald-500/30" : "border-white/10"
           )}
         />
+        {/* Checkmark inside input when filled */}
+        {showCheckmark && <FieldCheckmark visible={isFilled} />}
       </div>
     </div>
   );
@@ -74,20 +118,20 @@ function InputField({
 
 export function StepJobInfo({ form, onInputChange, isLoading }: StepJobInfoProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {isLoading && (
-        <div className="flex items-center gap-2 text-amber-200 text-xs p-3 rounded-lg border border-amber-500/30 bg-amber-500/10">
-          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        <div className="flex items-center gap-2 text-amber-200 text-[10px] sm:text-xs p-2 sm:p-3 rounded-lg border border-amber-500/30 bg-amber-500/10">
+          <Loader2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 animate-spin" />
           Loading existing data...
         </div>
       )}
 
       {/* Schedule */}
-      <div className="space-y-3">
-        <p className="text-xs font-medium text-white/50 uppercase tracking-wider">
+      <div className="space-y-2 sm:space-y-3">
+        <p className="text-[10px] sm:text-xs font-medium text-white/50 uppercase tracking-wider">
           Schedule
         </p>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-2 sm:gap-3 sm:grid-cols-3">
           <DateField
             label="Job Date"
             value={form.jobDate || ""}
@@ -111,11 +155,28 @@ export function StepJobInfo({ form, onInputChange, isLoading }: StepJobInfoProps
       </div>
 
       {/* Location */}
-      <div className="space-y-3 pt-2">
-        <p className="text-xs font-medium text-white/50 uppercase tracking-wider">
+      <div className="space-y-2 sm:space-y-3 pt-1 sm:pt-2">
+        <p className="text-[10px] sm:text-xs font-medium text-white/50 uppercase tracking-wider">
           Location
         </p>
-        <div className="grid gap-3 sm:grid-cols-2">
+        
+        {/* Saved Locations Quick-Pick */}
+        <SavedLocationPicker
+          currentValues={{
+            workLocation: form.workLocation,
+            nearestHospital: form.nearestHospital,
+            nearestClinic: form.nearestClinic,
+            circuitNumber: form.circuitNumber,
+          }}
+          onApply={(values) => {
+            onInputChange("workLocation", values.workLocation);
+            onInputChange("nearestHospital", values.nearestHospital);
+            onInputChange("nearestClinic", values.nearestClinic);
+            onInputChange("circuitNumber", values.circuitNumber);
+          }}
+        />
+
+        <div className="grid gap-2 sm:gap-3 sm:grid-cols-2">
           <InputField
             label="Work Location"
             icon={MapPin}
@@ -131,7 +192,7 @@ export function StepJobInfo({ form, onInputChange, isLoading }: StepJobInfoProps
             placeholder="Circuit number"
           />
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-2 sm:gap-3 sm:grid-cols-2">
           <LocationInputField
             label="Nearest Hospital"
             value={form.nearestHospital}
@@ -150,11 +211,28 @@ export function StepJobInfo({ form, onInputChange, isLoading }: StepJobInfoProps
       </div>
 
       {/* Emergency Contacts */}
-      <div className="space-y-3 pt-2">
-        <p className="text-xs font-medium text-white/50 uppercase tracking-wider">
+      <div className="space-y-2 sm:space-y-3 pt-1 sm:pt-2">
+        <p className="text-[10px] sm:text-xs font-medium text-white/50 uppercase tracking-wider">
           Emergency Contacts
         </p>
-        <div className="grid gap-3 sm:grid-cols-2">
+        
+        {/* Contact Template Quick-Fill */}
+        <ContactTemplatePicker
+          currentContacts={{
+            oc: form.ocContact,
+            doc: form.docContact,
+            gf: form.gfContact,
+            safety: form.safetyContact,
+          }}
+          onApply={(contacts) => {
+            onInputChange("ocContact", contacts.oc);
+            onInputChange("docContact", contacts.doc);
+            onInputChange("gfContact", contacts.gf);
+            onInputChange("safetyContact", contacts.safety);
+          }}
+        />
+
+        <div className="grid gap-2 sm:gap-3 sm:grid-cols-2">
           <InputField
             label="OC Contact"
             type="tel"

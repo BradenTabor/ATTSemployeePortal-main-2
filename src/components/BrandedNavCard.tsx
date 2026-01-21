@@ -1,9 +1,9 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { cn } from "../lib/utils";
-import { ReactNode, useMemo, useState } from "react";
+import { ReactNode, useMemo, useState, useCallback, useRef } from "react";
 import { getDeviceCapabilities } from "../lib/mobilePerf";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Pin, PinOff, Star } from "lucide-react";
 
 type CardVariant = "emerald" | "gold" | "ember" | "purple" | "redwhite" | "bluewhite";
 
@@ -15,6 +15,14 @@ interface BrandedNavCardProps {
   variant?: CardVariant;
   /** Mark as coming soon - disables link and shows badge */
   comingSoon?: boolean;
+  /** Unique ID for pinning (required for pin functionality) */
+  itemId?: string;
+  /** Whether this item is currently pinned */
+  isPinned?: boolean;
+  /** Whether user can pin more items (not at max) */
+  canPinMore?: boolean;
+  /** Callback when user pins/unpins this item */
+  onTogglePin?: (itemId: string) => void;
 }
 
 // Premium gradient styles with enhanced icon treatment
@@ -167,9 +175,18 @@ export default function BrandedNavCard({
   to,
   variant = "emerald",
   comingSoon = false,
+  itemId,
+  isPinned = false,
+  canPinMore = true,
+  onTogglePin,
 }: BrandedNavCardProps) {
   const selected = VARIANT_STYLES[variant] ?? VARIANT_STYLES.emerald;
   const [isHovered, setIsHovered] = useState(false);
+  const [showPinOverlay, setShowPinOverlay] = useState(false);
+  
+  // Use ref for timer ID to avoid race condition with async state updates
+  // This provides immediate, synchronous access to the latest value
+  const pressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // Get device capabilities (cached)
   const caps = useMemo(() => getDeviceCapabilities(), []);
@@ -177,11 +194,47 @@ export default function BrandedNavCard({
   const canAnimate = !caps.prefersReducedMotion;
   const canHover = !caps.isMobile && canAnimate && !comingSoon;
   const isMobile = caps.isMobile;
+  const hasPinSupport = !!itemId && !!onTogglePin;
+
+  // Long press detection for mobile pinning
+  const handleTouchStart = useCallback(() => {
+    if (!hasPinSupport) return;
+    const timer = setTimeout(() => {
+      setShowPinOverlay(true);
+      if ('vibrate' in navigator) navigator.vibrate(10);
+    }, 500);
+    pressTimerRef.current = timer;
+  }, [hasPinSupport]);
+
+  const handleTouchEnd = useCallback(() => {
+    if (pressTimerRef.current) {
+      clearTimeout(pressTimerRef.current);
+      pressTimerRef.current = null;
+    }
+  }, []);
+
+  // Right-click for desktop pinning
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    if (!hasPinSupport) return;
+    e.preventDefault();
+    setShowPinOverlay(true);
+  }, [hasPinSupport]);
+
+  // Handle pin toggle
+  const handleTogglePin = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (itemId && onTogglePin) {
+      onTogglePin(itemId);
+      if ('vibrate' in navigator) navigator.vibrate(5);
+    }
+    setShowPinOverlay(false);
+  }, [itemId, onTogglePin]);
 
   // Common event handlers
   const mouseHandlers = {
     onMouseEnter: () => canHover && setIsHovered(true),
-    onMouseLeave: () => setIsHovered(false),
+    onMouseLeave: () => { setIsHovered(false); setShowPinOverlay(false); },
   };
 
   // Render content
@@ -243,9 +296,9 @@ export default function BrandedNavCard({
           {/* Inner card with gradient background - RESTORED ORIGINAL STYLING */}
           <div
             className={cn(
-              "relative h-full w-full rounded-2xl px-4 py-3.5 sm:px-5 sm:py-4",
-              "flex items-center gap-3.5",
-              "min-h-[60px]", // Touch target
+              "relative h-full w-full rounded-xl sm:rounded-2xl px-3 py-2.5 sm:px-4 sm:py-3.5 md:px-5 md:py-4",
+              "flex items-center gap-2.5 sm:gap-3.5",
+              "min-h-[52px] sm:min-h-[60px]", // Touch target
               "border transition-all duration-300",
               selected.innerBorder,
               !caps.isLowEnd && "backdrop-blur-xl"
@@ -276,8 +329,8 @@ export default function BrandedNavCard({
                 <div
                   className={cn(
                     "relative flex items-center justify-center",
-                    "w-11 h-11 sm:w-12 sm:h-12",
-                    "rounded-xl transition-all duration-300",
+                    "w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12",
+                    "rounded-lg sm:rounded-xl transition-all duration-300",
                     "bg-gradient-to-br",
                     selected.iconGradient,
                     selected.iconGlow,
@@ -286,13 +339,13 @@ export default function BrandedNavCard({
                 >
                   {/* Inner border highlight */}
                   <div className={cn(
-                    "absolute inset-[1px] rounded-[10px] bg-gradient-to-br opacity-50",
+                    "absolute inset-[1px] rounded-[8px] sm:rounded-[10px] bg-gradient-to-br opacity-50",
                     selected.iconGradient
                   )} />
                   
                   {/* Icon */}
                   <div className={cn(
-                    "relative z-10 w-5 h-5 sm:w-6 sm:h-6 transition-colors duration-300",
+                    "relative z-10 w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 transition-colors duration-300",
                     "[&>svg]:w-full [&>svg]:h-full [&>svg]:drop-shadow-[0_0_3px_currentColor]",
                     selected.iconColor,
                     selected.iconColorHover
@@ -307,7 +360,7 @@ export default function BrandedNavCard({
             <div className="flex-1 min-w-0">
               <h3
                 className={cn(
-                  "text-sm sm:text-base font-semibold tracking-wide truncate",
+                  "text-xs sm:text-sm md:text-base font-semibold tracking-wide truncate",
                   selected.title
                 )}
               >
@@ -315,7 +368,7 @@ export default function BrandedNavCard({
               </h3>
               {description && (
                 <p className={cn(
-                  "text-xs sm:text-sm mt-0.5 line-clamp-1 sm:line-clamp-2 opacity-90",
+                  "text-[10px] sm:text-xs md:text-sm mt-0.5 line-clamp-1 sm:line-clamp-2 opacity-90",
                   selected.description
                 )}>
                   {description}
@@ -337,7 +390,7 @@ export default function BrandedNavCard({
               transition={{ type: "spring", stiffness: 400, damping: 25 }}
             >
               <ChevronRight 
-                className="w-5 h-5 drop-shadow-[0_0_4px_currentColor]" 
+                className="w-4 h-4 sm:w-5 sm:h-5 drop-shadow-[0_0_4px_currentColor]" 
                 strokeWidth={2.5} 
               />
             </motion.div>
@@ -373,12 +426,75 @@ export default function BrandedNavCard({
   }
 
   return (
-    <Link 
-      to={to} 
-      className="block touch-manipulation"
+    <div 
+      className="relative"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onContextMenu={handleContextMenu}
       {...mouseHandlers}
     >
-      {cardContent}
-    </Link>
+      <Link 
+        to={to} 
+        className="block touch-manipulation"
+      >
+        {cardContent}
+      </Link>
+
+      {/* Pinned indicator badge */}
+      {hasPinSupport && isPinned && (
+        <div className="absolute -top-1 -right-1 z-20 w-5 h-5 rounded-full bg-amber-500 border-2 border-[#041e15] flex items-center justify-center shadow-lg">
+          <Star className="w-2.5 h-2.5 text-white fill-white" />
+        </div>
+      )}
+
+      {/* Pin/Unpin overlay */}
+      <AnimatePresence>
+        {showPinOverlay && hasPinSupport && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 rounded-2xl bg-black/85 backdrop-blur-sm flex items-center justify-center z-30"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
+            {isPinned ? (
+              <button
+                onClick={handleTogglePin}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-500/20 border border-red-500/40 text-red-400 text-sm font-medium hover:bg-red-500/30 transition-colors"
+              >
+                <PinOff className="w-4 h-4" />
+                Remove from Quick Access
+              </button>
+            ) : canPinMore ? (
+              <button
+                onClick={handleTogglePin}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-sm font-medium hover:bg-emerald-500/30 transition-colors"
+              >
+                <Pin className="w-4 h-4" />
+                Add to Quick Access
+              </button>
+            ) : (
+              <div className="flex flex-col items-center gap-2 px-4 py-3 text-center">
+                <span className="text-white/60 text-sm">Quick Access is full (4 max)</span>
+                <span className="text-white/40 text-xs">Remove an item first</span>
+              </div>
+            )}
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowPinOverlay(false);
+              }}
+              className="absolute top-2 right-2 p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+            >
+              <span className="text-white/60 text-xs">✕</span>
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

@@ -357,7 +357,7 @@ export function useLocationPicker({
         setIsGettingLocation(false);
         switch (err.code) {
           case err.PERMISSION_DENIED:
-            setError('Location permission denied. You can still search manually.');
+            setError('Location permission denied');
             break;
           case err.POSITION_UNAVAILABLE:
             setError('Location unavailable. Please try again.');

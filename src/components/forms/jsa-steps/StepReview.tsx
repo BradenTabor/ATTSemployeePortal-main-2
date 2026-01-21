@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   AlertTriangle,
   Calendar,
@@ -10,6 +10,10 @@ import {
   Info,
   Wind,
   Zap,
+  PenLine,
+  TrendingUp,
+  Shield,
+  FileCheck,
 } from "lucide-react";
 import { cn } from "../../../lib/utils";
 import type { JsaSpan } from "./StepSpans";
@@ -184,10 +188,10 @@ export function StepReview({
     jobLabels.push(form.jobsOther);
   }
 
-  const weatherLabels = [
+  const weatherLabels = useMemo(() => [
     ...getActiveLabels(form.weatherConditions, WEATHER_LABELS),
     ...getActiveLabels(form.weatherModifiers, WEATHER_LABELS),
-  ];
+  ], [form.weatherConditions, form.weatherModifiers]);
 
   const requiredPpe = Object.entries(form.ppe)
     .filter(([, state]) => state.required)
@@ -220,8 +224,135 @@ export function StepReview({
     (s) => s.location.trim() || s.hazards.trim()
   );
 
+  // Calculate completion stats for summary card
+  const completionStats = useMemo(() => {
+    const hazardsCount = Object.values(form.hazardsPresent).filter(Boolean).length +
+      Object.values(form.trafficHazards).filter(Boolean).length;
+    const trafficSetupCount = Object.values(form.trafficSetup).filter(Boolean).length;
+    const ppeCount = Object.values(form.ppe).filter(p => p.required).length;
+    const jobsCount = form.jobsPerformed.length + (form.jobsOther.trim() ? 1 : 0);
+    
+    // Calculate overall completion percentage
+    let completedSections = 0;
+    if (form.jobDate && form.workLocation.trim()) completedSections++;
+    if (jobsCount > 0 && ppeCount > 0) completedSections++;
+    if (weatherLabels.length > 0) completedSections++;
+    if (hazardsCount > 0 || trafficSetupCount > 0) completedSections++;
+    if (filledSpans.length > 0) completedSections++;
+    if (form.employeeSignature.trim()) completedSections++;
+    
+    const completionPercent = Math.round((completedSections / 6) * 100);
+    
+    return {
+      hazardsCount,
+      trafficSetupCount,
+      ppeCount,
+      jobsCount,
+      spansCount: filledSpans.length,
+      completionPercent,
+      isComplete: completedSections >= 5 && form.employeeSignature.trim(),
+    };
+  }, [form, weatherLabels, filledSpans]);
+
   return (
     <div className="space-y-4">
+      {/* Completion Summary Card */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className={cn(
+          "rounded-xl border p-4 space-y-3",
+          completionStats.isComplete
+            ? "bg-emerald-500/10 border-emerald-500/30"
+            : "bg-white/5 border-white/10"
+        )}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {completionStats.isComplete ? (
+              <div className="p-1.5 rounded-lg bg-emerald-500/20">
+                <FileCheck className="w-4 h-4 text-emerald-400" />
+              </div>
+            ) : (
+              <div className="p-1.5 rounded-lg bg-amber-500/20">
+                <TrendingUp className="w-4 h-4 text-amber-400" />
+              </div>
+            )}
+            <span className="text-sm font-semibold text-white">
+              {completionStats.isComplete ? "Ready to Submit" : "JSA Progress"}
+            </span>
+          </div>
+          <span className={cn(
+            "text-lg font-bold",
+            completionStats.isComplete ? "text-emerald-400" : "text-white"
+          )}>
+            {completionStats.completionPercent}%
+          </span>
+        </div>
+        
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="rounded-lg bg-black/30 px-3 py-2 text-center">
+            <p className="text-lg font-bold text-emerald-400">{completionStats.hazardsCount}</p>
+            <p className="text-[10px] text-white/50 uppercase tracking-wide">Hazards</p>
+          </div>
+          <div className="rounded-lg bg-black/30 px-3 py-2 text-center">
+            <p className="text-lg font-bold text-amber-400">{completionStats.ppeCount}</p>
+            <p className="text-[10px] text-white/50 uppercase tracking-wide">PPE Items</p>
+          </div>
+          <div className="rounded-lg bg-black/30 px-3 py-2 text-center">
+            <p className="text-lg font-bold text-sky-400">{completionStats.spansCount}</p>
+            <p className="text-[10px] text-white/50 uppercase tracking-wide">Spans</p>
+          </div>
+          <div className="rounded-lg bg-black/30 px-3 py-2 text-center">
+            <p className="text-lg font-bold text-purple-400">{completionStats.trafficSetupCount}</p>
+            <p className="text-[10px] text-white/50 uppercase tracking-wide">Traffic Setup</p>
+          </div>
+        </div>
+        
+        {/* Progress bar */}
+        <div className="relative h-2 bg-black/40 rounded-full overflow-hidden">
+          <motion.div
+            className={cn(
+              "absolute inset-y-0 left-0 rounded-full",
+              completionStats.isComplete
+                ? "bg-gradient-to-r from-emerald-600 to-emerald-400"
+                : "bg-gradient-to-r from-amber-600 to-amber-400"
+            )}
+            initial={{ width: 0 }}
+            animate={{ width: `${completionStats.completionPercent}%` }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+          />
+        </div>
+        
+        {/* Completion message */}
+        <AnimatePresence mode="wait">
+          {completionStats.isComplete ? (
+            <motion.p
+              key="complete"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="text-xs text-emerald-300/80 flex items-center gap-1.5"
+            >
+              <Shield className="w-3.5 h-3.5" />
+              All required sections complete. Sign below to finalize.
+            </motion.p>
+          ) : (
+            <motion.p
+              key="incomplete"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="text-xs text-white/50"
+            >
+              Complete all sections and sign to submit your JSA.
+            </motion.p>
+          )}
+        </AnimatePresence>
+      </motion.div>
+
       {/* TRAPS Reminder */}
       <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-100 space-y-1">
         <div className="flex items-center gap-1.5 mb-1">
@@ -318,17 +449,33 @@ export function StepReview({
           />
         </div>
 
+        {/* Typed Signature */}
         <div>
           <label className="block text-[10px] font-medium text-white/50 uppercase mb-1">
-            Signature <span className="text-emerald-400">*</span>
+            Employee Signature <span className="text-red-400">*</span>
           </label>
-          <input
-            type="text"
-            value={form.employeeSignature}
-            onChange={(e) => onInputChange("employeeSignature", e.target.value)}
-            placeholder="Type your name or initials"
-            className="w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2.5 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
-          />
+          <div className="relative">
+            <PenLine className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500/50" />
+            <input
+              type="text"
+              value={form.employeeSignature}
+              onChange={(e) => onInputChange("employeeSignature", e.target.value)}
+              placeholder="Type your full name"
+              className={cn(
+                "w-full rounded-lg border bg-black/50 pl-10 pr-3 py-3 text-base text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 transition-all",
+                form.employeeSignature.trim()
+                  ? "border-emerald-500/40 focus:ring-emerald-500/50"
+                  : "border-white/10 focus:ring-emerald-500/50"
+              )}
+              style={{ fontFamily: "'Caveat', cursive" }}
+            />
+          </div>
+          {form.employeeSignature.trim() && (
+            <p className="mt-1 text-[10px] text-emerald-400/70 flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3" />
+              By typing your name, you certify this JSA is accurate
+            </p>
+          )}
         </div>
       </div>
 

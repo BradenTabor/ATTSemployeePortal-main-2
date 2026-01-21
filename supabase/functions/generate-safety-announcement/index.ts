@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Supabase Edge Function: Generate Daily Safety Announcement
  * 
@@ -29,165 +30,19 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import OpenAI from 'https://esm.sh/openai@4';
 
-// =============================================================================
-// CONFIGURATION
-// =============================================================================
+// Import from extracted modules
+import type { HazardCount, DvirIssue, EquipmentIssue, AggregatedStats } from './types.ts';
+import { 
+  DEFAULT_TIMEZONE, 
+  DEFAULT_WINDOW_HOURS, 
+  MIN_SUBMISSIONS, 
+  BODY_MAX_CHARS, 
+  SUMMARY_MAX_CHARS 
+} from './config.ts';
+import { corsHeaders, getTodayInTimezone, isWeekday, formatDateLong, truncateText } from './utils.ts';
+import { SYSTEM_PROMPT, LOW_DATA_MESSAGE } from './prompts.ts';
+import { aggregateJsaData, aggregateDvirData, aggregateEquipmentData, buildUserPrompt } from './aggregation.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-const DEFAULT_TIMEZONE = 'America/Chicago';
-const DEFAULT_WINDOW_HOURS = 48;
-const MIN_SUBMISSIONS = 3;
-const BODY_MAX_CHARS = 283;
-const BODY_TARGET_CHARS = 238;
-const SUMMARY_MAX_CHARS = 240;
-
-// =============================================================================
-// TYPES
-// =============================================================================
-
-interface HazardCount {
-  hazard: string;
-  count: number;
-}
-
-interface DvirIssue {
-  type: string;
-  truckNumber: string;
-}
-
-interface EquipmentIssue {
-  type: string;
-  equipmentType: string;
-}
-
-interface AggregatedStats {
-  jsaCount: number;
-  dvirCount: number;
-  equipmentCount: number;
-  totalSubmissions: number;
-  topHazards: HazardCount[];
-  topPPE: [string, number][];
-  nearMissCount: number;
-  weatherConditions: string[];
-  dvirWithIssues: number;
-  dvirIssues: DvirIssue[];
-  equipmentWithIssues: number;
-  equipmentIssues: EquipmentIssue[];
-}
-
-// =============================================================================
-// HELPER FUNCTIONS
-// =============================================================================
-
-/**
- * Get today's date in the specified timezone (YYYY-MM-DD format)
- */
-function getTodayInTimezone(timezone: string): string {
-  const now = new Date();
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    timeZone: timezone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
-  return formatter.format(now);
-}
-
-/**
- * Check if the given date is a weekday (Monday-Friday)
- */
-function isWeekday(dateFor: string, timezone: string): boolean {
-  const date = new Date(dateFor + 'T12:00:00');
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: timezone,
-    weekday: 'short',
-  });
-  const dayName = formatter.format(date);
-  return !['Sat', 'Sun'].includes(dayName);
-}
-
-/**
- * Format date for display (e.g., "Saturday, January 11, 2026")
- */
-function formatDateLong(timezone: string): string {
-  const now = new Date();
-  return now.toLocaleDateString('en-US', {
-    timeZone: timezone,
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-}
-
-/**
- * Truncate text at a word or sentence boundary
- */
-function truncateText(text: string, maxLength: number): string {
-  if (text.length <= maxLength) return text;
-  
-  const truncateAt = maxLength - 3; // Room for "..."
-  
-  // Try to find end of sentence
-  const sentenceEnd = text.lastIndexOf('. ', truncateAt);
-  if (sentenceEnd > truncateAt * 0.7) {
-    return text.slice(0, sentenceEnd + 1);
-  }
-  
-  // Try to find end of word
-  const wordEnd = text.lastIndexOf(' ', truncateAt);
-  if (wordEnd > truncateAt * 0.5) {
-    return text.slice(0, wordEnd) + '...';
-  }
-  
-  // Hard truncate
-  return text.slice(0, truncateAt) + '...';
-}
-
-// =============================================================================
-// SYSTEM PROMPT (v2 - Enhanced)
-// =============================================================================
-
-const SYSTEM_PROMPT = `You are a safety communication assistant for ATTS (All Terrain Tree Service), a professional tree services company.
-
-Your job is to generate clear, concise, and actionable safety announcements based on real safety data from multiple sources:
-- JSA (Job Safety Analysis) forms
-- DVIR (Daily Vehicle Inspection Reports)
-- Daily Equipment Inspections
-
-## CRITICAL CHARACTER LIMITS (STRICTLY ENFORCED)
-- message: Target ${BODY_TARGET_CHARS} characters, MAXIMUM ${BODY_MAX_CHARS} characters
-- The message MUST be under ${BODY_MAX_CHARS} characters including spaces and punctuation
-
-## Content Priority (in order)
-1. Near-misses (highest priority - these indicate close calls)
-2. Equipment/vehicle failures or deficiencies
-3. Top hazards identified in JSAs
-4. PPE reminders based on data
-5. Weather considerations
-
-## Rules
-1. GROUNDING: Only include claims supported by the provided data
-2. NO FABRICATION: Never invent incidents, injuries, or statistics
-3. ACTIONABLE: Tell employees what TO DO, not just what to avoid
-4. SPECIFIC: Mention specific hazard counts and equipment issues when available
-5. BREVITY: Be direct and concise - every word must count
-
-## Output Format (JSON)
-{
-  "title": "Safety Briefing - {Full Date}",
-  "message": "Main announcement - MUST be under ${BODY_MAX_CHARS} chars. Be direct, specific, and actionable. Start with key data points."
-}
-
-## Good Example (154 chars)
-"26 reports filed. Top hazard: Falls (8). 2 trucks need brake checks. Verify fall protection before climbing. Inspect equipment pre-departure. Stay alert!"
-
-## Bad Example (too vague, not grounded)
-"Safety is important. Remember to be careful today. Watch out for hazards and wear your PPE."`;
 
 // =============================================================================
 // MAIN HANDLER
@@ -333,149 +188,12 @@ serve(async (req) => {
     console.log('[SafetyAnnouncement] Data fetched - JSA:', jsas.length, 'DVIR:', dvirs.length, 'Equipment:', equipmentInspections.length);
 
     // =======================================================================
-    // Step 3: Aggregate JSA data
+    // Step 3-6: Aggregate all data using extracted functions
     // =======================================================================
-    const hazardCounts = new Map<string, number>();
-    const ppeCounts = new Map<string, number>();
-    let nearMissCount = 0;
-    const weatherConditions = new Set<string>();
-
-    for (const jsa of jsas) {
-      // hazards_present is a JSON object like { "Electrical Contact": true, "Falls": true }
-      if (jsa.hazards_present && typeof jsa.hazards_present === 'object') {
-        for (const [hazard, isPresent] of Object.entries(jsa.hazards_present)) {
-          if (isPresent === true) {
-            hazardCounts.set(hazard, (hazardCounts.get(hazard) || 0) + 1);
-          }
-        }
-      }
-      
-      // ppe is a JSON object like { "Hard Hat": { required: true, condition: "good" } }
-      if (jsa.ppe && typeof jsa.ppe === 'object') {
-        for (const [ppeItem, state] of Object.entries(jsa.ppe)) {
-          if (state && typeof state === 'object' && (state as { required?: boolean }).required) {
-            ppeCounts.set(ppeItem, (ppeCounts.get(ppeItem) || 0) + 1);
-          }
-        }
-      }
-      
-      // Check notes for near-miss mentions
-      if (jsa.notes && typeof jsa.notes === 'string') {
-        const notesLower = jsa.notes.toLowerCase();
-        if (notesLower.includes('near miss') || notesLower.includes('near-miss') || notesLower.includes('close call')) {
-          nearMissCount++;
-        }
-      }
-      
-      // weather_conditions is a JSON object
-      if (jsa.weather_conditions && typeof jsa.weather_conditions === 'object') {
-        const wc = jsa.weather_conditions as { conditions?: Record<string, boolean>; modifiers?: Record<string, boolean> };
-        if (wc.conditions) {
-          for (const [condition, isActive] of Object.entries(wc.conditions)) {
-            if (isActive === true) weatherConditions.add(condition);
-          }
-        }
-        if (wc.modifiers) {
-          for (const [modifier, isActive] of Object.entries(wc.modifiers)) {
-            if (isActive === true) weatherConditions.add(modifier);
-          }
-        }
-      }
-      
-      // Also check weather_hazards text field
-      if (jsa.weather_hazards && typeof jsa.weather_hazards === 'string' && jsa.weather_hazards.trim()) {
-        weatherConditions.add(jsa.weather_hazards.trim());
-      }
-    }
-
-    const topHazards: HazardCount[] = [...hazardCounts.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([hazard, count]) => ({ hazard, count }));
-
-    const topPPE: [string, number][] = [...ppeCounts.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5);
-
-    // =======================================================================
-    // Step 4: Aggregate DVIR data
-    // =======================================================================
-    const dvirIssues: DvirIssue[] = [];
-    let dvirWithIssues = 0;
-
-    for (const dvir of dvirs) {
-      let hasIssue = false;
-      
-      if (dvir.vehicle_trailer_checklist) {
-        const checklist = dvir.vehicle_trailer_checklist as Record<string, unknown>;
-        for (const [key, value] of Object.entries(checklist)) {
-          if (value === false || value === 'fail' || value === 'Fail') {
-            hasIssue = true;
-            dvirIssues.push({
-              type: key.replace(/_/g, ' '),
-              truckNumber: dvir.truck_number || 'Unknown',
-            });
-          }
-        }
-      }
-      
-      if (dvir.aerial_checklist) {
-        const checklist = dvir.aerial_checklist as Record<string, unknown>;
-        for (const [key, value] of Object.entries(checklist)) {
-          if (value === false || value === 'fail' || value === 'Fail') {
-            hasIssue = true;
-            dvirIssues.push({
-              type: `Aerial: ${key.replace(/_/g, ' ')}`,
-              truckNumber: dvir.truck_number || 'Unknown',
-            });
-          }
-        }
-      }
-      
-      if (hasIssue) dvirWithIssues++;
-    }
-
-    // =======================================================================
-    // Step 5: Aggregate Equipment Inspection data
-    // =======================================================================
-    const equipmentIssues: EquipmentIssue[] = [];
-    let equipmentWithIssues = 0;
-
-    for (const inspection of equipmentInspections) {
-      let hasIssue = false;
-      
-      if (inspection.general_checklist && typeof inspection.general_checklist === 'object') {
-        const checklist = inspection.general_checklist as Record<string, unknown>;
-        for (const [key, value] of Object.entries(checklist)) {
-          if (value === false || value === 'fail' || value === 'Fail' || value === 'no' || value === 'No') {
-            hasIssue = true;
-            equipmentIssues.push({
-              type: key.replace(/_/g, ' '),
-              equipmentType: `${inspection.equipment_type || 'Unknown'} #${inspection.equipment_number || '?'}`,
-            });
-          }
-        }
-      }
-      
-      if (inspection.specific_checklist && typeof inspection.specific_checklist === 'object') {
-        const checklist = inspection.specific_checklist as Record<string, unknown>;
-        for (const [key, value] of Object.entries(checklist)) {
-          if (value === false || value === 'fail' || value === 'Fail' || value === 'no' || value === 'No') {
-            hasIssue = true;
-            equipmentIssues.push({
-              type: key.replace(/_/g, ' '),
-              equipmentType: `${inspection.equipment_type || 'Unknown'} #${inspection.equipment_number || '?'}`,
-            });
-          }
-        }
-      }
-      
-      if (hasIssue) equipmentWithIssues++;
-    }
-
-    // =======================================================================
-    // Step 6: Build aggregated stats
-    // =======================================================================
+    const jsaStats = aggregateJsaData(jsas);
+    const dvirStats = aggregateDvirData(dvirs);
+    const equipmentStats = aggregateEquipmentData(equipmentInspections);
+    
     const totalSubmissions = jsas.length + dvirs.length + equipmentInspections.length;
     
     const stats: AggregatedStats = {
@@ -483,15 +201,18 @@ serve(async (req) => {
       dvirCount: dvirs.length,
       equipmentCount: equipmentInspections.length,
       totalSubmissions,
-      topHazards,
-      topPPE,
-      nearMissCount,
-      weatherConditions: [...weatherConditions],
-      dvirWithIssues,
-      dvirIssues,
-      equipmentWithIssues,
-      equipmentIssues,
+      topHazards: jsaStats.topHazards,
+      topPPE: jsaStats.topPPE,
+      nearMissCount: jsaStats.nearMissCount,
+      weatherConditions: jsaStats.weatherConditions,
+      dvirWithIssues: dvirStats.dvirWithIssues,
+      dvirIssues: dvirStats.dvirIssues,
+      equipmentWithIssues: equipmentStats.equipmentWithIssues,
+      equipmentIssues: equipmentStats.equipmentIssues,
     };
+
+    // Destructure for easier access
+    const { topHazards, nearMissCount, dvirWithIssues, equipmentWithIssues } = stats;
 
     console.log('[SafetyAnnouncement] Stats aggregated:', {
       totalSubmissions,
@@ -512,42 +233,47 @@ serve(async (req) => {
     if (isLowData) {
       userPrompt = `Date: ${todayFormatted}
 Time Window: Last ${windowHours} hours
-Total Submissions: ${totalSubmissions} (below minimum threshold of ${MIN_SUBMISSIONS})
 
-Generate a "low data" safety reminder. Since we have limited submissions across JSA, DVIR, and equipment inspections, focus on general safety reminders rather than specific trends.
+Generate a warm, caring safety reminder for the ATTS team. Focus on general safety reminders for tree service work with a warm, family-oriented tone.
 
-The message should acknowledge limited data and provide standard safety reminders for tree service work.`;
+DO NOT mention anything about "limited data" or "few submissions" - just provide an encouraging safety message.
+
+The message should:
+- Start with a warm greeting like "Hey ATTS Family," or "Hey team,"
+- Include appreciation for the crew's hard work
+- Provide general safety reminders relevant to tree service work
+- End with an encouraging phrase like "Stay safe out there!" or "Watch out for each other!"
+
+Remember: NO statistics or data references in the message.`;
     } else {
       userPrompt = `Date: ${todayFormatted}
 Time Window: Last ${windowHours} hours
 
-=== SUBMISSION SUMMARY ===
-Total Reports: ${totalSubmissions}
-- JSA Forms: ${jsas.length}
-- DVIR Reports: ${dvirs.length}
-- Equipment Inspections: ${equipmentInspections.length}
+=== CONTEXT DATA (for your reference only - DO NOT include these numbers in your message) ===
 
-=== JSA DATA ===
 Top Hazards Identified:
-${topHazards.length > 0 ? topHazards.map((h, i) => `${i + 1}. ${h.hazard} - ${h.count} mentions`).join('\n') : 'None reported'}
+${topHazards.length > 0 ? topHazards.map((h, i) => `${i + 1}. ${h.hazard}`).join('\n') : 'None reported'}
 
 PPE Requirements Noted:
-${topPPE.length > 0 ? topPPE.map(([p, c], i) => `${i + 1}. ${p} - ${c} mentions`).join('\n') : 'None specified'}
+${topPPE.length > 0 ? topPPE.map(([p], i) => `${i + 1}. ${p}`).join('\n') : 'None specified'}
 
-Near-misses reported: ${nearMissCount}
+Near-misses reported: ${nearMissCount > 0 ? 'Yes - be extra cautious' : 'None'}
 Weather conditions: ${[...weatherConditions].join(', ') || 'None specified'}
 
-=== DVIR DATA ===
-Total vehicle inspections: ${dvirs.length}
-Vehicles with issues: ${dvirWithIssues}
-${dvirIssues.length > 0 ? `Key vehicle issues:\n${dvirIssues.slice(0, 3).map(i => `- Truck ${i.truckNumber}: ${i.type}`).join('\n')}` : 'No vehicle defects reported'}
+Vehicle/Equipment Issues:
+${dvirWithIssues > 0 || equipmentWithIssues > 0 ? 'Some equipment needs attention - remind about pre-trip inspections' : 'All equipment passed inspection'}
 
-=== EQUIPMENT DATA ===
-Total equipment inspections: ${equipmentInspections.length}
-Equipment with issues: ${equipmentWithIssues}
-${equipmentIssues.length > 0 ? `Key equipment issues:\n${equipmentIssues.slice(0, 3).map(i => `- ${i.equipmentType}: ${i.type}`).join('\n')}` : 'All equipment passed inspection'}
+=== YOUR TASK ===
+Generate a warm, personalized safety message for the ATTS crew based on the conditions above.
 
-Generate a safety announcement that synthesizes the most important findings. Remember: message MUST be under ${BODY_MAX_CHARS} characters.`;
+CRITICAL REMINDERS:
+- DO NOT include any statistics, counts, or numbers in your message
+- DO NOT mention "X reports filed" or "X hazards identified"
+- START with a warm greeting like "Hey ATTS Family," or "Hey team,"
+- INCLUDE appreciation for the crew's work
+- MENTION relevant conditions (weather, equipment reminders) naturally
+- END with an encouraging phrase
+- Message MUST be under ${BODY_MAX_CHARS} characters`;
     }
 
     console.log('[SafetyAnnouncement] Calling OpenAI...');

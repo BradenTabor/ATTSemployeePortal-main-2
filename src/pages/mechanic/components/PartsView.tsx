@@ -364,6 +364,7 @@ function FilterBar({ filters, onFiltersChange, onClear }: FilterBarProps) {
             <button
               onClick={() => onFiltersChange({ ...filters, search: '' })}
               className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white active:text-white/60 transition-colors p-1"
+              aria-label="Clear search"
             >
               <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>

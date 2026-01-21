@@ -52,40 +52,71 @@ export const BODY_MAX_CHAR_LIMIT = 283;
 export const SUMMARY_MAX_CHAR_LIMIT = 240;
 
 // =============================================================================
-// PROMPT TEMPLATE
+// PROMPT TEMPLATE (v3 - Warm, Personalized, Compassionate)
 // =============================================================================
 
-const SYSTEM_PROMPT = `You are a safety communication assistant for ATTS, a tree services company. Your job is to generate concise, actionable safety announcements based on recent safety data from multiple sources:
-- JSA (Job Safety Analysis) forms
-- DVIR (Daily Vehicle Inspection Reports)  
-- Daily Equipment Inspections
+const SYSTEM_PROMPT = `You are a caring safety communication assistant for ATTS (All Terrain Tree Service), a tight-knit professional tree services company.
+
+Your job is to generate warm, personalized, and compassionate safety announcements that feel like they come from a caring teammate who appreciates the crew's hard work.
+
+## TONE & STYLE (CRITICAL)
+- Start with a warm greeting: "Hey ATTS Family," or "Hey team," or "Hey guys,"
+- Include appreciation for the crew's hard work when appropriate
+- Be encouraging and supportive, not clinical or robotic
+- End with caring phrases like "Stay safe out there!" or "Watch out for each other!" or "We've got your back!"
+- Write like you're talking to friends and family, not reading a corporate memo
+
+## WHAT TO INCLUDE
+- Relevant safety reminders based on current conditions (weather, hazards, equipment issues)
+- PPE reminders when applicable
+- Encouragement and appreciation for the team
+
+## WHAT NOT TO INCLUDE (CRITICAL)
+- DO NOT include statistics like "X reports filed" or "X submissions"
+- DO NOT start with data summaries
+- DO NOT include hazard counts or numbers
+- DO NOT sound robotic or clinical
+- The body should be purely the safety reminder itself, warm and human
 
 ## CRITICAL: Character Limits (STRICTLY ENFORCED)
 - body: Target 238 characters, MAXIMUM 283 characters (including spaces and punctuation)
-- summary: MAXIMUM 240 characters
+- summary: MAXIMUM 240 characters (should also be warm and personalized)
+
+## Content to Address (from provided data, in priority order)
+1. Near-misses (if any reported - mention being extra cautious)
+2. Weather conditions (cold, wind, rain - remind about relevant precautions)
+3. Equipment/vehicle issues (if any - remind about pre-trip inspections)
+4. PPE reminders relevant to current work
 
 ## Rules
-1. GROUNDING: Only include claims supported by the provided data
-2. NO FABRICATION: Never invent incidents, injuries, or statistics
-3. ANONYMITY: Never include employee names or identifying details
-4. CLARITY: Use simple, direct language
-5. ACTIONABLE: Focus on what employees should do, not just what to avoid
+1. GROUNDING: Only mention conditions/hazards that are in the provided data
+2. NO FABRICATION: Never invent conditions or issues
+3. WARMTH: Be genuinely caring and appreciative
+4. ANONYMITY: Never include employee names or identifying details
+5. ACTIONABLE: Tell employees what TO DO in a friendly way
 6. BREVITY: Body MUST be under 283 characters, aim for 238
-7. PRIORITIZE: Focus on most critical safety items across all data sources
 
 ## Output Format (JSON)
 {
   "title": "Safety Update - {date}",
-  "body": "Main message - MAX 283 chars, target 238 chars. Be direct and actionable.",
-  "summary": "One sentence summary for push notifications (max 240 chars)",
+  "body": "Warm, personalized safety message - NO statistics, just the caring safety reminder.",
+  "summary": "Warm one-sentence summary for push notifications (max 240 chars)",
   "sections": {
-    "overview": "Brief intro mentioning submission counts from all sources",
+    "overview": "Brief caring intro about the day's conditions",
     "topHazards": [{ "hazard": "Name", "count": 0, "note": "Brief context" }],
     "ppeReminders": ["PPE item 1", "PPE item 2"],
     "equipmentAlerts": ["Equipment issue 1", "Vehicle issue 2"],
     "expectations": ["Today's expectation 1", "Today's expectation 2"]
   }
-}`;
+}
+
+## Good Body Examples
+"Hey ATTS Family, we see the incredible work you've been doing! Please stay alert in these cold, windy conditions. Ensure proper PPE is worn at all times. Stay safe out there!"
+
+"Hey team, thank you for all your hard work! Remember to stay alert in windy conditions. Make sure fall protection is secure before climbing. Watch out for each other!"
+
+## Bad Body Example (too clinical, includes stats)
+"5 reports filed. No near-misses reported. All vehicles passed. Remember to stay alert in windy conditions."`;
 
 // =============================================================================
 // VALIDATION HELPERS
@@ -193,7 +224,7 @@ export async function fetchJsaSubmissions(windowHours: number): Promise<JsaSubmi
   
   const { data, error } = await supabase
     .from('daily_jsa')
-    .select('id, user_id, job_site, hazards, ppe_required, controls, weather_conditions, near_miss, notes, created_at')
+    .select('id, user_id, work_location, hazards_present, ppe, weather_conditions, notes, created_at')
     .gte('created_at', windowStart)
     .order('created_at', { ascending: false });
 
@@ -288,52 +319,62 @@ export function aggregateJsaData(submissions: JsaSubmission[]): JsaAggregation {
   const controlCounts = new Map<string, number>();
   const jobSites = new Set<string>();
   const weatherConditions = new Set<string>();
-  let nearMissCount = 0;
+  const nearMissCount = 0;
 
   for (const jsa of submissions) {
-    // Count hazards
-    if (jsa.hazards && Array.isArray(jsa.hazards)) {
-      for (const hazard of jsa.hazards) {
-        const normalized = normalizeString(hazard);
-        if (normalized) {
-          hazardCounts.set(normalized, (hazardCounts.get(normalized) || 0) + 1);
+    // Count hazards from hazards_present (Record<string, boolean>)
+    if (jsa.hazards_present && typeof jsa.hazards_present === 'object') {
+      for (const [hazard, isPresent] of Object.entries(jsa.hazards_present)) {
+        if (isPresent) {
+          const normalized = normalizeString(hazard.replace(/_/g, ' '));
+          if (normalized) {
+            hazardCounts.set(normalized, (hazardCounts.get(normalized) || 0) + 1);
+          }
         }
       }
     }
 
-    // Count PPE
-    if (jsa.ppe_required && Array.isArray(jsa.ppe_required)) {
-      for (const ppe of jsa.ppe_required) {
-        const normalized = normalizeString(ppe);
-        if (normalized) {
-          ppeCounts.set(normalized, (ppeCounts.get(normalized) || 0) + 1);
+    // Count PPE from ppe (Record<string, { required: boolean; condition: string }>)
+    if (jsa.ppe && typeof jsa.ppe === 'object') {
+      for (const [ppeName, ppeState] of Object.entries(jsa.ppe)) {
+        if (ppeState && ppeState.required) {
+          const normalized = normalizeString(ppeName.replace(/_/g, ' '));
+          if (normalized) {
+            ppeCounts.set(normalized, (ppeCounts.get(normalized) || 0) + 1);
+          }
         }
       }
     }
 
-    // Count controls
-    if (jsa.controls && Array.isArray(jsa.controls)) {
-      for (const control of jsa.controls) {
-        const normalized = normalizeString(control);
-        if (normalized) {
-          controlCounts.set(normalized, (controlCounts.get(normalized) || 0) + 1);
+    // Track work locations
+    if (jsa.work_location) {
+      jobSites.add(jsa.work_location);
+    }
+
+    // Track weather conditions from weather_conditions object
+    if (jsa.weather_conditions && typeof jsa.weather_conditions === 'object') {
+      // Extract active conditions
+      if (jsa.weather_conditions.conditions) {
+        for (const [condition, isActive] of Object.entries(jsa.weather_conditions.conditions)) {
+          if (isActive) {
+            const normalized = normalizeString(condition.replace(/_/g, ' '));
+            if (normalized) {
+              weatherConditions.add(normalized);
+            }
+          }
         }
       }
-    }
-
-    // Track job sites
-    if (jsa.job_site) {
-      jobSites.add(jsa.job_site);
-    }
-
-    // Track weather
-    if (jsa.weather_conditions) {
-      weatherConditions.add(jsa.weather_conditions);
-    }
-
-    // Count near misses
-    if (jsa.near_miss) {
-      nearMissCount++;
+      // Extract active modifiers (e.g., high winds, extreme heat)
+      if (jsa.weather_conditions.modifiers) {
+        for (const [modifier, isActive] of Object.entries(jsa.weather_conditions.modifiers)) {
+          if (isActive) {
+            const normalized = normalizeString(modifier.replace(/_/g, ' '));
+            if (normalized) {
+              weatherConditions.add(normalized);
+            }
+          }
+        }
+      }
     }
   }
 
@@ -511,6 +552,7 @@ function capitalizeFirst(str: string): string {
 
 /**
  * Build the user prompt for announcement generation using all data sources.
+ * Provides context data but instructs the LLM not to include statistics in the message.
  */
 function buildUserPrompt(aggregation: SafetyDataAggregation, windowHours: number): string {
   const today = formatDateYMD(new Date());
@@ -522,62 +564,64 @@ function buildUserPrompt(aggregation: SafetyDataAggregation, windowHours: number
   let prompt = `Date: ${today}
 Window: Last ${windowHours} hours
 
-=== SUBMISSION COUNTS ===
-JSA Forms: ${aggregation.jsa.totalCount}
-DVIR Reports: ${aggregation.dvir.totalCount}
-Equipment Inspections: ${aggregation.equipment.totalCount}
-Total Submissions: ${aggregation.totals.totalSubmissions}
+=== CONTEXT DATA (for your reference only - DO NOT include these numbers in your message) ===
 
-=== JSA DATA ===
 Top Hazards Identified:
-${topHazards.length > 0 ? topHazards.map((h, i) => `${i + 1}. ${h.hazard} - ${h.count} mentions`).join('\n') : 'None reported'}
+${topHazards.length > 0 ? topHazards.map((h, i) => `${i + 1}. ${h.hazard}`).join('\n') : 'None reported'}
 
 PPE Requirements Noted:
-${topPPE.length > 0 ? topPPE.map((p, i) => `${i + 1}. ${p.hazard} - ${p.count} mentions`).join('\n') : 'None reported'}
+${topPPE.length > 0 ? topPPE.map((p, i) => `${i + 1}. ${p.hazard}`).join('\n') : 'None reported'}
 
-Near-misses: ${aggregation.jsa.nearMissCount} reported`;
+Near-misses: ${aggregation.jsa.nearMissCount > 0 ? 'Yes - be extra cautious' : 'None'}`;
 
   if (aggregation.jsa.weatherConditions.size > 0) {
     prompt += `\nWeather conditions: ${Array.from(aggregation.jsa.weatherConditions).join(', ')}`;
   }
 
+  const hasEquipmentIssues = aggregation.dvir.deficiencyCount > 0 || topVehicleIssues.length > 0 || topEquipmentIssues.length > 0;
   prompt += `\n
-=== DVIR DATA ===
-Vehicles inspected: ${aggregation.dvir.totalCount}
-Deficiencies found: ${aggregation.dvir.deficiencyCount}`;
-
-  if (topVehicleIssues.length > 0) {
-    prompt += `\nVehicle/Trailer Issues:
-${topVehicleIssues.map((i, idx) => `${idx + 1}. ${i.hazard} - ${i.count} reports`).join('\n')}`;
-  }
+Vehicle/Equipment Issues: ${hasEquipmentIssues ? 'Some equipment needs attention - remind about pre-trip inspections' : 'All equipment passed inspection'}`;
 
   prompt += `\n
-=== EQUIPMENT INSPECTION DATA ===
-Equipment inspected: ${aggregation.equipment.totalCount}`;
+=== YOUR TASK ===
+Generate a warm, personalized safety message for the ATTS crew based on the conditions above.
 
-  if (topEquipmentIssues.length > 0) {
-    prompt += `\nEquipment Issues Found:
-${topEquipmentIssues.map((i, idx) => `${idx + 1}. ${i.hazard} - ${i.count} reports`).join('\n')}`;
-  }
-
-  prompt += `\n
-Generate a safety announcement synthesizing insights from ALL data sources. Prioritize the most critical safety items. Remember: body max 283 chars (target 238), summary max 240 chars.`;
+CRITICAL REMINDERS:
+- DO NOT include any statistics, counts, or numbers in your message
+- DO NOT mention "X reports filed" or "X hazards identified"
+- START with a warm greeting like "Hey ATTS Family," or "Hey team,"
+- INCLUDE appreciation for the crew's work
+- MENTION relevant conditions (weather, equipment reminders) naturally
+- END with an encouraging phrase
+- Body max 283 chars (target 238), summary max 240 chars`;
 
   return prompt;
 }
 
 /**
  * Build a low-data prompt when insufficient submissions are available.
+ * Uses warm, personalized tone without mentioning data limitations.
+ * 
+ * @param _totalCount - Total submissions count (available for potential future logging)
+ * @param _minRequired - Minimum required submissions (available for potential future logging)
  */
-function buildLowDataPrompt(totalCount: number, minRequired: number): string {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function buildLowDataPrompt(_totalCount: number, _minRequired: number): string {
   const today = formatDateYMD(new Date());
   
   return `Date: ${today}
-Total Submissions: ${totalCount} (below minimum threshold of ${minRequired})
 
-Generate a "low data" safety reminder. Since we have insufficient submissions across JSA, DVIR, and equipment inspections, focus on general safety reminders rather than specific trends.
+Generate a warm, caring safety reminder for the ATTS team. Focus on general safety reminders for tree service work with a warm, family-oriented tone.
 
-The body should acknowledge limited data and provide standard safety reminders. Remember: body max 283 chars (target 238), summary max 240 chars.`;
+DO NOT mention anything about "limited data" or "few submissions" - just provide an encouraging safety message.
+
+The body should:
+- Start with a warm greeting like "Hey ATTS Family," or "Hey team,"
+- Include appreciation for the crew's hard work
+- Provide general safety reminders relevant to tree service work
+- End with an encouraging phrase like "Stay safe out there!" or "Watch out for each other!"
+
+Remember: body max 283 chars (target 238), summary max 240 chars. NO statistics or data references in the body.`;
 }
 
 // =============================================================================

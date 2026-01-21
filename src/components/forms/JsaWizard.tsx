@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { JSA_STEPS } from "./jsaSteps";
+import { FormProgressRing, FormProgressBar } from "./FormProgressRing";
+import { AutoSaveIndicator } from "./AutoSaveIndicator";
 
 export type SaveMode = "draft" | "complete";
 
@@ -31,6 +33,21 @@ interface JsaWizardProps {
   isEditMode: boolean;
   status: "draft" | "completed";
   title?: string;
+  /** Form completion progress (0-100) */
+  progress?: number;
+  /** Last saved timestamp */
+  lastSaved?: Date | null;
+  /** Whether there are unsaved changes */
+  hasUnsavedChanges?: boolean;
+  /** Step-specific completion status for badges */
+  stepCompletionStatus?: {
+    step1: boolean; // Job Info (required fields filled)
+    step2: boolean; // PPE (at least one selected)
+    step3: boolean; // Weather (at least one condition selected)
+    step4: boolean; // Hazards (reviewed)
+    step5: boolean; // Spans (at least one filled)
+    step6: boolean; // Review (signature provided)
+  };
 }
 
 export function JsaWizard({
@@ -47,11 +64,20 @@ export function JsaWizard({
   isEditMode,
   status,
   title = "Daily JSA",
+  progress = 0,
+  lastSaved = null,
+  hasUnsavedChanges = false,
+  stepCompletionStatus,
 }: JsaWizardProps) {
   const [direction, setDirection] = useState(0);
   const [showSaveOptions, setShowSaveOptions] = useState(false);
   const saveButtonRef = useRef<HTMLButtonElement>(null);
   const saveMenuRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  
+  // Swipe gesture state
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
   
   const totalSteps = JSA_STEPS.length;
   const isFirstStep = currentStep === 1;
@@ -82,6 +108,7 @@ export function JsaWizard({
     onSave(mode);
   }, [onSave]);
 
+  // Navigation - must be defined before swipe handlers
   const goToStep = useCallback(
     (step: number) => {
       if (step < 1 || step > totalSteps) return;
@@ -102,6 +129,36 @@ export function JsaWizard({
       goToStep(currentStep + 1);
     }
   }, [currentStep, goToStep, isLastStep]);
+
+  // Swipe gesture handlers (mobile navigation)
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+    const deltaX = touchEndX - touchStartX.current;
+    const deltaY = touchEndY - touchStartY.current;
+    
+    // Only trigger if horizontal swipe is dominant and significant
+    const minSwipeDistance = 50;
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > minSwipeDistance) {
+      if (deltaX > 0 && !isFirstStep) {
+        // Swipe right -> go back
+        goToStep(currentStep - 1);
+      } else if (deltaX < 0 && !isLastStep) {
+        // Swipe left -> go forward
+        goToStep(currentStep + 1);
+      }
+    }
+    
+    touchStartX.current = null;
+    touchStartY.current = null;
+  }, [currentStep, isFirstStep, isLastStep, goToStep]);
 
   // Animation variants for step transitions
   const slideVariants = {
@@ -142,21 +199,38 @@ export function JsaWizard({
             <span className="text-xs sm:text-sm font-medium">Back</span>
           </motion.button>
 
-          {/* Center Title */}
+          {/* Center - Progress Ring & Title */}
           <div className="flex items-center gap-2 flex-1 justify-center min-w-0">
-            <h1 className="text-xs sm:text-sm font-bold text-white truncate">{title}</h1>
-            {isEditMode && (
-              <span
-                className={cn(
-                  "flex-shrink-0 px-1.5 py-0.5 rounded text-[8px] sm:text-[9px] font-bold uppercase tracking-wide",
-                  status === "completed"
-                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                    : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+            {/* Progress Ring (desktop) */}
+            <div className="hidden sm:block">
+              <FormProgressRing progress={progress} size={36} strokeWidth={3} />
+            </div>
+            <div className="flex flex-col items-center sm:items-start">
+              <div className="flex items-center gap-2">
+                <h1 className="text-xs sm:text-sm font-bold text-white truncate">{title}</h1>
+                {isEditMode && (
+                  <span
+                    className={cn(
+                      "flex-shrink-0 px-1.5 py-0.5 rounded text-[8px] sm:text-[9px] font-bold uppercase tracking-wide",
+                      status === "completed"
+                        ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                        : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                    )}
+                  >
+                    {status}
+                  </span>
                 )}
-              >
-                {status}
-              </span>
-            )}
+              </div>
+              {/* Auto-save indicator (only for new forms) */}
+              {!isEditMode && (
+                <AutoSaveIndicator
+                  status={hasUnsavedChanges ? "saving" : lastSaved ? "saved" : "idle"}
+                  lastSaved={lastSaved}
+                  hasUnsavedChanges={hasUnsavedChanges}
+                  className="mt-0.5"
+                />
+              )}
+            </div>
           </div>
 
           {/* Edit My JSA's Button - Always visible, enhanced */}
@@ -171,54 +245,85 @@ export function JsaWizard({
           </motion.button>
         </div>
 
-        {/* Step Progress - Compact horizontal pills */}
+        {/* Mobile Progress Bar */}
+        <div className="sm:hidden px-3 pb-2">
+          <FormProgressBar progress={progress} showLabel={true} />
+        </div>
+
+        {/* Step Progress - Enhanced touch targets with completion badges */}
         <div className="px-3 pb-2.5 sm:px-4">
-          <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-hide">
             {JSA_STEPS.map((step) => {
               const isActive = step.id === currentStep;
               const isComplete = completedSteps.has(step.id) || step.id < currentStep;
               
+              // Check step-specific completion for visual badge
+              const stepKey = `step${step.id}` as keyof typeof stepCompletionStatus;
+              const isStepComplete = stepCompletionStatus?.[stepKey] ?? false;
+              
               return (
-                <button
+                <motion.button
                   key={step.id}
                   type="button"
                   onClick={() => goToStep(step.id)}
+                  whileTap={{ scale: 0.95 }}
                   className={cn(
-                    "flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all touch-manipulation",
+                    // Increased min-height for better touch targets (44px minimum)
+                    "relative flex-shrink-0 flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl text-xs font-medium transition-all touch-manipulation",
                     isActive
-                      ? "bg-emerald-500/25 text-emerald-300 border border-emerald-500/40"
+                      ? "bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 shadow-lg shadow-emerald-900/20"
                       : isComplete
-                      ? "bg-white/5 text-white/70 hover:bg-white/10"
-                      : "bg-transparent text-white/40 hover:text-white/60"
+                      ? "bg-white/5 text-white/70 hover:bg-white/10 border border-transparent"
+                      : "bg-transparent text-white/40 hover:text-white/60 border border-transparent"
                   )}
                 >
                   <span
                     className={cn(
-                      "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold",
+                      // Increased size on mobile for easier tapping
+                      "w-6 h-6 sm:w-5 sm:h-5 rounded-full flex items-center justify-center text-[11px] sm:text-[10px] font-bold transition-all",
                       isActive
-                        ? "bg-emerald-500 text-white"
-                        : isComplete
+                        ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/30"
+                        : isComplete || isStepComplete
                         ? "bg-emerald-600/50 text-emerald-200"
                         : "bg-white/10 text-white/50"
                     )}
                   >
-                    {isComplete && !isActive ? (
-                      <Check className="w-3 h-3" />
+                    {(isComplete || isStepComplete) && !isActive ? (
+                      <Check className="w-3.5 h-3.5 sm:w-3 sm:h-3" />
                     ) : (
                       step.id
                     )}
                   </span>
                   <span className="hidden sm:inline">{step.shortTitle}</span>
-                </button>
+                  
+                  {/* Completion badge - small dot indicator */}
+                  {isStepComplete && !isActive && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-gray-900 shadow-sm"
+                    />
+                  )}
+                </motion.button>
               );
             })}
           </div>
+          
+          {/* Swipe hint for mobile (only on first visit) */}
+          <p className="sm:hidden text-center text-[9px] text-white/30 mt-1.5">
+            Swipe left/right to navigate steps
+          </p>
         </div>
       </div>
 
-      {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden">
-        <div className="max-w-2xl mx-auto px-4 py-5 sm:px-6 sm:py-6 pb-24">
+      {/* Scrollable Content Area - with swipe gestures */}
+      <div 
+        ref={contentRef}
+        className="flex-1 overflow-y-auto overflow-x-hidden"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div className="max-w-2xl mx-auto px-3 py-3 sm:px-6 sm:py-5 pb-20">
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
               key={currentStep}
@@ -232,14 +337,14 @@ export function JsaWizard({
                 opacity: { duration: 0.15 },
               }}
             >
-              {/* Step Header */}
-              <div className="mb-5">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-bold text-emerald-400 uppercase tracking-wide">
+              {/* Step Header - Compact on mobile */}
+              <div className="mb-3 sm:mb-5">
+                <div className="flex items-center gap-2 mb-0.5 sm:mb-1">
+                  <span className="text-[10px] sm:text-xs font-bold text-emerald-400 uppercase tracking-wide">
                     Step {currentStep} of {totalSteps}
                   </span>
                 </div>
-                <h2 className="text-xl font-bold text-white">
+                <h2 className="text-lg sm:text-xl font-bold text-white">
                   {currentStepData?.title}
                 </h2>
               </div>
@@ -318,6 +423,7 @@ export function JsaWizard({
                       <button
                         type="button"
                         onClick={() => setShowSaveOptions(false)}
+                        aria-label="Close save options"
                         className="p-1 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors"
                       >
                         <X className="w-4 h-4" />

@@ -99,12 +99,12 @@ const BasePicker = forwardRef<HTMLInputElement, InternalPickerProps>(
     };
 
     return (
-      <div className={cn("space-y-2", containerClassName)}>
+      <div className={cn("space-y-1 sm:space-y-2", containerClassName)}>
         {label && (
           <label
             htmlFor={inputId}
             className={cn(
-              "text-sm font-medium text-white/80 tracking-wide",
+              "text-xs sm:text-sm font-medium text-white/80 tracking-wide",
               labelClassName
             )}
           >
@@ -112,8 +112,8 @@ const BasePicker = forwardRef<HTMLInputElement, InternalPickerProps>(
           </label>
         )}
         <div className="relative group">
-          <div className={cn("pointer-events-none absolute left-4 top-1/2 -translate-y-1/2", theme.iconColor)}>
-            <Icon className="h-4 w-4" />
+          <div className={cn("pointer-events-none absolute left-3 sm:left-4 top-1/2 -translate-y-1/2", theme.iconColor)}>
+            <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </div>
           <input
             {...rest}
@@ -122,7 +122,7 @@ const BasePicker = forwardRef<HTMLInputElement, InternalPickerProps>(
             type={pickerType}
             onChange={handleChange}
             className={cn(
-              "w-full rounded-2xl border px-12 py-3 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:border-transparent transition-all [color-scheme:dark]",
+              "w-full rounded-xl sm:rounded-2xl border px-9 sm:px-12 py-2 sm:py-3 text-xs sm:text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:border-transparent transition-all [color-scheme:dark]",
               theme.border,
               theme.hoverBorder,
               theme.focusRing,
@@ -134,13 +134,13 @@ const BasePicker = forwardRef<HTMLInputElement, InternalPickerProps>(
             }}
           />
           {value && pickerType === "time" && (
-            <div className={cn("pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[0.6rem] uppercase tracking-[0.3em]", theme.badge)}>
+            <div className={cn("pointer-events-none absolute right-2.5 sm:right-4 top-1/2 -translate-y-1/2 text-[0.5rem] sm:text-[0.6rem] uppercase tracking-[0.3em]", theme.badge)}>
               24H
             </div>
           )}
         </div>
         {(helperText || formattedValue) && (
-          <p className="text-xs text-gray-400">
+          <p className="text-[10px] sm:text-xs text-gray-400">
             {formattedValue ? (
               <>
                 <span className={cn("font-semibold", theme.helperHighlight)}>

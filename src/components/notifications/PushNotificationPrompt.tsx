@@ -206,6 +206,10 @@ function PushNotificationPromptComponent() {
         transition={{ duration: 0.3 }}
         className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
         onClick={handleBackdropClick}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Enable Push Notifications"
+        tabIndex={0}
       >
         <motion.div
           initial={{ scale: 0.9, opacity: 0, y: 20 }}

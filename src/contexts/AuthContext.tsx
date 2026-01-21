@@ -1,7 +1,8 @@
-import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, ReactNode, useCallback } from 'react';
 import { User, Session, type PostgrestSingleResponse } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
 import { logger } from "../lib/logger";
+import { setCurrentUserId, clearSession as clearTelemetrySession } from '../lib/telemetry';
 
 
 // Matches DB constraint: check (role in ('employee', 'admin', 'manager', 'mechanic', 'general_foreman', 'safety_officer', 'foreman'))
@@ -17,11 +18,13 @@ interface AuthContextType {
   loading: boolean;
   role: UserRole;
   fullName: string | null;
+  avatarUrl: string | null;
   isAdmin: boolean;
   isMechanic: boolean;
   hasMechanicAccess: boolean;
   signOut: () => Promise<void>;
   setSession: (session: Session | null) => void;
+  refreshAvatar: () => Promise<void>;
 }
 
 // Session storage keys for profile caching
@@ -33,6 +36,7 @@ interface CachedProfile {
   userId: string;
   role: UserRole;
   fullName: string | null;
+  avatarUrl: string | null;
 }
 
 // Helper functions for profile caching
@@ -61,9 +65,9 @@ function getCachedProfile(userId: string): CachedProfile | null {
   }
 }
 
-function setCachedProfile(userId: string, role: UserRole, fullName: string | null): void {
+function setCachedProfile(userId: string, role: UserRole, fullName: string | null, avatarUrl: string | null): void {
   try {
-    const profile: CachedProfile = { userId, role, fullName };
+    const profile: CachedProfile = { userId, role, fullName, avatarUrl };
     sessionStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(profile));
     sessionStorage.setItem(PROFILE_CACHE_EXPIRY_KEY, String(Date.now() + PROFILE_CACHE_TTL));
   } catch {
@@ -80,6 +84,15 @@ function clearCachedProfile(): void {
   }
 }
 
+/**
+ * Get the public URL for an avatar stored in Supabase Storage
+ */
+function getAvatarPublicUrl(avatarPath: string | null): string | null {
+  if (!avatarPath) return null;
+  const { data } = supabase.storage.from('avatars').getPublicUrl(avatarPath);
+  return data.publicUrl ?? null;
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -87,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSessionState] = useState<ExtendedSession | null>(null);
   const [role, setRole] = useState<UserRole>(null);
   const [fullName, setFullName] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isMechanic, setIsMechanic] = useState(false);
@@ -95,6 +109,107 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Keep track of last known values to preserve them on transient errors
   const lastKnownRoleRef = useRef<UserRole>(null);
   const lastKnownFullNameRef = useRef<string | null>(null);
+  const lastKnownAvatarUrlRef = useRef<string | null>(null);
+
+  // Fetch user profile (role + full_name + avatar_url) from app_users table
+  // Returns profile on success, null on error so caller can preserve last known values
+  interface UserProfile {
+    role: UserRole;
+    fullName: string | null;
+    avatarUrl: string | null;
+  }
+  
+  const fetchUserProfile = useCallback(async (userId: string, skipCache = false): Promise<UserProfile | null> => {
+    try {
+      logger.info(`[AuthContext] Fetching profile for user_id: ${userId}`);
+      
+      // Check sessionStorage cache first for instant restore (unless skipping cache)
+      if (!skipCache) {
+        const cached = getCachedProfile(userId);
+        if (cached) {
+          logger.info(`[AuthContext] Using cached profile for ${userId}`, { role: cached.role, fullName: cached.fullName, avatarUrl: cached.avatarUrl });
+          return { role: cached.role, fullName: cached.fullName, avatarUrl: cached.avatarUrl };
+        }
+      }
+      
+      const timeoutSentinel = Symbol('profile-timeout');
+      let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+      // Fetch role, full_name, and avatar_url in single query
+      const fetchPromise = supabase
+        .from('app_users')
+        .select('role, full_name, avatar_url, user_id, email')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      const winner = await Promise.race([
+        fetchPromise.then((response) => {
+          if (timeoutId) clearTimeout(timeoutId);
+          return response;
+        }),
+        new Promise<typeof timeoutSentinel>((resolve) => {
+          // Reduced timeout from 5000ms to 2000ms for faster fallback
+          timeoutId = setTimeout(() => resolve(timeoutSentinel), 2000);
+        }),
+      ]);
+
+      if (winner === timeoutSentinel) {
+        logger.warn(
+          `[AuthContext] Profile fetch timed out for ${userId}, using cached values.`
+        );
+        return {
+          role: lastKnownRoleRef.current ?? 'employee',
+          fullName: lastKnownFullNameRef.current,
+          avatarUrl: lastKnownAvatarUrlRef.current,
+        };
+      }
+
+      const { data, error } = winner as PostgrestSingleResponse<{ 
+        role: string | null; 
+        full_name: string | null;
+        avatar_url: string | null;
+        user_id: string; 
+        email: string | null;
+      }>;
+
+      if (error) {
+        logger.error(`[AuthContext] Error fetching user profile for ${userId}:`, error.message);
+        return null;
+      }
+
+      if (!data) {
+        logger.warn(`[AuthContext] No app_users record found for user_id: ${userId}`);
+        return { role: 'employee', fullName: null, avatarUrl: null };
+      }
+
+      const rawRole = data?.role;
+      const rawFullName = data?.full_name;
+      const rawAvatarUrl = data?.avatar_url;
+      
+      // Convert storage path to public URL
+      const publicAvatarUrl = getAvatarPublicUrl(rawAvatarUrl);
+      
+      logger.info(`[AuthContext] Profile from DB for ${userId}:`, { role: rawRole, fullName: rawFullName, avatarUrl: publicAvatarUrl });
+
+      // Normalize role to known values (matches DB constraint)
+      let normalizedRole: UserRole = 'employee';
+      if (rawRole === 'admin' || rawRole === 'mechanic' || rawRole === 'employee' || rawRole === 'manager' || rawRole === 'general_foreman' || rawRole === 'safety_officer' || rawRole === 'foreman') {
+        normalizedRole = rawRole;
+      }
+
+      // Cache the profile in sessionStorage for instant restore on reload
+      setCachedProfile(userId, normalizedRole, rawFullName || null, publicAvatarUrl);
+
+      return {
+        role: normalizedRole,
+        fullName: rawFullName || null,
+        avatarUrl: publicAvatarUrl,
+      };
+    } catch (error) {
+      logger.error(`[AuthContext] Failed to fetch user profile for ${userId}:`, error);
+      return null;
+    }
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -102,103 +217,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const cleanupRealtime = async () => {
       const channels = supabase.getChannels();
       if (channels.length > 0) {
-        // console.log(`🧹 Cleaning up ${channels.length} realtime channel(s)`);
         for (const ch of channels) {
           await supabase.removeChannel(ch);
         }
-      }
-    };
-
-    // Fetch user profile (role + full_name) from app_users table
-    // Returns { role, fullName } on success, null values on error so caller can preserve last known values
-    // 
-    // IMPORTANT: This queries app_users WHERE user_id = userId
-    // The user_id column must contain the auth.users.id (UUID from Supabase Auth)
-    interface UserProfile {
-      role: UserRole;
-      fullName: string | null;
-    }
-    
-    const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
-      try {
-        logger.info(`[AuthContext] Fetching profile for user_id: ${userId}`);
-        
-        // Check sessionStorage cache first for instant restore
-        const cached = getCachedProfile(userId);
-        if (cached) {
-          logger.info(`[AuthContext] Using cached profile for ${userId}`, { role: cached.role, fullName: cached.fullName });
-          return { role: cached.role, fullName: cached.fullName };
-        }
-        
-        const timeoutSentinel = Symbol('profile-timeout');
-        let timeoutId: ReturnType<typeof setTimeout> | undefined;
-
-        // Fetch role AND full_name in single query (eliminates Dashboard duplicate)
-        const fetchPromise = supabase
-          .from('app_users')
-          .select('role, full_name, user_id, email')
-          .eq('user_id', userId)
-          .maybeSingle();
-
-        const winner = await Promise.race([
-          fetchPromise.then((response) => {
-            if (timeoutId) clearTimeout(timeoutId);
-            return response;
-          }),
-          new Promise<typeof timeoutSentinel>((resolve) => {
-            // Reduced timeout from 5000ms to 2000ms for faster fallback
-            timeoutId = setTimeout(() => resolve(timeoutSentinel), 2000);
-          }),
-        ]);
-
-        if (winner === timeoutSentinel) {
-          logger.warn(
-            `[AuthContext] Profile fetch timed out for ${userId}, using cached values.`
-          );
-          return {
-            role: lastKnownRoleRef.current ?? 'employee',
-            fullName: lastKnownFullNameRef.current,
-          };
-        }
-
-        const { data, error } = winner as PostgrestSingleResponse<{ 
-          role: string | null; 
-          full_name: string | null;
-          user_id: string; 
-          email: string | null;
-        }>;
-
-        if (error) {
-          logger.error(`[AuthContext] Error fetching user profile for ${userId}:`, error.message);
-          return null;
-        }
-
-        if (!data) {
-          logger.warn(`[AuthContext] No app_users record found for user_id: ${userId}`);
-          return { role: 'employee', fullName: null };
-        }
-
-        const rawRole = data?.role;
-        const rawFullName = data?.full_name;
-        
-        logger.info(`[AuthContext] Profile from DB for ${userId}:`, { role: rawRole, fullName: rawFullName });
-
-        // Normalize role to known values (matches DB constraint)
-        let normalizedRole: UserRole = 'employee';
-        if (rawRole === 'admin' || rawRole === 'mechanic' || rawRole === 'employee' || rawRole === 'manager' || rawRole === 'general_foreman' || rawRole === 'safety_officer' || rawRole === 'foreman') {
-          normalizedRole = rawRole;
-        }
-
-        // Cache the profile in sessionStorage for instant restore on reload
-        setCachedProfile(userId, normalizedRole, rawFullName || null);
-
-        return {
-          role: normalizedRole,
-          fullName: rawFullName || null,
-        };
-      } catch (error) {
-        logger.error(`[AuthContext] Failed to fetch user profile for ${userId}:`, error);
-        return null;
       }
     };
 
@@ -220,12 +241,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // If fetch failed (returned null), preserve last known values
             const finalRole: UserRole = profile?.role ?? lastKnownRoleRef.current ?? 'employee';
             const finalFullName = profile?.fullName ?? lastKnownFullNameRef.current ?? null;
+            const finalAvatarUrl = profile?.avatarUrl ?? lastKnownAvatarUrlRef.current ?? null;
             
             if (profile !== null) {
               // Only update refs when we get valid data from DB
               lastKnownRoleRef.current = profile.role;
               lastKnownFullNameRef.current = profile.fullName;
-              logger.info(`[AuthContext] Initial auth: Set profile for ${session.user.id}`, { role: profile.role, fullName: profile.fullName });
+              lastKnownAvatarUrlRef.current = profile.avatarUrl;
+              logger.info(`[AuthContext] Initial auth: Set profile for ${session.user.id}`, { role: profile.role, fullName: profile.fullName, avatarUrl: profile.avatarUrl });
             } else {
               logger.warn(`[AuthContext] Initial auth: Profile fetch failed, preserving last known values`);
             }
@@ -243,21 +266,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setUser(session.user);
             setRole(finalRole);
             setFullName(finalFullName);
+            setAvatarUrl(finalAvatarUrl);
             setIsAdmin(isAdminUser);
             setIsMechanic(isMechanicUser);
             setHasMechanicAccess(hasMechanicAccessUser);
+            // Set telemetry user context for event tracking
+            setCurrentUserId(session.user.id);
           } else {
             // No session - clear everything including last known values and cache
             lastKnownRoleRef.current = null;
             lastKnownFullNameRef.current = null;
+            lastKnownAvatarUrlRef.current = null;
             clearCachedProfile();
             setSessionState(null);
             setUser(null);
             setRole(null);
             setFullName(null);
+            setAvatarUrl(null);
             setIsAdmin(false);
             setIsMechanic(false);
             setHasMechanicAccess(false);
+            // Clear telemetry user context
+            setCurrentUserId(null);
           }
         }
       } catch (error) {
@@ -268,6 +298,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(null);
           setRole(null);
           setFullName(null);
+          setAvatarUrl(null);
           setIsAdmin(false);
           setIsMechanic(false);
           setHasMechanicAccess(false);
@@ -292,7 +323,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Clear last known values and cache on sign out
         lastKnownRoleRef.current = null;
         lastKnownFullNameRef.current = null;
+        lastKnownAvatarUrlRef.current = null;
         clearCachedProfile();
+        // Clear telemetry user context and session
+        setCurrentUserId(null);
+        clearTelemetrySession();
       }
 
       if (mounted) {
@@ -303,12 +338,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // If fetch failed (returned null), preserve last known values
           const finalRole: UserRole = profile?.role ?? lastKnownRoleRef.current ?? 'employee';
           const finalFullName = profile?.fullName ?? lastKnownFullNameRef.current ?? null;
+          const finalAvatarUrl = profile?.avatarUrl ?? lastKnownAvatarUrlRef.current ?? null;
           
           if (profile !== null) {
             // Only update refs when we get valid data from DB
             lastKnownRoleRef.current = profile.role;
             lastKnownFullNameRef.current = profile.fullName;
-            logger.info(`[AuthContext] Auth state change (${event}): Set profile for ${session.user.id}`, { role: profile.role, fullName: profile.fullName });
+            lastKnownAvatarUrlRef.current = profile.avatarUrl;
+            logger.info(`[AuthContext] Auth state change (${event}): Set profile for ${session.user.id}`, { role: profile.role, fullName: profile.fullName, avatarUrl: profile.avatarUrl });
           } else {
             logger.warn(`[AuthContext] Auth state change (${event}): Profile fetch failed, preserving last known values`);
           }
@@ -327,22 +364,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(session.user);
           setRole(finalRole);
           setFullName(finalFullName);
+          setAvatarUrl(finalAvatarUrl);
           setIsAdmin(isAdminUser);
           setIsMechanic(isMechanicUser);
           setHasMechanicAccess(hasMechanicAccessUser);
 
           if (event === 'SIGNED_IN') {
             logger.info(`[AuthContext] User signed in with role: ${finalRole}`);
+            // Set telemetry user context for event tracking
+            setCurrentUserId(session.user.id);
           }
         } else {
           // No session - clear everything including last known values and cache
           lastKnownRoleRef.current = null;
           lastKnownFullNameRef.current = null;
+          lastKnownAvatarUrlRef.current = null;
           clearCachedProfile();
           setSessionState(null);
           setUser(null);
           setRole(null);
           setFullName(null);
+          setAvatarUrl(null);
           setIsAdmin(false);
           setIsMechanic(false);
           setHasMechanicAccess(false);
@@ -361,15 +403,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       cleanupRealtime();
       subscription.unsubscribe();
     };
-  }, []);
+  }, [fetchUserProfile]);
 
   const signOut = async () => {
     try {
-      // console.log('🚪 Signing out user:', user?.email);
-
       const channels = supabase.getChannels();
       if (channels.length > 0) {
-        // console.log(`🧹 Cleaning up ${channels.length} realtime channel(s) before sign out`);
         for (const ch of channels) {
           await supabase.removeChannel(ch);
         }
@@ -385,11 +424,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Clear last known values and cache on sign out
       lastKnownRoleRef.current = null;
       lastKnownFullNameRef.current = null;
+      lastKnownAvatarUrlRef.current = null;
       clearCachedProfile();
       setUser(null);
       setSessionState(null);
       setRole(null);
       setFullName(null);
+      setAvatarUrl(null);
       setIsAdmin(false);
       setIsMechanic(false);
       setHasMechanicAccess(false);
@@ -414,8 +455,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSessionState(extended);
   };
 
+  // Refresh avatar URL after upload - skips cache to get fresh data
+  const refreshAvatar = useCallback(async () => {
+    if (!user?.id) return;
+    
+    logger.info(`[AuthContext] Refreshing avatar for user: ${user.id}`);
+    const profile = await fetchUserProfile(user.id, true); // Skip cache
+    
+    if (profile) {
+      setAvatarUrl(profile.avatarUrl);
+      lastKnownAvatarUrlRef.current = profile.avatarUrl;
+      // Update cache with new avatar URL
+      setCachedProfile(user.id, role, fullName, profile.avatarUrl);
+      logger.info(`[AuthContext] Avatar refreshed:`, profile.avatarUrl);
+    }
+  }, [user?.id, fetchUserProfile, role, fullName]);
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, role, fullName, isAdmin, isMechanic, hasMechanicAccess, signOut, setSession }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      session, 
+      loading, 
+      role, 
+      fullName, 
+      avatarUrl,
+      isAdmin, 
+      isMechanic, 
+      hasMechanicAccess, 
+      signOut, 
+      setSession,
+      refreshAvatar,
+    }}>
       {children}
     </AuthContext.Provider>
   );

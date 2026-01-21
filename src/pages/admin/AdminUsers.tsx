@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, memo, useMemo } from "react";
-import { motion } from "framer-motion";
-import { Users, Search, Filter, Mail, Calendar, Shield, Sparkles } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Users, Search, Filter, Mail, Calendar, Shield, Sparkles, X, Clock, Award } from "lucide-react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../contexts/AuthContext";
@@ -11,13 +11,50 @@ import { toast } from "../../lib/toast";
 import { logger } from "../../lib/logger";
 import { TextEffect } from "../../components/ui/TextEffect";
 import { getDeviceCapabilities } from "../../lib/mobilePerf";
+import { UserAvatar } from "../../components/ui/UserAvatar";
+import { differenceInMonths } from "date-fns";
 
 interface AppUser {
   id: string;
   email: string;
+  full_name: string | null;
   role: string;
+  avatar_url: string | null;
   created_at: string;
+  hire_date: string | null;
+  experience_level: 'apprentice' | 'journeyman' | 'expert' | null;
 }
+
+interface TenureInfo {
+  months: number;
+  isNewHire: boolean;
+  displayText: string;
+}
+
+function getTenure(hireDate: string | null): TenureInfo | null {
+  if (!hireDate) return null;
+  const months = differenceInMonths(new Date(), new Date(hireDate));
+  const years = Math.floor(months / 12);
+  const remainingMonths = months % 12;
+  return {
+    months,
+    isNewHire: months < 12,
+    displayText: months < 12 ? `New Hire (${months}mo)` : `${years}y ${remainingMonths}mo`
+  };
+}
+
+const getExperienceBadgeClass = (level: string | null): string => {
+  switch (level) {
+    case 'expert':
+      return 'bg-[#0d2818] text-[#6ee7b7] border border-emerald-500/40';
+    case 'journeyman':
+      return 'bg-[#1e1b4b] text-[#a5b4fc] border border-indigo-400/40';
+    case 'apprentice':
+      return 'bg-[#2d1f0f] text-[#fcd34d] border border-amber-400/40';
+    default:
+      return 'bg-white/5 text-[#9ca3af] border border-white/10';
+  }
+};
 
 const getRoleBadgeClass = (role: string): string => {
   const badgeClasses: Record<string, string> = {
@@ -56,6 +93,7 @@ interface MobileUserCardProps {
   onSaveRole: (userId: string, email: string) => void;
   onCancelEdit: () => void;
   onRoleChange: (role: string) => void;
+  onEditExperience: (user: AppUser) => void;
 }
 
 const MobileUserCard = ({
@@ -67,85 +105,131 @@ const MobileUserCard = ({
   onSaveRole,
   onCancelEdit,
   onRoleChange,
-}: MobileUserCardProps) => (
-  <motion.article
-    initial={{ opacity: 0, y: 8 }}
-    animate={{ opacity: 1, y: 0 }}
-    className="rounded-xl sm:rounded-2xl border border-[#f6dcb2]/15 bg-gradient-to-br from-[#1b1914]/80 to-[#120f0c]/60 p-3 sm:p-4 space-y-2.5 sm:space-y-3 active:bg-[#f4c979]/5 transition-colors"
-  >
-    {/* User Avatar & Email */}
-    <div className="flex items-start gap-2.5 sm:gap-3">
-      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-[#f4c979] to-[#d89d3e] flex items-center justify-center text-[#2d1c04] font-semibold text-sm sm:text-base flex-shrink-0">
-        {user.email.charAt(0).toUpperCase()}
+  onEditExperience,
+}: MobileUserCardProps) => {
+  const tenure = getTenure(user.hire_date);
+  
+  return (
+    <motion.article
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="rounded-xl sm:rounded-2xl border border-[#f6dcb2]/15 bg-gradient-to-br from-[#1b1914]/80 to-[#120f0c]/60 p-3 sm:p-4 space-y-2.5 sm:space-y-3 active:bg-[#f4c979]/5 transition-colors"
+    >
+      {/* User Avatar & Email */}
+      <div className="flex items-start gap-2.5 sm:gap-3">
+        <UserAvatar
+          avatarUrl={user.avatar_url}
+          name={user.full_name}
+          email={user.email}
+          size="sm"
+        />
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-white text-xs sm:text-sm truncate">
+            {user.full_name || user.email}
+          </p>
+          {user.full_name && (
+            <p className="text-[9px] sm:text-[0.65rem] text-[#c7b696] truncate">{user.email}</p>
+          )}
+          <p className="text-[9px] sm:text-[0.65rem] text-[#c7b696]/60">ID: {user.id.slice(0, 8)}…</p>
+        </div>
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold text-white text-xs sm:text-sm truncate">{user.email}</p>
-        <p className="text-[9px] sm:text-[0.65rem] text-[#c7b696]">ID: {user.id.slice(0, 8)}…</p>
-      </div>
-    </div>
 
-    {/* Role Section */}
-    <div className="space-y-1.5 sm:space-y-2">
-      <p className="text-[9px] sm:text-xs uppercase tracking-wider text-[#f4c979]/70">Role</p>
-      
-      {editingRoleUserId === user.id ? (
-        <div className="space-y-2">
-          {/* Role Dropdown */}
-          <select
-            value={pendingRole}
-            onChange={(e) => onRoleChange(e.target.value)}
-            disabled={savingRole}
-            className="w-full rounded-lg sm:rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-2.5 sm:px-3 py-2 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 min-h-[40px] sm:min-h-[44px]"
-          >
-            <option value="employee">Employee</option>
-            <option value="admin">Admin</option>
-            <option value="manager">Manager</option>
-            <option value="mechanic">Mechanic</option>
-            <option value="general_foreman">General Foreman</option>
-            <option value="safety_officer">Safety Officer</option>
-            <option value="foreman">Foreman</option>
-          </select>
-          
-          {/* Save/Cancel Buttons */}
-          <div className="flex gap-2">
-            <button
-              onClick={() => onSaveRole(user.id, user.email)}
+      {/* Role Section */}
+      <div className="space-y-1.5 sm:space-y-2">
+        <p className="text-[9px] sm:text-xs uppercase tracking-wider text-[#f4c979]/70">Role</p>
+        
+        {editingRoleUserId === user.id ? (
+          <div className="space-y-2">
+            {/* Role Dropdown */}
+            <select
+              value={pendingRole}
+              onChange={(e) => onRoleChange(e.target.value)}
               disabled={savingRole}
-              className="flex-1 px-2.5 sm:px-3 py-2 rounded-lg sm:rounded-xl bg-[#f4c979]/20 border border-[#f4c979]/40 text-[10px] sm:text-xs font-semibold text-[#fef3d1] hover:bg-[#f4c979]/30 active:bg-[#f4c979]/40 disabled:opacity-50 transition-colors min-h-[40px] sm:min-h-[44px]"
+              className="w-full rounded-lg sm:rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-2.5 sm:px-3 py-2 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 min-h-[40px] sm:min-h-[44px]"
             >
-              {savingRole ? 'Saving...' : 'Save'}
-            </button>
+              <option value="employee">Employee</option>
+              <option value="admin">Admin</option>
+              <option value="manager">Manager</option>
+              <option value="mechanic">Mechanic</option>
+              <option value="general_foreman">General Foreman</option>
+              <option value="safety_officer">Safety Officer</option>
+              <option value="foreman">Foreman</option>
+            </select>
+            
+            {/* Save/Cancel Buttons */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => onSaveRole(user.id, user.email)}
+                disabled={savingRole}
+                className="flex-1 px-2.5 sm:px-3 py-2 rounded-lg sm:rounded-xl bg-[#f4c979]/20 border border-[#f4c979]/40 text-[10px] sm:text-xs font-semibold text-[#fef3d1] hover:bg-[#f4c979]/30 active:bg-[#f4c979]/40 disabled:opacity-50 transition-colors min-h-[40px] sm:min-h-[44px]"
+              >
+                {savingRole ? 'Saving...' : 'Save'}
+              </button>
+              <button
+                onClick={onCancelEdit}
+                disabled={savingRole}
+                className="flex-1 px-2.5 sm:px-3 py-2 rounded-lg sm:rounded-xl border border-[#f6dcb2]/25 text-[10px] sm:text-xs font-semibold text-[#fdf4db] hover:bg-white/5 active:bg-white/10 disabled:opacity-50 transition-colors min-h-[40px] sm:min-h-[44px]"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between gap-2">
+            <span className={`inline-flex items-center px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-semibold ${getRoleBadgeClass(user.role)}`}>
+              {user.role.charAt(0).toUpperCase() + user.role.slice(1).replace('_', ' ')}
+            </span>
             <button
-              onClick={onCancelEdit}
-              disabled={savingRole}
-              className="flex-1 px-2.5 sm:px-3 py-2 rounded-lg sm:rounded-xl border border-[#f6dcb2]/25 text-[10px] sm:text-xs font-semibold text-[#fdf4db] hover:bg-white/5 active:bg-white/10 disabled:opacity-50 transition-colors min-h-[40px] sm:min-h-[44px]"
+              onClick={() => onEditRole(user.id, user.role)}
+              className="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border border-[#f6dcb2]/25 text-[10px] sm:text-xs font-semibold text-[#fdf4db] hover:bg-white/5 active:bg-white/10 transition-colors min-h-[36px] sm:min-h-[40px]"
             >
-              Cancel
+              Edit
             </button>
           </div>
-        </div>
-      ) : (
+        )}
+      </div>
+
+      {/* Experience Section */}
+      <div className="space-y-1.5 sm:space-y-2">
+        <p className="text-[9px] sm:text-xs uppercase tracking-wider text-[#f4c979]/70">Experience</p>
         <div className="flex items-center justify-between gap-2">
-          <span className={`inline-flex items-center px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-semibold ${getRoleBadgeClass(user.role)}`}>
-            {user.role.charAt(0).toUpperCase() + user.role.slice(1).replace('_', ' ')}
-          </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            {tenure && (
+              <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold ${
+                tenure.isNewHire 
+                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' 
+                  : 'bg-[#1a2a1a] text-[#a8e6a8] border border-green-500/30'
+              }`}>
+                <Clock className="w-3 h-3" />
+                {tenure.displayText}
+              </span>
+            )}
+            {user.experience_level && (
+              <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-semibold ${getExperienceBadgeClass(user.experience_level)}`}>
+                {user.experience_level.charAt(0).toUpperCase() + user.experience_level.slice(1)}
+              </span>
+            )}
+            {!tenure && !user.experience_level && (
+              <span className="text-[10px] text-[#c7b696]/60">Not set</span>
+            )}
+          </div>
           <button
-            onClick={() => onEditRole(user.id, user.role)}
-            className="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border border-[#f6dcb2]/25 text-[10px] sm:text-xs font-semibold text-[#fdf4db] hover:bg-white/5 active:bg-white/10 transition-colors min-h-[36px] sm:min-h-[40px]"
+            onClick={() => onEditExperience(user)}
+            className="px-2.5 py-1.5 rounded-lg border border-[#f6dcb2]/25 text-[10px] font-semibold text-[#fdf4db] hover:bg-white/5 transition-colors"
           >
             Edit
           </button>
         </div>
-      )}
-    </div>
+      </div>
 
-    {/* Joined Date */}
-    <div className="pt-1.5 sm:pt-2 border-t border-white/5">
-      <p className="text-[10px] sm:text-xs text-[#f0e2c7]">{formatJoinedDate(user.created_at)}</p>
-      <p className="text-[9px] sm:text-[0.7rem] text-[#c7b696]">{formatJoinedTime(user.created_at)}</p>
-    </div>
-  </motion.article>
-);
+      {/* Joined Date */}
+      <div className="pt-1.5 sm:pt-2 border-t border-white/5">
+        <p className="text-[10px] sm:text-xs text-[#f0e2c7]">{formatJoinedDate(user.created_at)}</p>
+        <p className="text-[9px] sm:text-[0.7rem] text-[#c7b696]">{formatJoinedTime(user.created_at)}</p>
+      </div>
+    </motion.article>
+  );
+};
 
 const MobileLoadingSkeleton = () => (
   <div className="md:hidden space-y-3 p-4">
@@ -157,6 +241,144 @@ const MobileLoadingSkeleton = () => (
     ))}
   </div>
 );
+
+// Experience Edit Modal
+interface ExperienceEditModalProps {
+  user: AppUser;
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (userId: string, hireDate: string | null, experienceLevel: 'apprentice' | 'journeyman' | 'expert' | null) => Promise<void>;
+  saving: boolean;
+}
+
+const ExperienceEditModal = ({ user, isOpen, onClose, onSave, saving }: ExperienceEditModalProps) => {
+  const [hireDate, setHireDate] = useState(user.hire_date || '');
+  const [experienceLevel, setExperienceLevel] = useState<'apprentice' | 'journeyman' | 'expert' | ''>(user.experience_level || '');
+
+  useEffect(() => {
+    // Defer state updates to avoid cascading renders during effect execution
+    requestAnimationFrame(() => {
+      setHireDate(user.hire_date || '');
+      setExperienceLevel(user.experience_level || '');
+    });
+  }, [user]);
+
+  const handleSave = async () => {
+    await onSave(
+      user.id, 
+      hireDate || null, 
+      experienceLevel as 'apprentice' | 'journeyman' | 'expert' | null
+    );
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={onClose}
+        >
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+          
+          {/* Modal */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-md rounded-2xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] p-6 shadow-2xl"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#f4c979]/15 border border-[#f4c979]/30 flex items-center justify-center">
+                  <Award className="w-5 h-5 text-[#f4c979]" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">Edit Experience</h3>
+                  <p className="text-xs text-[#c7b696]">{user.full_name || user.email}</p>
+                </div>
+              </div>
+              <button
+                onClick={onClose}
+                className="p-2 rounded-lg hover:bg-white/5 transition-colors"
+                aria-label="Close user form"
+              >
+                <X className="w-5 h-5 text-[#c7b696]" />
+              </button>
+            </div>
+
+            {/* Form */}
+            <div className="space-y-4">
+              {/* Hire Date */}
+              <div>
+                <label className="block text-xs font-semibold text-[#f4c979]/80 uppercase tracking-wider mb-2">
+                  Hire Date
+                </label>
+                <input
+                  type="date"
+                  value={hireDate}
+                  onChange={(e) => setHireDate(e.target.value)}
+                  className="w-full rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-4 py-3 text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60"
+                />
+                {hireDate && (
+                  <p className="mt-1.5 text-xs text-[#c7b696]">
+                    Tenure: {getTenure(hireDate)?.displayText || 'N/A'}
+                  </p>
+                )}
+              </div>
+
+              {/* Experience Level */}
+              <div>
+                <label className="block text-xs font-semibold text-[#f4c979]/80 uppercase tracking-wider mb-2">
+                  Experience Level
+                </label>
+                <select
+                  value={experienceLevel}
+                  onChange={(e) => setExperienceLevel(e.target.value as 'apprentice' | 'journeyman' | 'expert' | '')}
+                  className="w-full rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-4 py-3 text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60"
+                >
+                  <option value="">Not Set</option>
+                  <option value="apprentice">Apprentice (&lt;1 year)</option>
+                  <option value="journeyman">Journeyman (1-5 years)</option>
+                  <option value="expert">Expert (5+ years)</option>
+                </select>
+                <p className="mt-1.5 text-xs text-[#c7b696]">
+                  Used for Safety Forecast crew risk scoring
+                </p>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={onClose}
+                disabled={saving}
+                className="flex-1 px-4 py-3 rounded-xl border border-[#f6dcb2]/25 text-sm font-semibold text-[#fdf4db] hover:bg-white/5 disabled:opacity-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="flex-1 px-4 py-3 rounded-xl bg-[#f4c979]/20 border border-[#f4c979]/40 text-sm font-semibold text-[#fef3d1] hover:bg-[#f4c979]/30 disabled:opacity-50 transition-colors"
+              >
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
 
 function AdminUsers() {
   const { role: currentUserRole, user } = useAuth();
@@ -175,6 +397,10 @@ function AdminUsers() {
   const [editingRoleUserId, setEditingRoleUserId] = useState<string | null>(null);
   const [pendingRole, setPendingRole] = useState<string>("");
   const [savingRole, setSavingRole] = useState(false);
+
+  // Experience editing state
+  const [experienceModalUser, setExperienceModalUser] = useState<AppUser | null>(null);
+  const [savingExperience, setSavingExperience] = useState(false);
 
   const totalPages =
     totalUsers && totalUsers > 0 ? Math.max(1, Math.ceil(totalUsers / pageSize)) : 1;
@@ -243,6 +469,37 @@ function AdminUsers() {
     [pendingRole, users, updateUserRole]
   );
 
+  // Handle experience update
+  const handleExperienceUpdate = useCallback(
+    async (userId: string, hireDate: string | null, experienceLevel: 'apprentice' | 'journeyman' | 'expert' | null) => {
+      setSavingExperience(true);
+      try {
+        const { error } = await supabase
+          .from('app_users')
+          .update({ 
+            hire_date: hireDate || null,
+            experience_level: experienceLevel || null
+          })
+          .eq('id', userId);
+
+        if (error) {
+          logger.error('Failed to update experience:', error);
+          toast.error(error.message || 'Failed to update experience');
+          return;
+        }
+
+        toast.success('Experience updated successfully');
+        setExperienceModalUser(null);
+      } catch (err) {
+        logger.error('Unexpected error updating experience:', err);
+        toast.error('Unexpected error occurred');
+      } finally {
+        setSavingExperience(false);
+      }
+    },
+    []
+  );
+
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
@@ -252,7 +509,7 @@ function AdminUsers() {
 
       let query = supabase
         .from("user_profiles")
-        .select("id, email, role, created_at", { count: "exact" })
+        .select("id, email, full_name, role, avatar_url, created_at, hire_date, experience_level", { count: "exact" })
         .order("created_at", { ascending: false });
 
       if (debouncedSearchQuery.trim()) {
@@ -275,15 +532,30 @@ function AdminUsers() {
       type SupabaseUserRow = {
         id: string;
         email: string | null;
+        full_name: string | null;
         role: string;
+        avatar_url: string | null;
         created_at: string;
+        hire_date: string | null;
+        experience_level: 'apprentice' | 'journeyman' | 'expert' | null;
+      };
+
+      // Helper to convert avatar storage path to public URL
+      const getAvatarPublicUrl = (avatarPath: string | null): string | null => {
+        if (!avatarPath) return null;
+        const { data } = supabase.storage.from('avatars').getPublicUrl(avatarPath);
+        return data.publicUrl ?? null;
       };
 
       const formattedUsers = (data || []).map((user: SupabaseUserRow) => ({
         id: user.id,
         email: user.email || "N/A",
+        full_name: user.full_name,
         role: user.role,
+        avatar_url: getAvatarPublicUrl(user.avatar_url),
         created_at: user.created_at,
+        hire_date: user.hire_date,
+        experience_level: user.experience_level,
       }));
 
       setUsers(formattedUsers);
@@ -519,6 +791,12 @@ function AdminUsers() {
                         <th className="px-6 py-4 text-left">Role</th>
                         <th className="px-6 py-4 text-left">
                           <span className="inline-flex items-center gap-2">
+                            <Award className="w-4 h-4" />
+                            Experience
+                          </span>
+                        </th>
+                        <th className="px-6 py-4 text-left">
+                          <span className="inline-flex items-center gap-2">
                             <Calendar className="w-4 h-4" />
                             Joined
                           </span>
@@ -537,12 +815,20 @@ function AdminUsers() {
                         >
                           <td className="px-6 py-5">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#f4c979] to-[#d89d3e] flex items-center justify-center text-[#2d1c04] font-semibold">
-                                {user.email.charAt(0).toUpperCase()}
-                              </div>
+                              <UserAvatar
+                                avatarUrl={user.avatar_url}
+                                name={user.full_name}
+                                email={user.email}
+                                size="md"
+                              />
                               <div>
-                                <p className="font-semibold text-white">{user.email}</p>
-                                <p className="text-[0.65rem] text-[#c7b696]">ID: {user.id.slice(0, 8)}…</p>
+                                <p className="font-semibold text-white">
+                                  {user.full_name || user.email}
+                                </p>
+                                {user.full_name && (
+                                  <p className="text-[0.65rem] text-[#c7b696]">{user.email}</p>
+                                )}
+                                <p className="text-[0.65rem] text-[#c7b696]/60">ID: {user.id.slice(0, 8)}…</p>
                               </div>
                             </div>
                           </td>
@@ -554,6 +840,33 @@ function AdminUsers() {
                             >
                               {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                             </span>
+                          </td>
+                          <td className="px-6 py-5">
+                            {(() => {
+                              const tenure = getTenure(user.hire_date);
+                              return (
+                                <div className="flex flex-col gap-1.5">
+                                  {tenure && (
+                                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold w-fit ${
+                                      tenure.isNewHire 
+                                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' 
+                                        : 'bg-[#1a2a1a] text-[#a8e6a8] border border-green-500/30'
+                                    }`}>
+                                      <Clock className="w-3 h-3" />
+                                      {tenure.displayText}
+                                    </span>
+                                  )}
+                                  {user.experience_level && (
+                                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-semibold w-fit ${getExperienceBadgeClass(user.experience_level)}`}>
+                                      {user.experience_level.charAt(0).toUpperCase() + user.experience_level.slice(1)}
+                                    </span>
+                                  )}
+                                  {!tenure && !user.experience_level && (
+                                    <span className="text-xs text-[#c7b696]/60">Not set</span>
+                                  )}
+                                </div>
+                              );
+                            })()}
                           </td>
                           <td className="px-6 py-5">
                             <p className="text-[#f0e2c7]">
@@ -605,15 +918,23 @@ function AdminUsers() {
                                 </button>
                               </div>
                             ) : (
-                              <button
-                                onClick={() => {
-                                  setEditingRoleUserId(user.id);
-                                  setPendingRole(user.role);
-                                }}
-                                className="px-3 py-1.5 rounded-xl border border-[#f6dcb2]/25 text-xs font-semibold text-[#fdf4db] hover:bg-white/5 transition-colors"
-                              >
-                                Edit Role
-                              </button>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => {
+                                    setEditingRoleUserId(user.id);
+                                    setPendingRole(user.role);
+                                  }}
+                                  className="px-3 py-1.5 rounded-xl border border-[#f6dcb2]/25 text-xs font-semibold text-[#fdf4db] hover:bg-white/5 transition-colors"
+                                >
+                                  Edit Role
+                                </button>
+                                <button
+                                  onClick={() => setExperienceModalUser(user)}
+                                  className="px-3 py-1.5 rounded-xl border border-[#f6dcb2]/25 text-xs font-semibold text-[#fdf4db] hover:bg-white/5 transition-colors"
+                                >
+                                  Edit Experience
+                                </button>
+                              </div>
                             )}
                           </td>
                         </motion.tr>
@@ -639,6 +960,7 @@ function AdminUsers() {
                         setPendingRole("");
                       }}
                       onRoleChange={setPendingRole}
+                      onEditExperience={setExperienceModalUser}
                     />
                   ))}
                 </div>
@@ -679,6 +1001,17 @@ function AdminUsers() {
           </motion.div>
         </div>
       </div>
+
+      {/* Experience Edit Modal */}
+      {experienceModalUser && (
+        <ExperienceEditModal
+          user={experienceModalUser}
+          isOpen={!!experienceModalUser}
+          onClose={() => setExperienceModalUser(null)}
+          onSave={handleExperienceUpdate}
+          saving={savingExperience}
+        />
+      )}
     </DashboardLayout>
   );
 }

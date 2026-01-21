@@ -6,7 +6,7 @@
  */
 
 import { useRef, useEffect } from 'react';
-import { MapPin, Star, Clock, Building2 } from 'lucide-react';
+import { MapPin, Star, Clock, Building2, MapPinOff, Search, ArrowUp } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import type { PlaceLocation } from '../../../types/location.types';
 
@@ -18,6 +18,11 @@ interface ResultsListProps {
   isSearching: boolean;
   error: string | null;
   showRecent: boolean;
+}
+
+// Check if error is a location permission denial
+function isPermissionDeniedError(error: string | null): boolean {
+  return error?.toLowerCase().includes('permission denied') || false;
 }
 
 export function ResultsList({
@@ -57,6 +62,44 @@ export function ResultsList({
     );
   }
 
+  // Special handling for permission denied errors - more helpful UX
+  if (error && isPermissionDeniedError(error)) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center py-6 px-4 gap-4">
+        {/* Permission denied notice */}
+        <div className="flex flex-col items-center gap-3 text-center">
+          <div className="relative">
+            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+              <MapPinOff className="h-6 w-6 text-amber-400" />
+            </div>
+            <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-amber-400 animate-pulse" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-amber-200">Location Access Blocked</p>
+            <p className="text-xs text-gray-400 max-w-[200px]">
+              Enable in browser settings or search below
+            </p>
+          </div>
+        </div>
+
+        {/* Search prompt with animated arrow */}
+        <div className="flex flex-col items-center gap-2 mt-2">
+          <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+            <Search className="h-4 w-4 text-emerald-400" />
+            <span className="text-sm text-emerald-300 font-medium">
+              Search for a hospital or clinic
+            </span>
+          </div>
+          <ArrowUp className="h-4 w-4 text-emerald-400/60 animate-bounce" />
+          <p className="text-[10px] text-gray-500 uppercase tracking-wider">
+            Type above to search
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Standard error display
   if (error) {
     return (
       <div className="flex-1 flex items-center justify-center py-8">

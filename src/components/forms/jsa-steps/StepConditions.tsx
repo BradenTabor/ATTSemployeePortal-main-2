@@ -1,4 +1,5 @@
 import { cn } from "../../../lib/utils";
+import { VoiceInputButton } from "../VoiceInputButton";
 
 const WEATHER_CONDITIONS = [
   { key: "sunny", label: "☀️ Sunny" },
@@ -94,9 +95,17 @@ export function StepConditions({
 
       {/* Hazards & Mitigation */}
       <div className="space-y-2 pt-2">
-        <p className="text-xs font-medium text-white/50 uppercase tracking-wider">
-          Weather Hazards & Mitigation
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-medium text-white/50 uppercase tracking-wider">
+            Weather Hazards & Mitigation
+          </p>
+          <VoiceInputButton
+            onTranscript={(text) => onInputChange("weatherHazards", text)}
+            currentValue={form.weatherHazards}
+            appendMode={true}
+            size="sm"
+          />
+        </div>
         <textarea
           rows={3}
           value={form.weatherHazards}

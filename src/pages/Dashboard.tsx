@@ -1,24 +1,17 @@
-import { useCallback, memo, useMemo, Suspense, lazy, useEffect } from 'react';
+import { useCallback, memo, useMemo, Suspense, lazy, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ScrollReveal } from '../motion';
 import {
   RefreshCw,
-  Inbox,
   AlertTriangle,
   Briefcase,
 } from 'lucide-react';
-import { DashboardAvatar } from '../components/dashboard/DashboardAvatar';
-import ProfileBar from '../components/ProfileBar';
-import { EnableNotificationsButton } from '../components/notifications';
 import { useAuth } from '../contexts/AuthContext';
 import { useUserAssignedJobs } from '../hooks/jobs';
+import { useProfileDiscoveryToast } from '../hooks/useProfileDiscoveryToast';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { PERSISTENCE_KEYS } from '../lib/persistence';
-import { TextEffect } from '../components/ui/TextEffect';
-import { getDeviceCapabilities } from '../lib/mobilePerf';
-import { ExpandableSection } from '../components/dashboard/ExpandableSection';
-import { CompactJobCard, StackedJobCard } from '../components/jobs';
 import {
   perfMark,
   perfMeasure,
@@ -26,72 +19,36 @@ import {
 } from '../lib/mobilePerf';
 import type { JobProgressTracker } from '../types/jobs';
 
+// Dashboard components
+import {
+  DashboardAvatar,
+  ExpandableSection,
+  WelcomeHeader,
+  CompactComplianceStrip,
+  DashboardGrid,
+  DashboardCard,
+  StackedLayout,
+  FloatingActionButton,
+  PinnedFavorites,
+  PullToRefresh,
+  WelcomeHeaderSkeleton,
+  JobsSectionSkeleton,
+  EnhancedNavCardsSkeleton,
+  EnhancedEmptyJobsState,
+  FeaturedAnnouncementSection,
+} from '../components/dashboard';
+import { CompactJobCard, StackedJobCard } from '../components/jobs';
+import { EnableNotificationsButton } from '../components/notifications';
+
 // Lazy-loaded components for code splitting
-const DashboardAnnouncementCard = lazy(
-  () => import('../components/DashboardAnnouncementCard')
-);
 const NavCards = lazy(() => import('../components/NavCards'));
+const EnhancedRewardsCard = lazy(
+  () => import('../components/dashboard/EnhancedRewardsCard')
+);
 
 // ============================================================================
-// SKELETON LOADERS
+// ERROR STATE
 // ============================================================================
-
-const AnnouncementCardSkeleton = memo(function AnnouncementCardSkeleton() {
-  return (
-    <div className="rounded-3xl border border-white/10 bg-[#041b14]/70 p-5 space-y-3 animate-pulse">
-      <div className="h-3 w-32 bg-white/10 rounded-full" />
-      <div className="space-y-2">
-        <div className="h-3 w-full bg-white/10 rounded-full" />
-        <div className="h-3 w-3/4 bg-white/10 rounded-full" />
-        <div className="h-3 w-2/3 bg-white/5 rounded-full" />
-      </div>
-    </div>
-  );
-});
-
-const JobCardSkeleton = memo(function JobCardSkeleton() {
-  return (
-    <div className="rounded-2xl border border-emerald-500/20 bg-[#041510]/80 p-3 md:p-4 animate-pulse">
-      <div className="flex items-start justify-between gap-3 mb-2">
-        <div className="flex-1">
-          <div className="h-4 w-32 bg-white/10 rounded mb-2" />
-          <div className="h-3 w-24 bg-white/5 rounded" />
-        </div>
-        <div className="h-8 w-12 bg-emerald-500/10 rounded-lg" />
-      </div>
-      <div className="ml-5 h-1.5 bg-white/5 rounded-full" />
-    </div>
-  );
-});
-
-const NavCardsSkeleton = memo(function NavCardsSkeleton() {
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-      {Array.from({ length: 6 }).map((_, idx) => (
-        <div
-          key={`nav-skeleton-${idx}`}
-          className="rounded-2xl border border-white/10 bg-white/5 h-28 md:h-32 animate-pulse"
-        />
-      ))}
-    </div>
-  );
-});
-
-// ============================================================================
-// EMPTY & ERROR STATES
-// ============================================================================
-
-const EmptyJobsState = memo(function EmptyJobsState() {
-  return (
-    <div className="flex flex-col items-center justify-center py-8 text-center">
-      <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center mb-3">
-        <Inbox className="w-6 h-6 text-emerald-400/60" />
-      </div>
-      <p className="text-sm text-white/60 font-medium">No active assignments</p>
-      <p className="text-xs text-white/40 mt-1">Jobs assigned to you will appear here</p>
-    </div>
-  );
-});
 
 interface ErrorStateProps {
   message: string;
@@ -145,13 +102,10 @@ const NavigableJobCard = memo(
       </motion.div>
     );
   },
-  // Custom comparison to prevent unnecessary re-renders
   (prevProps, nextProps) => {
-    // Re-render only if job data changed or if it's a different job
     return (
       prevProps.job.id === nextProps.job.id &&
       prevProps.job.status === nextProps.job.status &&
-      // Check for progress changes
       JSON.stringify(prevProps.job.progress_updates?.length) === 
         JSON.stringify(nextProps.job.progress_updates?.length) &&
       JSON.stringify(prevProps.job.milestones?.filter(m => m.is_completed).length) ===
@@ -161,7 +115,7 @@ const NavigableJobCard = memo(
 );
 
 // ============================================================================
-// NAVIGABLE STACKED JOB CARD - Stacked jobs that navigate to Assigned Jobs
+// NAVIGABLE STACKED JOB CARD
 // ============================================================================
 
 interface NavigableStackedJobCardProps {
@@ -186,7 +140,7 @@ const NavigableStackedJobCard = memo(function NavigableStackedJobCard({
 });
 
 // ============================================================================
-// ASSIGNED JOBS SECTION - Isolated with progressive rendering
+// ASSIGNED JOBS SECTION
 // ============================================================================
 
 interface AssignedJobsSectionProps {
@@ -196,7 +150,6 @@ interface AssignedJobsSectionProps {
   onRefetch: () => void;
 }
 
-// Type for display items (either a group of jobs or a single job)
 type JobDisplayItem = 
   | { type: 'group'; groupId: string; jobs: JobProgressTracker[] }
   | { type: 'job'; job: JobProgressTracker };
@@ -207,9 +160,6 @@ const AssignedJobsSection = memo(function AssignedJobsSection({
   error,
   onRefetch,
 }: AssignedJobsSectionProps) {
-  const caps = getDeviceCapabilities();
-  const enableAnimations = !caps.prefersReducedMotion && !caps.isMobile;
-
   // Group jobs by job_group_id for stacked display
   const displayItems = useMemo(() => {
     const groupMap = new Map<string, JobProgressTracker[]>();
@@ -225,10 +175,8 @@ const AssignedJobsSection = memo(function AssignedJobsSection({
       }
     });
     
-    // Create a unified display list
     const items: JobDisplayItem[] = [];
     
-    // Add groups first (sorted by first job's created_at, newest first)
     const groups = Array.from(groupMap.entries());
     groups.sort((a, b) => {
       const aDate = new Date(a[1][0]?.created_at || 0).getTime();
@@ -239,20 +187,13 @@ const AssignedJobsSection = memo(function AssignedJobsSection({
       items.push({ type: 'group', groupId, jobs: groupJobs });
     });
     
-    // Add ungrouped jobs
     ungrouped.forEach(job => items.push({ type: 'job', job }));
     
     return items;
   }, [jobs]);
 
   if (loading) {
-    return (
-      <div className="space-y-2 sm:space-y-3">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <JobCardSkeleton key={`job-skeleton-${i}`} />
-        ))}
-      </div>
-    );
+    return <JobsSectionSkeleton />;
   }
 
   if (error) {
@@ -260,154 +201,69 @@ const AssignedJobsSection = memo(function AssignedJobsSection({
   }
 
   if (jobs.length === 0) {
-    return <EmptyJobsState />;
+    return <EnhancedEmptyJobsState />;
   }
 
   return (
-    <motion.article
-      initial={{ opacity: 0, y: 16, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.5, type: "spring", stiffness: 120, damping: 20 }}
-      className="relative overflow-hidden rounded-xl sm:rounded-2xl md:rounded-[28px] border border-emerald-400/30 shadow-[0_4px_30px_-10px_rgba(16,185,129,0.35),0_2px_12px_-6px_rgba(0,0,0,0.4)] sm:shadow-[0_8px_60px_-15px_rgba(16,185,129,0.4),0_4px_20px_-8px_rgba(0,0,0,0.5)]"
-      style={{
-        background: 'linear-gradient(145deg, rgba(4, 30, 21, 0.98) 0%, rgba(2, 15, 10, 1) 50%, rgba(1, 8, 5, 1) 100%)',
-      }}
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      className="space-y-2.5"
     >
-      {/* Outer glow border effect - reduced on mobile */}
-      <div className="absolute -inset-[1px] rounded-[inherit] bg-gradient-to-br from-emerald-400/40 via-emerald-500/20 to-emerald-600/30 opacity-40 sm:opacity-50 blur-[1px] pointer-events-none" />
-      
-      {/* Animated rotating gradient ring - only with animations */}
-      {enableAnimations && (
-        <motion.div
-          className="absolute -inset-[2px] rounded-[inherit] opacity-40 pointer-events-none"
-          style={{
-            background: 'conic-gradient(from 0deg, transparent 0%, rgba(16, 185, 129, 0.5) 10%, transparent 25%, transparent 50%, rgba(52, 211, 153, 0.3) 60%, transparent 75%)',
-          }}
-          animate={{ rotate: 360 }}
-          transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
-        />
-      )}
-      
-      {/* Inner container with solid bg */}
-      <div 
-        className="relative rounded-[inherit] overflow-hidden"
-        style={{
-          background: 'linear-gradient(145deg, rgba(4, 30, 21, 0.99) 0%, rgba(2, 15, 10, 1) 50%, rgba(1, 8, 5, 1) 100%)',
-        }}
-      >
-        {/* Premium top shine line */}
-        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-300/60 to-transparent" />
-        
-        {/* Floating orbs - only on desktop */}
-        {enableAnimations && (
-          <>
-            <motion.div
-              className="absolute w-48 h-48 rounded-full pointer-events-none"
-              style={{
-                background: 'radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, transparent 70%)',
-                top: '-15%',
-                left: '-10%',
-                filter: 'blur(30px)',
-              }}
-              animate={{ 
-                x: [0, 15, 0],
-                y: [0, 10, 0],
-                scale: [1, 1.1, 1],
-              }}
-              transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-            />
-            <motion.div
-              className="absolute w-36 h-36 rounded-full pointer-events-none"
-              style={{
-                background: 'radial-gradient(circle, rgba(52, 211, 153, 0.15) 0%, transparent 70%)',
-                bottom: '-10%',
-                right: '-5%',
-                filter: 'blur(25px)',
-              }}
-              animate={{ 
-                x: [0, -10, 0],
-                y: [0, -8, 0],
-                scale: [1, 1.12, 1],
-              }}
-              transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-            />
-          </>
-        )}
-        
-        {/* Grid pattern overlay */}
-        <div 
-          className="absolute inset-0 opacity-[0.02] pointer-events-none"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(16, 185, 129, 0.5) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(16, 185, 129, 0.5) 1px, transparent 1px)
-            `,
-            backgroundSize: '35px 35px',
-          }}
-        />
-        
-        {/* Corner accent decorations - hidden on smallest screens */}
-        <div className="hidden sm:block absolute top-2 sm:top-2.5 right-2 sm:right-2.5 w-8 sm:w-12 h-8 sm:h-12 pointer-events-none opacity-25 sm:opacity-30">
-          <div className="absolute top-0 right-0 w-4 sm:w-6 h-[1px] bg-gradient-to-l from-emerald-400/70 to-transparent" />
-          <div className="absolute top-0 right-0 w-[1px] h-4 sm:h-6 bg-gradient-to-b from-emerald-400/70 to-transparent" />
-        </div>
-        <div className="hidden sm:block absolute bottom-2 sm:bottom-2.5 left-2 sm:left-2.5 w-8 sm:w-12 h-8 sm:h-12 pointer-events-none opacity-25 sm:opacity-30">
-          <div className="absolute bottom-0 left-0 w-4 sm:w-6 h-[1px] bg-gradient-to-r from-emerald-400/70 to-transparent" />
-          <div className="absolute bottom-0 left-0 w-[1px] h-4 sm:h-6 bg-gradient-to-t from-emerald-400/70 to-transparent" />
-        </div>
-
-        {/* Content container - optimized for mobile */}
-        <div className="relative p-3 sm:p-4 md:p-6">
-          {/* Compact header row */}
-          <div className="flex items-center justify-between gap-2 mb-2.5 sm:mb-4">
-            <div className="flex items-center gap-1.5 sm:gap-2.5">
-              <motion.div 
-                className="relative"
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.15, type: "spring", stiffness: 200 }}
-              >
-                {/* Badge glow - smaller on mobile */}
-                <div className="absolute -inset-0.5 sm:-inset-1 rounded-full bg-emerald-400/20 blur-sm sm:blur-md" />
-                <span className="relative inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border border-emerald-300/50 text-[9px] sm:text-xs font-bold tracking-[0.15em] sm:tracking-[0.25em] text-emerald-100 bg-gradient-to-r from-emerald-500/25 via-emerald-400/15 to-emerald-500/25 shadow-md shadow-emerald-500/15 backdrop-blur-sm">
-                  <motion.div
-                    animate={enableAnimations ? { rotate: [0, 15, -15, 0] } : undefined}
-                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                  >
-                    <Briefcase className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 text-emerald-200" />
-                  </motion.div>
-                  <span className="hidden xs:inline">ACTIVE</span> JOBS
-                </span>
-              </motion.div>
-              
-              {/* Compact count badge */}
-              <div className="flex items-center gap-1 text-[9px] sm:text-xs text-emerald-200/50 font-medium">
-                <div className="w-1 h-1 rounded-full bg-emerald-400/60 animate-pulse" />
-                <span className="tabular-nums">{jobs.length}</span>
-              </div>
-            </div>
+      {/* Compact Header */}
+      <div className="flex items-center justify-between px-1">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 border border-emerald-400/30 flex items-center justify-center">
+            <Briefcase className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
           </div>
-
-          {/* Jobs List - Vertical stacked layout for grouped jobs */}
-          <div className="space-y-2 sm:space-y-3">
-            {displayItems.map((item, index) => (
-              <motion.div
-                key={item.type === 'group' ? `group-${item.groupId}` : item.job.id}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.03, duration: 0.25 }}
-              >
-                {item.type === 'group' ? (
-                  <NavigableStackedJobCard jobs={item.jobs} />
-                ) : (
-                  <NavigableJobCard job={item.job} />
-                )}
-              </motion.div>
-            ))}
+          <div>
+            <h3 className="text-xs sm:text-sm font-bold text-white">Active Jobs</h3>
+            <p className="text-[9px] sm:text-[10px] text-emerald-400/60">
+              {jobs.length} assignment{jobs.length !== 1 ? 's' : ''}
+            </p>
           </div>
         </div>
+        
+        {/* View all link */}
+        <a 
+          href="/assigned-jobs"
+          className="text-[10px] sm:text-xs font-medium text-emerald-400/70 hover:text-emerald-300 transition-colors"
+        >
+          View all →
+        </a>
       </div>
-    </motion.article>
+
+      {/* Compact Jobs Grid/List */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {displayItems.slice(0, 4).map((item, index) => (
+          <motion.div
+            key={item.type === 'group' ? `group-${item.groupId}` : item.job.id}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.03, duration: 0.25 }}
+          >
+            {item.type === 'group' ? (
+              <NavigableStackedJobCard jobs={item.jobs} />
+            ) : (
+              <NavigableJobCard job={item.job} />
+            )}
+          </motion.div>
+        ))}
+      </div>
+      
+      {/* Show more indicator if more than 4 jobs */}
+      {displayItems.length > 4 && (
+        <a 
+          href="/assigned-jobs"
+          className="flex items-center justify-center gap-2 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/15 hover:border-emerald-500/30 transition-all"
+        >
+          <span className="text-xs font-medium text-emerald-400">
+            +{displayItems.length - 4} more job{displayItems.length - 4 !== 1 ? 's' : ''}
+          </span>
+        </a>
+      )}
+    </motion.div>
   );
 });
 
@@ -417,7 +273,16 @@ const AssignedJobsSection = memo(function AssignedJobsSection({
 
 function Dashboard() {
   const navigate = useNavigate();
-  const { user, signOut, setSession, role, fullName } = useAuth();
+  const { user, signOut, setSession } = useAuth();
+
+  // State for compliance sync with QuickActions
+  const [complianceState, setComplianceState] = useState({
+    dvir: false,
+    equipment: false,
+    jsa: false,
+  });
+  const [rewardPoints, setRewardPoints] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Initialize long task observer in dev mode
   useEffect(() => {
@@ -425,16 +290,21 @@ function Dashboard() {
     return () => cleanup?.();
   }, []);
 
-  // Display full_name if available, otherwise show full email
-  const displayName = useMemo(() => fullName || user?.email || 'Employee', [fullName, user?.email]);
+  // Show one-time discovery toast for Profile/Settings pages
+  useProfileDiscoveryToast({ delay: 4000, duration: 10000 });
 
-  // Fetch user's assigned jobs with optimized hook
+  // Fetch user's assigned jobs
   const {
     assignedJobs,
     loading: jobsLoading,
     error: jobsError,
     refetch: refetchJobs,
   } = useUserAssignedJobs(user?.id);
+
+  // Handle compliance change from MissionControlCard
+  const handleComplianceChange = useCallback((dvir: boolean, equipment: boolean, jsa: boolean) => {
+    setComplianceState({ dvir, equipment, jsa });
+  }, []);
 
   // Stable sign out handler
   const handleSignOut = useCallback(async () => {
@@ -450,178 +320,180 @@ function Dashboard() {
     }
   }, [navigate, setSession, signOut]);
 
-  // Device capabilities for animation decisions
-  const caps = useMemo(() => getDeviceCapabilities(), []);
-  const enableAnimations = !caps.prefersReducedMotion && !caps.isMobile;
+  // Pull to refresh handler
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await refetchJobs();
+      // Small delay for visual feedback
+      await new Promise(resolve => setTimeout(resolve, 500));
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [refetchJobs]);
+
+  // Determine if jobs should be elevated (shown before announcements)
+  const hasActiveJobs = assignedJobs.length > 0;
+  const allFormsComplete = complianceState.dvir && complianceState.equipment && complianceState.jsa;
+
+  // Get current job name for welcome message
+  const currentJobName = useMemo(() => {
+    if (assignedJobs.length > 0) {
+      const activeJob = assignedJobs.find(j => j.status === 'active') || assignedJobs[0];
+      return activeJob?.job_name;
+    }
+    return undefined;
+  }, [assignedJobs]);
 
   return (
     <DashboardLayout title="Employee Hub">
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pb-4 pt-6 sm:pt-8">
-        {/* Premium Animated Welcome Section with Glass Backdrop */}
-        <div className="mb-6 md:mb-8">
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="relative"
-          >
-            {/* Glass backdrop container */}
-            <div 
-              className="relative overflow-hidden rounded-2xl md:rounded-3xl border border-white/[0.12] shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.1)]"
-              style={{
-                background: 'linear-gradient(145deg, rgba(16, 185, 129, 0.1) 0%, rgba(4, 30, 21, 0.65) 40%, rgba(0, 0, 0, 0.75) 100%)',
-                backdropFilter: 'blur(24px) saturate(1.6)',
-                WebkitBackdropFilter: 'blur(24px) saturate(1.6)',
-              }}
-            >
-              {/* Realistic glass gloss - diagonal shine reflection */}
-              <div 
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: 'linear-gradient(125deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 25%, transparent 50%, transparent 100%)',
-                }}
+      <PullToRefresh onRefresh={handleRefresh} isRefreshing={isRefreshing}>
+        <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 pb-4 pt-3 sm:pt-6">
+          
+          {/* ============================================================ */}
+          {/* TIER 1: Welcome Header - Compact identity + status */}
+          {/* ============================================================ */}
+          <div className="mb-3 sm:mb-4">
+            <Suspense fallback={<WelcomeHeaderSkeleton />}>
+              <WelcomeHeader
+                allFormsComplete={allFormsComplete}
+                activeJobsCount={assignedJobs.length}
+                currentJobName={currentJobName}
+                rewardPoints={rewardPoints}
+                onSignOut={handleSignOut}
               />
-              
-              {/* Secondary gloss layer - softer highlight */}
-              <div 
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 40%)',
-                }}
-              />
-              
-              {/* Inner emerald glow */}
-              <div 
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: 'radial-gradient(ellipse at 25% 0%, rgba(16, 185, 129, 0.2) 0%, transparent 45%)',
-                }}
-              />
-              
-              {/* Specular highlight - corner gleam */}
-              <div 
-                className="absolute top-0 left-0 w-32 h-32 pointer-events-none"
-                style={{
-                  background: 'radial-gradient(circle at 20% 20%, rgba(255,255,255,0.12) 0%, transparent 50%)',
-                }}
-              />
-              
-              {/* Top edge highlight - brighter for glass effect */}
-              <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-white/5 via-white/25 to-white/5 rounded-t-[inherit]" />
-              
-              {/* Left edge highlight */}
-              <div className="absolute top-0 left-0 bottom-0 w-[1px] bg-gradient-to-b from-white/20 via-white/5 to-transparent rounded-l-[inherit]" />
-              
-              {/* Content area */}
-              <div className="relative px-5 py-4 md:px-7 md:py-5">
-                <div className="flex items-center gap-4">
-                  {/* Subtle gradient line accent */}
-                  <motion.div
-                    initial={{ scaleY: 0, opacity: 0 }}
-                    animate={{ scaleY: 1, opacity: 1 }}
-                    transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                    className="w-1 h-12 md:h-14 rounded-full bg-gradient-to-b from-emerald-400 via-emerald-500 to-emerald-600 origin-top flex-shrink-0"
-                    style={{
-                      boxShadow: '0 0 20px rgba(16, 185, 129, 0.5), 0 0 40px rgba(16, 185, 129, 0.25)',
-                    }}
-                  />
-                  
-                  {/* Text content */}
-                  <div className="flex-1 min-w-0">
-                    {enableAnimations ? (
-                      <TextEffect
-                        as="h1"
-                        preset="blurSlide"
-                        per="char"
-                        delay={0.15}
-                        className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black tracking-tight"
-                        segmentWrapperClassName="bg-gradient-to-r from-white via-emerald-100 to-white/90 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(125,225,180,0.35)]"
-                      >
-                        {`Welcome back, ${displayName}`}
-                      </TextEffect>
-                    ) : (
-                      <h1 
-                        className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black tracking-tight bg-gradient-to-r from-white via-emerald-100 to-white/90 bg-clip-text text-transparent"
-                      >
-                        {`Welcome back, ${displayName}`}
-                      </h1>
-                    )}
-                    
-                    {/* Subtle tagline with fade-in */}
-                    <motion.p
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.5, delay: 0.7, ease: 'easeOut' }}
-                      className="mt-1 md:mt-1.5 text-xs sm:text-sm md:text-base text-emerald-300/40 font-medium tracking-wide"
-                    >
-                      Your command center awaits
-                    </motion.p>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Bottom edge - subtle dark line for depth */}
-              <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-black/30 to-transparent" />
-              
-              {/* Right edge subtle shadow for 3D depth */}
-              <div className="absolute top-0 right-0 bottom-0 w-[1px] bg-gradient-to-b from-transparent via-black/20 to-transparent" />
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Mobile-first Bento layout */}
-        <div className="w-full space-y-4 md:space-y-6">
-          {/* Section 1: Announcements - Clean direct display */}
-          <ScrollReveal variant="fadeUp" delay={0}>
-            <Suspense fallback={<AnnouncementCardSkeleton />}>
-              <DashboardAnnouncementCard />
             </Suspense>
-          </ScrollReveal>
+          </div>
 
-          {/* Section 2: Assigned Jobs - Clean floating grid display */}
-          <ScrollReveal variant="fadeUp" delay={0.1}>
-            <AssignedJobsSection
-              jobs={assignedJobs}
-              loading={jobsLoading}
-              error={jobsError}
-              onRefetch={refetchJobs}
-            />
-          </ScrollReveal>
+          {/* ============================================================ */}
+          {/* TIER 1.5: Featured Announcement - Right below header */}
+          {/* Premium announcement card for immediate visibility */}
+          {/* ============================================================ */}
+          <div className="mb-3 sm:mb-4">
+            <ScrollReveal variant="fadeUp" delay={0.02}>
+              <FeaturedAnnouncementSection />
+            </ScrollReveal>
+          </div>
 
-          {/* Section 3: All Tools & Features */}
-          <ScrollReveal variant="fadeUp" delay={0.2}>
+          {/* ============================================================ */}
+          {/* TIER 2: Compliance Strip - Unified form status + actions */}
+          {/* Replaces both ComplianceHeroGrid and QuickLinksRow */}
+          {/* ============================================================ */}
+          <div className="mb-3 sm:mb-4">
+            <ScrollReveal variant="fadeUp" delay={0.04}>
+              <CompactComplianceStrip onComplianceChange={handleComplianceChange} />
+            </ScrollReveal>
+          </div>
+
+          {/* ============================================================ */}
+          {/* TIER 3: Primary Content Grid */}
+          {/* Two columns on md+ screens: Jobs | Announcements+Rewards */}
+          {/* Single column stacked on mobile */}
+          {/* ============================================================ */}
+          <div className="mb-3 sm:mb-4">
+            <ScrollReveal variant="fadeUp" delay={0.06}>
+              <DashboardGrid
+                gap="md"
+                primaryWider={hasActiveJobs}
+                primary={
+                  <StackedLayout gap="sm">
+                    {/* Active Jobs Section */}
+                    <DashboardCard variant="elevated">
+                      <div className="p-3 sm:p-4">
+                        <AssignedJobsSection
+                          jobs={assignedJobs}
+                          loading={jobsLoading}
+                          error={jobsError}
+                          onRefetch={refetchJobs}
+                        />
+                      </div>
+                    </DashboardCard>
+                    
+                    {/* Pinned Favorites - Below jobs on mobile, visible always */}
+                    <div className="block md:hidden">
+                      <PinnedFavorites showTitle={false} />
+                    </div>
+                  </StackedLayout>
+                }
+                secondary={
+                  <StackedLayout gap="sm">
+                    {/* Rewards Card */}
+                    <Suspense fallback={
+                      <div className="rounded-2xl border border-emerald-400/20 bg-[#041b14] p-4 animate-pulse h-[120px]">
+                        <div className="flex items-center gap-4">
+                          <div className="w-14 h-14 rounded-2xl bg-white/5" />
+                          <div className="flex-1 space-y-2">
+                            <div className="h-4 w-28 bg-white/10 rounded" />
+                            <div className="h-3 w-40 bg-white/5 rounded" />
+                          </div>
+                        </div>
+                      </div>
+                    }>
+                      <EnhancedRewardsCard theme="emerald" onPointsChange={setRewardPoints} />
+                    </Suspense>
+                    
+                    {/* Pinned Favorites - In right column on desktop */}
+                    <div className="hidden md:block">
+                      <PinnedFavorites showTitle={true} />
+                    </div>
+                  </StackedLayout>
+                }
+              />
+            </ScrollReveal>
+          </div>
+
+          {/* ============================================================ */}
+          {/* TIER 4: All Tools (Expandable) - Full width */}
+          {/* ============================================================ */}
+          <ScrollReveal variant="fadeUp" delay={0.12}>
             <ExpandableSection
               id="dashboard-all-tools"
-              title="All Tools & Features"
-              subtitle="Complete navigation menu"
-              icon={<DashboardAvatar variant="tools" className="w-8 h-8 md:w-10 md:h-10" />}
+              title="All Tools"
+              subtitle="Forms, resources & more"
+              icon={<DashboardAvatar variant="tools" className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10" />}
               storageKey={PERSISTENCE_KEYS.ALL_TOOLS}
               defaultOpen={false}
+              ariaLabel="All Tools section. Expand to browse forms and resources. Tap and hold any item to pin it to your Quick Access shortcuts above."
             >
-              <Suspense fallback={<NavCardsSkeleton />}>
-                <NavCards />
-              </Suspense>
+              <div className="space-y-4">
+                {/* Pin hint message */}
+                <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-gradient-to-r from-amber-900/30 via-amber-950/20 to-transparent border border-amber-500/25">
+                  <div className="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-400/30 flex items-center justify-center flex-shrink-0">
+                    <svg className="w-3.5 h-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    </svg>
+                  </div>
+                  <p className="text-xs text-amber-200/80 leading-relaxed">
+                    <span className="font-semibold text-amber-300">Tip:</span>{' '}
+                    <span className="hidden sm:inline">Long-press (mobile) or right-click (desktop) any item below to </span>
+                    <span className="sm:hidden">Long-press any item to </span>
+                    <span className="font-medium text-amber-200">pin it to Quick Access</span>
+                  </p>
+                </div>
+                
+                {/* Navigation Cards */}
+                <Suspense fallback={<EnhancedNavCardsSkeleton />}>
+                  <NavCards />
+                </Suspense>
+              </div>
             </ExpandableSection>
           </ScrollReveal>
 
-          {/* Push Notifications Toggle */}
-          <ScrollReveal variant="fadeUp" delay={0.25}>
-            <div className="flex justify-center">
+          {/* ============================================================ */}
+          {/* TIER 5: Push Notifications Toggle */}
+          {/* ============================================================ */}
+          <ScrollReveal variant="fadeUp" delay={0.16}>
+            <div className="flex justify-center mt-4">
               <EnableNotificationsButton variant="green" />
             </div>
           </ScrollReveal>
-
-          {/* Profile Bar - Bottom section */}
-          <ScrollReveal variant="fadeUp" delay={0.3}>
-            <ProfileBar
-              email={user?.email}
-              role={role}
-              onSignOut={handleSignOut}
-              theme="emerald"
-            />
-          </ScrollReveal>
         </div>
-      </div>
+      </PullToRefresh>
+
+      {/* ============================================================ */}
+      {/* Floating Action Button (appears on scroll) */}
+      {/* ============================================================ */}
+      <FloatingActionButton scrollThreshold={400} showScrollToTop={true} />
     </DashboardLayout>
   );
 }

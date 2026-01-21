@@ -8,6 +8,7 @@ export { JobList } from './JobList';
 export { DashboardJobWidget } from './DashboardJobWidget';
 export { JobTrackerErrorBoundary } from './JobTrackerErrorBoundary';
 export { CompactJobCard } from './CompactJobCard';
+export type { CompactJobCardTheme } from './CompactJobCard';
 export { JobDetailExpanded } from './JobDetailExpanded';
 export { JobProgressUpdateForm } from './JobProgressUpdateForm';
 export { StackedJobCard } from './StackedJobCard';

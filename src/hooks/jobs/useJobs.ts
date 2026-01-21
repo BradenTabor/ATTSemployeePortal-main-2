@@ -143,6 +143,9 @@ export function useJobs(): UseJobsReturn {
           estimated_total_spans: formData.tracking_type === 'job_progress' ? formData.estimated_total_spans : null,
           estimated_total_feet: formData.tracking_type === 'job_progress' ? formData.estimated_total_feet : null,
           span_progress_metric: formData.tracking_type === 'job_progress' ? formData.span_progress_metric : null,
+          // Work site and crew linking (for Safety Forecast integration)
+          work_site_id: formData.work_site_id || null,
+          crew_id: formData.crew_id || null,
         })
         .select('id')
         .single();
@@ -263,6 +266,9 @@ export function useJobs(): UseJobsReturn {
           estimated_total_spans: formData.tracking_type === 'job_progress' ? formData.estimated_total_spans : null,
           estimated_total_feet: formData.tracking_type === 'job_progress' ? formData.estimated_total_feet : null,
           span_progress_metric: formData.tracking_type === 'job_progress' ? formData.span_progress_metric : null,
+          // Work site and crew linking (for Safety Forecast integration)
+          work_site_id: formData.work_site_id || null,
+          crew_id: formData.crew_id || null,
         })
         .eq('id', jobId);
 

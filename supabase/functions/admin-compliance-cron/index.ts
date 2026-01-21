@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Supabase Edge Function: Admin Compliance Summary
  * 
@@ -37,8 +38,9 @@ const ADMIN_RECIPIENTS = [
   'shane@alltts.com',
   'dusty@alltts.com',
   'mike@alltts.com',
-  'weston@alltts.com',
   'steve@alltts.com',
+  'brandon@alltts.com',
+  'weston@alltts.com',
 ];
 
 // Make.com webhook

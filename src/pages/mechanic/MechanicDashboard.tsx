@@ -1,213 +1,204 @@
-import { useEffect, useState, useCallback, useMemo, Suspense, lazy } from "react";
+import { useEffect, useState, useCallback, useMemo, Suspense, lazy, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Wrench } from "lucide-react";
+import { Wrench, ChevronRight, Shield } from "lucide-react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useAuth } from "../../contexts/AuthContext";
-import { ScrollReveal } from "../../motion";
 import { MECHANIC_NAV_CARDS, getCommonNavCards } from "../../components/admin/adminNavConfig";
 import { fetchDvirMetrics, type DvirMetrics } from "../../lib/dvirMetrics";
 import { logger } from "../../lib/logger";
 import { supabase } from "../../lib/supabaseClient";
-import { EmberExpandableSection } from "../../components/dashboard/EmberExpandableSection";
-import { DashboardAvatar } from "../../components/dashboard/DashboardAvatar";
-import BrandedNavCard from "../../components/BrandedNavCard";
-import ProfileBar from "../../components/ProfileBar";
+import { AvatarDropdownPortal } from "../../components/dashboard/AvatarDropdownPortal";
 import { EnableNotificationsButton } from "../../components/notifications";
 import { getDeviceCapabilities } from "../../lib/mobilePerf";
-import { TextEffect } from "../../components/ui/TextEffect";
 
 // Lazy-loaded components
 const ThemedAnnouncementCard = lazy(() => import("../../components/ThemedAnnouncementCard"));
 const FleetAiSummary = lazy(() => import("./components/FleetAiSummary"));
+const PendingDefectsWidget = lazy(() => import("./components/PendingDefectsWidget"));
 
-// Persistence keys for section states
-const PERSISTENCE_KEYS = {
-  QUICK_ACTIONS: 'mechanic_quick_actions_open',
-};
-
-// Stagger animation variants for cards
-const containerVariants = {
+// Compact stagger animation
+const staggerContainer = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: {
-      staggerChildren: 0.05,
-      delayChildren: 0.05,
-    },
+    transition: { staggerChildren: 0.04, delayChildren: 0.02 },
   },
 };
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 6 },
+const fadeUp = {
+  hidden: { opacity: 0, y: 8 },
   visible: { 
     opacity: 1, 
     y: 0,
-    transition: {
-      type: "spring" as const,
-      stiffness: 500,
-      damping: 30,
-    }
+    transition: { type: "spring" as const, stiffness: 400, damping: 25 }
   },
 };
 
-// Mechanic navigation cards component using BrandedNavCard
-function MechanicNavCards() {
-  const caps = useMemo(() => getDeviceCapabilities(), []);
-  const shouldReduceMotion = caps.prefersReducedMotion || caps.isLowEnd;
-
-  // Get common nav cards with ember theme
-  const commonCards = useMemo(() => getCommonNavCards("ember"), []);
-
-  // Filter active vs coming soon cards for role-specific
-  const activeCards = MECHANIC_NAV_CARDS.filter(card => !card.comingSoon);
-  const comingSoonCards = MECHANIC_NAV_CARDS.filter(card => card.comingSoon);
-
-  return (
-    <div className="space-y-6">
-      {/* Common Features Section */}
-      <div className="space-y-3">
-        <p className="text-[10px] uppercase tracking-[0.2em] text-[#ffb48a]/70 font-medium px-1">
-          Common Features
-        </p>
-        <motion.div 
-          className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5 sm:gap-3"
-          variants={shouldReduceMotion ? undefined : containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          {commonCards.map((card) => (
-            <motion.div key={card.to} variants={shouldReduceMotion ? undefined : itemVariants}>
-              <BrandedNavCard
-                title={card.title}
-                description={card.description}
-                icon={card.icon}
-                to={card.to}
-                variant="ember"
-              />
-            </motion.div>
-          ))}
-        </motion.div>
-      </div>
-
-      {/* Mechanic Tools Section */}
-      <div className="space-y-3">
-        <p className="text-[10px] uppercase tracking-[0.2em] text-[#ffb48a]/70 font-medium px-1">
-          Mechanic Tools
-        </p>
-        <motion.div 
-          className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3"
-          variants={shouldReduceMotion ? undefined : containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          {activeCards.map((card) => (
-            <motion.div key={card.to} variants={shouldReduceMotion ? undefined : itemVariants}>
-              <BrandedNavCard
-                title={card.title}
-                description={card.description}
-                icon={card.icon}
-                to={card.to}
-                variant="ember"
-              />
-            </motion.div>
-          ))}
-        </motion.div>
-      </div>
-
-      {/* Coming Soon cards - muted styling */}
-      {comingSoonCards.length > 0 && (
-        <div className="space-y-3">
-          <p className="text-[10px] uppercase tracking-[0.2em] text-[#ffb48a]/50 font-medium px-1">
-            Coming Soon
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
-            {comingSoonCards.map((card) => (
-              <div 
-                key={card.to}
-                className="group relative opacity-50 cursor-not-allowed"
-              >
-                <div className="relative w-full p-[2px] rounded-2xl overflow-hidden bg-gradient-to-br from-[#341109]/40 via-[#120504]/50 to-[#050201]/40">
-                  <div className="relative h-full w-full rounded-2xl px-4 py-3.5 sm:px-5 sm:py-4 flex items-center gap-3.5 min-h-[60px] border border-[#f38d57]/15 bg-[#0a0504]/80">
-                    {/* Muted icon */}
-                    <div className="flex-shrink-0 flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-[#ff9350]/5 border border-[#ff9350]/10">
-                      <div className="w-5 h-5 sm:w-6 sm:h-6 text-orange-400/40 [&>svg]:w-full [&>svg]:h-full">
-                        {card.icon}
-                      </div>
-                    </div>
-                    
-                    {/* Text content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-sm sm:text-base font-semibold text-white/40 truncate">
-                          {card.title}
-                        </h3>
-                        <span className="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider bg-[#ff9350]/15 text-[#ffb48a]/60 border border-[#ff9350]/20">
-                          Soon
-                        </span>
-                      </div>
-                      <p className="text-xs sm:text-sm mt-0.5 line-clamp-1 sm:line-clamp-2 text-white/25">
-                        {card.description}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
+// =============================================================================
+// COMPACT NAV CARD - Mobile-optimized
+// =============================================================================
+const CompactNavCard = memo(function CompactNavCard({ 
+  title, 
+  icon, 
+  to, 
+  description,
+  comingSoon = false 
+}: { 
+  title: string; 
+  icon: React.ReactNode; 
+  to: string; 
+  description?: string;
+  comingSoon?: boolean;
+}) {
+  const navigate = useNavigate();
+  
+  if (comingSoon) {
+    return (
+      <div className="relative opacity-50 cursor-not-allowed">
+        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-[#1a0c08]/60 border border-orange-500/10">
+          <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-400/50">
+            {icon}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-white/40 truncate">{title}</span>
+              <span className="text-[8px] uppercase font-bold px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-300/50 border border-orange-500/20">
+                Soon
+              </span>
+            </div>
           </div>
         </div>
-      )}
+      </div>
+    );
+  }
+  
+  return (
+    <motion.button
+      onClick={() => navigate(to)}
+      className="group w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-gradient-to-r from-[#1a0c08] to-[#0f0705] border border-orange-500/20 hover:border-orange-500/40 active:scale-[0.98] transition-all"
+      whileTap={{ scale: 0.98 }}
+    >
+      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500/25 to-orange-600/15 flex items-center justify-center text-orange-400 group-hover:text-orange-300 transition-colors">
+        {icon}
+      </div>
+      <div className="flex-1 min-w-0 text-left">
+        <span className="text-sm font-semibold text-white/90 group-hover:text-white truncate block">{title}</span>
+        {description && (
+          <span className="text-[10px] text-orange-300/40 truncate block">{description}</span>
+        )}
+      </div>
+      <ChevronRight className="w-4 h-4 text-orange-400/40 group-hover:text-orange-400/70 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+    </motion.button>
+  );
+});
+
+// =============================================================================
+// QUICK ACTION GRID - Prominent action buttons
+// =============================================================================
+const QuickActionGrid = memo(function QuickActionGrid() {
+  const navigate = useNavigate();
+  const caps = useMemo(() => getDeviceCapabilities(), []);
+  const shouldReduceMotion = caps.prefersReducedMotion || caps.isLowEnd;
+  
+  const quickActions = [
+    { label: "DVIR Queue", to: "/mechanic-dvir-center", icon: <Wrench className="w-5 h-5" />, primary: true },
+    { label: "Parts & Repairs", to: "/mechanic/parts-repairs", icon: <Shield className="w-5 h-5" />, primary: false },
+  ];
+  
+  return (
+    <motion.div 
+      className="grid grid-cols-2 gap-2"
+      variants={shouldReduceMotion ? undefined : staggerContainer}
+      initial="hidden"
+      animate="visible"
+    >
+      {quickActions.map((action) => (
+        <motion.button
+          key={action.to}
+          onClick={() => navigate(action.to)}
+          variants={shouldReduceMotion ? undefined : fadeUp}
+          className={`relative overflow-hidden rounded-xl px-3 py-3.5 font-bold text-sm transition-all active:scale-[0.97] ${
+            action.primary 
+              ? "bg-gradient-to-br from-orange-500 via-orange-600 to-amber-700 text-white shadow-lg shadow-orange-500/30" 
+              : "bg-gradient-to-br from-[#2b1810] to-[#1a0c08] text-orange-200 border border-orange-500/25 hover:border-orange-500/40"
+          }`}
+          whileTap={{ scale: 0.97 }}
+        >
+          <div className="flex flex-col items-center gap-1.5">
+            <div className={action.primary ? "text-white/90" : "text-orange-400"}>
+              {action.icon}
+            </div>
+            <span className="truncate">{action.label}</span>
+          </div>
+          {action.primary && (
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+          )}
+        </motion.button>
+      ))}
+    </motion.div>
+  );
+});
+
+// =============================================================================
+// NAV SECTION - Collapsible tools menu
+// =============================================================================
+const NavSection = memo(function NavSection({ 
+  title, 
+  cards 
+}: { 
+  title: string; 
+  cards: Array<{ title: string; description?: string; icon?: React.ReactNode; to: string; comingSoon?: boolean }> 
+}) {
+  const caps = useMemo(() => getDeviceCapabilities(), []);
+  const shouldReduceMotion = caps.prefersReducedMotion || caps.isLowEnd;
+  
+  return (
+    <div className="space-y-2">
+      <p className="text-[9px] uppercase tracking-[0.2em] text-orange-400/50 font-bold px-1">{title}</p>
+      <motion.div 
+        className="space-y-1.5"
+        variants={shouldReduceMotion ? undefined : staggerContainer}
+        initial="hidden"
+        animate="visible"
+      >
+        {cards.map((card) => (
+          <motion.div key={card.to} variants={shouldReduceMotion ? undefined : fadeUp}>
+            <CompactNavCard
+              title={card.title}
+              description={card.description}
+              icon={card.icon}
+              to={card.to}
+              comingSoon={card.comingSoon}
+            />
+          </motion.div>
+        ))}
+      </motion.div>
     </div>
   );
-}
+});
 
+// =============================================================================
+// MAIN DASHBOARD
+// =============================================================================
 export default function MechanicDashboard() {
   const navigate = useNavigate();
-  const { role, user, signOut, setSession } = useAuth();
+  const { role, user, signOut, setSession, fullName, avatarUrl } = useAuth();
   const unauthorized = role && role !== "mechanic" && role !== "admin";
-  // Metrics state - stored for future dashboard stats display
+  
+  // Metrics state
   const [_dvirMetrics, setDvirMetrics] = useState<DvirMetrics | null>(null);
   const [_metricsLoading, setMetricsLoading] = useState(true);
   const [_equipmentCount, setEquipmentCount] = useState(0);
   const [_equipmentLoading, setEquipmentLoading] = useState(true);
-  void _dvirMetrics; void _metricsLoading; void _equipmentCount; void _equipmentLoading; // Suppress warnings
-  const [fullName, setFullName] = useState<string | null>(null);
+  void _dvirMetrics; void _metricsLoading; void _equipmentCount; void _equipmentLoading;
 
-  // Fetch full_name from app_users table
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (!user?.id) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('app_users')
-          .select('full_name')
-          .eq('user_id', user.id)
-          .maybeSingle();
+  const displayName = fullName || user?.email?.split('@')[0] || 'Mechanic';
+  const firstName = displayName.split(' ')[0];
 
-        if (error) {
-          logger.error('Failed to fetch user profile:', error);
-          return;
-        }
-
-        if (data?.full_name) {
-          setFullName(data.full_name);
-        }
-      } catch (err) {
-        logger.error('Unexpected error fetching user profile:', err);
-      }
-    };
-
-    fetchUserProfile();
-  }, [user?.id]);
-
-  // Display name
-  const displayName = fullName || user?.email || 'Mechanic';
-
+  // Data fetching
   useEffect(() => {
     let isMounted = true;
-    const refreshMs = 60_000;
-
     const loadMetrics = async (withSpinner: boolean) => {
       if (withSpinner) setMetricsLoading(true);
       try {
@@ -219,13 +210,9 @@ export default function MechanicDashboard() {
         if (isMounted) setMetricsLoading(false);
       }
     };
-
     loadMetrics(true);
-    const interval = setInterval(() => loadMetrics(false), refreshMs);
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
+    const interval = setInterval(() => loadMetrics(false), 60_000);
+    return () => { isMounted = false; clearInterval(interval); };
   }, []);
 
   const loadEquipmentCount = useCallback(async () => {
@@ -234,7 +221,6 @@ export default function MechanicDashboard() {
       const { count, error } = await supabase
         .from("daily_equipment_inspections")
         .select("id", { count: "exact", head: true });
-
       if (error) throw error;
       setEquipmentCount(count ?? 0);
     } catch (error) {
@@ -245,9 +231,7 @@ export default function MechanicDashboard() {
     }
   }, []);
 
-  useEffect(() => {
-    loadEquipmentCount();
-  }, [loadEquipmentCount]);
+  useEffect(() => { loadEquipmentCount(); }, [loadEquipmentCount]);
 
   const handleSignOut = useCallback(async () => {
     try {
@@ -259,10 +243,12 @@ export default function MechanicDashboard() {
     }
   }, [navigate, setSession, signOut]);
 
-  // Device capabilities for animation decisions
-  const caps = useMemo(() => getDeviceCapabilities(), []);
-  const enableAnimations = !caps.prefersReducedMotion && !caps.isMobile;
+  // Memoized nav cards
+  const commonCards = useMemo(() => getCommonNavCards("ember"), []);
+  const activeCards = useMemo(() => MECHANIC_NAV_CARDS.filter(card => !card.comingSoon), []);
+  const comingSoonCards = useMemo(() => MECHANIC_NAV_CARDS.filter(card => card.comingSoon), []);
 
+  // Unauthorized check
   if (unauthorized) {
     return (
       <DashboardLayout title="Mechanic Panel">
@@ -275,215 +261,175 @@ export default function MechanicDashboard() {
 
   return (
     <DashboardLayout title="Mechanic Panel">
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pb-4 pt-4 sm:pt-6">
-        {/* Premium Animated Welcome Section with Glass Backdrop - Ember Theme */}
-        <div className="mb-5 md:mb-6">
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="relative"
-          >
-            {/* Glass backdrop container - Ember theme */}
-            <div 
-              className="relative overflow-hidden rounded-2xl md:rounded-3xl border border-white/[0.12] shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.1)]"
-              style={{
-                background: 'linear-gradient(145deg, rgba(255, 111, 60, 0.1) 0%, rgba(43, 18, 11, 0.65) 40%, rgba(8, 4, 3, 0.75) 100%)',
-                backdropFilter: 'blur(24px) saturate(1.6)',
-                WebkitBackdropFilter: 'blur(24px) saturate(1.6)',
-              }}
-            >
-              {/* Realistic glass gloss - diagonal shine reflection */}
-              <div 
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: 'linear-gradient(125deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 25%, transparent 50%, transparent 100%)',
-                }}
-              />
-              
-              {/* Secondary gloss layer */}
-              <div 
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 40%)',
-                }}
-              />
-              
-              {/* Inner ember glow */}
-              <div 
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: 'radial-gradient(ellipse at 25% 0%, rgba(255, 147, 80, 0.2) 0%, transparent 45%)',
-                }}
-              />
-              
-              {/* Specular highlight - corner gleam */}
-              <div 
-                className="absolute top-0 left-0 w-32 h-32 pointer-events-none"
-                style={{
-                  background: 'radial-gradient(circle at 20% 20%, rgba(255,255,255,0.12) 0%, transparent 50%)',
-                }}
-              />
-              
-              {/* Top edge highlight */}
-              <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-white/5 via-white/25 to-white/5 rounded-t-[inherit]" />
-              
-              {/* Left edge highlight */}
-              <div className="absolute top-0 left-0 bottom-0 w-[1px] bg-gradient-to-b from-white/20 via-white/5 to-transparent rounded-l-[inherit]" />
-
-              {/* Content area */}
-              <div className="relative px-5 py-4 md:px-7 md:py-5">
-                {/* Eyebrow with role badge */}
-                <div className="flex items-center gap-3 mb-3">
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.4, delay: 0.2 }}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#ff6f3c]/15 border border-[#ff6f3c]/30"
-                  >
-                    <Wrench className="w-3.5 h-3.5 text-[#ffb48a]" />
-                    <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#ffe7d0]">
-                      Mechanic
-                    </span>
-                  </motion.div>
-                  
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.4, delay: 0.3 }}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#2b120b]/60 border border-[#ff6f3c]/20"
-                  >
-                    <Wrench className="w-3 h-3 text-[#ffb48a]" />
-                    <span className="text-[9px] uppercase tracking-wider font-semibold text-[#ffe7d0]/70">
-                      {role === "admin" ? "Admin Access" : "Mechanic"}
-                    </span>
-                  </motion.div>
-                </div>
-
-                <div className="flex items-center gap-4">
-                  {/* Gradient line accent - Ember/Orange */}
-                  <motion.div
-                    initial={{ scaleY: 0, opacity: 0 }}
-                    animate={{ scaleY: 1, opacity: 1 }}
-                    transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                    className="w-1 h-14 md:h-16 rounded-full bg-gradient-to-b from-[#ffb48a] via-[#ff6f3c] to-[#d45a2a] origin-top flex-shrink-0"
-                    style={{
-                      boxShadow: '0 0 20px rgba(255, 111, 60, 0.5), 0 0 40px rgba(255, 111, 60, 0.25)',
-                    }}
-                  />
-                  
-                  {/* Text content */}
-                  <div className="flex-1 min-w-0">
-                    {enableAnimations ? (
-                      <TextEffect
-                        as="h1"
-                        preset="blurSlide"
-                        per="char"
-                        delay={0.15}
-                        className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight"
-                        segmentWrapperClassName="bg-gradient-to-r from-white via-[#ffb48a] to-white/90 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(255,111,60,0.35)]"
-                      >
-                        {`Welcome back, ${displayName}`}
-                      </TextEffect>
-                    ) : (
-                      <h1 
-                        className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight bg-gradient-to-r from-white via-[#ffb48a] to-white/90 bg-clip-text text-transparent"
-                      >
-                        {`Welcome back, ${displayName}`}
-                      </h1>
-                    )}
-                    
-                    {/* Description */}
-                    <motion.p
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.5, delay: 0.7, ease: 'easeOut' }}
-                      className="mt-1.5 md:mt-2 text-xs sm:text-sm text-[#ffb48a]/50 font-medium leading-relaxed max-w-xl"
-                    >
-                      Manage vehicle inspections, equipment maintenance, and keep the fleet running
-                    </motion.p>
+      <div className="w-full max-w-2xl mx-auto px-3 sm:px-4 pb-6 pt-2 sm:pt-4">
+        
+        {/* ============ COMPACT HERO HEADER ============ */}
+        <motion.header
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          className="mb-4"
+        >
+          <div className="relative overflow-hidden rounded-2xl border border-orange-500/20 bg-gradient-to-br from-[#1f0f09] via-[#150906]/90 to-[#0a0504] shadow-lg shadow-orange-900/20">
+            {/* Subtle glow */}
+            <div className="absolute top-0 left-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
+            
+            {/* Content */}
+            <div className="relative px-4 py-3.5 sm:py-4">
+              {/* Top row: badges + avatar */}
+              <div className="flex items-center justify-between gap-3 mb-2.5">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-orange-500/15 border border-orange-500/25">
+                    <Wrench className="w-3 h-3 text-orange-400" />
+                    <span className="text-[9px] uppercase tracking-wider font-bold text-orange-200">Mechanic</span>
                   </div>
+                  {role === "admin" && (
+                    <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#1a0c08]/80 border border-orange-500/15">
+                      <Shield className="w-2.5 h-2.5 text-orange-400/70" />
+                      <span className="text-[8px] uppercase tracking-wider font-semibold text-orange-300/60">Admin</span>
+                    </div>
+                  )}
+                </div>
+                
+                <AvatarDropdownPortal
+                  email={user?.email}
+                  role={role}
+                  fullName={fullName || user?.email || ''}
+                  avatarUrl={avatarUrl}
+                  theme="ember"
+                  onSignOut={handleSignOut}
+                />
+              </div>
+
+              {/* Welcome text - compact */}
+              <div className="flex items-center gap-3">
+                <div className="w-1 h-10 rounded-full bg-gradient-to-b from-orange-400 via-orange-500 to-orange-700 flex-shrink-0 shadow-[0_0_12px_rgba(249,115,22,0.5)]" />
+                <div className="min-w-0">
+                  <h1 className="text-lg sm:text-xl font-black text-white truncate">
+                    Hey, <span className="text-orange-300">{firstName}</span> 👋
+                  </h1>
+                  <p className="text-[11px] sm:text-xs text-orange-200/40 font-medium truncate">
+                    Keep the fleet running smooth
+                  </p>
                 </div>
               </div>
-              
-              {/* Bottom edge shadow */}
-              <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-black/30 to-transparent" />
-              
-              {/* Right edge shadow */}
-              <div className="absolute top-0 right-0 bottom-0 w-[1px] bg-gradient-to-b from-transparent via-black/20 to-transparent" />
             </div>
-          </motion.div>
-        </div>
+            
+            {/* Bottom accent line */}
+            <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
+          </div>
+        </motion.header>
 
-        {/* Mobile-first Bento layout */}
-        <div className="w-full space-y-4 md:space-y-6">
-          {/* Announcements Section */}
-          <ScrollReveal variant="fadeUp" delay={0}>
+        {/* ============ QUICK ACTIONS ============ */}
+        <motion.section
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.05 }}
+          className="mb-4"
+        >
+          <QuickActionGrid />
+        </motion.section>
+
+        {/* ============ MAIN CONTENT ============ */}
+        <div className="space-y-3">
+          
+          {/* Announcements - Compact */}
+          <motion.section
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+          >
             <Suspense fallback={
-              <div className="rounded-3xl border border-orange-500/20 bg-[#281405]/70 p-5 space-y-3 animate-pulse">
-                <div className="h-3 w-32 bg-white/10 rounded-full" />
-                <div className="space-y-2">
+              <div className="rounded-xl border border-orange-500/15 bg-[#1a0c08]/60 p-4 animate-pulse">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-4 h-4 rounded bg-orange-500/20" />
+                  <div className="h-3 w-20 bg-white/10 rounded-full" />
+                </div>
+                <div className="space-y-1.5">
                   <div className="h-3 w-full bg-white/10 rounded-full" />
-                  <div className="h-3 w-3/4 bg-white/10 rounded-full" />
+                  <div className="h-3 w-2/3 bg-white/10 rounded-full" />
                 </div>
               </div>
             }>
               <ThemedAnnouncementCard theme="ember" />
             </Suspense>
-          </ScrollReveal>
+          </motion.section>
 
-          {/* Fleet AI Summary Section */}
-          <ScrollReveal variant="fadeUp" delay={0.025}>
+          {/* Fleet AI Summary */}
+          <motion.section
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.15 }}
+          >
             <Suspense fallback={
-              <div className="rounded-2xl border border-purple-500/20 bg-purple-900/10 p-5 space-y-3 animate-pulse">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-purple-500/20" />
-                  <div className="space-y-1.5">
-                    <div className="h-3 w-40 bg-white/10 rounded-full" />
-                    <div className="h-2 w-28 bg-white/10 rounded-full" />
-                  </div>
+              <div className="rounded-xl border border-purple-500/15 bg-purple-900/10 p-4 animate-pulse">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-8 h-8 rounded-lg bg-purple-500/20" />
+                  <div className="h-4 w-24 bg-white/10 rounded-full" />
                 </div>
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="h-16 rounded-xl bg-white/5" />
-                  <div className="h-16 rounded-xl bg-white/5" />
-                  <div className="h-16 rounded-xl bg-white/5" />
+                  <div className="h-14 rounded-lg bg-white/5" />
+                  <div className="h-14 rounded-lg bg-white/5" />
+                  <div className="h-14 rounded-lg bg-white/5" />
                 </div>
               </div>
             }>
               <FleetAiSummary />
             </Suspense>
-          </ScrollReveal>
+          </motion.section>
 
-          {/* All Tools & Features */}
-          <ScrollReveal variant="fadeUp" delay={0.05}>
-            <EmberExpandableSection
-              id="mechanic-quick-actions"
-              title="All Tools & Features"
-              subtitle="Complete navigation menu"
-              icon={<DashboardAvatar variant="jobs" className="w-8 h-8 md:w-10 md:h-10" />}
-              storageKey={PERSISTENCE_KEYS.QUICK_ACTIONS}
-              defaultOpen={false}
-            >
-              <MechanicNavCards />
-            </EmberExpandableSection>
-          </ScrollReveal>
+          {/* Pending Defects Widget - Jidoka Maintenance */}
+          <motion.section
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.18 }}
+          >
+            <Suspense fallback={
+              <div className="rounded-xl border border-orange-500/15 bg-[#1a0c08]/60 p-4 animate-pulse">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-8 h-8 rounded-lg bg-orange-500/20" />
+                  <div className="h-4 w-32 bg-white/10 rounded-full" />
+                </div>
+                <div className="space-y-2">
+                  <div className="h-12 rounded-lg bg-white/5" />
+                  <div className="h-12 rounded-lg bg-white/5" />
+                </div>
+              </div>
+            }>
+              <PendingDefectsWidget />
+            </Suspense>
+          </motion.section>
 
-          {/* Push Notifications Toggle */}
-          <ScrollReveal variant="fadeUp" delay={0.1}>
+          {/* Navigation Cards - Collapsible sections */}
+          <motion.section
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+            className="space-y-4"
+          >
+            {/* Common Features */}
+            <NavSection title="Quick Links" cards={commonCards} />
+            
+            {/* Mechanic Tools */}
+            <NavSection title="Mechanic Tools" cards={activeCards} />
+            
+            {/* Coming Soon */}
+            {comingSoonCards.length > 0 && (
+              <NavSection title="Coming Soon" cards={comingSoonCards} />
+            )}
+          </motion.section>
+
+          {/* Notifications Toggle - Minimal */}
+          <motion.section
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.25 }}
+            className="pt-2"
+          >
             <div className="flex justify-center">
               <EnableNotificationsButton variant="ember" />
             </div>
-          </ScrollReveal>
-
-          {/* Profile Bar - Bottom section */}
-          <ScrollReveal variant="fadeUp" delay={0.15}>
-            <ProfileBar
-              email={user?.email}
-              role={role}
-              onSignOut={handleSignOut}
-              theme="ember"
-            />
-          </ScrollReveal>
+          </motion.section>
         </div>
       </div>
     </DashboardLayout>

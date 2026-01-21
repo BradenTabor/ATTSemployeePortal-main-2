@@ -8,12 +8,23 @@ import {
   useMemo,
 } from "react";
 import DashboardLayout from "../../layouts/DashboardLayout";
-import { Camera } from "lucide-react";
+import { Camera, CheckCheck, RotateCcw, XCircle, RefreshCw, CheckCircle2 } from "lucide-react";
 import { logger } from "../../lib/logger";
-import { toast } from "../../lib/toast";
+import { formToast } from "../../lib/formToast";
 import { DateField } from "../../components/forms/GlassyPickers";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../contexts/AuthContext";
+import { useFormPersistence } from "../../hooks/useFormPersistence";
+import { DraftRecoveryModal } from "../../components/forms/DraftRecoveryModal";
+import { AutoSaveIndicator } from "../../components/forms/AutoSaveIndicator";
+import { FormSuccessCelebration } from "../../components/forms/FormSuccessCelebration";
+import { useComplianceToast, type RemainingForm } from "../../hooks/useComplianceToast";
+import {
+  trackFormStarted,
+  trackFormSubmitted,
+  trackFormSubmitError,
+  createFormTimer,
+} from "../../lib/telemetry";
 
 type ChecklistValue = "" | "P" | "F";
 
@@ -149,24 +160,52 @@ const EQUIPMENT_NUMBERS_BY_TYPE: Record<EquipmentTypeOption, string[]> = {
   Skidsteer: ["118", "135", "136"],
 };
 
+// Consolidated form state for persistence (excludes files which can't be serialized)
+export interface EquipmentFormState {
+  submittedBy: string;
+  equipmentType: EquipmentTypeOption | "";
+  equipmentNumber: string;
+  inspectionDate: string;
+  template: EquipmentTemplate;
+  notes: string;
+  generalChecklist: Record<string, ChecklistValue>;
+  specificChecklist: Record<string, ChecklistValue>;
+}
+
+const createInitialEquipmentFormState = (): EquipmentFormState => ({
+  submittedBy: "",
+  equipmentType: "",
+  equipmentNumber: "",
+  inspectionDate: new Date().toISOString().slice(0, 10),
+  template: "",
+  notes: "",
+  generalChecklist: {},
+  specificChecklist: {},
+});
+
 export default function DailyEquipmentInspectionForm() {
-  const { user } = useAuth();
-  const [submittedBy, setSubmittedBy] = useState("");
-  const [equipmentType, setEquipmentType] = useState<EquipmentTypeOption | "">("");
-  const [equipmentNumber, setEquipmentNumber] = useState("");
-  const [inspectionDate, setInspectionDate] = useState(
-    new Date().toISOString().slice(0, 10)
-  );
-  const [template, setTemplate] = useState<EquipmentTemplate>("");
+  const { user, fullName } = useAuth();
+  
+  // Consolidated form state for persistence
+  const [form, setForm] = useState<EquipmentFormState>(() => createInitialEquipmentFormState());
+  
+  // Track current step for persistence (equipment form is single-page but we track progress)
+  const [currentStep, setCurrentStep] = useState(1);
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+  
+  // Draft recovery and celebration state
+  const [showDraftModal, setShowDraftModal] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [remainingForms, setRemainingForms] = useState<RemainingForm[]>([]);
+  
+  // Compliance toast for nudging and full celebration
+  const { 
+    checkAndCelebrate, 
+    FullCelebration, 
+    celebrationProps 
+  } = useComplianceToast();
 
-  const [notes, setNotes] = useState("");
-  const [generalChecklist, setGeneralChecklist] = useState<
-    Record<string, ChecklistValue>
-  >({});
-  const [specificChecklist, setSpecificChecklist] = useState<
-    Record<string, ChecklistValue>
-  >({});
-
+  // Photos state (Files can't be persisted to localStorage)
   const [photos, setPhotos] = useState<PhotoState>({});
   const overviewRef = useRef<HTMLInputElement | null>(null);
   const damageRef = useRef<HTMLInputElement | null>(null);
@@ -182,17 +221,148 @@ export default function DailyEquipmentInspectionForm() {
 
   const [submitting, setSubmitting] = useState(false);
 
+  // Telemetry: track form completion time
+  const formTimer = useRef(createFormTimer());
+  
+  // Track form_started on mount
+  useEffect(() => {
+    trackFormStarted({ form_type: 'equipment' });
+    formTimer.current.reset();
+  }, []);
+
+  // Form persistence (auto-save drafts to localStorage)
+  const {
+    hasDraft,
+    draftData,
+    lastSaved,
+    hasUnsavedChanges,
+    saveDraft,
+    clearDraft,
+    dismissDraft,
+    markAsSaved,
+  } = useFormPersistence<EquipmentFormState>({
+    formType: 'equipment',
+    userId: user?.id,
+    createInitialState: createInitialEquipmentFormState,
+    isEditMode: false,
+    debounceMs: 500,
+  });
+  
+  // Show draft recovery modal if draft exists
+  useEffect(() => {
+    if (hasDraft && draftData) {
+      setShowDraftModal(true);
+    }
+  }, [hasDraft, draftData]);
+  
+  // Handle draft restoration
+  const handleRestoreDraft = useCallback(() => {
+    if (draftData) {
+      setForm(draftData.form);
+      setCurrentStep(draftData.currentStep);
+      setCompletedSteps(new Set(draftData.completedSteps));
+      setShowDraftModal(false);
+      formToast.success("Draft Restored", "Your previous equipment inspection progress has been restored.");
+    }
+  }, [draftData]);
+  
+  // Handle draft dismissal
+  const handleDismissDraft = useCallback(() => {
+    dismissDraft();
+    setShowDraftModal(false);
+  }, [dismissDraft]);
+  
+  // Auto-save form changes
+  useEffect(() => {
+    if (user?.id) {
+      saveDraft(form, currentStep, completedSteps);
+    }
+  }, [form, currentStep, completedSteps, user?.id, saveDraft]);
+  
+  // Warn before closing browser/tab with unsaved changes (beforeunload)
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges && !showCelebration) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Your draft is auto-saved locally.';
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges, showCelebration]);
+
   function handleChecklistChange(
     type: "general" | "specific",
     id: string,
     value: ChecklistValue
   ) {
     if (type === "general") {
-      setGeneralChecklist((prev) => ({ ...prev, [id]: value }));
+      setForm(prev => ({
+        ...prev,
+        generalChecklist: { ...prev.generalChecklist, [id]: value }
+      }));
     } else {
-      setSpecificChecklist((prev) => ({ ...prev, [id]: value }));
+      setForm(prev => ({
+        ...prev,
+        specificChecklist: { ...prev.specificChecklist, [id]: value }
+      }));
     }
   }
+
+  // Quick action handlers for checklists
+  const handleMarkAllGeneralPass = useCallback(() => {
+    const allPass: Record<string, ChecklistValue> = {};
+    GENERAL_ITEMS.forEach(item => {
+      allPass[item.id] = "P";
+    });
+    setForm(prev => ({ ...prev, generalChecklist: allPass }));
+  }, []);
+  
+  const handleMarkAllGeneralFail = useCallback(() => {
+    // Confirm before marking all as fail to prevent accidental override
+    const hasSelections = Object.keys(form.generalChecklist).length > 0;
+    if (hasSelections && !window.confirm("Mark all general items as Fail? This will override your current selections.")) {
+      return;
+    }
+    const allFail: Record<string, ChecklistValue> = {};
+    GENERAL_ITEMS.forEach(item => {
+      allFail[item.id] = "F";
+    });
+    setForm(prev => ({ ...prev, generalChecklist: allFail }));
+  }, [form.generalChecklist]);
+  
+  const handleClearGeneralChecklist = useCallback(() => {
+    setForm(prev => ({ ...prev, generalChecklist: {} }));
+  }, []);
+  
+  const handleMarkAllSpecificPass = useCallback(() => {
+    const items = getSpecificItems(form.template);
+    const allPass: Record<string, ChecklistValue> = {};
+    items.forEach(item => {
+      allPass[item.id] = "P";
+    });
+    setForm(prev => ({ ...prev, specificChecklist: allPass }));
+  }, [form.template]);
+  
+  const handleMarkAllSpecificFail = useCallback(() => {
+    // Confirm before marking all as fail to prevent accidental override
+    const hasSelections = Object.keys(form.specificChecklist).length > 0;
+    if (hasSelections && !window.confirm("Mark all specific items as Fail? This will override your current selections.")) {
+      return;
+    }
+    const items = getSpecificItems(form.template);
+    const allFail: Record<string, ChecklistValue> = {};
+    items.forEach(item => {
+      allFail[item.id] = "F";
+    });
+    setForm(prev => ({ ...prev, specificChecklist: allFail }));
+  }, [form.template, form.specificChecklist]);
+  
+  const handleClearSpecificChecklist = useCallback(() => {
+    setForm(prev => ({ ...prev, specificChecklist: {} }));
+  }, []);
 
   function handlePhotoChange(kind: PhotoTypes, file?: File) {
     setPhotos((prev) => {
@@ -209,9 +379,9 @@ export default function DailyEquipmentInspectionForm() {
   const uploadPhoto = useCallback(
     async (file: File, kind: PhotoTypes) => {
       const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
-      const safeEquipment = equipmentNumber.trim().replace(/\s+/g, "-").toLowerCase() || "equipment";
+      const safeEquipment = form.equipmentNumber.trim().replace(/\s+/g, "-").toLowerCase() || "equipment";
       const safeUserBucket = user?.id ?? "anonymous";
-      const safeDate = inspectionDate || new Date().toISOString().slice(0, 10);
+      const safeDate = form.inspectionDate || new Date().toISOString().slice(0, 10);
       const uniqueId =
         typeof globalThis.crypto?.randomUUID === "function"
           ? globalThis.crypto.randomUUID()
@@ -232,46 +402,55 @@ export default function DailyEquipmentInspectionForm() {
 
       return objectPath;
     },
-    [equipmentNumber, inspectionDate, user?.id]
+    [form.equipmentNumber, form.inspectionDate, user?.id]
   );
 
   const handleEquipmentTypeSelect = (value: EquipmentTypeOption | "") => {
-    setEquipmentType(value);
-    setEquipmentNumber("");
+    setForm(prev => ({
+      ...prev,
+      equipmentType: value,
+      equipmentNumber: ""
+    }));
   };
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
 
-    const submitterName = submittedBy.trim();
+    const submitterName = form.submittedBy.trim();
     if (!submitterName) {
-      toast.error("Submitted By is required.");
+      formToast.error("Validation Error", "Submitted By is required.");
+      trackFormSubmitError({ form_type: 'equipment', error_code: 'VALIDATION_FAILED', field_name: 'submittedBy' });
       return;
     }
 
-    if (!equipmentType) {
-      toast.error("Select an equipment type.");
+    if (!form.equipmentType) {
+      formToast.error("Validation Error", "Select an equipment type.");
+      trackFormSubmitError({ form_type: 'equipment', error_code: 'VALIDATION_FAILED', field_name: 'equipmentType' });
       return;
     }
 
-    const trimmedNumber = equipmentNumber.trim();
+    const trimmedNumber = form.equipmentNumber.trim();
     if (!trimmedNumber || !availableEquipmentNumbers.includes(trimmedNumber)) {
-      toast.error("Select a valid equipment number for the chosen type.");
+      formToast.error("Validation Error", "Select a valid equipment number for the chosen type.");
+      trackFormSubmitError({ form_type: 'equipment', error_code: 'VALIDATION_FAILED', field_name: 'equipmentNumber' });
       return;
     }
 
     if (!user?.id) {
-      toast.error("You must be signed in to submit an inspection.");
+      formToast.error("Authentication Required", "You must be signed in to submit an inspection.");
+      trackFormSubmitError({ form_type: 'equipment', error_code: 'AUTH_ERROR' });
       return;
     }
 
     const missingRequired = REQUIRED_PHOTO_KEYS.filter((key) => !photos[key]);
     if (missingRequired.length > 0) {
-      toast.error("Hydraulic fluid level photo is required before submitting.");
+      formToast.error("Photo Required", "Hydraulic fluid level photo is required before submitting.");
+      trackFormSubmitError({ form_type: 'equipment', error_code: 'VALIDATION_FAILED', field_name: 'hydraulicPhoto' });
       return;
     }
 
     setSubmitting(true);
+    formToast.submitting("Submitting equipment inspection...");
 
     const uploadedPaths: string[] = [];
     const photoPathMap: Partial<Record<PhotoTypes, string>> = {};
@@ -288,13 +467,13 @@ export default function DailyEquipmentInspectionForm() {
       const payload = {
         user_id: user.id,
         submitted_by: submitterName,
-        equipment_type: equipmentType,
+        equipment_type: form.equipmentType,
         equipment_number: trimmedNumber,
-        inspection_date: inspectionDate,
-        template: template || null,
-        notes: notes.trim() ? notes.trim() : null,
-        general_checklist: generalChecklist,
-        specific_checklist: specificChecklist,
+        inspection_date: form.inspectionDate,
+        template: form.template || null,
+        notes: form.notes.trim() ? form.notes.trim() : null,
+        general_checklist: form.generalChecklist,
+        specific_checklist: form.specificChecklist,
         overview_photo_path: photoPathMap.overview ?? null,
         damage_photo_path: photoPathMap.damage ?? null,
         attachments_photo_path: photoPathMap.attachments ?? null,
@@ -309,46 +488,77 @@ export default function DailyEquipmentInspectionForm() {
         throw insertError;
       }
 
-      toast.success("Daily equipment inspection submitted.");
-      setSubmittedBy(defaultSubmitterName);
-      setEquipmentType("");
-      setEquipmentNumber("");
-      setTemplate("");
-      setGeneralChecklist({});
-      setSpecificChecklist({});
+      // Telemetry: track successful submission with duration
+      trackFormSubmitted({
+        form_type: 'equipment',
+        duration_seconds: formTimer.current.getDuration(),
+      });
+
+      // Dismiss loading toast before showing celebration
+      formToast.dismiss();
+
+      // Clear draft after successful submission
+      clearDraft();
+      markAsSaved();
+      
+      // Check compliance status and get remaining forms for nudge
+      const { allComplete, remaining } = await checkAndCelebrate('equipment');
+      setRemainingForms(remaining);
+      
+      // If all complete, the full celebration will show via celebrationProps
+      // Otherwise show the individual form celebration with remaining forms nudge
+      if (!allComplete) {
+        setShowCelebration(true);
+      }
+      
+      window.scrollTo({ top: 0, behavior: "smooth" });
+
+      // Reset form to initial state
+      setForm({
+        ...createInitialEquipmentFormState(),
+        submittedBy: defaultSubmitterName,
+      });
       setPhotos({});
-      setNotes("");
+      setCurrentStep(1);
+      setCompletedSteps(new Set());
     } catch (err: unknown) {
       logger.error("Failed to submit daily equipment inspection:", err);
       if (uploadedPaths.length) {
         await supabase.storage.from(BUCKET_NAME).remove(uploadedPaths);
       }
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : "Something went wrong submitting the inspection."
-      );
+      const errorMessage = err instanceof Error
+        ? err.message
+        : "Something went wrong submitting the inspection.";
+      formToast.error("Submission Failed", errorMessage, {
+        onRetry: () => handleSubmit({ preventDefault: () => {} } as FormEvent),
+      });
+      
+      // Telemetry: track server/network error
+      trackFormSubmitError({
+        form_type: 'equipment',
+        error_code: err instanceof Error && err.message.includes('network') ? 'NETWORK_ERROR' : 'SERVER_ERROR',
+      });
     } finally {
       setSubmitting(false);
     }
   }
 
-  const specificItems = useMemo(() => getSpecificItems(template), [template]);
+  const specificItems = useMemo(() => getSpecificItems(form.template), [form.template]);
 
   const generalCompleteCount = useMemo(
     () =>
-      Object.values(generalChecklist).filter((value) => value === "P" || value === "F")
+      Object.values(form.generalChecklist).filter((value) => value === "P" || value === "F")
         .length,
-    [generalChecklist]
+    [form.generalChecklist]
   );
 
   const specificCompleteCount = useMemo(
     () =>
       specificItems.reduce((count, item) => {
-        const value = specificChecklist[item.id];
+        const value = form.specificChecklist[item.id];
         return count + (value === "P" || value === "F" ? 1 : 0);
       }, 0),
-    [specificChecklist, specificItems]
+    [form.specificChecklist, specificItems]
   );
 
   const photoProgress = useMemo(() => {
@@ -360,6 +570,27 @@ export default function DailyEquipmentInspectionForm() {
       requiredCaptured,
     };
   }, [photos]);
+
+  // Photo preview URLs - create object URLs for thumbnail display
+  const photoPreviewUrls = useMemo(() => {
+    const urls: Partial<Record<PhotoTypes, string>> = {};
+    PHOTO_KEYS_ORDER.forEach((key) => {
+      const file = photos[key];
+      if (file) {
+        urls[key] = URL.createObjectURL(file);
+      }
+    });
+    return urls;
+  }, [photos]);
+
+  // Cleanup object URLs when photos change to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      Object.values(photoPreviewUrls).forEach((url) => {
+        if (url) URL.revokeObjectURL(url);
+      });
+    };
+  }, [photoPreviewUrls]);
 
   const heroStats = useMemo(
     () => [
@@ -408,15 +639,15 @@ export default function DailyEquipmentInspectionForm() {
   }, [user]);
 
   useEffect(() => {
-    if (!submitterPrefilledRef.current && defaultSubmitterName) {
-      setSubmittedBy(defaultSubmitterName);
+    if (!submitterPrefilledRef.current && defaultSubmitterName && !form.submittedBy) {
+      setForm(prev => ({ ...prev, submittedBy: defaultSubmitterName }));
       submitterPrefilledRef.current = true;
     }
-  }, [defaultSubmitterName]);
+  }, [defaultSubmitterName, form.submittedBy]);
 
   const availableEquipmentNumbers = useMemo(
-    () => (equipmentType ? EQUIPMENT_NUMBERS_BY_TYPE[equipmentType] ?? [] : []),
-    [equipmentType]
+    () => (form.equipmentType ? EQUIPMENT_NUMBERS_BY_TYPE[form.equipmentType] ?? [] : []),
+    [form.equipmentType]
   );
 
   return (
@@ -429,9 +660,20 @@ export default function DailyEquipmentInspectionForm() {
           <div className="relative space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
               <div className="space-y-2">
-                <p className="text-[9px] tracking-[0.4em] uppercase text-emerald-200/80">
-                  Safety First
-                </p>
+                <div className="flex items-center gap-3">
+                  <p className="text-[9px] tracking-[0.4em] uppercase text-emerald-200/80">
+                    Safety First
+                  </p>
+                  {/* Auto-save indicator */}
+                  {(lastSaved || hasUnsavedChanges) && (
+                    <AutoSaveIndicator
+                      status={hasUnsavedChanges ? "saving" : lastSaved ? "saved" : "idle"}
+                      lastSaved={lastSaved ?? null}
+                      hasUnsavedChanges={hasUnsavedChanges ?? false}
+                      className="hidden sm:flex"
+                    />
+                  )}
+                </div>
                 <h1 className="text-lg sm:text-xl font-semibold text-white">
                   Daily Equipment Inspection
                 </h1>
@@ -485,8 +727,8 @@ export default function DailyEquipmentInspectionForm() {
                   Submitted By *
                 </label>
                 <input
-                  value={submittedBy}
-                  onChange={(e) => setSubmittedBy(e.target.value)}
+                  value={form.submittedBy}
+                  onChange={(e) => setForm(prev => ({ ...prev, submittedBy: e.target.value }))}
                   placeholder="Operator name"
                   className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
                 />
@@ -497,7 +739,7 @@ export default function DailyEquipmentInspectionForm() {
                   Type *
                 </label>
                 <select
-                  value={equipmentType}
+                  value={form.equipmentType}
                   onChange={(e) => handleEquipmentTypeSelect(e.target.value as EquipmentTypeOption | "")}
                   aria-label="Equipment type"
                   className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-2 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
@@ -516,13 +758,13 @@ export default function DailyEquipmentInspectionForm() {
                   Number *
                 </label>
                 <select
-                  value={equipmentNumber}
-                  onChange={(e) => setEquipmentNumber(e.target.value)}
-                  disabled={!equipmentType}
+                  value={form.equipmentNumber}
+                  onChange={(e) => setForm(prev => ({ ...prev, equipmentNumber: e.target.value }))}
+                  disabled={!form.equipmentType}
                   aria-label="Equipment number"
                   className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-2 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/60 disabled:opacity-40"
                 >
-                  <option value="">{equipmentType ? "Select #" : "Type first"}</option>
+                  <option value="">{form.equipmentType ? "Select #" : "Type first"}</option>
                   {availableEquipmentNumbers.map((number) => (
                     <option key={number} value={number}>{number}</option>
                   ))}
@@ -531,8 +773,8 @@ export default function DailyEquipmentInspectionForm() {
 
               <DateField
                 label="Date"
-                value={inspectionDate}
-                onValueChange={setInspectionDate}
+                value={form.inspectionDate}
+                onValueChange={(val) => setForm(prev => ({ ...prev, inspectionDate: val }))}
                 helperText="Today"
                 containerClassName="text-white"
                 labelClassName="text-[10px] uppercase tracking-[0.25em] text-white/60 mb-1"
@@ -544,8 +786,8 @@ export default function DailyEquipmentInspectionForm() {
                   Template
                 </label>
                 <select
-                  value={template}
-                  onChange={(e) => setTemplate(e.target.value as EquipmentTemplate)}
+                  value={form.template}
+                  onChange={(e) => setForm(prev => ({ ...prev, template: e.target.value as EquipmentTemplate }))}
                   aria-label="Equipment template"
                   className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-2 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
                 >
@@ -578,9 +820,38 @@ export default function DailyEquipmentInspectionForm() {
                 style={{ width: `${generalPercent}%` }}
               />
             </div>
+            
+            {/* Quick Actions */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleMarkAllGeneralPass}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-[10px] font-medium hover:bg-emerald-500/20 transition-all touch-manipulation"
+              >
+                <CheckCheck className="w-3.5 h-3.5" />
+                All Pass
+              </button>
+              <button
+                type="button"
+                onClick={handleMarkAllGeneralFail}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-300 text-[10px] font-medium hover:bg-rose-500/20 transition-all touch-manipulation"
+              >
+                <XCircle className="w-3.5 h-3.5" />
+                All Fail
+              </button>
+              <button
+                type="button"
+                onClick={handleClearGeneralChecklist}
+                disabled={generalCompleteCount === 0}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-white/60 text-[10px] font-medium hover:bg-white/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed touch-manipulation"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                Clear
+              </button>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2">
               {GENERAL_ITEMS.map((item) => {
-                const value = generalChecklist[item.id] || "";
+                const value = form.generalChecklist[item.id] || "";
                 return (
                   <div
                     key={item.id}
@@ -591,6 +862,7 @@ export default function DailyEquipmentInspectionForm() {
                       <button
                         type="button"
                         onClick={() => handleChecklistChange("general", item.id, "P")}
+                        aria-label={`Mark ${item.label} as Pass`}
                         className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation ${
                           value === "P"
                             ? "border-emerald-400 bg-emerald-500/20 text-emerald-100"
@@ -602,6 +874,7 @@ export default function DailyEquipmentInspectionForm() {
                       <button
                         type="button"
                         onClick={() => handleChecklistChange("general", item.id, "F")}
+                        aria-label={`Mark ${item.label} as Fail`}
                         className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation ${
                           value === "F"
                             ? "border-rose-400 bg-rose-500/20 text-rose-100"
@@ -643,9 +916,38 @@ export default function DailyEquipmentInspectionForm() {
                 Select template above to load items
               </div>
             ) : (
+              <>
+                {/* Quick Actions */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleMarkAllSpecificPass}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-[10px] font-medium hover:bg-emerald-500/20 transition-all touch-manipulation"
+                  >
+                    <CheckCheck className="w-3.5 h-3.5" />
+                    All Pass
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleMarkAllSpecificFail}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-300 text-[10px] font-medium hover:bg-rose-500/20 transition-all touch-manipulation"
+                  >
+                    <XCircle className="w-3.5 h-3.5" />
+                    All Fail
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleClearSpecificChecklist}
+                    disabled={specificCompleteCount === 0}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-white/60 text-[10px] font-medium hover:bg-white/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed touch-manipulation"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    Clear
+                  </button>
+                </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2">
                 {specificItems.map((item) => {
-                  const value = specificChecklist[item.id] || "";
+                  const value = form.specificChecklist[item.id] || "";
                   return (
                     <div
                       key={item.id}
@@ -656,6 +958,7 @@ export default function DailyEquipmentInspectionForm() {
                         <button
                           type="button"
                           onClick={() => handleChecklistChange("specific", item.id, "P")}
+                          aria-label={`Mark ${item.label} as Pass`}
                           className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation ${
                             value === "P"
                               ? "border-emerald-400 bg-emerald-500/20 text-emerald-100"
@@ -667,6 +970,7 @@ export default function DailyEquipmentInspectionForm() {
                         <button
                           type="button"
                           onClick={() => handleChecklistChange("specific", item.id, "F")}
+                          aria-label={`Mark ${item.label} as Fail`}
                           className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation ${
                             value === "F"
                               ? "border-rose-400 bg-rose-500/20 text-rose-100"
@@ -680,6 +984,7 @@ export default function DailyEquipmentInspectionForm() {
                   );
                 })}
               </div>
+              </>
             )}
           </section>
 
@@ -712,6 +1017,7 @@ export default function DailyEquipmentInspectionForm() {
                 }}
                 type="file"
                 accept="image/*"
+                capture="environment"
                 aria-label={`Upload ${photo.label} photo`}
                 className="sr-only"
                 onChange={(e) => {
@@ -721,37 +1027,82 @@ export default function DailyEquipmentInspectionForm() {
               />
             ))}
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
               {PHOTO_DEFINITIONS.map((photo) => {
                 const captured = Boolean(photos[photo.key]);
+                const previewUrl = photoPreviewUrls[photo.key];
+                
                 return (
-                  <button
+                  <div
                     key={photo.key}
-                    type="button"
-                    onClick={() => photoRefs[photo.key].current?.click()}
-                    className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2.5 text-left transition hover:border-emerald-400/40 touch-manipulation"
+                    className="relative rounded-xl border border-white/10 bg-white/[0.02] overflow-hidden transition hover:border-emerald-400/40"
                   >
-                    <span className="inline-flex items-center justify-center rounded-lg border border-emerald-400/30 bg-emerald-500/10 p-1.5 text-emerald-200 flex-shrink-0">
-                      <Camera className="w-3.5 h-3.5" />
-                    </span>
-                    <span className="flex flex-col min-w-0 flex-1">
-                      <span className="text-xs font-semibold text-white truncate">
-                        {photo.label}
-                        {photo.required && <span className="text-rose-300 ml-1">*</span>}
-                      </span>
-                      <span
-                        className={`text-[9px] font-medium ${
-                          captured
-                            ? "text-emerald-300"
-                            : photo.required
-                            ? "text-rose-300/80"
-                            : "text-white/40"
-                        }`}
+                    {captured && previewUrl ? (
+                      // Photo captured - show thumbnail with retake option
+                      <div className="relative aspect-[4/3] group">
+                        <img
+                          src={previewUrl}
+                          alt={`${photo.label} preview`}
+                          className="w-full h-full object-cover"
+                        />
+                        {/* Gradient overlay for text readability */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                        
+                        {/* Success indicator badge */}
+                        <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/90 backdrop-blur-sm">
+                          <CheckCircle2 className="w-3 h-3 text-white" />
+                          <span className="text-[9px] font-bold text-white uppercase tracking-wide">Done</span>
+                        </div>
+                        
+                        {/* Photo label at bottom */}
+                        <div className="absolute bottom-0 left-0 right-0 p-2.5">
+                          <p className="text-xs font-semibold text-white truncate">
+                            {photo.label}
+                            {photo.required && <span className="text-emerald-300 ml-1">✓</span>}
+                          </p>
+                        </div>
+                        
+                        {/* Retake button - appears on hover/tap */}
+                        <button
+                          type="button"
+                          onClick={() => photoRefs[photo.key].current?.click()}
+                          className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity touch-manipulation"
+                          aria-label={`Retake ${photo.label} photo`}
+                        >
+                          <span className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 text-white">
+                            <RefreshCw className="w-4 h-4" />
+                            <span className="text-sm font-semibold">Retake</span>
+                          </span>
+                        </button>
+                      </div>
+                    ) : (
+                      // No photo - show capture button
+                      <button
+                        type="button"
+                        onClick={() => photoRefs[photo.key].current?.click()}
+                        className="w-full aspect-[4/3] flex flex-col items-center justify-center gap-2 p-3 text-center transition hover:bg-white/[0.03] touch-manipulation"
                       >
-                        {captured ? "✓ Done" : photo.required ? "Required" : "Optional"}
-                      </span>
-                    </span>
-                  </button>
+                        <span className={`inline-flex items-center justify-center rounded-xl border p-3 ${
+                          photo.required 
+                            ? "border-amber-400/40 bg-amber-500/10 text-amber-200" 
+                            : "border-emerald-400/30 bg-emerald-500/10 text-emerald-200"
+                        }`}>
+                          <Camera className="w-5 h-5" />
+                        </span>
+                        <span className="flex flex-col gap-0.5">
+                          <span className="text-xs font-semibold text-white">
+                            {photo.label}
+                            {photo.required && <span className="text-rose-300 ml-1">*</span>}
+                          </span>
+                          <span className={`text-[9px] font-medium ${
+                            photo.required ? "text-amber-300/80" : "text-white/40"
+                          }`}>
+                            {photo.required ? "Tap to capture (required)" : "Tap to capture"}
+                          </span>
+                        </span>
+                      </button>
+                    )}
+                  </div>
                 );
               })}
             </div>
@@ -766,8 +1117,8 @@ export default function DailyEquipmentInspectionForm() {
               <h2 className="text-sm sm:text-base font-semibold text-white">Notes</h2>
             </div>
             <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              value={form.notes}
+              onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
               rows={2}
               className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
               placeholder="Describe deficiencies, damage, or follow-ups..."
@@ -794,6 +1145,31 @@ export default function DailyEquipmentInspectionForm() {
           </section>
         </form>
       </div>
+      
+      {/* Draft Recovery Modal */}
+      <DraftRecoveryModal
+        isOpen={showDraftModal}
+        draft={draftData}
+        formType="equipment"
+        onRestore={handleRestoreDraft}
+        onDiscard={handleDismissDraft}
+      />
+      
+      {/* Success Celebration with Remaining Forms Nudge */}
+      <FormSuccessCelebration
+        isVisible={showCelebration}
+        formType="equipment"
+        onContinue={() => setShowCelebration(false)}
+        stats={{
+          checklistItemsCount: Object.keys(form.generalChecklist).length + 
+            Object.keys(form.specificChecklist).length,
+        }}
+        remainingForms={remainingForms}
+        userName={fullName || undefined}
+      />
+      
+      {/* Full Compliance Celebration (when all 3 forms complete) */}
+      <FullCelebration {...celebrationProps} />
     </DashboardLayout>
   );
 }

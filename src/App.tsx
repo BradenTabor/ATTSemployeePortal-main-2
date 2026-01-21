@@ -3,6 +3,7 @@ import {
   Routes,
   Route,
   useLocation,
+  Navigate,
 } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
@@ -13,10 +14,16 @@ import SessionOverlay from "./components/SessionOverlay";
 import LoadingScreen from "./components/LoadingScreen";
 import { useAuth } from "./contexts/AuthContext";
 import { Toaster } from "./components/ui/Toaster";
-import { PWAUpdatePrompt, PushNotificationPrompt } from "./components/notifications";
+import { ToastOverlayProvider } from "./components/ui/ToastOverlay";
+import { 
+  RequiredUpdatePrompt, 
+  PushNotificationPrompt,
+  WhatsNewOnboarding,
+} from "./components/notifications";
 import { IOSInstallPrompt } from "./components/pwa";
 import { queryClient } from "./lib/queryClient";
 import { PageWrapper } from "./motion";
+import { UserPresenceTracker } from "./hooks/useUserPresence";
 
 // Main pages
 const Home = lazy(() => import("./pages/Home"));
@@ -27,16 +34,22 @@ const Forms = lazy(() => import("./pages/forms/Forms"));
 const Announcements = lazy(() => import("./pages/Announcements"));
 const Resources = lazy(() => import("./pages/Resources"));
 const Contact = lazy(() => import("./pages/Contact"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Settings = lazy(() => import("./pages/Settings"));
 
 // Admin pages
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminRTO = lazy(() => import("./pages/admin/AdminRTO"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminJSA = lazy(() => import("./pages/admin/AdminJSA"));
-const AdminJobTracker = lazy(() => import("./pages/admin/AdminJobTracker"));
 const AdminJobProgress = lazy(() => import("./pages/admin/AdminJobProgress"));
 const AdminRewards = lazy(() => import("./pages/admin/AdminRewards"));
+const SafetyAnalyticsDashboard = lazy(() => import("./pages/admin/SafetyAnalyticsDashboard"));
 const AdminPartsFixesOverview = lazy(() => import("./pages/admin/AdminPartsFixesOverview"));
+const AdminTelemetry = lazy(() => import("./pages/admin/AdminTelemetry"));
+const AdminUserActivity = lazy(() => import("./pages/admin/AdminUserActivity"));
+const RiskCalibrationDashboard = lazy(() => import("./pages/admin/RiskCalibrationDashboard"));
+const AdminOperationsHub = lazy(() => import("./pages/admin/AdminOperationsHub"));
 
 // Mechanic pages
 const MechanicDashboard = lazy(() => import("./pages/mechanic/MechanicDashboard"));
@@ -72,10 +85,13 @@ const DVIRHistory = lazy(() => import("./pages/forms/DVIRHistory"));
 
 function AnimatedRoutes() {
   const location = useLocation();
-  const { loading } = useAuth();
+  const { loading, session } = useAuth();
 
   return (
     <>
+      {/* User Presence Tracker - tracks activity for authenticated users */}
+      {session && <UserPresenceTracker />}
+      
       {/* Session Restoring Overlay */}
       <SessionOverlay isLoading={loading} />
 
@@ -248,6 +264,30 @@ function AnimatedRoutes() {
                 <PageWrapper>
                   <ProtectedRoute>
                     <Contact />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            {/* Employee Profile */}
+            <Route
+              path="/profile"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            {/* User Settings */}
+            <Route
+              path="/settings"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute>
+                    <Settings />
                   </ProtectedRoute>
                 </PageWrapper>
               }
@@ -431,6 +471,17 @@ function AnimatedRoutes() {
             />
 
             <Route
+              path="/admin/telemetry"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminTelemetry />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            <Route
               path="/admin/jsa"
               element={
                 <PageWrapper>
@@ -441,15 +492,10 @@ function AnimatedRoutes() {
               }
             />
 
+            {/* Legacy route - redirect to Operations Hub */}
             <Route
               path="/admin/jobs"
-              element={
-                <PageWrapper>
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminJobTracker />
-                  </ProtectedRoute>
-                </PageWrapper>
-              }
+              element={<Navigate to="/admin/operations?tab=jobs" replace />}
             />
 
             <Route
@@ -476,11 +522,62 @@ function AnimatedRoutes() {
             />
 
             <Route
+              path="/admin/safety-analytics"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute requiredRole="admin">
+                    <SafetyAnalyticsDashboard />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            <Route
               path="/admin/parts-fixes"
               element={
                 <PageWrapper>
                   <ProtectedRoute requiredRole="admin">
                     <AdminPartsFixesOverview />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            <Route
+              path="/admin/activity"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminUserActivity />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            <Route
+              path="/admin/risk-calibration"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute requiredRole="admin">
+                    <RiskCalibrationDashboard />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            {/* Legacy route - redirect to Operations Hub */}
+            <Route
+              path="/admin/work-sites"
+              element={<Navigate to="/admin/operations?tab=sites" replace />}
+            />
+
+            {/* Operations Hub - Combined Sites, Crews, Jobs */}
+            <Route
+              path="/admin/operations"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminOperationsHub />
                   </ProtectedRoute>
                 </PageWrapper>
               }
@@ -516,24 +613,29 @@ function AnimatedRoutes() {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <AnimatedRoutes />
-      </Router>
-      <Toaster />
-      {/* PWA Update Prompt - shows when new version available */}
-      <PWAUpdatePrompt position="bottom-right" />
-      {/* Push Notification Opt-in Prompt - shows for unsubscribed users */}
-      <PushNotificationPrompt />
-      {/* iOS Install Prompt - shows installation instructions for iOS Safari users */}
-      <IOSInstallPrompt />
-      {/* DevTools - only renders in development */}
-      {import.meta.env.DEV && (
-        <ReactQueryDevtools
-          initialIsOpen={false}
-          position="bottom"
-          buttonPosition="bottom-right"
-        />
-      )}
+      <ToastOverlayProvider>
+        <Router>
+          <AnimatedRoutes />
+          {/* What's New Onboarding - one-time feature showcase after app updates (needs Router context) */}
+          <WhatsNewOnboarding />
+        </Router>
+        {/* Corner toasts for non-form notifications */}
+        <Toaster />
+        {/* Required Update Prompt - full-screen mandatory update when new version deployed */}
+        <RequiredUpdatePrompt required={true} />
+        {/* Push Notification Opt-in Prompt - shows for unsubscribed users */}
+        <PushNotificationPrompt />
+        {/* iOS Install Prompt - shows installation instructions for iOS Safari users */}
+        <IOSInstallPrompt />
+        {/* DevTools - only renders in development */}
+        {import.meta.env.DEV && (
+          <ReactQueryDevtools
+            initialIsOpen={false}
+            position="bottom"
+            buttonPosition="bottom-right"
+          />
+        )}
+      </ToastOverlayProvider>
     </QueryClientProvider>
   );
 }

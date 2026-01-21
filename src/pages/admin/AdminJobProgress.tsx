@@ -127,7 +127,7 @@ function FilterChip({
       className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#f4c979]/20 text-[#f4c979] text-[10px] font-medium"
     >
       {label}
-      <button onClick={onRemove} className="hover:bg-white/10 rounded-full p-0.5">
+      <button onClick={onRemove} className="hover:bg-white/10 rounded-full p-0.5" aria-label={`Remove ${label} filter`}>
         <X className="w-2.5 h-2.5" />
       </button>
     </motion.span>

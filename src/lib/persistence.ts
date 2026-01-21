@@ -94,11 +94,84 @@ export function removePersistedValue(key: string): void {
   }
 }
 
+/**
+ * Read a JSON value from localStorage with SSR safety and error handling.
+ * 
+ * @param key - The localStorage key
+ * @returns The parsed value or null if not found/invalid
+ */
+export function getPersistedJson<T>(key: string): T | null {
+  if (typeof window === 'undefined') return null;
+  
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === null) return null;
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Write a JSON value to localStorage with debouncing (200ms).
+ * SSR-safe and gracefully handles disabled localStorage.
+ * 
+ * @param key - The localStorage key
+ * @param value - The value to store (will be JSON stringified)
+ */
+export function setPersistedJson<T>(key: string, value: T): void {
+  if (typeof window === 'undefined') return;
+  
+  // Clear any pending write for this key
+  const existingTimeout = writeTimeouts.get(key);
+  if (existingTimeout) {
+    clearTimeout(existingTimeout);
+  }
+  
+  // Debounce the write by 200ms
+  const timeout = setTimeout(() => {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch {
+      // localStorage disabled - fail silently
+    }
+    writeTimeouts.delete(key);
+  }, 200);
+  
+  writeTimeouts.set(key, timeout);
+}
+
+/**
+ * Immediately write a JSON value to localStorage (no debounce).
+ * Use for state that needs instant cross-component sync.
+ * SSR-safe and gracefully handles disabled localStorage.
+ * 
+ * @param key - The localStorage key
+ * @param value - The value to store (will be JSON stringified)
+ */
+export function setPersistedJsonImmediate<T>(key: string, value: T): void {
+  if (typeof window === 'undefined') return;
+  
+  // Clear any pending debounced write for this key
+  const existingTimeout = writeTimeouts.get(key);
+  if (existingTimeout) {
+    clearTimeout(existingTimeout);
+    writeTimeouts.delete(key);
+  }
+  
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // localStorage disabled - fail silently
+  }
+}
+
 // Dashboard collapse state keys
 export const PERSISTENCE_KEYS = {
   ANNOUNCEMENTS: 'atts:dashboard:collapse:announcements',
   ASSIGNED_JOBS: 'atts:dashboard:collapse:assignedJobs',
   QUICK_ACTIONS: 'atts:dashboard:collapse:quickActions',
   ALL_TOOLS: 'atts:dashboard:collapse:allTools',
+  PINNED_FAVORITES: 'dashboard-pinned-favorites',
 } as const;
 

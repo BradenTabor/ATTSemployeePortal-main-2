@@ -199,6 +199,7 @@ export default function BulkMaintenanceScheduler({
           <button
             onClick={onClose}
             className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/5 transition-colors"
+            aria-label="Close scheduler"
           >
             <X className="w-4 h-4" />
           </button>

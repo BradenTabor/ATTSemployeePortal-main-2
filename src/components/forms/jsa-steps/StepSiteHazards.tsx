@@ -27,7 +27,7 @@ const TRAFFIC_HAZARDS = [
 ];
 
 const TRAFFIC_SETUP = [
-  { key: "warning_signs_used", label: "Warning signs?" },
+  { key: "warning_signs_used", label: "Equipment/hazards signs?" },
   { key: "warning_signs_distance", label: "Signs at distance?" },
   { key: "reflective_cones", label: "Cones placed?" },
   { key: "cone_separation", label: "Cone separation?" },

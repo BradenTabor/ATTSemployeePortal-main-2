@@ -148,7 +148,12 @@ export function useAdminRewards(params: AdminRewardsQueryParams) {
         rewardsQuery = rewardsQuery.gte('claimed_at', `${dateFrom}T00:00:00`);
       }
       if (dateTo) {
-        rewardsQuery = rewardsQuery.lte('claimed_at', `${dateTo}T23:59:59`);
+        // Calculate day after dateTo for proper boundary (includes all times up to 23:59:59.999)
+        const toDate = new Date(dateTo);
+        const dayAfterTo = new Date(toDate);
+        dayAfterTo.setDate(dayAfterTo.getDate() + 1);
+        const dayAfterToDate = dayAfterTo.toISOString().slice(0, 10);
+        rewardsQuery = rewardsQuery.lt('claimed_at', `${dayAfterToDate}T00:00:00`);
       }
 
       // Apply pagination

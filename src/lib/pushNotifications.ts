@@ -297,7 +297,155 @@ export const NotificationBuilders = {
   },
 };
 
+// ============================================
+// Specialized Notification Functions
+// ============================================
+
+/**
+ * Defect alert interface matching the detectDefects execution script
+ */
+export interface DefectAlert {
+  id: string;
+  truck_number?: string;
+  equipment_number?: string;
+  equipment_type: 'vehicle' | 'equipment' | 'trailer' | 'aerial';
+  defect_items: string[];
+  severity: 'critical' | 'warning';
+  reported_by: string;
+  reported_by_name?: string;
+  reported_at: Date;
+  source_table: 'dvir_reports' | 'daily_equipment_inspections';
+  source_id: string;
+}
+
+/**
+ * Risk score interface matching the calculateRiskScore execution script
+ */
+export interface RiskScore {
+  total: number;
+  level: 'LOW' | 'MODERATE' | 'ELEVATED' | 'HIGH' | 'CRITICAL';
+  drivers: string[];
+  recommendations: string[];
+}
+
+/**
+ * Send defect alert to all mechanics.
+ * 
+ * Used by the Jidoka Maintenance Automation feature to notify mechanics
+ * when equipment defects are reported via DVIR or Equipment Inspections.
+ * 
+ * @param defect - The defect alert details
+ * @returns Promise resolving when notification is sent
+ * 
+ * @example
+ * ```typescript
+ * await sendDefectAlert({
+ *   id: 'dvir-123',
+ *   truck_number: '104',
+ *   equipment_type: 'vehicle',
+ *   defect_items: ['Brake lights', 'Turn signals'],
+ *   severity: 'critical',
+ *   reported_by: 'user-uuid',
+ *   reported_by_name: 'John Smith',
+ *   reported_at: new Date(),
+ *   source_table: 'dvir_reports',
+ *   source_id: '123',
+ * });
+ * ```
+ */
+export async function sendDefectAlert(defect: DefectAlert): Promise<void> {
+  const itemLabel = defect.truck_number 
+    ? `Truck ${defect.truck_number}` 
+    : defect.equipment_number || 'Equipment';
+  
+  const reporterName = defect.reported_by_name || 'Unknown';
+  const issueCount = defect.defect_items.length;
+  const issueText = issueCount === 1 ? 'issue' : 'issues';
+
+  const result = await createNotificationSilent({
+    category: 'safety_alert',
+    severity: defect.severity === 'critical' ? 'critical' : 'high',
+    target_type: 'role',
+    target_ref: 'mechanic',
+    title: `🔧 Defect: ${itemLabel}`,
+    body: `${reporterName} flagged ${issueCount} ${issueText}. Inspection required.`,
+    url: '/mechanic/equipment-logs',
+    entity_type: 'defect',
+    entity_id: defect.source_id,
+  });
+
+  if (result) {
+    console.log('[sendDefectAlert] Sent to mechanics:', {
+      defect_id: defect.id,
+      severity: defect.severity,
+      dispatched: result.dispatched,
+    });
+  }
+}
+
+/**
+ * Send safety forecast notifications to leadership roles.
+ * 
+ * Used by the Admin Safety Forecast feature to notify admin, general_foreman,
+ * and safety_officer roles when the daily risk level is ELEVATED or higher.
+ * 
+ * NOTE: Only sends notifications if risk level >= ELEVATED (score >= 2.0)
+ * 
+ * @param riskScore - The calculated risk score for the day
+ * @param dateFor - The date the forecast is for (YYYY-MM-DD format)
+ * @returns Promise resolving when all notifications are sent
+ * 
+ * @example
+ * ```typescript
+ * await sendSafetyForecastNotifications(
+ *   { total: 2.4, level: 'ELEVATED', drivers: ['Wind gusts 28mph'], recommendations: [] },
+ *   '2026-01-20'
+ * );
+ * ```
+ */
+export async function sendSafetyForecastNotifications(
+  riskScore: RiskScore,
+  dateFor: string
+): Promise<void> {
+  // Only notify for ELEVATED+ risk levels
+  if (riskScore.total < 2.0) {
+    console.log('[sendSafetyForecastNotifications] Risk below ELEVATED, skipping notifications');
+    return;
+  }
+
+  const emoji: Record<RiskScore['level'], string> = {
+    LOW: '✅',
+    MODERATE: '📊',
+    ELEVATED: '⚠️',
+    HIGH: '🔴',
+    CRITICAL: '🚨',
+  };
+
+  const severity: CreateNotificationRequest['severity'] = 
+    riskScore.level === 'CRITICAL' ? 'critical' 
+    : riskScore.level === 'HIGH' ? 'high' 
+    : 'medium';
+
+  const targetRoles = ['admin', 'general_foreman', 'safety_officer'];
+  const topDriver = riskScore.drivers[0] || 'Check email for details.';
+
+  for (const role of targetRoles) {
+    const result = await createNotificationSilent({
+      category: 'safety_alert',
+      severity,
+      target_type: 'role',
+      target_ref: role,
+      title: `${emoji[riskScore.level]} Safety Forecast: ${riskScore.level} Risk`,
+      body: `Risk ${riskScore.total.toFixed(1)}/5.0 for ${dateFor}. ${topDriver}`,
+      url: '/admin/dashboard',
+      entity_type: 'forecast',
+    });
+
+    if (result) {
+      console.log('[sendSafetyForecastNotifications] Sent to role:', role, 'dispatched:', result.dispatched);
+    }
+  }
+}
+
 // Export types for convenience
 export type { CreateNotificationRequest, CreateNotificationResponse };
-
-

@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { motion } from "framer-motion";
-import { LogOut } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
+import { Link } from "react-router-dom";
 import { getDeviceCapabilities } from "../lib/mobilePerf";
 
 // Theme variants for different dashboard styles
@@ -74,15 +75,29 @@ const ProfileBar = memo(function ProfileBar({
             {role?.replace(/_/g, " ")}
           </p>
         </div>
-        <motion.button
-          whileHover={caps.prefersReducedMotion ? undefined : { scale: 1.02 }}
-          whileTap={caps.prefersReducedMotion ? undefined : { scale: 0.96 }}
-          onClick={onSignOut}
-          className="flex-shrink-0 inline-flex items-center gap-2 rounded-full bg-[#ff0000] px-4 py-2.5 text-xs sm:text-sm font-semibold border-4 border-[rgba(255,214,214,0.55)] hover:bg-red-600 transition-colors min-h-[44px]"
-        >
-          <LogOut className="w-4 h-4" />
-          Sign out
-        </motion.button>
+        <div className="flex items-center gap-2">
+          <motion.div
+            whileHover={caps.prefersReducedMotion ? undefined : { scale: 1.02 }}
+            whileTap={caps.prefersReducedMotion ? undefined : { scale: 0.96 }}
+          >
+            <Link
+              to="/profile"
+              className="flex-shrink-0 inline-flex items-center gap-2 rounded-full bg-white/10 hover:bg-white/15 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white border border-white/20 transition-colors min-h-[44px]"
+            >
+              <Settings className="w-4 h-4" />
+              <span className="hidden sm:inline">Profile</span>
+            </Link>
+          </motion.div>
+          <motion.button
+            whileHover={caps.prefersReducedMotion ? undefined : { scale: 1.02 }}
+            whileTap={caps.prefersReducedMotion ? undefined : { scale: 0.96 }}
+            onClick={onSignOut}
+            className="flex-shrink-0 inline-flex items-center gap-2 rounded-full bg-[#ff0000] px-4 py-2.5 text-xs sm:text-sm font-semibold border-4 border-[rgba(255,214,214,0.55)] hover:bg-red-600 transition-colors min-h-[44px]"
+          >
+            <LogOut className="w-4 h-4" />
+            Sign out
+          </motion.button>
+        </div>
       </div>
     </div>
   );

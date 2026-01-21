@@ -10,53 +10,77 @@ import {
   HardHat,
   Users,
   History,
+  UserCircle,
+  Settings,
 } from "lucide-react";
 import BrandedNavCard from "./BrandedNavCard";
 import { motion } from "framer-motion";
 import { useMemo } from "react";
 import { getDeviceCapabilities } from "../lib/mobilePerf";
+import { usePinnedFavorites } from "./dashboard";
 
 const userPages = [
   {
+    id: "jobs",
     label: "My Jobs",
     path: "/assigned-jobs",
     icon: Briefcase,
     description: "View and track your assigned work"
   },
   {
+    id: "forms",
     label: "Company Forms",
     path: "/forms",
     icon: FileText,
     description: "Access and submit required ATTS forms"
   },
   {
+    id: "history",
     label: "Forms History",
     path: "/forms-history",
     icon: History,
     description: "View your past form submissions"
   },
   {
+    id: "announcements",
     label: "Announcements",
     path: "/announcements",
     icon: Megaphone,
     description: "Latest company news and updates"
   },
   {
+    id: "resources",
     label: "Resources",
     path: "/resources",
     icon: FileSearch,
     description: "Training materials and documents"
   },
   {
+    id: "contact",
     label: "Contact",
     path: "/contact",
     icon: Phone,
     description: "Reach out to management and HR"
   },
+  {
+    id: "profile",
+    label: "My Profile",
+    path: "/profile",
+    icon: UserCircle,
+    description: "View credentials and settings"
+  },
+  {
+    id: "settings",
+    label: "Settings",
+    path: "/settings",
+    icon: Settings,
+    description: "Manage saved data and preferences"
+  },
 ];
 
 export default function NavCards() {
   const { isAdmin, hasMechanicAccess, role } = useAuth();
+  const { togglePin, isPinned, canPinMore } = usePinnedFavorites();
   
   // Get device capabilities for mobile optimization
   const caps = useMemo(() => getDeviceCapabilities(), []);
@@ -94,6 +118,7 @@ export default function NavCards() {
   const allCards = [
     ...userPages.map((page) => ({
       key: page.path,
+      itemId: page.id,
       title: page.label,
       description: page.description,
       icon: page.icon,
@@ -103,6 +128,7 @@ export default function NavCards() {
     })),
     {
       key: "/mechanic-dashboard",
+      itemId: "mechanic",
       title: "Mechanic Panel",
       description: "Review DVIR queues and shop work",
       icon: Wrench,
@@ -112,6 +138,7 @@ export default function NavCards() {
     },
     {
       key: "/general-foreman-dashboard",
+      itemId: "general-foreman",
       title: "General Foreman Panel",
       description: "Oversee crews and safety compliance",
       icon: HardHat,
@@ -121,6 +148,7 @@ export default function NavCards() {
     },
     {
       key: "/safety-officer-dashboard",
+      itemId: "safety-officer",
       title: "Safety Officer Panel",
       description: "Manage incidents and compliance",
       icon: Shield,
@@ -130,6 +158,7 @@ export default function NavCards() {
     },
     {
       key: "/foreman-dashboard",
+      itemId: "foreman",
       title: "Foreman Panel",
       description: "Manage crew and daily reports",
       icon: Users,
@@ -139,6 +168,7 @@ export default function NavCards() {
     },
     {
       key: "/admin",
+      itemId: "admin",
       title: "Admin Panel",
       description: "Manage users and approvals",
       icon: Shield,
@@ -150,7 +180,7 @@ export default function NavCards() {
 
   return (
     <motion.div 
-      className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5 sm:gap-3 w-full"
+      className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-2.5 md:gap-3 w-full"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -165,6 +195,10 @@ export default function NavCards() {
               icon={<Icon />}
               to={card.to}
               variant={card.variant}
+              itemId={card.itemId}
+              isPinned={isPinned(card.itemId)}
+              canPinMore={canPinMore}
+              onTogglePin={togglePin}
             />
           </motion.div>
         );

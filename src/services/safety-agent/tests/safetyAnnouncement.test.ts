@@ -35,7 +35,7 @@ import {
 } from '../execution/generateDailySafetyAnnouncement';
 import { isOpenAIConfigured } from '../lib/openai';
 import { getTodayInTimezone, buildCutoffTimestamp } from '../lib/time';
-import type { EquipmentInspectionReport } from '../types';
+import type { EquipmentInspectionReport, JsaSubmission } from '../types';
 
 // =============================================================================
 // TEST CONFIGURATION
@@ -685,28 +685,36 @@ describe('Safety Announcement Generation - Comprehensive Test Suite', () => {
 
 describe('Aggregation Functions', () => {
   it('should aggregate JSA data correctly', () => {
-    const mockJsaData = [
+    const mockJsaData: JsaSubmission[] = [
       {
         id: '1',
         user_id: 'u1',
-        job_site: 'Site A',
-        hazards: ['Falls', 'Electrical'],
-        ppe_required: ['Hard Hat', 'Safety Glasses'],
-        controls: ['Barricades'],
-        weather_conditions: 'Clear',
-        near_miss: true,
+        work_location: 'Site A',
+        hazards_present: { falls: true, electrical: true, noise: false },
+        ppe: { 
+          hard_hat: { required: true, condition: 'good' }, 
+          safety_glasses: { required: true, condition: 'good' } 
+        },
+        weather_conditions: { 
+          conditions: { clear: true, cloudy: false }, 
+          modifiers: {} 
+        },
         notes: 'Test note',
         created_at: new Date().toISOString(),
       },
       {
         id: '2',
         user_id: 'u2',
-        job_site: 'Site B',
-        hazards: ['Falls', 'Noise'],
-        ppe_required: ['Hard Hat', 'Ear Protection'],
-        controls: ['Signage'],
-        weather_conditions: 'Rain',
-        near_miss: false,
+        work_location: 'Site B',
+        hazards_present: { falls: true, noise: true },
+        ppe: { 
+          hard_hat: { required: true, condition: 'good' }, 
+          ear_protection: { required: true, condition: 'good' } 
+        },
+        weather_conditions: { 
+          conditions: { rain: true }, 
+          modifiers: {} 
+        },
         notes: null,
         created_at: new Date().toISOString(),
       },
@@ -719,7 +727,7 @@ describe('Aggregation Functions', () => {
     expect(result.hazardCounts.get('electrical')).toBe(1);
     expect(result.hazardCounts.get('noise')).toBe(1);
     expect(result.ppeCounts.get('hard hat')).toBe(2);
-    expect(result.nearMissCount).toBe(1);
+    expect(result.nearMissCount).toBe(0); // Near miss tracking removed from schema
     expect(result.jobSites.size).toBe(2);
   });
 

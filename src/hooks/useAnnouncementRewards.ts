@@ -24,37 +24,50 @@ export const rewardsQueryKeys = {
   totalPoints: (userId: string) => ['announcement-rewards', 'total-points', userId] as const,
   claimed: (userId: string, announcementId: string) => 
     ['announcement-rewards', 'claimed', userId, announcementId] as const,
+  claimedBatch: (userId: string) => ['announcement-rewards', 'claimed-batch', userId] as const,
 };
 
 /**
- * Check if the current user has claimed a reward for a specific announcement
+ * Batch fetch all claimed announcement IDs for the current user.
+ * Much more efficient than individual queries per announcement.
+ * Returns a Set of claimed announcement IDs for O(1) lookup.
  */
-export function useHasClaimedReward(announcementId: string | undefined) {
+export function useClaimedAnnouncementIds() {
   const { user } = useAuth();
   
   return useQuery({
-    queryKey: rewardsQueryKeys.claimed(user?.id ?? '', announcementId ?? ''),
-    queryFn: async () => {
-      if (!user?.id || !announcementId) return false;
+    queryKey: rewardsQueryKeys.claimedBatch(user?.id ?? ''),
+    queryFn: async (): Promise<Set<string>> => {
+      if (!user?.id) return new Set();
       
       const { data, error } = await supabase
         .from('announcement_rewards')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('announcement_id', announcementId)
-        .maybeSingle();
+        .select('announcement_id')
+        .eq('user_id', user.id);
       
       if (error) {
-        logger.error('Failed to check reward claim status:', error);
-        // Return false on error to allow retry
-        return false;
+        logger.error('Failed to fetch claimed announcements:', error);
+        return new Set();
       }
       
-      return data !== null;
+      return new Set((data || []).map(r => r.announcement_id));
     },
-    enabled: !!user?.id && !!announcementId,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled: !!user?.id,
+    staleTime: 1000 * 60 * 5, // 5 minutes - matches individual query
   });
+}
+
+/**
+ * Check if the current user has claimed a reward for a specific announcement.
+ * Uses the batch query for efficiency - single query instead of N queries.
+ */
+export function useHasClaimedReward(announcementId: string | undefined) {
+  const { data: claimedIds, isLoading } = useClaimedAnnouncementIds();
+  
+  return {
+    data: announcementId ? claimedIds?.has(announcementId) ?? false : false,
+    isLoading,
+  };
 }
 
 /**
@@ -91,11 +104,11 @@ export function useClaimReward() {
       
       return data as AnnouncementReward;
     },
-    onSuccess: (data) => {
-      // Invalidate relevant queries
+    onSuccess: () => {
+      // Invalidate relevant queries - including batch query for efficiency
       if (user?.id) {
         queryClient.invalidateQueries({ 
-          queryKey: rewardsQueryKeys.claimed(user.id, data.announcement_id) 
+          queryKey: rewardsQueryKeys.claimedBatch(user.id) 
         });
         queryClient.invalidateQueries({ 
           queryKey: rewardsQueryKeys.totalPoints(user.id) 
@@ -178,7 +191,8 @@ export function useUserRewards() {
 
 /**
  * Combined hook for reward claiming functionality
- * Provides all necessary state and actions for the CollectPointsButton component
+ * Provides all necessary state and actions for the CollectPointsButton component.
+ * Uses batch query for efficient reward checking (single query for all announcements).
  */
 export function useAnnouncementReward(announcementId: string | undefined) {
   const { data: hasClaimed, isLoading: isCheckingClaim } = useHasClaimedReward(announcementId);
@@ -192,7 +206,7 @@ export function useAnnouncementReward(announcementId: string | undefined) {
   };
   
   return {
-    hasClaimed: hasClaimed ?? false,
+    hasClaimed: hasClaimed,
     isCheckingClaim,
     isClaiming,
     totalPoints: totalPoints ?? 0,

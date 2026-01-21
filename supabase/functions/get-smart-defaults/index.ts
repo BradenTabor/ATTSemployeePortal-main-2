@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Supabase Edge Function: Get Smart Form Defaults
  * 

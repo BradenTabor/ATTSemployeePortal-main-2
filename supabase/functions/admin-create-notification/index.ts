@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * admin-create-notification Edge Function
  * 

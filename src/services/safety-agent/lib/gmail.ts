@@ -23,8 +23,9 @@ const DEFAULT_ADMIN_RECIPIENTS = [
   'shane@alltts.com',
   'dusty@alltts.com',
   'mike@alltts.com',
-  'weston@alltts.com',
   'steve@alltts.com',
+  'brandon@alltts.com',
+  'weston@alltts.com',
 ];
 
 // Default sender

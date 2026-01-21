@@ -203,7 +203,8 @@ export default function Home() {
           <img
             src={logo}
             alt="ATTS Logo"
-            fetchPriority="high"
+            // @ts-expect-error fetchpriority is a valid HTML attribute but not in React types yet
+            fetchpriority="high"
             className="h-64 sm:h-80 md:h-96 lg:h-[28rem] xl:h-[32rem] w-auto mx-auto opacity-95 drop-shadow-[0_0_60px_rgba(16,185,129,0.5)]"
             style={{
               imageRendering: 'crisp-edges'

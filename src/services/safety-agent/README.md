@@ -51,7 +51,7 @@ OPENAI_API_KEY=sk-your-api-key-here
 # ======================
 GMAIL_USER=allterraintreeservice.po@gmail.com
 GMAIL_APP_PASSWORD=xxxx xxxx xxxx xxxx  # 16-char Google App Password (NOT your login password)
-ADMIN_EMAIL_RECIPIENTS=bradenleetabor@gmail.com,shane@alltts.com,dusty@alltts.com,mike@alltts.com,weston@alltts.com,steve@alltts.com
+ADMIN_EMAIL_RECIPIENTS=bradenleetabor@gmail.com,shane@alltts.com,dusty@alltts.com,mike@alltts.com,steve@alltts.com,brandon@alltts.com
 
 # ======================
 # MAKE.COM WEBHOOK (for Google Sheets logging)

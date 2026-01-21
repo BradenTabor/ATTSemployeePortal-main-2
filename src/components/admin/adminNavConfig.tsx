@@ -14,6 +14,8 @@ import {
   Phone,
   History,
   Trophy,
+  BarChart3,
+  Activity,
 } from "lucide-react";
 import type { AdminNavCardConfig } from "./AdminPremiumScaffold";
 
@@ -106,10 +108,10 @@ export const ADMIN_CORE_NAV_CARDS: AdminNavCardConfig[] = [
     variant: "gold",
   },
   {
-    title: "Job Progress Tracker",
-    description: "Create and monitor job timelines with crew assignments.",
+    title: "Operations Hub",
+    description: "Manage work sites, crews, and job assignments.",
     icon: <Briefcase className="w-8 h-8 text-[#f4c979]" />,
-    to: "/admin/jobs",
+    to: "/admin/operations",
     variant: "gold",
   },
   {
@@ -127,10 +129,31 @@ export const ADMIN_CORE_NAV_CARDS: AdminNavCardConfig[] = [
     variant: "gold",
   },
   {
-    title: "Safety Rewards",
-    description: "View announcement reward claims and user points.",
+    title: "Safety Analytics",
+    description: "Unified compliance metrics, leaderboards, and engagement analytics.",
     icon: <Trophy className="w-8 h-8 text-[#f4c979]" />,
-    to: "/admin/rewards",
+    to: "/admin/safety-analytics",
+    variant: "gold",
+  },
+  {
+    title: "Telemetry Dashboard",
+    description: "Form analytics, engagement metrics, and system health.",
+    icon: <BarChart3 className="w-8 h-8 text-[#f4c979]" />,
+    to: "/admin/telemetry",
+    variant: "gold",
+  },
+  {
+    title: "User Activity",
+    description: "Live feed of active users and real-time engagement.",
+    icon: <Activity className="w-8 h-8 text-[#f4c979]" />,
+    to: "/admin/activity",
+    variant: "gold",
+  },
+  {
+    title: "Risk Calibration",
+    description: "Automated safety forecast tuning and incident tracking.",
+    icon: <Shield className="w-8 h-8 text-[#f4c979]" />,
+    to: "/admin/risk-calibration",
     variant: "gold",
   },
 ];

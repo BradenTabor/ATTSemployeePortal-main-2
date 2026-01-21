@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo, forwardRef } from "react";
+import { useEffect, useState, useCallback, useMemo, forwardRef, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../lib/supabaseClient";
 import { subscribeToTableChanges } from "../lib/realtime";
@@ -22,6 +22,8 @@ import { TextEffect } from "../components/ui/TextEffect";
 import { getDeviceCapabilities } from "../lib/mobilePerf";
 import { CollectPointsButton } from "../components/CollectPointsButton";
 import { AnnouncementDetailModal } from "../components/AnnouncementDetailModal";
+import { useAnnouncementTracking } from "../hooks/useAnnouncementTracking";
+import { formToast } from "../lib/formToast";
 
 interface Announcement {
   id: string;
@@ -107,32 +109,48 @@ interface FeaturedAnnouncementProps {
   onClick?: () => void;
 }
 
-const FeaturedAnnouncementCard = ({ announcement, formatDate, onClick }: FeaturedAnnouncementProps) => (
+const FeaturedAnnouncementCard = ({ announcement, formatDate, onClick }: FeaturedAnnouncementProps) => {
+  // Device capabilities for animation decisions
+  const caps = useMemo(() => getDeviceCapabilities(), []);
+  const enableHeavyAnimations = !caps.prefersReducedMotion && !caps.isMobile && !caps.isLowEnd;
+  
+  // Telemetry: track when featured announcement becomes visible
+  const trackingRef = useAnnouncementTracking(
+    announcement.id,
+    announcement.author === 'Safety AI',
+    { source: 'announcements_page' }
+  );
+
+  return (
   <motion.article
-    layout
-    initial={{ opacity: 0, y: 20, scale: 0.98 }}
-    animate={{ opacity: 1, y: 0, scale: 1 }}
-    transition={{ duration: 0.6, type: "spring", stiffness: 100, damping: 18 }}
-    whileHover={{ y: -4 }}
-    whileTap={{ scale: 0.995 }}
+    ref={trackingRef}
+    layout={enableHeavyAnimations}
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.4 }}
+    whileHover={enableHeavyAnimations ? { y: -4 } : undefined}
+    whileTap={enableHeavyAnimations ? { scale: 0.995 } : undefined}
     onClick={onClick}
-    className="relative overflow-hidden rounded-2xl md:rounded-[28px] border border-emerald-400/30 shadow-[0_8px_80px_-20px_rgba(16,185,129,0.5),0_4px_24px_-8px_rgba(0,0,0,0.6)] cursor-pointer group/featured"
+    className="relative overflow-hidden rounded-2xl md:rounded-[28px] border border-emerald-400/30 shadow-[0_8px_40px_-20px_rgba(16,185,129,0.4)] cursor-pointer group/featured"
     style={{
       background: 'linear-gradient(145deg, rgba(4, 30, 21, 0.98) 0%, rgba(2, 15, 10, 1) 50%, rgba(1, 8, 5, 1) 100%)',
+      willChange: enableHeavyAnimations ? 'transform' : 'auto',
     }}
   >
-    {/* Outer glow border effect */}
+    {/* Outer glow border effect - static */}
     <div className="absolute -inset-[1px] rounded-[inherit] bg-gradient-to-br from-emerald-400/40 via-emerald-500/20 to-emerald-600/30 opacity-60 blur-[1px] pointer-events-none" />
     
-    {/* Animated rotating gradient ring */}
-    <motion.div
-      className="absolute -inset-[2px] rounded-[inherit] opacity-50 pointer-events-none"
-      style={{
-        background: 'conic-gradient(from 0deg, transparent 0%, rgba(16, 185, 129, 0.6) 10%, transparent 25%, transparent 50%, rgba(52, 211, 153, 0.4) 60%, transparent 75%)',
-      }}
-      animate={{ rotate: 360 }}
-      transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
-    />
+    {/* Animated rotating gradient ring - only on capable devices */}
+    {enableHeavyAnimations && (
+      <motion.div
+        className="absolute -inset-[2px] rounded-[inherit] opacity-50 pointer-events-none"
+        style={{
+          background: 'conic-gradient(from 0deg, transparent 0%, rgba(16, 185, 129, 0.6) 10%, transparent 25%, transparent 50%, rgba(52, 211, 153, 0.4) 60%, transparent 75%)',
+        }}
+        animate={{ rotate: 360 }}
+        transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
+      />
+    )}
     
     {/* Inner container with solid bg to contain content */}
     <div 
@@ -144,37 +162,63 @@ const FeaturedAnnouncementCard = ({ announcement, formatDate, onClick }: Feature
       {/* Premium top shine line */}
       <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-300/70 to-transparent" />
       
-      {/* Floating orbs - decorative ambient lighting */}
-      <motion.div
-        className="absolute w-64 h-64 rounded-full pointer-events-none"
-        style={{
-          background: 'radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, transparent 70%)',
-          top: '-20%',
-          left: '-10%',
-          filter: 'blur(40px)',
-        }}
-        animate={{ 
-          x: [0, 20, 0],
-          y: [0, 15, 0],
-          scale: [1, 1.1, 1],
-        }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div
-        className="absolute w-48 h-48 rounded-full pointer-events-none"
-        style={{
-          background: 'radial-gradient(circle, rgba(52, 211, 153, 0.2) 0%, transparent 70%)',
-          bottom: '-15%',
-          right: '-5%',
-          filter: 'blur(35px)',
-        }}
-        animate={{ 
-          x: [0, -15, 0],
-          y: [0, -10, 0],
-          scale: [1, 1.15, 1],
-        }}
-        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-      />
+      {/* Floating orbs - only on capable devices */}
+      {enableHeavyAnimations ? (
+        <>
+          <motion.div
+            className="absolute w-64 h-64 rounded-full pointer-events-none"
+            style={{
+              background: 'radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, transparent 70%)',
+              top: '-20%',
+              left: '-10%',
+              filter: 'blur(40px)',
+            }}
+            animate={{ 
+              x: [0, 20, 0],
+              y: [0, 15, 0],
+              scale: [1, 1.1, 1],
+            }}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div
+            className="absolute w-48 h-48 rounded-full pointer-events-none"
+            style={{
+              background: 'radial-gradient(circle, rgba(52, 211, 153, 0.2) 0%, transparent 70%)',
+              bottom: '-15%',
+              right: '-5%',
+              filter: 'blur(35px)',
+            }}
+            animate={{ 
+              x: [0, -15, 0],
+              y: [0, -10, 0],
+              scale: [1, 1.15, 1],
+            }}
+            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          />
+        </>
+      ) : (
+        /* Static orbs for mobile/low-end */
+        <>
+          <div
+            className="absolute w-64 h-64 rounded-full pointer-events-none"
+            style={{
+              background: 'radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, transparent 70%)',
+              top: '-20%',
+              left: '-10%',
+              filter: 'blur(40px)',
+            }}
+          />
+          <div
+            className="absolute w-48 h-48 rounded-full pointer-events-none"
+            style={{
+              background: 'radial-gradient(circle, rgba(52, 211, 153, 0.15) 0%, transparent 70%)',
+              bottom: '-15%',
+              right: '-5%',
+              filter: 'blur(35px)',
+            }}
+          />
+        </>
+      )}
       
       {/* Grid pattern overlay */}
       <div 
@@ -317,7 +361,8 @@ const FeaturedAnnouncementCard = ({ announcement, formatDate, onClick }: Feature
       </div>
     </div>
   </motion.article>
-);
+  );
+};
 
 // Announcement card for the feed - Premium compact design
 interface AnnouncementCardProps {
@@ -328,18 +373,42 @@ interface AnnouncementCardProps {
 }
 
 const AnnouncementCard = forwardRef<HTMLDivElement, AnnouncementCardProps>(
-  ({ announcement, index, formatDate, onClick }, ref) => (
+  ({ announcement, index, formatDate, onClick }, ref) => {
+  // Device capabilities for animation decisions
+  const caps = useMemo(() => getDeviceCapabilities(), []);
+  const enableAnimations = !caps.prefersReducedMotion && !caps.isMobile;
+  
+  // Telemetry: track when announcement becomes visible
+  const trackingRef = useAnnouncementTracking(
+    announcement.id,
+    announcement.author === 'Safety AI',
+    { source: 'announcements_page' }
+  );
+
+  // Combine refs
+  const setRefs = (element: HTMLDivElement | null) => {
+    // Set tracking ref
+    trackingRef(element);
+    // Forward the ref
+    if (typeof ref === 'function') {
+      ref(element);
+    } else if (ref) {
+      ref.current = element;
+    }
+  };
+
+  return (
   <motion.div
-    ref={ref}
-    layout
-    initial={{ opacity: 0, y: 16 }}
+    ref={setRefs}
+    layout={false}
+    initial={enableAnimations ? { opacity: 0, y: 16 } : { opacity: 0 }}
     animate={{ opacity: 1, y: 0 }}
-    exit={{ opacity: 0, y: -16, transition: { duration: 0.2 } }}
-    transition={{ delay: index * 0.05, duration: 0.3, ease: "easeOut" }}
-    whileHover={{ y: -4, transition: { duration: 0.2 } }}
-    whileTap={{ scale: 0.98 }}
+    exit={enableAnimations ? { opacity: 0, y: -16, transition: { duration: 0.15 } } : { opacity: 0 }}
+    transition={{ delay: enableAnimations ? Math.min(index * 0.03, 0.15) : 0, duration: 0.25 }}
+    whileHover={enableAnimations ? { y: -4, transition: { duration: 0.2 } } : undefined}
+    whileTap={enableAnimations ? { scale: 0.98 } : undefined}
     onClick={onClick}
-    className="group relative overflow-hidden rounded-2xl border border-emerald-500/20 hover:border-emerald-400/40 transition-colors duration-300 cursor-pointer"
+    className="group relative overflow-hidden rounded-2xl border border-emerald-500/20 hover:border-emerald-400/40 transition-colors duration-200 cursor-pointer"
     style={{
       background: 'linear-gradient(135deg, rgba(4, 21, 15, 0.9) 0%, rgba(2, 13, 9, 0.95) 100%)',
     }}
@@ -399,7 +468,8 @@ const AnnouncementCard = forwardRef<HTMLDivElement, AnnouncementCardProps>(
       </div>
     </div>
   </motion.div>
-));
+  );
+});
 
 AnnouncementCard.displayName = "AnnouncementCard";
 
@@ -452,17 +522,21 @@ const SearchBar = ({ value, onChange, onClear, visibleCount, totalCount }: Searc
 
 export default function Announcements() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [newAnnouncementIndicator, setNewAnnouncementIndicator] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
+  
+  // Track previous count for new announcement detection
+  const prevCountRef = useRef(0);
 
-  // Pagination State
+  // Pagination State - server-side
   const pageSize = 8;
   const [currentPage, setCurrentPage] = useState(1);
-  const totalAnnouncements = announcements.length;
 
+  // For search, we need client-side filtering of loaded data
   const filteredAnnouncements = useMemo(() => {
     if (!searchTerm.trim()) return announcements;
     const query = searchTerm.trim().toLowerCase();
@@ -472,48 +546,71 @@ export default function Announcements() {
     });
   }, [announcements, searchTerm]);
 
-  const visibleAnnouncements = filteredAnnouncements.length;
-  const totalPages = Math.max(1, Math.ceil(visibleAnnouncements / pageSize));
+  const visibleAnnouncements = searchTerm ? filteredAnnouncements.length : totalCount;
+  const totalPages = Math.max(1, Math.ceil((searchTerm ? filteredAnnouncements.length - 1 : totalCount - 1) / pageSize));
 
   // Get paginated announcements (excluding the first/featured one)
   const latestAnnouncement = filteredAnnouncements[0] || null;
   const restAnnouncements = filteredAnnouncements.slice(1);
 
   const paginatedAnnouncements = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    const end = start + pageSize;
-    return restAnnouncements.slice(start, end);
-  }, [restAnnouncements, currentPage, pageSize]);
+    // When searching, use client-side pagination of filtered results
+    if (searchTerm) {
+      const start = (currentPage - 1) * pageSize;
+      const end = start + pageSize;
+      return restAnnouncements.slice(start, end);
+    }
+    // When not searching, data is already server-paginated
+    return restAnnouncements.slice(0, pageSize);
+  }, [restAnnouncements, currentPage, pageSize, searchTerm]);
 
-  // Fetch helper
-  const fetchAnnouncements = useCallback(async (showSpinner: boolean = true) => {
+  // Fetch with server-side pagination - optimized to avoid recreation
+  const fetchAnnouncements = useCallback(async (showSpinner: boolean = true, page: number = 1) => {
     if (showSpinner) setLoading(true);
 
     try {
+      // Calculate range for server-side pagination
+      // We need 1 (featured) + pageSize * pages to support pagination
+      // But for initial load, just get what we need for current view
+      const limit = 1 + pageSize * Math.max(page, 1);
+      
+      // First, get total count (cached query)
+      const { count, error: countError } = await supabase
+        .from("announcements")
+        .select("*", { count: "exact", head: true });
+      
+      if (countError) {
+        console.error("Error fetching count:", countError);
+      } else {
+        const newCount = count || 0;
+        // Check for new announcements
+        if (prevCountRef.current > 0 && newCount > prevCountRef.current) {
+          setNewAnnouncementIndicator(true);
+          setTimeout(() => setNewAnnouncementIndicator(false), 5000);
+        }
+        prevCountRef.current = newCount;
+        setTotalCount(newCount);
+      }
+
+      // Then fetch only needed records
       const { data, error } = await supabase
         .from("announcements")
-        .select("*")
-        .order("created_at", { ascending: false });
+        .select("id, title, message, author, date, created_at")
+        .order("created_at", { ascending: false })
+        .limit(limit);
 
       if (error) {
         console.error("Error fetching announcements:", error);
       } else {
-        const newData = (data || []) as Announcement[];
-        if (
-          announcements.length > 0 &&
-          newData.length > announcements.length
-        ) {
-          setNewAnnouncementIndicator(true);
-          setTimeout(() => setNewAnnouncementIndicator(false), 5000);
-        }
-        setAnnouncements(newData);
+        setAnnouncements((data || []) as Announcement[]);
       }
     } catch (err) {
       console.error("Error loading announcements:", err);
+      formToast.error("Load Failed", "Failed to load announcements. Pull to refresh or try again later.");
     } finally {
       if (showSpinner) setLoading(false);
     }
-  }, [announcements.length]);
+  }, [pageSize]);
 
   const handleManualRefresh = async () => {
     setRefreshing(true);
@@ -522,9 +619,10 @@ export default function Announcements() {
         "https://hook.us2.make.com/dlb3kmbn4615q14lcw6dhheif7602ph2",
         { method: "POST" }
       );
-      await fetchAnnouncements(false);
+      await fetchAnnouncements(false, currentPage);
     } catch (err) {
       console.error("Error refreshing announcements:", err);
+      formToast.error("Refresh Failed", "Failed to refresh announcements. Please try again.");
     }
     setRefreshing(false);
   };
@@ -535,7 +633,7 @@ export default function Announcements() {
 
     const load = async () => {
       if (cancelled) return;
-      await fetchAnnouncements(true);
+      await fetchAnnouncements(true, currentPage);
     };
 
     load();
@@ -546,15 +644,15 @@ export default function Announcements() {
       onInsert: () => {
         if (!cancelled) {
           setNewAnnouncementIndicator(true);
-          fetchAnnouncements(false);
+          fetchAnnouncements(false, currentPage);
           setTimeout(() => setNewAnnouncementIndicator(false), 5000);
         }
       },
       onUpdate: () => {
-        if (!cancelled) fetchAnnouncements(false);
+        if (!cancelled) fetchAnnouncements(false, currentPage);
       },
       onDelete: () => {
-        if (!cancelled) fetchAnnouncements(false);
+        if (!cancelled) fetchAnnouncements(false, currentPage);
       },
     });
 
@@ -562,7 +660,7 @@ export default function Announcements() {
       cancelled = true;
       unsubscribe();
     };
-  }, [fetchAnnouncements]);
+  }, [fetchAnnouncements, currentPage]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -619,10 +717,13 @@ export default function Announcements() {
             <div 
               className="relative overflow-hidden rounded-2xl md:rounded-3xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
               style={{
-                backdropFilter: 'blur(24px) saturate(180%)',
-                WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-                background: 'linear-gradient(145deg, rgba(4, 30, 21, 0.6) 0%, rgba(2, 15, 10, 0.5) 50%, rgba(1, 8, 5, 0.4) 100%)',
-                boxShadow: 'inset 0 0 15px rgba(125, 225, 180, 0.05), 0 8px 32px rgba(0,0,0,0.4)',
+                // Reduce backdrop-filter blur on mobile for better performance
+                backdropFilter: caps.isMobile ? 'blur(8px)' : 'blur(24px) saturate(180%)',
+                WebkitBackdropFilter: caps.isMobile ? 'blur(8px)' : 'blur(24px) saturate(180%)',
+                background: caps.isMobile 
+                  ? 'linear-gradient(145deg, rgba(4, 30, 21, 0.9) 0%, rgba(2, 15, 10, 0.85) 50%, rgba(1, 8, 5, 0.8) 100%)'
+                  : 'linear-gradient(145deg, rgba(4, 30, 21, 0.6) 0%, rgba(2, 15, 10, 0.5) 50%, rgba(1, 8, 5, 0.4) 100%)',
+                boxShadow: caps.isMobile ? '0 8px 32px rgba(0,0,0,0.4)' : 'inset 0 0 15px rgba(125, 225, 180, 0.05), 0 8px 32px rgba(0,0,0,0.4)',
               }}
             >
               <div className="absolute inset-0 opacity-70 pointer-events-none" style={{ background: 'linear-gradient(125deg, rgba(255,255,255,0.15) 0%, transparent 30%, transparent 70%, rgba(255,255,255,0.05) 100%)' }} />
@@ -700,8 +801,8 @@ export default function Announcements() {
                         value={searchTerm}
                         onChange={setSearchTerm}
                         onClear={() => setSearchTerm("")}
-                        visibleCount={visibleAnnouncements}
-                        totalCount={totalAnnouncements}
+                        visibleCount={searchTerm ? filteredAnnouncements.length : announcements.length}
+                        totalCount={totalCount}
                       />
                       
                       {/* Inline Live Status */}

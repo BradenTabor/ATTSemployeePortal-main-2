@@ -1,8 +1,9 @@
-import { memo, useState } from 'react';
+import { memo, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Gift, Check, Sparkles, Loader2 } from 'lucide-react';
 import { useAnnouncementReward, isRewardEligible } from '../hooks/useAnnouncementRewards';
 import { cn } from '../lib/utils';
+import { getDeviceCapabilities } from '../lib/mobilePerf';
 
 interface CollectPointsButtonProps {
   announcementId: string;
@@ -29,6 +30,10 @@ function CollectPointsButtonComponent({
 }: CollectPointsButtonProps) {
   const { hasClaimed, isCheckingClaim, isClaiming, claimReward } = useAnnouncementReward(announcementId);
   const [showCelebration, setShowCelebration] = useState(false);
+  
+  // Device capabilities for animation decisions
+  const caps = useMemo(() => getDeviceCapabilities(), []);
+  const enableHeavyAnimations = !caps.prefersReducedMotion && !caps.isMobile && !caps.isLowEnd;
   
   // Don't render if not a Safety AI announcement
   if (!isRewardEligible(author)) {
@@ -62,8 +67,8 @@ function CollectPointsButtonComponent({
   if (hasClaimed) {
     return (
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         className={cn(
           "relative flex items-center gap-2 px-4 py-2 rounded-xl border",
           "bg-emerald-900/30 border-emerald-500/30",
@@ -73,11 +78,14 @@ function CollectPointsButtonComponent({
       >
         <div className="relative">
           <Check className={cn("w-4 h-4 text-emerald-400", compact && "w-3.5 h-3.5")} />
-          <motion.div
-            className="absolute -inset-1 rounded-full bg-emerald-400/20"
-            animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          />
+          {/* Only animate on capable devices */}
+          {enableHeavyAnimations && (
+            <motion.div
+              className="absolute -inset-1 rounded-full bg-emerald-400/20"
+              animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            />
+          )}
         </div>
         <span className={cn(
           "text-xs font-semibold text-emerald-300/80 tracking-wide",
@@ -92,49 +100,51 @@ function CollectPointsButtonComponent({
   // Unclaimed state - interactive button
   return (
     <div className={cn("relative", className)}>
-      {/* Celebration particles */}
-      <AnimatePresence>
-        {showCelebration && (
-          <>
-            {[...Array(8)].map((_, i) => (
-              <motion.div
-                key={i}
-                className="absolute w-2 h-2 rounded-full bg-emerald-400"
-                initial={{ 
-                  opacity: 1, 
-                  scale: 0,
-                  x: 0, 
-                  y: 0 
-                }}
-                animate={{ 
-                  opacity: 0, 
-                  scale: 1,
-                  x: Math.cos((i / 8) * Math.PI * 2) * 50,
-                  y: Math.sin((i / 8) * Math.PI * 2) * 50,
-                }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
-                style={{
-                  left: '50%',
-                  top: '50%',
-                  marginLeft: -4,
-                  marginTop: -4,
-                }}
-              />
-            ))}
-          </>
-        )}
-      </AnimatePresence>
+      {/* Celebration particles - only on capable devices */}
+      {enableHeavyAnimations && (
+        <AnimatePresence>
+          {showCelebration && (
+            <>
+              {[...Array(8)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute w-2 h-2 rounded-full bg-emerald-400"
+                  initial={{ 
+                    opacity: 1, 
+                    scale: 0,
+                    x: 0, 
+                    y: 0 
+                  }}
+                  animate={{ 
+                    opacity: 0, 
+                    scale: 1,
+                    x: Math.cos((i / 8) * Math.PI * 2) * 50,
+                    y: Math.sin((i / 8) * Math.PI * 2) * 50,
+                  }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.6, ease: "easeOut" }}
+                  style={{
+                    left: '50%',
+                    top: '50%',
+                    marginLeft: -4,
+                    marginTop: -4,
+                  }}
+                />
+              ))}
+            </>
+          )}
+        </AnimatePresence>
+      )}
       
       <motion.button
         onClick={handleClaim}
         disabled={isClaiming}
-        whileHover={{ scale: 1.03 }}
-        whileTap={{ scale: 0.97 }}
+        whileHover={enableHeavyAnimations ? { scale: 1.03 } : undefined}
+        whileTap={enableHeavyAnimations ? { scale: 0.97 } : undefined}
         className={cn(
           "group relative flex items-center gap-2 px-5 py-2.5 rounded-xl overflow-hidden",
           "border border-emerald-400/40 shadow-lg shadow-emerald-500/20",
-          "transition-all duration-300",
+          "transition-all duration-200",
           "hover:border-emerald-300/60 hover:shadow-emerald-500/30",
           "disabled:cursor-not-allowed disabled:opacity-70",
           compact && "px-3.5 py-1.5 gap-1.5",
@@ -143,25 +153,25 @@ function CollectPointsButtonComponent({
           background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(5, 150, 105, 0.35) 50%, rgba(4, 120, 87, 0.3) 100%)',
         }}
       >
-        {/* Animated gradient background */}
-        <motion.div
-          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+        {/* Animated gradient background - only on hover, no continuous animation */}
+        <div
+          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
           style={{
             background: 'linear-gradient(135deg, rgba(52, 211, 153, 0.3) 0%, rgba(16, 185, 129, 0.4) 50%, rgba(5, 150, 105, 0.35) 100%)',
           }}
         />
         
-        {/* Shine effect on hover */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+        {/* Shine effect on hover - CSS only */}
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-500" />
         
         {/* Top border glow */}
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-300/60 to-transparent" />
         
-        {/* Icon with animation */}
+        {/* Icon - animation only on capable devices */}
         <div className="relative z-10">
           {isClaiming ? (
             <Loader2 className={cn("w-4 h-4 animate-spin text-emerald-200", compact && "w-3.5 h-3.5")} />
-          ) : (
+          ) : enableHeavyAnimations ? (
             <motion.div
               animate={{ 
                 rotate: [0, -10, 10, -5, 5, 0],
@@ -178,6 +188,11 @@ function CollectPointsButtonComponent({
                 compact && "w-3.5 h-3.5"
               )} />
             </motion.div>
+          ) : (
+            <Gift className={cn(
+              "w-4 h-4 text-emerald-200 group-hover:text-emerald-100 transition-colors",
+              compact && "w-3.5 h-3.5"
+            )} />
           )}
         </div>
         
@@ -190,44 +205,50 @@ function CollectPointsButtonComponent({
           {isClaiming ? 'Claiming...' : 'Collect Points'}
         </span>
         
-        {/* Sparkle indicator */}
-        <motion.div
-          className="relative z-10"
-          animate={{ 
-            scale: [1, 1.2, 1],
-            rotate: [0, 180, 360],
-          }}
-          transition={{ 
-            duration: 3, 
-            repeat: Infinity, 
-            ease: "easeInOut" 
-          }}
-        >
+        {/* Sparkle indicator - animation only on capable devices */}
+        {enableHeavyAnimations ? (
+          <motion.div
+            className="relative z-10"
+            animate={{ 
+              scale: [1, 1.2, 1],
+              rotate: [0, 180, 360],
+            }}
+            transition={{ 
+              duration: 3, 
+              repeat: Infinity, 
+              ease: "easeInOut" 
+            }}
+          >
+            <Sparkles className={cn(
+              "w-3.5 h-3.5 text-amber-300/80 group-hover:text-amber-200 transition-colors",
+              compact && "w-3 h-3"
+            )} />
+          </motion.div>
+        ) : (
           <Sparkles className={cn(
-            "w-3.5 h-3.5 text-amber-300/80 group-hover:text-amber-200 transition-colors",
+            "w-3.5 h-3.5 text-amber-300/80 group-hover:text-amber-200 transition-colors relative z-10",
             compact && "w-3 h-3"
           )} />
-        </motion.div>
+        )}
         
-        {/* Pulsing glow effect */}
-        <motion.div
-          className="absolute -inset-1 rounded-xl pointer-events-none"
-          animate={{
-            boxShadow: [
-              '0 0 20px rgba(16, 185, 129, 0.3)',
-              '0 0 30px rgba(16, 185, 129, 0.5)',
-              '0 0 20px rgba(16, 185, 129, 0.3)',
-            ],
-          }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-        />
+        {/* Pulsing glow effect - only on capable devices */}
+        {enableHeavyAnimations && (
+          <motion.div
+            className="absolute -inset-1 rounded-xl pointer-events-none"
+            animate={{
+              boxShadow: [
+                '0 0 20px rgba(16, 185, 129, 0.3)',
+                '0 0 30px rgba(16, 185, 129, 0.5)',
+                '0 0 20px rgba(16, 185, 129, 0.3)',
+              ],
+            }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          />
+        )}
       </motion.button>
       
-      {/* Point value indicator */}
-      <motion.div
-        initial={{ opacity: 0, y: 5 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
+      {/* Point value indicator - simpler animation */}
+      <div
         className={cn(
           "absolute -top-1 -right-1 flex items-center justify-center",
           "w-5 h-5 rounded-full",
@@ -238,7 +259,7 @@ function CollectPointsButtonComponent({
         )}
       >
         +1
-      </motion.div>
+      </div>
     </div>
   );
 }

@@ -93,7 +93,7 @@ function SuggestionCard({
 
   return (
     <motion.div
-      className={`relative p-3 rounded-xl transition-all duration-200 ${
+      className={`relative p-2 sm:p-3 rounded-lg sm:rounded-xl transition-all duration-200 ${
         isApplied
           ? 'bg-emerald-500/15 ring-1 ring-emerald-500/40'
           : 'bg-white/5 hover:bg-white/10'
@@ -108,22 +108,22 @@ function SuggestionCard({
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg"
+          className="absolute -top-1 -right-1 sm:-top-1.5 sm:-right-1.5 w-4 h-4 sm:w-5 sm:h-5 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg"
         >
-          <Check className="w-3 h-3 text-white" />
+          <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
         </motion.div>
       )}
 
       {/* Field label with confidence dot */}
-      <div className="flex items-center gap-2 mb-1.5">
-        <span className={`w-1.5 h-1.5 rounded-full ${config.dotColor}`} />
-        <span className="text-xs font-medium text-gray-300 uppercase tracking-wide truncate">
+      <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-1.5">
+        <span className={`w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full ${config.dotColor}`} />
+        <span className="text-[10px] sm:text-xs font-medium text-gray-300 uppercase tracking-wide truncate">
           {label}
         </span>
       </div>
 
       {/* Value */}
-      <div className="text-sm font-semibold text-white mb-2 truncate" title={displayValue}>
+      <div className="text-xs sm:text-sm font-semibold text-white mb-1.5 sm:mb-2 truncate" title={displayValue}>
         {displayValue}
       </div>
 
@@ -131,7 +131,7 @@ function SuggestionCard({
       <button
         onClick={onApply}
         disabled={isApplied}
-        className={`w-full py-1.5 px-2 rounded-lg text-xs font-medium transition-all ${
+        className={`w-full py-1 sm:py-1.5 px-1.5 sm:px-2 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium transition-all ${
           isApplied
             ? 'bg-emerald-600/20 text-emerald-400/60 cursor-default'
             : 'bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 active:scale-[0.98]'
@@ -173,16 +173,16 @@ export function SmartDefaultsPanel({
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-5"
+        className="mb-3 sm:mb-5"
       >
-        <div className="rounded-2xl bg-gradient-to-r from-emerald-900/20 via-emerald-800/10 to-emerald-900/20 ring-1 ring-emerald-500/20 p-3.5">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-emerald-500/20 animate-pulse">
-              <Sparkles className="w-4 h-4 text-emerald-400/50" />
+        <div className="rounded-xl sm:rounded-2xl bg-gradient-to-r from-emerald-900/20 via-emerald-800/10 to-emerald-900/20 ring-1 ring-emerald-500/20 p-2.5 sm:p-3.5">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-emerald-500/20 animate-pulse">
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400/50" />
             </div>
             <div className="flex-1">
-              <div className="h-4 w-32 bg-emerald-500/20 rounded animate-pulse mb-1.5" />
-              <div className="h-3 w-48 bg-emerald-500/10 rounded animate-pulse" />
+              <div className="h-3 sm:h-4 w-28 sm:w-32 bg-emerald-500/20 rounded animate-pulse mb-1 sm:mb-1.5" />
+              <div className="h-2.5 sm:h-3 w-40 sm:w-48 bg-emerald-500/10 rounded animate-pulse" />
             </div>
           </div>
         </div>
@@ -234,12 +234,12 @@ export function SmartDefaultsPanel({
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      className="mb-5"
+      className="mb-3 sm:mb-5"
     >
       {/* Collapsed State - Compact Clickable Bar */}
       <motion.div
         onClick={() => setIsExpanded(!isExpanded)}
-        className={`relative cursor-pointer rounded-2xl overflow-hidden transition-all duration-300 ${
+        className={`relative cursor-pointer rounded-xl sm:rounded-2xl overflow-hidden transition-all duration-300 ${
           isExpanded
             ? 'bg-gradient-to-br from-emerald-900/40 via-emerald-800/20 to-emerald-900/30 ring-1 ring-emerald-500/30'
             : 'bg-gradient-to-r from-emerald-900/30 via-emerald-800/20 to-emerald-900/30 hover:from-emerald-900/40 hover:via-emerald-800/30 hover:to-emerald-900/40 ring-1 ring-emerald-500/20 hover:ring-emerald-500/40'
@@ -252,26 +252,26 @@ export function SmartDefaultsPanel({
         layout
       >
         {/* Header Bar */}
-        <div className="flex items-center justify-between p-3.5">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between p-2.5 sm:p-3.5">
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* Icon */}
-            <div className={`p-2 rounded-xl transition-colors ${
+            <div className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-colors ${
               isExpanded ? 'bg-emerald-500/30' : 'bg-emerald-500/20'
             }`}>
-              <Sparkles className="w-4 h-4 text-emerald-400" />
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
             </div>
 
             {/* Title & Count */}
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-white text-sm">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <h3 className="font-semibold text-white text-xs sm:text-sm">
                   Smart Suggestions
                 </h3>
-                <span className="px-2 py-0.5 bg-emerald-500/20 rounded-full text-xs font-medium text-emerald-300">
+                <span className="px-1.5 sm:px-2 py-0.5 bg-emerald-500/20 rounded-full text-[10px] sm:text-xs font-medium text-emerald-300">
                   {totalCount}
                 </span>
               </div>
-              <p className="text-xs text-emerald-300/60 mt-0.5">
+              <p className="text-[10px] sm:text-xs text-emerald-300/60 mt-0.5">
                 {allApplied
                   ? 'All suggestions applied!'
                   : appliedCount > 0
@@ -282,7 +282,7 @@ export function SmartDefaultsPanel({
           </div>
 
           {/* Right side controls */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {/* Quick Apply All (when collapsed) */}
             {!isExpanded && !allApplied && (
               <motion.button
@@ -292,17 +292,18 @@ export function SmartDefaultsPanel({
                   e.stopPropagation();
                   handleApplyAll();
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600/40 hover:bg-emerald-600/60 rounded-lg text-xs font-medium text-emerald-200 transition-colors"
+                data-apply-all-btn
+                className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 bg-emerald-600/40 hover:bg-emerald-600/60 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium text-emerald-200 transition-colors"
               >
-                <Zap className="w-3 h-3" />
-                Apply All
+                <Zap className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                <span className="hidden xs:inline">Apply</span> All
               </motion.button>
             )}
 
             {/* All Applied Badge */}
             {allApplied && (
-              <span className="flex items-center gap-1 text-xs text-emerald-400">
-                <CheckCircle2 className="w-3.5 h-3.5" />
+              <span className="flex items-center gap-1 text-[10px] sm:text-xs text-emerald-400">
+                <CheckCircle2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                 Done
               </span>
             )}
@@ -310,10 +311,10 @@ export function SmartDefaultsPanel({
             {/* Dismiss */}
             <button
               onClick={handleDismiss}
-              className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+              className="p-1 sm:p-1.5 rounded-md sm:rounded-lg hover:bg-white/10 transition-colors"
               aria-label="Dismiss suggestions"
             >
-              <X className="w-4 h-4 text-gray-400 hover:text-white" />
+              <X className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 hover:text-white" />
             </button>
 
             {/* Expand/Collapse Arrow */}
@@ -321,7 +322,7 @@ export function SmartDefaultsPanel({
               animate={{ rotate: isExpanded ? 90 : 0 }}
               transition={{ duration: 0.2 }}
             >
-              <ChevronRight className="w-4 h-4 text-gray-400" />
+              <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />
             </motion.div>
           </div>
         </div>
@@ -336,16 +337,16 @@ export function SmartDefaultsPanel({
               transition={{ duration: 0.25, ease: 'easeInOut' }}
               className="overflow-hidden"
             >
-              <div className="px-3.5 pb-3.5 pt-1">
+              <div className="px-2.5 sm:px-3.5 pb-2.5 sm:pb-3.5 pt-0.5 sm:pt-1">
                 {/* Divider */}
-                <div className="h-px bg-emerald-500/20 mb-3" />
+                <div className="h-px bg-emerald-500/20 mb-2 sm:mb-3" />
 
                 {/* Warnings */}
                 {warnings.length > 0 && (
-                  <div className="mb-3 p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-xl">
-                    <div className="flex items-start gap-2">
-                      <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
-                      <p className="text-xs text-amber-200">{warnings.join(' ')}</p>
+                  <div className="mb-2 sm:mb-3 p-2 sm:p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-lg sm:rounded-xl">
+                    <div className="flex items-start gap-1.5 sm:gap-2">
+                      <AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 mt-0.5 flex-shrink-0" />
+                      <p className="text-[10px] sm:text-xs text-amber-200">{warnings.join(' ')}</p>
                     </div>
                   </div>
                 )}
@@ -389,6 +390,7 @@ export function SmartDefaultsPanel({
 
                   {/* Apply All Button */}
                   <button
+                    data-apply-all-btn
                     onClick={(e) => {
                       e.stopPropagation();
                       handleApplyAll();

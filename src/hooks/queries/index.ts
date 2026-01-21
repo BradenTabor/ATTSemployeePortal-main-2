@@ -21,3 +21,25 @@ export {
   useCreateContactRequest,
   type ContactRequest,
 } from './useContactsQuery';
+
+// Risk Calibration
+export {
+  useAutoTuningConfig,
+  useToggleAutoTuning,
+  useRecentTuningDecisions,
+  useTuningRuns,
+  useAccuracyStats,
+  useRiskScoreHistory,
+  useActiveAlgorithmConfig,
+  useSafetyIncidents,
+  useLogIncident,
+  useInvalidateRiskCalibration,
+  type AutoTuningConfig,
+  type TuningDecision,
+  type TuningRun,
+  type AccuracyStats,
+  type RiskScoreHistory,
+  type SafetyIncident,
+  type AlgorithmConfig,
+  type IncidentFormData,
+} from './useRiskCalibration';

@@ -1,20 +1,38 @@
-import { useMemo, useCallback, Suspense, lazy } from "react";
+import { useMemo, useCallback, Suspense, lazy, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, Briefcase } from "lucide-react";
+import { Users, Briefcase, AlertTriangle, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { FOREMAN_NAV_CARDS, getCommonNavCards } from "../../components/admin/adminNavConfig";
 import { useAuth } from "../../contexts/AuthContext";
-import { DashboardAvatar } from "../../components/dashboard/DashboardAvatar";
-import ProfileBar from "../../components/ProfileBar";
+import { useUserAssignedJobs } from "../../hooks/jobs";
 import BrandedNavCard from "../../components/BrandedNavCard";
 import { EnableNotificationsButton } from "../../components/notifications";
 import { ScrollReveal } from "../../motion";
 import { getDeviceCapabilities } from "../../lib/mobilePerf";
-import { TextEffect } from "../../components/ui/TextEffect";
+import {
+  DashboardAvatar,
+  ExpandableSection,
+  WelcomeHeader,
+  CompactComplianceStrip,
+  DashboardGrid,
+  DashboardCard,
+  StackedLayout,
+  FloatingActionButton,
+  PinnedFavorites,
+  PullToRefresh,
+  WelcomeHeaderSkeleton,
+  JobsSectionSkeleton,
+  EnhancedNavCardsSkeleton,
+  EnhancedEmptyJobsState,
+} from "../../components/dashboard";
+import { CompactJobCard } from "../../components/jobs";
+import { PERSISTENCE_KEYS } from "../../lib/persistence";
+import type { JobProgressTracker } from "../../types/jobs";
 
-// Lazy-loaded announcement card
+// Lazy-loaded components
 const ThemedAnnouncementCard = lazy(() => import("../../components/ThemedAnnouncementCard"));
+const EnhancedRewardsCard = lazy(() => import("../../components/dashboard/EnhancedRewardsCard"));
 
 // Animation variants
 const containerVariants = {
@@ -41,22 +59,186 @@ const itemVariants = {
   },
 };
 
+// ============================================================================
+// ERROR STATE
+// ============================================================================
+
+interface ErrorStateProps {
+  message: string;
+  onRetry?: () => void;
+}
+
+const ErrorState = function ErrorState({ message, onRetry }: ErrorStateProps) {
+  return (
+    <div className="flex flex-col items-center justify-center py-6 text-center">
+      <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center mb-3">
+        <AlertTriangle className="w-5 h-5 text-red-400" />
+      </div>
+      <p className="text-sm text-red-400 font-medium">{message}</p>
+      {onRetry && (
+        <button
+          onClick={onRetry}
+          className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-medium hover:bg-red-500/20 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 min-h-[44px]"
+        >
+          <RefreshCw className="w-3.5 h-3.5" />
+          Try Again
+        </button>
+      )}
+    </div>
+  );
+};
+
+// ============================================================================
+// NAVIGABLE JOB CARD
+// ============================================================================
+
+interface NavigableJobCardProps {
+  job: JobProgressTracker;
+}
+
+const NavigableJobCard = function NavigableJobCard({ job }: NavigableJobCardProps) {
+  const navigate = useNavigate();
+
+  const handleClick = useCallback(() => {
+    navigate(`/assigned-jobs?job=${job.id}`);
+  }, [navigate, job.id]);
+
+  return (
+    <motion.div
+      whileHover={{ scale: 1.01 }}
+      whileTap={{ scale: 0.99 }}
+      onClick={handleClick}
+      className="cursor-pointer"
+    >
+      <CompactJobCard job={job} theme="blue" />
+    </motion.div>
+  );
+};
+
+// ============================================================================
+// ASSIGNED JOBS SECTION (Blue themed)
+// ============================================================================
+
+interface AssignedJobsSectionProps {
+  jobs: JobProgressTracker[];
+  loading: boolean;
+  error: string | null;
+  onRefetch: () => void;
+}
+
+const AssignedJobsSection = function AssignedJobsSection({
+  jobs,
+  loading,
+  error,
+  onRefetch,
+}: AssignedJobsSectionProps) {
+  if (loading) {
+    return <JobsSectionSkeleton />;
+  }
+
+  if (error) {
+    return <ErrorState message={error} onRetry={onRefetch} />;
+  }
+
+  if (jobs.length === 0) {
+    return <EnhancedEmptyJobsState />;
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      className="space-y-2.5"
+    >
+      {/* Compact Header - Blue themed */}
+      <div className="flex items-center justify-between px-1">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-400/30 flex items-center justify-center">
+            <Briefcase className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-400" />
+          </div>
+          <div>
+            <h3 className="text-xs sm:text-sm font-bold text-white">Active Jobs</h3>
+            <p className="text-[9px] sm:text-[10px] text-blue-400/60">
+              {jobs.length} assignment{jobs.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+        </div>
+        
+        {/* View all link */}
+        <a 
+          href="/assigned-jobs"
+          className="text-[10px] sm:text-xs font-medium text-blue-400/70 hover:text-blue-300 transition-colors"
+        >
+          View all →
+        </a>
+      </div>
+
+      {/* Compact Jobs Grid/List */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {jobs.slice(0, 4).map((job, index) => (
+          <motion.div
+            key={job.id}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.03, duration: 0.25 }}
+          >
+            <NavigableJobCard job={job} />
+          </motion.div>
+        ))}
+      </div>
+      
+      {/* Show more indicator if more than 4 jobs */}
+      {jobs.length > 4 && (
+        <a 
+          href="/assigned-jobs"
+          className="flex items-center justify-center gap-2 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15 hover:border-blue-500/30 transition-all"
+        >
+          <span className="text-xs font-medium text-blue-400">
+            +{jobs.length - 4} more job{jobs.length - 4 !== 1 ? 's' : ''}
+          </span>
+        </a>
+      )}
+    </motion.div>
+  );
+};
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
+
 export default function ForemanDashboard() {
-  const { role, user, setSession, signOut, fullName } = useAuth();
+  const { role, user, setSession, signOut } = useAuth();
   const navigate = useNavigate();
   const caps = useMemo(() => getDeviceCapabilities(), []);
   const shouldReduceMotion = caps.prefersReducedMotion || caps.isLowEnd;
 
-  // Get common nav cards with bluewhite theme
+  // State management
+  const [complianceState, setComplianceState] = useState({
+    dvir: false,
+    equipment: false,
+    jsa: false,
+  });
+  const [rewardPoints, setRewardPoints] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Fetch user's assigned jobs
+  const {
+    assignedJobs,
+    loading: jobsLoading,
+    error: jobsError,
+    refetch: refetchJobs,
+  } = useUserAssignedJobs(user?.id);
+
+  // Get nav cards with bluewhite theme
   const commonCards = useMemo(() => getCommonNavCards("bluewhite"), []);
 
-  // Display name - must be called before any conditional returns
-  const displayName = useMemo(() => fullName || user?.email || "Foreman", [fullName, user?.email]);
-  
-  // Animation settings
-  const enableAnimations = !caps.prefersReducedMotion && !caps.isMobile;
+  // Handle compliance change
+  const handleComplianceChange = useCallback((dvir: boolean, equipment: boolean, jsa: boolean) => {
+    setComplianceState({ dvir, equipment, jsa });
+  }, []);
 
-  // Sign out handler - must be called before any conditional returns
+  // Sign out handler
   const handleSignOut = useCallback(async () => {
     try {
       setSession(null);
@@ -67,7 +249,31 @@ export default function ForemanDashboard() {
     }
   }, [navigate, setSession, signOut]);
 
-  // Access control - redirect if not authorized (AFTER all hooks)
+  // Pull to refresh handler
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await refetchJobs();
+      await new Promise(resolve => setTimeout(resolve, 500));
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [refetchJobs]);
+
+  // Derived state
+  const hasActiveJobs = assignedJobs.length > 0;
+  const allFormsComplete = complianceState.dvir && complianceState.equipment && complianceState.jsa;
+
+  // Get current job name for welcome message
+  const currentJobName = useMemo(() => {
+    if (assignedJobs.length > 0) {
+      const activeJob = assignedJobs.find(j => j.status === 'active') || assignedJobs[0];
+      return activeJob?.job_name;
+    }
+    return undefined;
+  }, [assignedJobs]);
+
+  // Access control - redirect if not authorized
   if (role !== "foreman" && role !== "admin") {
     return (
       <DashboardLayout title="Access Denied">
@@ -92,266 +298,217 @@ export default function ForemanDashboard() {
 
   return (
     <DashboardLayout title="Foreman Dashboard">
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pb-4 pt-4 sm:pt-6">
-        {/* Premium Animated Welcome Section with Glass Backdrop - Blue Theme */}
-        <div className="mb-5 md:mb-6">
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="relative"
-          >
-            {/* Glass backdrop container - Blue theme */}
-            <div 
-              className="relative overflow-hidden rounded-2xl md:rounded-3xl border border-white/[0.12] shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.1)]"
-              style={{
-                background: 'linear-gradient(145deg, rgba(59, 130, 246, 0.1) 0%, rgba(10, 22, 40, 0.65) 40%, rgba(2, 4, 8, 0.75) 100%)',
-                backdropFilter: 'blur(24px) saturate(1.6)',
-                WebkitBackdropFilter: 'blur(24px) saturate(1.6)',
-              }}
-            >
-              {/* Realistic glass gloss - diagonal shine reflection */}
-              <div 
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: 'linear-gradient(125deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 25%, transparent 50%, transparent 100%)',
-                }}
+      <PullToRefresh onRefresh={handleRefresh} isRefreshing={isRefreshing}>
+        <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 pb-4 pt-3 sm:pt-6">
+          
+          {/* ============================================================ */}
+          {/* TIER 1: Welcome Header - Blue themed */}
+          {/* ============================================================ */}
+          <div className="mb-3 sm:mb-4">
+            <Suspense fallback={<WelcomeHeaderSkeleton />}>
+              <WelcomeHeader
+                theme="blue"
+                allFormsComplete={allFormsComplete}
+                activeJobsCount={assignedJobs.length}
+                currentJobName={currentJobName}
+                rewardPoints={rewardPoints}
+                onSignOut={handleSignOut}
               />
-              
-              {/* Secondary gloss layer */}
-              <div 
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 40%)',
-                }}
-              />
-              
-              {/* Inner blue glow */}
-              <div 
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: 'radial-gradient(ellipse at 25% 0%, rgba(59, 130, 246, 0.2) 0%, transparent 45%)',
-                }}
-              />
-              
-              {/* Specular highlight - corner gleam */}
-              <div 
-                className="absolute top-0 left-0 w-32 h-32 pointer-events-none"
-                style={{
-                  background: 'radial-gradient(circle at 20% 20%, rgba(255,255,255,0.12) 0%, transparent 50%)',
-                }}
-              />
-              
-              {/* Top edge highlight */}
-              <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-white/5 via-white/25 to-white/5 rounded-t-[inherit]" />
-              
-              {/* Left edge highlight */}
-              <div className="absolute top-0 left-0 bottom-0 w-[1px] bg-gradient-to-b from-white/20 via-white/5 to-transparent rounded-l-[inherit]" />
+            </Suspense>
+          </div>
 
-              {/* Content area */}
-              <div className="relative px-5 py-4 md:px-7 md:py-5">
-                {/* Eyebrow with role badge */}
-                <div className="flex items-center gap-3 mb-3">
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.4, delay: 0.2 }}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#3b82f6]/15 border border-[#3b82f6]/30"
-                  >
-                    <Briefcase className="w-3.5 h-3.5 text-[#bfdbfe]" />
-                    <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#f0f9ff]">
-                      Foreman
-                    </span>
-                  </motion.div>
-                  
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.4, delay: 0.3 }}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0a1628]/60 border border-[#3b82f6]/20"
-                  >
-                    <Users className="w-3 h-3 text-[#bfdbfe]" />
-                    <span className="text-[9px] uppercase tracking-wider font-semibold text-[#f0f9ff]/70">
-                      {role === "admin" ? "Admin Access" : "Foreman"}
-                    </span>
-                  </motion.div>
-                </div>
-
-                <div className="flex items-center gap-4">
-                  {/* Gradient line accent - Blue */}
-                  <motion.div
-                    initial={{ scaleY: 0, opacity: 0 }}
-                    animate={{ scaleY: 1, opacity: 1 }}
-                    transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                    className="w-1 h-14 md:h-16 rounded-full bg-gradient-to-b from-[#bfdbfe] via-[#3b82f6] to-[#1d4ed8] origin-top flex-shrink-0"
-                    style={{
-                      boxShadow: '0 0 20px rgba(59, 130, 246, 0.5), 0 0 40px rgba(59, 130, 246, 0.25)',
-                    }}
-                  />
-                  
-                  {/* Text content */}
-                  <div className="flex-1 min-w-0">
-                    {enableAnimations ? (
-                      <TextEffect
-                        as="h1"
-                        preset="blurSlide"
-                        per="char"
-                        delay={0.15}
-                        className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight"
-                        segmentWrapperClassName="bg-gradient-to-r from-white via-[#bfdbfe] to-white/90 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(59,130,246,0.35)]"
-                      >
-                        {`Welcome back, ${displayName}`}
-                      </TextEffect>
-                    ) : (
-                      <h1 
-                        className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight bg-gradient-to-r from-white via-[#bfdbfe] to-white/90 bg-clip-text text-transparent"
-                      >
-                        {`Welcome back, ${displayName}`}
-                      </h1>
-                    )}
-                    
-                    {/* Description */}
-                    <motion.p
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.5, delay: 0.7, ease: 'easeOut' }}
-                      className="mt-1.5 md:mt-2 text-xs sm:text-sm text-[#bfdbfe]/50 font-medium leading-relaxed max-w-xl"
-                    >
-                      Manage your crew, track daily progress, and coordinate assignments
-                    </motion.p>
+          {/* ============================================================ */}
+          {/* TIER 1.5: Featured Announcement */}
+          {/* ============================================================ */}
+          <div className="mb-3 sm:mb-4">
+            <ScrollReveal variant="fadeUp" delay={0.02}>
+              <Suspense fallback={
+                <div className="rounded-3xl border border-blue-500/20 bg-[#0a1628]/70 p-5 space-y-3 animate-pulse">
+                  <div className="h-3 w-32 bg-white/10 rounded-full" />
+                  <div className="space-y-2">
+                    <div className="h-3 w-full bg-white/10 rounded-full" />
+                    <div className="h-3 w-3/4 bg-white/10 rounded-full" />
                   </div>
                 </div>
-              </div>
-              
-              {/* Bottom edge shadow */}
-              <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-black/30 to-transparent" />
-              
-              {/* Right edge shadow */}
-              <div className="absolute top-0 right-0 bottom-0 w-[1px] bg-gradient-to-b from-transparent via-black/20 to-transparent" />
-            </div>
-          </motion.div>
-        </div>
+              }>
+                <ThemedAnnouncementCard theme="bluewhite" />
+              </Suspense>
+            </ScrollReveal>
+          </div>
 
-        {/* Main content area */}
-        <div className="space-y-5 md:space-y-6">
-          {/* Announcements Section */}
-          <ScrollReveal variant="fadeUp" delay={0}>
-            <Suspense fallback={
-              <div className="rounded-3xl border border-blue-500/20 bg-[#0a1628]/70 p-5 space-y-3 animate-pulse">
-                <div className="h-3 w-32 bg-white/10 rounded-full" />
-                <div className="space-y-2">
-                  <div className="h-3 w-full bg-white/10 rounded-full" />
-                  <div className="h-3 w-3/4 bg-white/10 rounded-full" />
+          {/* ============================================================ */}
+          {/* TIER 2: Compliance Strip - Blue themed */}
+          {/* ============================================================ */}
+          <div className="mb-3 sm:mb-4">
+            <ScrollReveal variant="fadeUp" delay={0.04}>
+              <CompactComplianceStrip theme="blue" onComplianceChange={handleComplianceChange} />
+            </ScrollReveal>
+          </div>
+
+          {/* ============================================================ */}
+          {/* TIER 3: Primary Content Grid */}
+          {/* Two columns on md+ screens: Jobs | Rewards */}
+          {/* ============================================================ */}
+          <div className="mb-3 sm:mb-4">
+            <ScrollReveal variant="fadeUp" delay={0.06}>
+              <DashboardGrid
+                gap="md"
+                primaryWider={hasActiveJobs}
+                primary={
+                  <StackedLayout gap="sm">
+                    {/* Active Jobs Section */}
+                    <DashboardCard variant="elevated" theme="blue">
+                      <div className="p-3 sm:p-4">
+                        <AssignedJobsSection
+                          jobs={assignedJobs}
+                          loading={jobsLoading}
+                          error={jobsError}
+                          onRefetch={refetchJobs}
+                        />
+                      </div>
+                    </DashboardCard>
+                    
+                    {/* Pinned Favorites - Below jobs on mobile */}
+                    <div className="block md:hidden">
+                      <PinnedFavorites showTitle={false} theme="blue" />
+                    </div>
+                  </StackedLayout>
+                }
+                secondary={
+                  <StackedLayout gap="sm">
+                    {/* Rewards Card - Blue themed */}
+                    <Suspense fallback={
+                      <div className="rounded-2xl border border-blue-400/20 bg-[#0a1628] p-4 animate-pulse h-[120px]">
+                        <div className="flex items-center gap-4">
+                          <div className="w-14 h-14 rounded-2xl bg-white/5" />
+                          <div className="flex-1 space-y-2">
+                            <div className="h-4 w-28 bg-white/10 rounded" />
+                            <div className="h-3 w-40 bg-white/5 rounded" />
+                          </div>
+                        </div>
+                      </div>
+                    }>
+                      <EnhancedRewardsCard theme="blue" onPointsChange={setRewardPoints} />
+                    </Suspense>
+                    
+                    {/* Pinned Favorites - In right column on desktop */}
+                    <div className="hidden md:block">
+                      <PinnedFavorites showTitle={true} theme="blue" />
+                    </div>
+                  </StackedLayout>
+                }
+              />
+            </ScrollReveal>
+          </div>
+
+          {/* ============================================================ */}
+          {/* TIER 4: Foreman Tools (Expandable) */}
+          {/* ============================================================ */}
+          <div className="mb-3 sm:mb-4">
+            <ScrollReveal variant="fadeUp" delay={0.08}>
+              <ExpandableSection
+                id="foreman-tools"
+                title="Foreman Tools"
+                subtitle="Crew management & reports"
+                icon={<DashboardAvatar variant="jobs" className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10" />}
+                storageKey={PERSISTENCE_KEYS.ALL_TOOLS}
+                defaultOpen={true}
+                ariaLabel="Foreman tools section. Expand to access crew management and reporting tools."
+                theme="blue"
+              >
+                <motion.div 
+                  className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-2.5 md:gap-3"
+                  variants={shouldReduceMotion ? undefined : containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                >
+                  {FOREMAN_NAV_CARDS.map((card) => (
+                    <motion.div key={card.to} variants={shouldReduceMotion ? undefined : itemVariants}>
+                      <BrandedNavCard
+                        title={card.title}
+                        description={card.description}
+                        icon={card.icon}
+                        to={card.to}
+                        variant="bluewhite"
+                        comingSoon={card.comingSoon}
+                      />
+                    </motion.div>
+                  ))}
+                </motion.div>
+              </ExpandableSection>
+            </ScrollReveal>
+          </div>
+
+          {/* ============================================================ */}
+          {/* TIER 5: All Tools (Expandable) */}
+          {/* ============================================================ */}
+          <ScrollReveal variant="fadeUp" delay={0.12}>
+            <ExpandableSection
+              id="foreman-all-tools"
+              title="All Tools"
+              subtitle="Forms, resources & more"
+              icon={<DashboardAvatar variant="tools" className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10" />}
+              storageKey="foreman_all_tools_expanded"
+              defaultOpen={false}
+              ariaLabel="All Tools section. Expand to browse forms and resources."
+              theme="blue"
+            >
+              <div className="space-y-4">
+                {/* Pin hint message */}
+                <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-gradient-to-r from-blue-900/30 via-blue-950/20 to-transparent border border-blue-500/25">
+                  <div className="w-7 h-7 rounded-lg bg-blue-500/15 border border-blue-400/30 flex items-center justify-center flex-shrink-0">
+                    <svg className="w-3.5 h-3.5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    </svg>
+                  </div>
+                  <p className="text-xs text-blue-200/80 leading-relaxed">
+                    <span className="font-semibold text-blue-300">Tip:</span>{' '}
+                    <span className="hidden sm:inline">Long-press (mobile) or right-click (desktop) any item below to </span>
+                    <span className="sm:hidden">Long-press any item to </span>
+                    <span className="font-medium text-blue-200">pin it to Quick Access</span>
+                  </p>
                 </div>
-              </div>
-            }>
-              <ThemedAnnouncementCard theme="bluewhite" />
-            </Suspense>
-          </ScrollReveal>
-
-          {/* Common Features Section */}
-          <ScrollReveal variant="fadeUp" delay={0.05}>
-            <div className="space-y-3">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-[#bfdbfe]/70 font-medium px-1">
-                Common Features
-              </p>
-              <motion.div 
-                className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5 sm:gap-3"
-                variants={shouldReduceMotion ? undefined : containerVariants}
-                initial="hidden"
-                animate="visible"
-              >
-                {commonCards.map((card) => (
-                  <motion.div key={card.to} variants={shouldReduceMotion ? undefined : itemVariants}>
-                    <BrandedNavCard
-                      title={card.title}
-                      description={card.description}
-                      icon={card.icon}
-                      to={card.to}
-                      variant="bluewhite"
-                    />
+                
+                {/* Navigation Cards */}
+                <Suspense fallback={<EnhancedNavCardsSkeleton />}>
+                  <motion.div 
+                    className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-2.5 md:gap-3"
+                    variants={shouldReduceMotion ? undefined : containerVariants}
+                    initial="hidden"
+                    animate="visible"
+                  >
+                    {commonCards.map((card) => (
+                      <motion.div key={card.to} variants={shouldReduceMotion ? undefined : itemVariants}>
+                        <BrandedNavCard
+                          title={card.title}
+                          description={card.description}
+                          icon={card.icon}
+                          to={card.to}
+                          variant="bluewhite"
+                        />
+                      </motion.div>
+                    ))}
                   </motion.div>
-                ))}
-              </motion.div>
-            </div>
-          </ScrollReveal>
-
-          {/* Foreman Tools Section */}
-          <ScrollReveal variant="fadeUp" delay={0.1}>
-            <div className="space-y-3">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-[#bfdbfe]/70 font-medium px-1">
-                Foreman Tools
-              </p>
-              <motion.div 
-                className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5 sm:gap-3"
-                variants={shouldReduceMotion ? undefined : containerVariants}
-                initial="hidden"
-                animate="visible"
-              >
-                {FOREMAN_NAV_CARDS.map((card) => (
-                  <motion.div key={card.to} variants={shouldReduceMotion ? undefined : itemVariants}>
-                    <BrandedNavCard
-                      title={card.title}
-                      description={card.description}
-                      icon={card.icon}
-                      to={card.to}
-                      variant="bluewhite"
-                      comingSoon={card.comingSoon}
-                    />
-                  </motion.div>
-                ))}
-              </motion.div>
-            </div>
-          </ScrollReveal>
-
-          {/* Crew Status Section */}
-          <ScrollReveal variant="fadeUp" delay={0.2}>
-            <div className="rounded-3xl border border-blue-500/25 bg-gradient-to-br from-[#0a1628]/60 to-[#020408]/60 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <DashboardAvatar variant="jobs" className="w-8 h-8" />
-                <h3 className="text-lg font-semibold text-white">
-                  My Crew Status
-                </h3>
+                </Suspense>
               </div>
-              <p className="text-sm text-[#f0f9ff]/70">
-                Your crew assignments and member status will appear here.
-              </p>
-            </div>
+            </ExpandableSection>
           </ScrollReveal>
 
-          {/* Daily Reports Section */}
-          <ScrollReveal variant="fadeUp" delay={0.3}>
-            <div className="rounded-3xl border border-blue-500/25 bg-gradient-to-br from-[#0a1628]/60 to-[#020408]/60 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <DashboardAvatar variant="announcements" className="w-8 h-8" />
-                <h3 className="text-lg font-semibold text-white">
-                  Daily Reports
-                </h3>
-              </div>
-              <p className="text-sm text-[#f0f9ff]/70">
-                Submit and view your daily job progress reports here.
-              </p>
-            </div>
-          </ScrollReveal>
-
-          {/* Push Notifications Toggle */}
-          <ScrollReveal variant="fadeUp" delay={0.4}>
-            <div className="flex justify-center">
+          {/* ============================================================ */}
+          {/* TIER 6: Push Notifications Toggle */}
+          {/* ============================================================ */}
+          <ScrollReveal variant="fadeUp" delay={0.16}>
+            <div className="flex justify-center mt-4">
               <EnableNotificationsButton variant="bluewhite" />
             </div>
           </ScrollReveal>
-
-          {/* Profile Bar - Bottom section */}
-          <ScrollReveal variant="fadeUp" delay={0.45}>
-            <ProfileBar
-              email={user?.email}
-              role={role}
-              onSignOut={handleSignOut}
-              theme="bluewhite"
-            />
-          </ScrollReveal>
         </div>
-      </div>
+      </PullToRefresh>
+
+      {/* ============================================================ */}
+      {/* Floating Action Button (appears on scroll) */}
+      {/* ============================================================ */}
+      <FloatingActionButton scrollThreshold={400} showScrollToTop={true} />
     </DashboardLayout>
   );
 }

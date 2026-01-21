@@ -189,6 +189,7 @@ export function JsaPickerDrawer({
                   type="button"
                   onClick={onClose}
                   className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/5 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 transition touch-manipulation"
+                  aria-label="Close JSA picker"
                 >
                   <X className="w-5 h-5" />
                 </button>

@@ -1,7 +1,7 @@
 {
-  "name": "vite-react-typescript-starter",
+  "name": "atts-employee-portal",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.1.0",
   "type": "module",
   "overrides": {
     "tmp": "0.2.5"
@@ -9,11 +9,24 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build && npm run bundle:check",
+    "release:patch": "npm version patch && echo 'Version bumped! Run npm run build to create new release'",
+    "release:minor": "npm version minor && echo 'Version bumped! Remember to update WHATS_NEW_FEATURES in src/lib/appVersion.ts'",
+    "release:major": "npm version major && echo 'Version bumped! Remember to update WHATS_NEW_FEATURES in src/lib/appVersion.ts'",
     "lint": "eslint .",
     "preview": "vite preview",
     "preview:ci": "vite preview --host 127.0.0.1 --port 4173",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "test": "vitest run",
+    "test:unit": "vitest run --config tests/vitest.config.ts",
+    "test:unit:watch": "vitest --config tests/vitest.config.ts",
+    "test:unit:coverage": "vitest run --config tests/vitest.config.ts --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:all": "npm run test:unit && npm run test:e2e",
+    "test:setup": "npx tsx tests/setup/seedTestUsers.ts",
+    "test:setup:cleanup": "npx tsx tests/setup/seedTestUsers.ts --cleanup",
+    "test:fixtures": "npx tsx tests/setup/generateFixtures.ts",
     "bundle:check": "node scripts/checkBundleSize.mjs",
     "lighthouse": "npm run build && lhci autorun",
     "accessibility": "start-server-and-test preview:ci http://127.0.0.1:4173 pa11y-ci",
@@ -42,6 +55,7 @@
     "react-dom": "^18.3.1",
     "react-error-boundary": "^6.0.0",
     "react-hook-form": "^7.68.0",
+    "react-image-crop": "^11.0.10",
     "react-router-dom": "^7.9.4",
     "react-use-measure": "^2.1.7",
     "sonner": "^2.0.7",
@@ -54,8 +68,10 @@
     "zustand": "^5.0.9"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.0",
     "@eslint/js": "^9.9.1",
     "@lhci/cli": "^0.15.1",
+    "@playwright/test": "^1.57.0",
     "@tailwindcss/line-clamp": "^0.4.4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",

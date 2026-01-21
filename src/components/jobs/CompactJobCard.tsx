@@ -7,17 +7,94 @@ import { useCanViewJobProgress } from '../../hooks/useCanViewJobProgress';
 import { JobProgressBar } from './JobProgressBar';
 import type { JobProgressTracker } from '../../types/jobs';
 
+// ============================================================================
+// THEME CONFIGURATION
+// ============================================================================
+
+export type CompactJobCardTheme = 'emerald' | 'blue';
+
+interface ThemeConfig {
+  // Non-exceeded timeline job styles
+  border: string;
+  gradientFrom: string;
+  gradientVia: string;
+  gradientTo: string;
+  hoverBorder: string;
+  hoverShadow: string;
+  // Progress badge
+  progressBg: string;
+  progressBorder: string;
+  progressText: string;
+  // Icon color
+  iconColor: string;
+  // Lock/restricted badge
+  lockBg: string;
+  lockBorder: string;
+  lockColor: string;
+  // Progress bar background (for restricted state)
+  restrictedBg: string;
+  restrictedBorder: string;
+  restrictedText: string;
+  // Card inner gradient
+  innerGradient: string;
+}
+
+const compactJobCardThemeConfig: Record<CompactJobCardTheme, ThemeConfig> = {
+  emerald: {
+    border: 'border-emerald-500/20',
+    gradientFrom: 'from-[#041510]/80',
+    gradientVia: 'via-[#020d09]/90',
+    gradientTo: 'to-[#010604]',
+    hoverBorder: 'hover:border-emerald-400/40',
+    hoverShadow: 'hover:shadow-emerald-900/20',
+    progressBg: 'bg-emerald-500/15',
+    progressBorder: 'border-emerald-500/30',
+    progressText: 'text-emerald-400',
+    iconColor: 'rgb(0, 219, 77)',
+    lockBg: 'bg-emerald-500/10',
+    lockBorder: 'border-emerald-500/20',
+    lockColor: 'text-emerald-400/60',
+    restrictedBg: 'bg-emerald-500/5',
+    restrictedBorder: 'border-emerald-500/20',
+    restrictedText: 'text-emerald-400/70',
+    innerGradient: 'radial-gradient(circle at 50% 50%, rgba(5, 77, 53, 1) 0%, rgba(10, 10, 10, 1) 100%)',
+  },
+  blue: {
+    border: 'border-blue-500/20',
+    gradientFrom: 'from-[#040815]/80',
+    gradientVia: 'via-[#020509]/90',
+    gradientTo: 'to-[#010204]',
+    hoverBorder: 'hover:border-blue-400/40',
+    hoverShadow: 'hover:shadow-blue-900/20',
+    progressBg: 'bg-blue-500/15',
+    progressBorder: 'border-blue-500/30',
+    progressText: 'text-blue-400',
+    iconColor: 'rgb(59, 130, 246)',
+    lockBg: 'bg-blue-500/10',
+    lockBorder: 'border-blue-500/20',
+    lockColor: 'text-blue-400/60',
+    restrictedBg: 'bg-blue-500/5',
+    restrictedBorder: 'border-blue-500/20',
+    restrictedText: 'text-blue-400/70',
+    innerGradient: 'radial-gradient(circle at 50% 50%, rgba(5, 53, 77, 1) 0%, rgba(10, 10, 10, 1) 100%)',
+  },
+};
+
 interface CompactJobCardProps {
   job: JobProgressTracker;
   className?: string;
+  /** Color theme - defaults to emerald */
+  theme?: CompactJobCardTheme;
 }
 
 function CompactJobCardComponent({ 
   job, 
-  className 
+  className,
+  theme = 'emerald',
 }: CompactJobCardProps) {
   const { canViewProgress } = useCanViewJobProgress();
   const isSpanBased = job.tracking_type === 'job_progress';
+  const themeStyles = compactJobCardThemeConfig[theme];
   
   // Calculate span-based progress
   const spanProgress = useMemo(() => {
@@ -47,12 +124,12 @@ function CompactJobCardComponent({
   // Never show exceeded for span-based jobs
   const isExceeded = !isSpanBased && progress.status === 'exceeded';
 
-  // Card styling - span-based jobs use blue accent, never red
+  // Card styling - span-based jobs use orange accent, exceeded uses red, otherwise use theme
   const cardColors = isSpanBased
     ? 'border-blue-500/20 from-[#040815]/80 via-[#020509]/90 to-[#010204] hover:border-blue-400/40 hover:shadow-blue-900/20'
     : isExceeded
       ? 'border-red-500/30 from-[#1a0808]/80 via-[#0d0505]/90 to-[#050302] hover:border-red-500/50 hover:shadow-red-900/20'
-      : 'border-emerald-500/20 from-[#041510]/80 via-[#020d09]/90 to-[#010604] hover:border-emerald-400/40 hover:shadow-emerald-900/20';
+      : `${themeStyles.border} ${themeStyles.gradientFrom} ${themeStyles.gradientVia} ${themeStyles.gradientTo} ${themeStyles.hoverBorder} ${themeStyles.hoverShadow}`;
 
   return (
     <motion.div
@@ -70,7 +147,7 @@ function CompactJobCardComponent({
     >
       <div 
         className="w-full p-2.5 sm:p-3 md:p-4 text-left min-h-[40px] sm:min-h-[44px]"
-        style={{ background: 'radial-gradient(circle at 50% 50%, rgba(5, 77, 53, 1) 0%, rgba(10, 10, 10, 1) 100%)' }}
+        style={{ background: isSpanBased ? 'radial-gradient(circle at 50% 50%, rgba(5, 53, 77, 1) 0%, rgba(10, 10, 10, 1) 100%)' : themeStyles.innerGradient }}
       >
         {/* Compact layout: Job info and progress in single row on mobile */}
         <div className="flex items-center justify-between gap-2 sm:gap-3 mb-1.5 sm:mb-2">
@@ -82,7 +159,7 @@ function CompactJobCardComponent({
                 isExceeded && !isSpanBased && 'text-red-400'
               )}
               style={{
-                color: isSpanBased ? 'rgb(231, 114, 4)' : isExceeded ? undefined : 'rgb(0, 219, 77)'
+                color: isSpanBased ? 'rgb(231, 114, 4)' : isExceeded ? undefined : themeStyles.iconColor
               }}
             />
             <h4 className="font-semibold text-xs sm:text-sm md:text-base text-white truncate leading-tight">
@@ -100,7 +177,7 @@ function CompactJobCardComponent({
                   ? cn(spanProgressColors.bg, 'border', spanProgressColors.border)
                   : isExceeded
                     ? 'bg-red-500/15 border border-red-500/30'
-                    : 'bg-emerald-500/15 border border-emerald-500/30'
+                    : `${themeStyles.progressBg} border ${themeStyles.progressBorder}`
               )}
             >
               <span 
@@ -108,15 +185,15 @@ function CompactJobCardComponent({
                   'text-xs sm:text-sm md:text-base font-bold tabular-nums',
                   isSpanBased && spanProgressColors
                     ? spanProgressColors.text
-                    : isExceeded ? 'text-red-400' : 'text-emerald-400'
+                    : isExceeded ? 'text-red-400' : themeStyles.progressText
                 )}
               >
                 {isSpanBased && spanProgress ? spanProgress.percentage : progress.percentage}%
               </span>
             </div>
           ) : (
-            <div className="flex-shrink-0 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md sm:rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-              <Lock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-400/60" />
+            <div className={`flex-shrink-0 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md sm:rounded-lg ${themeStyles.lockBg} border ${themeStyles.lockBorder}`}>
+              <Lock className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${themeStyles.lockColor}`} />
             </div>
           )}
         </div>
@@ -155,9 +232,9 @@ function CompactJobCardComponent({
                 </div>
               </div>
             ) : (
-              <div className="flex items-center justify-center gap-1.5 py-1 sm:py-1.5 px-2 sm:px-3 rounded-md sm:rounded-lg bg-emerald-500/5 border border-emerald-500/20">
-                <Lock className="w-2 h-2 sm:w-2.5 sm:h-2.5 text-emerald-400/60" />
-                <span className="text-[8px] sm:text-[10px] text-emerald-400/70 font-medium truncate">Progress visible to management</span>
+              <div className={`flex items-center justify-center gap-1.5 py-1 sm:py-1.5 px-2 sm:px-3 rounded-md sm:rounded-lg ${themeStyles.restrictedBg} border ${themeStyles.restrictedBorder}`}>
+                <Lock className={`w-2 h-2 sm:w-2.5 sm:h-2.5 ${themeStyles.lockColor}`} />
+                <span className={`text-[8px] sm:text-[10px] ${themeStyles.restrictedText} font-medium truncate`}>Progress visible to management</span>
               </div>
             )
           ) : (

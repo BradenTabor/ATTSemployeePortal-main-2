@@ -241,6 +241,7 @@ function JobDetailModalComponent({
               <button
                 onClick={onClose}
                 className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/5 transition-colors"
+                aria-label="Close job details"
               >
                 <X className="w-5 h-5" />
               </button>

@@ -742,7 +742,7 @@ function SelectedJsaDetail({
             type="button"
             onClick={onClose}
             className="p-2 rounded-lg bg-[#0a0513]/70 border border-[#c084fc]/25 text-[#a78bfa] hover:text-white hover:bg-[#c084fc]/10 transition-all"
-            title="Close"
+            aria-label="Close compliance overview"
           >
             <X className="w-4 h-4" />
           </button>

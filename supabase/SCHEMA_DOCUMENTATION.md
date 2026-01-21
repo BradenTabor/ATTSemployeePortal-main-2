@@ -105,7 +105,8 @@ The ATTS Employee Portal database consists of 11 core tables organized around:
 | `user_id` | UUID | NO | FK to auth.users(id), unique |
 | `email` | TEXT | YES | Synced from auth.users |
 | `full_name` | TEXT | YES | User's display name |
-| `role` | TEXT | NO | One of: employee, admin, manager, mechanic |
+| `role` | TEXT | NO | One of: employee, admin, manager, mechanic, foreman, general_foreman, safety_officer |
+| `avatar_url` | TEXT | YES | Path to user avatar in Supabase Storage (avatars bucket) |
 | `drivers_license_number` | TEXT | YES | DL number |
 | `drivers_license_class` | TEXT | YES | DL class (A, B, C, etc.) |
 | `drivers_license_expiration` | TEXT | YES | DL expiration date |
@@ -115,6 +116,7 @@ The ATTS Employee Portal database consists of 11 core tables organized around:
 **Indexes:**
 - `idx_app_users_user_id` on (user_id)
 - `idx_app_users_role` on (role)
+- `idx_app_users_has_avatar` on ((avatar_url IS NOT NULL))
 
 ---
 

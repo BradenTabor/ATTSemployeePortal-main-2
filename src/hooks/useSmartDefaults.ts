@@ -139,19 +139,32 @@ export function useSmartDefaults(formType: 'dvir' | 'jsa'): UseSmartDefaultsResu
           from_cache: response.meta?.from_cache,
         });
 
-        // Show toast notification so user doesn't miss suggestions
-        toast.info(
-          'Smart Suggestions Ready',
-          `${suggestionCount} field ${suggestionCount === 1 ? 'suggestion' : 'suggestions'} available`
-        );
-
-        // Scroll to panel after short delay (let animation complete)
-        setTimeout(() => {
-          const panel = document.getElementById('smart-defaults-panel');
-          if (panel) {
-            panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-        }, 300);
+        // Show premium toast notification with actions
+        // Pass formType to create unique toast ID (prevents duplicates in React Strict Mode)
+        toast.smartSuggestions(suggestionCount, {
+          formType,
+          onViewPanel: () => {
+            const panel = document.getElementById('smart-defaults-panel');
+            if (panel) {
+              panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          },
+          // Note: onApplyAll is handled by the form component directly
+          // The toast's "Apply All" will also scroll to panel first
+          onApplyAll: () => {
+            const panel = document.getElementById('smart-defaults-panel');
+            if (panel) {
+              panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              // Trigger the apply all button click after scroll
+              setTimeout(() => {
+                const applyAllBtn = panel.querySelector('[data-apply-all-btn]');
+                if (applyAllBtn instanceof HTMLButtonElement) {
+                  applyAllBtn.click();
+                }
+              }, 400);
+            }
+          },
+        });
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load suggestions';

@@ -679,6 +679,7 @@ export default function MechanicPartsRepairsLog() {
                   <button
                     onClick={() => { setSearchQuery(''); setCurrentPage(1); }}
                     className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
+                    aria-label="Clear search"
                   >
                     <X className="w-4 h-4" />
                   </button>

@@ -62,34 +62,29 @@ export default function DashboardLayout({ title, children, hideHeader = false }:
       <div className={`flex-1 overflow-y-auto overflow-x-hidden px-4 sm:px-8 ${hideHeader ? 'pt-0' : 'pt-6 sm:pt-10'} pb-6 relative z-10`}>
         {/* Header Area - conditionally rendered */}
         {!hideHeader && (
-          <header className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6 w-full">
-            {/* Left Section: Logo + Title */}
-            <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 text-center sm:text-left">
-              <img
-                src={logo}
-                alt="ATTS Logo"
-                fetchPriority="high"
-                className="w-[180px] sm:w-52 md:w-60 object-contain drop-shadow-lg"
-              />
-              {title && (
-                <h1
-                  className="text-2xl sm:text-3xl font-bold tracking-wide text-transparent bg-clip-text break-normal gradient-animated"
-                  style={{
-                    backgroundSize: "200% 200%",
-                    backgroundImage: "linear-gradient(90deg, rgba(247, 228, 189, 1) 0%, rgba(138, 99, 30, 1) 20%, rgba(244, 201, 121, 1) 50%, rgba(138, 99, 30, 1) 75%, rgba(215, 154, 50, 1) 100%)",
-                    WebkitBackgroundClip: "text",
-                    textShadow: "0 0 12px rgba(247,228,189,0.35)",
-                  }}
-                >
-                  {title}
-                </h1>
-              )}
-            </div>
-
-            {/* Right Section: Return Button */}
-            <div className="flex justify-center sm:justify-end w-full sm:w-auto">
-              <ReturnButton />
-            </div>
+          <header className="flex items-center gap-2 sm:gap-4 mb-6 w-full">
+            {/* Logo - Smaller on mobile to leave room for title */}
+            <img
+              src={logo}
+              alt="ATTS Logo"
+              // @ts-expect-error fetchpriority is a valid HTML attribute but not in React types yet
+              fetchpriority="high"
+              className="w-[100px] sm:w-40 md:w-48 object-contain drop-shadow-lg flex-shrink-0"
+            />
+            {/* Title - No truncation, wraps if needed */}
+            {title && (
+              <h1
+                className="text-lg sm:text-2xl md:text-3xl font-bold tracking-wide text-transparent bg-clip-text gradient-animated leading-tight"
+                style={{
+                  backgroundSize: "200% 200%",
+                  backgroundImage: "linear-gradient(90deg, rgba(247, 228, 189, 1) 0%, rgba(138, 99, 30, 1) 20%, rgba(244, 201, 121, 1) 50%, rgba(138, 99, 30, 1) 75%, rgba(215, 154, 50, 1) 100%)",
+                  WebkitBackgroundClip: "text",
+                  textShadow: "0 0 12px rgba(247,228,189,0.35)",
+                }}
+              >
+                {title}
+              </h1>
+            )}
           </header>
         )}
 
@@ -98,6 +93,9 @@ export default function DashboardLayout({ title, children, hideHeader = false }:
           {children}
         </main>
       </div>
+
+      {/* Floating Return Navigation - Fixed position, stays visible */}
+      <ReturnButton />
     </div>
   );
 }

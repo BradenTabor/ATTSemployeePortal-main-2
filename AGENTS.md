@@ -199,7 +199,7 @@ Users must have a non-null email to be included in compliance checks.
 ### Admin Summary Email (Primary Mode)
 Instead of individual user emails, send a **consolidated summary** to ATTS Administration:
 - **FROM:** `allterraintreeservice.po@gmail.com`
-- **TO:** `bradenleetabor@gmail.com`, `shane@alltts.com`, `dusty@alltts.com`, `mike@alltts.com`, `weston@alltts.com`, `steve@alltts.com`
+- **TO:** `bradenleetabor@gmail.com`, `shane@alltts.com`, `dusty@alltts.com`, `mike@alltts.com`, `steve@alltts.com`, `brandon@alltts.com`, `weston@alltts.com`
 - **Delivery:** Gmail SMTP (primary) + Make.com webhook (audit/logging)
 
 ### Notification types (extended for JSA)

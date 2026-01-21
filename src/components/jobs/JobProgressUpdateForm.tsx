@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Check, Loader2, MapPin, Ruler, User, Wrench, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabaseClient';
-import { toast } from '../../lib/toast';
+import { formToast } from '../../lib/formToast';
 import { cn } from '../../lib/utils';
 import { getTodayDateString } from '../../lib/jobProgressUtils';
 import {
@@ -13,6 +13,7 @@ import {
   type JobProgressUpdateFormData,
 } from '../../types/jobs';
 import { logger } from '../../lib/logger';
+import { FormSuccessCelebration } from '../forms/FormSuccessCelebration';
 import './JobProgressUpdateForm.css';
 
 interface JobProgressUpdateFormProps {
@@ -38,13 +39,18 @@ const defaultForm: JobProgressUpdateFormData = {
 };
 
 export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUpdateFormProps) {
-  const { user } = useAuth();
+  const { user, fullName } = useAuth();
   const [formData, setFormData] = useState<JobProgressUpdateFormData>({
     ...defaultForm,
     full_name: undefined,
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Success celebration state
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [submittedSpans, setSubmittedSpans] = useState(0);
+  const [submittedFeet, setSubmittedFeet] = useState(0);
 
   const userFullName =
     (user?.user_metadata as Record<string, string | undefined>)?.full_name ||
@@ -63,7 +69,7 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
 
   const validate = (): boolean => {
     if (!user?.id) {
-      toast.error('You must be signed in to submit progress');
+      formToast.error('Authentication Required', 'You must be signed in to submit progress');
       return false;
     }
     if (!formData.date) {
@@ -100,10 +106,12 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
 
     const userId = user?.id;
     if (!userId) {
-      toast.error('You must be signed in to submit progress');
+      formToast.error('Authentication Required', 'You must be signed in to submit progress');
       setSubmitting(false);
       return;
     }
+
+    formToast.submitting('Saving progress update...');
 
     const payload = {
       job_id: job.id,
@@ -125,20 +133,35 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
     if (insertError) {
       logger.error('Progress update error:', insertError);
       if (insertError.code === '23503') {
-        toast.error('Job no longer exists');
+        formToast.error('Job Not Found', 'This job no longer exists in the system.');
       } else if (insertError.code === '42501') {
-        toast.error('No permission to update');
+        formToast.error('Permission Denied', 'You do not have permission to update this job.');
       } else {
-        toast.error(`Failed: ${insertError.message}`);
+        formToast.error('Update Failed', insertError.message, {
+          onRetry: () => handleSubmit(e),
+        });
       }
       setSubmitting(false);
       return;
     }
 
-    toast.success('Progress saved!');
+    // Dismiss loading toast before showing celebration
+    formToast.dismiss();
+    
+    // Store submitted values for celebration stats
+    setSubmittedSpans(formData.spans_completed);
+    setSubmittedFeet(totalFeet);
+    
+    // Show celebration
     setSubmitting(false);
-    onSubmit();
+    setShowCelebration(true);
   };
+  
+  // Handle celebration continue
+  const handleCelebrationContinue = useCallback(() => {
+    setShowCelebration(false);
+    onSubmit();
+  }, [onSubmit]);
 
   const equipmentOptions: { value: Equipment; label: string }[] = [
     { value: 'jerraff', label: 'Jarraff' },
@@ -147,7 +170,22 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
   ];
 
   return (
-    <AnimatePresence>
+    <>
+      {/* Success Celebration */}
+      <FormSuccessCelebration
+        isVisible={showCelebration}
+        formType="equipment" // Using 'equipment' for green theme
+        title="Progress Saved!"
+        message={`${submittedSpans} span${submittedSpans > 1 ? 's' : ''} (${submittedFeet.toLocaleString()} ft) has been recorded for ${job.job_name}.`}
+        onContinue={handleCelebrationContinue}
+        stats={{
+          spansCount: submittedSpans,
+        }}
+        userName={fullName || undefined}
+      />
+      
+      <AnimatePresence>
+      {!showCelebration && (
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -357,6 +395,8 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
           </div>
         </motion.div>
       </motion.div>
+      )}
     </AnimatePresence>
+    </>
   );
 }

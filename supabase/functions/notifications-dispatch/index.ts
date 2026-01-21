@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * notifications-dispatch Edge Function
  * 

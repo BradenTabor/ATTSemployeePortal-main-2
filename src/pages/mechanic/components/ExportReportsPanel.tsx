@@ -37,6 +37,7 @@ import {
   type ExportMetadata,
 } from '../../../lib/exportUtils';
 import { useAuth } from '../../../contexts/AuthContext';
+import { formToast } from '../../../lib/formToast';
 
 // =============================================================================
 // TYPES
@@ -392,6 +393,7 @@ export default function ExportReportsPanel({
       setTimeout(() => setExportSuccess(null), 3000);
     } catch (error) {
       console.error('Export failed:', error);
+      formToast.error('Export Failed', 'Export failed. Please try again.');
       setExportSuccess(null);
     } finally {
       setIsExporting(false);

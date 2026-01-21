@@ -4,13 +4,7 @@ import {
   Shield,
   ClipboardList,
   Search,
-  MapPin,
   User,
-  Clock,
-  AlignLeft,
-  Thermometer,
-  Wind,
-  AlertTriangle,
   ChevronRight,
   ChevronLeft,
   Sparkles,
@@ -22,8 +16,6 @@ import {
   SortAsc,
   X,
   Download,
-  Maximize2,
-  Minimize2,
   ChevronsLeft,
   ChevronsRight,
   Users,
@@ -34,175 +26,46 @@ import {
   FileSpreadsheet,
   Table,
   FileDown,
+  MapPin,
 } from "lucide-react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
-import type { DailyJsaRecord, JsaSpan } from "../forms/DailyJSAForm";
+import type { DailyJsaRecord } from "../forms/DailyJSAForm";
 import TableSkeleton from "../../components/skeletons/TableSkeleton";
 import CardListSkeleton from "../../components/skeletons/CardListSkeleton";
 import { TextEffect } from "../../components/ui/TextEffect";
 import { getDeviceCapabilities } from "../../lib/mobilePerf";
 import {
   DataExporter,
-  formatDateForExport,
   generateFilename,
-  type ExportColumn,
   type ExportMetadata,
 } from "../../lib/exportUtils";
 
-type AdminJsaRow = DailyJsaRecord & {
-  user_email?: string | null;
-  user_name?: string | null;
-  user_role?: string | null;
-};
+// Import from extracted module
+import {
+  type AdminJsaRow,
+  type UserProfileMeta,
+  type SortField,
+  type SortDirection,
+  PAGE_SIZE_OPTIONS,
+  DEFAULT_PAGE_SIZE,
+  STATUS_FILTERS,
+  STATUS_BADGE,
+  JSA_EXPORT_COLUMNS,
+  formatDate,
+  formatDateTime,
+  StatCard,
+  MobileJsaCard,
+  SelectedJsaDetail,
+} from "./admin-jsa";
 
-type UserProfileMeta = {
-  email?: string | null;
-  role?: string | null;
-  full_name?: string | null;
-};
+// Use STATUS_FILTERS from module
+const statusFilters = STATUS_FILTERS;
 
-type SortField = "job_date" | "updated_at" | "work_location" | "user_name" | "status";
-type SortDirection = "asc" | "desc";
-
-const PAGE_SIZE_OPTIONS = [20, 50, 100];
-const DEFAULT_PAGE_SIZE = 20;
-
-type JobSelection = {
-  key: string;
-  label?: string;
-};
-
-type WeatherPayload = {
-  conditions?: Record<string, boolean>;
-  modifiers?: Record<string, boolean>;
-};
-
-const WEATHER_CONDITIONS = [
-  { key: "sunny", label: "Sunny" },
-  { key: "rain", label: "Rain" },
-  { key: "overcast", label: "Overcast" },
-  { key: "windy", label: "Windy" },
-];
-
-const WEATHER_MODIFIERS = [
-  { key: "hot_dry", label: "Hot / Dry" },
-  { key: "wet", label: "Wet" },
-  { key: "cold", label: "Cold" },
-  { key: "ice_snow", label: "Ice / Snow" },
-];
-
-const HAZARD_ITEMS = [
-  { key: "lines_energized", label: "Lines energized" },
-  { key: "secondary_voltage", label: "Secondary voltage" },
-  { key: "open_wire_secondary", label: "Open-wire secondary" },
-  { key: "guy_wire_present", label: "Guy wire present" },
-  { key: "rotten_poles", label: "Rotten poles" },
-  { key: "broken_poles", label: "Broken/damaged poles" },
-  { key: "line_clearances_signed", label: "Line clearances needed & signed" },
-  { key: "voltages_grounded", label: "Voltages grounded" },
-  { key: "voltages_verified", label: "Grounds verified" },
-];
-
-const TRAFFIC_HAZARDS = [
-  { key: "hills", label: "Hills" },
-  { key: "curves", label: "Curves" },
-  { key: "heavy_traffic", label: "Heavy traffic" },
-  { key: "construction_zone", label: "Construction zone" },
-  { key: "school_zone", label: "School zone" },
-  { key: "closing_lane", label: "Closing a lane" },
-  { key: "flagger_needed", label: "Flagger needed" },
-  { key: "flagger_trained", label: "Flagger trained" },
-  { key: "has_stop_paddles", label: "Stop/Slow paddles ready" },
-  { key: "has_radios", label: "Required radios ready" },
-];
-
-const TRAFFIC_SETUP = [
-  { key: "warning_signs_used", label: "Proper warning signs used" },
-  { key: "warning_signs_distance", label: "Signs at correct distance" },
-  { key: "reflective_cones", label: "Reflective cones placed" },
-  { key: "cone_separation", label: "Cone separation correct" },
-  { key: "buffer_zone", label: "Buffer/Taper zone correct" },
-];
-
-const statusFilters = [
-  { label: "All", value: "all" },
-  { label: "Draft", value: "draft" },
-  { label: "Completed", value: "completed" },
-];
-
-// Export column definitions
-const jsaExportColumns: ExportColumn<AdminJsaRow>[] = [
-  {
-    header: "Job Date",
-    key: "job_date",
-    format: (value) => formatDateForExport(value as string),
-    width: 14,
-  },
-  {
-    header: "Location",
-    key: "work_location",
-    format: (value) => (value as string) || "N/A",
-    width: 30,
-  },
-  {
-    header: "Circuit Number",
-    key: "circuit_number",
-    format: (value) => (value as string) || "N/A",
-    width: 15,
-  },
-  {
-    header: "Submitted By",
-    key: "user_name",
-    format: (value) => (value as string) || "Unknown",
-    width: 20,
-  },
-  {
-    header: "Status",
-    key: "status",
-    format: (value) => {
-      const status = value as string;
-      return status === "completed" ? "Completed" : status === "draft" ? "Draft" : status || "N/A";
-    },
-    width: 12,
-  },
-  {
-    header: "Employee Signature",
-    key: "employee_signature",
-    format: (value) => (value as string) || "Not signed",
-    width: 20,
-  },
-  {
-    header: "Nearest Hospital",
-    key: "nearest_hospital",
-    format: (value) => (value as string) || "N/A",
-    width: 25,
-  },
-  {
-    header: "Nearest Clinic",
-    key: "nearest_clinic",
-    format: (value) => (value as string) || "N/A",
-    width: 25,
-  },
-  {
-    header: "Notes",
-    key: "notes",
-    format: (value) => (value as string) || "N/A",
-    width: 40,
-  },
-  {
-    header: "Updated",
-    key: "updated_at",
-    format: (value) => formatDateForExport(value as string, true),
-    width: 22,
-  },
-];
-
-const statusBadge: Record<string, string> = {
-  draft: "bg-[#2b1a07]/80 text-[#fcdca1] border border-[#f4c979]/40",
-  completed: "bg-[#0f2218]/80 text-[#9cf6d2] border border-[#6fe9b7]/35",
-};
+// Use imported constants from module
+const jsaExportColumns = JSA_EXPORT_COLUMNS;
+const statusBadge = STATUS_BADGE;
 
 export default function AdminJSA() {
   const { isAdmin } = useAuth();
@@ -1270,328 +1133,4 @@ export default function AdminJSA() {
       </div>
     </DashboardLayout>
   );
-}
-
-// Stat Card Component - Mobile optimized
-function StatCard({
-  icon,
-  label,
-  value,
-  color,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: number;
-  color: "gold" | "amber" | "emerald" | "blue" | "purple";
-}) {
-  const colorClasses = {
-    gold: "from-[#f4c979]/20 to-[#d79a32]/10 border-[#f4c979]/30 text-[#f4c979]",
-    amber: "from-[#fbbf24]/20 to-[#d97706]/10 border-[#fbbf24]/30 text-[#fbbf24]",
-    emerald: "from-[#34d399]/20 to-[#059669]/10 border-[#34d399]/30 text-[#34d399]",
-    blue: "from-[#60a5fa]/20 to-[#2563eb]/10 border-[#60a5fa]/30 text-[#60a5fa]",
-    purple: "from-[#a78bfa]/20 to-[#7c3aed]/10 border-[#a78bfa]/30 text-[#a78bfa]",
-  };
-
-  return (
-    <div
-      className={`rounded-xl sm:rounded-2xl border bg-gradient-to-br ${colorClasses[color]} p-2.5 sm:p-4 flex items-center gap-2 sm:gap-3`}
-    >
-      <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-black/20 [&>svg]:w-4 [&>svg]:h-4 sm:[&>svg]:w-5 sm:[&>svg]:h-5">{icon}</div>
-      <div className="min-w-0">
-        <p className="text-lg sm:text-2xl font-bold text-white truncate">{value.toLocaleString()}</p>
-        <p className="text-[9px] sm:text-xs text-[#c7b696] truncate">{label}</p>
-      </div>
-    </div>
-  );
-}
-
-function DetailRow({ label, value }: { label: string; value?: string | null }) {
-  return (
-    <div className="flex items-center justify-between text-xs text-[#c7b696] py-1">
-      <span className="uppercase tracking-wide">{label}</span>
-      <span className="text-white font-semibold text-right max-w-[60%] truncate">{value || "—"}</span>
-    </div>
-  );
-}
-
-function formatDate(value?: string | null) {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-function formatDateTime(value?: string | null) {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function SelectedJsaDetail({
-  record,
-  onClose,
-  isFullscreen,
-  onToggleFullscreen,
-}: {
-  record: AdminJsaRow;
-  onClose: () => void;
-  isFullscreen: boolean;
-  onToggleFullscreen: () => void;
-}) {
-  const ownerName = record.user_name || record.user_email || record.user_id;
-  const ownerEmail = record.user_email || record.user_id || "Unknown";
-  const jobs = (record.jobs_performed as JobSelection[] | undefined) ?? [];
-  const weather = (record.weather_conditions as WeatherPayload | undefined) || {
-    conditions: {},
-    modifiers: {},
-  };
-  const weatherConditions = getActiveLabels(weather.conditions, WEATHER_CONDITIONS);
-  const weatherModifiers = getActiveLabels(weather.modifiers, WEATHER_MODIFIERS);
-  const hazardLabels = getActiveLabels(record.hazards_present, HAZARD_ITEMS);
-  const trafficHazards = getActiveLabels(record.traffic_hazards, TRAFFIC_HAZARDS);
-  const trafficSetup = getActiveLabels(record.traffic_setup, TRAFFIC_SETUP);
-  const spanEntries = (record.spans as JsaSpan[] | undefined) ?? [];
-
-  return (
-    <div className={`space-y-5 text-sm text-[#fdf4db]/90 ${isFullscreen ? "p-6 max-w-4xl mx-auto" : ""}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-[#211c15] rounded-2xl border border-[#f6dcb2]/30">
-            <ClipboardList className="w-5 h-5 text-[#f4c979]" />
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-wide text-[#c7b696]">JSA Details</p>
-            <p className="text-lg font-semibold text-white">{record.work_location || "Untitled location"}</p>
-            <p className="text-xs text-[#c7b696]">{record.circuit_number || "No circuit noted"}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onToggleFullscreen}
-            className="p-2 rounded-lg bg-[#050402]/70 border border-[#f4c979]/25 text-[#f4c979] hover:bg-[#f4c979]/10 transition-all"
-            title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
-          >
-            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-2 rounded-lg bg-[#050402]/70 border border-[#f4c979]/25 text-[#c7b696] hover:text-white hover:bg-[#f4c979]/10 transition-all"
-            title="Close"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      <div className={`space-y-4 ${isFullscreen ? "grid md:grid-cols-2 gap-4 space-y-0" : ""}`}>
-        <DetailCard title="Owner & Job" icon={<User className="w-4 h-4" />}>
-          <div className="grid grid-cols-1 gap-1 text-xs text-[#f0e2c7]">
-            <DetailRow label="Owner" value={ownerName} />
-            <DetailRow label="Email" value={ownerEmail} />
-            <DetailRow label="Job Date" value={formatDate(record.job_date)} />
-            <DetailRow label="Call Times" value={`${record.call_in_time || "—"} → ${record.call_out_time || "—"}`} />
-            <DetailRow label="Status" value={record.status} />
-            <DetailRow label="Updated" value={formatDateTime(record.updated_at)} />
-            <DetailRow label="Driver Signature" value={record.employee_signature?.trim() || "—"} />
-          </div>
-        </DetailCard>
-
-        <DetailCard title="Emergency & Supervisors" icon={<Shield className="w-4 h-4" />}>
-          <div className="grid grid-cols-1 gap-1 text-xs text-[#f0e2c7]">
-            <DetailRow label="Nearest Hospital" value={record.nearest_hospital || "—"} />
-            <DetailRow label="Nearest Clinic" value={record.nearest_clinic || "—"} />
-            <DetailRow label="OC Contact" value={record.oc_contact || "—"} />
-            <DetailRow label="DOC Contact" value={record.doc_contact || "—"} />
-            <DetailRow label="GF Contact" value={record.gf_contact || "—"} />
-            <DetailRow label="Safety Contact" value={record.safety_contact || "—"} />
-          </div>
-        </DetailCard>
-
-        <DetailCard title="Jobs & Weather" icon={<Thermometer className="w-4 h-4" />}>
-          <ChipSection title="Jobs Performed" chips={jobs.map((job) => job.label ?? job.key)} emptyText="No jobs selected." />
-          <ChipSection title="Conditions" chips={weatherConditions} />
-          <ChipSection title="Surface" chips={weatherModifiers} />
-          <p className="text-xs text-[#f0e2c7] pt-2">
-            <span className="font-semibold text-white">Weather hazards: </span>
-            {record.weather_hazards?.trim() || "None provided."}
-          </p>
-        </DetailCard>
-
-        <DetailCard title="Hazards & Traffic" icon={<AlertTriangle className="w-4 h-4" />}>
-          <ChipSection title="Electrical / Structural" chips={hazardLabels} emptyText="No hazards flagged." />
-          <ChipSection title="Traffic Hazards" chips={trafficHazards} emptyText="No traffic hazards flagged." />
-          <ChipSection title="Work Zone Setup" chips={trafficSetup} emptyText="No setup details flagged." />
-        </DetailCard>
-
-        <DetailCard title="Span Walk-through" icon={<Wind className="w-4 h-4" />} className={isFullscreen ? "md:col-span-2" : ""}>
-          {spanEntries.length === 0 ? (
-            <p className="text-xs text-[#c7b696]">No spans documented.</p>
-          ) : (
-            <div className={`grid gap-3 ${isFullscreen ? "md:grid-cols-2 lg:grid-cols-3" : ""}`}>
-              {spanEntries.map((span) => (
-                <div
-                  key={span.spanNumber}
-                  className="rounded-2xl border border-[#f6dcb2]/20 bg-[#120f0c]/70 p-3 text-xs text-[#fdf4db]/85 space-y-1"
-                >
-                  <div className="flex items-center justify-between text-[#f0e2c7]">
-                    <span className="font-semibold text-white">Span #{span.spanNumber}</span>
-                    <span className="text-[#c7b696]">{span.location || "No location"}</span>
-                  </div>
-                  <p>
-                    <span className="text-[#c7b696] uppercase tracking-wide">Hazards:</span> {span.hazards?.trim() || "None"}
-                  </p>
-                  <p>
-                    <span className="text-[#c7b696] uppercase tracking-wide">Mitigation:</span>{" "}
-                    {span.mitigation?.trim() || "None"}
-                  </p>
-                  {span.initials && (
-                    <p className="text-[#c7b696]">
-                      Initials: <span className="text-white">{span.initials}</span>
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </DetailCard>
-
-        <DetailCard title="Notes & Signature" icon={<AlignLeft className="w-4 h-4" />} className={isFullscreen ? "md:col-span-2" : ""}>
-          <p className="text-xs text-[#f0e2c7]">
-            <span className="font-semibold text-white">Signature:</span> {record.employee_signature || "Not captured"}
-          </p>
-          <p className="text-xs text-[#c7b696] mt-2">
-            <span className="font-semibold text-white">Notes:</span>{" "}
-            {record.notes?.trim() || "No notes provided for this JSA."}
-          </p>
-        </DetailCard>
-      </div>
-    </div>
-  );
-}
-
-function MobileJsaCard({
-  record,
-  onSelect,
-  isSelected,
-}: {
-  record: AdminJsaRow;
-  onSelect: () => void;
-  isSelected: boolean;
-}) {
-  return (
-    <div
-      onClick={onSelect}
-      className={`rounded-xl sm:rounded-2xl border ${
-        isSelected ? "border-[#f4c979] bg-[#f4c979]/5 border-l-2 border-l-[#f4c979]" : "border-[#f6dcb2]/20"
-      } bg-[#120f0c]/70 p-3 sm:p-4 space-y-2.5 sm:space-y-3 shadow-lg shadow-black/30 cursor-pointer transition-all active:scale-[0.98] active:bg-[#f4c979]/5`}
-    >
-      <div className="flex items-start justify-between gap-2 sm:gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-[9px] sm:text-xs uppercase tracking-[0.2em] sm:tracking-[0.3em] text-[#f4c979]/80 mb-0.5 sm:mb-1">{formatDate(record.job_date)}</p>
-          <p className="text-sm sm:text-base font-semibold text-white truncate">{record.work_location || "Untitled location"}</p>
-          <p className="text-[10px] sm:text-xs text-[#c7b696] truncate">{record.circuit_number || "Circuit pending"}</p>
-        </div>
-        <span
-          className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-[0.65rem] font-semibold flex-shrink-0 ${
-            statusBadge[record.status || "draft"] || statusBadge.draft
-          }`}
-        >
-          {record.status === "completed" ? <CheckCircle2 className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> : <FileEdit className="w-2.5 h-2.5 sm:w-3 sm:h-3" />}
-          <span className="hidden xs:inline">{record.status || "draft"}</span>
-        </span>
-      </div>
-
-      <div className="text-[10px] sm:text-xs text-[#c7b696] space-y-1 sm:space-y-1.5">
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <User className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#f4c979] flex-shrink-0" />
-          <span className="text-white/90 truncate">{record.user_name || record.user_email || record.user_id}</span>
-        </div>
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <User className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#9cf6d2] flex-shrink-0" />
-          <span className="text-white/80 truncate">Signer: {record.employee_signature?.trim() || "—"}</span>
-        </div>
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#9cf6d2] flex-shrink-0" />
-          <span className="truncate">{formatDateTime(record.updated_at || record.created_at)}</span>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-end pt-1.5 sm:pt-2">
-        <span className="inline-flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold text-[#f4c979]">
-          {isSelected ? "Selected" : "View"}
-          <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function DetailCard({
-  title,
-  icon,
-  children,
-  className = "",
-}: {
-  title: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div className={`rounded-2xl border border-[#f6dcb2]/20 bg-[#120f0c]/70 p-4 space-y-3 ${className}`}>
-      <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-[#d3c2a1]">
-        {icon}
-        {title}
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function ChipSection({
-  title,
-  chips,
-  emptyText = "No data provided.",
-}: {
-  title: string;
-  chips: string[];
-  emptyText?: string;
-}) {
-  return (
-    <div className="space-y-2">
-      <p className="text-[0.65rem] uppercase tracking-wide text-[#d3c2a1]">{title}</p>
-      {chips.length === 0 ? (
-        <p className="text-xs text-[#c7b696]">{emptyText}</p>
-      ) : (
-        <div className="flex flex-wrap gap-1.5">
-          {chips.map((chip) => (
-            <span
-              key={chip}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.65rem] text-[#fef3d1] bg-[#2b251b]/80 border border-[#f6dcb2]/30"
-            >
-              {chip}
-            </span>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function getActiveLabels(map: Record<string, boolean> | null | undefined, catalog: { key: string; label: string }[]) {
-  if (!map) return [];
-  return catalog.filter((item) => map[item.key]).map((item) => item.label);
 }

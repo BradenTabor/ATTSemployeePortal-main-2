@@ -1,16 +1,25 @@
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { CONFIG } from "../../lib/config";
 import { logger } from "../../lib/logger";
-import { toast } from "../../lib/toast";
+import { formToast } from "../../lib/formToast";
 import { DateField, TimeField } from "../../components/forms/GlassyPickers";
 import { CalendarDays, Clock } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
+import { FormSuccessCelebration } from "../../components/forms/FormSuccessCelebration";
+import {
+  trackFormStarted,
+  trackFormSubmitted,
+  trackFormSubmitError,
+  createFormTimer,
+} from "../../lib/telemetry";
 
 export default function RequestTimeOff() {
-  const { user } = useAuth();
+  const { user, fullName: userFullName } = useAuth();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -28,11 +37,23 @@ export default function RequestTimeOff() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">(
     "idle"
   );
+  
+  // Success celebration state
+  const [showCelebration, setShowCelebration] = useState(false);
   const hasFullRange =
     Boolean(formData.startDate) &&
     Boolean(formData.endDate) &&
     Boolean(startTime) &&
     Boolean(endTime);
+
+  // Telemetry: track form completion time
+  const formTimer = useRef(createFormTimer());
+  
+  // Track form_started on mount
+  useEffect(() => {
+    trackFormStarted({ form_type: 'rto' });
+    formTimer.current.reset();
+  }, []);
 
     // 🔹 Load current user from Supabase and populate email
   useEffect(() => {
@@ -144,9 +165,10 @@ export default function RequestTimeOff() {
     );
   }, [startTime, endTime, formData.startDate, formData.endDate]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submitForm = useCallback(async () => {
     setStatus("loading");
+    formToast.submitting("Submitting your time-off request...");
+
     try {
       // 1. Insert to Supabase FIRST and get the record ID
       const { data: insertedRecord, error } = await supabase
@@ -198,8 +220,18 @@ export default function RequestTimeOff() {
         logger.warn("Webhook failed but record was saved:", insertedRecord.id);
       }
 
+      // Telemetry: track successful submission with duration
+      trackFormSubmitted({
+        form_type: 'rto',
+        duration_seconds: formTimer.current.getDuration(),
+      });
+
+      // Dismiss loading toast before showing celebration
+      formToast.dismiss();
+
       setStatus("success");
-      toast.success("Time off request submitted successfully!");
+      
+      // Reset form
       setFormData({
         fullName: "",
         email: "",
@@ -212,14 +244,40 @@ export default function RequestTimeOff() {
       setStartTime("");
       setEndTime("");
       setTotalDuration("");
-      setTimeout(() => setStatus("idle"), 3000);
+      
+      // Show success celebration
+      setShowCelebration(true);
     } catch (err) {
       logger.error("Submission error:", err);
       setStatus("error");
-      toast.error("Something went wrong. Please try again.");
+      const errorMessage = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      formToast.error(
+        "Submission Failed",
+        errorMessage,
+        { onRetry: () => submitForm() }
+      );
+      
+      // Telemetry: track server/network error
+      trackFormSubmitError({
+        form_type: 'rto',
+        error_code: err instanceof Error && err.message.includes('network') ? 'NETWORK_ERROR' : 'SERVER_ERROR',
+      });
+      
       setTimeout(() => setStatus("idle"), 3000);
     }
+  }, [formData, startTime, endTime, totalDuration, user?.id]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await submitForm();
   };
+  
+  // Handle celebration continue
+  const handleCelebrationContinue = useCallback(() => {
+    setShowCelebration(false);
+    setStatus("idle");
+    navigate("/dashboard");
+  }, [navigate]);
 
   return (
     <DashboardLayout title="Request Time Off">
@@ -426,6 +484,16 @@ export default function RequestTimeOff() {
 
         </form>
       </motion.div>
+      
+      {/* Success Celebration */}
+      <FormSuccessCelebration
+        isVisible={showCelebration}
+        formType="dvir" // Using 'dvir' for green theme since RTO doesn't have a specific type
+        title="Request Submitted!"
+        message="Your time-off request has been submitted and is pending approval. You'll be notified once it's reviewed."
+        onContinue={handleCelebrationContinue}
+        userName={userFullName || undefined}
+      />
     </DashboardLayout>
   );
 }
