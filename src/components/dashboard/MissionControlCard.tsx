@@ -87,6 +87,29 @@ function getTodayDateString(): string {
   return `${year}-${month}-${day}`;
 }
 
+/**
+ * Get UTC ISO timestamps for the start and end of a Chicago date.
+ */
+function getChicagoDayBoundsUtc(chicagoDate: string): { startUtc: string; endUtc: string } {
+  const startChicago = new Date(`${chicagoDate}T00:00:00`);
+  const endChicago = new Date(`${chicagoDate}T00:00:00`);
+  endChicago.setDate(endChicago.getDate() + 1);
+  
+  const startInChicago = new Date(startChicago.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+  const endInChicago = new Date(endChicago.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+  
+  const startOffsetMs = startChicago.getTime() - startInChicago.getTime();
+  const endOffsetMs = endChicago.getTime() - endInChicago.getTime();
+  
+  const startUtc = new Date(startChicago.getTime() + startOffsetMs);
+  const endUtc = new Date(endChicago.getTime() + endOffsetMs);
+  
+  return {
+    startUtc: startUtc.toISOString(),
+    endUtc: endUtc.toISOString(),
+  };
+}
+
 function getTimeUntilCutoff(): { hours: number; minutes: number; isPast: boolean; urgencyLevel: 'calm' | 'warning' | 'urgent' | 'missed' } {
   const now = new Date();
   const chicagoNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
@@ -759,11 +782,8 @@ function MissionControlCardComponent({ onComplianceChange }: MissionControlCardP
     
     const todayDate = getTodayDateString();
     
-    // Calculate tomorrow for proper JSA timestamp boundary
-    const today = new Date(todayDate);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowDate = tomorrow.toISOString().slice(0, 10);
+    // Get proper UTC boundaries for the Chicago date (handles timezone correctly)
+    const { startUtc, endUtc } = getChicagoDayBoundsUtc(todayDate);
     
     try {
       const [dvirResult, equipmentResult, jsaResult, rewardsResult] = await Promise.all([
@@ -779,12 +799,13 @@ function MissionControlCardComponent({ onComplianceChange }: MissionControlCardP
           .eq('user_id', user.id)
           .eq('inspection_date', todayDate)
           .limit(1),
+        // JSA uses created_at (timestamp in UTC) - query using proper UTC bounds for Chicago day
         supabase
           .from('daily_jsa')
           .select('id')
           .eq('user_id', user.id)
-          .gte('created_at', `${todayDate}T00:00:00`)
-          .lt('created_at', `${tomorrowDate}T00:00:00`)
+          .gte('created_at', startUtc)
+          .lt('created_at', endUtc)
           .limit(1),
         supabase
           .from('announcement_rewards')

@@ -23,6 +23,7 @@ import { DraftRecoveryModal } from "../../components/forms/DraftRecoveryModal";
 import { FormSuccessCelebration } from "../../components/forms/FormSuccessCelebration";
 import { useAuth } from "../../contexts/AuthContext";
 import { useComplianceToast, type RemainingForm } from "../../hooks/useComplianceToast";
+import { useInvalidateCompliance } from "../../hooks/queries/useComplianceQuery";
 import {
   trackFormStarted,
   trackFormSubmitted,
@@ -88,6 +89,9 @@ export default function DVIRForm() {
     FullCelebration, 
     celebrationProps 
   } = useComplianceToast();
+  
+  // Invalidate compliance cache to update dashboard immediately after submission
+  const invalidateCompliance = useInvalidateCompliance();
   
   // Previous mileage for validation (not persisted - fetched from DB)
   const [previousMileage, setPreviousMileage] = useState<number | null>(null);
@@ -814,6 +818,9 @@ export default function DVIRForm() {
       // ✅ Clear draft after successful submission
       clearDraft();
       markAsSaved();
+
+      // ✅ Invalidate compliance cache so dashboard updates immediately
+      invalidateCompliance();
 
       // ✅ Check compliance status and get remaining forms for nudge
       const { allComplete, remaining } = await checkAndCelebrate('dvir');

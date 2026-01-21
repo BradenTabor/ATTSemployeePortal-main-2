@@ -70,6 +70,30 @@ function getTodayDateString(): string {
   return `${year}-${month}-${day}`;
 }
 
+/**
+ * Get UTC ISO timestamps for the start and end of a Chicago date.
+ * This properly handles timezone conversion for querying timestamps stored in UTC.
+ */
+function getChicagoDayBoundsUtc(chicagoDate: string): { startUtc: string; endUtc: string } {
+  const startChicago = new Date(`${chicagoDate}T00:00:00`);
+  const endChicago = new Date(`${chicagoDate}T00:00:00`);
+  endChicago.setDate(endChicago.getDate() + 1);
+  
+  const startInChicago = new Date(startChicago.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+  const endInChicago = new Date(endChicago.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+  
+  const startOffsetMs = startChicago.getTime() - startInChicago.getTime();
+  const endOffsetMs = endChicago.getTime() - endInChicago.getTime();
+  
+  const startUtc = new Date(startChicago.getTime() + startOffsetMs);
+  const endUtc = new Date(endChicago.getTime() + endOffsetMs);
+  
+  return {
+    startUtc: startUtc.toISOString(),
+    endUtc: endUtc.toISOString(),
+  };
+}
+
 export interface UseComplianceToastReturn {
   /** Check compliance status and trigger appropriate celebration */
   checkAndCelebrate: (justSubmitted: ComplianceFormType) => Promise<{
@@ -133,34 +157,30 @@ export function useComplianceToast(): UseComplianceToastReturn {
     }
 
     const todayDate = getTodayDateString();
-    const today = new Date(todayDate);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowDate = tomorrow.toISOString().slice(0, 10);
+    const { startUtc, endUtc } = getChicagoDayBoundsUtc(todayDate);
 
     const [dvirResult, equipmentResult, jsaResult] = await Promise.all([
-      // DVIR uses created_at (no report_date column exists in schema)
+      // DVIR uses report_date (date column in America/Chicago timezone)
       supabase
         .from('dvir_reports')
         .select('id')
         .eq('user_id', userId)
-        .gte('created_at', `${todayDate}T00:00:00`)
-        .lt('created_at', `${tomorrowDate}T00:00:00`)
+        .eq('report_date', todayDate)
         .limit(1),
-      // Equipment uses inspection_date
+      // Equipment uses inspection_date (date column in America/Chicago timezone)
       supabase
         .from('daily_equipment_inspections')
         .select('id')
         .eq('user_id', userId)
         .eq('inspection_date', todayDate)
         .limit(1),
-      // JSA uses created_at
+      // JSA uses created_at (timestamp in UTC) - query using proper UTC bounds for Chicago day
       supabase
         .from('daily_jsa')
         .select('id')
         .eq('user_id', userId)
-        .gte('created_at', `${todayDate}T00:00:00`)
-        .lt('created_at', `${tomorrowDate}T00:00:00`)
+        .gte('created_at', startUtc)
+        .lt('created_at', endUtc)
         .limit(1),
     ]);
 

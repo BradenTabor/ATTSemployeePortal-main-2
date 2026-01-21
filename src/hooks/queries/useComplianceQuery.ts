@@ -41,40 +41,70 @@ function getTodayDateString(): string {
   return `${year}-${month}-${day}`;
 }
 
+/**
+ * Get UTC ISO timestamps for the start and end of a Chicago date.
+ * This properly handles timezone conversion for querying timestamps stored in UTC.
+ * 
+ * For example, if chicagoDate is "2026-01-20":
+ * - startUtc: midnight Jan 20 Chicago = 6 AM Jan 20 UTC (during CST)
+ * - endUtc: midnight Jan 21 Chicago = 6 AM Jan 21 UTC (during CST)
+ */
+function getChicagoDayBoundsUtc(chicagoDate: string): { startUtc: string; endUtc: string } {
+  // Parse the date string and create a Date for midnight in Chicago
+  // We use a trick: create the date string with Chicago timezone and let JS convert to UTC
+  const startChicago = new Date(`${chicagoDate}T00:00:00`);
+  const endChicago = new Date(`${chicagoDate}T00:00:00`);
+  endChicago.setDate(endChicago.getDate() + 1);
+  
+  // Get the offset for Chicago on these dates (handles DST)
+  const startInChicago = new Date(startChicago.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+  const endInChicago = new Date(endChicago.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+  
+  // Calculate the UTC offset in milliseconds
+  const startOffsetMs = startChicago.getTime() - startInChicago.getTime();
+  const endOffsetMs = endChicago.getTime() - endInChicago.getTime();
+  
+  // Adjust to get true UTC midnight for Chicago
+  const startUtc = new Date(startChicago.getTime() + startOffsetMs);
+  const endUtc = new Date(endChicago.getTime() + endOffsetMs);
+  
+  return {
+    startUtc: startUtc.toISOString(),
+    endUtc: endUtc.toISOString(),
+  };
+}
+
 // ============================================================================
 // FETCH FUNCTION
 // ============================================================================
 
 async function fetchComplianceStatus(userId: string, todayDate: string): Promise<ComplianceStatus> {
-  const today = new Date(todayDate);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowDate = tomorrow.toISOString().slice(0, 10);
+  // Get proper UTC boundaries for the Chicago date (handles timezone correctly)
+  const { startUtc, endUtc } = getChicagoDayBoundsUtc(todayDate);
 
   // Run all 3 queries in parallel - this is still 3 network calls but they execute concurrently
   const [dvirResult, equipmentResult, jsaResult] = await Promise.all([
-    // DVIR uses created_at (no report_date column exists in schema)
+    // DVIR uses report_date (date column in America/Chicago timezone)
     supabase
       .from('dvir_reports')
       .select('id')
       .eq('user_id', userId)
-      .gte('created_at', `${todayDate}T00:00:00`)
-      .lt('created_at', `${tomorrowDate}T00:00:00`)
+      .eq('report_date', todayDate)
       .limit(1),
-    // Equipment uses inspection_date
+    // Equipment uses inspection_date (date column in America/Chicago timezone)
     supabase
       .from('daily_equipment_inspections')
       .select('id')
       .eq('user_id', userId)
       .eq('inspection_date', todayDate)
       .limit(1),
-    // JSA uses created_at
+    // JSA uses created_at (timestamp in UTC) - query using proper UTC bounds for Chicago day
     supabase
       .from('daily_jsa')
       .select('id')
       .eq('user_id', userId)
-      .gte('created_at', `${todayDate}T00:00:00`)
-      .lt('created_at', `${tomorrowDate}T00:00:00`)
+      .gte('created_at', startUtc)
+      .lt('created_at', endUtc)
       .limit(1),
   ]);
 
@@ -163,8 +193,11 @@ export function useInvalidateCompliance() {
 
   return useCallback(() => {
     if (!userId) return;
+    // Force immediate refetch by using refetchType: 'all'
+    // This ensures the dashboard updates right away, not just when the query is next accessed
     queryClient.invalidateQueries({
       queryKey: queryKeys.compliance.today(userId, todayDate),
+      refetchType: 'all',
     });
   }, [queryClient, userId, todayDate]);
 }

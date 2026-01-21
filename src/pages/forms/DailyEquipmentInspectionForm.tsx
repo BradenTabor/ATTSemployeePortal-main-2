@@ -19,6 +19,7 @@ import { DraftRecoveryModal } from "../../components/forms/DraftRecoveryModal";
 import { AutoSaveIndicator } from "../../components/forms/AutoSaveIndicator";
 import { FormSuccessCelebration } from "../../components/forms/FormSuccessCelebration";
 import { useComplianceToast, type RemainingForm } from "../../hooks/useComplianceToast";
+import { useInvalidateCompliance } from "../../hooks/queries/useComplianceQuery";
 import {
   trackFormStarted,
   trackFormSubmitted,
@@ -172,11 +173,21 @@ export interface EquipmentFormState {
   specificChecklist: Record<string, ChecklistValue>;
 }
 
+// Get today's date in America/Chicago timezone (matches compliance queries)
+function getTodayChicagoDate(): string {
+  const now = new Date();
+  const chicagoDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+  const year = chicagoDate.getFullYear();
+  const month = String(chicagoDate.getMonth() + 1).padStart(2, '0');
+  const day = String(chicagoDate.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 const createInitialEquipmentFormState = (): EquipmentFormState => ({
   submittedBy: "",
   equipmentType: "",
   equipmentNumber: "",
-  inspectionDate: new Date().toISOString().slice(0, 10),
+  inspectionDate: getTodayChicagoDate(),
   template: "",
   notes: "",
   generalChecklist: {},
@@ -204,6 +215,9 @@ export default function DailyEquipmentInspectionForm() {
     FullCelebration, 
     celebrationProps 
   } = useComplianceToast();
+  
+  // Invalidate compliance cache to update dashboard immediately after submission
+  const invalidateCompliance = useInvalidateCompliance();
 
   // Photos state (Files can't be persisted to localStorage)
   const [photos, setPhotos] = useState<PhotoState>({});
@@ -381,7 +395,7 @@ export default function DailyEquipmentInspectionForm() {
       const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
       const safeEquipment = form.equipmentNumber.trim().replace(/\s+/g, "-").toLowerCase() || "equipment";
       const safeUserBucket = user?.id ?? "anonymous";
-      const safeDate = form.inspectionDate || new Date().toISOString().slice(0, 10);
+      const safeDate = form.inspectionDate || getTodayChicagoDate();
       const uniqueId =
         typeof globalThis.crypto?.randomUUID === "function"
           ? globalThis.crypto.randomUUID()
@@ -500,6 +514,9 @@ export default function DailyEquipmentInspectionForm() {
       // Clear draft after successful submission
       clearDraft();
       markAsSaved();
+      
+      // Invalidate compliance cache so dashboard updates immediately
+      invalidateCompliance();
       
       // Check compliance status and get remaining forms for nudge
       const { allComplete, remaining } = await checkAndCelebrate('equipment');

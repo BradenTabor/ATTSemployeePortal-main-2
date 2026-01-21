@@ -11,6 +11,7 @@ import { SmartDefaultsPanel } from "../../components/forms/SmartDefaultsPanel";
 import { FormSuccessCelebration } from "../../components/forms/FormSuccessCelebration";
 import { DraftRecoveryModal } from "../../components/forms/DraftRecoveryModal";
 import { useComplianceToast, type RemainingForm } from "../../hooks/useComplianceToast";
+import { useInvalidateCompliance } from "../../hooks/queries/useComplianceQuery";
 import {
   trackFormStarted,
   trackFormSubmitted,
@@ -366,6 +367,9 @@ export default function DailyJSAForm() {
     FullCelebration, 
     celebrationProps 
   } = useComplianceToast();
+  
+  // Invalidate compliance cache to update dashboard immediately after submission
+  const invalidateCompliance = useInvalidateCompliance();
 
   // Smart Defaults: Telemetry tracking
   const formStartTime = useRef(Date.now());
@@ -947,6 +951,9 @@ export default function DailyJSAForm() {
         setPersistedStatus(targetStatus);
 
         if (targetStatus === "completed") {
+          // Invalidate compliance cache so dashboard updates immediately
+          invalidateCompliance();
+          
           // Check compliance status and get remaining forms for nudge
           const { allComplete, remaining } = await checkAndCelebrate('jsa');
           setRemainingForms(remaining);
@@ -983,7 +990,7 @@ export default function DailyJSAForm() {
     } finally {
       setSaving(false);
     }
-  }, [user, form, isEditMode, id, persistedStatus, navigate, suggestions, clearDraft, markAsSaved, checkAndCelebrate]);
+  }, [user, form, isEditMode, id, persistedStatus, navigate, suggestions, clearDraft, markAsSaved, checkAndCelebrate, invalidateCompliance]);
 
   const handleComplete = useCallback(async () => {
     // Use the new save mode to complete
