@@ -465,7 +465,7 @@ export default function ExportReportsPanel({
                       type="date"
                       value={dateFrom}
                       onChange={(e) => setDateFrom(e.target.value)}
-                      className="w-full bg-black/30 border border-white/10 rounded-lg pl-7 sm:pl-9 pr-2 sm:pr-3 py-2.5 sm:py-2 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500/50 [color-scheme:dark] min-h-[40px] sm:min-h-[38px]"
+                      className="w-full bg-black/30 border border-white/10 rounded-lg pl-7 sm:pl-9 pr-2 sm:pr-3 py-2.5 sm:py-2 text-xs sm:text-sm text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500/50 [color-scheme:dark] min-h-[44px] sm:min-h-[38px]"
                     />
                   </div>
                 </div>
@@ -479,7 +479,7 @@ export default function ExportReportsPanel({
                       type="date"
                       value={dateTo}
                       onChange={(e) => setDateTo(e.target.value)}
-                      className="w-full bg-black/30 border border-white/10 rounded-lg pl-7 sm:pl-9 pr-2 sm:pr-3 py-2.5 sm:py-2 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500/50 [color-scheme:dark] min-h-[40px] sm:min-h-[38px]"
+                      className="w-full bg-black/30 border border-white/10 rounded-lg pl-7 sm:pl-9 pr-2 sm:pr-3 py-2.5 sm:py-2 text-xs sm:text-sm text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500/50 [color-scheme:dark] min-h-[44px] sm:min-h-[38px]"
                     />
                   </div>
                 </div>

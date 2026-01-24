@@ -61,7 +61,7 @@ function PartInput({ part, index, onChange, onRemove }: PartInputProps) {
           placeholder="Part name"
           value={part.part_name}
           onChange={(e) => onChange(index, { ...part, part_name: e.target.value })}
-          className="col-span-2 sm:col-span-1 bg-black/30 border border-white/10 text-white text-xs sm:text-sm rounded-lg px-2.5 sm:px-3 py-2.5 sm:py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all min-h-[40px] sm:min-h-[38px]"
+          className="col-span-2 sm:col-span-1 bg-black/30 border border-white/10 text-white text-xs sm:text-sm rounded-lg px-2.5 sm:px-3 py-2.5 sm:py-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/50 transition-all min-h-[44px] sm:min-h-[38px]"
         />
         <input
           type="number"
@@ -69,20 +69,20 @@ function PartInput({ part, index, onChange, onRemove }: PartInputProps) {
           min={1}
           value={part.quantity || ''}
           onChange={(e) => onChange(index, { ...part, quantity: parseInt(e.target.value) || 1 })}
-          className="bg-black/30 border border-white/10 text-white text-xs sm:text-sm rounded-lg px-2.5 sm:px-3 py-2.5 sm:py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all min-h-[40px] sm:min-h-[38px]"
+          className="bg-black/30 border border-white/10 text-white text-xs sm:text-sm rounded-lg px-2.5 sm:px-3 py-2.5 sm:py-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/50 transition-all min-h-[44px] sm:min-h-[38px]"
         />
         <input
           type="text"
           placeholder="Part #"
           value={part.part_number || ''}
           onChange={(e) => onChange(index, { ...part, part_number: e.target.value })}
-          className="bg-black/30 border border-white/10 text-white text-xs sm:text-sm rounded-lg px-2.5 sm:px-3 py-2.5 sm:py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all min-h-[40px] sm:min-h-[38px]"
+          className="bg-black/30 border border-white/10 text-white text-xs sm:text-sm rounded-lg px-2.5 sm:px-3 py-2.5 sm:py-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/50 transition-all min-h-[44px] sm:min-h-[38px]"
         />
       </div>
       <button
         type="button"
         onClick={() => onRemove(index)}
-        className="p-2.5 sm:p-2 rounded-lg text-red-400/60 hover:text-red-400 active:text-red-300 hover:bg-red-500/10 active:bg-red-500/20 transition-colors min-h-[40px] sm:min-h-[38px]"
+        className="p-2.5 sm:p-2 rounded-lg text-red-400/60 hover:text-red-400 active:text-red-300 hover:bg-red-500/10 active:bg-red-500/20 transition-colors min-h-[44px] sm:min-h-[38px]"
       >
         <Trash2 className="w-4 h-4" />
       </button>
@@ -281,7 +281,7 @@ export default function RepairLogForm({
             onChange={(e) => setDescription(e.target.value)}
             placeholder="What was done? E.g., Replaced front brake pads..."
             rows={2}
-            className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all resize-none"
+            className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/50 transition-all resize-none"
           />
         </div>
         
@@ -297,7 +297,7 @@ export default function RepairLogForm({
                 value={mileageAtService}
                 onChange={(e) => setMileageAtService(e.target.value)}
                 placeholder="Current odometer"
-                className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg pl-3 pr-10 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all"
+                className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg pl-3 pr-10 py-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/50 transition-all"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-white/30">mi</span>
             </div>
@@ -315,7 +315,7 @@ export default function RepairLogForm({
                 type="date"
                 value={serviceDate}
                 onChange={(e) => setServiceDate(e.target.value)}
-                className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all [color-scheme:dark]"
+                className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg pl-9 pr-3 py-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/50 transition-all [color-scheme:dark]"
               />
             </div>
           </div>
@@ -335,7 +335,7 @@ export default function RepairLogForm({
               value={cost}
               onChange={(e) => setCost(e.target.value)}
               placeholder="0.00"
-              className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all"
+              className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg pl-9 pr-3 py-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/50 transition-all"
             />
           </div>
         </div>
@@ -390,7 +390,7 @@ export default function RepairLogForm({
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Any additional details..."
               rows={2}
-              className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all resize-none"
+              className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg pl-9 pr-3 py-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/50 transition-all resize-none"
             />
           </div>
         </div>

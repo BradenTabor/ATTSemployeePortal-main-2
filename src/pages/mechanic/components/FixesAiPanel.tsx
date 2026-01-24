@@ -144,7 +144,7 @@ export default function FixesAiPanel({
               onGenerate();
             }}
             disabled={isLoading}
-            className="p-2.5 sm:p-2 rounded-lg text-amber-400/60 hover:text-amber-400 active:text-amber-300 hover:bg-amber-500/10 active:bg-amber-500/20 disabled:opacity-50 transition-colors min-h-[40px] sm:min-h-[36px] min-w-[40px] sm:min-w-[36px] flex items-center justify-center"
+            className="p-2.5 sm:p-2 rounded-lg text-amber-400/60 hover:text-amber-400 active:text-amber-300 hover:bg-amber-500/10 active:bg-amber-500/20 disabled:opacity-50 transition-colors min-h-[44px] sm:min-h-[36px] min-w-[40px] sm:min-w-[36px] flex items-center justify-center"
             title="Regenerate summary"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
