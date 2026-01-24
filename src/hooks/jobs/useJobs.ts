@@ -35,15 +35,20 @@ export function useJobs(): UseJobsReturn {
       // Fetch jobs with milestones and crew assignments
       // NOTE: We can't use nested joins with user_profiles because it's a VIEW
       // So we fetch separately and join manually
+      // OPTIMIZATION: select specific columns + limit to prevent loading all jobs
       const { data: jobsData, error: jobsError } = await supabase
         .from('job_progress_trackers')
         .select(`
-          *,
-          milestones:job_milestones(*),
-          crew_assignments:job_crew_assignments(*),
-          progress_updates:job_progress_updates(*)
+          id, created_at, updated_at, created_by, job_name, job_location, job_description, 
+          job_specs, start_date, end_date, status, notes, tracking_type, circuit, 
+          estimated_total_spans, estimated_total_feet, span_progress_metric, 
+          job_group_id, work_site_id, crew_id,
+          milestones:job_milestones(id, job_id, name, target_date, completed, sort_order),
+          crew_assignments:job_crew_assignments(id, job_id, user_id, assigned_at, assigned_by),
+          progress_updates:job_progress_updates(id, job_id, date, spans_completed, feet_completed, notes)
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(50);
 
       if (jobsError) {
         logger.error('Failed to fetch jobs:', jobsError);

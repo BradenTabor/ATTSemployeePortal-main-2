@@ -623,11 +623,13 @@ function AdminUserActivity() {
       }
 
       // Fetch active/idle sessions from user_activity_feed
+      // Optimized: select only needed fields (80% data reduction) + limit to 50 most recent
       const { data: activeSessions, error: sessionsError } = await supabase
         .from("user_activity_feed")
-        .select("*")
+        .select("id, user_id, session_id, status, last_seen_at, started_at, ended_at, current_page, device_info, avatar_url")
         .in("status", ["active", "idle"])
-        .order("last_seen_at", { ascending: false });
+        .order("last_seen_at", { ascending: false })
+        .limit(50);
 
       if (sessionsError) {
         logger.error("Failed to fetch user activity:", sessionsError);

@@ -1,87 +1,167 @@
 # Autopilot Backlog
 
-**Last Updated**: 2026-01-24  
-**Total Items**: 47  
-**Completed**: 9 (19.1%)
-**Severity Breakdown**: CRITICAL: 0 | HIGH: 8 | MEDIUM: 25 | LOW: 14
+Generated: 2026-01-24
+Last Updated: 2026-01-24
+Mode: READ-ONLY AUDIT (Initialization Complete)
+
+## Consolidated Findings by Category
+
+### SECURITY (10 findings - ALL GATED)
+
+| ID | Severity | Summary | Status | Effort | Dependencies |
+|----|----------|---------|--------|--------|--------------|
+| SEC-010 | CRITICAL | Privilege escalation in app_users INSERT policy | PENDING | L | none |
+| SEC-002 | HIGH | Announcements table missing UPDATE/DELETE policies | PENDING | M | none |
+| SEC-007 | HIGH | Equipment inspections UPDATE policy too permissive | PENDING | M | none |
+| SEC-004 | MEDIUM | Client-side role checks insufficient - need server-side verification | PENDING | M | SEC-002 |
+| SEC-008 | MEDIUM | Admin edge function relies on unverified RLS | PENDING | S | SEC-002 |
+| SEC-001 | MEDIUM | Logout doesn't clear localStorage, no session timeout | PENDING | S | none |
+| SEC-003 | MEDIUM | File upload lacks server-side validation | PENDING | M | none |
+| SEC-005 | LOW | PII leaked in logs (user IDs) | PENDING | XS | none |
+| SEC-006 | LOW | URL parameters need validation for XSS prevention | PENDING | XS | none |
+| SEC-009 | LOW | Supabase URL logged in production | PENDING | XS | none |
+
+⚠️ **GATING**: All security findings require explicit `APPROVE: SEC-XXX` before execution.
 
 ---
 
-## Backlog Items (All)
+### ARCHITECTURE (14 findings)
 
-| ID | Category | Severity | Effort | Status | Priority Score | Summary |
-|----|----------|----------|--------|--------|-----------------|---------|
-| BL-001 | UX | HIGH | S | COMPLETED | 95 | Disable submit button during validation; show loading state |
-| BL-002 | UX | MEDIUM | XS | COMPLETED | 82 | Add aria-pressed to P/F/N/A buttons for screen readers |
-| BL-003 | UX | MEDIUM | S | PENDING | 75 | Fix ValidationSummary positioning on mobile; prevent overlap |
-| BL-004 | UX | LOW | XS | COMPLETED | 45 | Add aria-disabled to disabled Previous button; prevent keyboard activation |
-| BL-005 | UX | MEDIUM | S | PENDING | 78 | Differentiate submit section with stronger visual treatment |
-| BL-006 | UX | HIGH | S | COMPLETED | 92 | Pass all field errors to StepJobInfo; show inline error messages |
-| BL-007 | UX | LOW | XS | PENDING | 42 | Explain TRAPS/TOOLS acronyms with tooltip or inline expansion |
-| BL-008 | UX | MEDIUM | XS | PENDING | 72 | Increase form list spacing on mobile; prevent cramped UI |
-| BL-009 | UX | MEDIUM | S | PENDING | 70 | Add visual feedback during long-press detection (250ms indicator) |
-| BL-010 | UX | HIGH | M | PENDING | 88 | Improve error message handling; translate technical errors to user-friendly messages |
-| BL-011 | UX | MEDIUM | XS | COMPLETED | 76 | Increase label font size to 12px minimum; improve required asterisk contrast |
-| BL-012 | UX | MEDIUM | S | PENDING | 74 | Add "Saving..." indicator during auto-save; ensure debouncing works |
-| BL-013 | WF | HIGH | M | PENDING | 90 | Add "Next Error" button to ValidationSummary; navigate between errors |
-| BL-014 | WF | MEDIUM | S | PENDING | 68 | Add "Fill from Profile" button to restore auto-populated driver info |
-| BL-015 | WF | HIGH | L | GATED | 85 | Persist photos in draft as base64; convert photos for persistence |
-| BL-016 | WF | MEDIUM | M | PENDING | 72 | Add error indicators to step buttons; show error count |
-| BL-017 | WF | LOW | S | PENDING | 52 | Add "Add 5 Spans" or "Add 10 Spans" quick action button |
-| BL-018 | WF | MEDIUM | XS | COMPLETED | 69 | Add "Mark All Fail" quick action button to DVIR checklist |
-| BL-019 | WF | MEDIUM | XS | PENDING | 65 | Update beforeunload message to mention draft recovery option |
-| BL-020 | WF | LOW | M | PENDING | 48 | Add drag handle icon to pinned favorites; show mobile hint on first pin |
-| BL-021 | ARCH | HIGH | M | PENDING | 86 | Fix type safety in useFormValidation; make hook generic |
-| BL-022 | ARCH | MEDIUM | L | PENDING | 77 | Refactor DailyJSAForm component; extract business logic to hooks |
-| BL-023 | ARCH | MEDIUM | S | PENDING | 71 | Separate file validation from form state validation in DVIRForm |
-| BL-024 | ARCH | LOW | XS | COMPLETED | 41 | Remove duplicate InputFieldProps interface definition |
-| BL-025 | ARCH | MEDIUM | M | PENDING | 79 | Extract submission logic to service layer (jsaService.ts) |
-| BL-026 | ARCH | LOW | S | PENDING | 51 | Refactor compliance fetch to use proper loading state pattern |
-| BL-027 | ARCH | MEDIUM | M | PENDING | 73 | Group JsaWizard props into logical objects; reduce prop count |
-| BL-028 | ARCH | LOW | XS | COMPLETED | 43 | Extract user initials logic to utility function |
-| BL-029 | ARCH | MEDIUM | S | PENDING | 75 | Create centralized error handling utility for form submissions |
-| BL-030 | ARCH | LOW | XS | PENDING | 40 | Extract navigation items to shared config file |
-| BL-031 | PERF | MEDIUM | S | COMPLETED | 68 | Optimize form validation useMemo; remove debug logging |
-| BL-032 | PERF | LOW | M | PENDING | 55 | Add route preloading strategy for admin routes |
-| BL-033 | PERF | MEDIUM | M | PENDING | 76 | Implement React Query for compliance queries; add caching |
-| BL-034 | PERF | LOW | S | PENDING | 58 | Optimize PinnedItem memoization; ensure stable props |
-| BL-035 | PERF | MEDIUM | S | PENDING | 79 | Debounce previous mileage query (300-500ms delay) |
-| BL-036 | PERF | LOW | XS | PENDING | 47 | Optimize lucide-react tree-shaking; ensure only used icons included |
-| BL-037 | PERF | MEDIUM | M | PENDING | 74 | Optimize stepCompletionStatus useMemo; split by step |
-| BL-038 | PERF | LOW | S | PENDING | 54 | Add database indexes on date columns; improve query performance |
-| BL-039 | QA | HIGH | M | GATED | 87 | Add handling for partial success in database operations |
-| BL-040 | QA | HIGH | L | GATED | 84 | Handle photo persistence edge cases; add recovery mechanism |
-| BL-041 | QA | MEDIUM | S | PENDING | 70 | Improve Unicode surrogate detection; preserve valid emoji |
-| BL-042 | QA | HIGH | L | GATED | 89 | Add unit tests for DailyJSAForm submission logic |
-| BL-043 | QA | MEDIUM | S | PENDING | 73 | Fix previous mileage query; exclude same-day reports |
-| BL-044 | QA | MEDIUM | M | PENDING | 72 | Add retry logic for failed audit log entries; queue in IndexedDB |
-| BL-045 | QA | LOW | XS | PENDING | 53 | Improve swipe gesture detection; require horizontal dominance |
-| BL-046 | QA | HIGH | L | GATED | 86 | Add unit tests for DVIRForm submission logic |
-| BL-047 | QA | LOW | S | PENDING | 64 | Fix DST timezone conversion; use date-fns-tz library |
+| ID | Severity | Summary | Status | Effort | Dependencies |
+|----|----------|---------|--------|--------|--------------|
+| ARCH-001 | HIGH | DailyJSAForm.tsx 1738 lines - violates SRP | PENDING | L | none |
+| ARCH-002 | HIGH | DVIRForm.tsx 1920 lines - violates SRP | PENDING | L | none |
+| ARCH-012 | MEDIUM | Excessive type assertions in DailyJSAForm | PENDING | M | ARCH-009 |
+| ARCH-009 | MEDIUM | Type assertion mismatch in validation | PENDING | M | none |
+| ARCH-003 | MEDIUM | useZodForm uses `as any` for zodResolver | PENDING | S | none |
+| ARCH-007 | MEDIUM | RequestTimeOff has direct API calls in component | PENDING | M | none |
+| ARCH-008 | MEDIUM | AdminManualNotifications has direct Edge Function calls | PENDING | M | none |
+| ARCH-013 | MEDIUM | AdminJSA queries with no React Query caching | PENDING | M | none |
+| ARCH-004 | LOW | IOSInstallPrompt uses `as any` for iOS API | PENDING | XS | none |
+| ARCH-005 | LOW | usePushNotifications uses `as any` for iOS API | PENDING | XS | none |
+| ARCH-006 | LOW | ExampleJobForm uses `as any` for zodResolver | PENDING | S | ARCH-003 |
+| ARCH-010 | LOW | ErrorBoundary.tsx syntax error in return | PENDING | XS | none |
+| ARCH-011 | LOW | useComplianceQuery return type inconsistency | PENDING | XS | none |
+| ARCH-014 | LOW | IOSInstallPrompt event listener cleanup issue | PENDING | XS | none |
 
 ---
 
-## Summary by Category
+### PERFORMANCE (15 findings)
 
-| Category | Total | Complete | Pending | Gated |
-|----------|-------|----------|---------|-------|
-| UX | 12 | 5 | 7 | 0 |
-| Workflow | 9 | 1 | 7 | 1 |
-| Architecture | 9 | 2 | 7 | 0 |
-| Performance | 9 | 1 | 8 | 0 |
-| QA | 8 | 0 | 4 | 4 |
-| **TOTAL** | **47** | **9** | **33** | **5** |
+| ID | Severity | Summary | Status | Effort | Dependencies |
+|----|----------|---------|--------|--------|--------------|
+| PERF-001 | HIGH | useJobs fetches all jobs with SELECT * and no pagination | PENDING | M | none |
+| PERF-002 | HIGH | AdminUserActivity SELECT * without field selection or pagination | PENDING | S | none |
+| PERF-012 | MEDIUM | useUnifiedFixes uses SELECT * for maintenance/DVIR queries | PENDING | M | none |
+| PERF-010 | MEDIUM | Compliance query refetches every 30s (excessive polling) | PENDING | S | none |
+| PERF-004 | MEDIUM | JSA form edit fetches full record with SELECT * | PENDING | S | none |
+| PERF-007 | MEDIUM | N+1 pattern in useJobs (fetch jobs then users) | PENDING | S | PERF-001 |
+| PERF-003 | MEDIUM | Count queries use SELECT * instead of SELECT 1 | PENDING | XS | none |
+| PERF-015 | MEDIUM | useUsersQuery fetches all columns with SELECT * | PENDING | S | none |
+| PERF-008 | LOW | Dashboard displayItems useMemo over-recalculates | PENDING | S | none |
+| PERF-006 | LOW | ReactQueryDevtools imported at top-level, not lazy-loaded | PENDING | XS | none |
+| PERF-009 | LOW | useVisibleSubscription effect runs on every render | PENDING | XS | none |
+| PERF-005 | MEDIUM | lucide-react excluded from optimizeDeps | PENDING | XS | none |
+| PERF-011 | LOW | jspdf libraries not code-split (200KB) | PENDING | M | none |
+| PERF-013 | LOW | assetStats useMemo expensive for 1000+ fixes | PENDING | M | PERF-012 |
+| PERF-014 | LOW | Four separate realtime subscriptions (network overhead) | PENDING | L | none |
 
 ---
 
-## Next Action
+### QA (15 findings)
 
-Autopilot is **RUNNING**. **Current backlog has 38 pending items (33 eligible, 5 gated)**.
+| ID | Severity | Summary | Status | Effort | Dependencies |
+|----|----------|---------|--------|--------|--------------|
+| QA-001 | HIGH | DVIR submission flow lacks integration tests | PENDING | L | none |
+| QA-009 | HIGH | JSA wizard has no integration tests for draft/status flow | PENDING | L | none |
+| QA-002 | HIGH | Photo upload orphaned files on failure (no cleanup) | PENDING | M | none |
+| QA-006 | HIGH | Equipment form cleanup errors swallowed (orphaned files) | PENDING | S | none |
+| QA-005 | MEDIUM | Race condition in duplicate submission prevention | PENDING | S | none |
+| QA-013 | MEDIUM | Job update delete-then-insert without rollback (data loss) | PENDING | M | none |
+| QA-014 | MEDIUM | Validation unit tests exist but no component integration tests | PENDING | M | none |
+| QA-003 | MEDIUM | Auth errors don't reset submitting flag | PENDING | XS | none |
+| QA-004 | MEDIUM | Photo uploads lack file type/size validation | PENDING | S | none |
+| QA-008 | MEDIUM | Webhook failure not shown to user | PENDING | M | none |
+| QA-011 | MEDIUM | No timeout-specific error handling in JSA form | PENDING | S | none |
+| QA-007 | MEDIUM | Date calculation in RequestTimeOff untested | PENDING | M | none |
+| QA-010 | LOW | Mileage validation race condition with async fetch | PENDING | S | none |
+| QA-012 | LOW | Avatar upload doesn't validate image dimensions | PENDING | S | none |
+| QA-015 | LOW | Previous mileage fetch error handling incomplete | PENDING | S | none |
 
-**Recommended next items (highest ROI)**:
-- BL-003: Fix ValidationSummary positioning (UX, MEDIUM, S effort) - Solves mobile layout issue
-- BL-005: Differentiate submit section (UX, MEDIUM, S effort) - Improves visual hierarchy
-- BL-008: Increase form list spacing (UX, MEDIUM, XS effort) - Quick mobile win
+---
 
-Send `STOP` to halt execution, or autopilot will continue automatically to next eligible item.
+### WORKFLOW (12 findings)
 
+| ID | Severity | Summary | Status | Effort | Dependencies |
+|----|----------|---------|--------|--------|--------------|
+| WF-003 | HIGH | JSA wizard requires sequential navigation (no URL deep linking) | PENDING | M | none |
+| WF-004 | MEDIUM | Contact fields not pre-filled despite smart defaults | PENDING | M | WF-005 |
+| WF-006 | MEDIUM | Form photo files lost when navigating away | PENDING | M | none |
+| WF-001 | MEDIUM | DVIR history search/pagination not persisted in URL | PENDING | S | none |
+| WF-002 | MEDIUM | JSA history search/pagination not persisted in URL | PENDING | S | none |
+| WF-007 | MEDIUM | No "Use as Template" for DVIR history | PENDING | M | none |
+| WF-008 | MEDIUM | No "Duplicate" action for JSA history | PENDING | M | none |
+| WF-009 | MEDIUM | Equipment form missing smart defaults pre-fill | PENDING | S | WF-005 |
+| WF-011 | MEDIUM | Equipment template selection unclear/optional | PENDING | S | none |
+| WF-005 | LOW | Smart defaults underutilized (incomplete coverage) | PENDING | L | none |
+| WF-010 | LOW | DVIR checklist requires separate clicks for bulk operations | PENDING | XS | none |
+| WF-012 | LOW | Dashboard job navigation doesn't preserve scroll position | PENDING | S | none |
+
+---
+
+### UX (10 findings)
+
+| ID | Severity | Summary | Status | Effort | Dependencies |
+|----|----------|---------|--------|--------|--------------|
+| UX-002 | MEDIUM | ChecklistQuickActions touch targets too small (36px vs 44px) | PENDING | XS | none |
+| UX-003 | MEDIUM | Export dropdown buttons touch targets too small (40px vs 44px) | PENDING | XS | none |
+| UX-001 | MEDIUM | Form inputs use `focus:` instead of `focus-visible:` | PENDING | M | UX-004 |
+| UX-009 | LOW | Viewport meta tag blocks user zoom (accessibility violation) | PENDING | XS | none |
+| UX-005 | LOW | ValidatedField doesn't connect aria-describedby | PENDING | S | none |
+| UX-004 | LOW | ValidatedSubmitButton uses `focus:` instead of `focus-visible:` | PENDING | XS | UX-001 |
+| UX-006 | LOW | Filter button has inconsistent touch targets (40px mobile) | PENDING | XS | none |
+| UX-007 | LOW | Quick form link buttons too small (32-36px vs 44px) | PENDING | XS | none |
+| UX-008 | LOW | Required field asterisk color confuses with error state | PENDING | XS | none |
+| UX-010 | LOW | Error state messages lack actionable guidance | PENDING | S | none |
+
+---
+
+## Summary Statistics
+
+**Total Findings**: 76
+- **CRITICAL**: 1 (SEC-010)
+- **HIGH**: 8
+- **MEDIUM**: 35
+- **LOW**: 32
+
+**By Category**:
+- Security: 10 (ALL GATED)
+- Architecture: 14
+- Performance: 15
+- QA: 15
+- Workflow: 12
+- UX: 10
+
+**By Effort**:
+- XS: 20
+- S: 19
+- M: 23
+- L: 10
+- XL: 4
+
+## Prioritization Notes
+
+1. **Security (CRITICAL/HIGH - GATED)**: SEC-010 (privilege escalation), SEC-002, SEC-007
+2. **Architecture (HIGH)**: ARCH-001, ARCH-002 (large components - foundation issues)
+3. **QA (HIGH)**: QA-001, QA-009, QA-002 (critical path testing gaps)
+4. **Performance (HIGH)**: PERF-001, PERF-002 (database queries affecting load time)
+5. **Workflow (HIGH)**: WF-003 (JSA navigation blocking user efficiency)
+6. **UX (MEDIUM)**: Accessibility fixes (touch targets, focus states)
+
+## Recommendations
+
+1. **Start with SEC-010**: Fix privilege escalation before any feature work
+2. **Large component refactoring** (ARCH-001, ARCH-002) creates foundation for other improvements
+3. **Database query optimization** (PERF-001-007) has high ROI - quick wins with big impact
+4. **Form submission testing** (QA-001, QA-009) prevents regressions in critical flows
+5. **Accessibility fixes** (UX-002, UX-003, UX-009) are quick XS/S efforts, high user impact
