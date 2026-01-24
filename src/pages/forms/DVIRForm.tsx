@@ -292,6 +292,7 @@ export default function DVIRForm() {
     validateAll,
     markSubmitAttempted,
     handleFieldBlur,
+    additionalErrors,
     allErrors,
   } = useDVIRFormValidation(form, oilDipstickPhoto, previousMileage);
   
@@ -888,22 +889,22 @@ export default function DVIRForm() {
                   value={form.truckNumber}
                   onChange={(e) => {
                     setForm(prev => ({ ...prev, truckNumber: e.target.value }));
-                    handleFieldBlur('truckNumber' as unknown as keyof typeof extendedFormState);
+                    handleFieldBlur('truckNumber' as keyof DVIRFormState);
                   }}
-                  onBlur={() => handleFieldBlur('truckNumber' as unknown as keyof typeof extendedFormState)}
+                  onBlur={() => handleFieldBlur('truckNumber' as keyof DVIRFormState)}
                   className={cn(
                     "w-full rounded-xl bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900",
                     "border px-4 py-3 text-sm text-white font-medium",
                     "focus:outline-none focus:ring-2 transition-all",
-                    shouldShowError('truckNumber' as unknown as keyof typeof extendedFormState) && getFieldError('truckNumber' as unknown as keyof typeof extendedFormState)
+                    shouldShowError('truckNumber' as keyof DVIRFormState) && getFieldError('truckNumber' as keyof DVIRFormState)
                       ? "border-rose-500/50 focus:ring-rose-400/50"
                       : form.truckNumber 
                         ? "border-emerald-500/40 focus:ring-emerald-400/50"
                         : "border-gray-700 focus:ring-emerald-400/50"
                   )}
                   title="Select truck number"
-                  aria-invalid={shouldShowError('truckNumber' as unknown as keyof typeof extendedFormState) && !!getFieldError('truckNumber' as unknown as keyof typeof extendedFormState)}
-                  aria-describedby={shouldShowError('truckNumber' as unknown as keyof typeof extendedFormState) && getFieldError('truckNumber' as unknown as keyof typeof extendedFormState) ? "truckNumber-error" : undefined}
+                  aria-invalid={shouldShowError('truckNumber' as keyof DVIRFormState) && !!getFieldError('truckNumber' as keyof DVIRFormState)}
+                  aria-describedby={shouldShowError('truckNumber' as keyof DVIRFormState) && getFieldError('truckNumber' as keyof DVIRFormState) ? "truckNumber-error" : undefined}
                 >
                   <option value="">Select Truck Number</option>
                   {TRUCK_NUMBERS.map((num) => (
@@ -912,7 +913,7 @@ export default function DVIRForm() {
                     </option>
                   ))}
                 </select>
-                {shouldShowError('truckNumber' as unknown as keyof typeof extendedFormState) && getFieldError('truckNumber' as unknown as keyof typeof extendedFormState) && (
+                {shouldShowError('truckNumber' as keyof DVIRFormState) && getFieldError('truckNumber' as keyof DVIRFormState) && (
                   <motion.p 
                     id="truckNumber-error"
                     role="alert"
@@ -921,10 +922,10 @@ export default function DVIRForm() {
                     className="text-xs text-rose-400 mt-1 flex items-center gap-1"
                   >
                     <AlertTriangle className="w-3 h-3" />
-                    {getFieldError('truckNumber' as unknown as keyof typeof extendedFormState)}
+                    {getFieldError('truckNumber' as keyof DVIRFormState)}
                   </motion.p>
                 )}
-                {form.truckNumber && !shouldShowError('truckNumber' as unknown as keyof typeof extendedFormState) && (
+                {form.truckNumber && !shouldShowError('truckNumber' as keyof DVIRFormState) && (
                   <motion.p 
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -1056,21 +1057,21 @@ export default function DVIRForm() {
                   value={form.driversName}
                   onChange={(e) => {
                     setForm(prev => ({ ...prev, driversName: e.target.value }));
-                    handleFieldBlur('driversName' as unknown as keyof typeof extendedFormState);
+                    handleFieldBlur('driversName' as keyof DVIRFormState);
                   }}
-                  onBlur={() => handleFieldBlur('driversName' as unknown as keyof typeof extendedFormState)}
+                  onBlur={() => handleFieldBlur('driversName' as keyof DVIRFormState)}
                   placeholder="Enter full name"
                   className={cn(
                     "w-full rounded-md bg-black/70 border px-3 py-2 text-sm text-white",
                     "focus:outline-none focus:ring-2 transition-all",
-                    shouldShowError('driversName' as unknown as keyof typeof extendedFormState) && getFieldError('driversName' as unknown as keyof typeof extendedFormState)
+                    shouldShowError('driversName' as keyof DVIRFormState) && getFieldError('driversName' as keyof DVIRFormState)
                       ? "border-rose-500/50 focus:ring-rose-400/50"
                       : "border-gray-700 focus:ring-emerald-400/50"
                   )}
-                  aria-invalid={shouldShowError('driversName' as unknown as keyof typeof extendedFormState) && !!getFieldError('driversName' as unknown as keyof typeof extendedFormState)}
-                  aria-describedby={shouldShowError('driversName' as unknown as keyof typeof extendedFormState) && getFieldError('driversName' as unknown as keyof typeof extendedFormState) ? "driversName-error" : undefined}
+                  aria-invalid={shouldShowError('driversName' as keyof DVIRFormState) && !!getFieldError('driversName' as keyof DVIRFormState)}
+                  aria-describedby={shouldShowError('driversName' as keyof DVIRFormState) && getFieldError('driversName' as keyof DVIRFormState) ? "driversName-error" : undefined}
                 />
-                {shouldShowError('driversName' as unknown as keyof typeof extendedFormState) && getFieldError('driversName' as unknown as keyof typeof extendedFormState) && (
+                {shouldShowError('driversName' as keyof DVIRFormState) && getFieldError('driversName' as keyof DVIRFormState) && (
                   <motion.p 
                     id="driversName-error"
                     role="alert"
@@ -1079,7 +1080,7 @@ export default function DVIRForm() {
                     className="text-xs text-rose-400 mt-1 flex items-center gap-1"
                   >
                     <AlertTriangle className="w-3 h-3" />
-                    {getFieldError('driversName' as unknown as keyof typeof extendedFormState)}
+                    {getFieldError('driversName' as keyof DVIRFormState)}
                   </motion.p>
                 )}
               </div>
@@ -1270,7 +1271,7 @@ export default function DVIRForm() {
             {/* Quick Actions */}
             <div className={cn(
               "rounded-lg border-2 p-4 transition-all",
-              shouldShowError('vehicleTrailerChecklist' as unknown as keyof typeof extendedFormState) && getFieldError('vehicleTrailerChecklist' as unknown as keyof typeof extendedFormState)
+              shouldShowError('vehicleTrailerChecklist' as keyof DVIRFormState) && getFieldError('vehicleTrailerChecklist' as keyof DVIRFormState)
                 ? "border-rose-500/30 bg-rose-500/5"
                 : "border-transparent"
             )}>
@@ -1281,7 +1282,7 @@ export default function DVIRForm() {
                 checkedCount={Object.keys(form.vehicleTrailerChecklist).length}
                 totalCount={VEHICLE_TRAILER_ITEMS.length}
               />
-              {shouldShowError('vehicleTrailerChecklist' as unknown as keyof typeof extendedFormState) && getFieldError('vehicleTrailerChecklist' as unknown as keyof typeof extendedFormState) && (
+              {shouldShowError('vehicleTrailerChecklist' as keyof DVIRFormState) && getFieldError('vehicleTrailerChecklist' as keyof DVIRFormState) && (
                 <motion.p 
                   id="vehicleTrailerChecklist-error"
                   role="alert"
@@ -1290,7 +1291,7 @@ export default function DVIRForm() {
                   className="text-xs text-rose-400 mt-3 flex items-center gap-1"
                 >
                   <AlertTriangle className="w-3 h-3" />
-                  {getFieldError('vehicleTrailerChecklist' as unknown as keyof typeof extendedFormState)}
+                  {getFieldError('vehicleTrailerChecklist' as keyof DVIRFormState)}
                 </motion.p>
               )}
             </div>
@@ -1442,7 +1443,7 @@ export default function DVIRForm() {
 
             <div className="space-y-4">
               <div className={cn(
-                shouldShowError('oilDipstickPhoto' as unknown as keyof typeof extendedFormState) && allErrors.oilDipstickPhoto 
+                shouldShowError('oilDipstickPhoto' as keyof DVIRFormState) && allErrors.oilDipstickPhoto 
                   ? "ring-2 ring-rose-500/50 rounded-xl p-1" 
                   : ""
               )}>
@@ -1453,7 +1454,7 @@ export default function DVIRForm() {
                   status={Boolean(oilDipstickPhoto)}
                   onClick={() => oilInputRef.current?.click()}
                 />
-                {shouldShowError('oilDipstickPhoto' as unknown as keyof typeof extendedFormState) && allErrors.oilDipstickPhoto && (
+                {shouldShowError('oilDipstickPhoto' as keyof DVIRFormState) && allErrors.oilDipstickPhoto && (
                   <motion.p 
                     id="oilDipstickPhoto-error"
                     role="alert"

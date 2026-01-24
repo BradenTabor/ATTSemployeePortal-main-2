@@ -1598,7 +1598,7 @@ export default function DailyJSAForm() {
                 errors={allErrors}
                 currentStep={currentStep}
                 getStepForField={getStepForField}
-                onNavigateToStep={(step) => {
+                onNavigateToStep={(step: number) => {
                   setCurrentStep(step);
                   setTimeout(() => {
                     const firstErrorField = Object.keys(allErrors).find(key => allErrors[key]);

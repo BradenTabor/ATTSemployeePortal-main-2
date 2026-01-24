@@ -174,7 +174,7 @@ interface RawEquipmentInspection {
 async function fetchMaintenanceLogFixes(): Promise<UnifiedFix[]> {
   const { data, error } = await supabase
     .from('vehicle_maintenance_log')
-    .select('*')
+    .select('id, truck_number, description, maintenance_type, parts_used, cost, service_date, performed_by_name, mileage_at_service, notes, created_at, updated_at')
     .order('service_date', { ascending: false });
   
   if (error) {
@@ -208,7 +208,7 @@ async function fetchMaintenanceLogFixes(): Promise<UnifiedFix[]> {
 async function fetchDvirFixes(): Promise<UnifiedFix[]> {
   const { data, error } = await supabase
     .from('dvir_reports')
-    .select('*')
+    .select('id, deficiency_corrected, vehicle_trailer_checklist, aerial_checklist, truck_number, mechanic_truck_number, mechanic_parts_used, mechanic_cost, mechanic_date, created_at, mileage, mechanic_remarks')
     .not('deficiency_corrected', 'is', null)
     .order('mechanic_date', { ascending: false, nullsFirst: false });
   
@@ -252,7 +252,7 @@ async function fetchDvirFixes(): Promise<UnifiedFix[]> {
 async function fetchEquipmentFixes(): Promise<UnifiedFix[]> {
   const { data, error } = await supabase
     .from('daily_equipment_inspections')
-    .select('*')
+    .select('id, equipment_type, equipment_number, mechanic_fixes, general_checklist, specific_checklist, mechanic_parts_used, mechanic_cost, last_mechanic_updated_at, inspection_date, notes, created_at')
     .not('mechanic_fixes', 'is', null)
     .order('last_mechanic_updated_at', { ascending: false, nullsFirst: false });
   
