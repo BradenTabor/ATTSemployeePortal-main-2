@@ -39,7 +39,8 @@ class MockSupabaseClient {
   private shouldFailWebhook = false;
   private uploadedPaths: string[] = [];
 
-  async insertDVIR(payload: DVIRSubmissionPayload) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async insertDVIR(_payload: DVIRSubmissionPayload) {
     if (this.shouldFailInsert) {
       throw new Error('Database insert failed');
     }
@@ -51,7 +52,8 @@ class MockSupabaseClient {
     return { path };
   }
 
-  async callWebhook(data: Record<string, unknown>) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async callWebhook(_data: Record<string, unknown>) {
     if (this.shouldFailWebhook) {
       throw new Error('Webhook request failed');
     }

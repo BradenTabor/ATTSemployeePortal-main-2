@@ -30,11 +30,10 @@ import {
   trackFormSubmitError,
   createFormTimer,
 } from "../../lib/telemetry";
-import { useFormValidation, type ValidationRule } from "../../hooks/useFormValidation";
-import { validators } from "../../lib/formValidation";
 import { ValidationSummary } from "../../components/forms/ValidationSummary";
 import { ValidatedSubmitButton } from "../../components/forms/ValidatedSubmitButton";
 import { scrollToFirstError } from "../../lib/scrollToError";
+import { useDVIRFormValidation, useDVIRPhotoUpload } from "../../hooks/dvir";
 
 // Import types and components from the dvir module
 import {
@@ -286,77 +285,15 @@ export default function DVIRForm() {
     formTimer.current.reset();
   }, []);
 
-  // Validation rules for DVIR form
-  const validationRules = useMemo<ValidationRule<DVIRFormState & { oilDipstickPhoto?: File | null }>[]>(() => [
-    {
-      field: 'truckNumber',
-      validator: (value: unknown) => validators.required(value) || (typeof value === 'string' && value?.trim() ? null : "Please select a truck number"),
-    },
-    {
-      field: 'driversName',
-      validator: (value: unknown) => validators.required(value) || (typeof value === 'string' && value?.trim() ? null : "Driver's name is required"),
-    },
-    {
-      field: 'mileage',
-      validator: (value: unknown) => {
-        if (!value || !String(value).trim()) {
-          return "Odometer reading is required";
-        }
-        return validators.mileage(value, previousMileage);
-      },
-    },
-    {
-      field: 'vehicleTrailerChecklist',
-      validator: (value: unknown) => {
-        const count = Object.keys((value as Record<string, unknown>) || {}).length;
-        if (count < VEHICLE_TRAILER_ITEMS.length) {
-          return `Complete vehicle inspection: ${count}/${VEHICLE_TRAILER_ITEMS.length} items checked`;
-        }
-        return null;
-      },
-    },
-  ], [previousMileage]);
-
-  // Extended form state for validation (includes non-persisted fields)
-  const extendedFormState = useMemo(() => ({
-    ...form,
-    oilDipstickPhoto,
-  }), [form, oilDipstickPhoto]);
-
-  // Form validation hook
+  // Extract validation logic into hook (reduces component complexity)
   const {
-    errors,
     getFieldError,
     shouldShowError,
     validateAll,
     markSubmitAttempted,
     handleFieldBlur,
-  } = useFormValidation(extendedFormState, validationRules, {
-    validateOnChange: true,
-    showErrorsAfterSubmitAttempt: false,
-  });
-
-  // Additional validation for non-form-state fields
-  const additionalErrors = useMemo(() => {
-    const errs: Record<string, string> = {};
-    
-    if (!oilDipstickPhoto) {
-      errs.oilDipstickPhoto = "Oil dipstick photo is required";
-    }
-    
-    const hasDriver = Boolean(form.finalDriverSignature?.trim());
-    const hasForeman = Boolean(form.generalForemanSignature?.trim());
-    if (!hasDriver && !hasForeman) {
-      errs.signature = "At least one signature (Driver or Foreman) is required";
-    }
-    
-    return errs;
-  }, [oilDipstickPhoto, form.finalDriverSignature, form.generalForemanSignature]);
-
-  // Combined errors
-  const allErrors = useMemo(() => {
-    return { ...errors, ...additionalErrors };
-  }, [errors, additionalErrors]);
+    allErrors,
+  } = useDVIRFormValidation(form, oilDipstickPhoto, previousMileage);
   
   // 📊 Calculate form progress
   const progressSteps = useMemo((): ProgressStep[] => {
@@ -517,31 +454,8 @@ export default function DVIRForm() {
     }
   }
 
-  async function uploadPhoto(file: File, fieldName: string): Promise<string> {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    const userId = user?.id || "anonymous";
-
-    const ext = file.name.split(".").pop() || "jpg";
-    // Bucket: dvir-photos
-    // Path:   dvir-photos/<userId>/<timestamp>-fieldName.ext
-    const filePath = `dvir-photos/${userId}/${Date.now()}-${fieldName}.${ext}`;
-
-    const { error } = await supabase.storage
-      .from("dvir-photos")
-      .upload(filePath, file, {
-        cacheControl: "3600",
-        upsert: false,
-      });
-
-    if (error) {
-      logger.error(`Error uploading ${fieldName}`, error);
-      throw error;
-    }
-
-    return filePath;
-  }
+  // Extract photo upload logic into hook
+  const { uploadPhoto } = useDVIRPhotoUpload();
 
   // 🔐 Submit handler with explicit session check so RLS auth.uid() works
   async function handleSubmit(e: FormEvent) {
