@@ -82,12 +82,12 @@ export function ValidatedSubmitButton({
           'relative inline-flex items-center justify-center gap-2',
           'px-6 py-3 rounded-xl font-semibold transition-all',
           'min-h-[44px]', // Touch target
-          'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black',
           hasErrors
-            ? 'bg-gray-700 text-gray-400 cursor-not-allowed focus:ring-gray-500'
+            ? 'bg-gray-700 text-gray-400 cursor-not-allowed focus-visible:ring-gray-500'
             : loading
-            ? 'bg-emerald-600/50 text-white cursor-wait focus:ring-emerald-500'
-            : 'bg-emerald-600 text-white hover:bg-emerald-500 focus:ring-emerald-500',
+            ? 'bg-emerald-600/50 text-white cursor-wait focus-visible:ring-emerald-500'
+            : 'bg-emerald-600 text-white hover:bg-emerald-500 focus-visible:ring-emerald-500',
           'disabled:opacity-60 disabled:cursor-not-allowed',
           className
         )}
