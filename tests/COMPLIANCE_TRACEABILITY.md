@@ -141,7 +141,7 @@ This document maps regulatory requirements to test coverage for DVIR, JSA, and E
 | 1.1.1 Non-text Content | Alt text for images | Photo preview a11y | `accessibility.spec.ts` |
 | 1.3.1 Info and Relationships | Proper heading structure | Heading hierarchy tests | `accessibility.spec.ts` |
 | 1.4.3 Contrast | 4.5:1 minimum ratio | Color contrast tests | `accessibility.spec.ts` |
-| 1.4.4 Resize Text | 200% zoom support | Zoom test | `accessibility.spec.ts` |
+| 1.4.4 Resize Text | N/A - Zoom intentionally disabled | Responsive viewport test | `accessibility.spec.ts` |
 
 ### 5.2 Operable (Principle 2)
 

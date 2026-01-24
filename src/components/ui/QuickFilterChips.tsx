@@ -152,18 +152,25 @@ export const DateRangeChips = memo(function DateRangeChips({
   const styles = variantStyles[variant];
 
   return (
-    <div className="flex items-center gap-1 p-1 bg-black/20 rounded-xl border border-white/5">
+    <div
+      role="group"
+      aria-label="Date range"
+      className="flex flex-wrap items-center gap-0.5 sm:gap-1 p-0.5 sm:p-1 bg-black/20 rounded-lg sm:rounded-xl border border-white/5"
+    >
       {ranges.map((range, index) => (
         <motion.button
           key={range.id}
+          type="button"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: index * 0.05 }}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={() => onRangeChange(range.id)}
-          className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200
+          className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium border transition-all duration-200 min-h-[32px] sm:min-h-0
             ${activeRange === range.id ? styles.active : styles.inactive}`}
+          aria-pressed={activeRange === range.id}
+          aria-label={`${range.label}${activeRange === range.id ? ", selected" : ""}`}
         >
           {range.label}
         </motion.button>

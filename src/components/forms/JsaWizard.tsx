@@ -5,7 +5,6 @@ import {
   ArrowRight,
   Check,
   ChevronLeft,
-  FolderOpen,
   Loader2,
   Save,
   FileText,
@@ -27,7 +26,6 @@ interface JsaWizardProps {
   onSave: (mode: SaveMode) => void;
   onComplete: () => void;
   onBack: () => void;
-  onOpenPicker: () => void;
   saving: boolean;
   isValid: boolean;
   isEditMode: boolean;
@@ -48,6 +46,8 @@ interface JsaWizardProps {
     step5: boolean; // Spans (at least one filled)
     step6: boolean; // Review (signature provided)
   };
+  /** Validation errors to show specific field issues */
+  validationErrors?: Record<string, string | undefined>;
 }
 
 export function JsaWizard({
@@ -58,7 +58,6 @@ export function JsaWizard({
   onSave,
   onComplete,
   onBack,
-  onOpenPicker,
   saving,
   isValid,
   isEditMode,
@@ -68,6 +67,7 @@ export function JsaWizard({
   lastSaved = null,
   hasUnsavedChanges = false,
   stepCompletionStatus,
+  validationErrors = {},
 }: JsaWizardProps) {
   const [direction, setDirection] = useState(0);
   const [showSaveOptions, setShowSaveOptions] = useState(false);
@@ -232,17 +232,6 @@ export function JsaWizard({
               )}
             </div>
           </div>
-
-          {/* Edit My JSA's Button - Always visible, enhanced */}
-          <motion.button
-            type="button"
-            onClick={onOpenPicker}
-            whileTap={{ scale: 0.95 }}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/25 hover:border-emerald-400/40 transition-all touch-manipulation active:bg-emerald-500/30 shadow-sm shadow-emerald-900/20"
-          >
-            <FolderOpen className="w-4 h-4 flex-shrink-0" />
-            <span className="text-[10px] sm:text-xs font-semibold whitespace-nowrap">My JSA's</span>
-          </motion.button>
         </div>
 
         {/* Mobile Progress Bar */}
@@ -370,6 +359,7 @@ export function JsaWizard({
             type="button"
             onClick={handlePrevious}
             disabled={isFirstStep}
+            aria-disabled={isFirstStep}
             className={cn(
               "inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-medium transition-all touch-manipulation min-w-[80px]",
               isFirstStep
@@ -412,43 +402,41 @@ export function JsaWizard({
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
                   transition={{ duration: 0.15, ease: "easeOut" }}
-                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 sm:w-72 z-50"
+                  className="fixed bottom-20 inset-x-0 mx-auto w-[calc(100vw-2rem)] max-w-[280px] z-50"
                 >
-                  <div className="bg-gray-900/98 backdrop-blur-xl border border-white/15 rounded-2xl shadow-2xl shadow-black/50 overflow-hidden">
+                  <div className="bg-gray-900/98 backdrop-blur-xl border border-white/15 rounded-xl shadow-2xl shadow-black/50 overflow-hidden">
                     {/* Header */}
-                    <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10 bg-white/5">
-                      <span className="text-xs font-semibold text-white/80 uppercase tracking-wide">
+                    <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 bg-white/5">
+                      <span className="text-[10px] font-semibold text-white/80 uppercase tracking-wide">
                         Choose Save Type
                       </span>
                       <button
                         type="button"
                         onClick={() => setShowSaveOptions(false)}
                         aria-label="Close save options"
-                        className="p-1 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+                        className="p-1 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors flex-shrink-0"
                       >
                         <X className="w-4 h-4" />
                       </button>
                     </div>
 
                     {/* Options */}
-                    <div className="p-2 space-y-1">
+                    <div className="p-2 space-y-1.5">
                       {/* Save Draft Option */}
                       <button
                         type="button"
                         onClick={() => handleSave("draft")}
-                        className="w-full flex items-start gap-3 p-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 hover:border-amber-500/40 transition-all group"
+                        className="w-full flex items-start gap-2.5 p-2.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 hover:border-amber-500/40 transition-all group"
                       >
-                        <div className="flex-shrink-0 p-2 rounded-lg bg-amber-500/20 group-hover:bg-amber-500/30 transition-colors">
-                          <FileText className="w-5 h-5 text-amber-400" />
+                        <div className="flex-shrink-0 p-1.5 rounded-lg bg-amber-500/20 group-hover:bg-amber-500/30 transition-colors">
+                          <FileText className="w-4 h-4 text-amber-400" />
                         </div>
-                        <div className="flex-1 text-left">
-                          <p className="text-sm font-semibold text-amber-300 group-hover:text-amber-200">
+                        <div className="flex-1 text-left min-w-0">
+                          <p className="text-xs font-semibold text-amber-300 group-hover:text-amber-200">
                             Save as Draft
                           </p>
-                          <p className="text-[11px] text-white/50 mt-0.5 leading-tight">
-                            Save progress and continue later. Find saved drafts in{" "}
-                            <span className="text-emerald-400 font-medium">My JSA's</span>{" "}
-                            (top right).
+                          <p className="text-[10px] text-white/50 mt-0.5 leading-relaxed">
+                            Save progress and continue later.
                           </p>
                         </div>
                       </button>
@@ -459,43 +447,40 @@ export function JsaWizard({
                         onClick={() => handleSave("complete")}
                         disabled={!isValid}
                         className={cn(
-                          "w-full flex items-start gap-3 p-3 rounded-xl border transition-all group",
+                          "w-full flex items-start gap-2.5 p-2.5 rounded-lg border transition-all group",
                           isValid
                             ? "bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/20 hover:border-emerald-500/40"
                             : "bg-white/5 border-white/10 opacity-50 cursor-not-allowed"
                         )}
                       >
                         <div className={cn(
-                          "flex-shrink-0 p-2 rounded-lg transition-colors",
+                          "flex-shrink-0 p-1.5 rounded-lg transition-colors",
                           isValid
                             ? "bg-emerald-500/20 group-hover:bg-emerald-500/30"
                             : "bg-white/10"
                         )}>
                           <CheckCircle2 className={cn(
-                            "w-5 h-5",
+                            "w-4 h-4",
                             isValid ? "text-emerald-400" : "text-white/30"
                           )} />
                         </div>
-                        <div className="flex-1 text-left">
+                        <div className="flex-1 text-left min-w-0">
                           <p className={cn(
-                            "text-sm font-semibold",
+                            "text-xs font-semibold",
                             isValid
                               ? "text-emerald-300 group-hover:text-emerald-200"
                               : "text-white/40"
                           )}>
                             Save as Complete
                           </p>
-                          <p className="text-[11px] text-white/50 mt-0.5 leading-tight">
+                          <p className="text-[10px] text-white/50 mt-0.5 leading-relaxed">
                             {isValid
-                              ? "Mark as final submission. Ready for review."
-                              : "Fill required fields first (date, location, signature)."}
+                              ? "Mark as final submission."
+                              : "Fill required fields first."}
                           </p>
                         </div>
                       </button>
                     </div>
-
-                    {/* Arrow pointer */}
-                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 rotate-45 bg-gray-900/98 border-r border-b border-white/15" />
                   </div>
                 </motion.div>
               )}
@@ -506,7 +491,32 @@ export function JsaWizard({
           {isLastStep ? (
             <button
               type="button"
-              onClick={onComplete}
+              onClick={async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                console.log('[JSA Wizard] Done button clicked', { 
+                  saving, 
+                  isValid, 
+                  isEditMode,
+                  disabled: saving || !isValid,
+                  validationErrors: Object.keys(validationErrors || {}).filter(k => validationErrors?.[k]),
+                });
+                
+                // Prevent multiple clicks while saving
+                if (saving) {
+                  console.warn('[JSA Wizard] Submission already in progress, ignoring click');
+                  return;
+                }
+                
+                // Always call onComplete - it will re-validate and show errors if needed
+                // This ensures users get feedback even if validation state is stale
+                try {
+                  await onComplete();
+                } catch (error) {
+                  console.error('[JSA Wizard] onComplete error', error);
+                }
+              }}
               disabled={saving || !isValid}
               className={cn(
                 "inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all touch-manipulation min-w-[80px]",
@@ -514,9 +524,12 @@ export function JsaWizard({
                   ? "opacity-40 cursor-not-allowed bg-amber-700/30 text-white/50"
                   : "bg-gradient-to-r from-amber-600 to-amber-700 text-white hover:from-amber-500 hover:to-amber-600"
               )}
+              aria-label={saving ? "Submitting..." : !isValid ? "Please fix validation errors" : "Submit JSA form"}
+              title={saving ? "Submitting..." : !isValid ? "Please fix the issues above" : "Submit JSA form"}
             >
-              <Check className="w-4 h-4" />
-              <span className="hidden sm:inline">Done</span>
+              {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+              {!saving && <Check className="w-4 h-4" />}
+              <span className="hidden sm:inline">{saving ? "Submitting..." : "Done"}</span>
             </button>
           ) : (
             <button
@@ -532,9 +545,44 @@ export function JsaWizard({
 
         {/* Validation hint - only show on last step */}
         {isLastStep && !isValid && (
-          <p className="text-center text-[10px] text-amber-300/70 pb-1 -mt-1">
-            Fill required fields (date, location, signature) to complete
-          </p>
+          <div className="text-center text-[10px] text-amber-300/70 pb-1 -mt-1 space-y-0.5">
+            <p className="mb-1 font-medium">Please fix the following issues:</p>
+            <div className="space-y-0.5">
+              {(() => {
+                // Filter out undefined/null errors and get actual error messages
+                const actualErrors = Object.entries(validationErrors || {})
+                  .filter(([, error]) => error && typeof error === 'string' && error.trim())
+                  .map(([field, error]) => ({ field, error: error as string }));
+                
+                if (actualErrors.length === 0) {
+                  // If no specific errors but form is invalid, show generic message
+                  return (
+                    <p className="text-amber-200/80">
+                      Check all required fields: date, location, contacts (with valid phone numbers), jobs, and signature
+                    </p>
+                  );
+                }
+                
+                return actualErrors.map(({ field, error }) => {
+                  const fieldLabel = field === 'jobDate' ? 'Date' :
+                                   field === 'workLocation' ? 'Location' :
+                                   field === 'ocContact' ? 'OC Contact' :
+                                   field === 'docContact' ? 'DOC Contact' :
+                                   field === 'gfContact' ? 'GF Contact' :
+                                   field === 'safetyContact' ? 'Safety Contact' :
+                                   field === 'jobsPerformed' ? 'Jobs' :
+                                   field === 'employeeSignature' ? 'Signature' :
+                                   field;
+                  
+                  return (
+                    <p key={field} className="text-amber-200/90">
+                      • {fieldLabel}: {error}
+                    </p>
+                  );
+                });
+              })()}
+            </div>
+          </div>
         )}
       </div>
     </div>

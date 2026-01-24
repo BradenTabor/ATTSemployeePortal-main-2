@@ -39,11 +39,13 @@ import {
 } from "./helpers";
 import {
   ScrollRevealSection,
+} from "./animations";
+import {
   listItemVariants,
   listItemVariantsReduced,
   detailTransition,
   detailTransitionReduced,
-} from "./animations";
+} from "../../../lib/animationVariants";
 import { equipmentExportColumns } from "./exportColumns";
 
 interface EquipmentTabProps {
@@ -644,11 +646,11 @@ export function EquipmentTab({
                               <div className="max-h-48 overflow-y-auto space-y-0.5">
                                 {GENERAL_EQUIPMENT_ITEMS.map((item) => {
                                   const value = selectedEquipment.general_checklist?.[item.id];
-                                  const status = value === "P" ? "pass" : value === "F" ? "fail" : "pending";
+                                  const status = value === "P" ? "pass" : value === "F" ? "fail" : value === "N/A" ? "na" : "pending";
                                   return (
                                     <div key={item.id} className="flex items-center justify-between py-1 text-[11px] text-white/60 gap-2">
                                       <span className="truncate">{item.label}</span>
-                                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${status === "pass" ? "bg-orange-400" : status === "fail" ? "bg-red-400" : "bg-white/20"}`} />
+                                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${status === "pass" ? "bg-orange-400" : status === "fail" ? "bg-red-400" : status === "na" ? "bg-amber-400" : "bg-white/20"}`} />
                                     </div>
                                   );
                                 })}
@@ -660,11 +662,11 @@ export function EquipmentTab({
                                 <div className="max-h-48 overflow-y-auto space-y-0.5">
                                   {getSpecificItems(selectedEquipment.template).map((item) => {
                                     const value = selectedEquipment.specific_checklist?.[item.id];
-                                    const status = value === "P" ? "pass" : value === "F" ? "fail" : "pending";
+                                    const status = value === "P" ? "pass" : value === "F" ? "fail" : value === "N/A" ? "na" : "pending";
                                     return (
                                       <div key={item.id} className="flex items-center justify-between py-1 text-[11px] text-white/60 gap-2">
                                         <span className="truncate">{item.label}</span>
-                                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${status === "pass" ? "bg-orange-400" : status === "fail" ? "bg-red-400" : "bg-white/20"}`} />
+                                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${status === "pass" ? "bg-orange-400" : status === "fail" ? "bg-red-400" : status === "na" ? "bg-amber-400" : "bg-white/20"}`} />
                                       </div>
                                     );
                                   })}

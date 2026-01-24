@@ -715,38 +715,38 @@ export default function Profile() {
             />
             <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
             
-            {/* Content - more compact on mobile */}
-            <div className="relative px-4 py-5 sm:px-6 sm:py-8 md:px-10 md:py-10">
-              <div className="flex flex-row items-center gap-3 sm:gap-6 md:gap-8">
-                {/* Avatar with upload capability - smaller on mobile */}
-                <div className="flex-shrink-0 scale-75 sm:scale-100 origin-left">
+            {/* Content - compact on mobile: stack avatar above info, tighter spacing */}
+            <div className="relative px-4 py-4 sm:px-6 sm:py-6 md:px-10 md:py-8">
+              <div className="flex flex-col sm:flex-row items-center sm:items-center gap-2 sm:gap-6 md:gap-8">
+                {/* Avatar - centered when stacked, smaller on mobile */}
+                <div className="flex-shrink-0 scale-75 sm:scale-100 origin-center sm:origin-left">
                   <AvatarUpload 
                     currentAvatarUrl={avatarUrl}
                     name={fullName || profile?.full_name}
                   />
                 </div>
                 
-                {/* Info - always left-aligned on mobile */}
-                <div className="flex-1 min-w-0">
+                {/* Info - full width when stacked, flex-1 when row; truncates properly */}
+                <div className="w-full sm:flex-1 min-w-0 overflow-hidden text-center sm:text-left">
                   {enableAnimations ? (
                     <TextEffect
                       as="h1"
                       preset="blurSlide"
-                      per="char"
+                      per="word"
                       delay={0.3}
-                      className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-tight truncate"
+                      className="text-lg sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-tight break-words line-clamp-2 sm:line-clamp-1"
                       segmentWrapperClassName="bg-gradient-to-r from-white via-emerald-100 to-white/90 bg-clip-text text-transparent"
                     >
                       {fullName || profile?.full_name || 'Employee'}
                     </TextEffect>
                   ) : (
-                    <h1 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-tight bg-gradient-to-r from-white via-emerald-100 to-white/90 bg-clip-text text-transparent truncate">
+                    <h1 className="text-lg sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-tight bg-gradient-to-r from-white via-emerald-100 to-white/90 bg-clip-text text-transparent break-words line-clamp-2 sm:line-clamp-1">
                       {fullName || profile?.full_name || 'Employee'}
                     </h1>
                   )}
                   
                   <motion.div 
-                    className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-1.5 sm:mt-3"
+                    className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 sm:gap-2 mt-1 sm:mt-3"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.6 }}
@@ -787,13 +787,13 @@ export default function Profile() {
                   </motion.div>
                   
                   <motion.p 
-                    className="mt-1.5 sm:mt-3 text-xs sm:text-sm text-emerald-200/50 flex items-center gap-1.5 sm:gap-2 truncate"
+                    className="mt-1 sm:mt-3 text-xs sm:text-sm text-emerald-200/50 flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 min-w-0 overflow-hidden"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.8 }}
                   >
                     <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-                    <span className="truncate">{user?.email || profile?.email}</span>
+                    <span className="truncate min-w-0">{user?.email || profile?.email}</span>
                   </motion.p>
                 </div>
               </div>

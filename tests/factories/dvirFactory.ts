@@ -26,7 +26,6 @@ export interface DVIRTestData {
   medical_card_exp?: string | null;
   copy_of_registration?: string | null;
   copy_of_insurance?: string | null;
-  drivers_signature_section_a?: string | null;
   
   // Checklists (JSONB)
   vehicle_trailer_checklist?: Record<string, 'P' | 'F' | ''> | null;
@@ -88,7 +87,6 @@ export function createValidDVIR(overrides?: Partial<DVIRTestData>): DVIRTestData
     medical_card_exp: '06/30/2026',
     copy_of_registration: 'yes',
     copy_of_insurance: 'yes',
-    drivers_signature_section_a: 'data:image/png;base64,TEST_SIGNATURE_A',
     aerial_checklist: {
       boom_operation: 'P',
       outriggers: 'P',

@@ -7,7 +7,7 @@
 
 export type EquipmentType = 'Geo-Boy' | 'Grapple' | 'Jarraff' | 'Mulcher' | 'Skidsteer';
 
-export type ChecklistValue = '' | 'P' | 'F';
+export type ChecklistValue = '' | 'P' | 'F' | 'N/A';
 
 export interface EquipmentTestData {
   // Required fields

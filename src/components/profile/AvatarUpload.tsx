@@ -13,10 +13,11 @@
  * Premium green-themed styling matching ATTS design system.
  */
 
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, Trash2, Upload, CheckCircle2, AlertCircle, Sparkles } from 'lucide-react';
+import { Camera, Trash2, Upload, CheckCircle2, AlertCircle, Sparkles, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
+import { cn } from '../../lib/utils';
 import { useAuth } from '../../contexts/AuthContext';
 import { logger } from '../../lib/logger';
 import { formToast } from '../../lib/formToast';
@@ -61,6 +62,107 @@ function getInitials(name: string | null | undefined): string {
     return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
   }
   return name.slice(0, 2).toUpperCase();
+}
+
+/**
+ * Read EXIF orientation from image file (1–8). Returns 1 if none/unused, -1 if not JPEG, -2 if parse error.
+ * Uses minimal buffer read; see https://stackoverflow.com/a/32490603
+ */
+function getOrientation(file: File): Promise<number> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const view = new DataView((e.target?.result as ArrayBuffer) ?? new ArrayBuffer(0));
+      if (view.getUint16(0, false) !== 0xffd8) {
+        return resolve(-2);
+      }
+      const length = view.byteLength;
+      let offset = 2;
+      while (offset < length) {
+        const marker = view.getUint16(offset, false);
+        offset += 2;
+        if (marker === 0xffe1) {
+          if (view.getUint32((offset += 2), false) !== 0x45786966) {
+            return resolve(-1);
+          }
+          const little = view.getUint16((offset += 6), false) === 0x4949;
+          offset += view.getUint32(offset + 4, little);
+          const tags = view.getUint16(offset, little);
+          offset += 2;
+          for (let i = 0; i < tags; i++) {
+            if (view.getUint16(offset + i * 12, little) === 0x0112) {
+              return resolve(view.getUint16(offset + i * 12 + 8, little));
+            }
+          }
+          return resolve(-1);
+        }
+        if ((marker & 0xff00) !== 0xff00) break;
+        offset += view.getUint16(offset, false);
+      }
+      resolve(-1);
+    };
+    reader.onerror = () => resolve(-1);
+    reader.readAsArrayBuffer(file.slice(0, 64 * 1024));
+  });
+}
+
+/**
+ * Apply EXIF orientation via canvas transform and return corrected image as data URL.
+ * Orientation 1 = no change; 2–8 = rotate/mirror. Ignores values less than 1.
+ */
+function resetOrientation(dataUrl: string, orientation: number): Promise<string> {
+  if (orientation < 2) {
+    return Promise.resolve(dataUrl);
+  }
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const width = img.width;
+      const height = img.height;
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Canvas context not available'));
+        return;
+      }
+      if (orientation > 4 && orientation < 9) {
+        canvas.width = height;
+        canvas.height = width;
+      } else {
+        canvas.width = width;
+        canvas.height = height;
+      }
+      switch (orientation) {
+        case 2:
+          ctx.transform(-1, 0, 0, 1, width, 0);
+          break;
+        case 3:
+          ctx.transform(-1, 0, 0, -1, width, height);
+          break;
+        case 4:
+          ctx.transform(1, 0, 0, -1, 0, height);
+          break;
+        case 5:
+          ctx.transform(0, 1, 1, 0, 0, 0);
+          break;
+        case 6:
+          ctx.transform(0, 1, -1, 0, height, 0);
+          break;
+        case 7:
+          ctx.transform(0, -1, -1, 0, height, width);
+          break;
+        case 8:
+          ctx.transform(0, -1, 1, 0, 0, width);
+          break;
+        default:
+          break;
+      }
+      ctx.drawImage(img, 0, 0);
+      resolve(canvas.toDataURL('image/jpeg', 0.92));
+    };
+    img.onerror = () => reject(new Error('Failed to load image for orientation fix'));
+    img.src = dataUrl;
+  });
 }
 
 /**
@@ -133,12 +235,12 @@ async function deleteOldAvatar(avatarPath: string): Promise<void> {
 }
 
 /**
- * Extract avatar path from full URL
+ * Extract avatar path from full URL (public or signed).
+ * Strips query string (?token=... or ?v=...) so path is suitable for storage delete.
  */
 function getAvatarPathFromUrl(url: string): string | null {
   try {
-    // URL format: .../storage/v1/object/public/avatars/{user_id}/{filename}
-    const match = url.match(/avatars\/(.+)$/);
+    const match = url.match(/avatars\/([^?]+)/);
     return match ? match[1] : null;
   } catch {
     return null;
@@ -159,11 +261,24 @@ export default function AvatarUpload({
   const [progress, setProgress] = useState(0);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
+  const [avatarUrlVersion, setAvatarUrlVersion] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const lastRetriedUrlRef = useRef<string | null>(null);
   
   const initials = useMemo(() => getInitials(name), [name]);
   const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
   const hasAvatar = currentAvatarUrl && !imageError;
+
+  // Reset load error and bump version when avatar URL changes so we retry displaying the new image
+  useEffect(() => {
+    setImageError(false);
+    setAvatarUrlVersion((v) => v + 1);
+    lastRetriedUrlRef.current = null;
+  }, [currentAvatarUrl]);
+
+  const avatarImgSrc = currentAvatarUrl
+    ? `${currentAvatarUrl}${currentAvatarUrl.includes('?') ? '&' : '?'}v=${avatarUrlVersion}`
+    : '';
   
   // Handle file selection
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -185,16 +300,25 @@ export default function AvatarUpload({
       return;
     }
     
-    // Read file and open cropper
-    const reader = new FileReader();
-    reader.onload = () => {
-      setSelectedImage(reader.result as string);
-      setState('cropping');
-    };
-    reader.onerror = () => {
-      formToast.error('Read Error', 'Failed to read the selected file.');
-    };
-    reader.readAsDataURL(file);
+    setState('selecting');
+    
+    void (async () => {
+      try {
+        const orientation = await getOrientation(file);
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => reject(new Error('Failed to read file'));
+          reader.readAsDataURL(file);
+        });
+        const imageToCrop = await resetOrientation(dataUrl, orientation);
+        setSelectedImage(imageToCrop);
+        setState('cropping');
+      } catch {
+        formToast.error('Read Error', 'Failed to read the selected file.');
+        setState('idle');
+      }
+    })();
   }, []);
   
   // Handle crop complete
@@ -240,11 +364,10 @@ export default function AvatarUpload({
       
       setProgress(80);
       
-      // Update database
-      const { error: dbError } = await supabase
-        .from('app_users')
-        .update({ avatar_url: filename })
-        .eq('user_id', user.id);
+      // Update database via RPC (allows employees; direct UPDATE is admin-only)
+      const { error: dbError } = await supabase.rpc('update_my_avatar_url', {
+        p_path: filename,
+      });
       
       if (dbError) {
         throw dbError;
@@ -312,11 +435,10 @@ export default function AvatarUpload({
         await deleteOldAvatar(avatarPath);
       }
       
-      // Update database
-      const { error: dbError } = await supabase
-        .from('app_users')
-        .update({ avatar_url: null })
-        .eq('user_id', user.id);
+      // Update database via RPC (allows employees; direct UPDATE is admin-only)
+      const { error: dbError } = await supabase.rpc('update_my_avatar_url', {
+        p_path: null,
+      });
       
       if (dbError) {
         throw dbError;
@@ -350,10 +472,22 @@ export default function AvatarUpload({
     fileInputRef.current?.click();
   }, [isOnline, state]);
   
-  // Handle image load error
+  // Handle image load error: retry once via refreshAvatar (new signed URL) then clear error
   const handleImageError = useCallback(() => {
+    const url = currentAvatarUrl ?? '';
+    if (url && lastRetriedUrlRef.current !== url) {
+      lastRetriedUrlRef.current = url;
+      formToast.info('Retrying…', 'Couldn’t load photo. Fetching again…');
+      void (async () => {
+        await refreshAvatar();
+        await new Promise((r) => setTimeout(r, 1500));
+        setImageError(false);
+        setAvatarUrlVersion((v) => v + 1);
+      })();
+      return;
+    }
     setImageError(true);
-  }, []);
+  }, [currentAvatarUrl, refreshAvatar]);
   
   return (
     <>
@@ -362,7 +496,6 @@ export default function AvatarUpload({
         ref={fileInputRef}
         type="file"
         accept={ACCEPTED_TYPES.join(',')}
-        capture="user"
         onChange={handleFileSelect}
         className="sr-only"
         aria-label="Upload profile photo"
@@ -412,7 +545,8 @@ export default function AvatarUpload({
             {/* Image or Initials */}
             {hasAvatar ? (
               <img
-                src={currentAvatarUrl}
+                key={currentAvatarUrl ?? 'avatar'}
+                src={avatarImgSrc}
                 alt={name || 'Profile photo'}
                 onError={handleImageError}
                 className="w-full h-full object-cover"
@@ -438,14 +572,23 @@ export default function AvatarUpload({
             
             {/* Upload overlay (on hover or during upload) */}
             <AnimatePresence>
-              {(state === 'idle' || state === 'uploading' || state === 'success' || state === 'error') && (
+              {(state === 'idle' || state === 'selecting' || state === 'uploading' || state === 'success' || state === 'error') && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: state === 'idle' ? 0 : 1 }}
                   whileHover={{ opacity: state === 'idle' ? 1 : undefined }}
                   exit={{ opacity: 0 }}
-                  className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm transition-opacity"
+                  className={cn(
+                    'absolute inset-0 flex flex-col items-center justify-center backdrop-blur-sm transition-opacity',
+                    hasAvatar ? 'bg-black/30' : 'bg-black/60'
+                  )}
                 >
+                  {state === 'selecting' && (
+                    <>
+                      <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
+                      <span className="mt-1 text-xs text-white/70">Preparing...</span>
+                    </>
+                  )}
                   {state === 'uploading' && (
                     <>
                       {/* Progress ring */}

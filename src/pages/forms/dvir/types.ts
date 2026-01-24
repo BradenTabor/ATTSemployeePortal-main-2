@@ -15,7 +15,7 @@ export type ExtraPhotos = {
   mileage?: File; // used for Detail-clean Truck Photo
 };
 
-export type ChecklistValue = "" | "P" | "F";
+export type ChecklistValue = "" | "P" | "F" | "N/A";
 
 export interface ChecklistItem {
   id: string;
@@ -41,7 +41,6 @@ export interface DVIRFormState {
   medicalCardExp: string;
   copyOfRegistration: "" | "YES" | "NO";
   copyOfInsurance: "" | "YES" | "NO";
-  driversSignatureSectionA: string;
   // Section B – Checklists
   vehicleTrailerChecklist: Record<string, ChecklistValue>;
   notes: string;
@@ -53,6 +52,11 @@ export interface DVIRFormState {
   mechanicRemarks: string;
   mechanicDate: string;
   isMechanicOpen: boolean;
+  // Signatures (typed; persisted in form state)
+  finalDriverSignature: string;
+  generalForemanSignature: string;
+  mechanicSignature: string;
+  driverApprovalSignature: string;
 }
 
 // =============================================================================
@@ -76,7 +80,6 @@ export const createInitialDVIRFormState = (): DVIRFormState => ({
   medicalCardExp: "",
   copyOfRegistration: "",
   copyOfInsurance: "",
-  driversSignatureSectionA: "",
   vehicleTrailerChecklist: {},
   notes: "",
   aerialChecklist: {},
@@ -86,6 +89,10 @@ export const createInitialDVIRFormState = (): DVIRFormState => ({
   mechanicRemarks: "",
   mechanicDate: "",
   isMechanicOpen: false,
+  finalDriverSignature: "",
+  generalForemanSignature: "",
+  mechanicSignature: "",
+  driverApprovalSignature: "",
 });
 
 // =============================================================================

@@ -48,7 +48,7 @@ export default function CardListSkeleton({
         <div
           key={`card-skeleton-${idx}`}
           className={cn(
-            "rounded-3xl border p-5 backdrop-blur-md overflow-hidden relative",
+            "rounded-2xl border p-4 sm:p-5 backdrop-blur-md overflow-hidden relative",
             styles.border,
             styles.background
           )}

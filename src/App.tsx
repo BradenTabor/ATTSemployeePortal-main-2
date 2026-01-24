@@ -82,6 +82,7 @@ const DailyEquipmentInspectionForm = lazy(
 const DailyJSAForm = lazy(() => import("./pages/forms/DailyJSAForm"));
 const FormHistory = lazy(() => import("./pages/forms/FormHistory"));
 const DVIRHistory = lazy(() => import("./pages/forms/DVIRHistory"));
+const JSAHistory = lazy(() => import("./pages/forms/JSAHistory"));
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -230,6 +231,18 @@ function AnimatedRoutes() {
                 <PageWrapper>
                   <ProtectedRoute>
                     <DVIRHistory />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            {/* JSA History (per-user) */}
+            <Route
+              path="/forms-history/jsa"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute>
+                    <JSAHistory />
                   </ProtectedRoute>
                 </PageWrapper>
               }

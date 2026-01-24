@@ -1,5 +1,6 @@
 // Toast Overlay System - Barrel Export
-export { ToastOverlayProvider, useToastOverlay } from './ToastOverlayProvider';
+export { ToastOverlayProvider } from './ToastOverlayProvider';
+export { useToastOverlay } from './useToastOverlay';
 export { ToastOverlayPortal } from './ToastOverlayPortal';
 export { ToastOverlayCard } from './ToastOverlayCard';
 export type {

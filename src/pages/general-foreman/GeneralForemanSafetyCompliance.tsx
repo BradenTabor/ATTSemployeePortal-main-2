@@ -6,6 +6,8 @@ import {
   Search,
   MapPin,
   User,
+  Users,
+  UserPlus,
   Clock,
   AlignLeft,
   Thermometer,
@@ -21,12 +23,13 @@ import {
   X,
   Maximize2,
   Minimize2,
+  Info,
 } from "lucide-react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
 import { PaginationControls } from "../../components/PaginationControls";
-import type { DailyJsaRecord, JsaSpan } from "../forms/DailyJSAForm";
+import type { DailyJsaRecord, JsaSpan, ObserverSignature, SharedUser } from "../forms/DailyJSAForm";
 import TableSkeleton from "../../components/skeletons/TableSkeleton";
 import CardListSkeleton from "../../components/skeletons/CardListSkeleton";
 import { TextEffect } from "../../components/ui/TextEffect";
@@ -180,24 +183,37 @@ export default function GeneralForemanSafetyCompliance() {
       const userMap = new Map<string, UserProfileMeta>();
 
       if (userIds.length > 0) {
-        const { data: profileData, error: profileError } = await supabase
-          .from("user_profiles")
-          .select("id, email, role, full_name")
-          .in("id", userIds);
-
-        if (profileError) {
-          console.warn("Failed to load user metadata:", profileError.message);
-        } else {
-          (profileData as Array<UserProfileMeta & { id: string }> | null)?.forEach(
-            (profile) => {
-              userMap.set(profile.id, {
-                email: profile.email,
-                role: profile.role,
-                full_name: profile.full_name,
-              });
-            }
-          );
+        // Batch query for large datasets
+        const batchSize = 100;
+        const batches = [];
+        for (let i = 0; i < userIds.length; i += batchSize) {
+          batches.push(userIds.slice(i, i + batchSize));
         }
+
+        const results = await Promise.all(
+          batches.map((batch) =>
+            supabase
+              .from("user_profiles")
+              .select("user_id, email, role, full_name")
+              .in("user_id", batch)
+          )
+        );
+
+        results.forEach((result) => {
+          if (result.error) {
+            console.warn("Failed to load user metadata:", result.error.message);
+          } else {
+            (result.data as Array<UserProfileMeta & { user_id: string }> | null)?.forEach(
+              (profile) => {
+                userMap.set(profile.user_id, {
+                  email: profile.email,
+                  role: profile.role,
+                  full_name: profile.full_name,
+                });
+              }
+            );
+          }
+        });
       }
 
       const enriched = rows.map((row) => {
@@ -205,8 +221,8 @@ export default function GeneralForemanSafetyCompliance() {
         return {
           ...row,
           user_email: meta.email || null,
-          user_name: meta.full_name || meta.email || null,
-          user_role: meta.role || "employee",
+          user_name: meta.full_name || meta.email || "Unknown User",
+          user_role: meta.role || "No role assigned",
         };
       });
 
@@ -702,6 +718,7 @@ function SelectedJsaDetail({
   // Use employee_signature as fallback for name if profile data unavailable
   const ownerName = record.user_name || record.employee_signature?.trim() || "Unknown User";
   const ownerEmail = record.user_email || "Not available";
+  const ownerRole = record.user_role || "—";
   const jobs = (record.jobs_performed as JobSelection[] | undefined) ?? [];
   const weather = (record.weather_conditions as WeatherPayload | undefined) || {
     conditions: {},
@@ -713,6 +730,8 @@ function SelectedJsaDetail({
   const trafficHazards = getActiveLabels(record.traffic_hazards, TRAFFIC_HAZARDS);
   const trafficSetup = getActiveLabels(record.traffic_setup, TRAFFIC_SETUP);
   const spanEntries = (record.spans as JsaSpan[] | undefined) ?? [];
+  const observers = (Array.isArray(record.observer_signatures) ? record.observer_signatures : []) as ObserverSignature[];
+  const sharedUsers = (Array.isArray(record.shared_with_users) ? record.shared_with_users : []) as SharedUser[];
 
   return (
     <div className={`space-y-5 text-sm text-[#f3e8ff]/90 ${isFullscreen ? "p-6 max-w-4xl mx-auto" : "p-6"}`}>
@@ -752,14 +771,76 @@ function SelectedJsaDetail({
       <div className={`space-y-4 ${isFullscreen ? "grid md:grid-cols-2 gap-4 space-y-0" : ""}`}>
         <DetailCard title="Owner & Job" icon={<User className="w-4 h-4" />}>
           <div className="grid grid-cols-1 gap-1 text-xs text-[#e9d5ff]">
-            <DetailRow label="Owner" value={ownerName} />
+            <div className="flex items-center justify-between text-xs text-[#c7b696] py-1">
+              <span className="uppercase tracking-wide">Owner</span>
+              <div className="flex items-center gap-1.5 text-white font-semibold text-right max-w-[60%]">
+                <span className="truncate">{ownerName}</span>
+                {ownerName === "Unknown User" && record.user_id && (
+                  <Info
+                    className="w-3 h-3 text-[#c7b696] flex-shrink-0 cursor-help"
+                    aria-label={`User ID: ${record.user_id}`}
+                  />
+                )}
+              </div>
+            </div>
             <DetailRow label="Email" value={ownerEmail} />
+            <DetailRow label="Role" value={ownerRole} />
             <DetailRow label="Job Date" value={formatDate(record.job_date)} />
             <DetailRow label="Call Times" value={`${record.call_in_time || "—"} → ${record.call_out_time || "—"}`} />
             <DetailRow label="Status" value={record.status} />
             <DetailRow label="Updated" value={formatDateTime(record.updated_at)} />
             <DetailRow label="Driver Signature" value={record.employee_signature?.trim() || "—"} />
           </div>
+        </DetailCard>
+
+        <DetailCard title="Observers" icon={<Users className="w-4 h-4" />}>
+          {observers.length === 0 ? (
+            <p className="text-xs text-[#a78bfa]">No observers for this JSA.</p>
+          ) : (
+            <div className="space-y-3 max-h-48 overflow-y-auto">
+              {observers.map((obs, idx) => (
+                <div
+                  key={idx}
+                  className="rounded-xl border border-[#c084fc]/15 bg-[#1a0f2e]/50 p-3 space-y-1.5 text-xs"
+                >
+                  <div className="flex justify-between items-center gap-2">
+                    <span className="font-semibold text-white truncate">{obs.name}</span>
+                    <span className="text-[10px] text-[#a78bfa] shrink-0">
+                      {obs.timestamp ? new Date(obs.timestamp).toLocaleDateString() : "—"}
+                    </span>
+                  </div>
+                  {obs.role && <p className="text-[#a78bfa]">{obs.role}</p>}
+                  {obs.signature_data && (
+                    <p
+                      className="text-base text-[#e9d5ff] break-words pt-1"
+                      style={{ fontFamily: "Caveat, cursive" }}
+                    >
+                      {obs.signature_data}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </DetailCard>
+
+        <DetailCard title="Shared with" icon={<UserPlus className="w-4 h-4" />}>
+          {sharedUsers.length === 0 ? (
+            <p className="text-xs text-[#a78bfa]">Not shared with any users.</p>
+          ) : (
+            <div className="space-y-2">
+              {sharedUsers.map((u) => (
+                <div
+                  key={u.id}
+                  className="rounded-xl border border-[#c084fc]/15 bg-[#1a0f2e]/50 p-2.5 space-y-1 text-xs text-[#e9d5ff]"
+                >
+                  <div className="font-semibold text-white truncate">{u.full_name || "Unknown"}</div>
+                  <div className="text-[#a78bfa] truncate">{u.email || "—"}</div>
+                  {u.role ? <div className="text-[#a78bfa]">{u.role}</div> : null}
+                </div>
+              ))}
+            </div>
+          )}
         </DetailCard>
 
         <DetailCard title="Emergency & Supervisors" icon={<Shield className="w-4 h-4" />}>

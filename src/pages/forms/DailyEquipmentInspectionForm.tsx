@@ -11,6 +11,7 @@ import DashboardLayout from "../../layouts/DashboardLayout";
 import { Camera, CheckCheck, RotateCcw, XCircle, RefreshCw, CheckCircle2 } from "lucide-react";
 import { logger } from "../../lib/logger";
 import { formToast } from "../../lib/formToast";
+import { cn } from "../../lib/utils";
 import { DateField } from "../../components/forms/GlassyPickers";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../contexts/AuthContext";
@@ -26,8 +27,15 @@ import {
   trackFormSubmitError,
   createFormTimer,
 } from "../../lib/telemetry";
+import { useFormValidation, type ValidationRule } from "../../hooks/useFormValidation";
+import { validators } from "../../lib/formValidation";
+import { ValidationSummary } from "../../components/forms/ValidationSummary";
+import { ValidatedSubmitButton } from "../../components/forms/ValidatedSubmitButton";
+import { scrollToFirstError } from "../../lib/scrollToError";
+import { AlertTriangle } from "lucide-react";
+import { motion } from "framer-motion";
 
-type ChecklistValue = "" | "P" | "F";
+type ChecklistValue = "" | "P" | "F" | "N/A";
 
 interface ChecklistItem {
   id: string;
@@ -244,6 +252,88 @@ export default function DailyEquipmentInspectionForm() {
     formTimer.current.reset();
   }, []);
 
+  const availableEquipmentNumbers = useMemo(
+    () => (form.equipmentType ? EQUIPMENT_NUMBERS_BY_TYPE[form.equipmentType] ?? [] : []),
+    [form.equipmentType]
+  );
+
+  // Validation rules for Equipment form
+  const validationRules = useMemo<ValidationRule<EquipmentFormState & { photos?: PhotoState }>[]>(() => [
+    {
+      field: 'submittedBy',
+      validator: (value: unknown) => validators.required(value) || (typeof value === 'string' && value?.trim() ? null : "Submitted By is required"),
+    },
+    {
+      field: 'equipmentType',
+      validator: (value: unknown) => validators.required(value) || (value ? null : "Select an equipment type"),
+    },
+    {
+      field: 'equipmentNumber',
+      validator: (value: unknown) => {
+        if (!value || !String(value).trim()) {
+          return "Select an equipment number";
+        }
+        const currentAvailable = form.equipmentType ? EQUIPMENT_NUMBERS_BY_TYPE[form.equipmentType] ?? [] : [];
+        if (!currentAvailable.includes(String(value).trim())) {
+          return "Select a valid equipment number for the chosen type";
+        }
+        return null;
+      },
+    },
+    {
+      field: 'generalChecklist',
+      validator: (value: unknown) => {
+        const count = Object.keys((value as Record<string, unknown>) || {}).filter(
+          (key) => (value as Record<string, unknown>)[key] === "P" || (value as Record<string, unknown>)[key] === "F" || (value as Record<string, unknown>)[key] === "N/A"
+        ).length;
+        if (count < GENERAL_ITEMS.length) {
+          return `Complete general checklist: ${count}/${GENERAL_ITEMS.length} items checked`;
+        }
+        return null;
+      },
+    },
+    // Specific checklist is optional - no validation requirement
+  ], [form.equipmentType]);
+
+  // Extended form state for validation (includes non-persisted fields)
+  const extendedFormState = useMemo(() => ({
+    ...form,
+    photos,
+  }), [form, photos]);
+
+  // Form validation hook
+  const {
+    errors,
+    getFieldError,
+    shouldShowError,
+    validateAll,
+    markSubmitAttempted,
+    handleFieldBlur,
+  } = useFormValidation(extendedFormState, validationRules, {
+    validateOnChange: true,
+    showErrorsAfterSubmitAttempt: false,
+  });
+
+  // Additional validation for non-form-state fields
+  const additionalErrors = useMemo(() => {
+    const errs: Record<string, string> = {};
+    
+    // Hydraulic photo is required
+    if (!photos.hydraulic) {
+      errs.hydraulicPhoto = "Hydraulic fluid level photo is required before submitting";
+    }
+    
+    // Specific checklist is optional - no validation required
+    // General checklist validation is handled in validationRules above
+    
+    return errs;
+  }, [photos.hydraulic]);
+
+  // Combined errors
+  const allErrors = useMemo(() => {
+    return { ...errors, ...additionalErrors };
+  }, [errors, additionalErrors]);
+
   // Form persistence (auto-save drafts to localStorage)
   const {
     hasDraft,
@@ -430,40 +520,57 @@ export default function DailyEquipmentInspectionForm() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
 
-    const submitterName = form.submittedBy.trim();
-    if (!submitterName) {
-      formToast.error("Validation Error", "Submitted By is required.");
-      trackFormSubmitError({ form_type: 'equipment', error_code: 'VALIDATION_FAILED', field_name: 'submittedBy' });
+    // Prevent multiple submissions
+    if (submitting) {
       return;
     }
 
-    if (!form.equipmentType) {
-      formToast.error("Validation Error", "Select an equipment type.");
-      trackFormSubmitError({ form_type: 'equipment', error_code: 'VALIDATION_FAILED', field_name: 'equipmentType' });
-      return;
-    }
-
-    const trimmedNumber = form.equipmentNumber.trim();
-    if (!trimmedNumber || !availableEquipmentNumbers.includes(trimmedNumber)) {
-      formToast.error("Validation Error", "Select a valid equipment number for the chosen type.");
-      trackFormSubmitError({ form_type: 'equipment', error_code: 'VALIDATION_FAILED', field_name: 'equipmentNumber' });
-      return;
-    }
-
+    // Check authentication first
     if (!user?.id) {
       formToast.error("Authentication Required", "You must be signed in to submit an inspection.");
       trackFormSubmitError({ form_type: 'equipment', error_code: 'AUTH_ERROR' });
       return;
     }
 
-    const missingRequired = REQUIRED_PHOTO_KEYS.filter((key) => !photos[key]);
-    if (missingRequired.length > 0) {
-      formToast.error("Photo Required", "Hydraulic fluid level photo is required before submitting.");
-      trackFormSubmitError({ form_type: 'equipment', error_code: 'VALIDATION_FAILED', field_name: 'hydraulicPhoto' });
+    setSubmitting(true);
+
+    // Mark submit as attempted to show all errors
+    markSubmitAttempted();
+
+    // Validate all fields
+    const isFormValid = validateAll();
+    const hasAdditionalErrors = Object.keys(additionalErrors).length > 0;
+
+    if (!isFormValid || hasAdditionalErrors) {
+      // Track validation errors
+      Object.keys(allErrors).forEach(field => {
+        if ((allErrors as Record<string, string>)[field]) {
+          trackFormSubmitError({ 
+            form_type: 'equipment', 
+            error_code: 'VALIDATION_FAILED', 
+            field_name: field 
+          });
+        }
+      });
+
+      // Show validation summary and scroll to first error
+      scrollToFirstError(allErrors, { offset: 120 });
+      
+      // Show error toast with summary
+      const errorCount = Object.keys(allErrors).filter(k => (allErrors as Record<string, string>)[k]).length;
+      formToast.error(
+        "Validation Error",
+        `Please fix ${errorCount} ${errorCount === 1 ? 'issue' : 'issues'} before submitting.`,
+      );
+      
+      setSubmitting(false);
       return;
     }
 
-    setSubmitting(true);
+    // All validation passed - proceed with submission
+    const submitterName = form.submittedBy.trim();
+    const trimmedNumber = form.equipmentNumber.trim();
+    
     formToast.submitting("Submitting equipment inspection...");
 
     const uploadedPaths: string[] = [];
@@ -564,8 +671,9 @@ export default function DailyEquipmentInspectionForm() {
 
   const generalCompleteCount = useMemo(
     () =>
-      Object.values(form.generalChecklist).filter((value) => value === "P" || value === "F")
-        .length,
+      Object.values(form.generalChecklist).filter(
+        (value) => value === "P" || value === "F" || value === "N/A"
+      ).length,
     [form.generalChecklist]
   );
 
@@ -573,7 +681,7 @@ export default function DailyEquipmentInspectionForm() {
     () =>
       specificItems.reduce((count, item) => {
         const value = form.specificChecklist[item.id];
-        return count + (value === "P" || value === "F" ? 1 : 0);
+        return count + (value === "P" || value === "F" || value === "N/A" ? 1 : 0);
       }, 0),
     [form.specificChecklist, specificItems]
   );
@@ -662,11 +770,6 @@ export default function DailyEquipmentInspectionForm() {
     }
   }, [defaultSubmitterName, form.submittedBy]);
 
-  const availableEquipmentNumbers = useMemo(
-    () => (form.equipmentType ? EQUIPMENT_NUMBERS_BY_TYPE[form.equipmentType] ?? [] : []),
-    [form.equipmentType]
-  );
-
   return (
     <DashboardLayout title="Daily Equipment Inspection">
       <div className="max-w-5xl mx-auto px-3 sm:px-4 pb-10 space-y-4 sm:space-y-5">
@@ -724,6 +827,15 @@ export default function DailyEquipmentInspectionForm() {
         </section>
 
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+          {/* Validation Summary */}
+          {Object.keys(allErrors).filter(k => (allErrors as Record<string, string>)[k]).length > 0 && (
+            <ValidationSummary
+              errors={allErrors}
+              formType="equipment"
+              className="mb-4"
+            />
+          )}
+
           {/* Card: Equipment Info */}
           <section className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#07140f] via-[#050a0f] to-[#020205] p-4 sm:p-5 space-y-4 shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
             <div className="flex items-center justify-between gap-3">
@@ -740,26 +852,66 @@ export default function DailyEquipmentInspectionForm() {
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
               <div className="col-span-2 sm:col-span-1">
-                <label className="block text-[10px] uppercase tracking-[0.25em] text-white/60 mb-1">
+                <label htmlFor="submittedBy" className="block text-[10px] uppercase tracking-[0.25em] text-white/60 mb-1">
                   Submitted By *
                 </label>
                 <input
+                  id="submittedBy"
+                  name="submittedBy"
                   value={form.submittedBy}
-                  onChange={(e) => setForm(prev => ({ ...prev, submittedBy: e.target.value }))}
+                  onChange={(e) => {
+                    setForm(prev => ({ ...prev, submittedBy: e.target.value }));
+                    handleFieldBlur('submittedBy' as unknown as keyof typeof extendedFormState);
+                  }}
+                  onBlur={() => handleFieldBlur('submittedBy' as unknown as keyof typeof extendedFormState)}
                   placeholder="Operator name"
-                  className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
+                  className={cn(
+                    "w-full rounded-xl border bg-white/[0.03] px-3 py-2 text-sm text-white placeholder:text-white/40",
+                    "focus:outline-none focus:ring-2 transition-all",
+                    shouldShowError('submittedBy' as unknown as keyof typeof extendedFormState) && getFieldError('submittedBy' as unknown as keyof typeof extendedFormState)
+                      ? "border-rose-500/50 focus:ring-rose-400/50"
+                      : "border-white/10 focus:ring-emerald-400/60"
+                  )}
+                  aria-invalid={shouldShowError('submittedBy' as unknown as keyof typeof extendedFormState) && !!getFieldError('submittedBy' as unknown as keyof typeof extendedFormState)}
+                  aria-describedby={shouldShowError('submittedBy' as unknown as keyof typeof extendedFormState) && getFieldError('submittedBy' as unknown as keyof typeof extendedFormState) ? "submittedBy-error" : undefined}
                 />
+                {shouldShowError('submittedBy' as unknown as keyof typeof extendedFormState) && getFieldError('submittedBy' as unknown as keyof typeof extendedFormState) && (
+                  <motion.p 
+                    id="submittedBy-error"
+                    role="alert"
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-xs text-rose-400 mt-1 flex items-center gap-1"
+                  >
+                    <AlertTriangle className="w-3 h-3" />
+                    {getFieldError('submittedBy' as unknown as keyof typeof extendedFormState)}
+                  </motion.p>
+                )}
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase tracking-[0.25em] text-white/60 mb-1">
+                <label htmlFor="equipmentType" className="block text-[10px] uppercase tracking-[0.25em] text-white/60 mb-1">
                   Type *
                 </label>
                 <select
+                  id="equipmentType"
+                  name="equipmentType"
                   value={form.equipmentType}
-                  onChange={(e) => handleEquipmentTypeSelect(e.target.value as EquipmentTypeOption | "")}
+                  onChange={(e) => {
+                    handleEquipmentTypeSelect(e.target.value as EquipmentTypeOption | "");
+                    handleFieldBlur('equipmentType' as unknown as keyof typeof extendedFormState);
+                  }}
+                  onBlur={() => handleFieldBlur('equipmentType' as unknown as keyof typeof extendedFormState)}
                   aria-label="Equipment type"
-                  className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-2 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
+                  className={cn(
+                    "w-full rounded-xl border bg-white/[0.03] px-2 py-2 text-sm text-white",
+                    "focus:outline-none focus:ring-2 transition-all",
+                    shouldShowError('equipmentType' as unknown as keyof typeof extendedFormState) && getFieldError('equipmentType' as unknown as keyof typeof extendedFormState)
+                      ? "border-rose-500/50 focus:ring-rose-400/50"
+                      : "border-white/10 focus:ring-emerald-400/60"
+                  )}
+                  aria-invalid={shouldShowError('equipmentType' as unknown as keyof typeof extendedFormState) && !!getFieldError('equipmentType' as unknown as keyof typeof extendedFormState)}
+                  aria-describedby={shouldShowError('equipmentType' as unknown as keyof typeof extendedFormState) && getFieldError('equipmentType' as unknown as keyof typeof extendedFormState) ? "equipmentType-error" : undefined}
                 >
                   <option value="">Select type</option>
                   {EQUIPMENT_TYPE_OPTIONS.map((option) => (
@@ -768,24 +920,62 @@ export default function DailyEquipmentInspectionForm() {
                     </option>
                   ))}
                 </select>
+                {shouldShowError('equipmentType' as unknown as keyof typeof extendedFormState) && getFieldError('equipmentType' as unknown as keyof typeof extendedFormState) && (
+                  <motion.p 
+                    id="equipmentType-error"
+                    role="alert"
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-xs text-rose-400 mt-1 flex items-center gap-1"
+                  >
+                    <AlertTriangle className="w-3 h-3" />
+                    {getFieldError('equipmentType' as unknown as keyof typeof extendedFormState)}
+                  </motion.p>
+                )}
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase tracking-[0.25em] text-white/60 mb-1">
+                <label htmlFor="equipmentNumber" className="block text-[10px] uppercase tracking-[0.25em] text-white/60 mb-1">
                   Number *
                 </label>
                 <select
+                  id="equipmentNumber"
+                  name="equipmentNumber"
                   value={form.equipmentNumber}
-                  onChange={(e) => setForm(prev => ({ ...prev, equipmentNumber: e.target.value }))}
+                  onChange={(e) => {
+                    setForm(prev => ({ ...prev, equipmentNumber: e.target.value }));
+                    handleFieldBlur('equipmentNumber' as unknown as keyof typeof extendedFormState);
+                  }}
+                  onBlur={() => handleFieldBlur('equipmentNumber' as unknown as keyof typeof extendedFormState)}
                   disabled={!form.equipmentType}
                   aria-label="Equipment number"
-                  className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-2 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/60 disabled:opacity-40"
+                  className={cn(
+                    "w-full rounded-xl border bg-white/[0.03] px-2 py-2 text-sm text-white",
+                    "focus:outline-none focus:ring-2 transition-all disabled:opacity-40",
+                    shouldShowError('equipmentNumber' as unknown as keyof typeof extendedFormState) && getFieldError('equipmentNumber' as unknown as keyof typeof extendedFormState)
+                      ? "border-rose-500/50 focus:ring-rose-400/50"
+                      : "border-white/10 focus:ring-emerald-400/60"
+                  )}
+                  aria-invalid={shouldShowError('equipmentNumber' as unknown as keyof typeof extendedFormState) && !!getFieldError('equipmentNumber' as unknown as keyof typeof extendedFormState)}
+                  aria-describedby={shouldShowError('equipmentNumber' as unknown as keyof typeof extendedFormState) && getFieldError('equipmentNumber' as unknown as keyof typeof extendedFormState) ? "equipmentNumber-error" : undefined}
                 >
                   <option value="">{form.equipmentType ? "Select #" : "Type first"}</option>
                   {availableEquipmentNumbers.map((number) => (
                     <option key={number} value={number}>{number}</option>
                   ))}
                 </select>
+                {shouldShowError('equipmentNumber' as unknown as keyof typeof extendedFormState) && getFieldError('equipmentNumber' as unknown as keyof typeof extendedFormState) && (
+                  <motion.p 
+                    id="equipmentNumber-error"
+                    role="alert"
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-xs text-rose-400 mt-1 flex items-center gap-1"
+                  >
+                    <AlertTriangle className="w-3 h-3" />
+                    {getFieldError('equipmentNumber' as unknown as keyof typeof extendedFormState)}
+                  </motion.p>
+                )}
               </div>
 
               <DateField
@@ -818,7 +1008,12 @@ export default function DailyEquipmentInspectionForm() {
           </section>
 
           {/* Card: General Checklist */}
-          <section className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#050b0f] via-[#04080c] to-[#010205] p-4 sm:p-5 space-y-3 shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
+          <section className={cn(
+            "rounded-2xl border bg-gradient-to-br from-[#050b0f] via-[#04080c] to-[#010205] p-4 sm:p-5 space-y-3 shadow-[0_20px_50px_rgba(0,0,0,0.45)]",
+            shouldShowError('generalChecklist' as unknown as keyof typeof extendedFormState) && getFieldError('generalChecklist' as unknown as keyof typeof extendedFormState)
+              ? "border-rose-500/30"
+              : "border-white/10"
+          )}>
             <div className="flex items-center justify-between gap-2">
               <div>
                 <p className="text-[9px] tracking-[0.3em] uppercase text-emerald-200/70">
@@ -831,6 +1026,20 @@ export default function DailyEquipmentInspectionForm() {
                 <p>{generalPercent}%</p>
               </div>
             </div>
+            {shouldShowError('generalChecklist' as unknown as keyof typeof extendedFormState) && getFieldError('generalChecklist' as unknown as keyof typeof extendedFormState) && (
+              <motion.div 
+                id="generalChecklist-error"
+                role="alert"
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3"
+              >
+                <p className="text-xs text-rose-400 flex items-center gap-1.5">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  {getFieldError('generalChecklist' as unknown as keyof typeof extendedFormState)}
+                </p>
+              </motion.div>
+            )}
             <div className="h-1 rounded-full bg-white/5 overflow-hidden">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-200 transition-all"
@@ -879,7 +1088,7 @@ export default function DailyEquipmentInspectionForm() {
                       <button
                         type="button"
                         onClick={() => handleChecklistChange("general", item.id, "P")}
-                        aria-label={`Mark ${item.label} as Pass`}
+                        aria-label={`Mark ${item.label} as Pass${value === "P" ? " - currently selected" : ""}`}
                         className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation ${
                           value === "P"
                             ? "border-emerald-400 bg-emerald-500/20 text-emerald-100"
@@ -891,7 +1100,7 @@ export default function DailyEquipmentInspectionForm() {
                       <button
                         type="button"
                         onClick={() => handleChecklistChange("general", item.id, "F")}
-                        aria-label={`Mark ${item.label} as Fail`}
+                        aria-label={`Mark ${item.label} as Fail${value === "F" ? " - currently selected" : ""}`}
                         className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation ${
                           value === "F"
                             ? "border-rose-400 bg-rose-500/20 text-rose-100"
@@ -899,6 +1108,18 @@ export default function DailyEquipmentInspectionForm() {
                         }`}
                       >
                         Fail
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleChecklistChange("general", item.id, "N/A")}
+                        aria-label={`Mark ${item.label} as Not Applicable${value === "N/A" ? " - currently selected" : ""}`}
+                        className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation ${
+                          value === "N/A"
+                            ? "border-amber-400 bg-amber-500/20 text-amber-100"
+                            : "border-white/10 bg-white/5 text-white/60"
+                        }`}
+                      >
+                        N/A
                       </button>
                     </div>
                   </div>
@@ -908,7 +1129,12 @@ export default function DailyEquipmentInspectionForm() {
           </section>
 
           {/* Card: Specific Equipment Checklist */}
-          <section className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#050b11] via-[#04070b] to-[#010204] p-4 sm:p-5 space-y-3 shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
+          <section className={cn(
+            "rounded-2xl border bg-gradient-to-br from-[#050b11] via-[#04070b] to-[#010204] p-4 sm:p-5 space-y-3 shadow-[0_20px_50px_rgba(0,0,0,0.45)]",
+            shouldShowError('specificChecklist' as unknown as keyof typeof extendedFormState) && allErrors.specificChecklist
+              ? "border-rose-500/30"
+              : "border-white/10"
+          )}>
             <div className="flex items-center justify-between gap-2">
               <div>
                 <p className="text-[9px] tracking-[0.3em] uppercase text-emerald-200/70">
@@ -921,6 +1147,20 @@ export default function DailyEquipmentInspectionForm() {
                 <p>{specificItems.length === 0 ? "Select template" : `${specificPercent}%`}</p>
               </div>
             </div>
+            {shouldShowError('specificChecklist' as unknown as keyof typeof extendedFormState) && allErrors.specificChecklist && (
+              <motion.div 
+                id="specificChecklist-error"
+                role="alert"
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 mb-2"
+              >
+                <p className="text-xs text-rose-400 flex items-center gap-1.5">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  {allErrors.specificChecklist}
+                </p>
+              </motion.div>
+            )}
             <div className="h-1 rounded-full bg-white/5 overflow-hidden">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-emerald-200 transition-all"
@@ -975,7 +1215,7 @@ export default function DailyEquipmentInspectionForm() {
                         <button
                           type="button"
                           onClick={() => handleChecklistChange("specific", item.id, "P")}
-                          aria-label={`Mark ${item.label} as Pass`}
+                          aria-label={`Mark ${item.label} as Pass${value === "P" ? " - currently selected" : ""}`}
                           className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation ${
                             value === "P"
                               ? "border-emerald-400 bg-emerald-500/20 text-emerald-100"
@@ -987,7 +1227,7 @@ export default function DailyEquipmentInspectionForm() {
                         <button
                           type="button"
                           onClick={() => handleChecklistChange("specific", item.id, "F")}
-                          aria-label={`Mark ${item.label} as Fail`}
+                          aria-label={`Mark ${item.label} as Fail${value === "F" ? " - currently selected" : ""}`}
                           className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation ${
                             value === "F"
                               ? "border-rose-400 bg-rose-500/20 text-rose-100"
@@ -995,6 +1235,18 @@ export default function DailyEquipmentInspectionForm() {
                           }`}
                         >
                           Fail
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleChecklistChange("specific", item.id, "N/A")}
+                          aria-label={`Mark ${item.label} as Not Applicable${value === "N/A" ? " - currently selected" : ""}`}
+                          className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation ${
+                            value === "N/A"
+                              ? "border-amber-400 bg-amber-500/20 text-amber-100"
+                              : "border-white/10 bg-white/5 text-white/60"
+                          }`}
+                        >
+                          N/A
                         </button>
                       </div>
                     </div>
@@ -1048,11 +1300,18 @@ export default function DailyEquipmentInspectionForm() {
               {PHOTO_DEFINITIONS.map((photo) => {
                 const captured = Boolean(photos[photo.key]);
                 const previewUrl = photoPreviewUrls[photo.key];
+                const isRequired = photo.required;
+                const hasError = isRequired && photo.key === 'hydraulic' && shouldShowError('hydraulicPhoto' as unknown as keyof typeof extendedFormState) && (allErrors as Record<string, string>).hydraulicPhoto;
                 
                 return (
                   <div
                     key={photo.key}
-                    className="relative rounded-xl border border-white/10 bg-white/[0.02] overflow-hidden transition hover:border-emerald-400/40"
+                    className={cn(
+                      "relative rounded-xl border bg-white/[0.02] overflow-hidden transition",
+                      hasError
+                        ? "border-rose-500/50 ring-2 ring-rose-500/30"
+                        : "border-white/10 hover:border-emerald-400/40"
+                    )}
                   >
                     {captured && previewUrl ? (
                       // Photo captured - show thumbnail with retake option
@@ -1152,13 +1411,16 @@ export default function DailyEquipmentInspectionForm() {
               </div>
             </div>
             
-            <button
-              type="submit"
+            <ValidatedSubmitButton
+              onClick={() => {
+                handleSubmit(new Event('submit') as unknown as React.FormEvent);
+              }}
               disabled={submitting}
-              className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 px-4 py-2.5 text-sm font-semibold text-black shadow-lg shadow-emerald-500/20 transition hover:shadow-emerald-400/40 disabled:cursor-not-allowed disabled:opacity-60 touch-manipulation"
-            >
-              {submitting ? "Submitting..." : "Submit Inspection"}
-            </button>
+              loading={submitting}
+              errorCount={Object.keys(allErrors).filter(k => (allErrors as Record<string, string>)[k]).length}
+              label={submitting ? "Submitting..." : "Submit Inspection"}
+              className="w-full"
+            />
           </section>
         </form>
       </div>

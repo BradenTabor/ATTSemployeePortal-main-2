@@ -32,7 +32,8 @@ export type { DashboardCardTheme } from './DashboardGrid';
 export { QuickActionsBar } from './QuickActionsBar';
 export { QuickLinksRow } from './QuickLinksRow';
 export { FloatingActionButton } from './FloatingActionButton';
-export { PinnedFavorites, usePinnedFavorites } from './PinnedFavorites';
+export { PinnedFavorites } from './PinnedFavorites';
+export { usePinnedFavorites } from '../../hooks/usePinnedFavorites';
 export type { PinnedFavoritesTheme } from './PinnedFavorites';
 
 // Header & Profile

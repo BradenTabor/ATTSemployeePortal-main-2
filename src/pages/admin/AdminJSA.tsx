@@ -41,6 +41,7 @@ import {
   generateFilename,
   type ExportMetadata,
 } from "../../lib/exportUtils";
+import { logger } from "../../lib/logger";
 
 // Import from extracted module
 import {
@@ -101,6 +102,54 @@ export default function AdminJSA() {
 
   const tableRef = useRef<HTMLDivElement>(null);
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  // Helper function to fetch user profiles in batches for large datasets
+  const fetchUserProfilesInBatches = useCallback(
+    async (
+      userIds: string[],
+      batchSize = 100
+    ): Promise<Array<{ user_id: string; email: string | null; role: string | null; full_name: string | null }>> => {
+      if (userIds.length === 0) return [];
+
+      // For small datasets, use single query
+      if (userIds.length <= batchSize) {
+        const { data, error } = await supabase
+          .from("user_profiles")
+          .select("user_id, email, role, full_name")
+          .in("user_id", userIds);
+
+        if (error) {
+          logger.error("Failed to fetch user profiles", { error, userIds: userIds.length });
+          return [];
+        }
+        return data || [];
+      }
+
+      // For large datasets, batch queries
+      const batches = [];
+      for (let i = 0; i < userIds.length; i += batchSize) {
+        batches.push(userIds.slice(i, i + batchSize));
+      }
+
+      const results = await Promise.all(
+        batches.map((batch) =>
+          supabase
+            .from("user_profiles")
+            .select("user_id, email, role, full_name")
+            .in("user_id", batch)
+        )
+      );
+
+      return results.flatMap((r) => {
+        if (r.error) {
+          logger.error("Failed to fetch user profile batch", { error: r.error, batchSize: 0 });
+          return [];
+        }
+        return (r.data as unknown as Array<{ user_id: string; email: string | null; role: string | null; full_name: string | null }>) || [];
+      });
+    },
+    []
+  );
 
   // Fetch stats on mount
   useEffect(() => {
@@ -205,35 +254,40 @@ export default function AdminJSA() {
       const userMap = new Map<string, UserProfileMeta>();
 
       if (userIds.length > 0) {
-        const { data: profileData, error: profileError } = await supabase
-          .from("user_profiles")
-          .select("id, email, role, full_name")
-          .in("id", userIds);
-
-        if (profileError) {
-          console.warn("Failed to load user metadata:", profileError.message);
-        } else {
-          (profileData as Array<UserProfileMeta & { id: string }> | null)?.forEach(
-            (profile) => {
-              userMap.set(profile.id, {
-                email: profile.email,
-                role: profile.role,
-                full_name: profile.full_name,
-              });
-            }
-          );
-        }
+        const profiles = await fetchUserProfilesInBatches(userIds);
+        profiles.forEach((profile) => {
+          userMap.set(profile.user_id, {
+            email: profile.email,
+            role: profile.role,
+            full_name: profile.full_name,
+          });
+        });
       }
 
       const enriched = rows.map((row) => {
         const meta = userMap.get(row.user_id) || ({} as UserProfileMeta);
         return {
           ...row,
-          user_email: meta.email || row.user_id,
-          user_name: meta.full_name || meta.email || row.user_id,
-          user_role: meta.role || "employee",
+          user_email: meta.email || null,
+          user_name: meta.full_name || meta.email || "Unknown User",
+          user_role: meta.role || "No role assigned",
+          user_id: row.user_id, // Keep UUID for debugging/admin purposes
         };
       });
+
+      // Log missing user profiles for ops visibility
+      const unknownUserCount = enriched.filter((r) => r.user_name === "Unknown User").length;
+      if (unknownUserCount > 0) {
+        logger.warn("admin_jsa_unknown_users", {
+          count: unknownUserCount,
+          total_jsas: enriched.length,
+          percentage: ((unknownUserCount / enriched.length) * 100).toFixed(2),
+          affected_user_ids: enriched
+            .filter((r) => r.user_name === "Unknown User")
+            .map((r) => r.user_id)
+            .slice(0, 10), // Limit to first 10 for log size
+        });
+      }
 
       // Sort by user_name if needed (since we can't sort by it directly in the query)
       if (sortField === "user_name") {
@@ -263,7 +317,7 @@ export default function AdminJSA() {
     } finally {
       setLoading(false);
     }
-  }, [isAdmin, page, pageSize, searchQuery, statusFilter, dateFilter, dateEndFilter, signatureFilter, userFilter, sortField, sortDirection]);
+  }, [isAdmin, page, pageSize, searchQuery, statusFilter, dateFilter, dateEndFilter, signatureFilter, userFilter, sortField, sortDirection, fetchUserProfilesInBatches]);
 
   useEffect(() => {
     fetchRecords();

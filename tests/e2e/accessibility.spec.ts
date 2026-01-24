@@ -253,9 +253,10 @@ test.describe('Accessibility - DVIR Form', () => {
       }
     });
 
-    test('should not truncate content at 200% zoom', async ({ page }) => {
-      // Set viewport to simulate 200% zoom
-      await page.setViewportSize({ width: 640, height: 480 }); // Half size = 200% zoom
+    test('should remain usable at small viewport sizes', async ({ page }) => {
+      // Test responsive layout at a small viewport (640x480)
+      // Note: Page zoom is intentionally disabled; this tests responsive behavior only
+      await page.setViewportSize({ width: 640, height: 480 });
       
       await page.goto('/dashboard/forms/dvir');
       await page.waitForSelector('form');

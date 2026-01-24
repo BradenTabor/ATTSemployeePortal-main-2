@@ -6,7 +6,6 @@ export { ExampleJobForm } from './ExampleJobForm';
 export { JsaWizard, type SaveMode } from './JsaWizard';
 export { JsaStepProgress } from './JsaStepProgress';
 export { JSA_STEPS, type JsaStep } from './jsaSteps';
-export { JsaPickerDrawer } from './JsaPickerDrawer';
 export { DateField, TimeField } from './GlassyPickers';
 
 // User-specific form enhancement components

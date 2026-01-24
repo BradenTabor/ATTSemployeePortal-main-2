@@ -1,6 +1,4 @@
 import {
-  createContext,
-  useContext,
   useState,
   useCallback,
   useEffect,
@@ -9,6 +7,7 @@ import {
 } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { ToastOverlayPortal } from './ToastOverlayPortal';
+import { ToastOverlayContext } from './ToastOverlayContext';
 import {
   type ToastState,
   type ToastOverlayContextValue,
@@ -31,18 +30,6 @@ const defaultState: ToastState = {
   autoDismiss: false,
   id: '',
 };
-
-// Create context
-const ToastOverlayContext = createContext<ToastOverlayContextValue | null>(null);
-
-// Hook to use toast overlay
-export function useToastOverlay(): ToastOverlayContextValue {
-  const context = useContext(ToastOverlayContext);
-  if (!context) {
-    throw new Error('useToastOverlay must be used within a ToastOverlayProvider');
-  }
-  return context;
-}
 
 interface ToastOverlayProviderProps {
   children: ReactNode;

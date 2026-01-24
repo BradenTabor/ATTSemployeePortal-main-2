@@ -14,9 +14,14 @@ import {
   TrendingUp,
   Shield,
   FileCheck,
+  Users,
+  X,
 } from "lucide-react";
 import { cn } from "../../../lib/utils";
 import type { JsaSpan } from "./StepSpans";
+import { ObserverSignatureCapture } from "../ObserverSignatureCapture";
+import { JsaUserSelector } from "../JsaUserSelector";
+import type { ObserverSignature, SharedUser } from "../../../pages/forms/DailyJSAForm";
 
 type ConditionState = "good" | "needs_replaced";
 
@@ -55,6 +60,8 @@ interface StepReviewProps {
     spans: JsaSpan[];
     notes: string;
     employeeSignature: string;
+    observerSignatures: ObserverSignature[];
+    sharedWithUsers: SharedUser[];
     status: "draft" | "completed";
     createdAt: string | null;
     updatedAt: string | null;
@@ -63,9 +70,17 @@ interface StepReviewProps {
     statusHistory: StatusLogEntry[];
   };
   onInputChange: (key: "notes" | "employeeSignature", value: string) => void;
+  onAddObserver: (observer: ObserverSignature) => void;
+  onDeleteObserver: (timestamp: string) => void;
+  onSharedUsersChange: (users: SharedUser[]) => void;
   onStatusChange: (status: "draft" | "completed") => void;
   onGoToStep: (step: number) => void;
   isEditMode: boolean;
+  errors?: {
+    employeeSignature?: string;
+    spans?: string;
+  };
+  onFieldBlur?: (field: "employeeSignature") => void;
 }
 
 const JOB_LABELS: Record<string, string> = {
@@ -175,11 +190,17 @@ function ChipList({ items }: { items: string[] }) {
 export function StepReview({
   form,
   onInputChange,
+  onAddObserver,
+  onDeleteObserver,
+  onSharedUsersChange,
   onStatusChange,
   onGoToStep,
   isEditMode,
+  errors,
+  onFieldBlur,
 }: StepReviewProps) {
   const [statusToast, setStatusToast] = useState<string | null>(null);
+  const [showUserSelector, setShowUserSelector] = useState(false);
 
   const jobLabels = form.jobsPerformed.map(
     (key) => JOB_LABELS[key] || key
@@ -434,6 +455,79 @@ export function StepReview({
         </SummarySection>
       </div>
 
+      {/* JSA Sharing / Delegation */}
+      <div className="space-y-3 pt-2">
+        {/* Info Banner */}
+        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4">
+          <div className="flex items-start gap-3">
+            <Info className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-emerald-300 mb-1">
+                About JSA Sharing
+              </p>
+              <p className="text-xs text-gray-300 leading-relaxed">
+                Users you add can <strong className="text-white">view and edit</strong> this JSA from their JSA History page. 
+                They <strong className="text-white">cannot</strong> change who it's shared with. You can remove users at any time.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Delegation Summary Section */}
+        <div className="rounded-lg border border-white/10 bg-black/30 overflow-hidden">
+          <div className="flex items-center justify-between px-3 py-2 border-b border-white/5 bg-white/5">
+            <div className="flex items-center gap-1.5">
+              <Users className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="text-xs font-semibold text-white">Share with Users</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowUserSelector(true)}
+              className="inline-flex items-center gap-1 text-[10px] text-emerald-400 hover:text-emerald-300 transition touch-manipulation px-1.5 py-1"
+            >
+              <Edit3 className="w-3 h-3" />
+              {form.sharedWithUsers.length > 0 ? 'Edit' : 'Add Users'}
+            </button>
+          </div>
+          <div className="px-3 py-2 text-xs">
+            {form.sharedWithUsers.length === 0 ? (
+              <span className="text-gray-500">None selected</span>
+            ) : (
+              <div className="space-y-2">
+                {form.sharedWithUsers.map((sharedUser) => (
+                  <div
+                    key={sharedUser.id}
+                    className="flex items-center justify-between p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-white truncate">
+                        {sharedUser.full_name || sharedUser.email}
+                        {!sharedUser.full_name && (
+                          <span className="ml-2 text-xs text-gray-500">(Inactive)</span>
+                        )}
+                      </p>
+                      {sharedUser.full_name && (
+                        <p className="text-xs text-gray-400 truncate">{sharedUser.email}</p>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onSharedUsersChange(
+                        form.sharedWithUsers.filter(u => u.id !== sharedUser.id)
+                      )}
+                      className="p-1 hover:bg-red-500/20 rounded-lg transition ml-2"
+                      aria-label={`Remove ${sharedUser.full_name || sharedUser.email}`}
+                    >
+                      <X className="w-4 h-4 text-red-400" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Notes & Signature */}
       <div className="space-y-3 pt-2">
         <div>
@@ -451,32 +545,65 @@ export function StepReview({
 
         {/* Typed Signature */}
         <div>
-          <label className="block text-[10px] font-medium text-white/50 uppercase mb-1">
+          <label htmlFor="employeeSignature" className="block text-[10px] font-medium text-white/50 uppercase mb-1">
             Employee Signature <span className="text-red-400">*</span>
           </label>
           <div className="relative">
-            <PenLine className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500/50" />
+            <PenLine className={cn(
+              "absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors",
+              errors?.employeeSignature ? "text-rose-400" : "text-emerald-500/50"
+            )} />
             <input
+              id="employeeSignature"
               type="text"
               value={form.employeeSignature}
               onChange={(e) => onInputChange("employeeSignature", e.target.value)}
+              onBlur={() => onFieldBlur?.("employeeSignature")}
               placeholder="Type your full name"
               className={cn(
                 "w-full rounded-lg border bg-black/50 pl-10 pr-3 py-3 text-base text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 transition-all",
-                form.employeeSignature.trim()
+                errors?.employeeSignature
+                  ? "border-rose-500/50 focus:ring-rose-500/50"
+                  : form.employeeSignature.trim()
                   ? "border-emerald-500/40 focus:ring-emerald-500/50"
                   : "border-white/10 focus:ring-emerald-500/50"
               )}
               style={{ fontFamily: "'Caveat', cursive" }}
+              aria-invalid={!!errors?.employeeSignature}
+              aria-describedby={errors?.employeeSignature ? "employeeSignature-error" : undefined}
             />
+            {errors?.employeeSignature && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <AlertTriangle className="w-4 h-4 text-rose-400" />
+              </div>
+            )}
           </div>
-          {form.employeeSignature.trim() && (
+          {errors?.employeeSignature && (
+            <motion.p
+              id="employeeSignature-error"
+              role="alert"
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-1 text-xs text-rose-400 flex items-center gap-1"
+            >
+              <AlertTriangle className="w-3 h-3" />
+              {errors.employeeSignature}
+            </motion.p>
+          )}
+          {form.employeeSignature.trim() && !errors?.employeeSignature && (
             <p className="mt-1 text-[10px] text-emerald-400/70 flex items-center gap-1">
               <CheckCircle2 className="w-3 h-3" />
               By typing your name, you certify this JSA is accurate
             </p>
           )}
         </div>
+
+        {/* Observer Signatures */}
+        <ObserverSignatureCapture
+          observers={form.observerSignatures}
+          onAddObserver={onAddObserver}
+          onDeleteObserver={onDeleteObserver}
+        />
       </div>
 
       {/* Status Toggle */}
@@ -508,6 +635,7 @@ export function StepReview({
                 type="button"
                 key={option.value}
                 onClick={() => handleStatusChange(option.value)}
+                aria-pressed={active}
                 className={cn(
                   "rounded-lg border px-3 py-2 text-xs font-semibold transition flex items-center justify-center gap-1.5 touch-manipulation",
                   active
@@ -553,6 +681,14 @@ export function StepReview({
           </div>
         )}
       </div>
+
+      {/* User Selector Modal */}
+      <JsaUserSelector
+        selectedUsers={form.sharedWithUsers}
+        onUsersChange={onSharedUsersChange}
+        isOpen={showUserSelector}
+        onClose={() => setShowUserSelector(false)}
+      />
     </div>
   );
 }

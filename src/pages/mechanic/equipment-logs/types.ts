@@ -2,7 +2,7 @@
 // TYPE DEFINITIONS
 // =============================================================================
 
-export type ChecklistValue = "" | "P" | "F";
+export type ChecklistValue = "" | "P" | "F" | "N/A";
 
 export interface ChecklistItem {
   id: string;

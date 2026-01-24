@@ -185,11 +185,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const rawRole = data?.role;
       const rawFullName = data?.full_name;
       const rawAvatarUrl = data?.avatar_url;
-      
-      // Convert storage path to public URL
-      const publicAvatarUrl = getAvatarPublicUrl(rawAvatarUrl);
-      
-      logger.info(`[AuthContext] Profile from DB for ${userId}:`, { role: rawRole, fullName: rawFullName, avatarUrl: publicAvatarUrl });
+
+      // Use signed URL for avatar (works even if bucket has permission quirks); fallback to public URL
+      let publicAvatarUrl: string | null = null;
+      if (rawAvatarUrl) {
+        try {
+          const { data: signed, error: signedErr } = await supabase.storage
+            .from('avatars')
+            .createSignedUrl(rawAvatarUrl, 3600);
+          if (!signedErr && signed?.signedUrl) {
+            publicAvatarUrl = signed.signedUrl;
+          } else {
+            publicAvatarUrl = getAvatarPublicUrl(rawAvatarUrl);
+          }
+        } catch {
+          publicAvatarUrl = getAvatarPublicUrl(rawAvatarUrl);
+        }
+      }
+
+      logger.info(`[AuthContext] Profile from DB for ${userId}:`, { role: rawRole, fullName: rawFullName, avatarUrl: publicAvatarUrl != null ? '[signed/public]' : null });
 
       // Normalize role to known values (matches DB constraint)
       let normalizedRole: UserRole = 'employee';

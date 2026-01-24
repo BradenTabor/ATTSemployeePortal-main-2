@@ -5,6 +5,8 @@
 import React from "react";
 import {
   User,
+  Users,
+  UserPlus,
   Clock,
   ChevronRight,
   Shield,
@@ -17,8 +19,9 @@ import {
   Minimize2,
   CheckCircle2,
   FileEdit,
+  Info,
 } from "lucide-react";
-import type { JsaSpan } from "../../forms/DailyJSAForm";
+import type { JsaSpan, ObserverSignature, SharedUser } from "../../forms/DailyJSAForm";
 import type { AdminJsaRow, JobSelection, WeatherPayload } from "./types";
 import {
   WEATHER_CONDITIONS,
@@ -178,7 +181,15 @@ export function MobileJsaCard({
       <div className="text-[10px] sm:text-xs text-[#c7b696] space-y-1 sm:space-y-1.5">
         <div className="flex items-center gap-1.5 sm:gap-2">
           <User className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#f4c979] flex-shrink-0" />
-          <span className="text-white/90 truncate">{record.user_name || record.user_email || record.user_id}</span>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="text-white/90 truncate">{record.user_name || "Unknown User"}</span>
+            {(!record.user_name || record.user_name === "Unknown User") && record.user_id && (
+              <Info
+                className="w-3 h-3 text-[#c7b696] flex-shrink-0 cursor-help"
+                aria-label={`User ID: ${record.user_id}`}
+              />
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2">
           <User className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#9cf6d2] flex-shrink-0" />
@@ -215,8 +226,10 @@ export function SelectedJsaDetail({
   isFullscreen: boolean;
   onToggleFullscreen: () => void;
 }) {
-  const ownerName = record.user_name || record.user_email || record.user_id;
-  const ownerEmail = record.user_email || "—";
+  const ownerName = record.user_name || "Unknown User";
+  const ownerEmail = record.user_email || "Not available";
+  const ownerRole = record.user_role || "—";
+  const isUnknownUser = ownerName === "Unknown User";
 
   // Parse job selections
   const jobsPerformed = (record.jobs_performed || []) as JobSelection[];
@@ -239,6 +252,10 @@ export function SelectedJsaDetail({
 
   // Parse spans
   const spanEntries = (record.spans || []) as JsaSpan[];
+
+  // Parse observers and shared users
+  const observers = (Array.isArray(record.observer_signatures) ? record.observer_signatures : []) as ObserverSignature[];
+  const sharedUsers = (Array.isArray(record.shared_with_users) ? record.shared_with_users : []) as SharedUser[];
 
   return (
     <div className="h-full flex flex-col">
@@ -275,14 +292,76 @@ export function SelectedJsaDetail({
       <div className={`flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 ${isFullscreen ? "grid md:grid-cols-2 gap-4" : ""}`}>
         <DetailCard title="Owner & Job" icon={<User className="w-4 h-4" />}>
           <div className="grid grid-cols-1 gap-1 text-xs text-[#f0e2c7]">
-            <DetailRow label="Owner" value={ownerName} />
+            <div className="flex items-center justify-between text-xs text-[#c7b696] py-1">
+              <span className="uppercase tracking-wide">Owner</span>
+              <div className="flex items-center gap-1.5 text-white font-semibold text-right max-w-[60%]">
+                <span className="truncate">{ownerName}</span>
+                {isUnknownUser && record.user_id && (
+                  <Info
+                    className="w-3 h-3 text-[#c7b696] flex-shrink-0 cursor-help"
+                    aria-label={`User ID: ${record.user_id}`}
+                  />
+                )}
+              </div>
+            </div>
             <DetailRow label="Email" value={ownerEmail} />
+            <DetailRow label="Role" value={ownerRole} />
             <DetailRow label="Job Date" value={formatDate(record.job_date)} />
             <DetailRow label="Call Times" value={`${record.call_in_time || "—"} → ${record.call_out_time || "—"}`} />
             <DetailRow label="Status" value={record.status} />
             <DetailRow label="Updated" value={formatDateTime(record.updated_at)} />
             <DetailRow label="Driver Signature" value={record.employee_signature?.trim() || "—"} />
           </div>
+        </DetailCard>
+
+        <DetailCard title="Observers" icon={<Users className="w-4 h-4" />}>
+          {observers.length === 0 ? (
+            <p className="text-xs text-[#c7b696]">No observers for this JSA.</p>
+          ) : (
+            <div className="space-y-3 max-h-48 overflow-y-auto">
+              {observers.map((obs, idx) => (
+                <div
+                  key={idx}
+                  className="rounded-xl border border-[#f6dcb2]/15 bg-[#120f0c]/50 p-3 space-y-1.5 text-xs"
+                >
+                  <div className="flex justify-between items-center gap-2">
+                    <span className="font-semibold text-white truncate">{obs.name}</span>
+                    <span className="text-[10px] text-[#c7b696] shrink-0">
+                      {obs.timestamp ? new Date(obs.timestamp).toLocaleDateString() : "—"}
+                    </span>
+                  </div>
+                  {obs.role && <p className="text-[#c7b696]">{obs.role}</p>}
+                  {obs.signature_data && (
+                    <p
+                      className="text-base text-[#f0e2c7] break-words pt-1"
+                      style={{ fontFamily: "Caveat, cursive" }}
+                    >
+                      {obs.signature_data}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </DetailCard>
+
+        <DetailCard title="Shared with" icon={<UserPlus className="w-4 h-4" />}>
+          {sharedUsers.length === 0 ? (
+            <p className="text-xs text-[#c7b696]">Not shared with any users.</p>
+          ) : (
+            <div className="space-y-2">
+              {sharedUsers.map((u) => (
+                <div
+                  key={u.id}
+                  className="rounded-xl border border-[#f6dcb2]/15 bg-[#120f0c]/50 p-2.5 space-y-1 text-xs text-[#f0e2c7]"
+                >
+                  <div className="font-semibold text-white truncate">{u.full_name || "Unknown"}</div>
+                  <div className="text-[#c7b696] truncate">{u.email || "—"}</div>
+                  {u.role ? <div className="text-[#c7b696]">{u.role}</div> : null}
+                </div>
+              ))}
+            </div>
+          )}
         </DetailCard>
 
         <DetailCard title="Emergency & Supervisors" icon={<Shield className="w-4 h-4" />}>

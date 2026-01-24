@@ -48,6 +48,21 @@
   }
 }
 
+@keyframes validation-highlight {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(244, 63, 94, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(244, 63, 94, 0.4);
+  }
+}
+
+/* Design-system shimmer: subtle sweep for premium surfaces. Disabled in prefers-reduced-motion. */
+@keyframes shimmer-sweep {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
 @layer base {
   /* Global font family and smooth scrolling */
   html {
@@ -55,6 +70,8 @@
     scroll-behavior: smooth;
     /* Prevent white flash and ensure consistent dark background */
     background-color: #010604;
+    /* Disable double-tap zoom while keeping pan/scroll */
+    touch-action: manipulation;
   }
   
   body {
@@ -62,6 +79,8 @@
     /* Match the dashboard's dark base color */
     background-color: #010604;
     min-height: 100vh;
+    /* Disable double-tap zoom while keeping pan/scroll */
+    touch-action: manipulation;
   }
 
   /* Root element background - premium dark gradient matching dashboard theme */
@@ -81,6 +100,12 @@
 @layer utilities {
   .animate-aurora {
     animation: aurora 20s linear infinite alternate;
+  }
+
+  .animate-shimmer {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+    background-size: 200% 100%;
+    animation: shimmer-sweep 4s ease-in-out infinite;
   }
 
   /* Text wrapping utilities */
@@ -155,6 +180,7 @@
     .animate-fadeIn,
     .animate-ping,
     .animate-spin,
+    .animate-shimmer,
     .gradient-animated {
       animation: none !important;
       transition: none !important;
@@ -285,4 +311,8 @@
 .gradient-animated {
   background-size: 200% 200%;
   animation: pulse-gradient 10s ease infinite;
+}
+
+.validation-highlight {
+  animation: validation-highlight 0.6s ease-in-out 3;
 }

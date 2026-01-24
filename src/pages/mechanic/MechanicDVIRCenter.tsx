@@ -60,7 +60,7 @@ function ScrollRevealSection({
   );
 }
 
-type ChecklistValue = "" | "P" | "F";
+type ChecklistValue = "" | "P" | "F" | "N/A";
 
 interface ChecklistItem {
   id: string;
@@ -95,7 +95,6 @@ interface DVIRReport {
   medical_card_exp: string | null;
   copy_of_registration: string | null;
   copy_of_insurance: string | null;
-  drivers_signature_section_a: string | null;
   notes: string | null;
   vehicle_trailer_checklist: Record<string, ChecklistValue> | null;
   aerial_checklist: Record<string, ChecklistValue> | null;
@@ -380,6 +379,8 @@ export default function MechanicDVIRCenter() {
     return data.publicUrl ?? null;
   }, []);
 
+  const isStoragePath = useCallback((s: string) => /[/\\]/.test(s) || /\.(png|jpe?g|webp)$/i.test(s), []);
+
   const fetchReports = useCallback(async () => {
     try {
       setLoading(true);
@@ -411,7 +412,6 @@ export default function MechanicDVIRCenter() {
             medical_card_exp,
             copy_of_registration,
             copy_of_insurance,
-            drivers_signature_section_a,
             notes,
             vehicle_trailer_checklist,
             aerial_checklist,
@@ -519,16 +519,20 @@ export default function MechanicDVIRCenter() {
       { label: "General Foreman Signature", path: selectedReport.general_foreman_signature },
       { label: "Mechanic Signature", path: selectedReport.mechanic_signature },
       { label: "Driver Approval Signature", path: selectedReport.driver_approval_signature },
-      { label: "Section A Signature", path: selectedReport.drivers_signature_section_a },
     ];
-    return base
-      .filter((entry) => entry.path)
-      .map((entry) => {
-        const url = getPublicUrl(entry.path);
-        return url ? { label: entry.label, url } : null;
-      })
-      .filter((entry): entry is { label: string; url: string } => Boolean(entry));
-  }, [selectedReport, getPublicUrl]);
+    const out: { label: string; url?: string; text?: string }[] = [];
+    for (const entry of base) {
+      const path = entry.path?.trim();
+      if (!path) continue;
+      if (isStoragePath(path)) {
+        const url = getPublicUrl(path);
+        if (url) out.push({ label: entry.label, url });
+      } else {
+        out.push({ label: entry.label, text: path });
+      }
+    }
+    return out;
+  }, [selectedReport, getPublicUrl, isStoragePath]);
 
   useEffect(() => {
     if (!selectedReport) {
@@ -1045,12 +1049,12 @@ export default function MechanicDVIRCenter() {
                                     <div className="max-h-48 overflow-y-auto space-y-0.5">
                                       {VEHICLE_TRAILER_ITEMS.map((item) => {
                                         const value = selectedReport.vehicle_trailer_checklist?.[item.id];
-                                        const status = value === "P" ? "pass" : value === "F" ? "fail" : "pending";
+                                        const status = value === "P" ? "pass" : value === "F" ? "fail" : value === "N/A" ? "na" : "pending";
                                         return (
                                           <div key={item.id} className="flex items-center justify-between py-1 text-[11px] text-white/60 gap-2">
                                             <span className="truncate">{item.label}</span>
                                             <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                                              status === "pass" ? "bg-emerald-400" : status === "fail" ? "bg-red-400" : "bg-white/20"
+                                              status === "pass" ? "bg-emerald-400" : status === "fail" ? "bg-red-400" : status === "na" ? "bg-amber-400" : "bg-white/20"
                                             }`} />
                                           </div>
                                         );
@@ -1063,12 +1067,12 @@ export default function MechanicDVIRCenter() {
                                     <div className="max-h-48 overflow-y-auto space-y-0.5">
                                       {AERIAL_LIFT_ITEMS.map((item) => {
                                         const value = selectedReport.aerial_checklist?.[item.id];
-                                        const status = value === "P" ? "pass" : value === "F" ? "fail" : "pending";
+                                        const status = value === "P" ? "pass" : value === "F" ? "fail" : value === "N/A" ? "na" : "pending";
                                         return (
                                           <div key={item.id} className="flex items-center justify-between py-1 text-[11px] text-white/60 gap-2">
                                             <span className="truncate">{item.label}</span>
                                             <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                                              status === "pass" ? "bg-emerald-400" : status === "fail" ? "bg-red-400" : "bg-white/20"
+                                              status === "pass" ? "bg-emerald-400" : status === "fail" ? "bg-red-400" : status === "na" ? "bg-amber-400" : "bg-white/20"
                                             }`} />
                                           </div>
                                         );
@@ -1120,18 +1124,28 @@ export default function MechanicDVIRCenter() {
                                   <p className="text-[11px] text-white/40 pt-1">No signatures</p>
                                 ) : (
                                   <div className="grid grid-cols-2 gap-2 pt-2">
-                                    {signatureEntries.map((signature) => (
-                                      <a
-                                        key={signature.label}
-                                        href={signature.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="rounded-lg border border-white/5 bg-black/30 p-2 transition-all hover:border-amber-500/30"
-                                      >
-                                        <div className="text-[9px] text-white/40 mb-1 truncate">{signature.label}</div>
-                                        <img src={signature.url} alt={signature.label} className="h-16 w-full object-contain" />
-                                      </a>
-                                    ))}
+                                    {signatureEntries.map((signature) =>
+                                      "url" in signature && signature.url ? (
+                                        <a
+                                          key={signature.label}
+                                          href={signature.url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="rounded-lg border border-white/5 bg-black/30 p-2 transition-all hover:border-amber-500/30"
+                                        >
+                                          <div className="text-[9px] text-white/40 mb-1 truncate">{signature.label}</div>
+                                          <img src={signature.url} alt={signature.label} className="h-16 w-full object-contain" />
+                                        </a>
+                                      ) : (
+                                        <div
+                                          key={signature.label}
+                                          className="rounded-lg border border-white/5 bg-black/30 p-2"
+                                        >
+                                          <div className="text-[9px] text-white/40 mb-1 truncate">{signature.label}</div>
+                                          <p className="text-[11px] text-white truncate">{signature.text ?? "—"}</p>
+                                        </div>
+                                      )
+                                    )}
                                   </div>
                                 )}
                               </details>

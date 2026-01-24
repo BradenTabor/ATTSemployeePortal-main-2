@@ -1,0 +1,36 @@
+# Exclude large documentation directories
+docs/cursor-agents/
+src/services/safety-agent/directives/
+src/services/safety-agent/prompts/
+
+# Exclude test fixtures and artifacts
+tests/fixtures/
+dist/
+build/
+.vite/
+
+# Exclude large reports and documentation
+performance-report/
+*PERFORMANCE*.md
+*AUDIT*.md
+*REPORT*.md
+*FLOW*.md
+*OVERLAY*.md
+
+# Exclude migration documentation (load only when needed)
+supabase/SCHEMA_DOCUMENTATION.md
+supabase/SUPABASE_MIGRATION_RECONCILIATION.md
+supabase/RLS_FIX_SUMMARY.md
+supabase/MIGRATION_RESOLUTION_GUIDE.md
+
+# Exclude planning documents
+plan.md
+docs/baseline_metrics.md
+docs/Telemetry_plan.md
+docs/telemetry.md
+
+# Exclude node_modules (should be default, but be explicit)
+node_modules/
+
+# Exclude archived files
+.archive/

@@ -30,6 +30,11 @@ import {
   trackFormSubmitError,
   createFormTimer,
 } from "../../lib/telemetry";
+import { useFormValidation, type ValidationRule } from "../../hooks/useFormValidation";
+import { validators } from "../../lib/formValidation";
+import { ValidationSummary } from "../../components/forms/ValidationSummary";
+import { ValidatedSubmitButton } from "../../components/forms/ValidatedSubmitButton";
+import { scrollToFirstError } from "../../lib/scrollToError";
 
 // Import types and components from the dvir module
 import {
@@ -47,8 +52,6 @@ import {
   ChecklistQuickActions,
   FormProgress,
   UploadTile,
-  SignaturePad,
-  type SignaturePadHandle,
   type ProgressStep,
 } from "./dvir";
 
@@ -63,8 +66,8 @@ export type { DVIRFormState } from "./dvir";
  * - ChecklistQuickActions
  * - FormProgress
  * - UploadTile
- * - SignaturePad
  * These are now imported from "./dvir"
+ * Signatures use typed inputs (no SignaturePad).
  */
 
 
@@ -270,12 +273,6 @@ export default function DVIRForm() {
   const damageInputRef = useRef<HTMLInputElement | null>(null);
   const mileageInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Signature pad refs (signatures can't be persisted to localStorage)
-  const finalDriverSigRef = useRef<SignaturePadHandle | null>(null);
-  const generalForemanSigRef = useRef<SignaturePadHandle | null>(null);
-  const mechanicSigRef = useRef<SignaturePadHandle | null>(null);
-  const driverApprovalSigRef = useRef<SignaturePadHandle | null>(null);
-
   const [submitting, setSubmitting] = useState(false);
   
   // Telemetry: track form completion time
@@ -286,10 +283,78 @@ export default function DVIRForm() {
     trackFormStarted({ form_type: 'dvir' });
     formTimer.current.reset();
   }, []);
-  
-  // Track signature state for progress bar (refs don't trigger re-renders)
-  const [hasDriverSignature, setHasDriverSignature] = useState(false);
-  const [hasForemanSignature, setHasForemanSignature] = useState(false);
+
+  // Validation rules for DVIR form
+  const validationRules = useMemo<ValidationRule<DVIRFormState & { oilDipstickPhoto?: File | null }>[]>(() => [
+    {
+      field: 'truckNumber',
+      validator: (value: unknown) => validators.required(value) || (typeof value === 'string' && value?.trim() ? null : "Please select a truck number"),
+    },
+    {
+      field: 'driversName',
+      validator: (value: unknown) => validators.required(value) || (typeof value === 'string' && value?.trim() ? null : "Driver's name is required"),
+    },
+    {
+      field: 'mileage',
+      validator: (value: unknown) => {
+        if (!value || !String(value).trim()) {
+          return "Odometer reading is required";
+        }
+        return validators.mileage(value, previousMileage);
+      },
+    },
+    {
+      field: 'vehicleTrailerChecklist',
+      validator: (value: unknown) => {
+        const count = Object.keys((value as Record<string, unknown>) || {}).length;
+        if (count < VEHICLE_TRAILER_ITEMS.length) {
+          return `Complete vehicle inspection: ${count}/${VEHICLE_TRAILER_ITEMS.length} items checked`;
+        }
+        return null;
+      },
+    },
+  ], [previousMileage]);
+
+  // Extended form state for validation (includes non-persisted fields)
+  const extendedFormState = useMemo(() => ({
+    ...form,
+    oilDipstickPhoto,
+  }), [form, oilDipstickPhoto]);
+
+  // Form validation hook
+  const {
+    errors,
+    getFieldError,
+    shouldShowError,
+    validateAll,
+    markSubmitAttempted,
+    handleFieldBlur,
+  } = useFormValidation(extendedFormState, validationRules, {
+    validateOnChange: true,
+    showErrorsAfterSubmitAttempt: false,
+  });
+
+  // Additional validation for non-form-state fields
+  const additionalErrors = useMemo(() => {
+    const errs: Record<string, string> = {};
+    
+    if (!oilDipstickPhoto) {
+      errs.oilDipstickPhoto = "Oil dipstick photo is required";
+    }
+    
+    const hasDriver = Boolean(form.finalDriverSignature?.trim());
+    const hasForeman = Boolean(form.generalForemanSignature?.trim());
+    if (!hasDriver && !hasForeman) {
+      errs.signature = "At least one signature (Driver or Foreman) is required";
+    }
+    
+    return errs;
+  }, [oilDipstickPhoto, form.finalDriverSignature, form.generalForemanSignature]);
+
+  // Combined errors
+  const allErrors = useMemo(() => {
+    return { ...errors, ...additionalErrors };
+  }, [errors, additionalErrors]);
   
   // 📊 Calculate form progress
   const progressSteps = useMemo((): ProgressStep[] => {
@@ -300,7 +365,9 @@ export default function DVIRForm() {
     const step2Complete = vehicleChecklistCount >= VEHICLE_TRAILER_ITEMS.length;
     const step3Complete = Boolean(oilDipstickPhoto);
     const step4Complete = aerialChecklistCount >= AERIAL_LIFT_ITEMS.length || (step3Complete && aerialChecklistCount === 0);
-    const step5Complete = hasDriverSignature || hasForemanSignature;
+    const hasDriverSig = Boolean(form.finalDriverSignature?.trim());
+    const hasForemanSig = Boolean(form.generalForemanSignature?.trim());
+    const step5Complete = hasDriverSig || hasForemanSig;
     
     return [
       {
@@ -334,7 +401,7 @@ export default function DVIRForm() {
         isCurrent: step4Complete && !step5Complete,
       },
     ];
-  }, [form.truckNumber, form.mileage, form.driversName, form.vehicleTrailerChecklist, form.aerialChecklist, oilDipstickPhoto, hasDriverSignature, hasForemanSignature]);
+  }, [form.truckNumber, form.mileage, form.driversName, form.vehicleTrailerChecklist, form.aerialChecklist, form.finalDriverSignature, form.generalForemanSignature, oilDipstickPhoto]);
   
   // Quick action handlers for checklists
   const handleMarkAllVehiclePass = useCallback(() => {
@@ -343,6 +410,14 @@ export default function DVIRForm() {
       allPass[item.id] = "P";
     });
     setForm(prev => ({ ...prev, vehicleTrailerChecklist: allPass }));
+  }, []);
+
+  const handleMarkAllVehicleFail = useCallback(() => {
+    const allFail: Record<string, ChecklistValue> = {};
+    VEHICLE_TRAILER_ITEMS.forEach(item => {
+      allFail[item.id] = "F";
+    });
+    setForm(prev => ({ ...prev, vehicleTrailerChecklist: allFail }));
   }, []);
   
   const handleClearVehicleChecklist = useCallback(() => {
@@ -355,6 +430,14 @@ export default function DVIRForm() {
       allPass[item.id] = "P";
     });
     setForm(prev => ({ ...prev, aerialChecklist: allPass }));
+  }, []);
+
+  const handleMarkAllAerialFail = useCallback(() => {
+    const allFail: Record<string, ChecklistValue> = {};
+    AERIAL_LIFT_ITEMS.forEach(item => {
+      allFail[item.id] = "F";
+    });
+    setForm(prev => ({ ...prev, aerialChecklist: allFail }));
   }, []);
   
   const handleClearAerialChecklist = useCallback(() => {
@@ -458,20 +541,6 @@ export default function DVIRForm() {
     return filePath;
   }
 
-  async function uploadSignatureFromPad(
-    padRef: React.RefObject<SignaturePadHandle>,
-    fieldName: string
-  ): Promise<string | null> {
-    const pad = padRef.current;
-    if (!pad || pad.isEmpty()) return null;
-    const blob = await pad.getImageBlob();
-    if (!blob) return null;
-
-    const file = new File([blob], `${fieldName}.png`, { type: "image/png" });
-    const path = await uploadPhoto(file, `signature_${fieldName}`);
-    return path;
-  }
-
   // 🔐 Submit handler with explicit session check so RLS auth.uid() works
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -481,77 +550,37 @@ export default function DVIRForm() {
       logger.warn("DVIR submission already in progress, ignoring duplicate submit");
       return;
     }
-
-    // Set submitting immediately to prevent double-clicks
     setSubmitting(true);
 
-    // 1. Truck number validation
-    if (!form.truckNumber.trim()) {
-      formToast.error("Validation Error", "Please select a truck number.");
-      trackFormSubmitError({ form_type: 'dvir', error_code: 'VALIDATION_FAILED', field_name: 'truckNumber' });
-      setSubmitting(false);
-      return;
-    }
+    // Mark submit as attempted to show all errors
+    markSubmitAttempted();
 
-    // 2. Driver's name validation
-    if (!form.driversName.trim()) {
-      formToast.error("Validation Error", "Driver's name is required.");
-      trackFormSubmitError({ form_type: 'dvir', error_code: 'VALIDATION_FAILED', field_name: 'driversName' });
-      setSubmitting(false);
-      return;
-    }
+    // Validate all fields
+    const isFormValid = validateAll();
+    const hasAdditionalErrors = Object.keys(additionalErrors).length > 0;
 
-    // 3. Mileage format validation
-    if (!form.mileage.trim()) {
-      formToast.error("Validation Error", "Odometer reading is required.");
-      trackFormSubmitError({ form_type: 'dvir', error_code: 'VALIDATION_FAILED', field_name: 'mileage' });
-      setSubmitting(false);
-      return;
-    }
+    if (!isFormValid || hasAdditionalErrors) {
+      // Track validation errors
+      Object.keys(allErrors).forEach(field => {
+        if ((allErrors as Record<string, string>)[field]) {
+          trackFormSubmitError({ 
+            form_type: 'dvir', 
+            error_code: 'VALIDATION_FAILED', 
+            field_name: field 
+          });
+        }
+      });
 
-    const mileageNum = parseInt(form.mileage.replace(/[^\d]/g, ''), 10);
-    if (isNaN(mileageNum)) {
-      formToast.error("Validation Error", "Please enter a valid numeric odometer reading.");
-      trackFormSubmitError({ form_type: 'dvir', error_code: 'VALIDATION_FAILED', field_name: 'mileage' });
-      setSubmitting(false);
-      return;
-    }
-
-    // 4. Previous mileage validation
-    if (previousMileage && mileageNum < previousMileage) {
+      // Show validation summary and scroll to first error
+      scrollToFirstError(allErrors, { offset: 120 });
+      
+      // Show error toast with summary
+      const errorCount = Object.keys(allErrors).filter(k => (allErrors as Record<string, string>)[k]).length;
       formToast.error(
         "Validation Error",
-        `Odometer reading (${mileageNum.toLocaleString()} mi) cannot be lower than previous (${previousMileage.toLocaleString()} mi).`
+        `Please fix ${errorCount} ${errorCount === 1 ? 'issue' : 'issues'} before submitting.`,
       );
-      trackFormSubmitError({ form_type: 'dvir', error_code: 'VALIDATION_FAILED', field_name: 'mileage' });
-      setSubmitting(false);
-      return;
-    }
-
-    // 6. Oil dipstick photo validation
-    if (!oilDipstickPhoto) {
-      formToast.error("Validation Error", "Oil dipstick photo is required.");
-      trackFormSubmitError({ form_type: 'dvir', error_code: 'VALIDATION_FAILED', field_name: 'oilDipstickPhoto' });
-      setSubmitting(false);
-      return;
-    }
-
-    // 7. Vehicle checklist validation
-    const vehicleChecklistCount = Object.keys(form.vehicleTrailerChecklist).length;
-    if (vehicleChecklistCount < VEHICLE_TRAILER_ITEMS.length) {
-      formToast.error(
-        "Validation Error",
-        `Complete vehicle inspection: ${vehicleChecklistCount}/${VEHICLE_TRAILER_ITEMS.length} items checked.`
-      );
-      trackFormSubmitError({ form_type: 'dvir', error_code: 'VALIDATION_FAILED', field_name: 'vehicleTrailerChecklist' });
-      setSubmitting(false);
-      return;
-    }
-
-    // 8. Signature validation
-    if (!hasDriverSignature && !hasForemanSignature) {
-      formToast.error("Validation Error", "At least one signature (Driver or Foreman) is required.");
-      trackFormSubmitError({ form_type: 'dvir', error_code: 'VALIDATION_FAILED', field_name: 'signature' });
+      
       setSubmitting(false);
       return;
     }
@@ -560,8 +589,6 @@ export default function DVIRForm() {
     formToast.submitting("Submitting DVIR report...");
 
     try {
-      // Note: setSubmitting(true) is already called at the start of handleSubmit
-
       // 1) Ensure we have an authenticated user
       const {
         data: { user },
@@ -603,6 +630,9 @@ export default function DVIRForm() {
 
       // 3) Upload required oil dipstick photo
       logger.debug("Uploading oil dipstick photo...");
+      if (!oilDipstickPhoto) {
+        throw new Error("Oil dipstick photo is required");
+      }
       const oilDipstickPath = await uploadPhoto(oilDipstickPhoto, "oil_dipstick");
       logger.debug("Oil dipstick uploaded:", oilDipstickPath);
 
@@ -632,24 +662,11 @@ export default function DVIRForm() {
         );
       }
 
-      // 5) Upload signatures (if signed)
-      logger.debug("Uploading signatures (if any)...");
-      const finalDriverSigPath = await uploadSignatureFromPad(
-        finalDriverSigRef,
-        "final_driver_signature"
-      );
-      const generalForemanSigPath = await uploadSignatureFromPad(
-        generalForemanSigRef,
-        "general_foreman_signature"
-      );
-      const mechanicSigPath = await uploadSignatureFromPad(
-        mechanicSigRef,
-        "mechanic_signature"
-      );
-      const driverApprovalSigPath = await uploadSignatureFromPad(
-        driverApprovalSigRef,
-        "driver_approval_signature"
-      );
+      // 5) Signature values (typed; stored as text)
+      const finalDriverSig = form.finalDriverSignature?.trim() || null;
+      const generalForemanSig = form.generalForemanSignature?.trim() || null;
+      const mechanicSig = form.mechanicSignature?.trim() || null;
+      const driverApprovalSig = form.driverApprovalSignature?.trim() || null;
 
       // 6) Build common payload object once
       const commonPayload = {
@@ -674,7 +691,6 @@ export default function DVIRForm() {
         medical_card_exp: form.medicalCardExp || null,
         copy_of_registration: form.copyOfRegistration || null,
         copy_of_insurance: form.copyOfInsurance || null,
-        drivers_signature_section_a: form.driversSignatureSectionA || null,
 
         // Checklists & notes
         vehicle_trailer_checklist: form.vehicleTrailerChecklist,
@@ -682,15 +698,15 @@ export default function DVIRForm() {
         aerial_checklist: form.aerialChecklist,
         aerial_notes: form.aerialNotes || null,
 
-        // Signatures
-        final_driver_signature: finalDriverSigPath,
-        general_foreman_signature: generalForemanSigPath,
+        // Signatures (typed text)
+        final_driver_signature: finalDriverSig,
+        general_foreman_signature: generalForemanSig,
         mechanic_truck_number: form.mechTruckNumber || null,
         mechanic_date: form.mechanicDate || null,
         deficiency_corrected: form.deficiencyCorrected || null,
         mechanic_remarks: form.mechanicRemarks || null,
-        mechanic_signature: mechanicSigPath,
-        driver_approval_signature: driverApprovalSigPath,
+        mechanic_signature: mechanicSig,
+        driver_approval_signature: driverApprovalSig,
 
         // Photos
         oil_dipstick_path: oilDipstickPath,
@@ -724,7 +740,6 @@ export default function DVIRForm() {
     medical_card_exp: form.medicalCardExp || null,
     copy_of_registration: form.copyOfRegistration || null,
     copy_of_insurance: form.copyOfInsurance || null,
-    drivers_signature_section_a: form.driversSignatureSectionA || null,
 
     // Vehicle / Trailer checklist
     vehicle_trailer_checklist: form.vehicleTrailerChecklist,
@@ -736,17 +751,17 @@ export default function DVIRForm() {
     aerial_checklist: form.aerialChecklist,
     aerial_notes: form.aerialNotes || null,
 
-    // Final sign-off (store signature image paths)
-    final_driver_signature: finalDriverSigPath,
-    general_foreman_signature: generalForemanSigPath,
+    // Final sign-off (typed signatures)
+    final_driver_signature: finalDriverSig,
+    general_foreman_signature: generalForemanSig,
 
     // Mechanic section
     mechanic_truck_number: form.mechTruckNumber || null,
     mechanic_date: form.mechanicDate || null,
     deficiency_corrected: form.deficiencyCorrected || null,
     mechanic_remarks: form.mechanicRemarks || null,
-    mechanic_signature: mechanicSigPath,
-    driver_approval_signature: driverApprovalSigPath,
+    mechanic_signature: mechanicSig,
+    driver_approval_signature: driverApprovalSig,
 
     // Photo paths
     oil_dipstick_path: oilDipstickPath,
@@ -841,16 +856,6 @@ export default function DVIRForm() {
       setOilDipstickPhoto(null);
       setExtraPhotos({});
 
-      // Clear signature pads
-      finalDriverSigRef.current?.clear();
-      generalForemanSigRef.current?.clear();
-      mechanicSigRef.current?.clear();
-      driverApprovalSigRef.current?.clear();
-      
-      // Reset signature tracking state
-      setHasDriverSignature(false);
-      setHasForemanSignature(false);
-      
       // Reset step tracking
       setCurrentStep(1);
       setCompletedSteps(new Set());
@@ -917,6 +922,15 @@ export default function DVIRForm() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Validation Summary */}
+          {Object.keys(allErrors).filter(k => (allErrors as Record<string, string>)[k]).length > 0 && (
+            <ValidationSummary
+              errors={allErrors}
+              formType="dvir"
+              className="mb-4"
+            />
+          )}
+
           {/* SECTION A – Vehicle / Driver Information */}
           <SectionCard
             title="Section A. Vehicle / Driver Information"
@@ -932,15 +946,27 @@ export default function DVIRForm() {
                   SELECT TRUCK *
                 </label>
                 <select
+                  id="truckNumber"
+                  name="truckNumber"
                   value={form.truckNumber}
-                  onChange={(e) => setForm(prev => ({ ...prev, truckNumber: e.target.value }))}
+                  onChange={(e) => {
+                    setForm(prev => ({ ...prev, truckNumber: e.target.value }));
+                    handleFieldBlur('truckNumber' as unknown as keyof typeof extendedFormState);
+                  }}
+                  onBlur={() => handleFieldBlur('truckNumber' as unknown as keyof typeof extendedFormState)}
                   className={cn(
                     "w-full rounded-xl bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900",
                     "border px-4 py-3 text-sm text-white font-medium",
-                    "focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all",
-                    form.truckNumber ? "border-emerald-500/40" : "border-gray-700"
+                    "focus:outline-none focus:ring-2 transition-all",
+                    shouldShowError('truckNumber' as unknown as keyof typeof extendedFormState) && getFieldError('truckNumber' as unknown as keyof typeof extendedFormState)
+                      ? "border-rose-500/50 focus:ring-rose-400/50"
+                      : form.truckNumber 
+                        ? "border-emerald-500/40 focus:ring-emerald-400/50"
+                        : "border-gray-700 focus:ring-emerald-400/50"
                   )}
                   title="Select truck number"
+                  aria-invalid={shouldShowError('truckNumber' as unknown as keyof typeof extendedFormState) && !!getFieldError('truckNumber' as unknown as keyof typeof extendedFormState)}
+                  aria-describedby={shouldShowError('truckNumber' as unknown as keyof typeof extendedFormState) && getFieldError('truckNumber' as unknown as keyof typeof extendedFormState) ? "truckNumber-error" : undefined}
                 >
                   <option value="">Select Truck Number</option>
                   {TRUCK_NUMBERS.map((num) => (
@@ -949,7 +975,19 @@ export default function DVIRForm() {
                     </option>
                   ))}
                 </select>
-                {form.truckNumber && (
+                {shouldShowError('truckNumber' as unknown as keyof typeof extendedFormState) && getFieldError('truckNumber' as unknown as keyof typeof extendedFormState) && (
+                  <motion.p 
+                    id="truckNumber-error"
+                    role="alert"
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-xs text-rose-400 mt-1 flex items-center gap-1"
+                  >
+                    <AlertTriangle className="w-3 h-3" />
+                    {getFieldError('truckNumber' as unknown as keyof typeof extendedFormState)}
+                  </motion.p>
+                )}
+                {form.truckNumber && !shouldShowError('truckNumber' as unknown as keyof typeof extendedFormState) && (
                   <motion.p 
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -1077,11 +1115,36 @@ export default function DVIRForm() {
                 </label>
                 <input
                   id="driversName"
+                  name="driversName"
                   value={form.driversName}
-                  onChange={(e) => setForm(prev => ({ ...prev, driversName: e.target.value }))}
+                  onChange={(e) => {
+                    setForm(prev => ({ ...prev, driversName: e.target.value }));
+                    handleFieldBlur('driversName' as unknown as keyof typeof extendedFormState);
+                  }}
+                  onBlur={() => handleFieldBlur('driversName' as unknown as keyof typeof extendedFormState)}
                   placeholder="Enter full name"
-                  className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-sm text-white"
+                  className={cn(
+                    "w-full rounded-md bg-black/70 border px-3 py-2 text-sm text-white",
+                    "focus:outline-none focus:ring-2 transition-all",
+                    shouldShowError('driversName' as unknown as keyof typeof extendedFormState) && getFieldError('driversName' as unknown as keyof typeof extendedFormState)
+                      ? "border-rose-500/50 focus:ring-rose-400/50"
+                      : "border-gray-700 focus:ring-emerald-400/50"
+                  )}
+                  aria-invalid={shouldShowError('driversName' as unknown as keyof typeof extendedFormState) && !!getFieldError('driversName' as unknown as keyof typeof extendedFormState)}
+                  aria-describedby={shouldShowError('driversName' as unknown as keyof typeof extendedFormState) && getFieldError('driversName' as unknown as keyof typeof extendedFormState) ? "driversName-error" : undefined}
                 />
+                {shouldShowError('driversName' as unknown as keyof typeof extendedFormState) && getFieldError('driversName' as unknown as keyof typeof extendedFormState) && (
+                  <motion.p 
+                    id="driversName-error"
+                    role="alert"
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-xs text-rose-400 mt-1 flex items-center gap-1"
+                  >
+                    <AlertTriangle className="w-3 h-3" />
+                    {getFieldError('driversName' as unknown as keyof typeof extendedFormState)}
+                  </motion.p>
+                )}
               </div>
 
               <div>
@@ -1258,35 +1321,42 @@ export default function DVIRForm() {
                   </label>
                 </div>
               </div>
-
-              <div>
-                <label htmlFor="driversSignatureSectionA" className="block text-xs text-gray-300 mb-1">
-                  DRIVERS SIGNATURE (Section A) – printed name
-                </label>
-                <input
-                  id="driversSignatureSectionA"
-                  value={form.driversSignatureSectionA}
-                  onChange={(e) => setForm(prev => ({ ...prev, driversSignatureSectionA: e.target.value }))}
-                  placeholder="Type your full name"
-                  className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-sm text-white"
-                />
-              </div>
             </div>
           </SectionCard>
 
           {/* SECTION B – Vehicle / Trailer Inspection Checklist */}
           <SectionCard
             title="Section B. Vehicle / Trailer Inspection Checklist"
-            subtitle='Mark "P" for pass and "F" for fail. Describe deficiencies in the Notes section.'
+            subtitle='Mark "P" for pass, "F" for fail, or "N/A" for not applicable. Describe deficiencies in the Notes section.'
             badge="Inspection"
           >
             {/* Quick Actions */}
-            <ChecklistQuickActions
-              onMarkAllPass={handleMarkAllVehiclePass}
-              onClearAll={handleClearVehicleChecklist}
-              checkedCount={Object.keys(form.vehicleTrailerChecklist).length}
-              totalCount={VEHICLE_TRAILER_ITEMS.length}
-            />
+            <div className={cn(
+              "rounded-lg border-2 p-4 transition-all",
+              shouldShowError('vehicleTrailerChecklist' as unknown as keyof typeof extendedFormState) && getFieldError('vehicleTrailerChecklist' as unknown as keyof typeof extendedFormState)
+                ? "border-rose-500/30 bg-rose-500/5"
+                : "border-transparent"
+            )}>
+              <ChecklistQuickActions
+                onMarkAllPass={handleMarkAllVehiclePass}
+                onMarkAllFail={handleMarkAllVehicleFail}
+                onClearAll={handleClearVehicleChecklist}
+                checkedCount={Object.keys(form.vehicleTrailerChecklist).length}
+                totalCount={VEHICLE_TRAILER_ITEMS.length}
+              />
+              {shouldShowError('vehicleTrailerChecklist' as unknown as keyof typeof extendedFormState) && getFieldError('vehicleTrailerChecklist' as unknown as keyof typeof extendedFormState) && (
+                <motion.p 
+                  id="vehicleTrailerChecklist-error"
+                  role="alert"
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-xs text-rose-400 mt-3 flex items-center gap-1"
+                >
+                  <AlertTriangle className="w-3 h-3" />
+                  {getFieldError('vehicleTrailerChecklist' as unknown as keyof typeof extendedFormState)}
+                </motion.p>
+              )}
+            </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {VEHICLE_TRAILER_ITEMS.map((item) => {
@@ -1299,7 +1369,7 @@ export default function DVIRForm() {
                     <span className="text-xs text-gray-100 pr-2">
                       {item.label}
                     </span>
-                    {/* Pass/Fail buttons - 44px minimum touch targets for mobile */}
+                    {/* Pass/Fail/N/A buttons - 44px minimum touch targets for mobile */}
                     <div className="flex items-center gap-1">
                       <button
                         type="button"
@@ -1338,6 +1408,25 @@ export default function DVIRForm() {
                         aria-label={`Mark ${item.label} as Fail${value === "F" ? " - currently selected" : ""}`}
                       >
                         F
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleChecklistChange("vehicle", item.id, "N/A")
+                        }
+                        className={`
+                          min-w-[44px] min-h-[44px] px-3 text-xs rounded-lg border
+                          transition-transform transition-colors duration-150
+                          active:scale-95 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-1 focus:ring-offset-black
+                          ${
+                            value === "N/A"
+                              ? "bg-amber-600 border-amber-400 text-white shadow-[0_0_10px_rgba(245,158,11,0.4)]"
+                              : "bg-black/70 border-gray-600 text-gray-300 hover:border-amber-400/70 hover:text-amber-200"
+                          }
+                        `}
+                        aria-label={`Mark ${item.label} as Not Applicable${value === "N/A" ? " - currently selected" : ""}`}
+                      >
+                        N/A
                       </button>
                     </div>
                   </div>
@@ -1415,13 +1504,31 @@ export default function DVIRForm() {
             />
 
             <div className="space-y-4">
-              <UploadTile
-                label="Oil Dipstick Photo"
-                description="Required before submitting this DVIR"
-                required
-                status={Boolean(oilDipstickPhoto)}
-                onClick={() => oilInputRef.current?.click()}
-              />
+              <div className={cn(
+                shouldShowError('oilDipstickPhoto' as unknown as keyof typeof extendedFormState) && allErrors.oilDipstickPhoto 
+                  ? "ring-2 ring-rose-500/50 rounded-xl p-1" 
+                  : ""
+              )}>
+                <UploadTile
+                  label="Oil Dipstick Photo"
+                  description="Required before submitting this DVIR"
+                  required
+                  status={Boolean(oilDipstickPhoto)}
+                  onClick={() => oilInputRef.current?.click()}
+                />
+                {shouldShowError('oilDipstickPhoto' as unknown as keyof typeof extendedFormState) && allErrors.oilDipstickPhoto && (
+                  <motion.p 
+                    id="oilDipstickPhoto-error"
+                    role="alert"
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-xs text-rose-400 mt-2 flex items-center gap-1"
+                  >
+                    <AlertTriangle className="w-3 h-3" />
+                    {allErrors.oilDipstickPhoto}
+                  </motion.p>
+                )}
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <UploadTile
                   label="Tire Tread"
@@ -1481,13 +1588,14 @@ export default function DVIRForm() {
           {/* Aerial Lift Section */}
           <SectionCard
             title="Aerial Lift Inspection (If Equipped)"
-            subtitle='Only complete for vehicles with aerial lifts. Mark "P" for pass and "F" for fail.'
+            subtitle='Only complete for vehicles with aerial lifts. Mark "P" for pass, "F" for fail, or "N/A" for not applicable.'
             badge="Aerial"
           >
             {/* Quick Actions */}
-            <ChecklistQuickActions
-              onMarkAllPass={handleMarkAllAerialPass}
-              onClearAll={handleClearAerialChecklist}
+              <ChecklistQuickActions
+                onMarkAllPass={handleMarkAllAerialPass}
+                onMarkAllFail={handleMarkAllAerialFail}
+                onClearAll={handleClearAerialChecklist}
               checkedCount={Object.keys(form.aerialChecklist).length}
               totalCount={AERIAL_LIFT_ITEMS.length}
             />
@@ -1503,7 +1611,7 @@ export default function DVIRForm() {
                     <span className="text-xs text-gray-100 pr-2">
                       {item.label}
                     </span>
-                    {/* Pass/Fail buttons - 44px minimum touch targets for mobile */}
+                    {/* Pass/Fail/N/A buttons - 44px minimum touch targets for mobile */}
                     <div className="flex items-center gap-1">
                       <button
                         type="button"
@@ -1543,6 +1651,25 @@ export default function DVIRForm() {
                       >
                         F
                       </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleChecklistChange("aerial", item.id, "N/A")
+                        }
+                        className={`
+                          min-w-[44px] min-h-[44px] px-3 text-xs rounded-lg border
+                          transition-transform transition-colors duration-150
+                          active:scale-95 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-1 focus:ring-offset-black
+                          ${
+                            value === "N/A"
+                              ? "bg-amber-600 border-amber-400 text-white shadow-[0_0_10px_rgba(245,158,11,0.4)]"
+                              : "bg-black/70 border-gray-600 text-gray-300 hover:border-amber-400/70 hover:text-amber-200"
+                          }
+                        `}
+                        aria-label={`Mark ${item.label} as Not Applicable${value === "N/A" ? " - currently selected" : ""}`}
+                      >
+                        N/A
+                      </button>
                     </div>
                   </div>
                 );
@@ -1572,23 +1699,58 @@ export default function DVIRForm() {
             </div>
           </SectionCard>
 
-          {/* Final Sign-off with signature pads */}
+          {/* Final Sign-off with typed signatures */}
           <SectionCard
             title="Driver & Foreman Sign-off"
             subtitle="Certify that today's inspection is complete and deficiencies have been communicated."
             badge="Signatures"
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <SignaturePad
-                ref={finalDriverSigRef}
-                label="Driver Signature (draw)"
-                onDrawingChange={setHasDriverSignature}
-              />
-              <SignaturePad
-                ref={generalForemanSigRef}
-                label="General Foreman Signature (draw)"
-                onDrawingChange={setHasForemanSignature}
-              />
+            <div className={cn(
+              "rounded-lg border-2 p-4 transition-all",
+              shouldShowError('signature' as unknown as keyof typeof allErrors) && (allErrors as Record<string, string>).signature
+                ? "border-rose-500/30 bg-rose-500/5"
+                : "border-transparent"
+            )}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label htmlFor="finalDriverSignature" className="block text-xs text-white/70">
+                    Driver Signature
+                  </label>
+                  <input
+                    id="finalDriverSignature"
+                    type="text"
+                    value={form.finalDriverSignature}
+                    onChange={(e) => setForm(prev => ({ ...prev, finalDriverSignature: e.target.value }))}
+                    placeholder="Type your full name"
+                    className="w-full rounded-2xl bg-black/60 border border-white/10 px-4 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="generalForemanSignature" className="block text-xs text-white/70">
+                    General Foreman Signature
+                  </label>
+                  <input
+                    id="generalForemanSignature"
+                    type="text"
+                    value={form.generalForemanSignature}
+                    onChange={(e) => setForm(prev => ({ ...prev, generalForemanSignature: e.target.value }))}
+                    placeholder="Type foreman full name"
+                    className="w-full rounded-2xl bg-black/60 border border-white/10 px-4 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
+                  />
+                </div>
+              </div>
+              {shouldShowError('signature' as unknown as keyof typeof allErrors) && (allErrors as Record<string, string>).signature && (
+                <motion.p 
+                  id="signature-error"
+                  role="alert"
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-xs text-rose-400 mt-3 flex items-center gap-1"
+                >
+                  <AlertTriangle className="w-3 h-3" />
+                  {(allErrors as Record<string, string>).signature}
+                </motion.p>
+              )}
             </div>
           </SectionCard>
 
@@ -1670,10 +1832,34 @@ export default function DVIRForm() {
                   />
                 </div>
 
-                <SignaturePad
-                  ref={mechanicSigRef}
-                  label="Mechanic Signature (draw)"
-                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label htmlFor="mechanicSignature" className="block text-xs text-white/70">
+                      Mechanic Signature
+                    </label>
+                    <input
+                      id="mechanicSignature"
+                      type="text"
+                      value={form.mechanicSignature}
+                      onChange={(e) => setForm(prev => ({ ...prev, mechanicSignature: e.target.value }))}
+                      placeholder="Type mechanic full name"
+                      className="w-full rounded-2xl bg-black/60 border border-white/10 px-4 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="driverApprovalSignature" className="block text-xs text-white/70">
+                      Driver Approval Signature
+                    </label>
+                    <input
+                      id="driverApprovalSignature"
+                      type="text"
+                      value={form.driverApprovalSignature}
+                      onChange={(e) => setForm(prev => ({ ...prev, driverApprovalSignature: e.target.value }))}
+                      placeholder="Type driver name (approval)"
+                      className="w-full rounded-2xl bg-black/60 border border-white/10 px-4 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
+                    />
+                  </div>
+                </div>
               </div>
             )}
           </SectionCard>
@@ -1689,13 +1875,16 @@ export default function DVIRForm() {
               <li>• Any deficiencies are documented and communicated.</li>
               <li>• Required oil dipstick photo has been captured.</li>
             </ul>
-            <button
-              type="submit"
+            <ValidatedSubmitButton
+              onClick={() => {
+                handleSubmit(new Event('submit') as unknown as React.FormEvent);
+              }}
               disabled={submitting}
-              className="w-full rounded-2xl px-4 py-3 text-sm font-semibold text-white transition disabled:opacity-60 disabled:cursor-not-allowed hover:opacity-90 bg-gradient-to-r from-emerald-500 to-gray-950"
-            >
-              {submitting ? "Submitting..." : "Submit DVIR"}
-            </button>
+              loading={submitting}
+              errorCount={Object.keys(allErrors).filter(k => (allErrors as Record<string, string>)[k]).length}
+              label={submitting ? "Submitting..." : "Submit DVIR"}
+              className="w-full"
+            />
           </SectionCard>
         </form>
       </div>

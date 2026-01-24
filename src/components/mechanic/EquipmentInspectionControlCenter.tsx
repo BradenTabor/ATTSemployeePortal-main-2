@@ -48,7 +48,7 @@ function ScrollRevealSection({
   );
 }
 
-type ChecklistValue = "" | "P" | "F";
+type ChecklistValue = "" | "P" | "F" | "N/A";
 
 interface ChecklistItem {
   id: string;
@@ -827,12 +827,12 @@ export function EquipmentInspectionControlCenter({
                               <div className="max-h-48 overflow-y-auto space-y-0.5">
                                 {GENERAL_ITEMS.map((item) => {
                                   const value = selectedInspection.general_checklist?.[item.id];
-                                  const status = value === "P" ? "pass" : value === "F" ? "fail" : "pending";
+                                  const status = value === "P" ? "pass" : value === "F" ? "fail" : value === "N/A" ? "na" : "pending";
                                   return (
                                     <div key={item.id} className="flex items-center justify-between py-1 text-[11px] text-white/60 gap-2">
                                       <span className="truncate">{item.label}</span>
                                       <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                                        status === "pass" ? "bg-emerald-400" : status === "fail" ? "bg-red-400" : "bg-white/20"
+                                        status === "pass" ? "bg-emerald-400" : status === "fail" ? "bg-red-400" : status === "na" ? "bg-amber-400" : "bg-white/20"
                                       }`} />
                                     </div>
                                   );
@@ -849,12 +849,12 @@ export function EquipmentInspectionControlCenter({
                                 <div className="max-h-48 overflow-y-auto space-y-0.5">
                                   {getSpecificItems(selectedInspection.template).map((item) => {
                                     const value = selectedInspection.specific_checklist?.[item.id];
-                                    const status = value === "P" ? "pass" : value === "F" ? "fail" : "pending";
+                                    const status = value === "P" ? "pass" : value === "F" ? "fail" : value === "N/A" ? "na" : "pending";
                                     return (
                                       <div key={item.id} className="flex items-center justify-between py-1 text-[11px] text-white/60 gap-2">
                                         <span className="truncate">{item.label}</span>
                                         <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                                          status === "pass" ? "bg-emerald-400" : status === "fail" ? "bg-red-400" : "bg-white/20"
+                                          status === "pass" ? "bg-emerald-400" : status === "fail" ? "bg-red-400" : status === "na" ? "bg-amber-400" : "bg-white/20"
                                         }`} />
                                       </div>
                                     );

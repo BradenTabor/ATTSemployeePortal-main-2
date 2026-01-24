@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import { MapPin, Loader2, CheckCircle2 } from "lucide-react";
+import { MapPin, Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "../../../lib/utils";
 import { DateField, TimeField } from "../GlassyPickers";
@@ -26,6 +26,8 @@ interface StepJobInfoProps {
   form: JobInfoFields;
   onInputChange: (key: keyof JobInfoFields, value: string) => void;
   isLoading?: boolean;
+  errors?: Partial<Record<keyof JobInfoFields, string | undefined>>;
+  onFieldBlur?: (field: keyof JobInfoFields) => void;
 }
 
 // Animated checkmark for completed fields
@@ -57,6 +59,9 @@ interface InputFieldProps {
   required?: boolean;
   className?: string;
   showCheckmark?: boolean;
+  error?: string;
+  onBlur?: () => void;
+  fieldId?: string;
 }
 
 function InputField({
@@ -69,18 +74,22 @@ function InputField({
   required,
   className,
   showCheckmark = true,
+  error,
+  onBlur,
+  fieldId,
 }: InputFieldProps) {
   const isFilled = value?.trim().length > 0;
+  const hasError = !!error;
   
   return (
     <div className={className}>
-      <label className="flex items-center gap-1 text-[10px] sm:text-[11px] font-medium text-white/70 mb-0.5 sm:mb-1 uppercase tracking-wide">
+      <label htmlFor={fieldId} className="flex items-center gap-1 text-xs sm:text-sm font-medium text-white/70 mb-0.5 sm:mb-1 uppercase tracking-wide">
         <span>
           {label}
           {required && <span className="text-emerald-400 ml-0.5">*</span>}
         </span>
         {/* Mini checkmark next to label when filled */}
-        {isFilled && showCheckmark && (
+        {isFilled && showCheckmark && !hasError && (
           <motion.span
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
@@ -93,30 +102,60 @@ function InputField({
       <div className="relative">
         {Icon && (
           <Icon className={cn(
-            "absolute left-2.5 sm:left-3 top-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 -translate-y-1/2 transition-colors",
-            isFilled ? "text-emerald-500" : "text-emerald-500/50"
+            "absolute left-2.5 sm:left-3 top-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 -translate-y-1/2 transition-colors z-10",
+            hasError ? "text-rose-400" : isFilled ? "text-emerald-500" : "text-emerald-500/50"
           )} />
         )}
         <input
+          id={fieldId}
           type={type}
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          onBlur={onBlur}
           placeholder={placeholder}
           required={required}
           className={cn(
-            "w-full rounded-lg border bg-black/50 px-2.5 py-2 sm:px-3 sm:py-2.5 text-xs sm:text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 focus:border-emerald-500/30 transition-all",
+            "w-full rounded-lg border bg-black/50 px-2.5 py-2 sm:px-3 sm:py-2.5 text-xs sm:text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 transition-all",
             Icon ? "pl-8 sm:pl-9" : "",
-            isFilled && showCheckmark ? "pr-8 sm:pr-9 border-emerald-500/30" : "border-white/10"
+            hasError
+              ? "border-rose-500/50 focus:ring-rose-500/50 focus:border-rose-500/50"
+              : isFilled && showCheckmark
+              ? "pr-8 sm:pr-9 border-emerald-500/30 focus:ring-emerald-500/50 focus:border-emerald-500/30"
+              : "border-white/10 focus:ring-emerald-500/50 focus:border-emerald-500/30"
           )}
+          aria-invalid={hasError}
+          aria-describedby={hasError && fieldId ? `${fieldId}-error` : undefined}
         />
         {/* Checkmark inside input when filled */}
-        {showCheckmark && <FieldCheckmark visible={isFilled} />}
+        {showCheckmark && !hasError && <FieldCheckmark visible={isFilled} />}
+        {/* Error icon */}
+        {hasError && (
+          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+            <AlertTriangle className="w-4 h-4 text-rose-400" />
+          </div>
+        )}
       </div>
+      {/* Error message */}
+      <AnimatePresence>
+        {hasError && (
+          <motion.p
+            id={fieldId ? `${fieldId}-error` : undefined}
+            role="alert"
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            className="text-xs text-rose-400 mt-1 flex items-center gap-1"
+          >
+            <AlertTriangle className="w-3 h-3" />
+            {error}
+          </motion.p>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
-export function StepJobInfo({ form, onInputChange, isLoading }: StepJobInfoProps) {
+export function StepJobInfo({ form, onInputChange, isLoading, errors, onFieldBlur }: StepJobInfoProps) {
   return (
     <div className="space-y-3 sm:space-y-4">
       {isLoading && (
@@ -128,7 +167,7 @@ export function StepJobInfo({ form, onInputChange, isLoading }: StepJobInfoProps
 
       {/* Schedule */}
       <div className="space-y-2 sm:space-y-3">
-        <p className="text-[10px] sm:text-xs font-medium text-white/50 uppercase tracking-wider">
+        <p className="text-xs sm:text-sm font-medium text-white/50 uppercase tracking-wider">
           Schedule
         </p>
         <div className="grid gap-2 sm:gap-3 sm:grid-cols-3">
@@ -156,7 +195,7 @@ export function StepJobInfo({ form, onInputChange, isLoading }: StepJobInfoProps
 
       {/* Location */}
       <div className="space-y-2 sm:space-y-3 pt-1 sm:pt-2">
-        <p className="text-[10px] sm:text-xs font-medium text-white/50 uppercase tracking-wider">
+        <p className="text-xs sm:text-sm font-medium text-white/50 uppercase tracking-wider">
           Location
         </p>
         
@@ -182,8 +221,11 @@ export function StepJobInfo({ form, onInputChange, isLoading }: StepJobInfoProps
             icon={MapPin}
             value={form.workLocation}
             onChange={(value) => onInputChange("workLocation", value)}
+            onBlur={() => onFieldBlur?.("workLocation")}
             placeholder="Street, city, project"
             required
+            error={errors?.workLocation}
+            fieldId="workLocation"
           />
           <InputField
             label="Circuit #"
@@ -212,7 +254,7 @@ export function StepJobInfo({ form, onInputChange, isLoading }: StepJobInfoProps
 
       {/* Emergency Contacts */}
       <div className="space-y-2 sm:space-y-3 pt-1 sm:pt-2">
-        <p className="text-[10px] sm:text-xs font-medium text-white/50 uppercase tracking-wider">
+        <p className="text-xs sm:text-sm font-medium text-white/50 uppercase tracking-wider">
           Emergency Contacts
         </p>
         
@@ -239,7 +281,10 @@ export function StepJobInfo({ form, onInputChange, isLoading }: StepJobInfoProps
             required
             value={form.ocContact}
             onChange={(value) => onInputChange("ocContact", value)}
+            onBlur={() => onFieldBlur?.("ocContact")}
             placeholder="Name · 870-555-1234"
+            error={errors?.ocContact}
+            fieldId="ocContact"
           />
           <InputField
             label="DOC Tel"
@@ -247,7 +292,10 @@ export function StepJobInfo({ form, onInputChange, isLoading }: StepJobInfoProps
             required
             value={form.docContact}
             onChange={(value) => onInputChange("docContact", value)}
+            onBlur={() => onFieldBlur?.("docContact")}
             placeholder="870-555-5678"
+            error={errors?.docContact}
+            fieldId="docContact"
           />
           <InputField
             label="GF Contact"
@@ -255,7 +303,10 @@ export function StepJobInfo({ form, onInputChange, isLoading }: StepJobInfoProps
             required
             value={form.gfContact}
             onChange={(value) => onInputChange("gfContact", value)}
+            onBlur={() => onFieldBlur?.("gfContact")}
             placeholder="Name · 870-555-2468"
+            error={errors?.gfContact}
+            fieldId="gfContact"
           />
           <InputField
             label="Safety Tel"
@@ -263,7 +314,10 @@ export function StepJobInfo({ form, onInputChange, isLoading }: StepJobInfoProps
             required
             value={form.safetyContact}
             onChange={(value) => onInputChange("safetyContact", value)}
+            onBlur={() => onFieldBlur?.("safetyContact")}
             placeholder="870-555-1357"
+            error={errors?.safetyContact}
+            fieldId="safetyContact"
           />
         </div>
       </div>

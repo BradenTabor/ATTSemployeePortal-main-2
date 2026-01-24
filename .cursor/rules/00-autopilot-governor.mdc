@@ -1,7 +1,7 @@
 ---
 description: Master Autopilot Governor - Controls recursive self-improvement with strict DOE and anti-hallucination constraints
 globs: ["**/*"]
-alwaysApply: true
+alwaysApply: false
 ---
 
 # CURSOR AUTOPILOT GOVERNOR v1.0

@@ -1,56 +1,87 @@
 import { useNavigate } from "react-router-dom";
+import { motion, useReducedMotion } from "framer-motion";
 import DashboardLayout from "../../layouts/DashboardLayout";
+import { BlurFade } from "../../components/ui/blur-fade";
 import { FileText, ClipboardList, ChevronRight } from "lucide-react";
 
-export default function FormsHistory() {
+const hubCards = [
+  {
+    key: "dvir",
+    path: "/forms-history/dvir",
+    title: "Daily Vehicle Inspection (DVIR)",
+    description: "Review your previously submitted DVIR forms.",
+    icon: FileText,
+  },
+  {
+    key: "jsa",
+    path: "/forms-history/jsa",
+    title: "Job Safety Analysis (JSA)",
+    description: "Review your previously submitted JSA forms.",
+    icon: ClipboardList,
+  },
+] as const;
+
+export default function FormHistory() {
   const navigate = useNavigate();
+  const prefersReducedMotion = useReducedMotion();
 
   return (
     <DashboardLayout title="Forms History">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-4 sm:space-y-6">
-        <p className="text-xs sm:text-sm text-gray-300">
-          View the history of forms you&apos;ve submitted. Select a form type
-          below to see your previous submissions.
-        </p>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-          {/* DVIR History Card */}
-          <button
-            onClick={() => navigate("/forms-history/dvir")}
-            className="flex items-center justify-between gap-3 rounded-xl sm:rounded-2xl border border-green-700/40 bg-black/60 px-3 sm:px-4 py-3 sm:py-4 text-left hover:border-green-400/70 hover:bg-black/80 active:bg-black/90 transition min-h-[72px] sm:min-h-[80px]"
-          >
-            <div className="flex items-start gap-2.5 sm:gap-3 min-w-0">
-              <div className="p-2 rounded-lg sm:rounded-xl bg-green-500/10 border border-green-500/30 flex-shrink-0">
-                <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
-              </div>
-              <div className="min-w-0">
-                <h2 className="text-xs sm:text-sm font-semibold text-white truncate">
-                  Daily Vehicle Inspection (DVIR)
-                </h2>
-                <p className="text-[10px] sm:text-xs text-gray-300 line-clamp-2 mt-0.5">
-                  Review your previously submitted DVIR forms
-                </p>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-green-400/60 flex-shrink-0" />
-          </button>
-
-          {/* Placeholder for future forms */}
-          <div className="flex items-center justify-between gap-3 rounded-xl sm:rounded-2xl border border-gray-700/40 bg-black/40 px-3 sm:px-4 py-3 sm:py-4 opacity-60 min-h-[72px] sm:min-h-[80px]">
-            <div className="flex items-start gap-2.5 sm:gap-3 min-w-0">
-              <div className="p-2 rounded-lg sm:rounded-xl bg-gray-500/10 border border-gray-500/30 flex-shrink-0">
-                <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
-              </div>
-              <div className="min-w-0">
-                <h2 className="text-xs sm:text-sm font-semibold text-gray-200 truncate">
-                  Other Forms
-                </h2>
-                <p className="text-[10px] sm:text-xs text-gray-400 line-clamp-2 mt-0.5">
-                  Coming soon: RTO Requests, Incident Reports
-                </p>
-              </div>
-            </div>
+      <div className="w-full max-w-6xl mx-auto space-y-6">
+        <BlurFade delay={0} duration={0.4} direction="up" offset={8} inView={false}>
+          <div>
+            <p className="text-xs uppercase tracking-[0.35em] font-medium text-emerald-200/80">
+              Compliance
+            </p>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight mt-1">
+              Forms History
+            </h2>
+            <p className="text-sm text-white/70 mt-2 max-w-2xl leading-relaxed">
+              View the history of forms you&apos;ve submitted. Select a form type below to see your previous submissions.
+            </p>
           </div>
+        </BlurFade>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {hubCards.map((card, index) => {
+            const Icon = card.icon;
+            return (
+              <BlurFade
+                key={card.key}
+                delay={0.06 + index * 0.04}
+                inView={false}
+                className="h-full"
+              >
+                <motion.button
+                  type="button"
+                  onClick={() => navigate(card.path)}
+                  whileHover={prefersReducedMotion ? undefined : { scale: 1.01 }}
+                  whileTap={prefersReducedMotion ? undefined : { scale: 0.99 }}
+                  transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+                  className="group w-full flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.08] to-transparent backdrop-blur-xl p-4 sm:p-5 text-left hover:border-emerald-400/40 hover:shadow-lg hover:shadow-emerald-500/10 focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] outline-none transition-all duration-300 min-h-[80px] sm:min-h-[88px]"
+                  aria-label={`Open ${card.title}`}
+                >
+                  <div className="flex items-start gap-3 min-w-0 flex-1">
+                    <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-400/30 flex-shrink-0">
+                      <Icon className="w-5 h-5 text-emerald-300" aria-hidden />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-sm sm:text-base font-semibold text-white truncate">
+                        {card.title}
+                      </h3>
+                      <p className="text-xs text-white/60 line-clamp-2 mt-1 leading-relaxed">
+                        {card.description}
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight
+                    className="w-5 h-5 text-emerald-400/60 flex-shrink-0 group-hover:text-emerald-300 transition-colors"
+                    aria-hidden
+                  />
+                </motion.button>
+              </BlurFade>
+            );
+          })}
         </div>
       </div>
     </DashboardLayout>

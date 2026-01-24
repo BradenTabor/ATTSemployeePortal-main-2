@@ -17,6 +17,7 @@ import {
   RotateCcw,
   TrendingUp,
   Truck,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AutoSaveIndicator } from "@/components/forms/AutoSaveIndicator";
@@ -196,12 +197,13 @@ export const MileageInput = ({ value, onChange, truckNumber, previousMileage }: 
 
 interface ChecklistQuickActionsProps {
   onMarkAllPass: () => void;
+  onMarkAllFail?: () => void;
   onClearAll: () => void;
   checkedCount: number;
   totalCount: number;
 }
 
-export const ChecklistQuickActions = ({ onMarkAllPass, onClearAll, checkedCount, totalCount }: ChecklistQuickActionsProps) => (
+export const ChecklistQuickActions = ({ onMarkAllPass, onMarkAllFail, onClearAll, checkedCount, totalCount }: ChecklistQuickActionsProps) => (
   <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg sm:rounded-xl bg-black/30 border border-white/5">
     <div className="flex items-center gap-1.5 sm:gap-2">
       <div className="text-[10px] sm:text-xs text-gray-400">
@@ -229,6 +231,16 @@ export const ChecklistQuickActions = ({ onMarkAllPass, onClearAll, checkedCount,
         <CheckCheck className="w-3 h-3" />
         <span>All Pass</span>
       </button>
+      {onMarkAllFail && (
+        <button
+          type="button"
+          onClick={onMarkAllFail}
+          className="flex-1 xs:flex-none flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2 sm:py-1.5 text-[10px] sm:text-[10px] font-medium text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 active:bg-rose-500/30 border border-rose-500/30 rounded-lg transition-colors min-h-[36px] sm:min-h-[32px]"
+        >
+          <X className="w-3 h-3" />
+          <span>All Fail</span>
+        </button>
+      )}
       <button
         type="button"
         onClick={onClearAll}

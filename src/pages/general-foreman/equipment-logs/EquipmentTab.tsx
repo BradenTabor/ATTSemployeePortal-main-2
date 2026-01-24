@@ -20,7 +20,8 @@ import { DateRangeChips } from "../../../components/ui/QuickFilterChips";
 import type { EquipmentInspection } from "./types";
 import { GENERAL_EQUIPMENT_ITEMS, EQUIPMENT_TYPE_OPTIONS } from "./types";
 import { inspectionHasFailures, getSpecificItems } from "./helpers";
-import { ScrollRevealSection, listItemVariants, listItemVariantsReduced, detailTransition, detailTransitionReduced } from "./animations";
+import { ScrollRevealSection } from "./animations";
+import { listItemVariants, listItemVariantsReduced, detailTransition, detailTransitionReduced } from "../../../lib/animationVariants";
 
 interface EquipmentTabProps {
   inspections: EquipmentInspection[];
@@ -111,91 +112,86 @@ export function EquipmentTab({
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   return (
-    <div className="space-y-4">
-      {/* Filter Bar */}
+    <div className="space-y-3 sm:space-y-4">
+      {/* Filter Bar - compressed, mobile-optimized */}
       <ScrollRevealSection delay={0}>
-        <motion.div 
-          layout
-          className="rounded-2xl border-2 border-purple-500/30 bg-gradient-to-br from-purple-900/40 via-purple-950/50 to-black/70 p-4 shadow-xl shadow-purple-500/10"
+        <div
+          role="search"
+          aria-label="Filter equipment inspections"
+          className="rounded-xl sm:rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-900/40 via-purple-950/50 to-black/70 p-3 sm:p-4 shadow-lg shadow-purple-500/10"
         >
-          <div className="flex flex-col gap-4">
-            {/* Primary filters row */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              {/* Status Select */}
-              <div className="relative">
-                <select 
-                  value={status} 
-                  onChange={(e) => { onStatusChange(e.target.value as typeof status); onPageChange(1); }} 
-                  className="w-full sm:w-auto bg-black/40 border border-purple-500/20 rounded-xl px-4 py-2.5 pr-10 text-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500/40 appearance-none cursor-pointer transition-all"
+          <div className="flex flex-col gap-3 sm:gap-4">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+              <div className="relative min-w-0 sm:w-auto">
+                <select
+                  value={status}
+                  onChange={(e) => { onStatusChange(e.target.value as typeof status); onPageChange(1); }}
+                  className="w-full sm:w-auto bg-black/40 border border-purple-500/20 rounded-lg sm:rounded-xl pl-3 sm:pl-4 pr-9 sm:pr-10 py-2.5 sm:py-3 text-xs sm:text-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/40 appearance-none cursor-pointer transition-colors min-h-[44px]"
+                  aria-label="Filter by status"
                 >
                   <option value="attention">Needs Attention</option>
                   <option value="all">All Inspections</option>
                   <option value="passed">Passed Only</option>
                 </select>
-                <ClipboardList className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-purple-400/50 pointer-events-none" />
+                <ClipboardList className="absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-400/50 pointer-events-none" aria-hidden />
               </div>
-              
-              {/* Type Select */}
-              <div className="relative">
-                <select 
-                  value={equipmentType} 
-                  onChange={(e) => { onEquipmentTypeChange(e.target.value); onPageChange(1); }} 
-                  className="w-full sm:w-auto bg-black/40 border border-purple-500/20 rounded-xl px-4 py-2.5 pr-10 text-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500/40 appearance-none cursor-pointer transition-all"
+              <div className="relative min-w-0 sm:w-auto">
+                <select
+                  value={equipmentType}
+                  onChange={(e) => { onEquipmentTypeChange(e.target.value); onPageChange(1); }}
+                  className="w-full sm:w-auto bg-black/40 border border-purple-500/20 rounded-lg sm:rounded-xl pl-3 sm:pl-4 pr-9 sm:pr-10 py-2.5 sm:py-3 text-xs sm:text-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/40 appearance-none cursor-pointer transition-colors min-h-[44px]"
+                  aria-label="Filter by equipment type"
                 >
                   <option value="">All Types</option>
                   {EQUIPMENT_TYPE_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
                 </select>
-                <Wrench className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-purple-400/50 pointer-events-none" />
+                <Wrench className="absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-400/50 pointer-events-none" aria-hidden />
               </div>
-              
-              {/* Search */}
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-purple-400/50" />
-                <input 
-                  value={search} 
-                  onChange={(e) => { onSearchChange(e.target.value); onPageChange(1); }} 
-                  placeholder="Search equipment or operator..." 
-                  className="w-full bg-black/40 border border-purple-500/20 rounded-xl pl-10 pr-10 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500/40 transition-all" 
+              <div className="relative flex-1 min-w-0">
+                <Search className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-400/50 pointer-events-none" aria-hidden />
+                <input
+                  type="search"
+                  value={search}
+                  onChange={(e) => { onSearchChange(e.target.value); onPageChange(1); }}
+                  placeholder="Search equipment or operator…"
+                  className="w-full bg-black/40 border border-purple-500/20 rounded-lg sm:rounded-xl pl-9 sm:pl-10 pr-9 sm:pr-10 py-2.5 sm:py-3 text-xs sm:text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/40 transition-colors min-h-[44px]"
+                  aria-label="Search by equipment number or operator"
                 />
                 {search && (
-                  <motion.button 
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    onClick={() => { onSearchChange(""); onPageChange(1); }} 
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors p-1 rounded-full hover:bg-white/10"
+                  <button
+                    type="button"
+                    onClick={() => { onSearchChange(""); onPageChange(1); }}
+                    className="absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 p-1 sm:p-1.5 rounded-md sm:rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black/80"
+                    aria-label="Clear search"
                   >
-                    <X className="w-3.5 h-3.5" />
-                  </motion.button>
+                    <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" aria-hidden />
+                  </button>
                 )}
               </div>
-              
-              {/* Refresh button */}
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+              <button
+                type="button"
                 onClick={onRefresh}
                 disabled={loading}
-                className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 hover:bg-purple-500/20 disabled:opacity-50 transition-all"
+                className="p-2.5 sm:p-3 rounded-lg sm:rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 hover:bg-purple-500/20 disabled:opacity-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black/80 min-h-[44px] min-w-[44px] flex items-center justify-center"
                 title="Refresh data"
+                aria-label="Refresh equipment inspections"
               >
-                <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-              </motion.button>
+                <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${loading ? "animate-spin" : ""}`} aria-hidden />
+              </button>
             </div>
-            
-            {/* Advanced filters row - collapsible */}
             <AnimatePresence>
               {showFilters && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3 }}
+                  transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
                   className="overflow-hidden"
                 >
-                  <div className="pt-3 border-t border-purple-500/10 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-purple-400/60" />
-                      <span className="text-xs text-white/50">Date Range:</span>
+                  <div className="pt-3 sm:pt-4 border-t border-purple-500/10 flex flex-col sm:flex-row gap-2 sm:gap-3 items-start sm:items-center">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-400/60" aria-hidden />
+                      <span className="text-[11px] sm:text-xs text-white/50">Date range</span>
                     </div>
                     <DateRangeChips
                       activeRange={dateRange}
@@ -207,7 +203,7 @@ export function EquipmentTab({
               )}
             </AnimatePresence>
           </div>
-        </motion.div>
+        </div>
       </ScrollRevealSection>
 
       {/* Content */}
@@ -218,57 +214,30 @@ export function EquipmentTab({
             <div className="lg:hidden"><CardListSkeleton rows={4} variant="purple" /></div>
           </div>
         )}
-        {error && <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">{error}</div>}
+        {error && (
+          <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200" role="alert">
+            {error}
+          </div>
+        )}
         {!loading && !error && (
-          <div className="grid gap-4 lg:grid-cols-3">
-            {/* List Panel */}
-            <motion.div 
-              layout
-              className="rounded-2xl border-2 border-purple-500/30 bg-gradient-to-b from-purple-900/50 via-purple-950/60 to-black/80 overflow-hidden flex flex-col shadow-2xl shadow-purple-500/10"
-            >
-              {/* Panel Header */}
-              <div className="relative px-4 py-3.5 bg-gradient-to-r from-purple-700/80 via-purple-800/70 to-violet-900/60 border-b border-purple-500/30">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <motion.div 
-                      animate={{ 
-                        scale: [1, 1.3, 1],
-                        boxShadow: ['0 0 10px rgba(192, 132, 252, 0.5)', '0 0 20px rgba(192, 132, 252, 0.8)', '0 0 10px rgba(192, 132, 252, 0.5)']
-                      }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                      className={`w-3 h-3 rounded-full ${status === "attention" ? "bg-rose-400" : status === "passed" ? "bg-purple-300" : "bg-violet-300"}`} 
-                    />
-                    <span className="text-sm font-bold text-white drop-shadow-sm">{status === "attention" ? "Needs Attention" : status === "passed" ? "Passed" : "All"}</span>
-                    <motion.span 
-                      key={filteredInspections.length}
-                      initial={{ scale: 0.8 }}
-                      animate={{ scale: 1 }}
-                      className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-white/20 text-white shadow-inner"
-                    >
-                      {filteredInspections.length}
-                    </motion.span>
-                  </div>
+          <div className="grid gap-3 sm:gap-4 lg:grid-cols-3">
+            <div className="rounded-xl sm:rounded-2xl border border-purple-500/30 bg-gradient-to-b from-purple-900/50 via-purple-950/60 to-black/80 overflow-hidden flex flex-col shadow-lg sm:shadow-xl shadow-purple-500/10 min-h-0">
+              <div className="px-3 py-2.5 sm:px-4 sm:py-3 bg-gradient-to-r from-purple-700/60 via-purple-800/50 to-violet-900/50 border-b border-purple-500/20 flex-shrink-0">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <span className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full flex-shrink-0 ${status === "attention" ? "bg-rose-400" : status === "passed" ? "bg-purple-300" : "bg-violet-300"}`} aria-hidden />
+                  <span className="text-xs sm:text-sm font-bold text-white">{status === "attention" ? "Needs Attention" : status === "passed" ? "Passed" : "All"}</span>
+                  <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-bold bg-white/15 text-white tabular-nums">{filteredInspections.length}</span>
                 </div>
               </div>
-              
-              {/* List content */}
-              <div className="max-h-[420px] overflow-y-auto flex-1">
+              <div className="max-h-[220px] xs:max-h-[260px] sm:max-h-[320px] lg:max-h-[400px] overflow-y-auto flex-1 scroll-container min-h-0">
                 {filteredInspections.length === 0 ? (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-8 text-center"
-                  >
-                    <motion.div
-                      animate={{ scale: [1, 1.1, 1] }}
-                      transition={{ duration: 3, repeat: Infinity }}
-                      className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-purple-600/30 to-violet-700/30 border border-purple-400/30 flex items-center justify-center"
-                    >
-                      <ClipboardList className="w-8 h-8 text-purple-300" />
-                    </motion.div>
-                    <p className="text-sm font-semibold text-white/80 mb-1">No matches found</p>
-                    <p className="text-xs text-purple-200/50">Try adjusting your filters</p>
-                  </motion.div>
+                  <div className="p-5 sm:p-6 text-center">
+                    <div className="w-11 h-11 sm:w-14 sm:h-14 mx-auto mb-3 sm:mb-4 rounded-lg sm:rounded-xl bg-purple-600/20 border border-purple-400/20 flex items-center justify-center" aria-hidden>
+                      <ClipboardList className="w-5 h-5 sm:w-7 sm:h-7 text-purple-300" />
+                    </div>
+                    <p className="text-xs sm:text-sm font-semibold text-white/80 mb-0.5 sm:mb-1">No matches found</p>
+                    <p className="text-[11px] sm:text-xs text-purple-200/50">Try adjusting your filters</p>
+                  </div>
                 ) : (
                   filteredInspections.map((inspection, index) => {
                     const isSelected = inspection.id === selectedId;
@@ -277,59 +246,45 @@ export function EquipmentTab({
                     return (
                       <motion.button
                         key={inspection.id}
+                        type="button"
                         custom={index}
                         variants={prefersReducedMotion ? listItemVariantsReduced : listItemVariants}
                         initial="hidden"
                         animate="visible"
-                        whileHover={{ backgroundColor: "rgba(192, 132, 252, 0.1)" }}
                         onClick={() => onSelectId(isSelected ? null : inspection.id)}
-                        className={`w-full text-left px-4 py-3.5 transition-all duration-200 flex items-center gap-3 group border-b border-purple-500/10 last:border-b-0 ${
-                          isSelected 
-                            ? "bg-gradient-to-r from-purple-600/25 to-purple-500/10 border-l-4 border-l-purple-400" 
-                            : "border-l-4 border-l-transparent hover:border-l-purple-500/50"
+                        className={`w-full text-left px-3 py-2.5 sm:px-4 sm:py-3 transition-colors duration-150 flex items-center gap-2 sm:gap-3 border-b border-purple-500/10 last:border-b-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-inset min-h-[44px] sm:min-h-[48px] touch-target ${
+                          isSelected
+                            ? "bg-purple-600/20 border-l-4 border-l-purple-400"
+                            : "border-l-4 border-l-transparent hover:bg-purple-500/10 hover:border-l-purple-500/30"
                         }`}
+                        aria-pressed={isSelected}
+                        aria-label={`${inspection.equipment_number || "N/A"}, ${inspection.equipment_type || ""}. ${hasFailures ? "Needs review" : "Passed"}. Select to view details.`}
                       >
-                        {isSelected && (
-                          <motion.div
-                            layoutId="equipment-selection-indicator"
-                            className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-purple-400 via-violet-400 to-purple-500"
-                          />
-                        )}
-                        <motion.div 
-                          whileHover={{ scale: 1.3 }}
-                          className={`w-3 h-3 rounded-full flex-shrink-0 shadow-lg ${hasFailures ? "bg-rose-400 shadow-rose-500/50" : "bg-purple-400 shadow-purple-500/50"}`} 
-                        />
+                        <span className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full flex-shrink-0 ${hasFailures ? "bg-rose-400" : "bg-purple-400"}`} aria-hidden />
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-sm text-white truncate drop-shadow-sm">{inspection.equipment_number || "N/A"}</span>
-                            <span className="text-[10px] text-purple-200/60 truncate bg-purple-500/20 px-2 py-0.5 rounded-full">{inspection.equipment_type || ""}</span>
+                          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                            <span className="font-semibold text-xs sm:text-sm text-white truncate">{inspection.equipment_number || "N/A"}</span>
+                            <span className="text-[9px] sm:text-[10px] text-purple-200/60 truncate bg-purple-500/20 px-1.5 py-0.5 sm:px-2 sm:py-0.5 rounded-md sm:rounded-lg">{inspection.equipment_type || ""}</span>
                             {hasFix && (
-                              <motion.span 
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                className="inline-flex items-center px-2 py-0.5 bg-emerald-500/30 border border-emerald-400/40 rounded-full text-[9px] text-emerald-200 font-bold shadow-sm"
-                              >
-                                <CheckCircle2 className="w-2.5 h-2.5 mr-1" />
-                                Fixed
-                              </motion.span>
+                              <span className="inline-flex items-center gap-0.5 sm:gap-1 px-1.5 py-0.5 sm:px-2 sm:py-0.5 bg-emerald-500/25 border border-emerald-400/30 rounded-md sm:rounded-lg text-[9px] sm:text-[10px] font-semibold text-emerald-200">
+                                <CheckCircle2 className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" aria-hidden /> Fixed
+                              </span>
                             )}
                           </div>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-xs text-purple-100/70 truncate">{inspection.submitted_by || "Unknown"}</span>
-                            <span className="text-purple-300/30">•</span>
-                            <span className="text-[10px] text-purple-200/50">{new Date(inspection.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+                          <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5 min-w-0">
+                            <span className="text-[11px] sm:text-xs text-purple-100/70 truncate">{inspection.submitted_by || "Unknown"}</span>
+                            <span className="text-purple-300/30 shrink-0" aria-hidden>•</span>
+                            <span className="text-[10px] sm:text-xs text-purple-200/50 truncate">{new Date(inspection.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
                           </div>
                         </div>
-                        <ChevronRight className={`w-4 h-4 transition-all duration-200 flex-shrink-0 ${isSelected ? "text-purple-300 rotate-90" : "text-purple-400/40 group-hover:text-purple-300"}`} />
+                        <ChevronRight className={`w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 transition-transform duration-200 ${isSelected ? "text-purple-300 rotate-90" : "text-purple-400/40"}`} aria-hidden />
                       </motion.button>
                     );
                   })
                 )}
               </div>
-              
-              {/* Pagination */}
               {totalCount > 0 && (
-                <div className="px-3 py-3 border-t border-purple-500/10 bg-black/20">
+                <div className="px-3 py-2.5 sm:px-4 sm:py-3 border-t border-purple-500/10 bg-black/20 flex-shrink-0">
                   <AdvancedPagination
                     currentPage={page}
                     totalPages={totalPages}
@@ -343,145 +298,105 @@ export function EquipmentTab({
                   />
                 </div>
               )}
-            </motion.div>
+            </div>
 
-            {/* Detail Panel */}
-            <div className="lg:col-span-2">
+            {/* Detail Panel - compressed, mobile-optimized */}
+            <div className="lg:col-span-2 min-w-0">
               <AnimatePresence mode="wait">
                 {!selectedEquipment ? (
                   <motion.div 
                     key="empty-state" 
                     {...(prefersReducedMotion ? detailTransitionReduced : detailTransition)} 
-                    className="h-full min-h-[300px] rounded-2xl border-2 border-purple-500/30 bg-gradient-to-br from-purple-900/40 via-purple-950/50 to-black/70 p-8 flex flex-col items-center justify-center text-center shadow-2xl shadow-purple-500/10"
+                    className="h-full min-h-[200px] sm:min-h-[260px] rounded-xl sm:rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-900/40 via-purple-950/50 to-black/70 p-5 sm:p-8 flex flex-col items-center justify-center text-center shadow-lg sm:shadow-xl shadow-purple-500/10"
                   >
-                    <motion.div 
-                      animate={{ 
-                        scale: [1, 1.05, 1], 
-                        rotate: [0, 5, -5, 0],
-                        boxShadow: ['0 0 20px rgba(192, 132, 252, 0.3)', '0 0 40px rgba(192, 132, 252, 0.5)', '0 0 20px rgba(192, 132, 252, 0.3)']
-                      }}
-                      transition={{ duration: 4, repeat: Infinity }}
-                      className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-600/40 to-violet-700/40 border border-purple-400/40 mb-4"
-                    >
-                      <ClipboardList className="w-10 h-10 text-purple-300" />
-                    </motion.div>
-                    <p className="text-lg font-bold text-white mb-1">Select an inspection</p>
-                    <p className="text-sm text-purple-200/60">Choose a record from the list to view details</p>
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg sm:rounded-xl bg-purple-600/30 border border-purple-400/30 flex items-center justify-center mb-4 sm:mb-6" aria-hidden>
+                      <ClipboardList className="w-6 h-6 sm:w-8 sm:h-8 text-purple-300" />
+                    </div>
+                    <p className="text-base sm:text-lg font-bold text-white mb-0.5 sm:mb-1">Select an inspection</p>
+                    <p className="text-xs sm:text-sm text-purple-200/60">Choose a record from the list to view details</p>
                   </motion.div>
                 ) : (
-                  <motion.div key={selectedId} {...(prefersReducedMotion ? detailTransitionReduced : detailTransition)} className="space-y-4">
-                    <div className="rounded-2xl border-2 border-purple-500/30 bg-gradient-to-br from-purple-900/50 via-purple-950/60 to-black/80 overflow-hidden shadow-2xl shadow-purple-500/15">
-                      {/* Header */}
-                      <div className="relative bg-gradient-to-r from-purple-700/80 via-violet-700/70 to-purple-800/60 border-b border-purple-400/30 px-5 py-5">
-                        <div className="absolute inset-0 animate-shimmer opacity-20 pointer-events-none" />
-                        
-                        <div className="relative flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-4 min-w-0">
-                            <motion.div 
-                              whileHover={{ scale: 1.1, rotate: 5 }}
-                              animate={{
-                                boxShadow: ['0 0 15px rgba(192, 132, 252, 0.4)', '0 0 30px rgba(192, 132, 252, 0.6)', '0 0 15px rgba(192, 132, 252, 0.4)']
-                              }}
-                              transition={{ duration: 2, repeat: Infinity }}
-                              className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-500/50 to-violet-600/50 border border-purple-300/50 flex items-center justify-center flex-shrink-0"
-                            >
-                              <Wrench className="w-7 h-7 text-purple-100" />
-                            </motion.div>
+                  <motion.div key={selectedId} {...(prefersReducedMotion ? detailTransitionReduced : detailTransition)} className="space-y-3 sm:space-y-4">
+                    <div className="rounded-xl sm:rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-900/50 via-purple-950/60 to-black/80 overflow-hidden shadow-lg sm:shadow-xl shadow-purple-500/10">
+                      <div className="bg-gradient-to-r from-purple-700/60 via-violet-700/50 to-purple-800/50 border-b border-purple-400/20 px-3 py-3 sm:px-5 sm:py-4">
+                        <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-3 sm:gap-4">
+                          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-purple-500/40 border border-purple-400/30 flex items-center justify-center flex-shrink-0" aria-hidden>
+                              <Wrench className="w-5 h-5 sm:w-6 sm:h-6 text-purple-100" />
+                            </div>
                             <div className="min-w-0">
-                              <h3 className="text-xl font-black text-white truncate drop-shadow-lg">{selectedEquipment.equipment_number || "Unknown"}</h3>
-                              <div className="flex items-center gap-2 text-sm text-purple-100/80">
+                              <h3 className="text-base sm:text-lg font-bold text-white truncate">{selectedEquipment.equipment_number || "Unknown"}</h3>
+                              <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-purple-100/80 mt-0.5 flex-wrap">
                                 <span className="font-medium bg-purple-500/30 px-2 py-0.5 rounded-lg">{selectedEquipment.equipment_type || "Equipment"}</span>
-                                <span className="text-purple-300/40">•</span>
-                                <span className="font-semibold">{new Date(selectedEquipment.inspection_date).toLocaleDateString()}</span>
+                                <span className="text-purple-300/40 shrink-0" aria-hidden>•</span>
+                                <span className="font-semibold tabular-nums">{new Date(selectedEquipment.inspection_date).toLocaleDateString()}</span>
                               </div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
+                          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 flex-wrap">
                             {selectedEquipment.mechanic_fixes && (
-                              <motion.span 
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-500/30 border border-emerald-400/50 rounded-xl text-xs font-bold text-emerald-100 shadow-lg shadow-emerald-500/20"
-                              >
-                                <Wrench className="w-4 h-4" />Fixed
-                              </motion.span>
+                              <span className="inline-flex items-center gap-1 sm:gap-1.5 px-2 py-1.5 sm:px-3 sm:py-2 bg-emerald-500/25 border border-emerald-400/40 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold text-emerald-100">
+                                <Wrench className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" aria-hidden /> Fixed
+                              </span>
                             )}
-                            <motion.span 
-                              animate={{ scale: [1, 1.02, 1] }}
-                              transition={{ duration: 2, repeat: Infinity }}
-                              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold shadow-lg ${inspectionHasFailures(selectedEquipment) ? "bg-gradient-to-r from-rose-500 to-red-500 text-white shadow-rose-500/30" : "bg-gradient-to-r from-purple-500 to-violet-500 text-white shadow-purple-500/30"}`}
-                            >
-                              {inspectionHasFailures(selectedEquipment) ? <><AlertTriangle className="w-4 h-4" />Needs Review</> : <><CheckCircle2 className="w-4 h-4" />Passed</>}
-                            </motion.span>
+                            <span className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold ${inspectionHasFailures(selectedEquipment) ? "bg-rose-500/80 text-white" : "bg-purple-500/80 text-white"}`}>
+                              {inspectionHasFailures(selectedEquipment) ? <><AlertTriangle className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" aria-hidden /> Needs Review</> : <><CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" aria-hidden /> Passed</>}
+                            </span>
                           </div>
                         </div>
                       </div>
-                      {/* Content */}
-                      <div className="px-5 py-5 space-y-4">
-                        {/* Info Cards */}
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          <div className="rounded-xl border border-purple-500/30 bg-gradient-to-br from-purple-800/30 to-purple-900/20 p-4">
-                            <div className="text-[11px] uppercase tracking-wider text-purple-200/70 mb-2 font-bold">Submitted by</div>
-                            <p className="text-base text-white/90 font-medium">{selectedEquipment.submitted_by || "Unknown"}</p>
+                      <div className="px-3 py-3 sm:px-5 sm:py-4 space-y-3 sm:space-y-4">
+                        <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+                          <div className="rounded-lg sm:rounded-xl border border-purple-500/20 bg-purple-800/20 p-3 sm:p-4">
+                            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-purple-200/70 mb-1.5 sm:mb-2">Submitted by</div>
+                            <p className="text-xs sm:text-sm text-white/90 font-medium">{selectedEquipment.submitted_by || "Unknown"}</p>
                           </div>
-                          <div className="rounded-xl border border-purple-500/30 bg-gradient-to-br from-purple-800/30 to-purple-900/20 p-4">
-                            <div className="text-[11px] uppercase tracking-wider text-purple-200/70 mb-2 font-bold">Notes</div>
-                            <p className="text-sm text-white/80 line-clamp-2">{selectedEquipment.notes?.trim() || "No notes"}</p>
+                          <div className="rounded-lg sm:rounded-xl border border-purple-500/20 bg-purple-800/20 p-3 sm:p-4">
+                            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-purple-200/70 mb-1.5 sm:mb-2">Notes</div>
+                            <p className="text-xs sm:text-sm text-white/80 line-clamp-2">{selectedEquipment.notes?.trim() || "No notes"}</p>
                           </div>
                         </div>
-                        {/* Mechanic Fix */}
                         {selectedEquipment.mechanic_fixes && (
-                          <motion.div 
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="rounded-xl border-2 border-emerald-500/40 bg-gradient-to-br from-emerald-700/30 via-emerald-800/20 to-emerald-900/10 p-5"
-                          >
-                            <div className="flex items-center gap-2 text-sm uppercase tracking-wider text-emerald-200 mb-3 font-bold">
-                              <motion.div
-                                animate={{ rotate: [0, 10, -10, 0] }}
-                                transition={{ duration: 2, repeat: Infinity }}
-                              >
-                                <Wrench className="w-4 h-4" />
-                              </motion.div>
-                              Mechanic Fix
+                          <div className="rounded-lg sm:rounded-xl border border-emerald-500/40 bg-emerald-700/20 p-3 sm:p-5">
+                            <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-emerald-200 mb-2 sm:mb-3">
+                              <Wrench className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" aria-hidden /> Mechanic fix
                             </div>
-                            <p className="text-base text-white/90 font-medium">{selectedEquipment.mechanic_fixes}</p>
-                            {selectedEquipment.last_mechanic_updated_at && <p className="text-xs text-emerald-200/50 mt-3">Updated {new Date(selectedEquipment.last_mechanic_updated_at).toLocaleDateString()}</p>}
-                          </motion.div>
+                            <p className="text-xs sm:text-sm text-white/90 font-medium">{selectedEquipment.mechanic_fixes}</p>
+                            {selectedEquipment.last_mechanic_updated_at && <p className="text-[10px] sm:text-xs text-emerald-200/50 mt-2 sm:mt-3">Updated {new Date(selectedEquipment.last_mechanic_updated_at).toLocaleDateString()}</p>}
+                          </div>
                         )}
-                        {/* Checklists */}
-                        <details className="group rounded-xl border-2 border-purple-500/25 bg-gradient-to-br from-purple-900/30 to-purple-950/20 overflow-hidden" open>
-                          <summary className="flex items-center justify-between cursor-pointer px-4 py-3.5 text-sm font-bold text-white/80 hover:text-white hover:bg-purple-500/10 transition-all">
-                            <span className="flex items-center gap-2"><ClipboardList className="w-4 h-4 text-purple-300" />Checklists</span>
-                            <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90 text-purple-400" />
+                        <details className="group rounded-lg sm:rounded-xl border border-purple-500/20 bg-purple-900/20 overflow-hidden focus-within:ring-2 focus-within:ring-purple-400 focus-within:ring-offset-2 focus-within:ring-offset-purple-950/80" open>
+                          <summary className="flex items-center justify-between cursor-pointer px-3 py-2.5 sm:px-4 sm:py-3.5 text-xs sm:text-sm font-semibold text-white/90 hover:text-white hover:bg-purple-500/10 transition-colors list-none [&::-webkit-details-marker]:hidden touch-target">
+                            <span className="flex items-center gap-1.5 sm:gap-2 min-w-0"><ClipboardList className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-300 shrink-0" aria-hidden /> <span className="truncate">Checklists</span></span>
+                            <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 transition-transform duration-200 group-open:rotate-90 text-purple-400" aria-hidden />
                           </summary>
-                          <div className="grid gap-3 sm:grid-cols-2 p-4 border-t border-purple-500/20 bg-black/20">
-                            <div className="rounded-xl border border-purple-500/20 bg-purple-950/30 p-4">
-                              <div className="text-[11px] uppercase tracking-wider text-purple-200/70 mb-3 font-bold">General</div>
-                              <div className="max-h-48 overflow-y-auto space-y-1.5">
+                          <div className="grid gap-2 sm:gap-3 md:gap-4 sm:grid-cols-2 p-2.5 sm:p-3 md:p-4 border-t border-purple-500/20 bg-black/20">
+                            <div className="rounded-lg sm:rounded-xl border border-purple-500/20 bg-purple-950/30 p-2.5 sm:p-3 md:p-4 min-w-0">
+                              <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-purple-200/70 mb-1.5 sm:mb-2 md:mb-3">General</div>
+                              <div className="max-h-24 xs:max-h-28 sm:max-h-32 md:max-h-40 overflow-y-auto space-y-0.5 sm:space-y-1 md:space-y-1.5 scroll-container">
                                 {GENERAL_EQUIPMENT_ITEMS.map((item) => {
                                   const value = selectedEquipment.general_checklist?.[item.id];
-                                  const itemStatus = value === "P" ? "pass" : value === "F" ? "fail" : "pending";
+                                  const itemStatus = value === "P" ? "pass" : value === "F" ? "fail" : value === "N/A" ? "na" : "pending";
                                   return (
-                                    <div key={item.id} className="flex items-center justify-between py-2 text-sm text-white/70 gap-2 border-b border-purple-500/10 last:border-0">
+                                    <div key={item.id} className="flex items-center justify-between py-1 sm:py-1.5 md:py-2 text-[11px] sm:text-xs md:text-sm text-white/70 gap-2 border-b border-purple-500/10 last:border-0">
                                       <span className="truncate">{item.label}</span>
-                                      <span className={`w-3 h-3 rounded-full flex-shrink-0 shadow-lg ${itemStatus === "pass" ? "bg-emerald-400 shadow-emerald-500/50" : itemStatus === "fail" ? "bg-rose-400 shadow-rose-500/50" : "bg-white/20"}`} />
+                                      <span className={`w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 rounded-full flex-shrink-0 ${itemStatus === "pass" ? "bg-emerald-400" : itemStatus === "fail" ? "bg-rose-400" : itemStatus === "na" ? "bg-amber-400" : "bg-white/20"}`} />
                                     </div>
                                   );
                                 })}
                               </div>
                             </div>
-                            <div className="rounded-xl border border-purple-500/20 bg-purple-950/30 p-4">
-                              <div className="text-[11px] uppercase tracking-wider text-purple-200/70 mb-3 font-bold">Template</div>
-                              {getSpecificItems(selectedEquipment.template).length === 0 ? <p className="text-sm text-purple-200/50">No template</p> : (
-                                <div className="max-h-48 overflow-y-auto space-y-1.5">
+                            <div className="rounded-lg sm:rounded-xl border border-purple-500/20 bg-purple-950/30 p-2.5 sm:p-3 md:p-4 min-w-0">
+                              <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-purple-200/70 mb-1.5 sm:mb-2 md:mb-3">Template</div>
+                              {getSpecificItems(selectedEquipment.template).length === 0 ? <p className="text-[11px] sm:text-xs md:text-sm text-purple-200/50 py-1">No template</p> : (
+                                <div className="max-h-24 xs:max-h-28 sm:max-h-32 md:max-h-40 overflow-y-auto space-y-0.5 sm:space-y-1 md:space-y-1.5 scroll-container">
                                   {getSpecificItems(selectedEquipment.template).map((item) => {
                                     const value = selectedEquipment.specific_checklist?.[item.id];
-                                    const itemStatus = value === "P" ? "pass" : value === "F" ? "fail" : "pending";
+                                    const itemStatus = value === "P" ? "pass" : value === "F" ? "fail" : value === "N/A" ? "na" : "pending";
                                     return (
-                                      <div key={item.id} className="flex items-center justify-between py-2 text-sm text-white/70 gap-2 border-b border-purple-500/10 last:border-0">
+                                      <div key={item.id} className="flex items-center justify-between py-1 sm:py-1.5 md:py-2 text-[11px] sm:text-xs md:text-sm text-white/70 gap-2 border-b border-purple-500/10 last:border-0">
                                         <span className="truncate">{item.label}</span>
-                                        <span className={`w-3 h-3 rounded-full flex-shrink-0 shadow-lg ${itemStatus === "pass" ? "bg-emerald-400 shadow-emerald-500/50" : itemStatus === "fail" ? "bg-rose-400 shadow-rose-500/50" : "bg-white/20"}`} />
+                                        <span className={`w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 rounded-full flex-shrink-0 ${itemStatus === "pass" ? "bg-emerald-400" : itemStatus === "fail" ? "bg-rose-400" : itemStatus === "na" ? "bg-amber-400" : "bg-white/20"}`} />
                                       </div>
                                     );
                                   })}
@@ -490,18 +405,18 @@ export function EquipmentTab({
                             </div>
                           </div>
                         </details>
-                        <details className="group rounded-xl border-2 border-purple-500/25 bg-gradient-to-br from-purple-900/30 to-purple-950/20 overflow-hidden">
-                          <summary className="flex items-center justify-between cursor-pointer px-4 py-3.5 text-sm font-bold text-white/80 hover:text-white hover:bg-purple-500/10 transition-all">
-                            <span className="flex items-center gap-2"><Camera className="w-4 h-4 text-purple-300" />Photos ({photoEntries.length})</span>
-                            <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90 text-purple-400" />
+                        <details className="group rounded-lg sm:rounded-xl border border-purple-500/20 bg-purple-900/20 overflow-hidden focus-within:ring-2 focus-within:ring-purple-400 focus-within:ring-offset-2 focus-within:ring-offset-purple-950/80">
+                          <summary className="flex items-center justify-between cursor-pointer px-3 py-2.5 sm:px-4 sm:py-3.5 text-xs sm:text-sm font-semibold text-white/90 hover:text-white hover:bg-purple-500/10 transition-colors list-none [&::-webkit-details-marker]:hidden touch-target">
+                            <span className="flex items-center gap-1.5 sm:gap-2 min-w-0"><Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-300 shrink-0" aria-hidden /> <span className="truncate">Photos ({photoEntries.length})</span></span>
+                            <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 transition-transform duration-200 group-open:rotate-90 text-purple-400" aria-hidden />
                           </summary>
-                          <div className="p-4 border-t border-purple-500/20 bg-black/20">
-                            {photoEntries.length === 0 ? <p className="text-sm text-purple-200/50">No photos uploaded</p> : (
-                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                          <div className="p-3 sm:p-4 border-t border-purple-500/20 bg-black/20">
+                            {photoEntries.length === 0 ? <p className="text-xs sm:text-sm text-purple-200/50">No photos uploaded</p> : (
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
                                 {photoEntries.map((photo) => (
-                                  <a key={photo.label} href={photo.url} target="_blank" rel="noopener noreferrer" className="group/img block rounded-xl border border-purple-500/20 bg-purple-950/30 overflow-hidden transition-all hover:border-purple-400/50 hover:shadow-xl hover:shadow-purple-500/20">
-                                    <img src={photo.url} alt={photo.label} className="h-20 w-full object-cover transition-transform duration-300 group-hover/img:scale-110" />
-                                    <div className="px-2 py-2 text-[11px] text-purple-200/70 truncate font-medium">{photo.label}</div>
+                                  <a key={photo.label} href={photo.url} target="_blank" rel="noopener noreferrer" className="block rounded-lg sm:rounded-xl border border-purple-500/20 bg-purple-950/30 overflow-hidden transition-colors hover:border-purple-400/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-purple-950/80">
+                                    <img src={photo.url} alt={photo.label} className="h-16 sm:h-20 w-full object-cover" />
+                                    <div className="px-2 py-1.5 sm:px-3 sm:py-2 text-[10px] sm:text-xs text-purple-200/70 truncate font-medium">{photo.label}</div>
                                   </a>
                                 ))}
                               </div>

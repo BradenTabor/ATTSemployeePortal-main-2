@@ -1123,6 +1123,8 @@ interface ErrorBreakdownSectionProps {
 }
 
 function ErrorBreakdownSection({ errors, isLoading }: ErrorBreakdownSectionProps) {
+  const [expandedError, setExpandedError] = useState<string | null>(null);
+  
   return (
     <motion.div
       variants={itemVariants}
@@ -1132,10 +1134,16 @@ function ErrorBreakdownSection({ errors, isLoading }: ErrorBreakdownSectionProps
         <div className="p-1.5 sm:p-2 rounded-lg bg-red-500/10 text-red-400">
           <AlertTriangle className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
         </div>
-        <div>
+        <div className="flex-1 min-w-0">
           <h3 className="text-sm sm:text-base font-semibold text-white">Errors</h3>
           <p className="hidden sm:block text-xs text-white/40 mt-0.5">Form submission errors</p>
         </div>
+        {errors.length > 0 && (
+          <div className="text-right shrink-0">
+            <p className="text-base sm:text-lg font-bold text-red-400 tabular-nums">{errors.reduce((sum, e) => sum + e.count, 0)}</p>
+            <p className="text-[8px] sm:text-[9px] text-white/40">Total</p>
+          </div>
+        )}
       </div>
 
       {isLoading ? (
@@ -1150,31 +1158,85 @@ function ErrorBreakdownSection({ errors, isLoading }: ErrorBreakdownSectionProps
           <p className="text-xs text-white/50">No errors</p>
         </div>
       ) : (
-        <div className="space-y-1.5">
-          {errors.slice(0, 5).map((error, idx) => (
-            <motion.div
-              key={`${error.form_type}-${error.error_code}-${error.field_name}`}
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.05 }}
-              className="flex items-center justify-between p-2 rounded-lg bg-red-500/5 border border-red-500/20"
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="p-1 rounded bg-red-500/10 text-red-400 shrink-0">
-                  <XCircle className="w-3 h-3" />
+        <div className="space-y-1.5 max-h-[250px] sm:max-h-[300px] overflow-y-auto pr-0.5">
+          {errors.map((error, idx) => {
+            const errorKey = `${error.form_type}-${error.error_code}-${error.field_name}`;
+            const isExpanded = expandedError === errorKey;
+            
+            return (
+              <motion.div
+                key={errorKey}
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.05 }}
+                className="rounded-lg bg-red-500/5 border border-red-500/20 overflow-hidden"
+              >
+                <div 
+                  className="flex items-center justify-between p-2 cursor-pointer hover:bg-red-500/10 transition-colors"
+                  onClick={() => setExpandedError(isExpanded ? null : errorKey)}
+                >
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <div className="p-1 rounded bg-red-500/10 text-red-400 shrink-0">
+                      <XCircle className="w-3 h-3" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] sm:text-xs font-medium text-white truncate">
+                        {error.error_code || 'Unknown'}
+                      </p>
+                      <p className="text-[9px] text-white/40 truncate">
+                        {error.form_type ? FORM_TYPE_LABELS[error.form_type] : 'Unknown'}
+                        {error.field_name && ` · ${error.field_name}`}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-xs font-bold text-red-400 tabular-nums">{error.count}</span>
+                    {isExpanded ? (
+                      <ChevronDown className="w-3 h-3 text-white/40" />
+                    ) : (
+                      <ChevronRight className="w-3 h-3 text-white/40" />
+                    )}
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="text-[10px] sm:text-xs font-medium text-white truncate">
-                    {error.error_code || 'Unknown'}
-                  </p>
-                  <p className="text-[9px] text-white/40 truncate">
-                    {error.form_type ? FORM_TYPE_LABELS[error.form_type] : 'Unknown'}
-                  </p>
-                </div>
-              </div>
-              <span className="text-xs font-bold text-red-400 tabular-nums shrink-0 ml-2">{error.count}</span>
-            </motion.div>
-          ))}
+                
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-2 pb-2 pt-1 border-t border-red-500/20 bg-red-500/5">
+                        <div className="space-y-1 text-[9px] sm:text-[10px]">
+                          <div className="flex justify-between">
+                            <span className="text-white/40">Form Type:</span>
+                            <span className="text-white/70 font-medium">
+                              {error.form_type ? FORM_TYPE_META[error.form_type]?.fullName || FORM_TYPE_LABELS[error.form_type] : 'Unknown'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-white/40">Error Code:</span>
+                            <span className="text-white/70 font-mono">{error.error_code || 'UNKNOWN'}</span>
+                          </div>
+                          {error.field_name && (
+                            <div className="flex justify-between">
+                              <span className="text-white/40">Field:</span>
+                              <span className="text-white/70 font-mono">{error.field_name}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between">
+                            <span className="text-white/40">Occurrences:</span>
+                            <span className="text-red-400 font-bold tabular-nums">{error.count}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            );
+          })}
         </div>
       )}
     </motion.div>
@@ -1232,7 +1294,7 @@ export default function AdminTelemetry() {
 
   return (
     <DashboardLayout title="Telemetry Dashboard">
-      <div className="max-w-7xl mx-auto space-y-3 sm:space-y-5">
+      <div className="max-w-7xl mx-auto space-y-2 sm:space-y-5">
         {/* Compact Header */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -1257,7 +1319,7 @@ export default function AdminTelemetry() {
                 key={option.days}
                 onClick={() => setSelectedDays(option.days)}
                 className={cn(
-                  "px-2 py-1 rounded-md text-[10px] font-medium transition-all whitespace-nowrap",
+                  "px-2 py-1 rounded-md text-[10px] font-medium transition-all whitespace-nowrap shrink-0",
                   selectedDays === option.days
                     ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
                     : "text-white/50"
@@ -1304,7 +1366,7 @@ export default function AdminTelemetry() {
             onClick={() => refetch()}
             disabled={isRefetching}
             className={cn(
-              "sm:hidden p-1.5 rounded-lg bg-white/5 border border-white/10 text-white/50",
+              "sm:hidden p-1.5 rounded-lg bg-white/5 border border-white/10 text-white/50 shrink-0",
               isRefetching && "animate-spin"
             )}
           >
@@ -1350,7 +1412,7 @@ export default function AdminTelemetry() {
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="space-y-5"
+            className="space-y-2 sm:space-y-5"
           >
             {/* Summary Stats */}
             <SummarySection data={data} />
@@ -1365,21 +1427,21 @@ export default function AdminTelemetry() {
             <TimelineSection data={data.timeline} />
 
             {/* Two Column Layout */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-5">
               <AnnouncementSection data={data.announcements} />
               <DuplicateSection data={data.duplicates} />
             </div>
 
             {/* Three Column Layout - Horizontal scroll on mobile */}
             <div className="sm:hidden overflow-x-auto -mx-4 px-4 pb-2">
-              <div className="flex gap-3 min-w-max">
-                <div className="w-64 shrink-0">
+              <div className="flex gap-2 min-w-max">
+                <div className="w-56 shrink-0">
                   <RouteAnalytics routes={routeStats || []} isLoading={routesLoading} />
                 </div>
                 <div className="w-56 shrink-0">
                   <ErrorBreakdownSection errors={errorBreakdown || []} isLoading={errorsLoading} />
                 </div>
-                <div className="w-64 shrink-0">
+                <div className="w-56 shrink-0">
                   <RawEventsLog events={rawEvents || []} isLoading={rawEventsLoading} />
                 </div>
               </div>
@@ -1393,7 +1455,7 @@ export default function AdminTelemetry() {
             {/* Compact Footer */}
             <motion.div
               variants={itemVariants}
-              className="text-center text-[10px] sm:text-xs text-white/30 pt-3 sm:pt-4 border-t border-white/5"
+              className="text-center text-[10px] sm:text-xs text-white/30 pt-2 sm:pt-4 border-t border-white/5"
             >
               <p>
                 {new Date(data.period.from).toLocaleDateString()} → {new Date(data.period.to).toLocaleDateString()} · {data.summary.total_events} events

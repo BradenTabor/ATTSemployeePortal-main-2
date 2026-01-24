@@ -49,3 +49,4 @@ supabase/.temp/
 .lighthouse/
 .lighthouseci/
 supabase/.temp/
+.archive/

@@ -44,11 +44,13 @@ import {
 } from "./helpers";
 import {
   ScrollRevealSection,
+} from "./animations";
+import {
   listItemVariants,
   listItemVariantsReduced,
   detailTransition,
   detailTransitionReduced,
-} from "./animations";
+} from "../../../lib/animationVariants";
 import { dvirExportColumns } from "./exportColumns";
 
 interface DVIRTabProps {
@@ -105,6 +107,8 @@ export function DVIRTab({
   getDvirPublicUrl,
 }: DVIRTabProps) {
   const prefersReducedMotion = useReducedMotion();
+
+  const isStoragePath = useCallback((s: string) => /[/\\]/.test(s) || /\.(png|jpe?g|webp)$/i.test(s), []);
   
   // Selection state
   const [selectedDvirId, setSelectedDvirId] = useState<string | null>(null);
@@ -295,11 +299,19 @@ export function DVIRTab({
       { label: "Mechanic", path: selectedDvir.mechanic_signature },
       { label: "Driver Approval", path: selectedDvir.driver_approval_signature },
     ];
-    return base.filter((e) => e.path).map((e) => {
-      const url = getDvirPublicUrl(e.path);
-      return url ? { label: e.label, url } : null;
-    }).filter((e): e is { label: string; url: string } => Boolean(e));
-  }, [selectedDvir, getDvirPublicUrl]);
+    const out: { label: string; url?: string; text?: string }[] = [];
+    for (const e of base) {
+      const path = e.path?.trim();
+      if (!path) continue;
+      if (isStoragePath(path)) {
+        const url = getDvirPublicUrl(path);
+        if (url) out.push({ label: e.label, url });
+      } else {
+        out.push({ label: e.label, text: path });
+      }
+    }
+    return out;
+  }, [selectedDvir, getDvirPublicUrl, isStoragePath]);
 
   const dvirTotalPages = Math.max(1, Math.ceil(dvirTotalCount / dvirPageSize));
 
@@ -783,11 +795,11 @@ export function DVIRTab({
                               <div className="max-h-52 overflow-y-auto space-y-1">
                                 {VEHICLE_TRAILER_ITEMS.map((item) => {
                                   const value = selectedDvir.vehicle_trailer_checklist?.[item.id];
-                                  const status = value === "P" ? "pass" : value === "F" ? "fail" : "pending";
+                                  const status = value === "P" ? "pass" : value === "F" ? "fail" : value === "N/A" ? "na" : "pending";
                                   return (
                                     <div key={item.id} className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-gray-800/50 text-sm text-gray-300 gap-2">
                                       <span className="truncate">{item.label}</span>
-                                      <span className={`w-3 h-3 rounded-full flex-shrink-0 ${status === "pass" ? "bg-emerald-500" : status === "fail" ? "bg-rose-500" : "bg-gray-600"}`} />
+                                      <span className={`w-3 h-3 rounded-full flex-shrink-0 ${status === "pass" ? "bg-emerald-500" : status === "fail" ? "bg-rose-500" : status === "na" ? "bg-amber-500" : "bg-gray-600"}`} />
                                     </div>
                                   );
                                 })}
@@ -798,11 +810,11 @@ export function DVIRTab({
                               <div className="max-h-52 overflow-y-auto space-y-1">
                                 {AERIAL_LIFT_ITEMS.map((item) => {
                                   const value = selectedDvir.aerial_checklist?.[item.id];
-                                  const status = value === "P" ? "pass" : value === "F" ? "fail" : "pending";
+                                  const status = value === "P" ? "pass" : value === "F" ? "fail" : value === "N/A" ? "na" : "pending";
                                   return (
                                     <div key={item.id} className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-gray-800/50 text-sm text-gray-300 gap-2">
                                       <span className="truncate">{item.label}</span>
-                                      <span className={`w-3 h-3 rounded-full flex-shrink-0 ${status === "pass" ? "bg-emerald-500" : status === "fail" ? "bg-rose-500" : "bg-gray-600"}`} />
+                                      <span className={`w-3 h-3 rounded-full flex-shrink-0 ${status === "pass" ? "bg-emerald-500" : status === "fail" ? "bg-rose-500" : status === "na" ? "bg-amber-500" : "bg-gray-600"}`} />
                                     </div>
                                   );
                                 })}
@@ -837,12 +849,19 @@ export function DVIRTab({
                           </summary>
                           {dvirSignatureEntries.length === 0 ? <p className="px-4 py-3 text-sm text-gray-500 bg-gray-950/80">No signatures</p> : (
                             <div className="grid grid-cols-2 gap-3 p-3 bg-gray-950/80">
-                              {dvirSignatureEntries.map((sig) => (
-                                <a key={sig.label} href={sig.url} target="_blank" rel="noopener noreferrer" className="rounded-xl border-2 border-gray-800 bg-gray-900 p-3 transition-all hover:border-orange-500/50">
-                                  <div className="text-xs text-gray-400 mb-2 truncate font-semibold">{sig.label}</div>
-                                  <img src={sig.url} alt={sig.label} className="h-20 w-full object-contain bg-white/5 rounded-lg" />
-                                </a>
-                              ))}
+                              {dvirSignatureEntries.map((sig) =>
+                                "url" in sig && sig.url ? (
+                                  <a key={sig.label} href={sig.url} target="_blank" rel="noopener noreferrer" className="rounded-xl border-2 border-gray-800 bg-gray-900 p-3 transition-all hover:border-orange-500/50">
+                                    <div className="text-xs text-gray-400 mb-2 truncate font-semibold">{sig.label}</div>
+                                    <img src={sig.url} alt={sig.label} className="h-20 w-full object-contain bg-white/5 rounded-lg" />
+                                  </a>
+                                ) : (
+                                  <div key={sig.label} className="rounded-xl border-2 border-gray-800 bg-gray-900 p-3">
+                                    <div className="text-xs text-gray-400 mb-2 truncate font-semibold">{sig.label}</div>
+                                    <p className="text-sm text-white truncate">{sig.text ?? "—"}</p>
+                                  </div>
+                                )
+                              )}
                             </div>
                           )}
                         </details>
