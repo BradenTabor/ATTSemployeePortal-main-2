@@ -171,10 +171,12 @@ export default function DVIRForm() {
       }
       
       try {
+        const today = new Date().toISOString().split('T')[0];
         const { data, error } = await supabase
           .from("dvir_reports")
-          .select("mileage")
+          .select("mileage, created_at")
           .eq("truck_number", form.truckNumber)
+          .lt("created_at", `${today}T00:00:00.000Z`) // Exclude same-day reports
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();

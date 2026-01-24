@@ -3,9 +3,12 @@
  * 
  * Pure utility functions for compliance-related date/time calculations.
  * All functions use America/Chicago timezone for ATTS operations.
+ * Uses date-fns-tz for proper DST handling.
  * 
  * Extracted from TodayComplianceStatus.tsx for testability.
  */
+
+import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
 
 const TIMEZONE = 'America/Chicago';
 const CUTOFF_HOUR = 9; // 9:00 AM
@@ -15,11 +18,8 @@ const CUTOFF_MINUTE = 0;
  * Get today's date string in YYYY-MM-DD format (Chicago timezone)
  */
 export function getTodayDateString(now: Date = new Date()): string {
-  const chicagoDate = new Date(now.toLocaleString('en-US', { timeZone: TIMEZONE }));
-  const year = chicagoDate.getFullYear();
-  const month = String(chicagoDate.getMonth() + 1).padStart(2, '0');
-  const day = String(chicagoDate.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  const chicagoDate = toZonedTime(now, TIMEZONE);
+  return formatInTimeZone(chicagoDate, TIMEZONE, 'yyyy-MM-dd');
 }
 
 /**
@@ -31,7 +31,7 @@ export function getTimeUntilCutoff(now: Date = new Date()): {
   isPast: boolean;
   totalMinutes: number;
 } {
-  const chicagoNow = new Date(now.toLocaleString('en-US', { timeZone: TIMEZONE }));
+  const chicagoNow = toZonedTime(now, TIMEZONE);
   
   // Cutoff is 9:00 AM Chicago time
   const cutoff = new Date(chicagoNow);
