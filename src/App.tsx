@@ -6,7 +6,6 @@ import {
   Navigate,
 } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { AnimatePresence } from "framer-motion";
 import { Suspense, lazy } from "react";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -31,6 +30,12 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const AssignedJobs = lazy(() => import("./pages/AssignedJobs"));
 const Forms = lazy(() => import("./pages/forms/Forms"));
+// Lazy-load devtools to reduce bundle size in production
+const ReactQueryDevtools = lazy(() =>
+  import("@tanstack/react-query-devtools").then(mod => ({
+    default: mod.ReactQueryDevtools
+  }))
+);
 const Announcements = lazy(() => import("./pages/Announcements"));
 const Resources = lazy(() => import("./pages/Resources"));
 const Contact = lazy(() => import("./pages/Contact"));
@@ -640,13 +645,15 @@ export default function App() {
         <PushNotificationPrompt />
         {/* iOS Install Prompt - shows installation instructions for iOS Safari users */}
         <IOSInstallPrompt />
-        {/* DevTools - only renders in development */}
+        {/* DevTools - only renders in development, lazy-loaded to reduce bundle */}
         {import.meta.env.DEV && (
-          <ReactQueryDevtools
-            initialIsOpen={false}
-            position="bottom"
-            buttonPosition="bottom-right"
-          />
+          <Suspense fallback={null}>
+            <ReactQueryDevtools
+              initialIsOpen={false}
+              position="bottom"
+              buttonPosition="bottom-right"
+            />
+          </Suspense>
         )}
       </ToastOverlayProvider>
     </QueryClientProvider>
