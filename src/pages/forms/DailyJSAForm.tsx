@@ -361,6 +361,7 @@ export default function DailyJSAForm() {
   const isEditMode = Boolean(id);
   const navigate = useNavigate();
   const { user, isAdmin, fullName } = useAuth();
+  const searchParams = new URLSearchParams(window.location.search);
 
   // Extract user initials from full name for span auto-fill
   const userInitials = useMemo(() => {
@@ -380,7 +381,20 @@ export default function DailyJSAForm() {
     useState<"draft" | "completed">("draft");
 
   // Wizard state
-  const [currentStep, setCurrentStep] = useState(1);
+  // Initialize currentStep from URL parameter if present (e.g., ?step=5)
+  const getInitialStep = () => {
+    const stepParam = searchParams.get('step');
+    if (stepParam) {
+      const step = parseInt(stepParam, 10);
+      // Validate step is in range 1-6
+      if (step >= 1 && step <= 6) {
+        return step;
+      }
+    }
+    return 1;
+  };
+
+  const [currentStep, setCurrentStep] = useState(getInitialStep);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [spanPage, setSpanPage] = useState(1);
 
@@ -466,6 +480,17 @@ export default function DailyJSAForm() {
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsavedChanges, isEditMode, showCelebration]);
+
+  // Update URL when step changes to enable deep-linking
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (currentStep > 1) {
+      params.set('step', currentStep.toString());
+    }
+    const queryString = params.toString();
+    const newUrl = queryString ? `?${queryString}` : window.location.pathname;
+    window.history.replaceState(null, '', newUrl);
+  }, [currentStep]);
 
   // Track form_started on mount (only for new forms)
   useEffect(() => {
