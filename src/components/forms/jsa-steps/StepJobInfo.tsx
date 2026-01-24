@@ -170,7 +170,7 @@ export function StepJobInfo({ form, onInputChange, isLoading, errors, onFieldBlu
         <p className="text-xs sm:text-sm font-medium text-white/50 uppercase tracking-wider">
           Schedule
         </p>
-        <div className="grid gap-2 sm:gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:gap-4 sm:grid-cols-3">
           <DateField
             label="Job Date"
             value={form.jobDate || ""}
@@ -194,7 +194,7 @@ export function StepJobInfo({ form, onInputChange, isLoading, errors, onFieldBlu
       </div>
 
       {/* Location */}
-      <div className="space-y-2 sm:space-y-3 pt-1 sm:pt-2">
+      <div className="space-y-3 sm:space-y-4">
         <p className="text-xs sm:text-sm font-medium text-white/50 uppercase tracking-wider">
           Location
         </p>
@@ -215,7 +215,7 @@ export function StepJobInfo({ form, onInputChange, isLoading, errors, onFieldBlu
           }}
         />
 
-        <div className="grid gap-2 sm:gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
           <InputField
             label="Work Location"
             icon={MapPin}
@@ -234,7 +234,7 @@ export function StepJobInfo({ form, onInputChange, isLoading, errors, onFieldBlu
             placeholder="Circuit number"
           />
         </div>
-        <div className="grid gap-2 sm:gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
           <LocationInputField
             label="Nearest Hospital"
             value={form.nearestHospital}
@@ -253,7 +253,7 @@ export function StepJobInfo({ form, onInputChange, isLoading, errors, onFieldBlu
       </div>
 
       {/* Emergency Contacts */}
-      <div className="space-y-2 sm:space-y-3 pt-1 sm:pt-2">
+      <div className="space-y-3 sm:space-y-4">
         <p className="text-xs sm:text-sm font-medium text-white/50 uppercase tracking-wider">
           Emergency Contacts
         </p>
@@ -274,7 +274,7 @@ export function StepJobInfo({ form, onInputChange, isLoading, errors, onFieldBlu
           }}
         />
 
-        <div className="grid gap-2 sm:gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
           <InputField
             label="OC Contact"
             type="tel"

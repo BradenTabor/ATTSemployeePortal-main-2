@@ -1663,7 +1663,7 @@ export default function DailyJSAForm() {
       >
         {/* Validation Summary - Step-aware (positioned top-right, compact, non-obstructive, below all header elements) */}
         {Object.keys(allErrors).filter(k => allErrors[k]).length > 0 && (
-          <div className="absolute top-[140px] right-2 sm:top-[150px] sm:right-3 z-50 pointer-events-none">
+          <div className="fixed top-16 right-2 sm:absolute sm:top-[140px] sm:right-3 z-50 pointer-events-none max-w-[calc(100vw-1rem)] sm:max-w-none">
             <div className="pointer-events-auto">
               <ValidationSummary
                 errors={allErrors}
