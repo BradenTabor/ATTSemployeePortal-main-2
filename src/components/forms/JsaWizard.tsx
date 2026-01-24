@@ -371,8 +371,8 @@ export function JsaWizard({
             <span className="hidden sm:inline">Back</span>
           </button>
 
-          {/* Center: Save with Mode Selector */}
-          <div className="relative">
+          {/* Center: Save with Mode Selector - Visual differentiation */}
+          <div className="relative rounded-xl bg-emerald-500/5 border border-emerald-500/15 px-2 py-1.5 sm:px-3 sm:py-2">
             <button
               ref={saveButtonRef}
               type="button"
