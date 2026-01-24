@@ -388,7 +388,7 @@ export default function DailyEquipmentInspectionForm() {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (hasUnsavedChanges && !showCelebration) {
         e.preventDefault();
-        e.returnValue = 'You have unsaved changes. Your draft is auto-saved locally.';
+        e.returnValue = 'You have unsaved changes. Your draft is auto-saved and can be recovered on the next visit.';
         return e.returnValue;
       }
     };

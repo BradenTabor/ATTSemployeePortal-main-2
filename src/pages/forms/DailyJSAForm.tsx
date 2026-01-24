@@ -458,7 +458,7 @@ export default function DailyJSAForm() {
       if (hasUnsavedChanges && !isEditMode && !showCelebration) {
         e.preventDefault();
         // Most browsers ignore custom messages, but setting returnValue is required
-        e.returnValue = 'You have unsaved changes. Your draft is auto-saved locally.';
+        e.returnValue = 'You have unsaved changes. Your draft is auto-saved and can be recovered on the next visit.';
         return e.returnValue;
       }
     };

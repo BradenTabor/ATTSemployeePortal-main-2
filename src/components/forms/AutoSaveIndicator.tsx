@@ -93,9 +93,9 @@ export function AutoSaveIndicator({
         className={`flex items-center gap-1.5 ${className}`}
       >
         <Icon
-          className={`w-3.5 h-3.5 ${config.color} ${config.spin ? 'animate-spin' : ''}`}
+          className={`w-4 h-4 ${config.color} ${config.spin ? 'animate-spin' : ''}`}
         />
-        <span className={`text-[10px] font-medium ${config.color}`}>
+        <span className={`text-xs font-semibold ${config.color}`}>
           {config.text}
         </span>
       </motion.div>

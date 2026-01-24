@@ -378,14 +378,14 @@ export function StepReview({
       <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-100 space-y-1">
         <div className="flex items-center gap-1.5 mb-1">
           <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-          <span className="font-semibold text-amber-200">TRAPS Check</span>
+          <span className="font-semibold text-amber-200 cursor-help" title="Time Pressure, Rushing, Anxiety, Pressure to produce, Situational awareness">TRAPS Check</span>
         </div>
         <p>
-          <span className="font-medium">TRAPS:</span> Time Pressure,
-          Overconfidence, Distractions
+          <span className="font-medium cursor-help" title="Time Pressure, Rushing, Anxiety, Pressure to produce, Situational awareness">TRAPS:</span> Time Pressure,
+          Rushing, Anxiety, Pressure to Produce, Situational Awareness
         </p>
         <p>
-          <span className="font-medium">TOOLS:</span> Self-check, Peer Check,
+          <span className="font-medium cursor-help" title="Self-check, Peer Check, Communication">TOOLS:</span> Self-check, Peer Check,
           Communication
         </p>
       </div>
