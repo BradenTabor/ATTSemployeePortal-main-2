@@ -151,12 +151,12 @@ export function useComplianceQuery(options: UseComplianceQueryOptions = {}) {
     enabled: enabled && !!user?.id,
     
     // Cache strategy for compliance:
-    // - staleTime: 30s - Data considered fresh for 30s (no background refetch)
+    // - staleTime: 60s - Data considered fresh for 60s (no background refetch)
     // - gcTime: 5min - Keep in cache for 5 min after unmount
-    // - refetchInterval: 30s - Poll for updates every 30s when mounted
-    staleTime: 1000 * 30,
+    // - refetchInterval: 60s - Poll for updates every 60s when mounted (reduced from 30s)
+    staleTime: 1000 * 60,
     gcTime: 1000 * 60 * 5,
-    refetchInterval: 1000 * 30,
+    refetchInterval: 1000 * 60,
     
     // Show cached data immediately while revalidating
     placeholderData: (previousData) => previousData,

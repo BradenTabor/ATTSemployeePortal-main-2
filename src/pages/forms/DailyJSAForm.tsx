@@ -10,6 +10,7 @@ import { useFormPersistence } from "../../hooks/useFormPersistence";
 import { SmartDefaultsPanel } from "../../components/forms/SmartDefaultsPanel";
 import { FormSuccessCelebration } from "../../components/forms/FormSuccessCelebration";
 import { DraftRecoveryModal } from "../../components/forms/DraftRecoveryModal";
+import { ValidationSummary } from "../../components/forms/ValidationSummary";
 import { useComplianceToast, type RemainingForm } from "../../hooks/useComplianceToast";
 import { useInvalidateCompliance } from "../../hooks/queries/useComplianceQuery";
 import {
