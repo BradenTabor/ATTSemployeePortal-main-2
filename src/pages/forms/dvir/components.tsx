@@ -226,7 +226,7 @@ export const ChecklistQuickActions = ({ onMarkAllPass, onMarkAllFail, onClearAll
       <button
         type="button"
         onClick={onMarkAllPass}
-        className="flex-1 xs:flex-none flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2 sm:py-1.5 text-[10px] sm:text-[10px] font-medium text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 active:bg-emerald-500/30 border border-emerald-500/30 rounded-lg transition-colors min-h-[36px] sm:min-h-[32px]"
+        className="flex-1 xs:flex-none flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2 sm:py-1.5 text-[10px] sm:text-[10px] font-medium text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 active:bg-emerald-500/30 border border-emerald-500/30 rounded-lg transition-colors min-h-[44px] xs:min-h-[36px] sm:min-h-[32px]"
       >
         <CheckCheck className="w-3 h-3" />
         <span>All Pass</span>
@@ -235,7 +235,7 @@ export const ChecklistQuickActions = ({ onMarkAllPass, onMarkAllFail, onClearAll
         <button
           type="button"
           onClick={onMarkAllFail}
-          className="flex-1 xs:flex-none flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2 sm:py-1.5 text-[10px] sm:text-[10px] font-medium text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 active:bg-rose-500/30 border border-rose-500/30 rounded-lg transition-colors min-h-[36px] sm:min-h-[32px]"
+          className="flex-1 xs:flex-none flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2 sm:py-1.5 text-[10px] sm:text-[10px] font-medium text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 active:bg-rose-500/30 border border-rose-500/30 rounded-lg transition-colors min-h-[44px] xs:min-h-[36px] sm:min-h-[32px]"
         >
           <X className="w-3 h-3" />
           <span>All Fail</span>
@@ -244,7 +244,7 @@ export const ChecklistQuickActions = ({ onMarkAllPass, onMarkAllFail, onClearAll
       <button
         type="button"
         onClick={onClearAll}
-        className="flex-1 xs:flex-none flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2 sm:py-1.5 text-[10px] sm:text-[10px] font-medium text-gray-400 hover:text-white active:text-white bg-white/5 hover:bg-white/10 active:bg-white/15 border border-white/10 rounded-lg transition-colors min-h-[36px] sm:min-h-[32px]"
+        className="flex-1 xs:flex-none flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2 sm:py-1.5 text-[10px] sm:text-[10px] font-medium text-gray-400 hover:text-white active:text-white bg-white/5 hover:bg-white/10 active:bg-white/15 border border-white/10 rounded-lg transition-colors min-h-[44px] xs:min-h-[36px] sm:min-h-[32px]"
       >
         <RotateCcw className="w-3 h-3" />
         <span>Clear</span>
