@@ -786,7 +786,7 @@ export default function DailyJSAForm() {
       // This allows delegated users to edit JSAs shared with them
       const { data, error: fetchError } = await supabase
         .from("daily_jsa")
-        .select("*")
+        .select("id, job_date, call_in_time, call_out_time, work_location, circuit_number, nearest_hospital, nearest_clinic, oc_contact, doc_contact, gf_contact, safety_contact, jobs_performed, ppe, weather_conditions, weather_hazards, hazards_present, traffic_hazards, traffic_setup, spans, supervisor_name, supervisor_signature, created_at, updated_at, status")
         .eq("id", id)
         .maybeSingle();
 
