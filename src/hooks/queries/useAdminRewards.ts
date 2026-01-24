@@ -234,7 +234,7 @@ export function useAdminRewardsStats() {
       // Get total count
       const { count: totalClaims, error: countError } = await supabase
         .from('announcement_rewards')
-        .select('*', { count: 'exact', head: true });
+        .select('id', { count: 'exact', head: true });
 
       if (countError) {
         logger.error('Failed to fetch rewards count:', countError);

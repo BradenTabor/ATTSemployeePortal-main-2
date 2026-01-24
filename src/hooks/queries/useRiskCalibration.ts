@@ -413,7 +413,7 @@ async function generateCaseNumber(): Promise<string> {
   // Get count of incidents this year
   const { count } = await supabase
     .from('safety_incidents')
-    .select('*', { count: 'exact', head: true })
+    .select('id', { count: 'exact', head: true })
     .gte('incident_date', `${year}-01-01`)
     .lte('incident_date', `${year}-12-31`);
   

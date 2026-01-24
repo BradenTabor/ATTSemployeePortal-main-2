@@ -577,7 +577,7 @@ export default function Announcements() {
       // First, get total count (cached query)
       const { count, error: countError } = await supabase
         .from("announcements")
-        .select("*", { count: "exact", head: true });
+        .select("id", { count: "exact", head: true });
       
       if (countError) {
         console.error("Error fetching count:", countError);

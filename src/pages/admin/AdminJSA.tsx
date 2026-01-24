@@ -159,11 +159,11 @@ export default function AdminJSA() {
       const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
       const [totalRes, draftsRes, completedRes, todayRes, weekRes] = await Promise.all([
-        supabase.from("daily_jsa").select("*", { count: "exact", head: true }),
-        supabase.from("daily_jsa").select("*", { count: "exact", head: true }).eq("status", "draft"),
-        supabase.from("daily_jsa").select("*", { count: "exact", head: true }).eq("status", "completed"),
-        supabase.from("daily_jsa").select("*", { count: "exact", head: true }).eq("job_date", today),
-        supabase.from("daily_jsa").select("*", { count: "exact", head: true }).gte("created_at", weekAgo),
+        supabase.from("daily_jsa").select("id", { count: "exact", head: true }),
+        supabase.from("daily_jsa").select("id", { count: "exact", head: true }).eq("status", "draft"),
+        supabase.from("daily_jsa").select("id", { count: "exact", head: true }).eq("status", "completed"),
+        supabase.from("daily_jsa").select("id", { count: "exact", head: true }).eq("job_date", today),
+        supabase.from("daily_jsa").select("id", { count: "exact", head: true }).gte("created_at", weekAgo),
       ]);
 
       setStats({
