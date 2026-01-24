@@ -504,6 +504,9 @@ export default function DVIRForm() {
     // All validation passed - proceed with submission
     formToast.submitting("Submitting DVIR report...");
 
+    // Track uploaded photo paths for cleanup on failure
+    const uploadedPhotoPaths: string[] = [];
+
     try {
       // 1) Ensure we have an authenticated user
       const {
@@ -550,6 +553,7 @@ export default function DVIRForm() {
         throw new Error("Oil dipstick photo is required");
       }
       const oilDipstickPath = await uploadPhoto(oilDipstickPhoto, "oil_dipstick");
+      uploadedPhotoPaths.push(oilDipstickPath);
       logger.debug("Oil dipstick uploaded:", oilDipstickPath);
 
       // 4) Upload optional photos
@@ -561,14 +565,17 @@ export default function DVIRForm() {
       if (extraPhotos.tire) {
         logger.debug("Uploading tire photo...");
         tirePhotoPath = await uploadPhoto(extraPhotos.tire, "tire");
+        uploadedPhotoPaths.push(tirePhotoPath);
       }
       if (extraPhotos.coolant) {
         logger.debug("Uploading coolant photo...");
         coolantPhotoPath = await uploadPhoto(extraPhotos.coolant, "coolant");
+        uploadedPhotoPaths.push(coolantPhotoPath);
       }
       if (extraPhotos.damage) {
         logger.debug("Uploading damage photo...");
         damagePhotoPath = await uploadPhoto(extraPhotos.damage, "damage");
+        uploadedPhotoPaths.push(damagePhotoPath);
       }
       if (extraPhotos.mileage) {
         logger.debug("Uploading detail-clean truck photo...");
@@ -576,6 +583,7 @@ export default function DVIRForm() {
           extraPhotos.mileage,
           "detail-clean_truck"
         );
+        uploadedPhotoPaths.push(detailCleanTruckPhotoPath);
       }
 
       // 5) Signature values (typed; stored as text)
@@ -777,6 +785,19 @@ export default function DVIRForm() {
       setCompletedSteps(new Set());
     } catch (err: unknown) {
       logger.error("Unexpected error in DVIR handleSubmit:", err);
+      
+      // Clean up uploaded photos on failure to prevent orphaned files
+      if (uploadedPhotoPaths.length > 0) {
+        try {
+          await supabase.storage
+            .from("dvir-photos")
+            .remove(uploadedPhotoPaths);
+          logger.info(`Cleaned up ${uploadedPhotoPaths.length} orphaned photo(s) after failed submission`);
+        } catch (cleanupErr) {
+          logger.error("Failed to cleanup orphaned photos:", cleanupErr);
+        }
+      }
+      
       const message =
         err instanceof Error
           ? err.message
