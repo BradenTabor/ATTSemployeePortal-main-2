@@ -50,3 +50,8 @@ supabase/.temp/
 .lighthouseci/
 supabase/.temp/
 .archive/
+
+# E2E / test artifacts
+test-results/
+tests/e2e-report/
+tests/e2e-report/data/
