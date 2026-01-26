@@ -73,7 +73,7 @@ function PullToRefreshComponent({
   const startYRef = useRef(0);
   const isPullingRef = useRef(false);
   const lastPullRef = useRef(0);
-  const [isPulling, setIsPulling] = useState(false);
+  const [, setIsPulling] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Motion values for smooth animation
@@ -86,17 +86,18 @@ function PullToRefreshComponent({
   const pullDistanceRef = useRef(pullDistance);
   const thresholdRef = useRef(threshold);
   const maxPullRef = useRef(maxPull);
-  pullDistanceRef.current = pullDistance;
-  thresholdRef.current = threshold;
-  maxPullRef.current = maxPull;
-
-  // Combined refreshing state
   const refreshing = isRefreshing || externalRefreshing;
   const refreshingRef = useRef(refreshing);
-  refreshingRef.current = refreshing;
-
   const onRefreshRef = useRef(onRefresh);
-  onRefreshRef.current = onRefresh;
+
+  // Sync refs after render so passive listeners see latest values (refs not updated during render)
+  useEffect(() => {
+    pullDistanceRef.current = pullDistance;
+    thresholdRef.current = threshold;
+    maxPullRef.current = maxPull;
+    refreshingRef.current = refreshing;
+    onRefreshRef.current = onRefresh;
+  });
 
   // Trigger haptic feedback on iOS
   const triggerHaptic = useCallback(() => {
