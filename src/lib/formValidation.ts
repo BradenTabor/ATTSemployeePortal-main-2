@@ -149,6 +149,32 @@ export const validators = {
   },
 
   /**
+   * Photo file validator (type and size)
+   * Validates image file type and size before upload
+   */
+  photoFile: (file: File | null | undefined): ValidationResult => {
+    if (!file) {
+      return null; // Allow empty (handled by required validator)
+    }
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+    const fileType = file.type.toLowerCase();
+    if (!allowedTypes.some(type => fileType.includes(type))) {
+      return "Photo must be a JPEG, PNG, WebP, or GIF image";
+    }
+
+    // Validate file size (10MB max)
+    const maxSizeBytes = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSizeBytes) {
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+      return `Photo is too large (${sizeMB}MB). Maximum size is 10MB`;
+    }
+
+    return null;
+  },
+
+  /**
    * Checklist completion validator
    */
   checklist: (

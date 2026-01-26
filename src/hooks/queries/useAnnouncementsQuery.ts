@@ -94,7 +94,7 @@ export function useCreateAnnouncement() {
       queryClient.invalidateQueries({ queryKey: queryKeys.announcements.all });
       
       // Send notification to all users (non-blocking)
-      console.log('[Announcements] Sending push notification for new announcement:', data.title);
+      logger.info('[Announcements] Sending push notification for new announcement:', data.title);
       
       const notificationResult = await createNotificationSilent(
         NotificationBuilders.announcement({
@@ -104,10 +104,10 @@ export function useCreateAnnouncement() {
       );
       
       if (notificationResult) {
-        console.log('[Announcements] ✅ Create notification sent:', notificationResult);
+        logger.info('[Announcements] ✅ Create notification sent:', notificationResult);
         toast.success(`Announcement published and sent to ${notificationResult.dispatched} users!`);
       } else {
-        console.warn('[Announcements] ⚠️ Create notification failed silently');
+        logger.warn('[Announcements] ⚠️ Create notification failed silently');
         toast.success('Announcement published');
       }
     },
@@ -129,10 +129,8 @@ export function useUpdateAnnouncement() {
       id,
       ...updates
     }: Partial<Announcement> & { id: string }) => {
-      // Direct console.log for debugging
-      console.log('🔧 UPDATE: Attempting to update announcement');
-      console.log('🔧 UPDATE: ID:', id);
-      console.log('🔧 UPDATE: Updates:', JSON.stringify(updates, null, 2));
+      // Debug trace for announcement update
+      logger.debug('[useAnnouncementsQuery] UPDATE: Attempting update', { id, updates });
       
       // Only include fields that exist in the table
       const updatePayload: Record<string, unknown> = {};
@@ -141,19 +139,14 @@ export function useUpdateAnnouncement() {
       if (updates.author !== undefined) updatePayload.author = updates.author;
       if (updates.date !== undefined) updatePayload.date = updates.date;
       
-      console.log('🔧 UPDATE: Final payload:', JSON.stringify(updatePayload, null, 2));
-      
       const { data: result, error } = await supabase
         .from('announcements')
         .update(updatePayload)
         .eq('id', id)
         .select();
 
-      console.log('🔧 UPDATE: Result:', result);
-      console.log('🔧 UPDATE: Error:', error);
-
       if (error) {
-        console.error('🔧 UPDATE ERROR:', {
+        logger.error('[useAnnouncementsQuery] UPDATE failed:', {
           message: error.message,
           code: error.code,
           details: error.details,
@@ -170,7 +163,7 @@ export function useUpdateAnnouncement() {
       // Send notification to all users about the updated announcement (non-blocking)
       if (data && data.length > 0) {
         const updatedAnnouncement = data[0];
-        console.log('[Announcements] Sending push notification for updated announcement:', updatedAnnouncement.title);
+        logger.info('[Announcements] Sending push notification for updated announcement:', updatedAnnouncement.title);
         
         const notificationResult = await createNotificationSilent(
           NotificationBuilders.announcement({
@@ -180,10 +173,10 @@ export function useUpdateAnnouncement() {
         );
         
         if (notificationResult) {
-          console.log('[Announcements] ✅ Update notification sent:', notificationResult);
+          logger.info('[Announcements] ✅ Update notification sent:', notificationResult);
           toast.success(`Announcement updated and sent to ${notificationResult.dispatched} users!`);
         } else {
-          console.warn('[Announcements] ⚠️ Update notification failed silently');
+          logger.warn('[Announcements] ⚠️ Update notification failed silently');
           toast.success('Announcement updated');
         }
       } else {
@@ -191,7 +184,7 @@ export function useUpdateAnnouncement() {
       }
     },
     onError: (error) => {
-      console.error('🔧 UPDATE MUTATION ERROR:', error);
+      logger.error('🔧 UPDATE MUTATION ERROR:', error);
       logger.error('Failed to update announcement:', error);
       toast.error('Failed to update announcement');
     },

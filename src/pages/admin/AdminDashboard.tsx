@@ -144,7 +144,7 @@ export default function AdminDashboard() {
       await signOut();
       navigate("/", { replace: true });
     } catch (error) {
-      console.error("Sign out error:", error);
+      logger.error("[AdminDashboard] Sign out failed:", error);
     }
   }, [navigate, setSession, signOut]);
 

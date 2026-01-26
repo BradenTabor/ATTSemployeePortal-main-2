@@ -21,8 +21,9 @@ precacheAndRoute(self.__WB_MANIFEST);
 cleanupOutdatedCaches();
 clientsClaim();
 
-// Skip waiting to activate new service worker immediately
-self.skipWaiting();
+// DO NOT skip waiting on install - wait for client signal.
+// This allows RequiredUpdatePrompt to appear and user to control the update.
+// SKIP_WAITING is triggered by the message handler below when user clicks "Update Now".
 
 // ============================================
 // Push Notification Handler (iOS Safari Compatible)

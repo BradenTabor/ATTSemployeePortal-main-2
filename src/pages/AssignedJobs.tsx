@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams } from 'react-router-dom';
@@ -182,15 +182,17 @@ const CircuitFilter = memo(function CircuitFilter({
         <button
           type="button"
           onClick={() => onChange('All')}
+          aria-label="Show all circuits"
+          aria-pressed={activeCircuit === 'All'}
           className={cn(
             'flex items-center gap-1 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl border text-[11px] sm:text-sm font-medium transition-all min-h-[40px] sm:min-h-[44px] touch-manipulation whitespace-nowrap snap-start',
-            'active:scale-[0.97] active:brightness-110',
+            'active:scale-[0.97] active:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]',
             activeCircuit === 'All'
               ? 'bg-emerald-500/25 text-emerald-300 border-emerald-500/50 shadow-lg shadow-emerald-500/10'
               : 'bg-white/5 text-white/60 border-white/10 active:bg-white/15'
           )}
         >
-          <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+          <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" aria-hidden />
           All
         </button>
         {circuits.map((circuit) => (
@@ -198,15 +200,17 @@ const CircuitFilter = memo(function CircuitFilter({
             key={circuit}
             type="button"
             onClick={() => onChange(circuit)}
+            aria-label={`Filter by circuit ${circuit}`}
+            aria-pressed={activeCircuit === circuit}
             className={cn(
               'flex items-center gap-1 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl border text-[11px] sm:text-sm font-medium transition-all min-h-[40px] sm:min-h-[44px] touch-manipulation whitespace-nowrap snap-start',
-              'active:scale-[0.97] active:brightness-110',
+              'active:scale-[0.97] active:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]',
               activeCircuit === circuit
                 ? 'bg-emerald-500/25 text-emerald-300 border-emerald-500/50 shadow-lg shadow-emerald-500/10'
                 : 'bg-white/5 text-white/60 border-white/10 active:bg-white/15'
             )}
           >
-            <MapPin className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
+            <MapPin className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 flex-shrink-0" aria-hidden />
             <span className="max-w-[80px] sm:max-w-none truncate">{circuit}</span>
           </button>
         ))}
@@ -248,33 +252,37 @@ const Pagination = memo(function Pagination({
       </span>
       <div className="flex items-center gap-1.5 sm:gap-2">
         <button
+          type="button"
           onClick={onPrevious}
           disabled={currentPage === 1}
+          aria-label="Previous page"
           className={cn(
-            'p-2 sm:p-2.5 rounded-xl border transition-all min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation',
+            'p-2 sm:p-2.5 rounded-xl border transition-all min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] disabled:focus-visible:ring-0',
             'active:scale-[0.95]',
             currentPage === 1
               ? 'border-white/5 text-white/20 cursor-not-allowed'
               : 'border-white/20 text-white/70 active:bg-white/15 active:border-white/30'
           )}
         >
-          <ChevronLeft className="w-5 h-5" />
+          <ChevronLeft className="w-5 h-5" aria-hidden />
         </button>
-        <span className="text-xs sm:text-sm text-white/70 px-1.5 sm:px-2 tabular-nums font-medium min-w-[40px] sm:min-w-[48px] text-center">
+        <span className="text-xs sm:text-sm text-white/70 px-1.5 sm:px-2 tabular-nums font-medium min-w-[40px] sm:min-w-[48px] text-center" aria-live="polite">
           {currentPage}/{totalPages}
         </span>
         <button
+          type="button"
           onClick={onNext}
           disabled={currentPage === totalPages}
+          aria-label="Next page"
           className={cn(
-            'p-2 sm:p-2.5 rounded-xl border transition-all min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation',
+            'p-2 sm:p-2.5 rounded-xl border transition-all min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] disabled:focus-visible:ring-0',
             'active:scale-[0.95]',
             currentPage === totalPages
               ? 'border-white/5 text-white/20 cursor-not-allowed'
               : 'border-white/20 text-white/70 active:bg-white/15 active:border-white/30'
           )}
         >
-          <ChevronRight className="w-5 h-5" />
+          <ChevronRight className="w-5 h-5" aria-hidden />
         </button>
       </div>
     </div>
@@ -326,10 +334,13 @@ const JobListItem = memo(function JobListItem({
 
   return (
     <button
+      type="button"
       onClick={() => onSelect(job.id)}
+      aria-label={`View job ${job.job_name}${job.circuit ? `, circuit ${job.circuit}` : ''}${isSelected ? ', selected' : ''}`}
+      aria-pressed={isSelected}
       className={cn(
         'w-full text-left rounded-lg sm:rounded-xl border p-2.5 sm:p-3 transition-all min-h-[52px] touch-manipulation overflow-hidden',
-        'bg-gradient-to-br active:scale-[0.98] active:brightness-110',
+        'bg-gradient-to-br active:scale-[0.98] active:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]',
         isSelected
           ? 'border-emerald-400/60 from-[#0a2a1f]/90 via-[#041812]/95 to-[#03120c]/90 shadow-lg shadow-emerald-500/20 ring-2 ring-emerald-400/40'
           : isSpanBased
@@ -490,11 +501,12 @@ const JobDetailPanel = memo(function JobDetailPanel({
             {/* Close Button - positioned at top right */}
             <div className="flex justify-end mb-2">
               <button
+                type="button"
                 onClick={onClose}
-                className="p-2 sm:p-2.5 rounded-xl bg-white/5 border border-white/10 active:bg-white/15 active:border-white/25 transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center touch-manipulation"
+                className="p-2 sm:p-2.5 rounded-xl bg-white/5 border border-white/10 active:bg-white/15 active:border-white/25 transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center touch-manipulation focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
                 aria-label="Close job detail"
               >
-                <X className="w-4 h-4 sm:w-5 sm:h-5 text-white/60" />
+                <X className="w-4 h-4 sm:w-5 sm:h-5 text-white/60" aria-hidden />
               </button>
             </div>
           
@@ -680,8 +692,11 @@ const JobDetailPanel = memo(function JobDetailPanel({
               </div>
               {job.milestones.length > 3 && (
                 <button
+                  type="button"
                   onClick={() => setShowAllMilestones(!showAllMilestones)}
-                  className="mt-3 text-xs text-emerald-400 active:text-emerald-300 min-h-[44px] px-3 -mx-3 touch-manipulation"
+                  aria-label={showAllMilestones ? "Show less milestones" : `Show ${job.milestones.length - 3} more milestones`}
+                  aria-expanded={showAllMilestones}
+                  className="mt-3 text-xs text-emerald-400 active:text-emerald-300 min-h-[44px] px-3 -mx-3 touch-manipulation focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] rounded"
                 >
                   {showAllMilestones ? 'Show less' : `Show ${job.milestones.length - 3} more`}
                 </button>
@@ -725,6 +740,45 @@ const JobDetailPanel = memo(function JobDetailPanel({
 // ============================================================================
 
 function AssignedJobs() {
+  // Preserve scroll position when navigating away and back
+  useEffect(() => {
+    const scrollKey = 'assigned-jobs-scroll-position';
+    
+    // Restore scroll position on mount
+    const savedScroll = sessionStorage.getItem(scrollKey);
+    if (savedScroll) {
+      const scrollY = parseInt(savedScroll, 10);
+      // Use requestAnimationFrame to ensure DOM is ready
+      requestAnimationFrame(() => {
+        window.scrollTo(0, scrollY);
+      });
+      // Clear after restore
+      sessionStorage.removeItem(scrollKey);
+    }
+
+    // Save scroll position before navigation
+    const handleBeforeUnload = () => {
+      sessionStorage.setItem(scrollKey, String(window.scrollY));
+    };
+
+    // Save scroll position periodically (debounced)
+    let scrollTimeout: ReturnType<typeof setTimeout>;
+    const handleScroll = () => {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        sessionStorage.setItem(scrollKey, String(window.scrollY));
+      }, 100);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      clearTimeout(scrollTimeout);
+    };
+  }, []);
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedJobId = searchParams.get('job');

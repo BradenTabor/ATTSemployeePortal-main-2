@@ -62,6 +62,18 @@ export const queryKeys = {
     list: (filters?: { status?: string; date?: string }) =>
       ['jsa', 'list', filters] as const,
     detail: (jsaId: string) => ['jsa', 'detail', jsaId] as const,
+    adminList: (params: {
+      page: number;
+      pageSize: number;
+      statusFilter: string;
+      dateFilter?: string;
+      dateEndFilter?: string;
+      searchQuery?: string;
+      signatureFilter?: string;
+      userFilter?: string;
+      sortField: string;
+      sortDirection: string;
+    }) => ['jsa', 'admin', 'list', params] as const,
   },
 
   // DVIR
@@ -84,6 +96,9 @@ export const queryKeys = {
   compliance: {
     today: (userId: string, date: string) => ['compliance', 'today', userId, date] as const,
   },
+
+  // Pending Defects (for mechanic dashboard)
+  pendingDefects: () => ['pendingDefects'] as const,
 
   // Risk Calibration (for admin dashboard)
   riskCalibration: {

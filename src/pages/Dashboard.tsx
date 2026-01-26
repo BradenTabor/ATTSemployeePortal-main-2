@@ -17,6 +17,7 @@ import {
   perfMeasure,
   initLongTaskObserver,
 } from '../lib/mobilePerf';
+import { logger } from '../lib/logger';
 import type { JobProgressTracker } from '../types/jobs';
 
 // Dashboard components
@@ -64,10 +65,12 @@ const ErrorState = memo(function ErrorState({ message, onRetry }: ErrorStateProp
       <p className="text-sm text-red-400 font-medium">{message}</p>
       {onRetry && (
         <button
+          type="button"
           onClick={onRetry}
-          className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-medium hover:bg-red-500/20 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 min-h-[44px]"
+          aria-label="Try again"
+          className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-medium hover:bg-red-500/20 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] min-h-[44px]"
         >
-          <RefreshCw className="w-3.5 h-3.5" />
+          <RefreshCw className="w-3.5 h-3.5" aria-hidden />
           Try Again
         </button>
       )}
@@ -284,6 +287,46 @@ function Dashboard() {
   const [rewardPoints, setRewardPoints] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Preserve scroll position when navigating away and back
+  useEffect(() => {
+    const scrollKey = 'dashboard-scroll-position';
+    
+    // Restore scroll position on mount
+    const savedScroll = sessionStorage.getItem(scrollKey);
+    if (savedScroll) {
+      const scrollY = parseInt(savedScroll, 10);
+      // Use requestAnimationFrame to ensure DOM is ready
+      requestAnimationFrame(() => {
+        window.scrollTo(0, scrollY);
+      });
+      // Clear after restore
+      sessionStorage.removeItem(scrollKey);
+    }
+
+    // Save scroll position before navigation
+    const handleBeforeUnload = () => {
+      sessionStorage.setItem(scrollKey, String(window.scrollY));
+    };
+
+    // Save scroll position periodically (debounced)
+    let scrollTimeout: ReturnType<typeof setTimeout>;
+    const handleScroll = () => {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        sessionStorage.setItem(scrollKey, String(window.scrollY));
+      }, 100);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      clearTimeout(scrollTimeout);
+    };
+  }, []);
+
   // Initialize long task observer in dev mode
   useEffect(() => {
     const cleanup = initLongTaskObserver();
@@ -314,7 +357,7 @@ function Dashboard() {
       await signOut();
       navigate('/', { replace: true });
     } catch (error) {
-      console.error('Sign out failed:', error);
+      logger.error('[Dashboard] Sign out failed:', error);
     } finally {
       perfMeasure('sign-out');
     }

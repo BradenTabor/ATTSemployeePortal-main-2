@@ -315,6 +315,7 @@ function ReturnButtonComponent() {
       )}
 
       <motion.button
+        type="button"
         onClick={handleClick}
         onMouseEnter={() => !isMobile && setIsHovered(true)}
         onMouseLeave={() => !isMobile && setIsHovered(false)}
@@ -373,7 +374,7 @@ function ReturnButtonComponent() {
             initial="idle"
             animate={showExpanded ? "hover" : "idle"}
           >
-            <ArrowLeft className={`${isMobile && !isExpanded ? 'w-4 h-4' : 'w-4 h-4 sm:w-[18px] sm:h-[18px]'} text-emerald-300`} />
+            <ArrowLeft className={`${isMobile && !isExpanded ? 'w-4 h-4' : 'w-4 h-4 sm:w-[18px] sm:h-[18px]'} text-emerald-300`} aria-hidden />
           </motion.div>
 
           {/* Label - hidden on mobile when collapsed */}
@@ -411,7 +412,7 @@ function ReturnButtonComponent() {
                         animate="visible"
                         exit="exit"
                       >
-                        <Home className="w-4 h-4 sm:w-[18px] sm:h-[18px] text-emerald-400/80" />
+                        <Home className="w-4 h-4 sm:w-[18px] sm:h-[18px] text-emerald-400/80" aria-hidden />
                       </motion.div>
                     )}
                   </AnimatePresence>

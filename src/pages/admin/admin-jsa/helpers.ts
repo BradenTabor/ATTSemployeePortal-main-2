@@ -31,6 +31,44 @@ export function formatDateTime(value?: string | null): string {
 }
 
 // =============================================================================
+// PERSISTENCE (WF-019)
+// =============================================================================
+
+const ADMIN_JSA_STORAGE_KEY = "atts_admin_jsa_state";
+
+export type PersistedAdminJSAState = {
+  page?: number;
+  pageSize?: number;
+  searchQuery?: string;
+  statusFilter?: "all" | "draft" | "completed";
+  dateFilter?: string;
+  dateEndFilter?: string;
+  signatureFilter?: string;
+  userFilter?: string;
+  sortField?: string;
+  sortDirection?: "asc" | "desc";
+  showFilters?: boolean;
+};
+
+export function persistAdminJSAState(state: PersistedAdminJSAState): void {
+  try {
+    localStorage.setItem(ADMIN_JSA_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // Ignore quota / privacy errors
+  }
+}
+
+export function loadAdminJSAState(): PersistedAdminJSAState | null {
+  try {
+    const raw = localStorage.getItem(ADMIN_JSA_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as PersistedAdminJSAState;
+  } catch {
+    return null;
+  }
+}
+
+// =============================================================================
 // DATA EXTRACTION
 // =============================================================================
 

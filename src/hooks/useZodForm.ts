@@ -4,15 +4,20 @@ import { z } from 'zod';
 
 /**
  * Wrapper around useForm that integrates Zod validation
- * Note: Uses 'any' for Zod v4 + react-hook-form resolver compatibility
+ * 
+ * @template TFormData - The form data type inferred from the Zod schema
+ * @param schema - Zod schema for form validation
+ * @param options - Additional react-hook-form options (resolver is automatically set)
+ * @returns Configured useForm hook with Zod validation
  */
 export function useZodForm<TFormData extends FieldValues>(
   schema: z.ZodType<TFormData>,
   options?: Omit<UseFormProps<TFormData>, 'resolver'>
 ) {
   return useForm<TFormData>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(schema as any),
+    // @ts-expect-error - zodResolver has complex generic constraints that don't align perfectly
+    // with react-hook-form's UseFormProps, but this is safe at runtime
+    resolver: zodResolver(schema),
     mode: 'onBlur', // Validate on blur for better UX
     ...options,
   });

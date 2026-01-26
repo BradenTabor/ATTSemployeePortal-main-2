@@ -12,6 +12,7 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
  * - Visible focus ring for keyboard navigation
  * - Improved placeholder contrast (50% vs 30%) for readability
  * - Minimum 44px height for touch targets
+ * - Supports aria-invalid and aria-describedby (set by parent FormField)
  */
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ className, error, ...props }, ref) => {
@@ -22,16 +23,17 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           'w-full bg-[#050402]/80 border rounded-2xl px-4 py-3 text-white',
           // Improved placeholder contrast for accessibility (WCAG)
           'placeholder:text-white/50',
-          // Visible focus ring for keyboard navigation
-          'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#030201]',
+          // Visible focus ring for keyboard navigation (focus-visible only, not mouse clicks)
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#030201]',
           'transition-colors duration-200',
           // Minimum touch target height
           'min-h-[44px]',
           error
-            ? 'border-red-500/50 focus:ring-red-500/60'
-            : 'border-[#f6dcb2]/20 focus:ring-[#f4c979]/60',
+            ? 'border-red-500/50 focus-visible:ring-red-500/60'
+            : 'border-[#f6dcb2]/20 focus-visible:ring-[#f4c979]/60',
           className
         )}
+        aria-invalid={error ? true : undefined}
         {...props}
       />
     );

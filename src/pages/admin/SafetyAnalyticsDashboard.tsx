@@ -230,13 +230,16 @@ const PeriodSelector = memo(function PeriodSelector({
   ];
   
   return (
-    <div className="flex gap-0.5 p-0.5 rounded-lg bg-black/30 border border-white/5">
+    <div className="flex gap-0.5 p-0.5 rounded-lg bg-black/30 border border-white/5" role="tablist" aria-label="Time period">
       {periods.map(({ key, label }) => (
         <button
           key={key}
+          type="button"
+          role="tab"
+          aria-selected={value === key}
           onClick={() => onChange(key)}
           className={cn(
-            "px-2 py-1 rounded text-[10px] font-medium transition-all",
+            "px-2 py-1 rounded text-[10px] font-medium transition-all focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-1",
             value === key
               ? "bg-amber-500/20 text-amber-200 border border-amber-500/30"
               : "text-[#f6dcb2]/40 hover:text-[#f6dcb2]/70"
@@ -298,8 +301,8 @@ const UserDetailModal = memo(function UserDetailModal({
                   <p className="text-[10px] text-[#f6dcb2]/50 capitalize">{userDetail.role.replace('_', ' ')}</p>
                 </div>
                 <SafetyScoreBadge score={userDetail.safety_score} />
-                <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/5" aria-label="Close user detail">
-                  <X className="w-4 h-4 text-white/40" />
+                <button type="button" onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/5 focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]" aria-label="Close user detail">
+                  <X className="w-4 h-4 text-white/40" aria-hidden />
                 </button>
               </div>
               
@@ -484,10 +487,12 @@ function SafetyAnalyticsDashboard() {
             <div className="flex items-center gap-2">
               <PeriodSelector value={period} onChange={setPeriod} />
               <button
+                type="button"
                 onClick={() => refetch()}
-                className="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+                aria-label={isLoading ? "Refreshing analytics" : "Refresh safety analytics"}
+                className="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
               >
-                <RefreshCw className={cn("w-3.5 h-3.5 text-white/50", isLoading && "animate-spin")} />
+                <RefreshCw className={cn("w-3.5 h-3.5 text-white/50", isLoading && "animate-spin")} aria-hidden />
               </button>
             </div>
           </div>
@@ -498,8 +503,10 @@ function SafetyAnalyticsDashboard() {
             <Shield className="w-10 h-10 text-red-400 mx-auto mb-2" />
             <h3 className="text-sm font-semibold text-white mb-1">Error Loading Analytics</h3>
             <button
+              type="button"
               onClick={() => refetch()}
-              className="mt-2 px-3 py-1.5 rounded-lg bg-red-500/20 border border-red-500/30 text-red-300 text-xs font-medium hover:bg-red-500/30"
+              aria-label="Try again to load analytics"
+              className="mt-2 px-3 py-1.5 rounded-lg bg-red-500/20 border border-red-500/30 text-red-300 text-xs font-medium hover:bg-red-500/30 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
             >
               Try Again
             </button>
@@ -551,13 +558,16 @@ function SafetyAnalyticsDashboard() {
                       <span className="text-[9px] text-[#f6dcb2]/40">({filteredLeaderboard.length})</span>
                     </div>
                     <button
+                      type="button"
                       onClick={() => setShowSearch(!showSearch)}
+                      aria-label={showSearch ? "Hide search" : "Show search"}
+                      aria-pressed={showSearch}
                       className={cn(
-                        "p-1.5 rounded-lg transition-colors",
+                        "p-1.5 rounded-lg transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-1",
                         showSearch ? "bg-amber-500/20 text-amber-300" : "hover:bg-white/5 text-[#f6dcb2]/40"
                       )}
                     >
-                      {showSearch ? <X className="w-3.5 h-3.5" /> : <Filter className="w-3.5 h-3.5" />}
+                      {showSearch ? <X className="w-3.5 h-3.5" aria-hidden /> : <Filter className="w-3.5 h-3.5" aria-hidden />}
                     </button>
                   </div>
                   

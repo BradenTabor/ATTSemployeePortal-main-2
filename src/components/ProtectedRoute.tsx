@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import LoadingScreen from "./LoadingScreen";
 
+// Client-side guard only. Admin mutations must be enforced server-side via RLS (see docs/SECURITY_AUDIT_ADMIN_RLS.md).
 // Matches DB constraint: check (role in ('employee', 'admin', 'manager', 'mechanic', 'general_foreman', 'safety_officer', 'foreman'))
 type UserRole = "employee" | "admin" | "mechanic" | "manager" | "general_foreman" | "safety_officer" | "foreman";
 

@@ -112,6 +112,7 @@ export function JsaWizard({
   const goToStep = useCallback(
     (step: number) => {
       if (step < 1 || step > totalSteps) return;
+      if (step === currentStep) return; // no-op avoids redundant URL/history updates
       setDirection(step > currentStep ? 1 : -1);
       setCurrentStep(step);
     },
@@ -177,7 +178,7 @@ export function JsaWizard({
   };
 
   return (
-    <div className="relative flex flex-col h-full overflow-hidden">
+    <div className="relative flex flex-col h-full overflow-hidden" data-testid="jsa-wizard">
       {/* Premium Header - Mobile Optimized */}
       <div
         className="flex-shrink-0 border-b border-emerald-500/20"
@@ -193,6 +194,7 @@ export function JsaWizard({
             type="button"
             onClick={onBack}
             whileTap={{ scale: 0.95 }}
+            data-testid="jsa-back"
             className="inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg bg-white/5 border border-white/10 text-white/80 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all touch-manipulation active:bg-white/15"
           >
             <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -240,8 +242,13 @@ export function JsaWizard({
         </div>
 
         {/* Step Progress - Enhanced touch targets with completion badges */}
-        <div className="px-3 pb-2.5 sm:px-4">
-          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-hide">
+        <div
+          className="px-3 pb-2.5 sm:px-4"
+          role="navigation"
+          aria-label={`Step ${currentStep} of ${totalSteps}, Daily JSA`}
+        >
+          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-hide flex-1 min-w-0">
             {JSA_STEPS.map((step) => {
               const isActive = step.id === currentStep;
               const isComplete = completedSteps.has(step.id) || step.id < currentStep;
@@ -256,6 +263,7 @@ export function JsaWizard({
                   type="button"
                   onClick={() => goToStep(step.id)}
                   whileTap={{ scale: 0.95 }}
+                  data-testid={`jsa-step-${step.id}`}
                   className={cn(
                     // Increased min-height for better touch targets (44px minimum)
                     "relative flex-shrink-0 flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl text-xs font-medium transition-all touch-manipulation",
@@ -297,6 +305,10 @@ export function JsaWizard({
               );
             })}
           </div>
+          <span className="flex-shrink-0 text-xs font-medium text-white/60 tabular-nums" aria-hidden="true">
+            {currentStep}/{totalSteps}
+          </span>
+          </div>
           
           {/* Swipe hint for mobile (only on first visit) */}
           <p className="sm:hidden text-center text-[9px] text-white/30 mt-1.5">
@@ -305,10 +317,10 @@ export function JsaWizard({
         </div>
       </div>
 
-      {/* Scrollable Content Area - with swipe gestures */}
-      <div 
+      {/* Scrollable Content Area - z-0 so footer (z-10) stays on top for clicks */}
+      <div
         ref={contentRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden"
+        className="relative z-0 flex-1 min-h-0 overflow-y-auto overflow-x-hidden"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
@@ -329,7 +341,7 @@ export function JsaWizard({
               {/* Step Header - Compact on mobile */}
               <div className="mb-3 sm:mb-5">
                 <div className="flex items-center gap-2 mb-0.5 sm:mb-1">
-                  <span className="text-[10px] sm:text-xs font-bold text-emerald-400 uppercase tracking-wide">
+                  <span className="text-xs font-bold text-emerald-400 uppercase tracking-wide">
                     Step {currentStep} of {totalSteps}
                   </span>
                 </div>
@@ -344,9 +356,9 @@ export function JsaWizard({
         </div>
       </div>
 
-      {/* Fixed Footer Navigation */}
+      {/* Fixed Footer Navigation - relative z-10 so it stays above content and receives clicks */}
       <div
-        className="flex-shrink-0 border-t border-white/10"
+        className="relative z-10 flex-shrink-0 border-t border-white/10 pointer-events-auto"
         style={{
           background:
             "linear-gradient(0deg, rgba(0,10,5,0.98) 0%, rgba(0,20,10,0.95) 100%)",
@@ -354,10 +366,15 @@ export function JsaWizard({
         }}
       >
         <div className="flex items-center justify-between gap-2 px-4 py-3 sm:px-5">
-          {/* Previous */}
+          {/* Previous step (not the same as top-bar "Back" which leaves the form) */}
           <button
             type="button"
-            onClick={handlePrevious}
+            data-testid="jsa-prev"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handlePrevious();
+            }}
             disabled={isFirstStep}
             aria-disabled={isFirstStep}
             className={cn(
@@ -378,6 +395,7 @@ export function JsaWizard({
               type="button"
               onClick={() => setShowSaveOptions(!showSaveOptions)}
               disabled={saving}
+              data-testid="save-button"
               className={cn(
                 "inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all touch-manipulation",
                 saving
@@ -392,6 +410,9 @@ export function JsaWizard({
               )}
               <span>Save</span>
             </button>
+            <p className="sr-only">
+              Save as draft anytime to continue later, or save as complete when finished.
+            </p>
 
             {/* Save Mode Selector Popover */}
             <AnimatePresence>
@@ -426,6 +447,7 @@ export function JsaWizard({
                       <button
                         type="button"
                         onClick={() => handleSave("draft")}
+                        data-testid="save-draft"
                         className="w-full flex items-start gap-2.5 p-2.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 hover:border-amber-500/40 transition-all group"
                       >
                         <div className="flex-shrink-0 p-1.5 rounded-lg bg-amber-500/20 group-hover:bg-amber-500/30 transition-colors">
@@ -446,6 +468,7 @@ export function JsaWizard({
                         type="button"
                         onClick={() => handleSave("complete")}
                         disabled={!isValid}
+                        data-testid="save-complete"
                         className={cn(
                           "w-full flex items-start gap-2.5 p-2.5 rounded-lg border transition-all group",
                           isValid
@@ -491,21 +514,14 @@ export function JsaWizard({
           {isLastStep ? (
             <button
               type="button"
+              data-testid="jsa-complete"
               onClick={async (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 
-                console.log('[JSA Wizard] Done button clicked', { 
-                  saving, 
-                  isValid, 
-                  isEditMode,
-                  disabled: saving || !isValid,
-                  validationErrors: Object.keys(validationErrors || {}).filter(k => validationErrors?.[k]),
-                });
-                
                 // Prevent multiple clicks while saving
                 if (saving) {
-                  console.warn('[JSA Wizard] Submission already in progress, ignoring click');
+                  // Silently ignore - button is already disabled, this is defensive
                   return;
                 }
                 
@@ -513,8 +529,9 @@ export function JsaWizard({
                 // This ensures users get feedback even if validation state is stale
                 try {
                   await onComplete();
-                } catch (error) {
-                  console.error('[JSA Wizard] onComplete error', error);
+                } catch {
+                  // Error handling is done in onComplete implementation
+                  // Silently catch - errors are handled in onComplete
                 }
               }}
               disabled={saving || !isValid}
@@ -534,7 +551,12 @@ export function JsaWizard({
           ) : (
             <button
               type="button"
-              onClick={handleNext}
+              data-testid="jsa-next"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleNext();
+              }}
               className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600/80 px-3 py-2.5 text-sm font-semibold text-white hover:bg-emerald-500 transition-all touch-manipulation min-w-[80px] border border-emerald-500/30"
             >
               <span className="hidden sm:inline">Next</span>

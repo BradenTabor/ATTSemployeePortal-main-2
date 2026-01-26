@@ -17,6 +17,7 @@ import ReactCrop, { type Crop, type PixelCrop, centerCrop, makeAspectCrop } from
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check, RotateCcw, Crop as CropIcon, Loader2, ImageIcon } from 'lucide-react';
 import 'react-image-crop/dist/ReactCrop.css';
+import { logger } from '../../lib/logger';
 
 // ============================================================================
 // TYPES
@@ -229,7 +230,7 @@ export default function ImageCropper({
       const croppedBlob = await getCroppedImage(imgRef.current, completedCrop);
       onCropComplete(croppedBlob);
     } catch (error) {
-      console.error('Failed to crop image:', error);
+      logger.error('[ImageCropper] Failed to crop image:', error);
     } finally {
       setIsProcessing(false);
     }

@@ -10,6 +10,7 @@ import BrandedNavCard from "../../components/BrandedNavCard";
 import { EnableNotificationsButton } from "../../components/notifications";
 import { ScrollReveal } from "../../motion";
 import { getDeviceCapabilities } from "../../lib/mobilePerf";
+import { logger } from "../../lib/logger";
 import {
   DashboardAvatar,
   ExpandableSection,
@@ -245,7 +246,7 @@ export default function ForemanDashboard() {
       await signOut();
       navigate("/", { replace: true });
     } catch (error) {
-      console.error("Sign out error:", error);
+      logger.error("[ForemanDashboard] Sign out failed:", error);
     }
   }, [navigate, setSession, signOut]);
 

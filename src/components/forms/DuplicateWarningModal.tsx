@@ -134,11 +134,12 @@ export function DuplicateWarningModal({
 
             {/* Close button */}
             <button
+              type="button"
               onClick={onClose}
-              aria-label="Close"
-              className="absolute top-4 right-4 p-2 rounded-xl bg-white/5 text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+              aria-label="Close duplicate warning"
+              className="absolute top-4 right-4 p-2 rounded-xl bg-white/5 text-white/50 hover:text-white hover:bg-white/10 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4" aria-hidden />
             </button>
 
             {/* Content */}
@@ -196,27 +197,33 @@ export function DuplicateWarningModal({
               {/* Actions */}
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
+                  type="button"
                   onClick={onViewExisting}
+                  aria-label="View existing submission"
                   className={cn(
                     "flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl",
                     "bg-white/5 border border-white/10 text-white",
                     "hover:bg-white/10 hover:border-white/20 transition-all",
-                    "text-sm font-medium"
+                    "text-sm font-medium",
+                    "focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
                   )}
                 >
-                  <Eye className="w-4 h-4" />
+                  <Eye className="w-4 h-4" aria-hidden />
                   View Existing
                 </button>
 
                 <button
+                  type="button"
                   onClick={onSubmitAnyway}
                   disabled={isSubmitting}
+                  aria-label={isSubmitting ? "Submitting..." : "Submit anyway"}
                   className={cn(
                     "flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl",
                     "bg-amber-500/20 border border-amber-500/30 text-amber-300",
                     "hover:bg-amber-500/30 hover:border-amber-500/40 transition-all",
                     "text-sm font-medium",
-                    "disabled:opacity-50 disabled:cursor-not-allowed"
+                    "disabled:opacity-50 disabled:cursor-not-allowed",
+                    "focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
                   )}
                 >
                   {isSubmitting ? (
@@ -229,12 +236,13 @@ export function DuplicateWarningModal({
                           ease: "linear",
                         }}
                         className="w-4 h-4 border-2 border-amber-300/30 border-t-amber-300 rounded-full"
+                        aria-hidden
                       />
                       Submitting...
                     </>
                   ) : (
                     <>
-                      <AlertTriangle className="w-4 h-4" />
+                      <AlertTriangle className="w-4 h-4" aria-hidden />
                       Submit Anyway
                     </>
                   )}
@@ -243,8 +251,10 @@ export function DuplicateWarningModal({
 
               {/* Cancel */}
               <button
+                type="button"
                 onClick={onClose}
-                className="w-full py-2 text-sm text-white/50 hover:text-white/70 transition-colors"
+                aria-label="Cancel and go back"
+                className="w-full py-2 text-sm text-white/50 hover:text-white/70 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] rounded"
               >
                 Cancel and go back
               </button>

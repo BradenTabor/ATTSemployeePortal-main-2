@@ -17,6 +17,9 @@ export {
   SignaturePad,
 } from './components';
 
+// Sections
+export { SectionA } from './sections/SectionA';
+
 export type {
   ProgressStep,
   SignaturePadHandle,

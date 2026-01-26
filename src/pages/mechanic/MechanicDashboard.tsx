@@ -239,7 +239,7 @@ export default function MechanicDashboard() {
       await signOut();
       navigate('/', { replace: true });
     } catch (error) {
-      console.error('Sign out failed:', error);
+      logger.error("[MechanicDashboard] Sign out failed:", error);
     }
   }, [navigate, setSession, signOut]);
 

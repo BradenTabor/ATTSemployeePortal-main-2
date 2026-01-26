@@ -36,6 +36,13 @@ export const FIELD_NAME_MAP: Record<string, Record<string, string>> = {
     'doc_contact': 'docContact',
     'gf_contact': 'gfContact',
     'safety_contact': 'safetyContact',
+    'call_in_time': 'callInTime',
+    'call_out_time': 'callOutTime',
+  },
+  equipment: {
+    'submitted_by': 'submittedBy',
+    'equipment_type': 'equipmentType',
+    'equipment_number': 'equipmentNumber',
   },
 };
 
@@ -49,6 +56,9 @@ export const REVERSE_FIELD_MAP: Record<string, Record<string, string>> = {
   ),
   jsa: Object.fromEntries(
     Object.entries(FIELD_NAME_MAP.jsa).map(([k, v]) => [v, k])
+  ),
+  equipment: Object.fromEntries(
+    Object.entries(FIELD_NAME_MAP.equipment).map(([k, v]) => [v, k])
   ),
 };
 
@@ -68,7 +78,7 @@ export const REVERSE_FIELD_MAP: Record<string, Record<string, string>> = {
  */
 export function mapSuggestionsToFormKeys<T>(
   suggestions: Record<string, T>,
-  formType: 'dvir' | 'jsa'
+  formType: 'dvir' | 'jsa' | 'equipment'
 ): Record<string, T> {
   const map = FIELD_NAME_MAP[formType] || {};
   return Object.entries(suggestions).reduce((acc, [dbKey, value]) => {
@@ -87,7 +97,7 @@ export function mapSuggestionsToFormKeys<T>(
  */
 export function mapFormKeysToDbColumns<T>(
   data: Record<string, T>,
-  formType: 'dvir' | 'jsa'
+  formType: 'dvir' | 'jsa' | 'equipment'
 ): Record<string, T> {
   const map = REVERSE_FIELD_MAP[formType] || {};
   return Object.entries(data).reduce((acc, [formKey, value]) => {
@@ -121,6 +131,12 @@ export const FIELD_LABELS: Record<string, string> = {
   docContact: 'DOC Contact',
   gfContact: 'GF Contact',
   safetyContact: 'Safety Contact',
+  callInTime: 'Call-in Time',
+  callOutTime: 'Call-out Time',
+  // Equipment fields (camelCase keys)
+  submittedBy: 'Submitted By',
+  equipmentType: 'Equipment Type',
+  equipmentNumber: 'Equipment Number',
 };
 
 /**

@@ -15,6 +15,7 @@ import { Send, CheckCircle, AlertTriangle, Users, User, Briefcase } from 'lucide
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from '../../lib/toast';
+import { logger } from '../../lib/logger';
 import {
   type NotificationCategory,
   type NotificationSeverity,
@@ -104,7 +105,7 @@ function AdminNotificationTestComponent() {
       }
       // 'all' doesn't need target_ref
 
-      console.log('[AdminNotificationTest] Sending notification:', payload);
+      logger.info('[AdminNotificationTest] Sending notification:', payload);
 
       // Call the secure admin Edge Function
       const { data, error } = await supabase.functions.invoke<CreateNotificationResponse | CreateNotificationErrorResponse>(
@@ -113,7 +114,7 @@ function AdminNotificationTestComponent() {
       );
 
       if (error) {
-        console.error('[AdminNotificationTest] Edge Function error:', error);
+        logger.error('[AdminNotificationTest] Edge Function error:', error);
         throw new Error(error.message || 'Failed to send notification');
       }
 
@@ -129,7 +130,7 @@ function AdminNotificationTestComponent() {
 
       // Success!
       const successData = data as CreateNotificationResponse;
-      console.log('[AdminNotificationTest] Success:', successData);
+      logger.info('[AdminNotificationTest] Success:', successData);
 
       setResult({
         type: 'success',
@@ -145,7 +146,7 @@ function AdminNotificationTestComponent() {
       setFormState(initialFormState);
 
     } catch (err) {
-      console.error('[AdminNotificationTest] Error:', err);
+      logger.error('[AdminNotificationTest] Error:', err);
       const message = err instanceof Error ? err.message : 'An unexpected error occurred';
       
       setResult({

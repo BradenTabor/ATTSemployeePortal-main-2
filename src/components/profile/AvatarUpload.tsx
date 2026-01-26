@@ -47,6 +47,8 @@ const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB raw
 const MAX_COMPRESSED_SIZE = 500 * 1024; // 500KB compressed
 const TARGET_SIZE = 400; // 400x400px output
+const MIN_DIMENSION = 100; // Minimum width or height in pixels
+const MAX_DIMENSION = 10000; // Maximum width or height in pixels
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -311,11 +313,43 @@ export default function AvatarUpload({
           reader.onerror = () => reject(new Error('Failed to read file'));
           reader.readAsDataURL(file);
         });
+        
+        // Validate image dimensions before cropping
+        const img = new Image();
+        await new Promise<void>((resolve, reject) => {
+          img.onload = () => {
+            // Get actual dimensions (accounting for orientation)
+            let width = img.width;
+            let height = img.height;
+            
+            // Adjust for EXIF orientation (rotated images)
+            if (orientation >= 5 && orientation <= 8) {
+              [width, height] = [height, width];
+            }
+            
+            // Validate dimensions
+            if (width < MIN_DIMENSION || height < MIN_DIMENSION) {
+              reject(new Error(`Image is too small. Minimum size is ${MIN_DIMENSION}x${MIN_DIMENSION} pixels.`));
+              return;
+            }
+            
+            if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+              reject(new Error(`Image is too large. Maximum size is ${MAX_DIMENSION}x${MAX_DIMENSION} pixels.`));
+              return;
+            }
+            
+            resolve();
+          };
+          img.onerror = () => reject(new Error('Failed to load image'));
+          img.src = dataUrl;
+        });
+        
         const imageToCrop = await resetOrientation(dataUrl, orientation);
         setSelectedImage(imageToCrop);
         setState('cropping');
-      } catch {
-        formToast.error('Read Error', 'Failed to read the selected file.');
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to read the selected file.';
+        formToast.error('Image Error', errorMessage);
         setState('idle');
       }
     })();

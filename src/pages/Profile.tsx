@@ -12,6 +12,7 @@
  */
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import {
   User,
@@ -40,6 +41,7 @@ import { getDeviceCapabilities } from '../lib/mobilePerf';
 import { EnableNotificationsButton } from '../components/notifications';
 // ScrollReveal import removed - not currently used
 import AvatarUpload from '../components/profile/AvatarUpload';
+import { useMyCertificationRecords, useCertificationTypes } from '../hooks/useCertifications';
 
 // ============================================================================
 // TYPES
@@ -409,6 +411,7 @@ function CertificationCard({ cert }: { cert: CertificationStatus }) {
 // ============================================================================
 
 interface ProfileSectionProps {
+  id?: string;
   title: string;
   subtitle?: string;
   icon: React.ReactNode;
@@ -417,9 +420,10 @@ interface ProfileSectionProps {
   delay?: number;
 }
 
-function ProfileSection({ title, subtitle, icon, children, action }: ProfileSectionProps) {
+function ProfileSection({ id, title, subtitle, icon, children, action }: ProfileSectionProps) {
   return (
     <motion.section
+      id={id}
       variants={cardVariants}
       className="relative overflow-hidden rounded-xl sm:rounded-2xl md:rounded-3xl border border-emerald-400/20"
       style={{
@@ -553,8 +557,11 @@ function QuickActionButton({ href, icon, title, subtitle }: QuickActionProps) {
 // MAIN PROFILE PAGE COMPONENT
 // ============================================================================
 
+const PROFILE_CERTIFICATIONS_SECTION_ID = 'profile-certifications';
+
 export default function Profile() {
   const { user, role, fullName, avatarUrl } = useAuth();
+  const location = useLocation();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -562,6 +569,10 @@ export default function Profile() {
   // Device capabilities for animation decisions
   const caps = useMemo(() => getDeviceCapabilities(), []);
   const enableAnimations = !caps.prefersReducedMotion && !caps.isLowEnd;
+
+  // Fetch user's certification records (refetches when invalidated e.g. after passing a test)
+  const { data: certificationRecords } = useMyCertificationRecords(user?.id);
+  const { data: certificationTypes } = useCertificationTypes();
 
   // Fetch user profile from database
   const fetchProfile = useCallback(async () => {
@@ -623,6 +634,62 @@ export default function Profile() {
     const expired = certifications.filter(c => c.status === 'expired').length;
     return { expiring, expired, total: expiring + expired };
   }, [certifications]);
+
+  // Build user's earned certifications list (include written_passed so certs show before practical is done)
+  const earnedCertifications = useMemo(() => {
+    if (!certificationRecords || !certificationTypes) return [];
+    
+    return certificationRecords
+      .filter(rec => rec.status === 'active' || rec.status === 'expired' || rec.status === 'written_passed')
+      .map(rec => {
+        const certType = certificationTypes.find(ct => ct.id === rec.certification_type_id);
+        const expiresAt = rec.expires_at ? new Date(rec.expires_at) : null;
+        const now = new Date();
+        const daysUntilExpiry = expiresAt ? Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : null;
+        
+        let status: 'valid' | 'expiring' | 'expired' = 'valid';
+        if (daysUntilExpiry !== null) {
+          if (daysUntilExpiry < 0) status = 'expired';
+          else if (daysUntilExpiry <= 30) status = 'expiring';
+        }
+        
+        return {
+          id: rec.id,
+          name: certType?.name ?? 'Unknown Certification',
+          certifiedAt: rec.certified_at,
+          expiresAt: rec.expires_at,
+          writtenScore: rec.written_score,
+          status,
+          daysUntilExpiry,
+          recordStatus: rec.status,
+        };
+      })
+      .sort((a, b) => {
+        // Active first, then by expiry date
+        if (a.status === 'expired' && b.status !== 'expired') return 1;
+        if (b.status === 'expired' && a.status !== 'expired') return -1;
+        return (a.daysUntilExpiry ?? 999) - (b.daysUntilExpiry ?? 999);
+      });
+  }, [certificationRecords, certificationTypes]);
+
+  // Scroll to earned certifications when navigating from certification result overlay
+  useEffect(() => {
+    const state = location.state as { scrollToCertifications?: boolean } | null;
+    if (!state?.scrollToCertifications) return;
+    const scrollToSection = () => {
+      const el = document.getElementById(PROFILE_CERTIFICATIONS_SECTION_ID);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    };
+    if (earnedCertifications.length > 0) {
+      scrollToSection();
+    } else {
+      const t = setTimeout(scrollToSection, 800);
+      return () => clearTimeout(t);
+    }
+  }, [location.state, earnedCertifications.length]);
 
   // Loading state with premium animation
   if (loading) {
@@ -836,13 +903,114 @@ export default function Profile() {
           animate="visible"
           className="space-y-4 sm:space-y-6 md:space-y-8"
         >
+          {/* Earned Certifications - Full width when present */}
+          {earnedCertifications.length > 0 && (
+            <ProfileSection
+              id={PROFILE_CERTIFICATIONS_SECTION_ID}
+              title="Earned Certifications"
+              subtitle={`${earnedCertifications.filter(c => c.status !== 'expired').length} active certification${earnedCertifications.filter(c => c.status !== 'expired').length !== 1 ? 's' : ''}`}
+              icon={<Award className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />}
+            >
+              <motion.div 
+                className="grid gap-2 sm:gap-3 sm:grid-cols-2"
+                variants={containerVariants}
+              >
+                {earnedCertifications.map((cert) => {
+                  const statusConfig = {
+                    valid: {
+                      border: 'border-emerald-500/30',
+                      bg: 'bg-emerald-500/10',
+                      badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+                      label: 'Active',
+                    },
+                    expiring: {
+                      border: 'border-amber-500/30',
+                      bg: 'bg-amber-500/10',
+                      badge: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+                      label: 'Expiring Soon',
+                    },
+                    expired: {
+                      border: 'border-red-500/30',
+                      bg: 'bg-red-500/10',
+                      badge: 'bg-red-500/20 text-red-300 border-red-500/40',
+                      label: 'Expired',
+                    },
+                  };
+                  const writtenPassedConfig = {
+                    border: 'border-emerald-500/30',
+                    bg: 'bg-emerald-500/10',
+                    badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+                    label: 'Written passed',
+                  };
+                  const config =
+                    (cert as { recordStatus?: string }).recordStatus === 'written_passed'
+                      ? writtenPassedConfig
+                      : statusConfig[cert.status];
+                  
+                  return (
+                    <motion.div
+                      key={cert.id}
+                      variants={certCardVariants}
+                      whileHover={{ scale: 1.02, y: -2 }}
+                      className={`relative overflow-hidden rounded-lg sm:rounded-xl border ${config.border} ${config.bg} p-3 sm:p-4 cursor-default`}
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg ${config.bg} border ${config.border} flex items-center justify-center shrink-0`}>
+                            <Award className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs sm:text-sm font-semibold text-white truncate">{cert.name}</p>
+                            {cert.writtenScore && (
+                              <p className="text-[10px] sm:text-xs text-white/50">Score: {cert.writtenScore.toFixed(0)}%</p>
+                            )}
+                          </div>
+                        </div>
+                        <span className={`shrink-0 inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-full text-[8px] sm:text-[10px] font-bold uppercase tracking-wider border ${config.badge}`}>
+                          {config.label}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between text-[10px] sm:text-xs text-white/50">
+                        <span className="flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                          {cert.certifiedAt ? formatDate(cert.certifiedAt) : 'Certified'}
+                        </span>
+                        {cert.expiresAt && (
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {cert.daysUntilExpiry !== null && cert.daysUntilExpiry >= 0 
+                              ? `${cert.daysUntilExpiry}d left`
+                              : cert.daysUntilExpiry !== null
+                                ? `Expired ${Math.abs(cert.daysUntilExpiry)}d ago`
+                                : formatDate(cert.expiresAt)
+                            }
+                          </span>
+                        )}
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </motion.div>
+              
+              <motion.a 
+                href="/resources"
+                className="mt-3 sm:mt-4 flex items-center justify-center gap-2 text-[10px] sm:text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
+                whileHover={{ x: 3 }}
+              >
+                View all certifications & training
+                <ChevronRight className="w-3 h-3" />
+              </motion.a>
+            </ProfileSection>
+          )}
+
           {/* Two-column grid for sections on larger screens */}
           <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
             {/* Licenses & Certifications */}
             <ProfileSection
-              title="Licenses & Certifications"
+              title="Licenses & Credentials"
               subtitle="Keep your credentials up to date"
-              icon={<Award className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />}
+              icon={<CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />}
             >
               <motion.div 
                 className="space-y-2 sm:space-y-3"

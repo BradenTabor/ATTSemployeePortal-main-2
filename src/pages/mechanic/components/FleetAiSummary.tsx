@@ -540,17 +540,21 @@ export default function FleetAiSummary() {
                                         {formatTimeAgo(currentSummary.generated_at)}
                                       </span>
                                       <button
+                                        type="button"
                                         onClick={handleCopy}
-                                        className="p-1.5 rounded-md bg-white/5 text-white/50 hover:text-violet-300 active:bg-violet-500/20"
+                                        aria-label={copied ? "Copied" : "Copy summary"}
+                                        className="p-1.5 rounded-md bg-white/5 text-white/50 hover:text-violet-300 active:bg-violet-500/20 focus-visible:outline focus-visible:ring-2 focus-visible:ring-violet-400/50 focus-visible:ring-offset-1"
                                       >
-                                        {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                                        {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" aria-hidden /> : <Copy className="w-3.5 h-3.5" aria-hidden />}
                                       </button>
                                       <button
+                                        type="button"
                                         onClick={() => handleGenerateSummary(true)}
                                         disabled={isGenerating}
-                                        className="p-1.5 rounded-md bg-white/5 text-white/50 hover:text-violet-300 active:bg-violet-500/20 disabled:opacity-50"
+                                        aria-label={isGenerating ? "Regenerating summary" : "Regenerate summary"}
+                                        className="p-1.5 rounded-md bg-white/5 text-white/50 hover:text-violet-300 active:bg-violet-500/20 disabled:opacity-50 focus-visible:outline focus-visible:ring-2 focus-visible:ring-violet-400/50 focus-visible:ring-offset-1"
                                       >
-                                        <RefreshCw className={`w-3.5 h-3.5 ${isGenerating ? 'animate-spin' : ''}`} />
+                                        <RefreshCw className={`w-3.5 h-3.5 ${isGenerating ? 'animate-spin' : ''}`} aria-hidden />
                                       </button>
                                     </div>
                                   )}
@@ -567,7 +571,7 @@ export default function FleetAiSummary() {
                                 {summaryError && !isGenerating && (
                                   <div className="rounded-md bg-red-500/20 border border-red-500/30 p-2 text-xs text-red-300 flex items-center justify-between">
                                     <span>{summaryError}</span>
-                                    <button onClick={() => handleGenerateSummary(true)} className="text-red-400 underline ml-2">
+                                    <button type="button" onClick={() => handleGenerateSummary(true)} aria-label="Retry generating summary" className="text-red-400 underline ml-2 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-1 rounded">
                                       Retry
                                     </button>
                                   </div>
@@ -597,12 +601,14 @@ export default function FleetAiSummary() {
                                 
                                 {/* Link */}
                                 <button
+                                  type="button"
                                   onClick={() => navigate(`/mechanic/parts-repairs?truck=${encodeURIComponent(truck.truckNumber)}`)}
-                                  className="mt-2.5 pt-2.5 border-t border-violet-500/20 text-xs text-violet-300 hover:text-cyan-300 flex items-center gap-1 w-full"
+                                  aria-label={`View details and log repairs for truck ${truck.truckNumber}`}
+                                  className="mt-2.5 pt-2.5 border-t border-violet-500/20 text-xs text-violet-300 hover:text-cyan-300 flex items-center gap-1 w-full focus-visible:outline focus-visible:ring-2 focus-visible:ring-violet-400/50 focus-visible:ring-offset-1 rounded"
                                 >
-                                  <Wrench className="w-3 h-3" />
+                                  <Wrench className="w-3 h-3" aria-hidden />
                                   View details & log repairs
-                                  <ChevronRight className="w-3 h-3 ml-auto" />
+                                  <ChevronRight className="w-3 h-3 ml-auto" aria-hidden />
                                 </button>
                               </div>
                             </motion.div>

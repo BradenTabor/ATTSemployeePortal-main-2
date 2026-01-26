@@ -38,6 +38,7 @@ import {
 } from '../../../lib/exportUtils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { formToast } from '../../../lib/formToast';
+import { logger } from '../../../lib/logger';
 
 // =============================================================================
 // TYPES
@@ -392,7 +393,7 @@ export default function ExportReportsPanel({
       
       setTimeout(() => setExportSuccess(null), 3000);
     } catch (error) {
-      console.error('Export failed:', error);
+      logger.error('[ExportReportsPanel] Export failed:', error);
       formToast.error('Export Failed', 'Export failed. Please try again.');
       setExportSuccess(null);
     } finally {

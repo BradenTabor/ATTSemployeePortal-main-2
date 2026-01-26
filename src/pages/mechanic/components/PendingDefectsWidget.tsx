@@ -7,154 +7,13 @@
  * Part of the Jidoka Maintenance Automation feature.
  */
 
-import { useState, useEffect, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle, Wrench, ChevronRight, RefreshCw, CheckCircle2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../../../lib/supabaseClient";
-import { logger } from "../../../lib/logger";
 import { cn } from "../../../lib/utils";
-
-// Critical defect keywords (same as detectDefects.ts)
-const CRITICAL_KEYWORDS = [
-  'brake', 'steering', 'hydraulic', 'boom', 'outrigger',
-  'emergency', 'pto', 'safety', 'chain', 'fuel'
-];
-
-interface DefectItem {
-  id: string;
-  source: 'dvir' | 'equipment';
-  truck_number?: string;
-  equipment_type?: string;
-  defect_items: string[];
-  severity: 'critical' | 'warning';
-  reporter_name: string;
-  reported_at: string;
-}
-
-interface DefectSummary {
-  total: number;
-  critical: number;
-  warning: number;
-  items: DefectItem[];
-}
-
-// Extract failed items from checklist JSON
-function extractFailedItems(checklist: Record<string, string | boolean> | null): string[] {
-  if (!checklist) return [];
-  
-  const failed: string[] = [];
-  for (const [key, value] of Object.entries(checklist)) {
-    // "F" for fail in DVIR, false for equipment inspections
-    if (value === 'F' || value === false) {
-      // Convert snake_case to Title Case
-      const label = key
-        .replace(/_/g, ' ')
-        .replace(/\b\w/g, c => c.toUpperCase());
-      failed.push(label);
-    }
-  }
-  return failed;
-}
-
-// Determine if defect is critical based on keywords
-function isCritical(items: string[]): boolean {
-  const combined = items.join(' ').toLowerCase();
-  return CRITICAL_KEYWORDS.some(kw => combined.includes(kw));
-}
-
-// Fetch pending defects from the last 7 days
-async function fetchPendingDefects(): Promise<DefectSummary> {
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  const cutoffDate = sevenDaysAgo.toISOString().split('T')[0];
-  
-  const items: DefectItem[] = [];
-  
-  // Fetch DVIR defects (vehicle_trailer_checklist or aerial_checklist with "F" values)
-  try {
-    const { data: dvirData, error: dvirError } = await supabase
-      .from('dvir_reports')
-      .select('id, truck_number, vehicle_trailer_checklist, aerial_checklist, notes, created_at, user_id, app_users(full_name)')
-      .gte('report_date', cutoffDate)
-      .order('created_at', { ascending: false })
-      .limit(50);
-    
-    if (dvirError) throw dvirError;
-    
-    if (dvirData) {
-      for (const dvir of dvirData) {
-        const vehicleDefects = extractFailedItems(dvir.vehicle_trailer_checklist);
-        const aerialDefects = extractFailedItems(dvir.aerial_checklist);
-        const allDefects = [...vehicleDefects, ...aerialDefects];
-        
-        if (allDefects.length > 0) {
-          items.push({
-            id: dvir.id,
-            source: 'dvir',
-            truck_number: dvir.truck_number,
-            defect_items: allDefects,
-            severity: isCritical(allDefects) ? 'critical' : 'warning',
-            reporter_name: (dvir.app_users as unknown as { full_name: string } | null)?.full_name || 'Unknown',
-            reported_at: dvir.created_at,
-          });
-        }
-      }
-    }
-  } catch (error) {
-    logger.error('[PendingDefectsWidget] Failed to fetch DVIR defects', error);
-  }
-  
-  // Fetch Equipment Inspection defects (any false values in checklist)
-  try {
-    const { data: equipData, error: equipError } = await supabase
-      .from('daily_equipment_inspections')
-      .select('id, equipment_number, equipment_type, checklist, notes, created_at, user_id, app_users(full_name)')
-      .gte('inspection_date', cutoffDate)
-      .order('created_at', { ascending: false })
-      .limit(50);
-    
-    if (equipError) throw equipError;
-    
-    if (equipData) {
-      for (const equip of equipData) {
-        const defects = extractFailedItems(equip.checklist);
-        
-        if (defects.length > 0) {
-          items.push({
-            id: equip.id,
-            source: 'equipment',
-            equipment_type: equip.equipment_type || equip.equipment_number || 'Equipment',
-            defect_items: defects,
-            severity: isCritical(defects) ? 'critical' : 'warning',
-            reporter_name: (equip.app_users as unknown as { full_name: string } | null)?.full_name || 'Unknown',
-            reported_at: equip.created_at,
-          });
-        }
-      }
-    }
-  } catch (error) {
-    logger.error('[PendingDefectsWidget] Failed to fetch equipment defects', error);
-  }
-  
-  // Sort by severity (critical first) then by date (newest first)
-  items.sort((a, b) => {
-    if (a.severity !== b.severity) {
-      return a.severity === 'critical' ? -1 : 1;
-    }
-    return new Date(b.reported_at).getTime() - new Date(a.reported_at).getTime();
-  });
-  
-  const critical = items.filter(i => i.severity === 'critical').length;
-  const warning = items.filter(i => i.severity === 'warning').length;
-  
-  return {
-    total: items.length,
-    critical,
-    warning,
-    items: items.slice(0, 5), // Show top 5 most urgent
-  };
-}
+import { usePendingDefects } from "../../../hooks/mechanic/usePendingDefects";
+import type { DefectItem } from "../../../hooks/mechanic/usePendingDefects";
 
 // Format relative time
 function formatRelativeTime(dateStr: string): string {
@@ -172,33 +31,51 @@ function formatRelativeTime(dateStr: string): string {
 
 export default function PendingDefectsWidget() {
   const navigate = useNavigate();
-  const [summary, setSummary] = useState<DefectSummary | null>(null);
-  const [loading, setLoading] = useState(true);
+  // ARCH-018: Use hook instead of inline API calls
+  const { summary, loading, error, refetch } = usePendingDefects();
   const [refreshing, setRefreshing] = useState(false);
   
-  const loadDefects = async (isRefresh = false) => {
-    if (isRefresh) setRefreshing(true);
-    else setLoading(true);
-    
+  const handleRefresh = async () => {
+    setRefreshing(true);
     try {
-      const data = await fetchPendingDefects();
-      setSummary(data);
-    } catch (error) {
-      logger.error('[PendingDefectsWidget] Failed to load defects', error);
+      // PERF-019: refetch is now a function that returns a promise
+      await refetch();
     } finally {
-      setLoading(false);
       setRefreshing(false);
     }
   };
   
-  useEffect(() => {
-    loadDefects();
-    // Refresh every 5 minutes
-    const interval = setInterval(() => loadDefects(), 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, []);
-  
   const hasCritical = useMemo(() => (summary?.critical ?? 0) > 0, [summary]);
+  
+  // QA-001: Display error state to user if hook returns error
+  if (error) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="rounded-xl border border-red-500/30 bg-red-900/10 p-4"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-red-500/15 flex items-center justify-center">
+            <AlertTriangle className="w-5 h-5 text-red-400" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-sm font-bold text-red-200">Failed to Load Defects</h3>
+            <p className="text-xs text-red-300/70 mt-0.5">{error}</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            aria-label={refreshing ? "Retrying..." : "Retry loading defects"}
+            className="px-3 py-1.5 text-xs font-medium text-red-200 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition-colors disabled:opacity-50 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+          >
+            {refreshing ? 'Retrying...' : 'Retry'}
+          </button>
+        </div>
+      </motion.div>
+    );
+  }
   
   if (loading) {
     return (
@@ -266,14 +143,16 @@ export default function PendingDefectsWidget() {
         </div>
         
         <button
-          onClick={() => loadDefects(true)}
+          type="button"
+          onClick={handleRefresh}
           disabled={refreshing}
-          className="p-1.5 rounded-lg hover:bg-white/5 transition-colors"
+          aria-label={refreshing ? "Refreshing defects" : "Refresh pending defects"}
+          className="p-1.5 rounded-lg hover:bg-white/5 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-orange-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
         >
           <RefreshCw className={cn(
             "w-3.5 h-3.5 text-white/40 hover:text-white/60",
             refreshing && "animate-spin"
-          )} />
+          )} aria-hidden />
         </button>
       </div>
       
@@ -296,7 +175,7 @@ export default function PendingDefectsWidget() {
       {/* Defect Items */}
       <div className="space-y-1.5 mb-3">
         <AnimatePresence mode="popLayout">
-          {summary.items.map((item, idx) => (
+          {summary.items.map((item: DefectItem, idx: number) => (
             <motion.div
               key={item.id}
               initial={{ opacity: 0, x: -8 }}
@@ -348,13 +227,15 @@ export default function PendingDefectsWidget() {
       {/* View All Button */}
       {summary.total > 5 && (
         <button
+          type="button"
           onClick={() => navigate('/mechanic/equipment-logs')}
-          className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors group"
+          aria-label={`View all ${summary.total} defects in equipment logs`}
+          className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors group focus-visible:outline focus-visible:ring-2 focus-visible:ring-orange-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
         >
           <span className="text-xs font-medium text-white/60 group-hover:text-white/80">
             View all {summary.total} defects
           </span>
-          <ChevronRight className="w-3.5 h-3.5 text-white/40 group-hover:text-white/60 group-hover:translate-x-0.5 transition-all" />
+          <ChevronRight className="w-3.5 h-3.5 text-white/40 group-hover:text-white/60 group-hover:translate-x-0.5 transition-all" aria-hidden />
         </button>
       )}
     </motion.div>

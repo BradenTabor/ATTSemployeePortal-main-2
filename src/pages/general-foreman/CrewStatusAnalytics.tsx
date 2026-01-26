@@ -100,21 +100,25 @@ function CompactPagination({
       </span>
       <div className="flex items-center gap-1">
         <button
+          type="button"
           disabled={currentPage === 1 || loading}
           onClick={onPrev}
-          className="p-1.5 rounded-lg bg-[#c084fc]/10 text-[#e9d5ff]/60 hover:bg-[#c084fc]/20 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          aria-label="Previous page"
+          className="p-1.5 rounded-lg bg-[#c084fc]/10 text-[#e9d5ff]/60 hover:bg-[#c084fc]/20 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#c084fc]/50 focus-visible:ring-offset-1"
         >
-          <ChevronLeft className="w-3.5 h-3.5" />
+          <ChevronLeft className="w-3.5 h-3.5" aria-hidden />
         </button>
-        <span className="text-[11px] text-[#e9d5ff]/50 px-2 min-w-[50px] text-center">
+        <span className="text-[11px] text-[#e9d5ff]/50 px-2 min-w-[50px] text-center" aria-live="polite">
           {currentPage} / {totalPages}
         </span>
         <button
+          type="button"
           disabled={currentPage >= totalPages || loading}
           onClick={onNext}
-          className="p-1.5 rounded-lg bg-[#c084fc]/10 text-[#e9d5ff]/60 hover:bg-[#c084fc]/20 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          aria-label="Next page"
+          className="p-1.5 rounded-lg bg-[#c084fc]/10 text-[#e9d5ff]/60 hover:bg-[#c084fc]/20 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#c084fc]/50 focus-visible:ring-offset-1"
         >
-          <ChevronRight className="w-3.5 h-3.5" />
+          <ChevronRight className="w-3.5 h-3.5" aria-hidden />
         </button>
       </div>
     </div>
@@ -140,8 +144,8 @@ function FilterChip({
       className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#c084fc]/20 text-[#c084fc] text-[10px] font-medium"
     >
       {label}
-      <button onClick={onRemove} className="hover:bg-white/10 rounded-full p-0.5" aria-label={`Remove ${label} filter`}>
-        <X className="w-2.5 h-2.5" />
+      <button type="button" onClick={onRemove} className="hover:bg-white/10 rounded-full p-0.5 focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#c084fc]/50 focus-visible:ring-offset-1" aria-label={`Remove ${label} filter`}>
+        <X className="w-2.5 h-2.5" aria-hidden />
       </button>
     </motion.span>
   );
@@ -482,11 +486,14 @@ export default function CrewStatusAnalytics() {
       >
         {/* Filter Header */}
         <button
+          type="button"
           onClick={() => setShowFilters(!showFilters)}
-          className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-white/5 transition-colors"
+          aria-label={showFilters ? "Hide filters" : "Show filters"}
+          aria-expanded={showFilters}
+          className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-white/5 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#c084fc]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] rounded-lg"
         >
           <div className="flex items-center gap-2">
-            <Filter className="w-3.5 h-3.5 text-[#c084fc]" />
+            <Filter className="w-3.5 h-3.5 text-[#c084fc]" aria-hidden />
             <span className="text-[11px] uppercase tracking-[0.2em] text-[#c084fc]/70 font-medium">Filters</span>
             {hasActiveFilters && (
               <span className="ml-1 px-1.5 py-0.5 rounded-full bg-[#c084fc]/20 text-[#c084fc] text-[9px] font-bold">
@@ -494,7 +501,7 @@ export default function CrewStatusAnalytics() {
               </span>
             )}
           </div>
-          <ChevronDown className={cn("w-4 h-4 text-white/40 transition-transform", showFilters && "rotate-180")} />
+          <ChevronDown className={cn("w-4 h-4 text-white/40 transition-transform", showFilters && "rotate-180")} aria-hidden />
         </button>
 
         {/* Active Filter Chips */}
@@ -518,8 +525,10 @@ export default function CrewStatusAnalytics() {
                 );
               })}
               <button
+                type="button"
                 onClick={clearFilters}
-                className="text-[10px] text-white/40 hover:text-white/60 px-1"
+                aria-label="Clear all filters"
+                className="text-[10px] text-white/40 hover:text-white/60 px-1 focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#c084fc]/50 rounded"
               >
                 Clear all
               </button>
@@ -549,9 +558,12 @@ export default function CrewStatusAnalytics() {
                   ].map(opt => (
                     <button
                       key={opt.value}
+                      type="button"
                       onClick={() => setDateRange(opt.value as DateRangeOption)}
+                      aria-label={`Filter by ${opt.label}`}
+                      aria-pressed={dateRange === opt.value}
                       className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
+                        "px-3 py-1.5 rounded-lg text-xs font-medium transition-all focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#c084fc]/50 focus-visible:ring-offset-1",
                         dateRange === opt.value
                           ? "bg-[#c084fc]/20 text-[#c084fc] border border-[#c084fc]/40"
                           : "bg-white/5 text-white/60 border border-white/10 hover:bg-white/10"
@@ -585,13 +597,17 @@ export default function CrewStatusAnalytics() {
                 {/* Jobs Dropdown */}
                 <div className="relative">
                   <button
+                    type="button"
                     onClick={() => setJobDropdownOpen(!jobDropdownOpen)}
-                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-[#050402]/70 border border-[#c084fc]/20 text-xs text-[#f3e8ff] hover:bg-white/5 transition-colors"
+                    aria-label={selectedJobIds.length ? `${selectedJobIds.length} job(s) selected` : "Filter by job"}
+                    aria-expanded={jobDropdownOpen}
+                    aria-haspopup="listbox"
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-[#050402]/70 border border-[#c084fc]/20 text-xs text-[#f3e8ff] hover:bg-white/5 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#c084fc]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
                   >
                     <span className={selectedJobIds.length ? 'text-[#c084fc]' : 'text-white/50'}>
                       {selectedJobIds.length ? `${selectedJobIds.length} job${selectedJobIds.length > 1 ? 's' : ''} selected` : 'All Jobs'}
                     </span>
-                    <ChevronDown className={cn("w-3.5 h-3.5 text-white/40 transition-transform", jobDropdownOpen && "rotate-180")} />
+                    <ChevronDown className={cn("w-3.5 h-3.5 text-white/40 transition-transform", jobDropdownOpen && "rotate-180")} aria-hidden />
                   </button>
                   <AnimatePresence>
                     {jobDropdownOpen && (
@@ -607,12 +623,15 @@ export default function CrewStatusAnalytics() {
                           jobOptions.map(([id, label]) => (
                             <button
                               key={id}
+                              type="button"
                               onClick={() => {
                                 setSelectedJobIds(prev =>
                                   prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
                                 );
                               }}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/80 hover:bg-white/5 transition-colors"
+                              aria-label={selectedJobIds.includes(id) ? `Deselect job ${label}` : `Select job ${label}`}
+                              aria-pressed={selectedJobIds.includes(id)}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/80 hover:bg-white/5 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#c084fc]/50 focus-visible:ring-inset"
                             >
                               <span className={cn(
                                 "w-3.5 h-3.5 rounded border flex items-center justify-center text-[9px]",
@@ -633,8 +652,10 @@ export default function CrewStatusAnalytics() {
 
                 {hasActiveFilters && (
                   <button
+                    type="button"
                     onClick={clearFilters}
-                    className="text-[11px] text-white/40 hover:text-[#c084fc] transition-colors"
+                    aria-label="Clear all filters"
+                    className="text-[11px] text-white/40 hover:text-[#c084fc] transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#c084fc]/50 rounded"
                   >
                     Clear all filters
                   </button>

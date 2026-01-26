@@ -5,7 +5,7 @@
  * Provides error states, inline messages, and accessibility support.
  */
 
-import { ReactNode } from 'react';
+import { ReactNode, cloneElement, isValidElement } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -96,7 +96,7 @@ export function ValidatedField({
         className="block text-xs font-semibold text-white/80 uppercase tracking-wide"
       >
         {label}
-        {required && <span className="text-rose-400 ml-1">*</span>}
+        {required && <span className="text-amber-400 ml-1">*</span>}
       </label>
 
       {/* Field container */}
@@ -110,7 +110,12 @@ export function ValidatedField({
           )}
           onBlur={onBlur}
         >
-          {children}
+          {isValidElement(children) && fieldId
+            ? cloneElement(children as React.ReactElement, {
+                'aria-describedby': [errorId, hintId].filter(Boolean).join(' ') || undefined,
+                'aria-invalid': showError ? true : undefined,
+              })
+            : children}
         </div>
 
         {/* Error icon overlay */}

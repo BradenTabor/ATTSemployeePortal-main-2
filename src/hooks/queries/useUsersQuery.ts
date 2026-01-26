@@ -59,7 +59,7 @@ export function useUserQuery(userId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('app_users')
-        .select('*')
+        .select('id, user_id, email, full_name, role, created_at')
         .eq('user_id', userId)
         .single();
 

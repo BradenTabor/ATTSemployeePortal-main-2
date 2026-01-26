@@ -16,7 +16,7 @@
  * - Weekend mode = celebratory, premium experience showing week accomplishments
  */
 
-import { memo, useMemo, useEffect, useState, useCallback, useRef } from 'react';
+import { memo, useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -35,6 +35,7 @@ import {
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { getDeviceCapabilities } from '../../lib/mobilePerf';
+import { useComplianceQuery } from '../../hooks/queries/useComplianceQuery';
 
 // ============================================================================
 // TYPES
@@ -111,40 +112,6 @@ const themeConfig = {
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
-
-function getTodayDateString(): string {
-  // Get today's date in America/Chicago timezone
-  const now = new Date();
-  const chicagoDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
-  const year = chicagoDate.getFullYear();
-  const month = String(chicagoDate.getMonth() + 1).padStart(2, '0');
-  const day = String(chicagoDate.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-/**
- * Get UTC ISO timestamps for the start and end of a Chicago date.
- * This properly handles timezone conversion for querying timestamps stored in UTC.
- */
-function getChicagoDayBoundsUtc(chicagoDate: string): { startUtc: string; endUtc: string } {
-  const startChicago = new Date(`${chicagoDate}T00:00:00`);
-  const endChicago = new Date(`${chicagoDate}T00:00:00`);
-  endChicago.setDate(endChicago.getDate() + 1);
-  
-  const startInChicago = new Date(startChicago.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
-  const endInChicago = new Date(endChicago.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
-  
-  const startOffsetMs = startChicago.getTime() - startInChicago.getTime();
-  const endOffsetMs = endChicago.getTime() - endInChicago.getTime();
-  
-  const startUtc = new Date(startChicago.getTime() + startOffsetMs);
-  const endUtc = new Date(endChicago.getTime() + endOffsetMs);
-  
-  return {
-    startUtc: startUtc.toISOString(),
-    endUtc: endUtc.toISOString(),
-  };
-}
 
 function getTimeUntilCutoff(): { hours: number; minutes: number; isPast: boolean } {
   const now = new Date();
@@ -255,9 +222,9 @@ const WeekendModeCard = memo(function WeekendModeCard({ theme, themeKey, userId,
             .lt('created_at', `${dayAfterEndDate}T00:00:00`),
         ]);
         
-        const dvirDates = new Set(dvirResult.data?.map(d => d.report_date) || []);
-        const equipmentDates = new Set(equipmentResult.data?.map(d => d.inspection_date) || []);
-        const jsaDates = new Set(jsaResult.data?.map(d => d.created_at?.split('T')[0]) || []);
+        const dvirDates = new Set(dvirResult.data?.map((d: { report_date: string }) => d.report_date) || []);
+        const equipmentDates = new Set(equipmentResult.data?.map((d: { inspection_date: string }) => d.inspection_date) || []);
+        const jsaDates = new Set(jsaResult.data?.map((d: { created_at: string }) => d.created_at?.split('T')[0]) || []);
         
         // Calculate perfect days (all 3 forms submitted)
         const allDates = new Set([...dvirDates, ...equipmentDates, ...jsaDates]);
@@ -342,12 +309,15 @@ const WeekendModeCard = memo(function WeekendModeCard({ theme, themeKey, userId,
           {/* Right: Stats toggle (mobile-friendly) */}
           {!weekStats.loading && totalForms > 0 && (
             <button
+              type="button"
               onClick={() => setShowStats(!showStats)}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg ${theme.accentBg} border ${theme.accentBorder} hover:opacity-80 transition-colors`}
+              aria-label={showStats ? "Hide week stats" : "Show week stats"}
+              aria-expanded={showStats}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg ${theme.accentBg} border ${theme.accentBorder} hover:opacity-80 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]`}
             >
-              <Trophy className={`w-3.5 h-3.5 ${theme.accent}`} />
+              <Trophy className={`w-3.5 h-3.5 ${theme.accent}`} aria-hidden />
               <span className={`text-xs font-semibold ${theme.accent}`}>{totalForms}</span>
-              <ChevronRight className={`w-3 h-3 ${theme.accent} opacity-70 transition-transform ${showStats ? 'rotate-90' : ''}`} />
+              <ChevronRight className={`w-3 h-3 ${theme.accent} opacity-70 transition-transform ${showStats ? 'rotate-90' : ''}`} aria-hidden />
             </button>
           )}
         </div>
@@ -476,89 +446,20 @@ function TodayComplianceStatusComponent({
     return fullName.split(' ')[0];
   }, [fullName]);
   
-  // Track if initial fetch is done to avoid calling setState in effect
-  const initialFetchDone = useRef(false);
-  
-  const [compliance, setCompliance] = useState<ComplianceData>({
-    dvir: false,
-    equipment: false,
-    jsa: false,
-    loading: true,
-    error: null,
+  // ARCH-016: Use useComplianceQuery hook instead of manual API calls
+  // This provides caching, automatic refetching, and shared state across components
+  const { compliance: complianceStatus, isLoading, error: complianceError } = useComplianceQuery({
+    onComplianceChange,
   });
 
-  // Fetch compliance status
-  const fetchCompliance = useCallback(async () => {
-    if (!user?.id) return;
-    
-    const todayDate = getTodayDateString();
-    
-    // Get proper UTC boundaries for the Chicago date (handles timezone correctly)
-    const { startUtc, endUtc } = getChicagoDayBoundsUtc(todayDate);
-    
-    try {
-      // Query all three form types in parallel
-      const [dvirResult, equipmentResult, jsaResult] = await Promise.all([
-        supabase
-          .from('dvir_reports')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('report_date', todayDate)
-          .limit(1),
-        supabase
-          .from('daily_equipment_inspections')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('inspection_date', todayDate)
-          .limit(1),
-        // JSA uses created_at (timestamp in UTC) - query using proper UTC bounds for Chicago day
-        supabase
-          .from('daily_jsa')
-          .select('id')
-          .eq('user_id', user.id)
-          .gte('created_at', startUtc)
-          .lt('created_at', endUtc)
-          .limit(1),
-      ]);
-
-      const dvirStatus = (dvirResult.data?.length ?? 0) > 0;
-      const equipmentStatus = (equipmentResult.data?.length ?? 0) > 0;
-      const jsaStatus = (jsaResult.data?.length ?? 0) > 0;
-      
-      setCompliance({
-        dvir: dvirStatus,
-        equipment: equipmentStatus,
-        jsa: jsaStatus,
-        loading: false,
-        error: null,
-      });
-      
-      // Notify parent of compliance change
-      onComplianceChange?.(dvirStatus, equipmentStatus, jsaStatus);
-    } catch {
-      setCompliance(prev => ({
-        ...prev,
-        loading: false,
-        error: 'Failed to check compliance',
-      }));
-    }
-  }, [user, onComplianceChange]);
-
-  useEffect(() => {
-    // Only fetch if not already done to avoid immediate setState in effect
-    if (!initialFetchDone.current) {
-      initialFetchDone.current = true;
-      // Use setTimeout to avoid synchronous setState in effect
-      const timeoutId = setTimeout(() => {
-        fetchCompliance();
-      }, 0);
-      return () => clearTimeout(timeoutId);
-    }
-    
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchCompliance, 30000);
-    return () => clearInterval(interval);
-  }, [fetchCompliance]);
+  // Map hook response to component's expected format
+  const compliance: ComplianceData = useMemo(() => ({
+    dvir: complianceStatus.dvir,
+    equipment: complianceStatus.equipment,
+    jsa: complianceStatus.jsa,
+    loading: isLoading,
+    error: complianceError,
+  }), [complianceStatus, isLoading, complianceError]);
 
   // Build form status list
   const formStatuses: FormStatus[] = useMemo(() => [

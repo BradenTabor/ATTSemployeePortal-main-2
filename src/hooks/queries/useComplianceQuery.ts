@@ -131,7 +131,20 @@ interface UseComplianceQueryOptions {
   enabled?: boolean;
 }
 
-export function useComplianceQuery(options: UseComplianceQueryOptions = {}) {
+export interface UseComplianceQueryReturn {
+  /** Current compliance status */
+  compliance: ComplianceStatus;
+  /** Whether the query is loading (only true if no cached data) */
+  isLoading: boolean;
+  /** Whether the query is refetching in the background */
+  isRefetching: boolean;
+  /** Error message if query failed */
+  error: string | null;
+  /** Manually refetch compliance status */
+  refetch: () => Promise<void>;
+}
+
+export function useComplianceQuery(options: UseComplianceQueryOptions = {}): UseComplianceQueryReturn {
   const { user } = useAuth();
   const { onComplianceChange, enabled = true } = options;
   const todayDate = getTodayDateString();
@@ -184,6 +197,10 @@ export function useComplianceQuery(options: UseComplianceQueryOptions = {}) {
 /**
  * Invalidate compliance cache after form submission
  * Call this after successfully submitting a form to update the dashboard immediately
+ * 
+ * Batches invalidations to prevent cascading refetches - React Query automatically
+ * batches invalidations within the same event loop tick, but we ensure all related
+ * queries are invalidated together for optimal performance.
  */
 export function useInvalidateCompliance() {
   const queryClient = useQueryClient();
@@ -193,11 +210,16 @@ export function useInvalidateCompliance() {
 
   return useCallback(() => {
     if (!userId) return;
-    // Force immediate refetch by using refetchType: 'all'
-    // This ensures the dashboard updates right away, not just when the query is next accessed
+    
+    // Batch all compliance-related invalidations together
+    // React Query will batch these automatically, but grouping them
+    // makes the intent clear and ensures they happen atomically
     queryClient.invalidateQueries({
       queryKey: queryKeys.compliance.today(userId, todayDate),
       refetchType: 'all',
     });
+    
+    // Note: If form history queries need invalidation, add them here
+    // to batch with compliance invalidation for optimal performance
   }, [queryClient, userId, todayDate]);
 }

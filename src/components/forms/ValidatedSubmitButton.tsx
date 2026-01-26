@@ -45,6 +45,11 @@ export interface ValidatedSubmitButtonProps {
    * Button type (default: 'button' to prevent form submission)
    */
   type?: 'button' | 'submit';
+  
+  /**
+   * Optional data-testid for E2E tests
+   */
+  dataTestId?: string;
 }
 
 /**
@@ -58,6 +63,7 @@ export function ValidatedSubmitButton({
   label = 'Submit',
   className,
   type = 'button',
+  dataTestId,
 }: ValidatedSubmitButtonProps) {
   const [isHovered, setIsHovered] = useState(false);
   const hasErrors = errorCount > 0;
@@ -78,6 +84,7 @@ export function ValidatedSubmitButton({
         type={type}
         onClick={onClick}
         disabled={isDisabled}
+        data-testid={dataTestId}
         className={cn(
           'relative inline-flex items-center justify-center gap-2',
           'px-6 py-3 rounded-xl font-semibold transition-all',

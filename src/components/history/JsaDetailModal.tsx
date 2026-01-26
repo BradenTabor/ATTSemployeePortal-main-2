@@ -17,6 +17,7 @@ import {
   CheckCircle,
   Activity,
   MapPin,
+  Copy,
 } from "lucide-react";
 import type { DailyJsaRecord, ObserverSignature, JsaSpan } from "../../pages/forms/DailyJSAForm";
 
@@ -73,12 +74,14 @@ export interface JsaDetailModalProps {
   jsa: DailyJsaRecord;
   onClose: () => void;
   onEdit: (id: string) => void;
+  onDuplicate?: () => void;
 }
 
 export const JsaDetailModal = memo(function JsaDetailModal({
   jsa,
   onClose,
   onEdit,
+  onDuplicate,
 }: JsaDetailModalProps) {
   const prefersReducedMotion = useReducedMotion();
   const status = getStatus(jsa);
@@ -149,10 +152,22 @@ export const JsaDetailModal = memo(function JsaDetailModal({
                 type="button"
                 onClick={() => onEdit(jsa.id)}
                 className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/20 px-4 py-2 text-xs font-medium text-emerald-200 hover:bg-emerald-500/30 hover:border-emerald-400/50 focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] outline-none transition-all active:scale-95"
+                aria-label="Edit JSA"
               >
                 <Edit3 className="w-3.5 h-3.5" aria-hidden />
                 Edit
               </button>
+              {onDuplicate && (
+                <button
+                  type="button"
+                  onClick={onDuplicate}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-2 text-xs font-medium text-amber-300 hover:bg-amber-500/20 hover:border-amber-400/60 focus-visible:ring-2 focus-visible:ring-amber-400/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] outline-none transition-all active:scale-95"
+                  aria-label="Duplicate"
+                >
+                  <Copy className="w-3.5 h-3.5" aria-hidden />
+                  Duplicate
+                </button>
+              )}
               <button
                 type="button"
                 onClick={onClose}

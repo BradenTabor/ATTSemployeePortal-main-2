@@ -2,6 +2,7 @@ import { ReactNode, lazy, Suspense } from "react";
 import ReturnButton from "../components/ReturnButton";
 import logo from "../assets/ATTS_Logo-removebg-preview.png";
 import { getDeviceCapabilities } from "../lib/mobilePerf";
+import { CertificationResultOverlay } from "../components/certifications/CertificationResultOverlay";
 
 // Lazy load BackgroundParticles for better initial load performance
 const BackgroundParticles = lazy(() => import("../components/ui/BackgroundParticles"));
@@ -96,6 +97,9 @@ export default function DashboardLayout({ title, children, hideHeader = false }:
 
       {/* Floating Return Navigation - Fixed position, stays visible */}
       <ReturnButton />
+
+      {/* Certification Result Overlay - Shows when test is graded by admin */}
+      <CertificationResultOverlay />
     </div>
   );
 }

@@ -22,13 +22,11 @@ import {
   ClipboardCheck,
   ChevronRight,
   Sparkles,
-  Shield,
-  Clock,
-  Sun,
   Trophy,
 } from 'lucide-react';
 import { useComplianceQuery } from '../../hooks/queries/useComplianceQuery';
 import { getDeviceCapabilities } from '../../lib/mobilePerf';
+import attsLogoStamped from '../../assets/ATTS_Logo_stamped.png';
 
 // ============================================================================
 // TYPES
@@ -280,7 +278,7 @@ const QuickFormLinksRow = memo(function QuickFormLinksRow({ themeStyles }: Quick
                 flex items-center gap-1 sm:gap-1.5 px-2 py-1.5 sm:px-2.5 sm:py-1.5 rounded-lg
                 ${themeStyles.accentBg} border ${themeStyles.accentBorder}
                 ${themeStyles.accentHover} ${themeStyles.accentActive} transition-colors group
-                min-h-[32px] sm:min-h-[36px]
+                min-h-[44px]
               `}
               title={link.label}
             >
@@ -335,11 +333,11 @@ const WeekendMode = memo(function WeekendMode({ themeStyles, themeKey }: Weekend
           {/* Left: Icon + Message */}
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <motion.div 
-              className={`w-10 h-10 rounded-xl ${themeStyles.accentBg} border ${themeStyles.accentBorder} flex items-center justify-center flex-shrink-0`}
+              className="w-10 h-10 flex items-center justify-center flex-shrink-0 overflow-hidden"
               animate={enableAnimations ? { rotate: [0, 5, -5, 0] } : undefined}
               transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
             >
-              <Sun className={`w-5 h-5 ${themeStyles.accent}`} />
+              <img src={attsLogoStamped} alt="" className="w-10 h-10 object-contain" aria-hidden />
             </motion.div>
             
             <div className="min-w-0">
@@ -457,15 +455,11 @@ function CompactComplianceStripComponent({ theme = 'emerald', onComplianceChange
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <motion.div 
-              className={`w-9 h-9 rounded-xl ${themeStyles.accentBg} border ${themeStyles.accentBorder} flex items-center justify-center`}
+              className={`w-10 h-10 rounded-xl ${themeStyles.accentBg} border ${themeStyles.accentBorder} flex items-center justify-center flex-shrink-0 overflow-hidden`}
               animate={allComplete ? { scale: [1, 1.1, 1] } : undefined}
               transition={{ duration: 0.5, delay: 0.3 }}
             >
-              {allComplete ? (
-                <Shield className={`w-4.5 h-4.5 ${themeStyles.checkColor}`} />
-              ) : (
-                <Clock className={`w-4.5 h-4.5 ${themeStyles.pendingColor}`} />
-              )}
+              <img src={attsLogoStamped} alt="" className="w-6 h-6 object-contain" aria-hidden />
             </motion.div>
             <div>
               <h3 className="text-sm font-bold text-white">Today's Mission</h3>

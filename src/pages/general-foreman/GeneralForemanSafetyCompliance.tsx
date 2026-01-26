@@ -34,6 +34,7 @@ import TableSkeleton from "../../components/skeletons/TableSkeleton";
 import CardListSkeleton from "../../components/skeletons/CardListSkeleton";
 import { TextEffect } from "../../components/ui/TextEffect";
 import { getDeviceCapabilities } from "../../lib/mobilePerf";
+import { logger } from "../../lib/logger";
 
 type GFJsaRow = DailyJsaRecord & {
   user_email?: string | null;
@@ -145,9 +146,39 @@ export default function GeneralForemanSafetyCompliance() {
     const to = from + pageSize - 1;
 
     try {
+      // ARCH-015: Select only needed columns instead of SELECT *
+      // Fields used in list view and detail view
       let query = supabase
         .from("daily_jsa")
-        .select("*", { count: "exact" })
+        .select(`
+          id,
+          user_id,
+          job_date,
+          work_location,
+          circuit_number,
+          status,
+          employee_signature,
+          nearest_hospital,
+          nearest_clinic,
+          notes,
+          updated_at,
+          created_at,
+          jobs_performed,
+          weather_conditions,
+          hazards_present,
+          traffic_hazards,
+          traffic_setup,
+          spans,
+          observer_signatures,
+          shared_with_users,
+          call_in_time,
+          call_out_time,
+          oc_contact,
+          doc_contact,
+          gf_contact,
+          safety_contact,
+          weather_hazards
+        `, { count: "exact" })
         .order("updated_at", { ascending: false })
         .range(from, to);
 
@@ -201,7 +232,7 @@ export default function GeneralForemanSafetyCompliance() {
 
         results.forEach((result) => {
           if (result.error) {
-            console.warn("Failed to load user metadata:", result.error.message);
+            logger.warn("[GeneralForemanSafetyCompliance] Failed to load user metadata:", result.error.message);
           } else {
             (result.data as Array<UserProfileMeta & { user_id: string }> | null)?.forEach(
               (profile) => {
@@ -237,7 +268,7 @@ export default function GeneralForemanSafetyCompliance() {
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Unable to load JSAs.";
-      console.error("Failed to load JSAs:", err);
+      logger.error("[GeneralForemanSafetyCompliance] Failed to load JSAs:", err);
       setError(message);
       setRecords([]);
       setTotal(0);

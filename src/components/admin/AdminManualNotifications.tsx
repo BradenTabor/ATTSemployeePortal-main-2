@@ -26,17 +26,16 @@ import {
   AlertCircle,
   Zap,
   ChevronRight,
+  Award,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabaseClient';
 import { toast } from '../../lib/toast';
+import { useCreateNotification } from '../../hooks/admin';
 import {
   type NotificationCategory,
   type NotificationSeverity,
   type NotificationTargetType,
   type CreateNotificationRequest,
-  type CreateNotificationResponse,
-  type CreateNotificationErrorResponse,
   NOTIFICATION_CATEGORIES,
   NOTIFICATION_SEVERITIES,
   NOTIFICATION_TARGET_TYPES,
@@ -69,6 +68,7 @@ const CATEGORY_ICONS: Record<NotificationCategory, React.ReactNode> = {
   schedule: <Calendar className="w-4 h-4" />,
   rto_decision: <Clock className="w-4 h-4" />,
   admin_notice: <AlertCircle className="w-4 h-4" />,
+  certification_expiry: <Award className="w-4 h-4" />,
 };
 
 // Severity color mapping
@@ -104,7 +104,6 @@ function AdminManualNotificationsComponent() {
   const isAdmin = role === 'admin';
 
   const [formState, setFormState] = useState<FormState>(initialFormState);
-  const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{
     type: 'success' | 'error';
     message: string;
@@ -112,6 +111,9 @@ function AdminManualNotificationsComponent() {
     dispatched?: number;
     skipped?: number;
   } | null>(null);
+
+  // Custom hook for notification creation
+  const { createNotification, loading } = useCreateNotification();
 
   // Computed values
   const severityStyle = useMemo(() => SEVERITY_STYLES[formState.severity], [formState.severity]);
@@ -137,50 +139,27 @@ function AdminManualNotificationsComponent() {
       return;
     }
 
-    setLoading(true);
     setResult(null);
 
-    try {
-      const payload: CreateNotificationRequest = {
-        category: formState.category,
-        severity: formState.severity,
-        target_type: formState.targetType,
-        title: formState.title.trim(),
-        body: formState.body.trim() || undefined,
-        url: '/dashboard',
-      };
+    const payload: CreateNotificationRequest = {
+      category: formState.category,
+      severity: formState.severity,
+      target_type: formState.targetType,
+      title: formState.title.trim(),
+      body: formState.body.trim() || undefined,
+      url: '/dashboard',
+    };
 
-      // Add target_ref based on target type
-      if (formState.targetType === 'user') {
-        payload.target_ref = user?.id;
-      } else if (formState.targetType === 'role' || formState.targetType === 'crew') {
-        payload.target_ref = formState.targetRef;
-      }
+    // Add target_ref based on target type
+    if (formState.targetType === 'user') {
+      payload.target_ref = user?.id;
+    } else if (formState.targetType === 'role' || formState.targetType === 'crew') {
+      payload.target_ref = formState.targetRef;
+    }
 
-      console.log('[AdminManualNotifications] Sending notification:', payload);
+    const successData = await createNotification(payload);
 
-      const { data, error } = await supabase.functions.invoke<CreateNotificationResponse | CreateNotificationErrorResponse>(
-        'admin-create-notification',
-        { body: payload }
-      );
-
-      if (error) {
-        console.error('[AdminManualNotifications] Edge Function error:', error);
-        throw new Error(error.message || 'Failed to send notification');
-      }
-
-      if (!data) {
-        throw new Error('No response from server');
-      }
-
-      if ('success' in data && data.success === false) {
-        const errorData = data as CreateNotificationErrorResponse;
-        throw new Error(errorData.error || 'Unknown error');
-      }
-
-      const successData = data as CreateNotificationResponse;
-      console.log('[AdminManualNotifications] Success:', successData);
-
+    if (successData) {
       setResult({
         type: 'success',
         message: `Notification delivered successfully!`,
@@ -189,23 +168,15 @@ function AdminManualNotificationsComponent() {
         skipped: successData.skipped,
       });
 
-      toast.success('Notification sent!', `Delivered to ${successData.dispatched} user(s)`);
+      toast.success('Notification sent!', `Delivered to ${successData.dispatched || 0} user${successData.dispatched !== 1 ? 's' : ''}`);
       setFormState(initialFormState);
-
-    } catch (err) {
-      console.error('[AdminManualNotifications] Error:', err);
-      const message = err instanceof Error ? err.message : 'An unexpected error occurred';
-      
+    } else {
       setResult({
         type: 'error',
-        message,
+        message: 'Failed to send notification',
       });
-
-      toast.error('Failed to send notification', message);
-    } finally {
-      setLoading(false);
     }
-  }, [formState, user?.id]);
+  }, [formState, user?.id, createNotification]);
 
   // Don't render for non-admins
   if (!isAdmin) {

@@ -456,24 +456,65 @@ const FilterChip = memo(function FilterChip({ label, value, onClear }: FilterChi
 // MAIN COMPONENT
 // ============================================================================
 
+// WF-020: State persistence key for AdminRTO filters/pagination
+const ADMIN_RTO_STATE_KEY = 'atts:admin:rto:state';
+
+interface AdminRTOState {
+  searchQuery: string;
+  statusFilter: string | null;
+  monthFilter: string | null;
+  currentPage: number;
+}
+
+function getPersistedAdminRTOState(): Partial<AdminRTOState> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const stored = localStorage.getItem(ADMIN_RTO_STATE_KEY);
+    if (stored) {
+      return JSON.parse(stored) as Partial<AdminRTOState>;
+    }
+  } catch { /* ignore */ }
+  return {};
+}
+
+function persistAdminRTOState(state: Partial<AdminRTOState>): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(ADMIN_RTO_STATE_KEY, JSON.stringify(state));
+  } catch { /* ignore */ }
+}
+
 export default function AdminRTO() {
   const { role: currentUserRole, user, loading: authLoading } = useAuth();
   const [requests, setRequests] = useState<RTORequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [monthFilter, setMonthFilter] = useState<string | null>(null);
+  
+  // WF-020: Initialize state from localStorage
+  const persistedState = getPersistedAdminRTOState();
+  const [searchQuery, setSearchQuery] = useState(persistedState.searchQuery ?? "");
+  const [statusFilter, setStatusFilter] = useState<string | null>(persistedState.statusFilter ?? null);
+  const [monthFilter, setMonthFilter] = useState<string | null>(persistedState.monthFilter ?? null);
   const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
 
   // Pagination State
   const pageSize = 15;
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(persistedState.currentPage ?? 1);
   const [totalRequests, setTotalRequests] = useState<number | null>(null);
 
   const totalPages =
     totalRequests && totalRequests > 0
       ? Math.max(1, Math.ceil(totalRequests / pageSize))
       : 1;
+
+  // WF-020: Persist state changes to localStorage
+  useEffect(() => {
+    persistAdminRTOState({
+      searchQuery,
+      statusFilter,
+      monthFilter,
+      currentPage,
+    });
+  }, [searchQuery, statusFilter, monthFilter, currentPage]);
 
   // Fetch RTO requests with pagination
   const fetchRTORequests = useCallback(
@@ -486,9 +527,10 @@ export default function AdminRTO() {
         const from = (currentPage - 1) * pageSize;
         const to = from + pageSize - 1;
 
+        // PERF-018: Select only needed columns instead of SELECT *
         let query = supabase
           .from("rto_requests")
-          .select("*", { count: "exact" })
+          .select("id, user_id, start_date, end_date, reason, status, submitted_at, email, full_name", { count: "exact" })
           .order("submitted_at", { ascending: false });
 
         if (debouncedSearchQuery.trim()) {

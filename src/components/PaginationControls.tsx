@@ -67,13 +67,15 @@ export function PaginationControls({
       {/* Right: Navigation Buttons */}
       <div className="flex items-center gap-2">
         <motion.button
+          type="button"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           disabled={currentPage === 1 || loading}
           onClick={onPreviousClick}
-          className="inline-flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium bg-white/5 text-white hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all border border-white/10 hover:border-white/20"
+          aria-label="Previous page"
+          className="inline-flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium bg-white/5 text-white hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all border border-white/10 hover:border-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="w-4 h-4" aria-hidden />
           <span className="hidden sm:inline">Previous</span>
         </motion.button>
 
@@ -83,14 +85,16 @@ export function PaginationControls({
         </div>
 
         <motion.button
+          type="button"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           disabled={currentPage >= totalPages || loading}
           onClick={onNextClick}
-          className="inline-flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium bg-white/5 text-white hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all border border-white/10 hover:border-white/20"
+          aria-label="Next page"
+          className="inline-flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium bg-white/5 text-white hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all border border-white/10 hover:border-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
         >
           <span className="hidden sm:inline">Next</span>
-          <ChevronRight className="w-4 h-4" />
+          <ChevronRight className="w-4 h-4" aria-hidden />
         </motion.button>
       </div>
     </motion.div>

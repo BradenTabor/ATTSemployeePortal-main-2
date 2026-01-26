@@ -176,30 +176,32 @@ export const AdvancedPagination = memo(function AdvancedPagination({
       <div className="flex items-center gap-1">
         {/* First page button */}
         <motion.button
+          type="button"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => onPageChange(1)}
           disabled={currentPage === 1}
           className={`p-1.5 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed 
-            text-white/50 ${styles.hover}`}
+            text-white/50 focus-visible:outline focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${styles.ring} ${styles.hover}`}
           title="First page"
           aria-label="Go to first page"
         >
-          <ChevronsLeft className="w-4 h-4" />
+          <ChevronsLeft className="w-4 h-4" aria-hidden />
         </motion.button>
 
         {/* Previous page button */}
         <motion.button
+          type="button"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
           className={`p-1.5 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed 
-            text-white/50 ${styles.hover}`}
+            text-white/50 focus-visible:outline focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${styles.ring} ${styles.hover}`}
           title="Previous page"
           aria-label="Go to previous page"
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="w-4 h-4" aria-hidden />
         </motion.button>
 
         {/* Page numbers */}
@@ -210,6 +212,7 @@ export const AdvancedPagination = memo(function AdvancedPagination({
                 return (
                   <motion.button
                     key={page}
+                    type="button"
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
@@ -219,10 +222,11 @@ export const AdvancedPagination = memo(function AdvancedPagination({
                       }
                     }}
                     className={`w-8 h-8 flex items-center justify-center rounded-lg text-white/40 
-                      ${showJumpToPage ? `${styles.hover} cursor-pointer` : "cursor-default"}`}
+                      ${showJumpToPage ? `${styles.hover} cursor-pointer focus-visible:outline focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${styles.ring}` : "cursor-default"}`}
                     title={showJumpToPage ? "Jump to page" : undefined}
+                    aria-label={showJumpToPage ? "Jump to page" : undefined}
                   >
-                    <MoreHorizontal className="w-4 h-4" />
+                    <MoreHorizontal className="w-4 h-4" aria-hidden />
                   </motion.button>
                 );
               }
@@ -231,6 +235,7 @@ export const AdvancedPagination = memo(function AdvancedPagination({
               return (
                 <motion.button
                   key={page}
+                  type="button"
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
@@ -238,11 +243,13 @@ export const AdvancedPagination = memo(function AdvancedPagination({
                   whileHover={!isActive ? { scale: 1.1 } : undefined}
                   whileTap={!isActive ? { scale: 0.95 } : undefined}
                   onClick={() => onPageChange(page)}
-                  className={`w-8 h-8 flex items-center justify-center rounded-lg font-medium transition-all
+                  className={`w-8 h-8 flex items-center justify-center rounded-lg font-medium transition-all focus-visible:outline focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${styles.ring}
                     ${isActive 
                       ? styles.active
                       : `text-white/60 ${styles.hover} border border-white/5`
                     }`}
+                  aria-label={isActive ? `Page ${page}, current page` : `Go to page ${page}`}
+                  aria-current={isActive ? "page" : undefined}
                 >
                   {page}
                 </motion.button>
@@ -253,30 +260,32 @@ export const AdvancedPagination = memo(function AdvancedPagination({
 
         {/* Next page button */}
         <motion.button
+          type="button"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
           className={`p-1.5 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed 
-            text-white/50 ${styles.hover}`}
+            text-white/50 focus-visible:outline focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${styles.ring} ${styles.hover}`}
           title="Next page"
           aria-label="Go to next page"
         >
-          <ChevronRight className="w-4 h-4" />
+          <ChevronRight className="w-4 h-4" aria-hidden />
         </motion.button>
 
         {/* Last page button */}
         <motion.button
+          type="button"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => onPageChange(totalPages)}
           disabled={currentPage === totalPages}
           className={`p-1.5 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed 
-            text-white/50 ${styles.hover}`}
+            text-white/50 focus-visible:outline focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${styles.ring} ${styles.hover}`}
           title="Last page"
           aria-label="Go to last page"
         >
-          <ChevronsRight className="w-4 h-4" />
+          <ChevronsRight className="w-4 h-4" aria-hidden />
         </motion.button>
       </div>
 
@@ -313,7 +322,8 @@ export const AdvancedPagination = memo(function AdvancedPagination({
                 />
                 <button
                   type="submit"
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${styles.active}`}
+                  aria-label="Go to page"
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all focus-visible:outline focus-visible:ring-2 focus-visible:ring-offset-2 ${styles.ring} ${styles.active}`}
                 >
                   Go
                 </button>

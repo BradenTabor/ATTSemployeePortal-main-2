@@ -1,4 +1,5 @@
 import {
+  Award,
   CalendarCheck,
   ClipboardList,
   Users,
@@ -154,6 +155,13 @@ export const ADMIN_CORE_NAV_CARDS: AdminNavCardConfig[] = [
     description: "Automated safety forecast tuning and incident tracking.",
     icon: <Shield className="w-8 h-8 text-[#f4c979]" />,
     to: "/admin/risk-calibration",
+    variant: "gold",
+  },
+  {
+    title: "Certifications",
+    description: "Track certifications, grade tests, and manage access.",
+    icon: <Award className="w-8 h-8 text-[#f4c979]" />,
+    to: "/admin/certifications",
     variant: "gold",
   },
 ];

@@ -19,6 +19,8 @@ import { useFormPersistence } from "../../hooks/useFormPersistence";
 import { DraftRecoveryModal } from "../../components/forms/DraftRecoveryModal";
 import { AutoSaveIndicator } from "../../components/forms/AutoSaveIndicator";
 import { FormSuccessCelebration } from "../../components/forms/FormSuccessCelebration";
+import { useSmartDefaults } from "../../hooks/useSmartDefaults";
+import { SmartDefaultsPanel } from "../../components/forms/SmartDefaultsPanel";
 import { useComplianceToast, type RemainingForm } from "../../hooks/useComplianceToast";
 import { useInvalidateCompliance } from "../../hooks/queries/useComplianceQuery";
 import {
@@ -27,7 +29,9 @@ import {
   trackFormSubmitError,
   createFormTimer,
 } from "../../lib/telemetry";
+import { parseFormError, getErrorToastTitle } from "../../lib/errorHandling";
 import { useFormValidation, type ValidationRule } from "../../hooks/useFormValidation";
+import { validators as formValidators } from "../../lib/formValidation";
 import { validators } from "../../lib/formValidation";
 import { ValidationSummary } from "../../components/forms/ValidationSummary";
 import { ValidatedSubmitButton } from "../../components/forms/ValidatedSubmitButton";
@@ -242,6 +246,7 @@ export default function DailyEquipmentInspectionForm() {
   const submitterPrefilledRef = useRef(false);
 
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false); // Ref for atomic race condition prevention
 
   // Telemetry: track form completion time
   const formTimer = useRef(createFormTimer());
@@ -251,6 +256,88 @@ export default function DailyEquipmentInspectionForm() {
     trackFormStarted({ form_type: 'equipment' });
     formTimer.current.reset();
   }, []);
+
+  // Smart Defaults: Fetch suggestions
+  const { suggestions, warnings, isLoading: suggestionsLoading } = useSmartDefaults('equipment');
+  const [suggestionsVisible, setSuggestionsVisible] = useState(true);
+  const [autoAppliedDefaults, setAutoAppliedDefaults] = useState(false);
+
+  // Smart Defaults: Apply a single suggestion
+  const handleApplySuggestion = useCallback((field: string, value: string | boolean) => {
+    const keyMap: Record<string, keyof EquipmentFormState> = {
+      submittedBy: 'submittedBy',
+      equipmentType: 'equipmentType',
+      equipmentNumber: 'equipmentNumber',
+    };
+
+    const formKey = keyMap[field];
+    if (formKey) {
+      setForm((prev) => ({ ...prev, [formKey]: String(value) }));
+    }
+  }, []);
+
+  // Smart Defaults: Apply all suggestions
+  const handleApplyAllSuggestions = useCallback(() => {
+    if (!suggestions) return;
+    Object.entries(suggestions).forEach(([field, suggestion]) => {
+      handleApplySuggestion(field, suggestion.value);
+    });
+  }, [handleApplySuggestion, suggestions]);
+
+  // Auto-select template based on equipment type
+  useEffect(() => {
+    if (!form.equipmentType) {
+      // Clear template if no equipment type selected
+      if (form.template) {
+        setForm(prev => ({ ...prev, template: "" }));
+      }
+      return;
+    }
+
+    // Map equipment types to templates
+    const templateMap: Record<string, EquipmentTemplate> = {
+      "Geo-Boy": "geo_boy",
+      "Jarraff": "sky_trim",
+      "Skidsteer": "skid_steer",
+    };
+
+    const suggestedTemplate = templateMap[form.equipmentType];
+    
+    // Auto-select template if one exists and template is not already set
+    if (suggestedTemplate && form.template !== suggestedTemplate) {
+      setForm(prev => ({ ...prev, template: suggestedTemplate }));
+    } else if (!suggestedTemplate && form.template) {
+      // Clear template if equipment type doesn't have a matching template
+      setForm(prev => ({ ...prev, template: "" }));
+    }
+  }, [form.equipmentType, form.template]);
+
+  // Auto-apply smart defaults when form is empty (similar to JSA form)
+  // Auto-apply high-confidence suggestions + all suggestions for equipment form
+  useEffect(() => {
+    if (autoAppliedDefaults || !suggestions || suggestionsLoading) return;
+    
+    const isFormEmpty = !form.submittedBy && !form.equipmentType && !form.equipmentNumber;
+    if (!isFormEmpty) return;
+
+    // Auto-apply all suggestions (equipment form has fewer fields, so we can be more aggressive)
+    let appliedCount = 0;
+    Object.entries(suggestions).forEach(([field, suggestion]) => {
+      // Apply all suggestions regardless of confidence for equipment form
+      // This improves workflow efficiency since equipment form has fewer fields
+      handleApplySuggestion(field, suggestion.value);
+      appliedCount++;
+    });
+
+    if (appliedCount > 0) {
+      setAutoAppliedDefaults(true);
+      logger.info('smart_defaults_auto_applied', {
+        form_type: 'equipment',
+        count: appliedCount,
+        confidence: 'all',
+      });
+    }
+  }, [suggestions, suggestionsLoading, form.submittedBy, form.equipmentType, form.equipmentNumber, autoAppliedDefaults, handleApplySuggestion]);
 
   const availableEquipmentNumbers = useMemo(
     () => (form.equipmentType ? EQUIPMENT_NUMBERS_BY_TYPE[form.equipmentType] ?? [] : []),
@@ -341,6 +428,7 @@ export default function DailyEquipmentInspectionForm() {
     lastSaved,
     hasUnsavedChanges,
     saveDraft,
+    flushPendingSave,
     clearDraft,
     dismissDraft,
     markAsSaved,
@@ -355,7 +443,11 @@ export default function DailyEquipmentInspectionForm() {
   // Show draft recovery modal if draft exists
   useEffect(() => {
     if (hasDraft && draftData) {
-      setShowDraftModal(true);
+      // Small delay to allow page to render first, making modal less intrusive
+      const timer = setTimeout(() => {
+        setShowDraftModal(true);
+      }, 500);
+      return () => clearTimeout(timer);
     }
   }, [hasDraft, draftData]);
   
@@ -384,18 +476,28 @@ export default function DailyEquipmentInspectionForm() {
   }, [form, currentStep, completedSteps, user?.id, saveDraft]);
   
   // Warn before closing browser/tab with unsaved changes (beforeunload)
+  // Also warn if photos are selected (photos can't be persisted to localStorage)
+  // Save draft immediately if there are unsaved changes
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasUnsavedChanges && !showCelebration) {
+      const hasPhotos = Object.keys(photos).length > 0;
+      if ((hasUnsavedChanges || hasPhotos) && !showCelebration) {
+        // Save draft immediately before page unload (synchronous, bypasses debounce)
+        if (hasUnsavedChanges && user?.id) {
+          flushPendingSave(form, currentStep, completedSteps);
+        }
+        
         e.preventDefault();
-        e.returnValue = 'You have unsaved changes. Your draft is auto-saved and can be recovered on the next visit.';
+        e.returnValue = hasPhotos 
+          ? 'You have photos selected that will be lost if you leave this page. Are you sure you want to leave?'
+          : 'You have unsaved changes. Your draft is auto-saved and can be recovered on the next visit.';
         return e.returnValue;
       }
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [hasUnsavedChanges, showCelebration]);
+  }, [hasUnsavedChanges, showCelebration, photos, user?.id, form, currentStep, completedSteps, flushPendingSave]);
 
   function handleChecklistChange(
     type: "general" | "specific",
@@ -469,6 +571,15 @@ export default function DailyEquipmentInspectionForm() {
   }, []);
 
   function handlePhotoChange(kind: PhotoTypes, file?: File) {
+    if (file) {
+      // Validate file type and size
+      const validationError = formValidators.photoFile(file);
+      if (validationError) {
+        formToast.error("Invalid Photo", validationError);
+        return;
+      }
+    }
+    
     setPhotos((prev) => {
       const next = { ...prev };
       if (file) {
@@ -520,8 +631,8 @@ export default function DailyEquipmentInspectionForm() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
 
-    // Prevent multiple submissions
-    if (submitting) {
+    // Prevent multiple submissions - atomic check using ref to prevent race condition
+    if (submittingRef.current || submitting) {
       return;
     }
 
@@ -532,6 +643,7 @@ export default function DailyEquipmentInspectionForm() {
       return;
     }
 
+    submittingRef.current = true; // Set ref immediately (atomic)
     setSubmitting(true);
 
     // Mark submit as attempted to show all errors
@@ -563,6 +675,7 @@ export default function DailyEquipmentInspectionForm() {
         `Please fix ${errorCount} ${errorCount === 1 ? 'issue' : 'issues'} before submitting.`,
       );
       
+      submittingRef.current = false;
       setSubmitting(false);
       return;
     }
@@ -647,22 +760,48 @@ export default function DailyEquipmentInspectionForm() {
       setCompletedSteps(new Set());
     } catch (err: unknown) {
       logger.error("Failed to submit daily equipment inspection:", err);
-      if (uploadedPaths.length) {
-        await supabase.storage.from(BUCKET_NAME).remove(uploadedPaths);
+      
+      // Clean up uploaded photos on failure to prevent orphaned files
+      if (uploadedPaths.length > 0) {
+        try {
+          const { error: cleanupError } = await supabase.storage
+            .from(BUCKET_NAME)
+            .remove(uploadedPaths);
+          
+          if (cleanupError) {
+            logger.error("Failed to cleanup orphaned photos:", cleanupError);
+          } else {
+            logger.info(`Cleaned up ${uploadedPaths.length} orphaned photo(s) after failed submission`);
+          }
+        } catch (cleanupErr) {
+          // Don't throw - preserve original error, but log cleanup failure
+          logger.error("Exception during photo cleanup:", cleanupErr);
+        }
       }
-      const errorMessage = err instanceof Error
-        ? err.message
-        : "Something went wrong submitting the inspection.";
-      formToast.error("Submission Failed", errorMessage, {
-        onRetry: () => handleSubmit({ preventDefault: () => {} } as FormEvent),
-      });
+      
+      // Ensure form state is saved as draft on error to prevent data loss
+      if (user?.id) {
+        saveDraft(form, currentStep, completedSteps);
+      }
+      
+      // Parse error using standardized utility
+      const parsedError = parseFormError(err, 'equipment');
+      
+      formToast.error(
+        getErrorToastTitle(parsedError.isTimeout, parsedError.code),
+        parsedError.userMessage,
+        {
+          onRetry: () => handleSubmit({ preventDefault: () => {} } as FormEvent),
+        }
+      );
       
       // Telemetry: track server/network error
       trackFormSubmitError({
         form_type: 'equipment',
-        error_code: err instanceof Error && err.message.includes('network') ? 'NETWORK_ERROR' : 'SERVER_ERROR',
+        error_code: parsedError.code,
       });
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   }
@@ -825,6 +964,19 @@ export default function DailyEquipmentInspectionForm() {
             </div>
           </div>
         </section>
+
+        {/* Smart Defaults Panel */}
+        {suggestionsVisible && (suggestionsLoading || (suggestions && Object.keys(suggestions).length > 0)) && (
+          <SmartDefaultsPanel
+            formType="equipment"
+            suggestions={suggestions}
+            warnings={warnings}
+            isLoading={suggestionsLoading}
+            onApplyField={handleApplySuggestion}
+            onApplyAll={handleApplyAllSuggestions}
+            onDismiss={() => setSuggestionsVisible(false)}
+          />
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
           {/* Validation Summary */}
@@ -989,20 +1141,39 @@ export default function DailyEquipmentInspectionForm() {
               />
 
               <div>
-                <label className="block text-[10px] uppercase tracking-[0.25em] text-white/60 mb-1">
-                  Template
+                <label htmlFor="template" className="block text-[10px] uppercase tracking-[0.25em] text-white/60 mb-1">
+                  Specific Checklist Template
+                  {form.equipmentType && (
+                    <span className="ml-2 text-[9px] normal-case text-emerald-400/80">
+                      {form.template ? "(Auto-selected)" : "(Not available for this type)"}
+                    </span>
+                  )}
                 </label>
                 <select
+                  id="template"
                   value={form.template}
                   onChange={(e) => setForm(prev => ({ ...prev, template: e.target.value as EquipmentTemplate }))}
-                  aria-label="Equipment template"
-                  className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-2 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
+                  aria-label="Equipment template for specific checklist items"
+                  aria-describedby="template-help"
+                  disabled={!form.equipmentType}
+                  className={cn(
+                    "w-full rounded-xl border border-white/10 bg-white/[0.03] px-2 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/60",
+                    !form.equipmentType && "opacity-50 cursor-not-allowed"
+                  )}
                 >
-                  <option value="">Select</option>
-                  <option value="sky_trim">Sky Trim/Jarraff</option>
+                  <option value="">
+                    {form.equipmentType ? "None (use general checklist only)" : "Select equipment type first"}
+                  </option>
+                  <option value="sky_trim">Sky Trim / Jarraff</option>
                   <option value="geo_boy">Geo Boy</option>
                   <option value="skid_steer">Skid Steer</option>
                 </select>
+                <p id="template-help" className="text-[9px] text-white/50 mt-1">
+                  {form.equipmentType 
+                    ? "Template auto-selected based on equipment type. Loads equipment-specific checklist items (Section B)."
+                    : "Select an equipment type above to enable template selection."
+                  }
+                </p>
               </div>
             </div>
           </section>
@@ -1052,7 +1223,7 @@ export default function DailyEquipmentInspectionForm() {
               <button
                 type="button"
                 onClick={handleMarkAllGeneralPass}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-[10px] font-medium hover:bg-emerald-500/20 transition-all touch-manipulation"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-[10px] font-medium hover:bg-emerald-500/20 transition-all touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
                 All Pass
@@ -1060,7 +1231,7 @@ export default function DailyEquipmentInspectionForm() {
               <button
                 type="button"
                 onClick={handleMarkAllGeneralFail}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-300 text-[10px] font-medium hover:bg-rose-500/20 transition-all touch-manipulation"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-300 text-[10px] font-medium hover:bg-rose-500/20 transition-all touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               >
                 <XCircle className="w-3.5 h-3.5" />
                 All Fail
@@ -1069,7 +1240,7 @@ export default function DailyEquipmentInspectionForm() {
                 type="button"
                 onClick={handleClearGeneralChecklist}
                 disabled={generalCompleteCount === 0}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-white/60 text-[10px] font-medium hover:bg-white/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed touch-manipulation"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-white/60 text-[10px] font-medium hover:bg-white/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:focus-visible:ring-0"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 Clear
@@ -1089,7 +1260,7 @@ export default function DailyEquipmentInspectionForm() {
                         type="button"
                         onClick={() => handleChecklistChange("general", item.id, "P")}
                         aria-label={`Mark ${item.label} as Pass${value === "P" ? " - currently selected" : ""}`}
-                        className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation ${
+                        className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
                           value === "P"
                             ? "border-emerald-400 bg-emerald-500/20 text-emerald-100"
                             : "border-white/10 bg-white/5 text-white/60"
@@ -1101,7 +1272,7 @@ export default function DailyEquipmentInspectionForm() {
                         type="button"
                         onClick={() => handleChecklistChange("general", item.id, "F")}
                         aria-label={`Mark ${item.label} as Fail${value === "F" ? " - currently selected" : ""}`}
-                        className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation ${
+                        className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
                           value === "F"
                             ? "border-rose-400 bg-rose-500/20 text-rose-100"
                             : "border-white/10 bg-white/5 text-white/60"
@@ -1113,7 +1284,7 @@ export default function DailyEquipmentInspectionForm() {
                         type="button"
                         onClick={() => handleChecklistChange("general", item.id, "N/A")}
                         aria-label={`Mark ${item.label} as Not Applicable${value === "N/A" ? " - currently selected" : ""}`}
-                        className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation ${
+                        className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
                           value === "N/A"
                             ? "border-amber-400 bg-amber-500/20 text-amber-100"
                             : "border-white/10 bg-white/5 text-white/60"
@@ -1144,7 +1315,7 @@ export default function DailyEquipmentInspectionForm() {
               </div>
               <div className="text-right text-[10px] text-white/60">
                 <p>{specificCompleteCount}/{specificItems.length || 0}</p>
-                <p>{specificItems.length === 0 ? "Select template" : `${specificPercent}%`}</p>
+                <p>{specificItems.length === 0 ? "No template" : `${specificPercent}%`}</p>
               </div>
             </div>
             {shouldShowError('specificChecklist' as unknown as keyof typeof extendedFormState) && allErrors.specificChecklist && (
@@ -1170,7 +1341,15 @@ export default function DailyEquipmentInspectionForm() {
 
             {specificItems.length === 0 ? (
               <div className="rounded-xl border border-dashed border-white/20 bg-white/[0.02] px-3 py-4 text-xs text-white/60 text-center">
-                Select template above to load items
+                {form.template ? (
+                  <p className="text-xs text-white/60">
+                    {specificItems.length} specific items loaded for {form.template === 'sky_trim' ? 'Sky Trim/Jarraff' : form.template === 'geo_boy' ? 'Geo Boy' : 'Skid Steer'} template
+                  </p>
+                ) : (
+                  <p className="text-xs text-white/60">
+                    Select a template above to load equipment-specific checklist items
+                  </p>
+                )}
               </div>
             ) : (
               <>
@@ -1179,7 +1358,7 @@ export default function DailyEquipmentInspectionForm() {
                   <button
                     type="button"
                     onClick={handleMarkAllSpecificPass}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-[10px] font-medium hover:bg-emerald-500/20 transition-all touch-manipulation"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-[10px] font-medium hover:bg-emerald-500/20 transition-all touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                   >
                     <CheckCheck className="w-3.5 h-3.5" />
                     All Pass
@@ -1187,7 +1366,7 @@ export default function DailyEquipmentInspectionForm() {
                   <button
                     type="button"
                     onClick={handleMarkAllSpecificFail}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-300 text-[10px] font-medium hover:bg-rose-500/20 transition-all touch-manipulation"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-300 text-[10px] font-medium hover:bg-rose-500/20 transition-all touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                   >
                     <XCircle className="w-3.5 h-3.5" />
                     All Fail
@@ -1196,7 +1375,7 @@ export default function DailyEquipmentInspectionForm() {
                     type="button"
                     onClick={handleClearSpecificChecklist}
                     disabled={specificCompleteCount === 0}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-white/60 text-[10px] font-medium hover:bg-white/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed touch-manipulation"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-white/60 text-[10px] font-medium hover:bg-white/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:focus-visible:ring-0"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                     Clear
@@ -1216,7 +1395,7 @@ export default function DailyEquipmentInspectionForm() {
                           type="button"
                           onClick={() => handleChecklistChange("specific", item.id, "P")}
                           aria-label={`Mark ${item.label} as Pass${value === "P" ? " - currently selected" : ""}`}
-                          className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation ${
+                          className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
                             value === "P"
                               ? "border-emerald-400 bg-emerald-500/20 text-emerald-100"
                               : "border-white/10 bg-white/5 text-white/60"
@@ -1228,7 +1407,7 @@ export default function DailyEquipmentInspectionForm() {
                           type="button"
                           onClick={() => handleChecklistChange("specific", item.id, "F")}
                           aria-label={`Mark ${item.label} as Fail${value === "F" ? " - currently selected" : ""}`}
-                          className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation ${
+                          className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
                             value === "F"
                               ? "border-rose-400 bg-rose-500/20 text-rose-100"
                               : "border-white/10 bg-white/5 text-white/60"
@@ -1240,7 +1419,7 @@ export default function DailyEquipmentInspectionForm() {
                           type="button"
                           onClick={() => handleChecklistChange("specific", item.id, "N/A")}
                           aria-label={`Mark ${item.label} as Not Applicable${value === "N/A" ? " - currently selected" : ""}`}
-                          className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation ${
+                          className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
                             value === "N/A"
                               ? "border-amber-400 bg-amber-500/20 text-amber-100"
                               : "border-white/10 bg-white/5 text-white/60"
@@ -1285,6 +1464,7 @@ export default function DailyEquipmentInspectionForm() {
                   photoRefs[photo.key].current = node;
                 }}
                 type="file"
+                name={`${photo.key}-photo`}
                 accept="image/*"
                 capture="environment"
                 aria-label={`Upload ${photo.label} photo`}
@@ -1342,7 +1522,7 @@ export default function DailyEquipmentInspectionForm() {
                         <button
                           type="button"
                           onClick={() => photoRefs[photo.key].current?.click()}
-                          className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity touch-manipulation"
+                          className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity touch-manipulation focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                           aria-label={`Retake ${photo.label} photo`}
                         >
                           <span className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 text-white">
@@ -1356,7 +1536,8 @@ export default function DailyEquipmentInspectionForm() {
                       <button
                         type="button"
                         onClick={() => photoRefs[photo.key].current?.click()}
-                        className="w-full aspect-[4/3] flex flex-col items-center justify-center gap-2 p-3 text-center transition hover:bg-white/[0.03] touch-manipulation"
+                        aria-label={`Capture ${photo.label} photo${photo.required ? " (required)" : ""}`}
+                        className="w-full aspect-[4/3] flex flex-col items-center justify-center gap-2 p-3 text-center transition hover:bg-white/[0.03] touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                       >
                         <span className={`inline-flex items-center justify-center rounded-xl border p-3 ${
                           photo.required 
@@ -1412,6 +1593,7 @@ export default function DailyEquipmentInspectionForm() {
             </div>
             
             <ValidatedSubmitButton
+              dataTestId="submit-button"
               onClick={() => {
                 handleSubmit(new Event('submit') as unknown as React.FormEvent);
               }}

@@ -99,15 +99,15 @@ function StatBox({ label, value, subValue, color = "emerald", icon }: StatBoxPro
   };
 
   return (
-    <div className={cn("rounded-xl border p-3", colorClasses[color])}>
-      <div className="flex items-center gap-2 mb-1">
-        {icon && <span className={textClasses[color]}>{icon}</span>}
-        <span className="text-[10px] uppercase tracking-wide text-white/50">{label}</span>
+    <div className={cn("rounded-lg sm:rounded-xl border p-2 sm:p-3", colorClasses[color])}>
+      <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
+        {icon && <span className={cn(textClasses[color], "w-3 h-3 sm:w-3.5 sm:h-3.5")}>{icon}</span>}
+        <span className="text-[9px] sm:text-[10px] uppercase tracking-wide text-white/50">{label}</span>
       </div>
-      <p className={cn("text-xl font-bold tabular-nums", textClasses[color])}>
+      <p className={cn("text-base sm:text-xl font-bold tabular-nums", textClasses[color])}>
         {typeof value === "number" ? value.toLocaleString() : value}
       </p>
-      {subValue && <p className="text-[10px] text-white/40 mt-0.5">{subValue}</p>}
+      {subValue && <p className="text-[9px] sm:text-[10px] text-white/40 mt-0.5">{subValue}</p>}
     </div>
   );
 }
@@ -141,10 +141,10 @@ function MobileStatChip({ label, value, icon, color = "emerald" }: {
   };
   
   return (
-    <div className={cn("flex items-center gap-1.5 px-2 py-1 rounded-lg border shrink-0", colorClasses[color])}>
-      <span className="opacity-80">{icon}</span>
-      <span className="text-[10px] text-white/60 whitespace-nowrap">{label}</span>
-      <span className="text-xs font-bold tabular-nums">{typeof value === "number" ? value.toLocaleString() : value}</span>
+    <div className={cn("flex items-center gap-1 px-1.5 py-0.5 rounded-md border shrink-0", colorClasses[color])}>
+      <span className="opacity-80 w-2.5 h-2.5">{icon}</span>
+      <span className="text-[9px] text-white/60 whitespace-nowrap">{label}</span>
+      <span className="text-[10px] sm:text-xs font-bold tabular-nums">{typeof value === "number" ? value.toLocaleString() : value}</span>
     </div>
   );
 }
@@ -156,20 +156,20 @@ function SummarySection({ data }: SummarySectionProps) {
   return (
     <motion.div variants={itemVariants}>
       {/* Mobile: Horizontal scrolling compact strip */}
-      <div className="sm:hidden overflow-x-auto -mx-4 px-4 pb-2">
-        <div className="flex gap-1.5">
-          <MobileStatChip label="Events" value={data.summary.total_events} icon={<Activity className="w-3 h-3" />} color="emerald" />
-          <MobileStatChip label="Sessions" value={data.summary.unique_sessions} icon={<Users className="w-3 h-3" />} color="blue" />
-          <MobileStatChip label="Started" value={data.forms.total_started} icon={<FileText className="w-3 h-3" />} color="blue" />
-          <MobileStatChip label="Submitted" value={data.forms.total_submitted} icon={<CheckCircle2 className="w-3 h-3" />} color="emerald" />
-          <MobileStatChip label="Errors" value={data.forms.total_errors} icon={<XCircle className="w-3 h-3" />} color="red" />
-          <MobileStatChip label="Views" value={data.announcements.total_views} icon={<Eye className="w-3 h-3" />} color="purple" />
-          <MobileStatChip label="Dupes" value={data.duplicates.detected} icon={<Shield className="w-3 h-3" />} color="amber" />
+      <div className="sm:hidden overflow-x-auto -mx-4 px-4 pb-1">
+        <div className="flex gap-1">
+          <MobileStatChip label="Events" value={data.summary.total_events} icon={<Activity className="w-2.5 h-2.5" />} color="emerald" />
+          <MobileStatChip label="Sessions" value={data.summary.unique_sessions} icon={<Users className="w-2.5 h-2.5" />} color="blue" />
+          <MobileStatChip label="Started" value={data.forms.total_started} icon={<FileText className="w-2.5 h-2.5" />} color="blue" />
+          <MobileStatChip label="Submitted" value={data.forms.total_submitted} icon={<CheckCircle2 className="w-2.5 h-2.5" />} color="emerald" />
+          <MobileStatChip label="Errors" value={data.forms.total_errors} icon={<XCircle className="w-2.5 h-2.5" />} color="red" />
+          <MobileStatChip label="Views" value={data.announcements.total_views} icon={<Eye className="w-2.5 h-2.5" />} color="purple" />
+          <MobileStatChip label="Dupes" value={data.duplicates.detected} icon={<Shield className="w-2.5 h-2.5" />} color="amber" />
         </div>
       </div>
 
       {/* Desktop: Full Grid */}
-      <div className="hidden sm:grid sm:grid-cols-4 lg:grid-cols-8 gap-3">
+      <div className="hidden sm:grid sm:grid-cols-4 lg:grid-cols-8 gap-2 sm:gap-3">
         <StatBox 
           label="Total Events" 
           value={data.summary.total_events} 
@@ -276,24 +276,24 @@ function FormPerformanceSection({ completionTimes, byType }: FormPerformanceSect
   return (
     <motion.div
       variants={itemVariants}
-      className="rounded-xl sm:rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-[#07140f] via-[#050a0f] to-[#020205] p-3 sm:p-5"
+      className="rounded-lg sm:rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-[#07140f] via-[#050a0f] to-[#020205] p-2 sm:p-5"
     >
       {/* Compact mobile header */}
-      <div className="flex items-center justify-between mb-3 sm:mb-4">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 sm:p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
-            <Clock className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
+      <div className="flex items-center justify-between mb-2 sm:mb-4">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="p-1 sm:p-2 rounded-md sm:rounded-lg bg-emerald-500/10 text-emerald-400">
+            <Clock className="w-3 sm:w-4 h-3 sm:h-4" />
           </div>
           <div>
-            <h3 className="text-sm sm:text-base font-semibold text-white">Form Performance</h3>
+            <h3 className="text-xs sm:text-base font-semibold text-white">Form Performance</h3>
             <p className="hidden sm:block text-xs text-white/40 mt-0.5">Completion times, submission rates, and error tracking</p>
           </div>
         </div>
       </div>
 
       {/* Mobile: Compact horizontal scrolling cards */}
-      <div className="sm:hidden overflow-x-auto -mx-3 px-3 pb-2">
-        <div className="flex gap-2">
+      <div className="sm:hidden overflow-x-auto -mx-2 px-2 pb-1">
+        <div className="flex gap-1.5">
           {formStats.map((item) => {
             const meta = FORM_TYPE_META[item.form_type];
             const colors = colorClasses[meta?.color || 'emerald'];
@@ -303,26 +303,26 @@ function FormPerformanceSection({ completionTimes, byType }: FormPerformanceSect
               <div
                 key={item.form_type}
                 className={cn(
-                  "rounded-lg border p-2.5 bg-gradient-to-br min-w-[140px] shrink-0",
+                  "rounded-md border p-2 bg-gradient-to-br min-w-[120px] shrink-0",
                   colors.bg, colors.border
                 )}
               >
-                <div className="flex items-center gap-1.5 mb-2">
-                  <div className={cn("p-1 rounded bg-white/5", colors.text)}>
-                    {meta?.icon && <div className="w-3.5 h-3.5">{meta.icon}</div>}
+                <div className="flex items-center gap-1 mb-1.5">
+                  <div className={cn("p-0.5 rounded bg-white/5", colors.text)}>
+                    {meta?.icon && <div className="w-3 h-3">{meta.icon}</div>}
                   </div>
-                  <span className="text-xs font-medium text-white">{meta?.label}</span>
+                  <span className="text-[10px] font-medium text-white">{meta?.label}</span>
                 </div>
-                <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-center">
+                <div className="grid grid-cols-2 gap-x-1.5 gap-y-0.5 text-center">
                   <div>
-                    <p className="text-sm font-bold text-emerald-400 tabular-nums">{item.submitted}</p>
-                    <p className="text-[8px] text-white/40">Done</p>
+                    <p className="text-xs font-bold text-emerald-400 tabular-nums">{item.submitted}</p>
+                    <p className="text-[7px] text-white/40">Done</p>
                   </div>
                   <div>
-                    <p className={cn("text-sm font-bold tabular-nums", completionRate >= 80 ? "text-emerald-400" : completionRate >= 50 ? "text-amber-400" : "text-white/50")}>
+                    <p className={cn("text-xs font-bold tabular-nums", completionRate >= 80 ? "text-emerald-400" : completionRate >= 50 ? "text-amber-400" : "text-white/50")}>
                       {completionRate}%
                     </p>
-                    <p className="text-[8px] text-white/40">Rate</p>
+                    <p className="text-[7px] text-white/40">Rate</p>
                   </div>
                 </div>
               </div>
@@ -442,39 +442,39 @@ function AnnouncementSection({ data }: AnnouncementSectionProps) {
   return (
     <motion.div
       variants={itemVariants}
-      className="rounded-xl sm:rounded-2xl border border-purple-500/20 bg-gradient-to-br from-[#0f071a] via-[#080510] to-[#020205] p-3 sm:p-5"
+      className="rounded-lg sm:rounded-2xl border border-purple-500/20 bg-gradient-to-br from-[#0f071a] via-[#080510] to-[#020205] p-2 sm:p-5"
     >
       {/* Compact mobile header */}
-      <div className="flex items-center gap-2 mb-2 sm:mb-4">
-        <div className="p-1.5 sm:p-2 rounded-lg bg-purple-500/10 text-purple-400">
-          <Eye className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
+      <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-4">
+        <div className="p-1 sm:p-2 rounded-md sm:rounded-lg bg-purple-500/10 text-purple-400">
+          <Eye className="w-3 sm:w-4 h-3 sm:h-4" />
         </div>
         <div>
-          <h3 className="text-sm sm:text-base font-semibold text-white">Announcements</h3>
+          <h3 className="text-xs sm:text-base font-semibold text-white">Announcements</h3>
           <p className="hidden sm:block text-xs text-white/40 mt-0.5">Views and engagement metrics</p>
         </div>
       </div>
 
       {/* Mobile: Inline compact stats */}
-      <div className="sm:hidden flex items-center justify-between gap-2 mb-2">
-        <div className="flex items-center gap-3">
+      <div className="sm:hidden flex items-center justify-between gap-1.5 mb-1.5">
+        <div className="flex items-center gap-2">
           <div className="text-center">
-            <p className="text-lg font-bold text-purple-400 tabular-nums">{data.total_views}</p>
-            <p className="text-[8px] text-white/40">Views</p>
+            <p className="text-sm font-bold text-purple-400 tabular-nums">{data.total_views}</p>
+            <p className="text-[7px] text-white/40">Views</p>
           </div>
           <div className="text-center">
-            <p className="text-lg font-bold text-emerald-400 tabular-nums">{data.ai_generated_views}</p>
-            <p className="text-[8px] text-white/40">AI</p>
+            <p className="text-sm font-bold text-emerald-400 tabular-nums">{data.ai_generated_views}</p>
+            <p className="text-[7px] text-white/40">AI</p>
           </div>
           <div className="text-center">
-            <p className="text-lg font-bold text-amber-400 tabular-nums">{humanViews}</p>
-            <p className="text-[8px] text-white/40">Human</p>
+            <p className="text-sm font-bold text-amber-400 tabular-nums">{humanViews}</p>
+            <p className="text-[7px] text-white/40">Human</p>
           </div>
         </div>
       </div>
 
       {/* Desktop: Full Grid */}
-      <div className="hidden sm:grid sm:grid-cols-4 gap-3">
+      <div className="hidden sm:grid sm:grid-cols-4 gap-2 sm:gap-3">
         <StatBox label="Total Views" value={data.total_views} color="purple" icon={<Eye className="w-3.5 h-3.5" />} />
         <StatBox label="Unique Sessions" value={data.unique_sessions} color="blue" icon={<Users className="w-3.5 h-3.5" />} />
         <StatBox 
@@ -494,12 +494,12 @@ function AnnouncementSection({ data }: AnnouncementSectionProps) {
       </div>
 
       {/* View Distribution Bar - Compact on mobile */}
-      <div className="pt-2 sm:mt-4 sm:pt-4 border-t border-white/10">
+      <div className="pt-1.5 sm:mt-4 sm:pt-4 border-t border-white/10">
         <div className="hidden sm:flex items-center justify-between text-xs text-white/50 mb-2">
           <span>View Distribution</span>
           <span>AI vs Human-authored content</span>
         </div>
-        <div className="relative h-2 sm:h-3 rounded-full bg-white/5 overflow-hidden flex">
+        <div className="relative h-1.5 sm:h-3 rounded-full bg-white/5 overflow-hidden flex">
           <motion.div
             className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500"
             initial={{ width: 0 }}
@@ -513,13 +513,13 @@ function AnnouncementSection({ data }: AnnouncementSectionProps) {
             transition={{ duration: 0.8, delay: 0.2 }}
           />
         </div>
-        <div className="flex items-center justify-between mt-1.5 sm:mt-2 text-[9px] sm:text-[10px]">
-          <span className="flex items-center gap-1 text-emerald-400">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+        <div className="flex items-center justify-between mt-1 sm:mt-2 text-[8px] sm:text-[10px]">
+          <span className="flex items-center gap-0.5 sm:gap-1 text-emerald-400">
+            <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-emerald-400" />
             AI ({aiPercentage}%)
           </span>
-          <span className="flex items-center gap-1 text-amber-400">
-            <div className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+          <span className="flex items-center gap-0.5 sm:gap-1 text-amber-400">
+            <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-amber-400" />
             Human ({100 - aiPercentage}%)
           </span>
         </div>
@@ -547,43 +547,43 @@ function DuplicateSection({ data }: DuplicateSectionProps) {
   return (
     <motion.div
       variants={itemVariants}
-      className="rounded-xl sm:rounded-2xl border border-amber-500/20 bg-gradient-to-br from-[#14100a] via-[#0a0805] to-[#020205] p-3 sm:p-5"
+      className="rounded-lg sm:rounded-2xl border border-amber-500/20 bg-gradient-to-br from-[#14100a] via-[#0a0805] to-[#020205] p-2 sm:p-5"
     >
       {/* Compact mobile header */}
-      <div className="flex items-center gap-2 mb-2 sm:mb-4">
-        <div className="p-1.5 sm:p-2 rounded-lg bg-amber-500/10 text-amber-400">
-          <Shield className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
+      <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-4">
+        <div className="p-1 sm:p-2 rounded-md sm:rounded-lg bg-amber-500/10 text-amber-400">
+          <Shield className="w-3 sm:w-4 h-3 sm:h-4" />
         </div>
         <div>
-          <h3 className="text-sm sm:text-base font-semibold text-white">Duplicate Detection</h3>
+          <h3 className="text-xs sm:text-base font-semibold text-white">Duplicate Detection</h3>
           <p className="hidden sm:block text-xs text-white/40 mt-0.5">Preventing duplicate submissions</p>
         </div>
       </div>
 
       {/* Mobile: Compact inline stats */}
-      <div className="sm:hidden flex items-center justify-between gap-2 mb-2">
-        <div className="flex items-center gap-4">
+      <div className="sm:hidden flex items-center justify-between gap-1.5 mb-1.5">
+        <div className="flex items-center gap-2.5">
           <div className="text-center">
-            <p className="text-lg font-bold text-amber-400 tabular-nums">{data.detected}</p>
-            <p className="text-[8px] text-white/40">Detected</p>
+            <p className="text-sm font-bold text-amber-400 tabular-nums">{data.detected}</p>
+            <p className="text-[7px] text-white/40">Detected</p>
           </div>
           <div className="text-center">
-            <p className="text-lg font-bold text-emerald-400 tabular-nums">{data.prevented}</p>
-            <p className="text-[8px] text-white/40">Blocked</p>
+            <p className="text-sm font-bold text-emerald-400 tabular-nums">{data.prevented}</p>
+            <p className="text-[7px] text-white/40">Blocked</p>
           </div>
           <div className="text-center">
-            <p className="text-lg font-bold text-red-400 tabular-nums">{data.overridden}</p>
-            <p className="text-[8px] text-white/40">Override</p>
+            <p className="text-sm font-bold text-red-400 tabular-nums">{data.overridden}</p>
+            <p className="text-[7px] text-white/40">Override</p>
           </div>
         </div>
         <div className="text-right">
-          <p className="text-sm font-bold text-emerald-400">{preventionRate}%</p>
-          <p className="text-[8px] text-white/40">Block rate</p>
+          <p className="text-xs font-bold text-emerald-400">{preventionRate}%</p>
+          <p className="text-[7px] text-white/40">Block rate</p>
         </div>
       </div>
 
       {/* Desktop: Full Grid */}
-      <div className="hidden sm:grid sm:grid-cols-3 gap-3 mb-4">
+      <div className="hidden sm:grid sm:grid-cols-3 gap-2 sm:gap-3 mb-4">
         <StatBox label="Detected" value={data.detected} color="amber" icon={<AlertTriangle className="w-3.5 h-3.5" />} />
         <StatBox 
           label="Prevented" 
@@ -602,8 +602,8 @@ function DuplicateSection({ data }: DuplicateSectionProps) {
       </div>
 
       {data.detected > 0 && (
-        <div className="pt-2 sm:pt-3 border-t border-white/10">
-          <div className="flex items-center justify-between text-[10px] sm:text-xs">
+        <div className="pt-1.5 sm:pt-3 border-t border-white/10">
+          <div className="flex items-center justify-between text-[9px] sm:text-xs">
             <span className="text-white/50">Estimated time saved</span>
             <span className="text-emerald-400 font-medium">~{Math.round(data.prevented * 5)} min</span>
           </div>
@@ -695,20 +695,20 @@ function TimelineSection({ data }: TimelineSectionProps) {
   return (
     <motion.div
       variants={itemVariants}
-      className="rounded-xl sm:rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-[#07140f] via-[#050a0f] to-[#020205] p-3 sm:p-5"
+      className="rounded-lg sm:rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-[#07140f] via-[#050a0f] to-[#020205] p-2 sm:p-5"
     >
       {/* Compact mobile header with inline filter */}
-      <div className="flex items-center justify-between gap-2 mb-3 sm:mb-4">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 sm:p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
-            <BarChart3 className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
+      <div className="flex items-center justify-between gap-1.5 sm:gap-2 mb-2 sm:mb-4">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="p-1 sm:p-2 rounded-md sm:rounded-lg bg-emerald-500/10 text-emerald-400">
+            <BarChart3 className="w-3 sm:w-4 h-3 sm:h-4" />
           </div>
           <div>
-            <h3 className="text-sm sm:text-base font-semibold text-white">Activity Timeline</h3>
+            <h3 className="text-xs sm:text-base font-semibold text-white">Activity Timeline</h3>
             <p className="hidden sm:block text-xs text-white/40 mt-0.5">Events over the last 14 days</p>
           </div>
         </div>
-        <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-white/5 border border-white/10">
+        <div className="flex items-center gap-0.5 p-0.5 rounded-md sm:rounded-lg bg-white/5 border border-white/10">
           {[
             { id: 'all', label: 'All', mobileLabel: '•' },
             { id: 'submissions', label: 'Forms', mobileLabel: 'F' },
@@ -719,7 +719,7 @@ function TimelineSection({ data }: TimelineSectionProps) {
               key={option.id}
               onClick={() => setActiveMetric(option.id as typeof activeMetric)}
               className={cn(
-                "px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-md text-[9px] sm:text-[10px] font-medium transition-all",
+                "px-1 sm:px-2.5 py-0.5 sm:py-1 rounded text-[8px] sm:text-[10px] font-medium transition-all",
                 activeMetric === option.id
                   ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
                   : "text-white/50"
@@ -733,10 +733,10 @@ function TimelineSection({ data }: TimelineSectionProps) {
       </div>
 
       {/* Summary Stats - Compact on mobile */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-3 sm:mb-4">
+      <div className="grid grid-cols-3 gap-1.5 sm:gap-3 mb-2 sm:mb-4">
         <motion.div 
           className={cn(
-            "rounded-lg sm:rounded-xl p-1.5 sm:p-2.5 border transition-all cursor-pointer",
+            "rounded-md sm:rounded-xl p-1 sm:p-2.5 border transition-all cursor-pointer",
             activeMetric === 'submissions' || activeMetric === 'all'
               ? "bg-emerald-500/10 border-emerald-500/30"
               : "bg-white/5 border-white/10"
@@ -744,15 +744,15 @@ function TimelineSection({ data }: TimelineSectionProps) {
           onClick={() => setActiveMetric(activeMetric === 'submissions' ? 'all' : 'submissions')}
           whileHover={{ scale: 1.02 }}
         >
-          <div className="flex items-center gap-1 mb-0.5">
-            <div className="w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full bg-emerald-400" />
-            <span className="text-[8px] sm:text-[9px] text-white/50 uppercase">Subs</span>
+          <div className="flex items-center gap-0.5 sm:gap-1 mb-0.5">
+            <div className="w-1 sm:w-2 h-1 sm:h-2 rounded-full bg-emerald-400" />
+            <span className="text-[7px] sm:text-[9px] text-white/50 uppercase">Subs</span>
           </div>
-          <p className="text-base sm:text-lg font-bold text-white tabular-nums">{totals.submissions}</p>
+          <p className="text-sm sm:text-lg font-bold text-white tabular-nums">{totals.submissions}</p>
         </motion.div>
         <motion.div 
           className={cn(
-            "rounded-lg sm:rounded-xl p-1.5 sm:p-2.5 border transition-all cursor-pointer",
+            "rounded-md sm:rounded-xl p-1 sm:p-2.5 border transition-all cursor-pointer",
             activeMetric === 'views' || activeMetric === 'all'
               ? "bg-blue-500/10 border-blue-500/30"
               : "bg-white/5 border-white/10"
@@ -760,15 +760,15 @@ function TimelineSection({ data }: TimelineSectionProps) {
           onClick={() => setActiveMetric(activeMetric === 'views' ? 'all' : 'views')}
           whileHover={{ scale: 1.02 }}
         >
-          <div className="flex items-center gap-1 mb-0.5">
-            <div className="w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full bg-blue-400" />
-            <span className="text-[8px] sm:text-[9px] text-white/50 uppercase">Views</span>
+          <div className="flex items-center gap-0.5 sm:gap-1 mb-0.5">
+            <div className="w-1 sm:w-2 h-1 sm:h-2 rounded-full bg-blue-400" />
+            <span className="text-[7px] sm:text-[9px] text-white/50 uppercase">Views</span>
           </div>
-          <p className="text-base sm:text-lg font-bold text-white tabular-nums">{totals.views}</p>
+          <p className="text-sm sm:text-lg font-bold text-white tabular-nums">{totals.views}</p>
         </motion.div>
         <motion.div 
           className={cn(
-            "rounded-lg sm:rounded-xl p-1.5 sm:p-2.5 border transition-all cursor-pointer",
+            "rounded-md sm:rounded-xl p-1 sm:p-2.5 border transition-all cursor-pointer",
             activeMetric === 'errors' || activeMetric === 'all'
               ? "bg-red-500/10 border-red-500/30"
               : "bg-white/5 border-white/10"
@@ -776,16 +776,16 @@ function TimelineSection({ data }: TimelineSectionProps) {
           onClick={() => setActiveMetric(activeMetric === 'errors' ? 'all' : 'errors')}
           whileHover={{ scale: 1.02 }}
         >
-          <div className="flex items-center gap-1 mb-0.5">
-            <div className="w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full bg-red-400" />
-            <span className="text-[8px] sm:text-[9px] text-white/50 uppercase">Errors</span>
+          <div className="flex items-center gap-0.5 sm:gap-1 mb-0.5">
+            <div className="w-1 sm:w-2 h-1 sm:h-2 rounded-full bg-red-400" />
+            <span className="text-[7px] sm:text-[9px] text-white/50 uppercase">Errors</span>
           </div>
-          <p className="text-base sm:text-lg font-bold text-white tabular-nums">{totals.errors}</p>
+          <p className="text-sm sm:text-lg font-bold text-white tabular-nums">{totals.errors}</p>
         </motion.div>
       </div>
 
       {/* Chart - Shorter on mobile */}
-      <div className="relative h-28 sm:h-40">
+      <div className="relative h-24 sm:h-40">
         <div className="absolute left-0 top-0 bottom-5 w-6 flex flex-col justify-between text-[9px] text-white/30 tabular-nums">
           <span>{maxValue}</span>
           <span>{Math.round(maxValue / 2)}</span>
@@ -928,22 +928,22 @@ function RawEventsLog({ events, isLoading }: RawEventsLogProps) {
   return (
     <motion.div
       variants={itemVariants}
-      className="rounded-xl sm:rounded-2xl border border-white/10 bg-gradient-to-br from-[#0a0a0f] via-[#050508] to-[#020205] p-3 sm:p-5"
+      className="rounded-lg sm:rounded-2xl border border-white/10 bg-gradient-to-br from-[#0a0a0f] via-[#050508] to-[#020205] p-2 sm:p-5"
     >
-      <div className="flex items-center justify-between gap-2 mb-2 sm:mb-4">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 sm:p-2 rounded-lg bg-white/5 text-white/60">
-            <List className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
+      <div className="flex items-center justify-between gap-1.5 sm:gap-2 mb-1.5 sm:mb-4">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="p-1 sm:p-2 rounded-md sm:rounded-lg bg-white/5 text-white/60">
+            <List className="w-3 sm:w-4 h-3 sm:h-4" />
           </div>
           <div>
-            <h3 className="text-sm sm:text-base font-semibold text-white">Events</h3>
+            <h3 className="text-xs sm:text-base font-semibold text-white">Events</h3>
             <p className="hidden sm:block text-xs text-white/40 mt-0.5">{events.length} recent</p>
           </div>
         </div>
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="bg-white/5 border border-white/10 rounded-lg px-1.5 py-0.5 text-[10px] sm:text-xs text-white/70 focus:outline-none"
+          className="bg-white/5 border border-white/10 rounded-md sm:rounded-lg px-1 py-0.5 text-[9px] sm:text-xs text-white/70 focus:outline-none"
         >
           <option value="all">All</option>
           {eventTypes.map(type => (
@@ -963,7 +963,7 @@ function RawEventsLog({ events, isLoading }: RawEventsLogProps) {
           No events found
         </div>
       ) : (
-        <div className="space-y-1 max-h-[200px] sm:max-h-[300px] overflow-y-auto pr-0.5">
+        <div className="space-y-1 max-h-[150px] sm:max-h-[300px] overflow-y-auto pr-0.5">
           {filteredEvents.slice(0, 20).map((event) => {
             const meta = EVENT_TYPE_META[event.event_name];
             const isExpanded = expanded === event.id;
@@ -1059,14 +1059,14 @@ function RouteAnalytics({ routes, isLoading }: RouteAnalyticsProps) {
   return (
     <motion.div
       variants={itemVariants}
-      className="rounded-xl sm:rounded-2xl border border-blue-500/20 bg-gradient-to-br from-[#070a14] via-[#050508] to-[#020205] p-3 sm:p-5"
+      className="rounded-lg sm:rounded-2xl border border-blue-500/20 bg-gradient-to-br from-[#070a14] via-[#050508] to-[#020205] p-2 sm:p-5"
     >
-      <div className="flex items-center gap-2 mb-2 sm:mb-4">
-        <div className="p-1.5 sm:p-2 rounded-lg bg-blue-500/10 text-blue-400">
-          <MapPin className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
+      <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-4">
+        <div className="p-1 sm:p-2 rounded-md sm:rounded-lg bg-blue-500/10 text-blue-400">
+          <MapPin className="w-3 sm:w-4 h-3 sm:h-4" />
         </div>
         <div>
-          <h3 className="text-sm sm:text-base font-semibold text-white">Routes</h3>
+          <h3 className="text-xs sm:text-base font-semibold text-white">Routes</h3>
           <p className="hidden sm:block text-xs text-white/40 mt-0.5">Events by page</p>
         </div>
       </div>
@@ -1128,20 +1128,20 @@ function ErrorBreakdownSection({ errors, isLoading }: ErrorBreakdownSectionProps
   return (
     <motion.div
       variants={itemVariants}
-      className="rounded-xl sm:rounded-2xl border border-red-500/20 bg-gradient-to-br from-[#140a0a] via-[#0a0505] to-[#020205] p-3 sm:p-5"
+      className="rounded-lg sm:rounded-2xl border border-red-500/20 bg-gradient-to-br from-[#140a0a] via-[#0a0505] to-[#020205] p-2 sm:p-5"
     >
-      <div className="flex items-center gap-2 mb-2 sm:mb-4">
-        <div className="p-1.5 sm:p-2 rounded-lg bg-red-500/10 text-red-400">
-          <AlertTriangle className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
+      <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-4">
+        <div className="p-1 sm:p-2 rounded-md sm:rounded-lg bg-red-500/10 text-red-400">
+          <AlertTriangle className="w-3 sm:w-4 h-3 sm:h-4" />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm sm:text-base font-semibold text-white">Errors</h3>
+          <h3 className="text-xs sm:text-base font-semibold text-white">Errors</h3>
           <p className="hidden sm:block text-xs text-white/40 mt-0.5">Form submission errors</p>
         </div>
         {errors.length > 0 && (
           <div className="text-right shrink-0">
-            <p className="text-base sm:text-lg font-bold text-red-400 tabular-nums">{errors.reduce((sum, e) => sum + e.count, 0)}</p>
-            <p className="text-[8px] sm:text-[9px] text-white/40">Total</p>
+            <p className="text-sm sm:text-lg font-bold text-red-400 tabular-nums">{errors.reduce((sum, e) => sum + e.count, 0)}</p>
+            <p className="text-[7px] sm:text-[9px] text-white/40">Total</p>
           </div>
         )}
       </div>
@@ -1158,7 +1158,7 @@ function ErrorBreakdownSection({ errors, isLoading }: ErrorBreakdownSectionProps
           <p className="text-xs text-white/50">No errors</p>
         </div>
       ) : (
-        <div className="space-y-1.5 max-h-[250px] sm:max-h-[300px] overflow-y-auto pr-0.5">
+        <div className="space-y-1 max-h-[180px] sm:max-h-[300px] overflow-y-auto pr-0.5">
           {errors.map((error, idx) => {
             const errorKey = `${error.form_type}-${error.error_code}-${error.field_name}`;
             const isExpanded = expandedError === errorKey;
@@ -1294,12 +1294,12 @@ export default function AdminTelemetry() {
 
   return (
     <DashboardLayout title="Telemetry Dashboard">
-      <div className="max-w-7xl mx-auto space-y-2 sm:space-y-5">
+      <div className="max-w-7xl mx-auto space-y-1.5 sm:space-y-5">
         {/* Compact Header */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between gap-2"
+          className="flex items-center justify-between gap-1.5 sm:gap-2"
         >
           {/* Title - hidden on mobile since navbar shows it */}
           <div className="hidden sm:block">
@@ -1313,13 +1313,13 @@ export default function AdminTelemetry() {
           </div>
 
           {/* Mobile-only compact date selector */}
-          <div className="flex sm:hidden items-center gap-1 p-0.5 rounded-lg bg-white/5 border border-white/10 overflow-x-auto">
+          <div className="flex sm:hidden items-center gap-0.5 p-0.5 rounded-md bg-white/5 border border-white/10 overflow-x-auto">
             {DATE_RANGE_OPTIONS.map((option) => (
               <button
                 key={option.days}
                 onClick={() => setSelectedDays(option.days)}
                 className={cn(
-                  "px-2 py-1 rounded-md text-[10px] font-medium transition-all whitespace-nowrap shrink-0",
+                  "px-1.5 py-0.5 rounded text-[9px] font-medium transition-all whitespace-nowrap shrink-0",
                   selectedDays === option.days
                     ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
                     : "text-white/50"
@@ -1366,11 +1366,11 @@ export default function AdminTelemetry() {
             onClick={() => refetch()}
             disabled={isRefetching}
             className={cn(
-              "sm:hidden p-1.5 rounded-lg bg-white/5 border border-white/10 text-white/50 shrink-0",
+              "sm:hidden p-1 rounded-md bg-white/5 border border-white/10 text-white/50 shrink-0",
               isRefetching && "animate-spin"
             )}
           >
-            <RefreshCw className="w-3.5 h-3.5" />
+            <RefreshCw className="w-3 h-3" />
           </button>
         </motion.div>
 
@@ -1412,7 +1412,7 @@ export default function AdminTelemetry() {
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="space-y-2 sm:space-y-5"
+            className="space-y-1.5 sm:space-y-5"
           >
             {/* Summary Stats */}
             <SummarySection data={data} />
@@ -1427,21 +1427,21 @@ export default function AdminTelemetry() {
             <TimelineSection data={data.timeline} />
 
             {/* Two Column Layout */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-5">
               <AnnouncementSection data={data.announcements} />
               <DuplicateSection data={data.duplicates} />
             </div>
 
             {/* Three Column Layout - Horizontal scroll on mobile */}
-            <div className="sm:hidden overflow-x-auto -mx-4 px-4 pb-2">
-              <div className="flex gap-2 min-w-max">
-                <div className="w-56 shrink-0">
+            <div className="sm:hidden overflow-x-auto -mx-4 px-4 pb-1">
+              <div className="flex gap-1.5 min-w-max">
+                <div className="w-52 shrink-0">
                   <RouteAnalytics routes={routeStats || []} isLoading={routesLoading} />
                 </div>
-                <div className="w-56 shrink-0">
+                <div className="w-52 shrink-0">
                   <ErrorBreakdownSection errors={errorBreakdown || []} isLoading={errorsLoading} />
                 </div>
-                <div className="w-56 shrink-0">
+                <div className="w-52 shrink-0">
                   <RawEventsLog events={rawEvents || []} isLoading={rawEventsLoading} />
                 </div>
               </div>
@@ -1455,7 +1455,7 @@ export default function AdminTelemetry() {
             {/* Compact Footer */}
             <motion.div
               variants={itemVariants}
-              className="text-center text-[10px] sm:text-xs text-white/30 pt-2 sm:pt-4 border-t border-white/5"
+              className="text-center text-[9px] sm:text-xs text-white/30 pt-1.5 sm:pt-4 border-t border-white/5"
             >
               <p>
                 {new Date(data.period.from).toLocaleDateString()} → {new Date(data.period.to).toLocaleDateString()} · {data.summary.total_events} events

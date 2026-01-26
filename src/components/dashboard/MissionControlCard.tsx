@@ -13,7 +13,7 @@
  * - Reduces cognitive load by presenting unified view
  */
 
-import { memo, useMemo, useEffect, useState, useCallback, useRef } from 'react';
+import { memo, useMemo, useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -36,6 +36,7 @@ import {
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { getDeviceCapabilities } from '../../lib/mobilePerf';
+import { useComplianceQuery } from '../../hooks/queries/useComplianceQuery';
 
 // ============================================================================
 // TYPES
@@ -77,38 +78,6 @@ interface WeekStats {
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
-
-function getTodayDateString(): string {
-  const now = new Date();
-  const chicagoDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
-  const year = chicagoDate.getFullYear();
-  const month = String(chicagoDate.getMonth() + 1).padStart(2, '0');
-  const day = String(chicagoDate.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-/**
- * Get UTC ISO timestamps for the start and end of a Chicago date.
- */
-function getChicagoDayBoundsUtc(chicagoDate: string): { startUtc: string; endUtc: string } {
-  const startChicago = new Date(`${chicagoDate}T00:00:00`);
-  const endChicago = new Date(`${chicagoDate}T00:00:00`);
-  endChicago.setDate(endChicago.getDate() + 1);
-  
-  const startInChicago = new Date(startChicago.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
-  const endInChicago = new Date(endChicago.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
-  
-  const startOffsetMs = startChicago.getTime() - startInChicago.getTime();
-  const endOffsetMs = endChicago.getTime() - endInChicago.getTime();
-  
-  const startUtc = new Date(startChicago.getTime() + startOffsetMs);
-  const endUtc = new Date(endChicago.getTime() + endOffsetMs);
-  
-  return {
-    startUtc: startUtc.toISOString(),
-    endUtc: endUtc.toISOString(),
-  };
-}
 
 function getTimeUntilCutoff(): { hours: number; minutes: number; isPast: boolean; urgencyLevel: 'calm' | 'warning' | 'urgent' | 'missed' } {
   const now = new Date();
@@ -536,12 +505,15 @@ const WeekendModeCard = memo(function WeekendModeCard({ userId, firstName }: Wee
           {/* Right: Stats toggle (mobile-friendly) */}
           {!weekStats.loading && totalForms > 0 && (
             <button
+              type="button"
               onClick={() => setShowStats(!showStats)}
-              className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex-shrink-0"
+              aria-label={showStats ? "Hide stats" : "Show week stats"}
+              aria-expanded={showStats}
+              className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex-shrink-0 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
             >
-              <Trophy className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-400" />
+              <Trophy className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-400" aria-hidden />
               <span className="text-[10px] sm:text-xs font-semibold text-emerald-400">{totalForms}</span>
-              <ChevronDown className={`w-2.5 h-2.5 sm:w-3 sm:h-3 text-emerald-400/70 transition-transform ${showStats ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-2.5 h-2.5 sm:w-3 sm:h-3 text-emerald-400/70 transition-transform ${showStats ? 'rotate-180' : ''}`} aria-hidden />
             </button>
           )}
         </div>
@@ -757,7 +729,6 @@ const CompactComplianceCard = memo(function CompactComplianceCard({
 function MissionControlCardComponent({ onComplianceChange }: MissionControlCardProps) {
   const { user, fullName } = useAuth();
   const [isExpanded, setIsExpanded] = useState(false);
-  const initialFetchDone = useRef(false);
   const [compactMode, setCompactMode] = useState(false);
   
   // Extract first name from full name
@@ -766,95 +737,60 @@ function MissionControlCardComponent({ onComplianceChange }: MissionControlCardP
     return fullName.split(' ')[0];
   }, [fullName]);
   
-  const [mission, setMission] = useState<MissionData>({
-    dvir: false,
-    equipment: false,
-    jsa: false,
-    totalPoints: 0,
-    claimsCount: 0,
-    loading: true,
-    error: null,
+  // ARCH-019: Use useComplianceQuery hook for compliance data (caching, shared state)
+  const { compliance: complianceStatus, isLoading: complianceLoading, error: complianceError } = useComplianceQuery({
+    onComplianceChange,
   });
 
-  // Fetch all mission data
-  const fetchMission = useCallback(async () => {
+  // Fetch rewards data separately (different concern from compliance)
+  const [rewards, setRewards] = useState({ totalPoints: 0, claimsCount: 0, loading: true, error: null as string | null });
+  
+  const fetchRewards = useCallback(async () => {
     if (!user?.id) return;
     
-    const todayDate = getTodayDateString();
-    
-    // Get proper UTC boundaries for the Chicago date (handles timezone correctly)
-    const { startUtc, endUtc } = getChicagoDayBoundsUtc(todayDate);
-    
     try {
-      const [dvirResult, equipmentResult, jsaResult, rewardsResult] = await Promise.all([
-        supabase
-          .from('dvir_reports')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('report_date', todayDate)
-          .limit(1),
-        supabase
-          .from('daily_equipment_inspections')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('inspection_date', todayDate)
-          .limit(1),
-        // JSA uses created_at (timestamp in UTC) - query using proper UTC bounds for Chicago day
-        supabase
-          .from('daily_jsa')
-          .select('id')
-          .eq('user_id', user.id)
-          .gte('created_at', startUtc)
-          .lt('created_at', endUtc)
-          .limit(1),
-        supabase
-          .from('announcement_rewards')
-          .select('points_awarded')
-          .eq('user_id', user.id),
-      ]);
+      const { data, error } = await supabase
+        .from('announcement_rewards')
+        .select('points_awarded')
+        .eq('user_id', user.id);
 
-      const dvir = (dvirResult.data?.length ?? 0) > 0;
-      const equipment = (equipmentResult.data?.length ?? 0) > 0;
-      const jsa = (jsaResult.data?.length ?? 0) > 0;
-      const totalPoints = rewardsResult.data?.reduce((sum, r) => sum + (r.points_awarded || 1), 0) ?? 0;
-      const claimsCount = rewardsResult.data?.length ?? 0;
+      if (error) throw error;
 
-      setMission({
-        dvir,
-        equipment,
-        jsa,
+      const totalPoints = data?.reduce((sum, r) => sum + (r.points_awarded || 1), 0) ?? 0;
+      const claimsCount = data?.length ?? 0;
+
+      setRewards({
         totalPoints,
         claimsCount,
         loading: false,
         error: null,
       });
-
-      // Notify parent of compliance state
-      onComplianceChange?.(dvir, equipment, jsa);
     } catch {
-      setMission(prev => ({
+      setRewards(prev => ({
         ...prev,
         loading: false,
-        error: 'Failed to load mission data',
+        error: 'Failed to load rewards',
       }));
     }
-  }, [user, onComplianceChange]);
+  }, [user?.id]);
 
   useEffect(() => {
-    // Only fetch if not already done to avoid immediate setState in effect
-    if (!initialFetchDone.current) {
-      initialFetchDone.current = true;
-      // Use setTimeout to avoid synchronous setState in effect
-      const timeoutId = setTimeout(() => {
-        fetchMission();
-      }, 0);
-      return () => clearTimeout(timeoutId);
-    }
-    
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchMission, 30000);
+    fetchRewards();
+    // Refresh rewards every 30 seconds
+    const interval = setInterval(fetchRewards, 30000);
     return () => clearInterval(interval);
-  }, [fetchMission]);
+  }, [fetchRewards]);
+
+  // Combine compliance and rewards into mission data
+  const mission: MissionData = useMemo(() => ({
+    dvir: complianceStatus.dvir,
+    equipment: complianceStatus.equipment,
+    jsa: complianceStatus.jsa,
+    totalPoints: rewards.totalPoints,
+    claimsCount: rewards.claimsCount,
+    loading: complianceLoading || rewards.loading,
+    error: complianceError || rewards.error,
+  }), [complianceStatus, complianceLoading, complianceError, rewards]);
 
   // Build form status list
   const formStatuses: FormStatus[] = useMemo(() => [
@@ -909,8 +845,10 @@ function MissionControlCardComponent({ onComplianceChange }: MissionControlCardP
           firstName={firstName}
         />
         <button
+          type="button"
           onClick={() => setCompactMode(false)}
-          className="w-full text-xs text-white/30 hover:text-white/50 transition-colors py-1"
+          aria-label="Show full mission view"
+          className="w-full text-xs text-white/30 hover:text-white/50 transition-colors py-1 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] rounded"
         >
           Show full view
         </button>
@@ -1003,8 +941,11 @@ function MissionControlCardComponent({ onComplianceChange }: MissionControlCardP
         
         {/* Expandable details toggle */}
         <button
+          type="button"
           onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full mt-3 pt-3 border-t border-white/5 flex items-center justify-between text-xs text-white/50 hover:text-white/70 transition-colors"
+          aria-label={isExpanded ? "Hide form details" : "Show form details"}
+          aria-expanded={isExpanded}
+          className="w-full mt-3 pt-3 border-t border-white/5 flex items-center justify-between text-xs text-white/50 hover:text-white/70 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] rounded"
         >
           <span className="font-medium">
             {isExpanded ? 'Hide details' : 'Show form details'}
@@ -1012,6 +953,7 @@ function MissionControlCardComponent({ onComplianceChange }: MissionControlCardP
           <motion.div
             animate={{ rotate: isExpanded ? 180 : 0 }}
             transition={{ duration: 0.2 }}
+            aria-hidden
           >
             <ChevronDown className="w-4 h-4" />
           </motion.div>

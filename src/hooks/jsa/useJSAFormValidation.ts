@@ -70,7 +70,8 @@ export function useJSAFormValidation(form: DailyJsaFormState) {
     },
   ], []);
 
-  // Form validation hook
+  // Form validation hook - use FormValidationState type for constraint compatibility
+  type FormValidationState = DailyJsaFormState & Record<string, unknown>;
   const {
     errors,
     getFieldError,
@@ -78,7 +79,7 @@ export function useJSAFormValidation(form: DailyJsaFormState) {
     validateAll,
     markSubmitAttempted,
     handleFieldBlur,
-  } = useFormValidation(form as unknown as Record<string, unknown>, validationRules as unknown as ValidationRule<Record<string, unknown>>[], {
+  } = useFormValidation<FormValidationState>(form as FormValidationState, validationRules as ValidationRule<FormValidationState>[], {
     validateOnChange: true,
     showErrorsAfterSubmitAttempt: false,
   });

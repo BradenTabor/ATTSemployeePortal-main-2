@@ -19,7 +19,8 @@ export type NotificationCategory =
   | 'safety_alert'
   | 'job_update'
   | 'rto_decision'
-  | 'admin_notice';
+  | 'admin_notice'
+  | 'certification_expiry';
 
 /**
  * Severity levels for notification prioritization

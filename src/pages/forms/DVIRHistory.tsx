@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import CardListSkeleton from "../../components/skeletons/CardListSkeleton";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../contexts/AuthContext";
 import { logger } from "../../lib/logger";
+import type { DVIRFormState, ChecklistValue } from "./dvir/types";
 import {
   HistoryPageShell,
   HistoryPagination,
@@ -23,7 +25,6 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
-type ChecklistValue = "" | "P" | "F" | "N/A";
 
 interface ChecklistItem {
   id: string;
@@ -164,16 +165,46 @@ function hasMechanicUpdate(report: DVIRReport) {
 
 export default function DVIRHistory() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const prefersReducedMotion = useReducedMotion();
+  const [searchParams] = useSearchParams();
+  
+  // Initialize state from URL params
   const [reports, setReports] = useState<DVIRReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
+  const searchTermFromUrl = searchParams.get('search') || '';
+  // Validate page parameter: must be numeric, default to 1 if invalid
+  const pageParam = searchParams.get('page') || '1';
+  const pageFromUrl = /^\d+$/.test(pageParam) ? parseInt(pageParam, 10) : 1;
+  const [searchTerm, setSearchTerm] = useState(searchTermFromUrl);
   const [selectedReport, setSelectedReport] = useState<DVIRReport | null>(null);
 
   const pageSize = 20;
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(isNaN(pageFromUrl) || pageFromUrl < 1 ? 1 : pageFromUrl);
   const [totalReports, setTotalReports] = useState<number | null>(null);
+
+  // Sync URL params when search or page changes
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (searchTerm.trim()) {
+      params.set('search', searchTerm.trim());
+    }
+    if (currentPage > 1) {
+      params.set('page', currentPage.toString());
+    }
+    const queryString = params.toString();
+    const newUrl = queryString ? `?${queryString}` : window.location.pathname;
+    window.history.replaceState(null, '', newUrl);
+  }, [searchTerm, currentPage]);
+
+  // Initialize search term from URL on mount (only if different)
+  useEffect(() => {
+    if (searchTermFromUrl && searchTerm !== searchTermFromUrl) {
+      setSearchTerm(searchTermFromUrl);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTermFromUrl]); // Only run on mount/URL change, not when searchTerm changes
 
   const getPublicUrl = useCallback((path?: string | null) => {
     if (!path) return null;
@@ -239,9 +270,12 @@ export default function DVIRHistory() {
     fetchDVIRReports();
   }, [fetchDVIRReports]);
 
+  // Reset to page 1 when search term changes (but preserve in URL)
   useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm]);
+    if (searchTerm !== searchTermFromUrl) {
+      setCurrentPage(1);
+    }
+  }, [searchTerm, searchTermFromUrl]);
 
   const filteredReports = useMemo(() => {
     if (!searchTerm.trim()) return reports;
@@ -303,6 +337,52 @@ export default function DVIRHistory() {
 
   const handleReportClick = (r: DVIRReport) => setSelectedReport(r);
   const closeDetail = () => setSelectedReport(null);
+
+  // Handle "Use as Template" - transform report to form state and navigate
+  const handleUseAsTemplate = useCallback((report: DVIRReport) => {
+    // Transform DVIRReport to DVIRFormState (excluding photos and signatures)
+    const templateData: Partial<DVIRFormState> = {
+      truckNumber: report.truck_number || "",
+      mileage: report.mileage?.toString() || "",
+      chipperNumber: report.chipper_number || "",
+      trailerNumber: report.trailer_number || "",
+      truckGvwr: report.truck_gvwr || "",
+      trailerChipperGvwr: report.trailer_chipper_gvwr || "",
+      medicalCardRequired: (report.medical_card_required as "" | "YES" | "NO") || "",
+      driversName: report.drivers_name || "",
+      driversLicenseNumber: report.drivers_license_number || "",
+      driversLicenseClass: report.drivers_license_class || "",
+      driversLicenseExp: report.drivers_license_exp || "",
+      driversLicenseRequired: (report.drivers_license_required as "" | "YES" | "NO") || "",
+      hasMedicalCard: (report.has_medical_card as "" | "YES" | "NO") || "",
+      medicalCardExp: report.medical_card_exp || "",
+      copyOfRegistration: (report.copy_of_registration as "" | "YES" | "NO") || "",
+      copyOfInsurance: (report.copy_of_insurance as "" | "YES" | "NO") || "",
+      vehicleTrailerChecklist: (report.vehicle_trailer_checklist as Record<string, ChecklistValue>) || {},
+      notes: report.notes || "",
+      aerialChecklist: (report.aerial_checklist as Record<string, ChecklistValue>) || {},
+      aerialNotes: report.aerial_notes || "",
+      mechTruckNumber: report.mechanic_truck_number || "",
+      deficiencyCorrected: report.deficiency_corrected || "",
+      mechanicRemarks: report.mechanic_remarks || "",
+      mechanicDate: report.mechanic_date || "",
+      isMechanicOpen: false,
+      // Don't copy signatures - user needs to sign new form
+      finalDriverSignature: "",
+      generalForemanSignature: "",
+      mechanicSignature: "",
+      driverApprovalSignature: "",
+    };
+
+    // Store template data in sessionStorage
+    sessionStorage.setItem('dvir-template', JSON.stringify(templateData));
+    
+    // Navigate to DVIR form
+    navigate('/forms/dvir');
+    
+    // Close modal
+    setSelectedReport(null);
+  }, [navigate]);
 
   return (
     <DashboardLayout title="DVIR History">
@@ -459,6 +539,7 @@ export default function DVIRHistory() {
               mediaEntries={mediaEntries}
               signatureEntries={signatureEntries}
               onClose={closeDetail}
+              onUseAsTemplate={() => selectedReport && handleUseAsTemplate(selectedReport)}
             />
           );
         })()}

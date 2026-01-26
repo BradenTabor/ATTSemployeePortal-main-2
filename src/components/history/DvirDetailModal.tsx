@@ -8,6 +8,8 @@ import {
   Truck,
   Images,
   FileSignature,
+  Copy,
+  X,
 } from "lucide-react";
 
 export interface MediaEntry {
@@ -42,6 +44,7 @@ export interface DvirDetailModalProps {
   mediaEntries: MediaEntry[];
   signatureEntries: SignatureEntry[];
   onClose: () => void;
+  onUseAsTemplate?: () => void;
 }
 
 function formatDateTime(iso: string) {
@@ -74,6 +77,7 @@ export const DvirDetailModal = memo(function DvirDetailModal({
   mediaEntries,
   signatureEntries,
   onClose,
+  onUseAsTemplate,
 }: DvirDetailModalProps) {
   const prefersReducedMotion = useReducedMotion();
   const allFails = [...vehicleFails, ...aerialFails];
@@ -103,7 +107,7 @@ export const DvirDetailModal = memo(function DvirDetailModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between pb-5 border-b border-white/10">
-          <div>
+          <div className="flex-1">
             <p className="text-xs uppercase tracking-wider text-white/50">Truck</p>
             <h2 className="text-xl sm:text-2xl font-bold text-white break-normal mt-1">
               {truckNumber || "N/A"}
@@ -138,12 +142,24 @@ export const DvirDetailModal = memo(function DvirDetailModal({
                 Mechanic updated
               </span>
             )}
+            {onUseAsTemplate && (
+              <button
+                type="button"
+                onClick={onUseAsTemplate}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-400/40 bg-emerald-500/10 px-4 py-2 text-xs font-medium text-emerald-300 hover:bg-emerald-500/20 hover:border-emerald-400/60 focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] outline-none transition-all active:scale-95"
+                aria-label="Use as template"
+              >
+                <Copy className="w-3.5 h-3.5" aria-hidden />
+                Use as Template
+              </button>
+            )}
             <button
               type="button"
               onClick={onClose}
               className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-xs font-medium text-white/70 hover:bg-white/10 hover:border-white/30 focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] outline-none transition-all active:scale-95"
               aria-label="Close"
             >
+              <X className="w-3.5 h-3.5" aria-hidden />
               Close
             </button>
           </div>

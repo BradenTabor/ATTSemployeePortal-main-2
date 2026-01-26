@@ -1,10 +1,11 @@
-import { useForm } from 'react-hook-form';
+import { useForm, type SubmitHandler, type FieldValues } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { jobFormSchema, type JobFormData } from '../../schemas/jobs';
 import { FormField } from './FormField';
 import { Input } from './Input';
 import { Textarea } from './Textarea';
 import { toast } from '../../lib/toast';
+import { logger } from '../../lib/logger';
 
 interface ExampleJobFormProps {
   initialData?: Partial<JobFormData>;
@@ -13,8 +14,13 @@ interface ExampleJobFormProps {
 }
 
 /**
- * Example form implementation using React Hook Form + Zod
- * Use this as a reference for creating new forms
+ * Example form implementation using React Hook Form + Zod.
+ * Use this as a reference for creating new forms.
+ *
+ * For data-entry forms (equipment, DVIR, JSA, etc.) consider also:
+ * - useSmartDefaults(formType) — pre-fill from user's last submission
+ * - useFormPersistence — auto-save drafts and restore on return
+ * See DailyEquipmentInspectionForm, DVIRForm, and DailyJSAForm for patterns.
  */
 export function ExampleJobForm({ initialData, onSubmit, onCancel }: ExampleJobFormProps) {
   const {
@@ -22,8 +28,8 @@ export function ExampleJobForm({ initialData, onSubmit, onCancel }: ExampleJobFo
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<JobFormData>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(jobFormSchema as any),
+    // @ts-expect-error - zodResolver type mismatch with schema, but safe at runtime
+    resolver: zodResolver(jobFormSchema),
     mode: 'onBlur',
     defaultValues: {
       job_name: '',
@@ -38,17 +44,19 @@ export function ExampleJobForm({ initialData, onSubmit, onCancel }: ExampleJobFo
     },
   });
 
-  const onFormSubmit = async (data: JobFormData) => {
+  const onFormSubmit: SubmitHandler<JobFormData> = async (data) => {
     try {
       await onSubmit(data);
       toast.success('Job saved successfully');
-    } catch {
+    } catch (err) {
+      logger.error('[ExampleJobForm] Save failed:', err);
       toast.error('Failed to save job');
     }
   };
 
+  // Resolver typing widens TFieldValues; handler is JobFormData at runtime (see useForm<JobFormData>)
   return (
-    <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onFormSubmit as SubmitHandler<FieldValues>)} className="space-y-6">
       <FormField label="Job Name" error={errors.job_name?.message} required>
         <Input
           {...register('job_name')}

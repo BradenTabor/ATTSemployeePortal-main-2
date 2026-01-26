@@ -258,11 +258,12 @@ export default function Home() {
                         key={option}
                         type="button"
                         onClick={() => handleModeSwitch(option)}
-                        className={`px-5 py-2.5 min-h-[44px] text-sm font-medium rounded-full transition-all duration-300 ${
+                        className={`px-5 py-2.5 min-h-[44px] text-sm font-medium rounded-full transition-all duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400 ${
                           mode === option
                             ? "bg-white/10 text-white shadow-lg shadow-black/20 border border-white/10"
                             : "text-white/40 hover:text-white/70"
                         }`}
+                        aria-label={option === "login" ? "Sign In" : "Sign Up"}
                         aria-pressed={mode === option ? "true" : "false"}
                       >
                         {option === "login" ? "Sign In" : "Sign Up"}
@@ -434,7 +435,8 @@ export default function Home() {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="group w-full bg-gradient-to-r from-[#004708] to-[#03cc00] hover:from-[#004708] hover:to-[#03cc00] text-white font-semibold py-3.5 px-6 rounded-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-green-900/30 hover:shadow-green-500/25 flex items-center justify-center gap-2"
+                      aria-label={loading ? (mode === "login" ? "Signing in..." : "Creating account...") : (mode === "login" ? "Sign in" : "Create account")}
+                      className="group w-full bg-gradient-to-r from-[#004708] to-[#03cc00] hover:from-[#004708] hover:to-[#03cc00] text-white font-semibold py-3.5 px-6 rounded-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-green-900/30 hover:shadow-green-500/25 flex items-center justify-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
                     >
                       {loading ? (
                         <span className="flex items-center gap-2">

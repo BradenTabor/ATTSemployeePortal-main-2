@@ -71,7 +71,7 @@ export interface UseSmartDefaultsResult {
 /**
  * Fetch smart form defaults for a given form type
  * 
- * @param formType - 'dvir' or 'jsa'
+ * @param formType - 'dvir', 'jsa', or 'equipment'
  * @returns Smart defaults result with transformed field names
  * 
  * @example
@@ -94,7 +94,7 @@ export interface UseSmartDefaultsResult {
  * }
  * ```
  */
-export function useSmartDefaults(formType: 'dvir' | 'jsa'): UseSmartDefaultsResult {
+export function useSmartDefaults(formType: 'dvir' | 'jsa' | 'equipment'): UseSmartDefaultsResult {
   const [data, setData] = useState<SmartDefaultsResponse | null>(null);
   // Start with loading=true so the skeleton shows immediately on mount
   const [isLoading, setIsLoading] = useState(true);

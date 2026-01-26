@@ -127,8 +127,8 @@ function FilterChip({
       className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#f4c979]/20 text-[#f4c979] text-[10px] font-medium"
     >
       {label}
-      <button onClick={onRemove} className="hover:bg-white/10 rounded-full p-0.5" aria-label={`Remove ${label} filter`}>
-        <X className="w-2.5 h-2.5" />
+      <button type="button" onClick={onRemove} className="hover:bg-white/10 rounded-full p-0.5 focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-1" aria-label={`Remove ${label} filter`}>
+        <X className="w-2.5 h-2.5" aria-hidden />
       </button>
     </motion.span>
   );
@@ -516,11 +516,14 @@ export default function AdminJobProgress() {
           >
             {/* Filter Header */}
             <button
+              type="button"
               onClick={() => setShowFilters(!showFilters)}
-              className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-white/5 transition-colors"
+              aria-label={showFilters ? "Hide filters" : "Show filters"}
+              aria-expanded={showFilters}
+              className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-white/5 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] rounded-lg"
             >
               <div className="flex items-center gap-2">
-                <Filter className="w-3.5 h-3.5 text-[#f4c979]" />
+                <Filter className="w-3.5 h-3.5 text-[#f4c979]" aria-hidden />
                 <span className="text-[11px] uppercase tracking-[0.2em] text-[#f4c979]/70 font-medium">Filters</span>
                 {hasActiveFilters && (
                   <span className="ml-1 px-1.5 py-0.5 rounded-full bg-[#f4c979]/20 text-[#f4c979] text-[9px] font-bold">
@@ -528,7 +531,7 @@ export default function AdminJobProgress() {
                   </span>
                 )}
               </div>
-              <ChevronDown className={cn("w-4 h-4 text-white/40 transition-transform", showFilters && "rotate-180")} />
+              <ChevronDown className={cn("w-4 h-4 text-white/40 transition-transform", showFilters && "rotate-180")} aria-hidden />
             </button>
 
             {/* Active Filter Chips */}
@@ -730,8 +733,10 @@ export default function AdminJobProgress() {
 
                     {hasActiveFilters && (
                       <button
+                        type="button"
                         onClick={clearFilters}
-                        className="text-[11px] text-white/40 hover:text-[#f4c979] transition-colors"
+                        aria-label="Clear all filters"
+                        className="text-[11px] text-white/40 hover:text-[#f4c979] transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 rounded"
                       >
                         Clear all filters
                       </button>

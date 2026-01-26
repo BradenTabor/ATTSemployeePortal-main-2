@@ -4,6 +4,11 @@ import { subscribeToTableChanges } from '../../lib/realtime';
 import { logger } from '../../lib/logger';
 import { NotificationBuilders, createNotificationSilent } from '../../lib/pushNotifications';
 import type { JobProgressTracker, JobFormData, JobStatus } from '../../types/jobs';
+import {
+  transformJobsFromApi,
+  type JobsUserMap,
+  type RawJobRow,
+} from './transformJobsFromApi';
 
 interface UseJobsReturn {
   jobs: JobProgressTracker[];
@@ -52,7 +57,6 @@ export function useJobs(): UseJobsReturn {
 
       if (jobsError) {
         logger.error('Failed to fetch jobs:', jobsError);
-        console.error('Supabase fetch jobs error:', jobsError);
         const errorMsg = jobsError.message || jobsError.code || 'Unknown error';
         setError(`Failed to load jobs: ${errorMsg}`);
         return;
@@ -60,65 +64,43 @@ export function useJobs(): UseJobsReturn {
 
       // Collect all unique user_ids from crew assignments
       const userIds = new Set<string>();
-      (jobsData || []).forEach(job => {
-        job.crew_assignments?.forEach((a: { user_id: string }) => {
+      (jobsData || []).forEach((job: RawJobRow) => {
+        job.crew_assignments?.forEach((a) => {
           if (a.user_id) userIds.add(a.user_id);
         });
       });
 
       // Fetch user profiles for all assigned users
-      let userMap: Record<string, { email: string; full_name: string | null; role: string }> = {};
+      let userMap: JobsUserMap = {};
       if (userIds.size > 0) {
         const { data: usersData } = await supabase
           .from('user_profiles')
           .select('user_id, email, full_name, role')
           .in('user_id', Array.from(userIds));
-        
+
         if (usersData) {
-          userMap = usersData.reduce((acc, user) => {
-            acc[user.user_id] = {
-              email: user.email,
-              full_name: user.full_name,
-              role: user.role,
-            };
-            return acc;
-          }, {} as Record<string, { email: string; full_name: string | null; role: string }>);
+          userMap = usersData.reduce(
+            (acc, user) => {
+              acc[user.user_id] = {
+                email: user.email,
+                full_name: user.full_name,
+                role: user.role,
+              };
+              return acc;
+            },
+            {} as JobsUserMap
+          );
         }
       }
 
-      // Transform data and manually join user info
-      const transformedJobs = (jobsData || []).map(job => ({
-        ...job,
-        tracking_type: job.tracking_type || 'timeline',
-        circuit: job.circuit || job.job_location || null,
-        milestones: job.milestones?.sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order) || [],
-        crew_assignments: job.crew_assignments?.map((assignment: {
-          id: string;
-          job_id: string;
-          user_id: string;
-          assigned_at: string;
-          assigned_by: string | null;
-        }) => {
-          const user = userMap[assignment.user_id];
-          return {
-            ...assignment,
-            user_email: user?.email,
-            user_full_name: user?.full_name,
-            user_role: user?.role,
-          };
-        }) || [],
-        progress_updates: job.progress_updates
-          ?.sort((a: { date: string; created_at: string }, b: { date: string; created_at: string }) => {
-            const aDate = new Date(a.date || a.created_at).getTime();
-            const bDate = new Date(b.date || b.created_at).getTime();
-            return bDate - aDate;
-          }) || [],
-      }));
-
+      const transformedJobs = transformJobsFromApi(
+        (jobsData || []) as RawJobRow[],
+        userMap
+      );
       setJobs(transformedJobs);
     } catch (err) {
       logger.error('Unexpected error fetching jobs:', err);
-      setError('An unexpected error occurred');
+      setError('Unable to load jobs. Please refresh the page or check your connection.');
     } finally {
       setLoading(false);
     }
@@ -159,7 +141,6 @@ export function useJobs(): UseJobsReturn {
         logger.error('Failed to create job:', jobError);
         // Return actual error message for debugging
         const errorMsg = jobError.message || jobError.code || 'Failed to create job';
-        console.error('Supabase job creation error:', jobError);
         return { success: false, error: `Failed to create job: ${errorMsg}` };
       }
 
@@ -200,11 +181,11 @@ export function useJobs(): UseJobsReturn {
 
         if (assignmentsError) {
           logger.error('Failed to create crew assignments:', assignmentsError);
-          console.error('[useJobs] Crew assignment failed - notifications will NOT be sent:', assignmentsError);
+          logger.error('[useJobs] Crew assignment failed - notifications will NOT be sent:', assignmentsError);
           // Don't fail the whole operation, job was created
         } else {
           // 4. Notify assigned crew members (non-blocking)
-          console.log('[useJobs] Sending push notification for job assignment...', {
+          logger.info('[useJobs] Sending push notification for job assignment...', {
             jobId,
             jobName: formData.job_name,
             crewCount: formData.crew_member_ids.length,
@@ -220,13 +201,13 @@ export function useJobs(): UseJobsReturn {
           );
           
           if (notificationResult) {
-            console.log('[useJobs] ✅ Push notification sent successfully:', {
+            logger.info('[useJobs] ✅ Push notification sent successfully:', {
               dispatched: notificationResult.dispatched,
               skipped: notificationResult.skipped,
               eventId: notificationResult.event_id,
             });
           } else {
-            console.warn('[useJobs] ⚠️ Push notification failed silently - check edge function logs');
+            logger.warn('[useJobs] ⚠️ Push notification failed silently - check edge function logs');
           }
         }
       }
@@ -235,7 +216,7 @@ export function useJobs(): UseJobsReturn {
       return { success: true, jobId };
     } catch (err) {
       logger.error('Unexpected error creating job:', err);
-      return { success: false, error: 'An unexpected error occurred' };
+      return { success: false, error: 'Unable to create job. Please check your connection and try again.' };
     }
   }, [fetchJobs]);
 
@@ -283,32 +264,78 @@ export function useJobs(): UseJobsReturn {
       }
 
       // 3. Delete existing milestones and recreate
-      await supabase.from('job_milestones').delete().eq('job_id', jobId);
-      
-      if (formData.milestones.length > 0) {
-        const milestonesWithJobId = formData.milestones.map((m, index) => ({
-          job_id: jobId,
-          title: m.title,
-          description: m.description || null,
-          target_date: m.target_date || null,
-          sort_order: index,
-          is_completed: m.is_completed || false,
-        }));
+      // Prepare milestones data first to validate before deleting
+      const milestonesWithJobId = formData.milestones.length > 0
+        ? formData.milestones.map((m, index) => ({
+            job_id: jobId,
+            title: m.title,
+            description: m.description || null,
+            target_date: m.target_date || null,
+            sort_order: index,
+            is_completed: m.is_completed || false,
+          }))
+        : [];
 
-        await supabase.from('job_milestones').insert(milestonesWithJobId);
+      // Delete existing milestones
+      const { error: deleteMilestonesError } = await supabase
+        .from('job_milestones')
+        .delete()
+        .eq('job_id', jobId);
+      
+      if (deleteMilestonesError) {
+        logger.error('Failed to delete milestones:', deleteMilestonesError);
+        return { success: false, error: 'Failed to update milestones' };
+      }
+
+      // Insert new milestones if any
+      if (milestonesWithJobId.length > 0) {
+        const { error: insertMilestonesError } = await supabase
+          .from('job_milestones')
+          .insert(milestonesWithJobId);
+
+        if (insertMilestonesError) {
+          logger.error('Failed to insert milestones:', insertMilestonesError);
+          // Data loss risk: milestones were deleted but insert failed
+          // Attempt to restore by refetching (best effort recovery)
+          await fetchJobs();
+          return { success: false, error: 'Failed to update milestones. Please refresh and try again.' };
+        }
       }
 
       // 4. Delete existing assignments and recreate
-      await supabase.from('job_crew_assignments').delete().eq('job_id', jobId);
-      
-      if (formData.crew_member_ids.length > 0) {
-        const assignments = formData.crew_member_ids.map(crewId => ({
-          job_id: jobId,
-          user_id: crewId,
-          assigned_by: userId,
-        }));
+      // Prepare assignments data first to validate before deleting
+      const assignments = formData.crew_member_ids.length > 0
+        ? formData.crew_member_ids.map(crewId => ({
+            job_id: jobId,
+            user_id: crewId,
+            assigned_by: userId,
+          }))
+        : [];
 
-        await supabase.from('job_crew_assignments').insert(assignments);
+      // Delete existing assignments
+      const { error: deleteAssignmentsError } = await supabase
+        .from('job_crew_assignments')
+        .delete()
+        .eq('job_id', jobId);
+      
+      if (deleteAssignmentsError) {
+        logger.error('Failed to delete assignments:', deleteAssignmentsError);
+        return { success: false, error: 'Failed to update crew assignments' };
+      }
+
+      // Insert new assignments if any
+      if (assignments.length > 0) {
+        const { error: insertAssignmentsError } = await supabase
+          .from('job_crew_assignments')
+          .insert(assignments);
+
+        if (insertAssignmentsError) {
+          logger.error('Failed to insert assignments:', insertAssignmentsError);
+          // Data loss risk: assignments were deleted but insert failed
+          // Attempt to restore by refetching (best effort recovery)
+          await fetchJobs();
+          return { success: false, error: 'Failed to update crew assignments. Please refresh and try again.' };
+        }
       }
 
       // 5. Notify newly assigned crew members (only if there are new assignments)
@@ -330,7 +357,7 @@ export function useJobs(): UseJobsReturn {
       return { success: true };
     } catch (err) {
       logger.error('Unexpected error updating job:', err);
-      return { success: false, error: 'An unexpected error occurred' };
+      return { success: false, error: 'Unable to update job. Please try again or refresh the page.' };
     }
   }, [fetchJobs]);
 
@@ -352,7 +379,7 @@ export function useJobs(): UseJobsReturn {
       return { success: true };
     } catch (err) {
       logger.error('Unexpected error deleting job:', err);
-      return { success: false, error: 'An unexpected error occurred' };
+      return { success: false, error: 'Unable to delete job. Please try again.' };
     }
   }, [fetchJobs]);
 
@@ -390,7 +417,7 @@ export function useJobs(): UseJobsReturn {
       return { success: true };
     } catch (err) {
       logger.error('Unexpected error updating job status:', err);
-      return { success: false, error: 'An unexpected error occurred' };
+      return { success: false, error: 'Unable to update job status. Please try again.' };
     }
   }, [fetchJobs]);
 
@@ -418,7 +445,7 @@ export function useJobs(): UseJobsReturn {
       return { success: true };
     } catch (err) {
       logger.error('Unexpected error toggling milestone:', err);
-      return { success: false, error: 'An unexpected error occurred' };
+      return { success: false, error: 'Unable to update milestone. Please try again.' };
     }
   }, [fetchJobs]);
 
@@ -453,7 +480,7 @@ export function useJobs(): UseJobsReturn {
       return { success: true, groupId };
     } catch (err) {
       logger.error('Unexpected error stacking jobs:', err);
-      return { success: false, error: 'An unexpected error occurred' };
+      return { success: false, error: 'Unable to stack jobs. Please try again.' };
     }
   }, [fetchJobs]);
 
@@ -484,7 +511,7 @@ export function useJobs(): UseJobsReturn {
       return { success: true };
     } catch (err) {
       logger.error('Unexpected error unstacking jobs:', err);
-      return { success: false, error: 'An unexpected error occurred' };
+      return { success: false, error: 'Unable to unstack jobs. Please try again.' };
     }
   }, [fetchJobs]);
 

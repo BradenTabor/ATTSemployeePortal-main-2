@@ -17,6 +17,11 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
-logger.info('Supabase client initialized successfully', {
-  url: supabaseUrl.substring(0, 30) + '...',
-});
+// SEC-009: Only log Supabase URL in development, never in production
+if (import.meta.env.DEV) {
+  logger.info('Supabase client initialized successfully', {
+    url: supabaseUrl.substring(0, 30) + '...',
+  });
+} else {
+  logger.info('Supabase client initialized successfully');
+}

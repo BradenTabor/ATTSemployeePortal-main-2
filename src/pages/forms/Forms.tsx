@@ -14,6 +14,8 @@ import {
   ShoppingCart,
   Sparkles,
   Wrench,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import DashboardLayout from "../../layouts/DashboardLayout";
@@ -21,6 +23,8 @@ import AdaptiveCardWrapper from "../../components/AdaptiveCardWrapper";
 import { cn } from "../../lib/utils";
 import { TextEffect } from "../../components/ui/TextEffect";
 import { getDeviceCapabilities } from "../../lib/mobilePerf";
+import { JsaTypePicker } from "../../components/forms/JsaTypePicker";
+import { useComplianceQuery } from "../../hooks/queries/useComplianceQuery";
 
 const CATEGORY_META = {
   "Finance & Procurement": {
@@ -168,11 +172,18 @@ const cardVariants: Variants = {
 interface FormCardProps {
   form: FormDefinition;
   index: number;
+  onJsaPickerOpen?: () => void;
+  complianceStatus?: {
+    dvir: boolean;
+    equipment: boolean;
+    jsa: boolean;
+  };
 }
 
-const FormCard = ({ form, index }: FormCardProps) => {
+const FormCard = ({ form, index, onJsaPickerOpen, complianceStatus }: FormCardProps) => {
   const Icon = form.icon;
   const isExternal = form.type === "external";
+  const useJsaPicker = form.id === "daily-jsa" && onJsaPickerOpen;
 
   const cardContent = (
     <AdaptiveCardWrapper>
@@ -207,6 +218,35 @@ const FormCard = ({ form, index }: FormCardProps) => {
                 <span className="text-[8px] sm:text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-white/70">
                   {form.tag}
                 </span>
+              )}
+              {/* Compliance status indicator for required forms */}
+              {complianceStatus && (form.id === "dvir" || form.id === "equipment-inspection" || form.id === "daily-jsa") && (
+                (() => {
+                  const isComplete = 
+                    (form.id === "dvir" && complianceStatus.dvir) ||
+                    (form.id === "equipment-inspection" && complianceStatus.equipment) ||
+                    (form.id === "daily-jsa" && complianceStatus.jsa);
+                  
+                  return isComplete ? (
+                    <span 
+                      className="text-[8px] sm:text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 flex items-center gap-0.5"
+                      title="Completed today"
+                      aria-label="Form completed today"
+                    >
+                      <CheckCircle2 className="w-2.5 h-2.5" />
+                      <span className="hidden xs:inline">Done</span>
+                    </span>
+                  ) : (
+                    <span 
+                      className="text-[8px] sm:text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-200 flex items-center gap-0.5"
+                      title="Required - not completed today"
+                      aria-label="Form required but not completed today"
+                    >
+                      <AlertCircle className="w-2.5 h-2.5" />
+                      <span className="hidden xs:inline">Due</span>
+                    </span>
+                  );
+                })()
               )}
             </div>
           </div>
@@ -256,8 +296,21 @@ const FormCard = ({ form, index }: FormCardProps) => {
         >
           {cardContent}
         </a>
+      ) : useJsaPicker ? (
+        <button
+          type="button"
+          onClick={onJsaPickerOpen}
+          className="block h-full w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] rounded-xl"
+          aria-label={`Open ${form.title} form`}
+        >
+          {cardContent}
+        </button>
       ) : (
-        <Link to={form.to ?? "/"} className="block h-full">
+        <Link
+          to={form.to ?? "/"}
+          className="block h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] rounded-xl"
+          aria-label={`Open ${form.title} form`}
+        >
           {cardContent}
         </Link>
       )}
@@ -269,9 +322,15 @@ interface FormCategorySectionProps {
   category: FormCategory;
   forms: FormDefinition[];
   startIndex: number;
+  onJsaPickerOpen?: () => void;
+  complianceStatus?: {
+    dvir: boolean;
+    equipment: boolean;
+    jsa: boolean;
+  };
 }
 
-const FormCategorySection = ({ category, forms, startIndex }: FormCategorySectionProps) => {
+const FormCategorySection = ({ category, forms, startIndex, onJsaPickerOpen, complianceStatus }: FormCategorySectionProps) => {
   const meta = CATEGORY_META[category];
 
   return (
@@ -287,7 +346,13 @@ const FormCategorySection = ({ category, forms, startIndex }: FormCategorySectio
       <motion.div layout className="grid gap-2.5 sm:gap-3 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
         <AnimatePresence mode="popLayout">
           {forms.map((form, idx) => (
-            <FormCard key={form.id} form={form} index={startIndex + idx} />
+            <FormCard 
+              key={form.id} 
+              form={form} 
+              index={startIndex + idx} 
+              onJsaPickerOpen={onJsaPickerOpen}
+              complianceStatus={complianceStatus}
+            />
           ))}
         </AnimatePresence>
         </motion.div>
@@ -302,17 +367,21 @@ interface SearchBarProps {
   filteredCount: number;
 }
 
+const searchInputId = "forms-search";
+
 const SearchBar = ({ value, onChange, totalCount, filteredCount }: SearchBarProps) => (
   <div className="w-full">
     <div className="flex flex-col gap-3 sm:gap-4">
-      <label className="relative block group">
-        <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50 pointer-events-none transition-colors group-focus-within:text-emerald-300" />
+      <label htmlFor={searchInputId} className="relative block group">
+        <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50 pointer-events-none transition-colors group-focus-within:text-emerald-300" aria-hidden />
         <input
+          id={searchInputId}
           type="text"
           value={value}
           onChange={(event) => onChange(event.target.value)}
           placeholder="Search forms..."
-          className="w-full rounded-xl sm:rounded-2xl bg-black/50 border border-white/10 pl-10 sm:pl-11 pr-3 sm:pr-4 py-3 min-h-[48px] text-base sm:text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-400/60 focus:border-transparent transition-all shadow-inner touch-manipulation"
+          aria-label="Search forms"
+          className="w-full rounded-xl sm:rounded-2xl bg-black/50 border border-white/10 pl-10 sm:pl-11 pr-3 sm:pr-4 py-3 min-h-[48px] text-base sm:text-sm text-white placeholder:text-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60 focus:border-transparent transition-all shadow-inner touch-manipulation"
         />
       </label>
       <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] sm:text-xs text-white/60">
@@ -349,8 +418,10 @@ const CategoryFilter = ({ activeCategory, onChange }: CategoryFilterProps) => (
           type="button"
           onClick={() => onChange(category)}
           whileTap={{ scale: 0.97 }}
+          aria-label={category === "All" ? "Show all forms" : `Filter by ${category}`}
+          aria-pressed={isActive}
           className={cn(
-            "flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 min-h-[44px] rounded-full border text-xs sm:text-sm font-medium transition-all backdrop-blur-md touch-manipulation",
+            "flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 min-h-[44px] rounded-full border text-xs sm:text-sm font-medium transition-all backdrop-blur-md touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]",
             isActive
               ? "bg-white text-slate-900 border-white shadow-lg shadow-emerald-500/20"
               : "bg-white/5 text-white/70 border-white/10 active:bg-white/10"
@@ -395,6 +466,10 @@ const EmptyState = ({ query }: EmptyStateProps) => (
 export default function Forms() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<CategoryFilterOption>("All");
+  const [jsaPickerOpen, setJsaPickerOpen] = useState(false);
+  
+  // Get compliance status to show indicators on required forms
+  const { compliance } = useComplianceQuery();
 
   const filteredForms = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -505,6 +580,8 @@ export default function Forms() {
                     category={category}
                     forms={forms}
                     startIndex={cardCounter}
+                    onJsaPickerOpen={() => setJsaPickerOpen(true)}
+                    complianceStatus={compliance}
                   />
                 );
                 cardCounter += forms.length;
@@ -516,6 +593,10 @@ export default function Forms() {
           </div>
         </div>
       </div>
+      <JsaTypePicker
+        open={jsaPickerOpen}
+        onClose={() => setJsaPickerOpen(false)}
+      />
     </DashboardLayout>
   );
 }

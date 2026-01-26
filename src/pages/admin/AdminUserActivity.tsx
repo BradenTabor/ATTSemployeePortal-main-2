@@ -452,14 +452,15 @@ const UserActivityCard = memo(
                 {formatRelativeTime(session.last_seen_at)}
               </span>
               <button
+                type="button"
                 onClick={onToggle}
-                className="p-1.5 rounded-lg border border-white/10 hover:border-[#f4c979]/30 hover:bg-white/5 transition-all"
+                className="p-1.5 rounded-lg border border-white/10 hover:border-[#f4c979]/30 hover:bg-white/5 transition-all focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
                 aria-label={isExpanded ? "Collapse details" : "Expand details"}
               >
                 {isExpanded ? (
-                  <ChevronUp className="w-3.5 h-3.5 text-[#f4c979]" />
+                  <ChevronUp className="w-3.5 h-3.5 text-[#f4c979]" aria-hidden />
                 ) : (
-                  <ChevronDown className="w-3.5 h-3.5 text-white/50" />
+                  <ChevronDown className="w-3.5 h-3.5 text-white/50" aria-hidden />
                 )}
               </button>
             </div>
@@ -637,8 +638,10 @@ function AdminUserActivity() {
       }
 
       // Create a map of user_id to their active session
-      const activeSessionMap = new Map<string, UserActivitySession>();
-      (activeSessions || []).forEach((session: UserActivitySession) => {
+      // Note: activeSessions from API doesn't include email/full_name/role yet - those are added in merge step
+      type RawSession = Omit<UserActivitySession, 'email' | 'full_name' | 'role'>;
+      const activeSessionMap = new Map<string, RawSession>();
+      (activeSessions || []).forEach((session: RawSession) => {
         // Only keep the most recent session per user
         if (!activeSessionMap.has(session.user_id)) {
           activeSessionMap.set(session.user_id, session);
@@ -647,7 +650,7 @@ function AdminUserActivity() {
 
       // Merge all users with their session data (or mark as offline)
       const mergedSessions: UserActivitySession[] = (allUsers || []).map((user) => {
-        const activeSession = activeSessionMap.get(user.user_id);
+        const activeSession = activeSessionMap.get(user.user_id) as UserActivitySession | undefined;
         
         if (activeSession) {
           // User has an active/idle session
@@ -979,18 +982,21 @@ function AdminUserActivity() {
 
             {/* Refresh Button */}
             <button
+              type="button"
               onClick={handleRefresh}
               disabled={refreshing}
+              aria-label={refreshing ? "Refreshing activity..." : "Refresh user activity"}
               className={cn(
                 "inline-flex items-center justify-center gap-1.5 px-3 sm:px-5 py-2 sm:py-3 rounded-lg sm:rounded-xl",
                 "bg-gradient-to-r from-[#f7e4bd]/10 to-[#f4c979]/10",
                 "border border-[#f4c979]/30 text-[#f4c979]",
                 "hover:from-[#f7e4bd]/20 hover:to-[#f4c979]/20",
                 "transition-all duration-200 min-h-[40px] sm:min-h-[48px] flex-shrink-0",
-                "disabled:opacity-50 disabled:cursor-not-allowed"
+                "disabled:opacity-50 disabled:cursor-not-allowed",
+                "focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
               )}
             >
-              <RefreshCw className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", refreshing && "animate-spin")} />
+              <RefreshCw className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", refreshing && "animate-spin")} aria-hidden />
               <span className="text-xs sm:text-sm font-semibold hidden sm:inline">Refresh</span>
             </button>
           </div>
@@ -1005,13 +1011,13 @@ function AdminUserActivity() {
               {searchQuery && (
                 <span className="inline-flex items-center gap-1.5 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border border-[#f4c979]/30 bg-[#f4c979]/10 text-[10px] sm:text-xs text-[#fef3d1]">
                   {searchQuery}
-                  <button onClick={() => setSearchQuery("")} className="hover:text-white">✕</button>
+                  <button type="button" onClick={() => setSearchQuery("")} aria-label="Clear search" className="hover:text-white focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 rounded">✕</button>
                 </span>
               )}
               {statusFilter && (
                 <span className="inline-flex items-center gap-1.5 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border border-[#f6dcb2]/30 bg-[#f6dcb2]/10 text-[10px] sm:text-xs text-[#fef3d1]">
                   {statusFilter}
-                  <button onClick={() => setStatusFilter(null)} className="hover:text-white">✕</button>
+                  <button type="button" onClick={() => setStatusFilter(null)} aria-label="Clear status filter" className="hover:text-white focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 rounded">✕</button>
                 </span>
               )}
             </motion.div>

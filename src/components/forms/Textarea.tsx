@@ -11,6 +11,7 @@ interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
  * Accessibility features:
  * - Visible focus ring for keyboard navigation
  * - Improved placeholder contrast (50% vs 30%) for readability
+ * - Minimum 44px height for touch targets
  */
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ className, error, ...props }, ref) => {
@@ -21,12 +22,14 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           'w-full bg-[#050402]/80 border rounded-2xl px-4 py-3 text-white resize-none',
           // Improved placeholder contrast for accessibility (WCAG)
           'placeholder:text-white/50',
-          // Visible focus ring for keyboard navigation
-          'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#030201]',
+          // Visible focus ring for keyboard navigation (focus-visible only, not mouse clicks)
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#030201]',
           'transition-colors duration-200',
+          // Minimum touch target height
+          'min-h-[44px]',
           error
-            ? 'border-red-500/50 focus:ring-red-500/60'
-            : 'border-[#f6dcb2]/20 focus:ring-[#f4c979]/60',
+            ? 'border-red-500/50 focus-visible:ring-red-500/60'
+            : 'border-[#f6dcb2]/20 focus-visible:ring-[#f4c979]/60',
           className
         )}
         {...props}

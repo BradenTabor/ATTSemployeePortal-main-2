@@ -11,6 +11,7 @@ import { WelcomeHeader } from "../../components/dashboard";
 import BrandedNavCard from "../../components/BrandedNavCard";
 import { EnableNotificationsButton } from "../../components/notifications";
 import { getDeviceCapabilities } from "../../lib/mobilePerf";
+import { logger } from "../../lib/logger";
 
 // Lazy-loaded announcement card
 const ThemedAnnouncementCard = lazy(() => import("../../components/ThemedAnnouncementCard"));
@@ -57,7 +58,7 @@ export default function SafetyOfficerDashboard() {
       await signOut();
       navigate("/", { replace: true });
     } catch (error) {
-      console.error("Sign out error:", error);
+      logger.error("[SafetyOfficerDashboard] Sign out failed:", error);
     }
   }, [navigate, setSession, signOut]);
 

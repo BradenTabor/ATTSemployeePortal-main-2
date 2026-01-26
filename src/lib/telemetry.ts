@@ -185,6 +185,27 @@ export function clearSession(): void {
   }
 }
 
+/**
+ * Clear all telemetry-related localStorage data.
+ * SEC-001: Called on logout to prevent data leakage.
+ */
+export function clearTelemetryStorage(): void {
+  if (typeof window !== 'undefined') {
+    try {
+      // Clear any telemetry-related localStorage keys
+      const keys = Object.keys(localStorage);
+      keys.forEach(key => {
+        if (key.startsWith('telemetry_') || key.startsWith('session_')) {
+          localStorage.removeItem(key);
+        }
+      });
+      logger.debug('[Telemetry] Telemetry storage cleared');
+    } catch (error) {
+      logger.warn('[Telemetry] Failed to clear telemetry storage:', error);
+    }
+  }
+}
+
 // ============================================================================
 // USER CONTEXT
 // ============================================================================

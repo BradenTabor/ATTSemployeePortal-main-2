@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
 import type { SharedUser } from '../../pages/forms/DailyJSAForm';
 import { cn } from '../../lib/utils';
+import { logger } from '../../lib/logger';
 
 interface JsaUserSelectorProps {
   selectedUsers: SharedUser[];
@@ -61,8 +62,9 @@ export function JsaUserSelector({
 
         setAllUsers((data || []) as UserSearchResult[]);
       } catch (err) {
-        console.error('Failed to load users:', err);
-        setError((err as unknown as { message?: string }).message || 'Failed to load users');
+        logger.error('Failed to load users:', err);
+        const errorMsg = (err as unknown as { message?: string }).message;
+        setError(errorMsg || 'Unable to load users. Please check your connection and try again.');
         setAllUsers([]);
       } finally {
         setLoading(false);

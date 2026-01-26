@@ -406,14 +406,14 @@ export function DVIRTab({
                     <span className="hidden sm:inline">Export</span>
                   </motion.button>
                   <div className="absolute right-0 top-full mt-2 w-40 bg-gray-950 border-2 border-gray-800 rounded-xl shadow-2xl shadow-black/50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20 overflow-hidden">
-                    <button onClick={() => handleExportDvir("csv")} disabled={isExporting} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:text-white hover:bg-orange-600/20 transition-colors">
-                      <FileSpreadsheet className="w-4 h-4 text-orange-400" /> CSV
+                    <button type="button" onClick={() => handleExportDvir("csv")} disabled={isExporting} aria-label="Export DVIR as CSV" className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:text-white hover:bg-orange-600/20 transition-colors min-h-[44px] focus-visible:outline focus-visible:ring-2 focus-visible:ring-orange-400/50 focus-visible:ring-inset">
+                      <FileSpreadsheet className="w-4 h-4 text-orange-400" aria-hidden /> CSV
                     </button>
-                    <button onClick={() => handleExportDvir("excel")} disabled={isExporting} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:text-white hover:bg-orange-600/20 transition-colors border-t border-gray-800">
-                      <Table className="w-4 h-4 text-orange-400" /> Excel
+                    <button type="button" onClick={() => handleExportDvir("excel")} disabled={isExporting} aria-label="Export DVIR as Excel" className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:text-white hover:bg-orange-600/20 transition-colors border-t border-gray-800 min-h-[44px] focus-visible:outline focus-visible:ring-2 focus-visible:ring-orange-400/50 focus-visible:ring-inset">
+                      <Table className="w-4 h-4 text-orange-400" aria-hidden /> Excel
                     </button>
-                    <button onClick={() => handleExportDvir("pdf")} disabled={isExporting} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:text-white hover:bg-orange-600/20 transition-colors border-t border-gray-800">
-                      <FileDown className="w-4 h-4 text-orange-400" /> PDF
+                    <button type="button" onClick={() => handleExportDvir("pdf")} disabled={isExporting} aria-label="Export DVIR as PDF" className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:text-white hover:bg-orange-600/20 transition-colors border-t border-gray-800 min-h-[44px] focus-visible:outline focus-visible:ring-2 focus-visible:ring-orange-400/50 focus-visible:ring-inset">
+                      <FileDown className="w-4 h-4 text-orange-400" aria-hidden /> PDF
                     </button>
                   </div>
                 </div>

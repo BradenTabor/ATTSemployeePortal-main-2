@@ -2,18 +2,14 @@ import DashboardLayout from "../../layouts/DashboardLayout";
 import { motion } from "framer-motion";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../../lib/supabaseClient";
-import { CONFIG } from "../../lib/config";
-import { logger } from "../../lib/logger";
 import { formToast } from "../../lib/formToast";
+import { useRTOSubmission, useRTOUserProfile } from "../../hooks/rto";
 import { DateField, TimeField } from "../../components/forms/GlassyPickers";
 import { CalendarDays, Clock } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { FormSuccessCelebration } from "../../components/forms/FormSuccessCelebration";
 import {
   trackFormStarted,
-  trackFormSubmitted,
-  trackFormSubmitError,
   createFormTimer,
 } from "../../lib/telemetry";
 
@@ -37,6 +33,8 @@ export default function RequestTimeOff() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">(
     "idle"
   );
+  // QA-003: Prevent duplicate submissions with atomic ref check
+  const submittingRef = useRef(false);
   
   // Success celebration state
   const [showCelebration, setShowCelebration] = useState(false);
@@ -48,61 +46,31 @@ export default function RequestTimeOff() {
 
   // Telemetry: track form completion time
   const formTimer = useRef(createFormTimer());
+  const submitFormRef = useRef<() => Promise<void>>();
   
+  // Custom hooks for RTO operations
+  const { submitRTO } = useRTOSubmission();
+  const { profile: userProfile, loading: profileLoading } = useRTOUserProfile();
+
   // Track form_started on mount
   useEffect(() => {
     trackFormStarted({ form_type: 'rto' });
     formTimer.current.reset();
   }, []);
 
-    // 🔹 Load current user from Supabase and populate email
+  // Populate form with user profile data
   useEffect(() => {
-    const loadUserProfile = async () => {
-      try {
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser();
-
-        if (userError) {
-          logger.error("Error fetching auth user:", userError);
-          return;
-        }
-
-        if (!user) {
-          logger.warn("No authenticated user found");
-          return;
-        }
-
-        // Try to also fetch app_users row (optional)
-        const { data: profile, error: profileError } = await supabase
-          .from("app_users")
-          .select("email, full_name")
-          .eq("user_id", user.id)
-          .maybeSingle(); // won't throw if no row
-
-        if (profileError) {
-          logger.error("Error fetching user profile:", profileError);
-        }
-
-        // Log to verify what you're getting back
-        logger.debug("Auth user:", user);
-        logger.debug("Profile row:", profile);
-
-        setFormData((prev) => ({
-          ...prev,
-          // ✅ Priority: profile.email → auth user.email → existing form value
-          email: profile?.email ?? user.email ?? prev.email,
-          // ✅ Only auto-fill name if empty so user can override
-          fullName: prev.fullName || profile?.full_name || "",
-        }));
-      } catch (err) {
-        logger.error("Unexpected error fetching user profile:", err);
-      }
-    };
-
-    loadUserProfile();
-  }, []);
+    if (!profileLoading && userProfile) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setFormData((prev) => ({
+        ...prev,
+        // Priority: profile.email → existing form value
+        email: userProfile.email || prev.email,
+        // Only auto-fill name if empty so user can override
+        fullName: prev.fullName || userProfile.fullName || "",
+      }));
+    }
+  }, [userProfile, profileLoading]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -114,6 +82,7 @@ export default function RequestTimeOff() {
   useEffect(() => {
     // Need all four fields to calculate a proper total
     if (!startTime || !endTime || !formData.startDate || !formData.endDate) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTotalDuration("");
       return;
     }
@@ -166,70 +135,31 @@ export default function RequestTimeOff() {
   }, [startTime, endTime, formData.startDate, formData.endDate]);
 
   const submitForm = useCallback(async () => {
+    // QA-003: Prevent duplicate submissions - atomic check using ref to prevent race condition
+    if (submittingRef.current || status === "loading") {
+      return;
+    }
+    submittingRef.current = true; // Set ref immediately (atomic)
     setStatus("loading");
     formToast.submitting("Submitting your time-off request...");
 
-    try {
-      // 1. Insert to Supabase FIRST and get the record ID
-      const { data: insertedRecord, error } = await supabase
-        .from("rto_requests")
-        .insert([
-          {
-            user_id: user?.id, // Required for RLS policy
-            full_name: formData.fullName,
-            email: formData.email,
-            phone_number: formData.phoneNumber,
-            start_date: formData.startDate,
-            end_date: formData.endDate,
-            start_time: startTime,
-            end_time: endTime,
-            total_duration: totalDuration,
-            reason: formData.reason,
-            notes: formData.notes,
-          },
-        ])
-        .select('id')
-        .single();
-
-      if (error) throw error;
-
-      // 2. Send to webhook WITH the record ID
-      if (!CONFIG.make.rtoWebhook) {
-        throw new Error("RTO webhook URL is not configured");
-      }
-
-      const payload = {
+    const result = await submitRTO(
+      {
         ...formData,
-        rtoRequestId: insertedRecord.id, // The Supabase record ID
-        phoneNumber: formData.phoneNumber,
         startTime,
         endTime,
         totalDuration,
-      };
-      
-      const res = await fetch(
-        CONFIG.make.rtoWebhook,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
+      },
+      user?.id,
+      formTimer.current
+    );
 
-      if (!res.ok) {
-        logger.warn("Webhook failed but record was saved:", insertedRecord.id);
-      }
-
-      // Telemetry: track successful submission with duration
-      trackFormSubmitted({
-        form_type: 'rto',
-        duration_seconds: formTimer.current.getDuration(),
-      });
-
+    if (result.success) {
       // Dismiss loading toast before showing celebration
       formToast.dismiss();
 
       setStatus("success");
+      submittingRef.current = false; // QA-003: Reset ref on success
       
       // Reset form
       setFormData({
@@ -247,25 +177,25 @@ export default function RequestTimeOff() {
       
       // Show success celebration
       setShowCelebration(true);
-    } catch (err) {
-      logger.error("Submission error:", err);
+    } else {
       setStatus("error");
-      const errorMessage = err instanceof Error ? err.message : "Something went wrong. Please try again.";
       formToast.error(
         "Submission Failed",
-        errorMessage,
-        { onRetry: () => submitForm() }
+        result.error || "Something went wrong. Please try again.",
+        { onRetry: () => submitFormRef.current?.() }
       );
       
-      // Telemetry: track server/network error
-      trackFormSubmitError({
-        form_type: 'rto',
-        error_code: err instanceof Error && err.message.includes('network') ? 'NETWORK_ERROR' : 'SERVER_ERROR',
-      });
-      
-      setTimeout(() => setStatus("idle"), 3000);
+      setTimeout(() => {
+        setStatus("idle");
+        submittingRef.current = false; // QA-003: Reset ref after error timeout
+      }, 3000);
     }
-  }, [formData, startTime, endTime, totalDuration, user?.id]);
+  }, [formData, startTime, endTime, totalDuration, user?.id, submitRTO, status]);
+
+  // Store submitForm in ref to avoid circular dependency
+  useEffect(() => {
+    submitFormRef.current = submitForm;
+  }, [submitForm]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -470,7 +400,8 @@ export default function RequestTimeOff() {
           <button
             type="submit"
             disabled={status === "loading"}
-            className="w-full py-2.5 sm:py-3 rounded-2xl sm:rounded-[35px] font-semibold text-sm sm:text-base text-white shadow-md transition-all focus:ring-2 focus:ring-green-600 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 touch-manipulation min-h-[44px]"
+            className="w-full py-2.5 sm:py-3 rounded-2xl sm:rounded-[35px] font-semibold text-sm sm:text-base text-white shadow-md transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 touch-manipulation min-h-[44px]"
+            aria-label={status === "loading" ? "Submitting request" : "Submit time-off request"}
             style={{
               background: 'radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 1) 0%, rgba(16, 66, 42, 1) 100%)',
             }}

@@ -31,6 +31,7 @@ import { supabase } from "../../lib/supabaseClient";
 import { VoiceInputButton } from "../forms/VoiceInputButton";
 import { FormSuccessCelebration } from "../forms/FormSuccessCelebration";
 import { formToast } from "../../lib/formToast";
+import { logger } from "../../lib/logger";
 
 // ============================================================================
 // TYPES
@@ -318,7 +319,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
         setEmployees(validEmployees);
       }
     } catch (error) {
-      console.error('Error fetching options:', error);
+      logger.error('Error fetching options:', error);
       formToast.error('Load Failed', 'Failed to load form options. Some fields may not work correctly.');
     } finally {
       setIsLoadingOptions(false);
@@ -376,7 +377,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
       setFormData(INITIAL_FORM_STATE);
       setShowOshaWarning(false);
     } catch (error) {
-      console.error('Error logging incident:', error);
+      logger.error('Error logging incident:', error);
       formToast.error('Submission Failed', 'Failed to log incident. Please try again.');
     }
   };

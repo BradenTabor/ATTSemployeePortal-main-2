@@ -137,6 +137,8 @@ export const MileageInput = ({ value, onChange, truckNumber, previousMileage }: 
           {/* Main input */}
           <input
             ref={inputRef}
+            id="mileage"
+            name="mileage"
             type="text"
             inputMode="numeric"
             value={displayValue}
@@ -204,29 +206,34 @@ interface ChecklistQuickActionsProps {
 }
 
 export const ChecklistQuickActions = ({ onMarkAllPass, onMarkAllFail, onClearAll, checkedCount, totalCount }: ChecklistQuickActionsProps) => (
-  <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg sm:rounded-xl bg-black/30 border border-white/5">
-    <div className="flex items-center gap-1.5 sm:gap-2">
-      <div className="text-[10px] sm:text-xs text-gray-400">
-        <span className="text-emerald-400 font-semibold">{checkedCount}</span>
-        <span className="text-gray-600"> / </span>
-        <span>{totalCount}</span>
-        <span className="ml-1 text-gray-600 hidden xs:inline">checked</span>
+  <div className="flex flex-col gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg sm:rounded-xl bg-black/30 border border-white/5">
+    <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="text-[10px] sm:text-xs text-gray-400">
+          <span className="text-emerald-400 font-semibold">{checkedCount}</span>
+          <span className="text-gray-600"> / </span>
+          <span>{totalCount}</span>
+          <span className="ml-1 text-gray-600 hidden xs:inline">checked</span>
+        </div>
+        {checkedCount === totalCount && checkedCount > 0 && (
+          <motion.span 
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+          >
+            ✓
+          </motion.span>
+        )}
       </div>
-      {checkedCount === totalCount && checkedCount > 0 && (
-        <motion.span 
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          className="text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-        >
-          ✓
-        </motion.span>
-      )}
+      <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-white/50 hidden sm:inline">
+        Quick Actions
+      </span>
     </div>
-    <div className="flex items-center gap-1.5 sm:gap-2 w-full xs:w-auto">
+    <div className="flex items-center gap-1.5 sm:gap-2 w-full">
       <button
         type="button"
         onClick={onMarkAllPass}
-        className="flex-1 xs:flex-none flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2 sm:py-1.5 text-[10px] sm:text-[10px] font-medium text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 active:bg-emerald-500/30 border border-emerald-500/30 rounded-lg transition-colors min-h-[44px] xs:min-h-[36px] sm:min-h-[32px]"
+        className="flex-1 xs:flex-none flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2.5 sm:py-2.5 text-[10px] sm:text-[10px] font-medium text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 active:bg-emerald-500/30 border border-emerald-500/30 rounded-lg transition-colors min-h-[44px]"
       >
         <CheckCheck className="w-3 h-3" />
         <span>All Pass</span>
@@ -235,7 +242,7 @@ export const ChecklistQuickActions = ({ onMarkAllPass, onMarkAllFail, onClearAll
         <button
           type="button"
           onClick={onMarkAllFail}
-          className="flex-1 xs:flex-none flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2 sm:py-1.5 text-[10px] sm:text-[10px] font-medium text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 active:bg-rose-500/30 border border-rose-500/30 rounded-lg transition-colors min-h-[44px] xs:min-h-[36px] sm:min-h-[32px]"
+          className="flex-1 xs:flex-none flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2.5 sm:py-2.5 text-[10px] sm:text-[10px] font-medium text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 active:bg-rose-500/30 border border-rose-500/30 rounded-lg transition-colors min-h-[44px]"
         >
           <X className="w-3 h-3" />
           <span>All Fail</span>
@@ -244,7 +251,8 @@ export const ChecklistQuickActions = ({ onMarkAllPass, onMarkAllFail, onClearAll
       <button
         type="button"
         onClick={onClearAll}
-        className="flex-1 xs:flex-none flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2 sm:py-1.5 text-[10px] sm:text-[10px] font-medium text-gray-400 hover:text-white active:text-white bg-white/5 hover:bg-white/10 active:bg-white/15 border border-white/10 rounded-lg transition-colors min-h-[44px] xs:min-h-[36px] sm:min-h-[32px]"
+        disabled={checkedCount === 0}
+        className="flex-1 xs:flex-none flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2.5 sm:py-2.5 text-[10px] sm:text-[10px] font-medium text-gray-400 hover:text-white active:text-white bg-white/5 hover:bg-white/10 active:bg-white/15 border border-white/10 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:opacity-40 disabled:cursor-not-allowed disabled:focus-visible:ring-0 min-h-[44px]"
       >
         <RotateCcw className="w-3 h-3" />
         <span>Clear</span>
@@ -445,7 +453,7 @@ export const UploadTile = ({ label, description, required, status, onClick }: Up
   <button
     type="button"
     onClick={onClick}
-    className="group flex items-center justify-between gap-2 sm:gap-4 rounded-xl sm:rounded-2xl border border-white/5 bg-white/[0.04] px-3 sm:px-4 py-3 text-left transition-all hover:border-emerald-400/40 hover:bg-white/[0.07] active:bg-white/[0.1] min-h-[60px] sm:min-h-[64px]"
+    className="group flex items-center justify-between gap-2 sm:gap-4 rounded-xl sm:rounded-2xl border border-white/5 bg-white/[0.04] px-3 sm:px-4 py-3 text-left transition-all hover:border-emerald-400/40 hover:bg-white/[0.07] active:bg-white/[0.1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black min-h-[60px] sm:min-h-[64px]"
   >
     <div className="flex items-center gap-2 sm:gap-3 min-w-0">
       <span className="inline-flex items-center justify-center rounded-xl sm:rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-2 sm:p-2.5 text-emerald-200 flex-shrink-0">

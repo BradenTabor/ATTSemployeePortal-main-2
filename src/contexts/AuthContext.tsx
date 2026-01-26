@@ -2,7 +2,8 @@ import { createContext, useContext, useEffect, useState, useRef, ReactNode, useC
 import { User, Session, type PostgrestSingleResponse } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
 import { logger } from "../lib/logger";
-import { setCurrentUserId, clearSession as clearTelemetrySession } from '../lib/telemetry';
+import { setCurrentUserId, clearSession as clearTelemetrySession, clearTelemetryStorage } from '../lib/telemetry';
+import { redactUserId } from '../lib/logger';
 
 
 // Matches DB constraint: check (role in ('employee', 'admin', 'manager', 'mechanic', 'general_foreman', 'safety_officer', 'foreman'))
@@ -127,7 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!skipCache) {
         const cached = getCachedProfile(userId);
         if (cached) {
-          logger.info(`[AuthContext] Using cached profile for ${userId}`, { role: cached.role, fullName: cached.fullName, avatarUrl: cached.avatarUrl });
+          logger.info(`[AuthContext] Using cached profile for ${redactUserId(userId)}`, { role: cached.role, fullName: cached.fullName, avatarUrl: cached.avatarUrl != null ? '[present]' : null });
           return { role: cached.role, fullName: cached.fullName, avatarUrl: cached.avatarUrl };
         }
       }
@@ -148,14 +149,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return response;
         }),
         new Promise<typeof timeoutSentinel>((resolve) => {
-          // Reduced timeout from 5000ms to 2000ms for faster fallback
-          timeoutId = setTimeout(() => resolve(timeoutSentinel), 2000);
+          // 4s allows slow/flaky networks (e.g. after reconnect) to complete
+          timeoutId = setTimeout(() => resolve(timeoutSentinel), 4000);
         }),
       ]);
 
       if (winner === timeoutSentinel) {
         logger.warn(
-          `[AuthContext] Profile fetch timed out for ${userId}, using cached values.`
+          `[AuthContext] Profile fetch timed out for ${redactUserId(userId)}, using cached values.`
         );
         return {
           role: lastKnownRoleRef.current ?? 'employee',
@@ -173,12 +174,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }>;
 
       if (error) {
-        logger.error(`[AuthContext] Error fetching user profile for ${userId}:`, error.message);
+        logger.error(`[AuthContext] Error fetching user profile for ${redactUserId(userId)}:`, error.message);
         return null;
       }
 
       if (!data) {
-        logger.warn(`[AuthContext] No app_users record found for user_id: ${userId}`);
+        logger.warn(`[AuthContext] No app_users record found for user_id: ${redactUserId(userId)}`);
         return { role: 'employee', fullName: null, avatarUrl: null };
       }
 
@@ -220,7 +221,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         avatarUrl: publicAvatarUrl,
       };
     } catch (error) {
-      logger.error(`[AuthContext] Failed to fetch user profile for ${userId}:`, error);
+      logger.error(`[AuthContext] Failed to fetch user profile for ${redactUserId(userId)}:`, error);
       return null;
     }
   }, []);
@@ -359,7 +360,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             lastKnownRoleRef.current = profile.role;
             lastKnownFullNameRef.current = profile.fullName;
             lastKnownAvatarUrlRef.current = profile.avatarUrl;
-            logger.info(`[AuthContext] Auth state change (${event}): Set profile for ${session.user.id}`, { role: profile.role, fullName: profile.fullName, avatarUrl: profile.avatarUrl });
+            logger.info(`[AuthContext] Auth state change (${event}): Set profile for ${redactUserId(session.user.id)}`, { role: profile.role, fullName: profile.fullName != null ? '[present]' : null, avatarUrl: profile.avatarUrl != null ? '[present]' : null });
           } else {
             logger.warn(`[AuthContext] Auth state change (${event}): Profile fetch failed, preserving last known values`);
           }
@@ -409,11 +410,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
+    // Refetch profile when network recovers (e.g. after ERR_NETWORK_CHANGED)
+    const handleOnline = () => {
+      if (!mounted) return;
+      const sess = supabase.auth.getSession();
+      sess.then(({ data: { session } }) => {
+        if (session?.user?.id) {
+          logger.info('[AuthContext] Window online – refetching profile');
+          fetchUserProfile(session.user.id, true).then((profile) => {
+            if (!mounted || !profile) return;
+            lastKnownRoleRef.current = profile.role;
+            lastKnownFullNameRef.current = profile.fullName;
+            lastKnownAvatarUrlRef.current = profile.avatarUrl;
+            setRole(profile.role);
+            setFullName(profile.fullName);
+            setAvatarUrl(profile.avatarUrl);
+            setIsAdmin(profile.role === 'admin');
+            setIsMechanic(profile.role === 'mechanic');
+            setHasMechanicAccess(profile.role === 'admin' || profile.role === 'mechanic');
+          });
+        }
+      });
+    };
+
     window.addEventListener('beforeunload', cleanupRealtime);
+    window.addEventListener('online', handleOnline);
 
     return () => {
       mounted = false;
       window.removeEventListener('beforeunload', cleanupRealtime);
+      window.removeEventListener('online', handleOnline);
       cleanupRealtime();
       subscription.unsubscribe();
     };
@@ -440,6 +466,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       lastKnownFullNameRef.current = null;
       lastKnownAvatarUrlRef.current = null;
       clearCachedProfile();
+      clearTelemetrySession();
+      
+      // SEC-001: Clear localStorage on logout to prevent data leakage
+      try {
+        localStorage.clear();
+        clearTelemetryStorage(); // Also clear telemetry-specific storage
+        logger.debug('[AuthContext] localStorage cleared on sign out');
+      } catch (error) {
+        logger.warn('[AuthContext] Failed to clear localStorage:', error);
+      }
+      
       setUser(null);
       setSessionState(null);
       setRole(null);

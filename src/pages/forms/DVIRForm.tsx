@@ -8,16 +8,15 @@ import {
 } from "react";
 import { motion } from "framer-motion";
 import DashboardLayout from "../../layouts/DashboardLayout";
-import { AlertTriangle, Truck } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
-import { CONFIG } from "../../lib/config";
-import { logger } from "../../lib/logger"; 
+import { logger, redactUserId } from "../../lib/logger"; 
 import { cn } from "../../lib/utils";
-import { DateField } from "../../components/forms/GlassyPickers";
 import { useSmartDefaults } from "../../hooks/useSmartDefaults";
 import { SmartDefaultsPanel } from "../../components/forms/SmartDefaultsPanel";
 import { VoiceInputButton } from "../../components/forms/VoiceInputButton";
 import { formToast } from "../../lib/formToast";
+import { validators as formValidators } from "../../lib/formValidation";
 import { useFormPersistence } from "../../hooks/useFormPersistence";
 import { DraftRecoveryModal } from "../../components/forms/DraftRecoveryModal";
 import { FormSuccessCelebration } from "../../components/forms/FormSuccessCelebration";
@@ -26,14 +25,14 @@ import { useComplianceToast, type RemainingForm } from "../../hooks/useComplianc
 import { useInvalidateCompliance } from "../../hooks/queries/useComplianceQuery";
 import {
   trackFormStarted,
-  trackFormSubmitted,
   trackFormSubmitError,
   createFormTimer,
 } from "../../lib/telemetry";
+import { parseFormError, getErrorToastTitle } from "../../lib/errorHandling";
 import { ValidationSummary } from "../../components/forms/ValidationSummary";
 import { ValidatedSubmitButton } from "../../components/forms/ValidatedSubmitButton";
 import { scrollToFirstError } from "../../lib/scrollToError";
-import { useDVIRFormValidation, useDVIRPhotoUpload } from "../../hooks/dvir";
+import { useDVIRFormValidation, useDVIRPhotoUpload, useDVIRSubmission } from "../../hooks/dvir";
 
 // Import types and components from the dvir module
 import {
@@ -42,15 +41,13 @@ import {
   type DVIRFormState,
   createInitialDVIRFormState,
   TRUCK_NUMBERS,
-  TRAILER_NUMBERS,
-  CHIPPER_NUMBERS,
   VEHICLE_TRAILER_ITEMS,
   AERIAL_LIFT_ITEMS,
   SectionCard,
-  MileageInput,
   ChecklistQuickActions,
   FormProgress,
   UploadTile,
+  SectionA,
   type ProgressStep,
 } from "./dvir";
 
@@ -84,6 +81,9 @@ export default function DVIRForm() {
   const [showDraftModal, setShowDraftModal] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [remainingForms, setRemainingForms] = useState<RemainingForm[]>([]);
+  // Camera-related state (Files can't be persisted to localStorage)
+  const [oilDipstickPhoto, setOilDipstickPhoto] = useState<File | null>(null);
+  const [extraPhotos, setExtraPhotos] = useState<ExtraPhotos>({});
   
   // Compliance toast for nudging and full celebration
   const { 
@@ -105,6 +105,7 @@ export default function DVIRForm() {
     lastSaved,
     hasUnsavedChanges,
     saveDraft,
+    flushPendingSave,
     clearDraft,
     dismissDraft,
     markAsSaved,
@@ -116,10 +117,40 @@ export default function DVIRForm() {
     debounceMs: 500,
   });
   
-  // Show draft recovery modal if draft exists
+  // Check for template data from history (takes precedence over draft)
+  useEffect(() => {
+    const templateDataStr = sessionStorage.getItem('dvir-template');
+    if (templateDataStr) {
+      try {
+        const templateData = JSON.parse(templateDataStr) as Partial<DVIRFormState>;
+        // Merge template data with initial state (template overrides defaults)
+        setForm({
+          ...createInitialDVIRFormState(),
+          ...templateData,
+          // Ensure signatures are always empty for new forms
+          finalDriverSignature: "",
+          generalForemanSignature: "",
+          mechanicSignature: "",
+          driverApprovalSignature: "",
+        });
+        // Clear template data after use
+        sessionStorage.removeItem('dvir-template');
+        formToast.success("Template Loaded", "Previous DVIR data has been loaded. Please review and update as needed.");
+      } catch (err) {
+        logger.error("Failed to parse template data:", err);
+        sessionStorage.removeItem('dvir-template');
+      }
+    }
+  }, []);
+
+  // Show draft recovery modal if draft exists (with small delay to be less intrusive)
   useEffect(() => {
     if (hasDraft && draftData) {
-      setShowDraftModal(true);
+      // Small delay to allow page to render first, making modal less intrusive
+      const timer = setTimeout(() => {
+        setShowDraftModal(true);
+      }, 500);
+      return () => clearTimeout(timer);
     }
   }, [hasDraft, draftData]);
   
@@ -148,54 +179,136 @@ export default function DVIRForm() {
   }, [form, currentStep, completedSteps, user?.id, saveDraft]);
   
   // Warn before closing browser/tab with unsaved changes (beforeunload)
+  // Also warn if photos are selected (photos can't be persisted to localStorage)
+  // Save draft immediately if there are unsaved changes
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasUnsavedChanges && !showCelebration) {
+      const hasPhotos = Boolean(oilDipstickPhoto) || Object.keys(extraPhotos).length > 0;
+      if ((hasUnsavedChanges || hasPhotos) && !showCelebration) {
+        // Save draft immediately before page unload (synchronous, bypasses debounce)
+        if (hasUnsavedChanges && user?.id) {
+          flushPendingSave(form, currentStep, completedSteps);
+        }
+        
         e.preventDefault();
-        e.returnValue = 'You have unsaved changes. Your draft is auto-saved and can be recovered on the next visit.';
+        e.returnValue = hasPhotos 
+          ? 'You have photos selected that will be lost if you leave this page. Are you sure you want to leave?'
+          : 'You have unsaved changes. Your draft is auto-saved and can be recovered on the next visit.';
         return e.returnValue;
       }
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [hasUnsavedChanges, showCelebration]);
+  }, [hasUnsavedChanges, showCelebration, oilDipstickPhoto, extraPhotos, user?.id, form, currentStep, completedSteps, flushPendingSave]);
   
   // 🔽 Fetch previous mileage when truck is selected
+  // Use AbortController to prevent race conditions when truck number changes rapidly
   useEffect(() => {
+    const abortController = new AbortController();
+    
     const fetchPreviousMileage = async () => {
       if (!form.truckNumber) {
         setPreviousMileage(null);
         return;
       }
       
+      // Store current truck number to verify we're still fetching for the same truck
+      const currentTruckNumber = form.truckNumber;
+      
       try {
         const today = new Date().toISOString().split('T')[0];
         const { data, error } = await supabase
           .from("dvir_reports")
           .select("mileage, created_at")
-          .eq("truck_number", form.truckNumber)
+          .eq("truck_number", currentTruckNumber)
           .lt("created_at", `${today}T00:00:00.000Z`) // Exclude same-day reports
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
         
+        // Check if request was aborted (truck number changed)
+        if (abortController.signal.aborted) {
+          return;
+        }
+        
         if (error) {
-          logger.warn("Could not fetch previous mileage:", error);
+          // Check if request was aborted before logging
+          if (abortController.signal.aborted) {
+            return;
+          }
+          
+          // Categorize error types for better logging
+          const errorType = error.code === 'PGRST116' ? 'NOT_FOUND' : 
+                           error.code === 'PGRST301' ? 'RLS_VIOLATION' :
+                           error.message?.toLowerCase().includes('network') ? 'NETWORK_ERROR' :
+                           'UNKNOWN';
+          
+          logger.warn("Could not fetch previous mileage:", {
+            error,
+            errorType,
+            truckNumber: currentTruckNumber,
+            code: error.code,
+          });
+          
+          // Reset previousMileage on error to prevent stale data
+          if (form.truckNumber === currentTruckNumber) {
+            setPreviousMileage(null);
+          }
+          return;
+        }
+        
+        // Double-check truck number hasn't changed before setting state
+        if (abortController.signal.aborted || form.truckNumber !== currentTruckNumber) {
           return;
         }
         
         if (data?.mileage) {
-          setPreviousMileage(typeof data.mileage === 'number' ? data.mileage : parseInt(data.mileage, 10));
+          const mileageValue = typeof data.mileage === 'number' ? data.mileage : parseInt(String(data.mileage), 10);
+          if (isNaN(mileageValue)) {
+            logger.warn("Invalid mileage value in database:", data.mileage);
+            setPreviousMileage(null);
+          } else {
+            setPreviousMileage(mileageValue);
+          }
         } else {
           setPreviousMileage(null);
         }
       } catch (err) {
-        logger.error("Error fetching previous mileage:", err);
+        // Ignore abort errors
+        if (err instanceof Error && err.name === 'AbortError') {
+          return;
+        }
+        
+        // Only handle if not aborted
+        if (!abortController.signal.aborted) {
+          // Categorize error
+          const isNetworkError = err instanceof Error && (
+            err.message?.toLowerCase().includes('network') ||
+            err.message?.toLowerCase().includes('timeout') ||
+            err.message?.toLowerCase().includes('fetch')
+          );
+          
+          logger.error("Error fetching previous mileage:", {
+            error: err,
+            errorType: isNetworkError ? 'NETWORK_ERROR' : 'UNKNOWN',
+            truckNumber: currentTruckNumber,
+          });
+          
+          // Reset previousMileage on error to prevent stale data
+          if (form.truckNumber === currentTruckNumber) {
+            setPreviousMileage(null);
+          }
+        }
       }
     };
     
     fetchPreviousMileage();
+    
+    // Cleanup: abort request if truck number changes or component unmounts
+    return () => {
+      abortController.abort();
+    };
   }, [form.truckNumber]);
 
   // 🔽 Auto-populate driver info from app_users (only if form is empty)
@@ -224,7 +337,7 @@ export default function DVIRForm() {
           .select(
             "full_name, drivers_license_number, drivers_license_class, drivers_license_expiration"
           )
-          .eq("id", authUser.id)
+          .eq("user_id", authUser.id)
           .maybeSingle();
 
         if (error) {
@@ -232,7 +345,7 @@ export default function DVIRForm() {
           return;
         }
         if (!data) {
-          logger.warn("No app_users record found for user:", authUser.id);
+          logger.warn("No app_users record found for user:", redactUserId(authUser.id));
           return;
         }
 
@@ -264,10 +377,6 @@ export default function DVIRForm() {
     loadDriverInfo();
   }, [form.driversName]);
 
-  // Camera-related state (Files can't be persisted to localStorage)
-  const [oilDipstickPhoto, setOilDipstickPhoto] = useState<File | null>(null);
-  const [extraPhotos, setExtraPhotos] = useState<ExtraPhotos>({});
-
   const oilInputRef = useRef<HTMLInputElement | null>(null);
   const tireInputRef = useRef<HTMLInputElement | null>(null);
   const coolantInputRef = useRef<HTMLInputElement | null>(null);
@@ -275,6 +384,7 @@ export default function DVIRForm() {
   const mileageInputRef = useRef<HTMLInputElement | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false); // Ref for atomic race condition prevention
   
   // Telemetry: track form completion time
   const formTimer = useRef(createFormTimer());
@@ -384,12 +494,10 @@ export default function DVIRForm() {
     setForm(prev => ({ ...prev, aerialChecklist: {} }));
   }, []);
 
-  // Smart Defaults: Telemetry tracking
-  const formStartTime = useRef(Date.now());
-
   // Smart Defaults: Fetch suggestions
   const { suggestions, warnings, isLoading: suggestionsLoading } = useSmartDefaults('dvir');
   const [suggestionsVisible, setSuggestionsVisible] = useState(true);
+  const [autoAppliedDefaults, setAutoAppliedDefaults] = useState(false);
 
   // Log form_started on mount for baseline metrics
   useEffect(() => {
@@ -430,7 +538,44 @@ export default function DVIRForm() {
     });
   }, [suggestions, handleApplySuggestion]);
 
+  // Auto-apply high-confidence smart defaults when form is empty
+  useEffect(() => {
+    if (suggestions && !autoAppliedDefaults && !hasDraft && !suggestionsLoading) {
+      // Check if form is essentially empty (only initial state)
+      const isFormEmpty = !form.truckNumber && !form.mileage && !form.driversName;
+      
+      if (isFormEmpty) {
+        // Auto-apply only high-confidence suggestions
+        let appliedCount = 0;
+        Object.entries(suggestions).forEach(([field, suggestion]) => {
+          if (suggestion.confidence === 'high') {
+            handleApplySuggestion(field, suggestion.value);
+            appliedCount++;
+          }
+        });
+        
+        if (appliedCount > 0) {
+          setAutoAppliedDefaults(true);
+          logger.info('smart_defaults_auto_applied', {
+            form_type: 'dvir',
+            fields_applied: appliedCount,
+            confidence: 'high',
+          });
+        }
+      }
+    }
+  }, [suggestions, autoAppliedDefaults, hasDraft, suggestionsLoading, form.truckNumber, form.mileage, form.driversName, handleApplySuggestion]);
+
   function handleExtraPhotoChange(type: keyof ExtraPhotos, file?: File) {
+    if (file) {
+      // Validate file type and size
+      const validationError = formValidators.photoFile(file);
+      if (validationError) {
+        formToast.error("Invalid Photo", validationError);
+        return;
+      }
+    }
+    
     setExtraPhotos((prev) => ({
       ...prev,
       [type]: file,
@@ -457,16 +602,20 @@ export default function DVIRForm() {
 
   // Extract photo upload logic into hook
   const { uploadPhoto } = useDVIRPhotoUpload();
+  
+  // Extract submission logic into hook (reduces component size - ARCH-002)
+  const { submitDVIR } = useDVIRSubmission();
 
-  // 🔐 Submit handler with explicit session check so RLS auth.uid() works
+  // 🔐 Submit handler with validation and UI state management
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
 
-    // Prevent multiple submissions - MUST be first check
-    if (submitting) {
+    // Prevent multiple submissions - atomic check using ref to prevent race condition
+    if (submittingRef.current || submitting) {
       logger.warn("DVIR submission already in progress, ignoring duplicate submit");
       return;
     }
+    submittingRef.current = true; // Set ref immediately (atomic)
     setSubmitting(true);
 
     // Mark submit as attempted to show all errors
@@ -498,6 +647,7 @@ export default function DVIRForm() {
         `Please fix ${errorCount} ${errorCount === 1 ? 'issue' : 'issues'} before submitting.`,
       );
       
+      submittingRef.current = false;
       setSubmitting(false);
       return;
     }
@@ -505,316 +655,69 @@ export default function DVIRForm() {
     // All validation passed - proceed with submission
     formToast.submitting("Submitting DVIR report...");
 
-    // Track uploaded photo paths for cleanup on failure
-    const uploadedPhotoPaths: string[] = [];
+    const formStartTime = Date.now();
 
-    try {
-      // 1) Ensure we have an authenticated user
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
+    // Use submission hook for actual submission logic
+    await submitDVIR({
+      form,
+      oilDipstickPhoto,
+      extraPhotos,
+      uploadPhoto,
+      formStartTime,
+      onSuccess: async () => {
+        // ✅ Dismiss loading toast before showing celebration
+        formToast.dismiss();
 
-      if (userError) {
-        logger.error("Auth error in DVIR submit (getUser):", userError);
-        formToast.error("Authentication Error", `Unable to load user: ${userError.message}`);
-        return;
-      }
+        // ✅ Clear draft after successful submission
+        clearDraft();
+        markAsSaved();
 
-      if (!user) {
-        logger.error("No authenticated user in DVIR submit");
-        formToast.error("Authentication Error", "You must be logged in to submit a DVIR.");
-        return;
-      }
+        // ✅ Invalidate compliance cache so dashboard updates immediately
+        invalidateCompliance();
 
-      // 2) Ensure Supabase session/JWT is loaded so RLS auth.uid() is not null
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
+        // ✅ Check compliance status and get remaining forms for nudge
+        const { allComplete, remaining } = await checkAndCelebrate('dvir');
+        setRemainingForms(remaining);
+        
+        // If all complete, the full celebration will show via celebrationProps
+        // Otherwise show the individual form celebration with remaining forms nudge
+        if (!allComplete) {
+          setShowCelebration(true);
+        }
+        
+        window.scrollTo({ top: 0, behavior: "smooth" });
 
-      if (sessionError) {
-        logger.error("Auth session error in DVIR submit (getSession):", sessionError);
-        formToast.error("Session Error", "Unable to verify your session. Please refresh the page and try again.");
-        return;
-      }
+        // Reset form to initial state
+        setForm(createInitialDVIRFormState());
 
-      if (!session) {
-        logger.warn("No active session in DVIR submit – auth still hydrating?");
-        formToast.error("Session Error", "Your session is still loading. Please wait a moment and try again.");
-        return;
-      }
+        // Reset photos (can't be persisted anyway)
+        setOilDipstickPhoto(null);
+        setExtraPhotos({});
 
-      const userId = user.id;
-      const userEmail = user.email ?? null;
-
-      // 3) Upload required oil dipstick photo
-      logger.debug("Uploading oil dipstick photo...");
-      if (!oilDipstickPhoto) {
-        throw new Error("Oil dipstick photo is required");
-      }
-      const oilDipstickPath = await uploadPhoto(oilDipstickPhoto, "oil_dipstick");
-      uploadedPhotoPaths.push(oilDipstickPath);
-      logger.debug("Oil dipstick uploaded:", oilDipstickPath);
-
-      // 4) Upload optional photos
-      let tirePhotoPath: string | null = null;
-      let coolantPhotoPath: string | null = null;
-      let damagePhotoPath: string | null = null;
-      let detailCleanTruckPhotoPath: string | null = null;
-
-      if (extraPhotos.tire) {
-        logger.debug("Uploading tire photo...");
-        tirePhotoPath = await uploadPhoto(extraPhotos.tire, "tire");
-        uploadedPhotoPaths.push(tirePhotoPath);
-      }
-      if (extraPhotos.coolant) {
-        logger.debug("Uploading coolant photo...");
-        coolantPhotoPath = await uploadPhoto(extraPhotos.coolant, "coolant");
-        uploadedPhotoPaths.push(coolantPhotoPath);
-      }
-      if (extraPhotos.damage) {
-        logger.debug("Uploading damage photo...");
-        damagePhotoPath = await uploadPhoto(extraPhotos.damage, "damage");
-        uploadedPhotoPaths.push(damagePhotoPath);
-      }
-      if (extraPhotos.mileage) {
-        logger.debug("Uploading detail-clean truck photo...");
-        detailCleanTruckPhotoPath = await uploadPhoto(
-          extraPhotos.mileage,
-          "detail-clean_truck"
-        );
-        uploadedPhotoPaths.push(detailCleanTruckPhotoPath);
-      }
-
-      // 5) Signature values (typed; stored as text)
-      const finalDriverSig = form.finalDriverSignature?.trim() || null;
-      const generalForemanSig = form.generalForemanSignature?.trim() || null;
-      const mechanicSig = form.mechanicSignature?.trim() || null;
-      const driverApprovalSig = form.driverApprovalSignature?.trim() || null;
-
-      // 6) Build common payload object once
-      const commonPayload = {
-        user_id: userId,
-        user_email: userEmail,
-        created_at: new Date().toISOString(),
-
-        // Section A
-        truck_number: form.truckNumber,
-        mileage: form.mileage,
-        chipper_number: form.chipperNumber || null,
-        trailer_number: form.trailerNumber || null,
-        truck_gvwr: form.truckGvwr || null,
-        trailer_chipper_gvwr: form.trailerChipperGvwr || null,
-        medical_card_required: form.medicalCardRequired || null,
-        drivers_name: form.driversName,
-        drivers_license_number: form.driversLicenseNumber || null,
-        drivers_license_class: form.driversLicenseClass || null,
-        drivers_license_exp: form.driversLicenseExp || null,
-        drivers_license_required: form.driversLicenseRequired || null,
-        has_medical_card: form.hasMedicalCard || null,
-        medical_card_exp: form.medicalCardExp || null,
-        copy_of_registration: form.copyOfRegistration || null,
-        copy_of_insurance: form.copyOfInsurance || null,
-
-        // Checklists & notes
-        vehicle_trailer_checklist: form.vehicleTrailerChecklist,
-        notes: form.notes || null,
-        aerial_checklist: form.aerialChecklist,
-        aerial_notes: form.aerialNotes || null,
-
-        // Signatures (typed text)
-        final_driver_signature: finalDriverSig,
-        general_foreman_signature: generalForemanSig,
-        mechanic_truck_number: form.mechTruckNumber || null,
-        mechanic_date: form.mechanicDate || null,
-        deficiency_corrected: form.deficiencyCorrected || null,
-        mechanic_remarks: form.mechanicRemarks || null,
-        mechanic_signature: mechanicSig,
-        driver_approval_signature: driverApprovalSig,
-
-        // Photos
-        oil_dipstick_path: oilDipstickPath,
-        tire_photo_path: tirePhotoPath,
-        coolant_photo_path: coolantPhotoPath,
-        damage_photo_path: damagePhotoPath,
-        detail_clean_truck_photo_path: detailCleanTruckPhotoPath,
-      };
-
-      // 7) FIRST save to Supabase (DB is the source of truth)
-      logger.debug("Inserting DVIR into dvir_reports...");
-     const { error: insertError } = await supabase
-  .from("dvir_reports")
-  .insert({
-    // ✅ Do NOT send user_id – DB will default it to auth.uid()
-
-    // Section A
-    truck_number: form.truckNumber,
-    mileage: Number(form.mileage),
-    chipper_number: form.chipperNumber || null,
-    trailer_number: form.trailerNumber || null,
-    truck_gvwr: form.truckGvwr || null,
-    trailer_chipper_gvwr: form.trailerChipperGvwr || null,
-    medical_card_required: form.medicalCardRequired || null,
-    drivers_name: form.driversName,
-    drivers_license_number: form.driversLicenseNumber || null,
-    drivers_license_class: form.driversLicenseClass || null,
-    drivers_license_exp: form.driversLicenseExp || null,
-    drivers_license_required: form.driversLicenseRequired || null,
-    has_medical_card: form.hasMedicalCard || null,
-    medical_card_exp: form.medicalCardExp || null,
-    copy_of_registration: form.copyOfRegistration || null,
-    copy_of_insurance: form.copyOfInsurance || null,
-
-    // Vehicle / Trailer checklist
-    vehicle_trailer_checklist: form.vehicleTrailerChecklist,
-
-    // Notes
-    notes: form.notes || null,
-
-    // Aerial lift
-    aerial_checklist: form.aerialChecklist,
-    aerial_notes: form.aerialNotes || null,
-
-    // Final sign-off (typed signatures)
-    final_driver_signature: finalDriverSig,
-    general_foreman_signature: generalForemanSig,
-
-    // Mechanic section
-    mechanic_truck_number: form.mechTruckNumber || null,
-    mechanic_date: form.mechanicDate || null,
-    deficiency_corrected: form.deficiencyCorrected || null,
-    mechanic_remarks: form.mechanicRemarks || null,
-    mechanic_signature: mechanicSig,
-    driver_approval_signature: driverApprovalSig,
-
-    // Photo paths
-    oil_dipstick_path: oilDipstickPath,
-    tire_photo_path: tirePhotoPath,
-    coolant_photo_path: coolantPhotoPath,
-    damage_photo_path: damagePhotoPath,
-    detail_clean_truck_photo_path: detailCleanTruckPhotoPath,
-  });
-
-      if (insertError) {
-        logger.error("Supabase insert error (dvir_reports):", insertError);
-        formToast.error("Database Error", `Failed to save DVIR to the database: ${insertError.message}`);
-        return;
-      }
-
-      // Log form_submitted for baseline metrics (Smart Defaults ROI)
-      // IMPORTANT: Log immediately after successful DB insert, before webhook
-      logger.info('form_submitted', {
-        form_type: 'dvir',
-        duration_seconds: Math.round((Date.now() - formStartTime.current) / 1000),
-        smart_defaults_shown: Boolean(suggestions && Object.keys(suggestions).length > 0),
-        timestamp: new Date().toISOString(),
-      });
-
-      logger.info("DVIR row inserted successfully. Sending to Make webhook...");
-
-      // 8) THEN send to Make.com webhook (non-blocking for DB save)
-      // NOTE: Webhook is optional - if not configured or fails, we still show success since data was saved
-      let webhookSuccess = false;
-      if (CONFIG.make.dvirWebhook) {
-        try {
-          const webhookRes = await fetch(
-            CONFIG.make.dvirWebhook,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(commonPayload),
-            }
-          );
-
-          if (!webhookRes.ok) {
-            const text = await webhookRes.text();
-            logger.error("Make webhook error:", text);
-          } else {
-            webhookSuccess = true;
-            logger.info("Make webhook call succeeded.");
+        // Reset step tracking
+        setCurrentStep(1);
+        setCompletedSteps(new Set());
+      },
+      onError: (error: Error) => {
+        // Ensure form state is saved as draft on error to prevent data loss
+        if (user?.id) {
+          saveDraft(form, currentStep, completedSteps);
+        }
+        
+        // Parse error using standardized utility for consistent error messages
+        const parsedError = parseFormError(error, 'dvir');
+        formToast.error(
+          getErrorToastTitle(parsedError.isTimeout, parsedError.code),
+          parsedError.userMessage,
+          {
+            onRetry: () => handleSubmit({ preventDefault: () => {} } as React.FormEvent),
           }
-        } catch (webhookErr) {
-          logger.error("Make webhook fetch error:", webhookErr);
-        }
-      } else {
-        logger.warn("DVIR webhook URL is not configured - skipping webhook (data was saved to database)");
-      }
+        );
+      },
+    });
 
-      // Log if webhook had issues but don't fail the submission
-      if (!webhookSuccess && CONFIG.make.dvirWebhook) {
-        logger.warn("DVIR saved but webhook call failed - data is safe in database");
-      }
-
-      // ✅ Telemetry: track successful submission with duration
-      trackFormSubmitted({
-        form_type: 'dvir',
-        duration_seconds: formTimer.current.getDuration(),
-      });
-
-      // ✅ Dismiss loading toast before showing celebration
-      formToast.dismiss();
-
-      // ✅ Clear draft after successful submission
-      clearDraft();
-      markAsSaved();
-
-      // ✅ Invalidate compliance cache so dashboard updates immediately
-      invalidateCompliance();
-
-      // ✅ Check compliance status and get remaining forms for nudge
-      const { allComplete, remaining } = await checkAndCelebrate('dvir');
-      setRemainingForms(remaining);
-      
-      // If all complete, the full celebration will show via celebrationProps
-      // Otherwise show the individual form celebration with remaining forms nudge
-      if (!allComplete) {
-        setShowCelebration(true);
-      }
-      
-      window.scrollTo({ top: 0, behavior: "smooth" });
-
-      // Reset form to initial state
-      setForm(createInitialDVIRFormState());
-
-      // Reset photos (can't be persisted anyway)
-      setOilDipstickPhoto(null);
-      setExtraPhotos({});
-
-      // Reset step tracking
-      setCurrentStep(1);
-      setCompletedSteps(new Set());
-    } catch (err: unknown) {
-      logger.error("Unexpected error in DVIR handleSubmit:", err);
-      
-      // Clean up uploaded photos on failure to prevent orphaned files
-      if (uploadedPhotoPaths.length > 0) {
-        try {
-          await supabase.storage
-            .from("dvir-photos")
-            .remove(uploadedPhotoPaths);
-          logger.info(`Cleaned up ${uploadedPhotoPaths.length} orphaned photo(s) after failed submission`);
-        } catch (cleanupErr) {
-          logger.error("Failed to cleanup orphaned photos:", cleanupErr);
-        }
-      }
-      
-      const message =
-        err instanceof Error
-          ? err.message
-          : "Something went wrong submitting the DVIR (unexpected error).";
-      formToast.error("Submission Failed", message, {
-        onRetry: () => handleSubmit({ preventDefault: () => {} } as React.FormEvent),
-      });
-      
-      // Telemetry: track server/network error
-      trackFormSubmitError({
-        form_type: 'dvir',
-        error_code: err instanceof Error && err.message.includes('network') ? 'NETWORK_ERROR' : 'SERVER_ERROR',
-      });
-    } finally {
-      setSubmitting(false);
-    }
+    submittingRef.current = false;
+    setSubmitting(false);
   }
 
   return (
@@ -870,397 +773,14 @@ export default function DVIRForm() {
           )}
 
           {/* SECTION A – Vehicle / Driver Information */}
-          <SectionCard
-            title="Section A. Vehicle / Driver Information"
-            subtitle="Complete before operating any ATTS vehicle. Fields marked with * are required."
-            badge="Required"
-          >
-            {/* Truck Selection - Full Width for prominence */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* TRUCK NUMBER as dropdown - Enhanced */}
-              <div className="sm:col-span-1">
-                <label className="flex items-center gap-2 text-xs text-gray-300 mb-1">
-                  <Truck className="w-3.5 h-3.5 text-emerald-400" />
-                  SELECT TRUCK *
-                </label>
-                <select
-                  id="truckNumber"
-                  name="truckNumber"
-                  value={form.truckNumber}
-                  onChange={(e) => {
-                    setForm(prev => ({ ...prev, truckNumber: e.target.value }));
-                    handleFieldBlur('truckNumber' as keyof DVIRFormState);
-                  }}
-                  onBlur={() => handleFieldBlur('truckNumber' as keyof DVIRFormState)}
-                  className={cn(
-                    "w-full rounded-xl bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900",
-                    "border px-4 py-3 text-sm text-white font-medium",
-                    "focus:outline-none focus:ring-2 transition-all",
-                    shouldShowError('truckNumber' as keyof DVIRFormState) && getFieldError('truckNumber' as keyof DVIRFormState)
-                      ? "border-rose-500/50 focus:ring-rose-400/50"
-                      : form.truckNumber 
-                        ? "border-emerald-500/40 focus:ring-emerald-400/50"
-                        : "border-gray-700 focus:ring-emerald-400/50"
-                  )}
-                  title="Select truck number"
-                  aria-invalid={shouldShowError('truckNumber' as keyof DVIRFormState) && !!getFieldError('truckNumber' as keyof DVIRFormState)}
-                  aria-describedby={shouldShowError('truckNumber' as keyof DVIRFormState) && getFieldError('truckNumber' as keyof DVIRFormState) ? "truckNumber-error" : undefined}
-                >
-                  <option value="">Select Truck Number</option>
-                  {TRUCK_NUMBERS.map((num) => (
-                    <option key={num} value={num}>
-                      {num}
-                    </option>
-                  ))}
-                </select>
-                {shouldShowError('truckNumber' as keyof DVIRFormState) && getFieldError('truckNumber' as keyof DVIRFormState) && (
-                  <motion.p 
-                    id="truckNumber-error"
-                    role="alert"
-                    initial={{ opacity: 0, y: -4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-xs text-rose-400 mt-1 flex items-center gap-1"
-                  >
-                    <AlertTriangle className="w-3 h-3" />
-                    {getFieldError('truckNumber' as keyof DVIRFormState)}
-                  </motion.p>
-                )}
-                {form.truckNumber && !shouldShowError('truckNumber' as keyof DVIRFormState) && (
-                  <motion.p 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-[10px] text-emerald-400/70 mt-1"
-                  >
-                    ✓ Truck {form.truckNumber} selected
-                  </motion.p>
-                )}
-              </div>
-
-              {/* Enhanced Mileage Input */}
-              <div className="sm:col-span-1">
-                <MileageInput
-                  value={form.mileage}
-                  onChange={(val) => setForm(prev => ({ ...prev, mileage: val }))}
-                  truckNumber={form.truckNumber}
-                  previousMileage={previousMileage}
-                />
-              </div>
-            </div>
-            
-            {/* Equipment Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* CHIPPER NUMBER as dropdown */}
-              <div>
-                <label className="block text-xs text-gray-300 mb-1">
-                  CHIPPER NUMBER
-                </label>
-                <select
-                  value={form.chipperNumber}
-                  onChange={(e) => setForm(prev => ({ ...prev, chipperNumber: e.target.value }))}
-                  className="w-full rounded-xl bg-black/70 border border-gray-700 px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all"
-                  title="Select chipper number"
-                >
-                  <option value="">Select Chipper Number</option>
-                  {CHIPPER_NUMBERS.map((chip) => (
-                    <option key={chip} value={chip}>
-                      {chip}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* TRAILER NUMBER as dropdown */}
-              <div>
-                <label className="block text-xs text-gray-300 mb-1">
-                  TRAILER NUMBER
-                </label>
-                <select
-                  value={form.trailerNumber}
-                  onChange={(e) => setForm(prev => ({ ...prev, trailerNumber: e.target.value }))}
-                  className="w-full rounded-xl bg-black/70 border border-gray-700 px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all"
-                  title="Select trailer number"
-                >
-                  <option value="">Select Trailer Number</option>
-                  {TRAILER_NUMBERS.map((trail) => (
-                    <option key={trail} value={trail}>
-                      {trail}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs text-gray-300 mb-1">
-                  TRUCK GVWR
-                </label>
-                <input
-                  value={form.truckGvwr}
-                  onChange={(e) => setForm(prev => ({ ...prev, truckGvwr: e.target.value }))}
-                  placeholder="e.g., 26,000 lbs"
-                  className="w-full rounded-xl bg-black/70 border border-gray-700 px-3 py-2.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs text-gray-300 mb-1">
-                  TRAILER / CHIPPER GVWR
-                </label>
-                <input
-                  value={form.trailerChipperGvwr}
-                  onChange={(e) => setForm(prev => ({ ...prev, trailerChipperGvwr: e.target.value }))}
-                  placeholder="e.g., 14,000 lbs"
-                  className="w-full rounded-xl bg-black/70 border border-gray-700 px-3 py-2.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all"
-                />
-              </div>
-            </div>
-
-            {/* Medical card required - 44px touch targets for mobile */}
-            <div>
-              <label className="block text-xs text-gray-300 mb-1">
-                IS A MEDICAL CARD REQUIRED
-              </label>
-              <div className="flex gap-2 text-xs text-gray-200">
-                <label className="inline-flex items-center gap-2 min-h-[44px] px-4 rounded-lg cursor-pointer hover:bg-white/5 transition-colors">
-                  <input
-                    type="radio"
-                    name="medical_card_required"
-                    value="YES"
-                    checked={form.medicalCardRequired === "YES"}
-                    onChange={() => setForm(prev => ({ ...prev, medicalCardRequired: "YES" }))}
-                    className="w-4 h-4 accent-emerald-500"
-                  />
-                  YES
-                </label>
-                <label className="inline-flex items-center gap-2 min-h-[44px] px-4 rounded-lg cursor-pointer hover:bg-white/5 transition-colors">
-                  <input
-                    type="radio"
-                    name="medical_card_required"
-                    value="NO"
-                    checked={form.medicalCardRequired === "NO"}
-                    onChange={() => setForm(prev => ({ ...prev, medicalCardRequired: "NO" }))}
-                    className="w-4 h-4 accent-emerald-500"
-                  />
-                  NO
-                </label>
-              </div>
-            </div>
-
-            {/* Driver + License fields */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="driversName" className="block text-xs text-gray-300 mb-1">
-                  DRIVERS NAME *
-                </label>
-                <input
-                  id="driversName"
-                  name="driversName"
-                  value={form.driversName}
-                  onChange={(e) => {
-                    setForm(prev => ({ ...prev, driversName: e.target.value }));
-                    handleFieldBlur('driversName' as keyof DVIRFormState);
-                  }}
-                  onBlur={() => handleFieldBlur('driversName' as keyof DVIRFormState)}
-                  placeholder="Enter full name"
-                  className={cn(
-                    "w-full rounded-md bg-black/70 border px-3 py-2 text-sm text-white",
-                    "focus:outline-none focus:ring-2 transition-all",
-                    shouldShowError('driversName' as keyof DVIRFormState) && getFieldError('driversName' as keyof DVIRFormState)
-                      ? "border-rose-500/50 focus:ring-rose-400/50"
-                      : "border-gray-700 focus:ring-emerald-400/50"
-                  )}
-                  aria-invalid={shouldShowError('driversName' as keyof DVIRFormState) && !!getFieldError('driversName' as keyof DVIRFormState)}
-                  aria-describedby={shouldShowError('driversName' as keyof DVIRFormState) && getFieldError('driversName' as keyof DVIRFormState) ? "driversName-error" : undefined}
-                />
-                {shouldShowError('driversName' as keyof DVIRFormState) && getFieldError('driversName' as keyof DVIRFormState) && (
-                  <motion.p 
-                    id="driversName-error"
-                    role="alert"
-                    initial={{ opacity: 0, y: -4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-xs text-rose-400 mt-1 flex items-center gap-1"
-                  >
-                    <AlertTriangle className="w-3 h-3" />
-                    {getFieldError('driversName' as keyof DVIRFormState)}
-                  </motion.p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="driversLicenseNumber" className="block text-xs text-gray-300 mb-1">
-                  DRIVERS LICENSE NUMBER
-                </label>
-                <input
-                  id="driversLicenseNumber"
-                  value={form.driversLicenseNumber}
-                  onChange={(e) => setForm(prev => ({ ...prev, driversLicenseNumber: e.target.value }))}
-                  placeholder="Enter license number"
-                  className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-sm text-white"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="driversLicenseClass" className="block text-xs text-gray-300 mb-1">
-                  DRIVERS LICENSE CLASS
-                </label>
-                <input
-                  id="driversLicenseClass"
-                  value={form.driversLicenseClass}
-                  onChange={(e) => setForm(prev => ({ ...prev, driversLicenseClass: e.target.value }))}
-                  placeholder="e.g., Class A, B, C"
-                  className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-sm text-white"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="driversLicenseExp" className="block text-xs text-gray-300 mb-1">
-                  DRIVERS LICENSE EXP. (MM/DD/YYYY)
-                </label>
-                <input
-                  id="driversLicenseExp"
-                  value={form.driversLicenseExp}
-                  onChange={(e) => setForm(prev => ({ ...prev, driversLicenseExp: e.target.value }))}
-                  placeholder="MM/DD/YYYY"
-                  className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-sm text-white"
-                />
-              </div>
-            </div>
-
-            {/* License required + medical card */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs text-gray-300 mb-1">
-                  DRIVERS LICENSE REQUIRED
-                </label>
-                <div className="flex gap-2 text-xs text-gray-200">
-                  <label className="inline-flex items-center gap-2 min-h-[44px] px-4 rounded-lg cursor-pointer hover:bg-white/5 transition-colors">
-                    <input
-                      type="radio"
-                      name="drivers_license_required"
-                      value="YES"
-                      checked={form.driversLicenseRequired === "YES"}
-                      onChange={() => setForm(prev => ({ ...prev, driversLicenseRequired: "YES" }))}
-                      className="w-4 h-4 accent-emerald-500"
-                    />
-                    YES
-                  </label>
-                  <label className="inline-flex items-center gap-2 min-h-[44px] px-4 rounded-lg cursor-pointer hover:bg-white/5 transition-colors">
-                    <input
-                      type="radio"
-                      name="drivers_license_required"
-                      value="NO"
-                      checked={form.driversLicenseRequired === "NO"}
-                      onChange={() => setForm(prev => ({ ...prev, driversLicenseRequired: "NO" }))}
-                      className="w-4 h-4 accent-emerald-500"
-                    />
-                    NO
-                  </label>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs text-gray-300 mb-1">
-                  DO YOU HAVE A MEDICAL CARD
-                </label>
-                <div className="flex gap-2 text-xs text-gray-200">
-                  <label className="inline-flex items-center gap-2 min-h-[44px] px-4 rounded-lg cursor-pointer hover:bg-white/5 transition-colors">
-                    <input
-                      type="radio"
-                      name="has_medical_card"
-                      value="YES"
-                      checked={form.hasMedicalCard === "YES"}
-                      onChange={() => setForm(prev => ({ ...prev, hasMedicalCard: "YES" }))}
-                      className="w-4 h-4 accent-emerald-500"
-                    />
-                    YES
-                  </label>
-                  <label className="inline-flex items-center gap-2 min-h-[44px] px-4 rounded-lg cursor-pointer hover:bg-white/5 transition-colors">
-                    <input
-                      type="radio"
-                      name="has_medical_card"
-                      value="NO"
-                      checked={form.hasMedicalCard === "NO"}
-                      onChange={() => setForm(prev => ({ ...prev, hasMedicalCard: "NO" }))}
-                      className="w-4 h-4 accent-emerald-500"
-                    />
-                    NO
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            {/* Medical card exp + copies */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <DateField
-                label="MEDICAL CARD EXPIRATION (MM/DD/YYYY)"
-                value={form.medicalCardExp}
-                onValueChange={(val) => setForm(prev => ({ ...prev, medicalCardExp: val }))}
-                helperText="Required for DOT compliance"
-                containerClassName="text-white"
-                labelClassName="text-xs tracking-wide text-gray-300"
-                className="bg-black/70 border-gray-700 focus:ring-emerald-400/50"
-              />
-
-              <div>
-                <label className="block text-xs text-gray-300 mb-1">
-                  COPY OF REGISTRATION
-                </label>
-                <div className="flex gap-2 text-xs text-gray-200">
-                  <label className="inline-flex items-center gap-2 min-h-[44px] px-4 rounded-lg cursor-pointer hover:bg-white/5 transition-colors">
-                    <input
-                      type="radio"
-                      name="copy_registration"
-                      value="YES"
-                      checked={form.copyOfRegistration === "YES"}
-                      onChange={() => setForm(prev => ({ ...prev, copyOfRegistration: "YES" }))}
-                      className="w-4 h-4 accent-emerald-500"
-                    />
-                    YES
-                  </label>
-                  <label className="inline-flex items-center gap-2 min-h-[44px] px-4 rounded-lg cursor-pointer hover:bg-white/5 transition-colors">
-                    <input
-                      type="radio"
-                      name="copy_registration"
-                      value="NO"
-                      checked={form.copyOfRegistration === "NO"}
-                      onChange={() => setForm(prev => ({ ...prev, copyOfRegistration: "NO" }))}
-                      className="w-4 h-4 accent-emerald-500"
-                    />
-                    NO
-                  </label>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs text-gray-300 mb-1">
-                  COPY OF INSURANCE
-                </label>
-                <div className="flex gap-2 text-xs text-gray-200">
-                  <label className="inline-flex items-center gap-2 min-h-[44px] px-4 rounded-lg cursor-pointer hover:bg-white/5 transition-colors">
-                    <input
-                      type="radio"
-                      name="copy_insurance"
-                      value="YES"
-                      checked={form.copyOfInsurance === "YES"}
-                      onChange={() => setForm(prev => ({ ...prev, copyOfInsurance: "YES" }))}
-                      className="w-4 h-4 accent-emerald-500"
-                    />
-                    YES
-                  </label>
-                  <label className="inline-flex items-center gap-2 min-h-[44px] px-4 rounded-lg cursor-pointer hover:bg-white/5 transition-colors">
-                    <input
-                      type="radio"
-                      name="copy_insurance"
-                      value="NO"
-                      checked={form.copyOfInsurance === "NO"}
-                      onChange={() => setForm(prev => ({ ...prev, copyOfInsurance: "NO" }))}
-                      className="w-4 h-4 accent-emerald-500"
-                    />
-                    NO
-                  </label>
-                </div>
-              </div>
-            </div>
-          </SectionCard>
+          <SectionA
+            form={form}
+            setForm={setForm}
+            previousMileage={previousMileage}
+            getFieldError={(field) => getFieldError(field) ?? null}
+            shouldShowError={shouldShowError}
+            handleFieldBlur={handleFieldBlur}
+          />
 
           {/* SECTION B – Vehicle / Trailer Inspection Checklist */}
           <SectionCard
@@ -1317,7 +837,7 @@ export default function DVIRForm() {
                         className={`
                           min-w-[44px] min-h-[44px] px-3 text-xs rounded-lg border
                           transition-transform transition-colors duration-150
-                          active:scale-95 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-1 focus:ring-offset-black
+                          active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black
                           ${
                             value === "P"
                               ? "bg-emerald-600 border-emerald-400 text-white shadow-[0_0_10px_rgba(16,185,129,0.4)]"
@@ -1336,7 +856,7 @@ export default function DVIRForm() {
                         className={`
                           min-w-[44px] min-h-[44px] px-3 text-xs rounded-lg border
                           transition-transform transition-colors duration-150
-                          active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-1 focus:ring-offset-black
+                          active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black
                           ${
                             value === "F"
                               ? "bg-red-600 border-red-400 text-white shadow-[0_0_10px_rgba(248,113,113,0.4)]"
@@ -1355,7 +875,7 @@ export default function DVIRForm() {
                         className={`
                           min-w-[44px] min-h-[44px] px-3 text-xs rounded-lg border
                           transition-transform transition-colors duration-150
-                          active:scale-95 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-1 focus:ring-offset-black
+                          active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black
                           ${
                             value === "N/A"
                               ? "bg-amber-600 border-amber-400 text-white shadow-[0_0_10px_rgba(245,158,11,0.4)]"
@@ -1559,7 +1079,7 @@ export default function DVIRForm() {
                         className={`
                           min-w-[44px] min-h-[44px] px-3 text-xs rounded-lg border
                           transition-transform transition-colors duration-150
-                          active:scale-95 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-1 focus:ring-offset-black
+                          active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black
                           ${
                             value === "P"
                               ? "bg-emerald-600 border-emerald-400 text-white shadow-[0_0_10px_rgba(16,185,129,0.4)]"
@@ -1578,7 +1098,7 @@ export default function DVIRForm() {
                         className={`
                           min-w-[44px] min-h-[44px] px-3 text-xs rounded-lg border
                           transition-transform transition-colors duration-150
-                          active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-1 focus:ring-offset-black
+                          active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black
                           ${
                             value === "F"
                               ? "bg-red-600 border-red-400 text-white shadow-[0_0_10px_rgba(248,113,113,0.4)]"
@@ -1597,7 +1117,7 @@ export default function DVIRForm() {
                         className={`
                           min-w-[44px] min-h-[44px] px-3 text-xs rounded-lg border
                           transition-transform transition-colors duration-150
-                          active:scale-95 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-1 focus:ring-offset-black
+                          active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black
                           ${
                             value === "N/A"
                               ? "bg-amber-600 border-amber-400 text-white shadow-[0_0_10px_rgba(245,158,11,0.4)]"
@@ -1822,6 +1342,7 @@ export default function DVIRForm() {
               errorCount={Object.keys(allErrors).filter(k => (allErrors as Record<string, string>)[k]).length}
               label={submitting ? "Submitting..." : "Submit DVIR"}
               className="w-full"
+              dataTestId="dvir-submit-button"
             />
           </SectionCard>
         </form>

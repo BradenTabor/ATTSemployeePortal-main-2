@@ -10,6 +10,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Mic, MicOff, Loader2 } from 'lucide-react';
 import { toast } from '../../lib/toast';
+import { logger } from '../../lib/logger';
 
 // Web Speech API types for browser compatibility
 interface SpeechRecognitionEvent extends Event {
@@ -176,7 +177,7 @@ export function VoiceInputButton({
       };
 
       recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-        console.error('Speech recognition error:', event.error);
+        logger.error('[VoiceInput] Speech recognition error', { error: event.error, message: event.message });
         setIsListening(false);
 
         switch (event.error) {
@@ -206,7 +207,7 @@ export function VoiceInputButton({
       recognition.start();
       recognitionRef.current = recognition;
     } catch (error) {
-      console.error('Failed to start speech recognition:', error);
+      logger.error('[VoiceInput] Failed to start speech recognition', { error });
       toast.error('Failed to start voice input');
       setIsListening(false);
     }
@@ -258,6 +259,7 @@ export function VoiceInputButton({
           : 'bg-amber-500/10 hover:bg-amber-500/20 focus:ring-amber-500/40'
         }
         ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+        min-w-[44px] min-h-[44px] flex items-center justify-center
         ${className}
       `}
       title={isListening ? 'Stop recording' : 'Voice input (click to speak)'}

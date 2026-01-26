@@ -32,8 +32,7 @@ export function IOSInstallPrompt() {
   // Check if running as installed PWA (standalone mode)
   const isInstalled = typeof window !== 'undefined' && (
     window.matchMedia('(display-mode: standalone)').matches ||
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window.navigator as any).standalone === true
+    window.navigator.standalone === true
   );
 
   // Check if already dismissed
@@ -59,6 +58,7 @@ export function IOSInstallPrompt() {
       if (!hasScrolled && window.scrollY > 200) {
         hasScrolled = true;
         setTimeout(showPromptNow, 2000);
+        // Remove listener once triggered to prevent multiple calls
         window.removeEventListener('scroll', handleScroll);
       }
     };
@@ -72,6 +72,7 @@ export function IOSInstallPrompt() {
       }
     }, 10000);
 
+    // Cleanup: Remove listener and clear timer
     return () => {
       window.removeEventListener('scroll', handleScroll);
       clearTimeout(fallbackTimer);

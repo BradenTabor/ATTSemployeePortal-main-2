@@ -12,7 +12,7 @@
  * - Single "Update Now" button that triggers service worker update
  */
 
-import { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download, RefreshCw, Shield, Zap, TreePine } from 'lucide-react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
@@ -25,10 +25,14 @@ interface RequiredUpdatePromptProps {
   testMode?: boolean;
 }
 
+const UPDATE_CHECK_INTERVAL_MS = 60 * 60 * 1000; // 60 minutes
+
 function RequiredUpdatePromptComponent({ required = true, testMode = false }: RequiredUpdatePromptProps) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [testModeVisible, setTestModeVisible] = useState(testMode);
+  const updateCheckPendingRef = useRef(false);
+  const swCleanupRef = useRef<(() => void) | null>(null);
 
   const {
     needRefresh: [needRefresh, setNeedRefresh],
@@ -36,12 +40,57 @@ function RequiredUpdatePromptComponent({ required = true, testMode = false }: Re
   } = useRegisterSW({
     onRegistered(registration) {
       console.log('[PWA] Service worker registered for required update:', registration);
+
+      if (!registration) return;
+
+      const checkForUpdate = async () => {
+        if (updateCheckPendingRef.current) {
+          console.log('[PWA] Update check already in progress, skipping');
+          return;
+        }
+        updateCheckPendingRef.current = true;
+        try {
+          if (!registration.installing && navigator.onLine) {
+            console.log('[PWA] Checking for updates...');
+            await registration.update();
+          }
+        } catch (error) {
+          console.warn('[PWA] Update check failed:', error);
+        } finally {
+          updateCheckPendingRef.current = false;
+        }
+      };
+
+      // Periodic check: every 60 minutes
+      const intervalId = setInterval(() => {
+        console.log('[PWA] Periodic update check (60 min interval)');
+        checkForUpdate();
+      }, UPDATE_CHECK_INTERVAL_MS);
+
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'visible') {
+          console.log('[PWA] Tab became visible, checking for updates');
+          checkForUpdate();
+        }
+      };
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+
+      swCleanupRef.current = () => {
+        clearInterval(intervalId);
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      };
     },
     onRegisterError(error) {
       console.error('[PWA] Service worker registration error:', error);
       setUpdateError('Failed to prepare update. Please refresh the page.');
     },
   });
+
+  useEffect(() => {
+    return () => {
+      swCleanupRef.current?.();
+    };
+  }, []);
 
   const handleUpdate = useCallback(async () => {
     setIsUpdating(true);

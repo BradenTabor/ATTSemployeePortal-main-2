@@ -5,6 +5,8 @@
  * accounting for fixed headers and providing visual feedback.
  */
 
+import { logger } from './logger';
+
 export interface ScrollToErrorOptions {
   /**
    * Offset from top of viewport (default: 120px for fixed headers)
@@ -52,7 +54,7 @@ export function scrollToField(
       document.querySelector(`[data-field-id="${fieldId}"]`);
 
     if (!element) {
-      console.warn(`[scrollToError] Field not found: ${fieldId}`);
+      logger.warn(`[scrollToError] Field not found: ${fieldId}`);
       return;
     }
 

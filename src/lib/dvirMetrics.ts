@@ -50,14 +50,14 @@ export async function fetchDvirMetrics(): Promise<DvirMetrics> {
       getCountOrZero(
         supabase
           .from(DVIR_TABLE)
-          .select("*", { head: true, count: "exact" })
+          .select("id", { head: true, count: "exact" })
           .or("mechanic_date.is.null,deficiency_corrected.is.null"),
         "totalOpen"
       ),
       getCountOrZero(
         supabase
           .from(DVIR_TABLE)
-          .select("*", { head: true, count: "exact" })
+          .select("id", { head: true, count: "exact" })
           .not("mechanic_date", "is", "null")
           .gte("mechanic_date", sevenDaysAgo.toISOString()),
         "completedLast7Days"
@@ -65,7 +65,7 @@ export async function fetchDvirMetrics(): Promise<DvirMetrics> {
       getCountOrZero(
         supabase
           .from(DVIR_TABLE)
-          .select("*", { head: true, count: "exact" })
+          .select("id", { head: true, count: "exact" })
           .gte("created_at", startOfToday.toISOString()),
         "todaysReports"
       ),

@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { supabase } from "../../lib/supabaseClient";
+import { logger } from "../../lib/logger";
 import { useSafetyIncidents, type SafetyIncident } from "../../hooks/queries/useRiskCalibration";
 
 // ============================================================================
@@ -161,7 +162,7 @@ function IncidentDetailModal({
           setInvolvedEmployees(data);
         }
       } catch (error) {
-        console.error('Error fetching employee names:', error);
+        logger.error('[SafetyIncidentsList] Error fetching employee names:', error);
       } finally {
         setLoadingEmployees(false);
       }

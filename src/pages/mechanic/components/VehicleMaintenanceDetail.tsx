@@ -298,17 +298,20 @@ function ServiceTimeline({ logs, isLoading }: ServiceTimelineProps) {
       
       {logs.length > 3 && (
         <button
+          type="button"
           onClick={() => setExpanded(!expanded)}
-          className="w-full mt-2 py-2 text-xs text-amber-400/70 hover:text-amber-400 flex items-center justify-center gap-1 transition-colors"
+          aria-label={expanded ? "Show less logs" : `Show ${logs.length - 3} more logs`}
+          aria-expanded={expanded}
+          className="w-full mt-2 py-2 text-xs text-amber-400/70 hover:text-amber-400 flex items-center justify-center gap-1 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-1 rounded"
         >
           {expanded ? (
             <>
-              <ChevronUp className="w-3.5 h-3.5" />
+              <ChevronUp className="w-3.5 h-3.5" aria-hidden />
               Show less
             </>
           ) : (
             <>
-              <ChevronDown className="w-3.5 h-3.5" />
+              <ChevronDown className="w-3.5 h-3.5" aria-hidden />
               Show {logs.length - 3} more
             </>
           )}
@@ -471,23 +474,25 @@ ${summary.summary}`;
               {formatTimeAgo(summary.generated_at)}
             </span>
             <button
+              type="button"
               onClick={handleCopy}
-              className="p-1.5 rounded-lg text-white/40 hover:text-white/70 hover:bg-white/5 transition-colors"
-              title="Copy summary"
+              aria-label={copied ? "Copied" : "Copy summary"}
+              className="p-1.5 rounded-lg text-white/40 hover:text-white/70 hover:bg-white/5 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-purple-400/50 focus-visible:ring-offset-1"
             >
               {copied ? (
-                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                <Check className="w-3.5 h-3.5 text-emerald-400" aria-hidden />
               ) : (
-                <Copy className="w-3.5 h-3.5" />
+                <Copy className="w-3.5 h-3.5" aria-hidden />
               )}
             </button>
             <button
+              type="button"
               onClick={() => handleGenerate(true)}
               disabled={isLoading}
-              className="p-1.5 rounded-lg text-white/40 hover:text-white/70 hover:bg-white/5 transition-colors disabled:opacity-50"
-              title="Refresh summary"
+              aria-label={isLoading ? "Refreshing summary" : "Refresh summary"}
+              className="p-1.5 rounded-lg text-white/40 hover:text-white/70 hover:bg-white/5 transition-colors disabled:opacity-50 focus-visible:outline focus-visible:ring-2 focus-visible:ring-purple-400/50 focus-visible:ring-offset-1"
             >
-              <RefreshCcw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCcw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} aria-hidden />
             </button>
           </div>
         )}
@@ -512,8 +517,10 @@ ${summary.summary}`;
             </div>
             <p className="text-xs text-red-300/70 mb-3">{error}</p>
             <button
+              type="button"
               onClick={() => handleGenerate(true)}
-              className="text-xs text-red-400 hover:text-red-300 underline"
+              aria-label="Try again to generate summary"
+              className="text-xs text-red-400 hover:text-red-300 underline focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-1 rounded"
             >
               Try again
             </button>
@@ -528,8 +535,10 @@ ${summary.summary}`;
                 ⚠️ Summary may be outdated
               </span>
               <button
+                type="button"
                 onClick={() => handleGenerate(true)}
-                className="text-xs text-amber-400 hover:text-amber-300 underline"
+                aria-label="Refresh AI summary"
+                className="text-xs text-amber-400 hover:text-amber-300 underline focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-1 rounded"
               >
                 Refresh
               </button>
@@ -552,10 +561,12 @@ ${summary.summary}`;
               Generate an AI-powered maintenance recommendation
             </p>
             <button
+              type="button"
               onClick={() => handleGenerate(false)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs font-semibold transition-all hover:shadow-lg hover:shadow-purple-500/20"
+              aria-label="Generate AI maintenance summary"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs font-semibold transition-all hover:shadow-lg hover:shadow-purple-500/20 focus-visible:outline focus-visible:ring-2 focus-visible:ring-purple-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
             >
-              <Sparkles className="w-3.5 h-3.5" />
+              <Sparkles className="w-3.5 h-3.5" aria-hidden />
               Generate Summary
             </button>
           </div>
@@ -715,29 +726,34 @@ export default function VehicleMaintenanceDetail({ vehicle, onLogRepair }: Vehic
               {/* Export Dropdown */}
               <div className="relative group">
                 <button
+                  type="button"
                   disabled={isExporting || isLoadingLogs || serviceLogs.length === 0}
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-300 text-xs font-medium hover:bg-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  aria-label={isExporting ? "Exporting..." : "Export service logs"}
+                  aria-haspopup="menu"
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-300 text-xs font-medium hover:bg-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-blue-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
                 >
-                  {isExporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+                  {isExporting ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden /> : <Download className="w-3 h-3" aria-hidden />}
                   Export
                 </button>
                 <div className="absolute right-0 top-full mt-1 w-28 bg-[#0c0402] border border-white/10 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20">
-                  <button onClick={() => handleExport('csv')} disabled={isExporting} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/70 hover:text-white hover:bg-white/5 transition-colors rounded-t-lg">
-                    <FileSpreadsheet className="w-3 h-3" /> CSV
+                  <button type="button" onClick={() => handleExport('csv')} disabled={isExporting} aria-label="Export as CSV" className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/70 hover:text-white hover:bg-white/5 transition-colors rounded-t-lg min-h-[44px] focus-visible:outline focus-visible:ring-2 focus-visible:ring-blue-400/50 focus-visible:ring-inset">
+                    <FileSpreadsheet className="w-3 h-3" aria-hidden /> CSV
                   </button>
-                  <button onClick={() => handleExport('excel')} disabled={isExporting} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/70 hover:text-white hover:bg-white/5 transition-colors">
-                    <Table className="w-3 h-3" /> Excel
+                  <button type="button" onClick={() => handleExport('excel')} disabled={isExporting} aria-label="Export as Excel" className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/70 hover:text-white hover:bg-white/5 transition-colors min-h-[44px] focus-visible:outline focus-visible:ring-2 focus-visible:ring-blue-400/50 focus-visible:ring-inset">
+                    <Table className="w-3 h-3" aria-hidden /> Excel
                   </button>
-                  <button onClick={() => handleExport('pdf')} disabled={isExporting} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/70 hover:text-white hover:bg-white/5 transition-colors rounded-b-lg">
-                    <FileDown className="w-3 h-3" /> PDF
+                  <button type="button" onClick={() => handleExport('pdf')} disabled={isExporting} aria-label="Export as PDF" className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/70 hover:text-white hover:bg-white/5 transition-colors rounded-b-lg min-h-[44px] focus-visible:outline focus-visible:ring-2 focus-visible:ring-blue-400/50 focus-visible:ring-inset">
+                    <FileDown className="w-3 h-3" aria-hidden /> PDF
                   </button>
                 </div>
               </div>
               <button
+                type="button"
                 onClick={onLogRepair}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#ff9350] to-[#e87830] text-white text-xs font-semibold transition-all hover:shadow-lg hover:shadow-[#ff9350]/20"
+                aria-label="Log repair"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#ff9350] to-[#e87830] text-white text-xs font-semibold transition-all hover:shadow-lg hover:shadow-[#ff9350]/20 focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#ff9350]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="w-3.5 h-3.5" aria-hidden />
                 Log Repair
               </button>
             </div>
@@ -811,17 +827,20 @@ export default function VehicleMaintenanceDetail({ vehicle, onLogRepair }: Vehic
             </AnimatePresence>
             
             <button
+              type="button"
               onClick={() => setShowAllStatuses(!showAllStatuses)}
-              className="w-full py-2 text-xs text-white/40 hover:text-white/60 flex items-center justify-center gap-1 transition-colors"
+              aria-label={showAllStatuses ? "Show less statuses" : "Show tire replacement statuses"}
+              aria-expanded={showAllStatuses}
+              className="w-full py-2 text-xs text-white/40 hover:text-white/60 flex items-center justify-center gap-1 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-1 rounded"
             >
               {showAllStatuses ? (
                 <>
-                  <ChevronUp className="w-3.5 h-3.5" />
+                  <ChevronUp className="w-3.5 h-3.5" aria-hidden />
                   Show less
                 </>
               ) : (
                 <>
-                  <ChevronDown className="w-3.5 h-3.5" />
+                  <ChevronDown className="w-3.5 h-3.5" aria-hidden />
                   Show tire replacement
                 </>
               )}

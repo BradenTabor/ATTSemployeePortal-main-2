@@ -13,6 +13,7 @@ import BrandedNavCard from "../../components/BrandedNavCard";
 import { EnableNotificationsButton } from "../../components/notifications";
 import { ScrollReveal } from "../../motion";
 import { getDeviceCapabilities } from "../../lib/mobilePerf";
+import { logger } from "../../lib/logger";
 import CrewStatusAnalytics from "./CrewStatusAnalytics";
 
 // Lazy-loaded announcement card
@@ -60,7 +61,7 @@ export default function GeneralForemanDashboard() {
       await signOut();
       navigate("/", { replace: true });
     } catch (error) {
-      console.error("Sign out error:", error);
+      logger.error("[GeneralForemanDashboard] Sign out failed:", error);
     }
   }, [navigate, setSession, signOut]);
 

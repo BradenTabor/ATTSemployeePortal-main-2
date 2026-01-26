@@ -31,7 +31,7 @@ import type { SuggestionValue } from '../../hooks/useSmartDefaults';
 
 interface SmartDefaultsPanelProps {
   /** Form type for telemetry */
-  formType: 'dvir' | 'jsa';
+  formType: 'dvir' | 'jsa' | 'equipment';
   /** Suggestions object with camelCase field names */
   suggestions: Record<string, SuggestionValue> | null;
   /** Optional warnings to display */

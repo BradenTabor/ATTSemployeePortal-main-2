@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { logger } from './logger';
 
 /**
  * Validates data against a Zod schema and returns typed result
@@ -34,7 +35,7 @@ export function validateApiResponse<T extends z.ZodSchema>(
 ): z.infer<T> {
   const result = schema.safeParse(data);
   if (!result.success) {
-    console.error('API response validation failed:', result.error.flatten());
+    logger.error('API response validation failed:', result.error.flatten());
     throw new Error('Invalid API response format');
   }
   return result.data;

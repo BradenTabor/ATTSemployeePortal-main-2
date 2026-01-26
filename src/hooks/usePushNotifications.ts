@@ -23,6 +23,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { toast } from '@/lib/toast';
+import { logger } from '@/lib/logger';
 
 export interface UsePushNotificationsResult {
   /** Current browser notification permission status */
@@ -129,8 +130,7 @@ export function usePushNotifications(): UsePushNotificationsResult {
     
     return (
       window.matchMedia('(display-mode: standalone)').matches ||
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window.navigator as any).standalone === true ||
+      window.navigator.standalone === true ||
       document.referrer.includes('android-app://')
     );
   }, []);
@@ -177,7 +177,7 @@ export function usePushNotifications(): UsePushNotificationsResult {
     const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
     if (!vapidPublicKey) {
       setError('VAPID key not configured');
-      console.error('[usePushNotifications] VITE_VAPID_PUBLIC_KEY not set');
+      logger.error('[usePushNotifications] VITE_VAPID_PUBLIC_KEY not set');
       return false;
     }
 
@@ -198,7 +198,7 @@ export function usePushNotifications(): UsePushNotificationsResult {
         applicationServerKey: applicationServerKey as BufferSource,
       });
 
-      console.log('[usePushNotifications] Push subscription created:', subscription.endpoint);
+      logger.info('[usePushNotifications] Push subscription created:', subscription.endpoint);
 
       // Send subscription to backend
       const { error: fnError } = await supabase.functions.invoke('push-subscribe', {
@@ -206,18 +206,18 @@ export function usePushNotifications(): UsePushNotificationsResult {
       });
 
       if (fnError) {
-        console.error('[usePushNotifications] Failed to save subscription:', fnError);
+        logger.error('[usePushNotifications] Failed to save subscription:', fnError);
         throw new Error(fnError.message || 'Failed to save subscription');
       }
 
       setIsSubscribed(true);
       notifySubscriptionChange(true); // Notify other hook instances
       toast.success('Notifications enabled!', 'You\'ll receive alerts for important updates.');
-      console.log('[usePushNotifications] Subscription saved successfully');
+      logger.info('[usePushNotifications] Subscription saved successfully');
       return true;
 
     } catch (err) {
-      console.error('[usePushNotifications] Subscribe failed:', err);
+      logger.error('[usePushNotifications] Subscribe failed:', err);
       
       // iOS-friendly error messages
       const errorMessage = err instanceof Error ? err.message : 'Failed to subscribe';
@@ -249,7 +249,7 @@ export function usePushNotifications(): UsePushNotificationsResult {
         const subscription = await registration.pushManager.getSubscription();
         setIsSubscribed(!!subscription);
       } catch (err) {
-        console.error('[usePushNotifications] Failed to check subscription:', err);
+        logger.error('[usePushNotifications] Failed to check subscription:', err);
       }
     };
 
@@ -320,7 +320,7 @@ export function usePushNotifications(): UsePushNotificationsResult {
 
       return false;
     } catch (err) {
-      console.error('[usePushNotifications] Permission request failed:', err);
+      logger.error('[usePushNotifications] Permission request failed:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to request permission';
       setError(errorMessage);
       toast.error('Failed to enable notifications', errorMessage);
@@ -346,12 +346,12 @@ export function usePushNotifications(): UsePushNotificationsResult {
         setIsSubscribed(false);
         notifySubscriptionChange(false); // Notify other hook instances
         toast.success('Notifications disabled', 'You won\'t receive push notifications anymore.');
-        console.log('[usePushNotifications] Unsubscribed from push notifications');
+        logger.info('[usePushNotifications] Unsubscribed from push notifications');
       }
 
       return true;
     } catch (err) {
-      console.error('[usePushNotifications] Unsubscribe failed:', err);
+      logger.error('[usePushNotifications] Unsubscribe failed:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to unsubscribe';
       setError(errorMessage);
       toast.error('Failed to disable notifications', errorMessage);

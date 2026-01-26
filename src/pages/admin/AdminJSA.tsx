@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
+import { useAdminJSAQuery } from "../../hooks/queries/useAdminJSAQuery";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Shield,
@@ -31,7 +32,6 @@ import {
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
-import type { DailyJsaRecord } from "../forms/DailyJSAForm";
 import TableSkeleton from "../../components/skeletons/TableSkeleton";
 import CardListSkeleton from "../../components/skeletons/CardListSkeleton";
 import { TextEffect } from "../../components/ui/TextEffect";
@@ -41,12 +41,10 @@ import {
   generateFilename,
   type ExportMetadata,
 } from "../../lib/exportUtils";
-import { logger } from "../../lib/logger";
 
 // Import from extracted module
 import {
   type AdminJsaRow,
-  type UserProfileMeta,
   type SortField,
   type SortDirection,
   PAGE_SIZE_OPTIONS,
@@ -59,6 +57,8 @@ import {
   StatCard,
   MobileJsaCard,
   SelectedJsaDetail,
+  persistAdminJSAState,
+  loadAdminJSAState,
 } from "./admin-jsa";
 
 // Use STATUS_FILTERS from module
@@ -70,13 +70,9 @@ const statusBadge = STATUS_BADGE;
 
 export default function AdminJSA() {
   const { isAdmin } = useAuth();
-  const [records, setRecords] = useState<AdminJsaRow[]>([]);
   const [allUsers, setAllUsers] = useState<{ id: string; name: string; email: string }[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
-  const [total, setTotal] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "draft" | "completed">("all");
   const [dateFilter, setDateFilter] = useState("");
@@ -101,55 +97,59 @@ export default function AdminJSA() {
   });
 
   const tableRef = useRef<HTMLDivElement>(null);
+
+  // Use React Query for caching
+  const { data, isLoading: loading, error: queryError } = useAdminJSAQuery(
+    {
+      page,
+      pageSize,
+      statusFilter,
+      dateFilter: dateFilter || undefined,
+      dateEndFilter: dateEndFilter || undefined,
+      searchQuery: searchQuery || undefined,
+      signatureFilter: signatureFilter || undefined,
+      userFilter: userFilter || undefined,
+      sortField,
+      sortDirection,
+    },
+    isAdmin
+  );
+
+  const records = useMemo(() => data?.records ?? [], [data?.records]);
+  const total = data?.total ?? 0;
+  const error = queryError ? (queryError instanceof Error ? queryError.message : "Failed to load JSA records.") : null;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
-  // Helper function to fetch user profiles in batches for large datasets
-  const fetchUserProfilesInBatches = useCallback(
-    async (
-      userIds: string[],
-      batchSize = 100
-    ): Promise<Array<{ user_id: string; email: string | null; role: string | null; full_name: string | null }>> => {
-      if (userIds.length === 0) return [];
+  // Restore persisted state on mount
+  useEffect(() => {
+    const saved = loadAdminJSAState();
+    if (!saved) return;
+    if (typeof saved.page === "number" && saved.page >= 1) setPage(saved.page);
+    if (typeof saved.pageSize === "number") setPageSize(saved.pageSize);
+    if (typeof saved.searchQuery === "string") setSearchQuery(saved.searchQuery);
+    if (saved.statusFilter) setStatusFilter(saved.statusFilter);
+    if (typeof saved.dateFilter === "string") setDateFilter(saved.dateFilter);
+    if (typeof saved.dateEndFilter === "string") setDateEndFilter(saved.dateEndFilter);
+    if (typeof saved.signatureFilter === "string") setSignatureFilter(saved.signatureFilter);
+    if (typeof saved.userFilter === "string") setUserFilter(saved.userFilter);
+    if (saved.sortField) setSortField(saved.sortField as SortField);
+    if (saved.sortDirection) setSortDirection(saved.sortDirection);
+    if (typeof saved.showFilters === "boolean") setShowFilters(saved.showFilters);
+  }, []);
 
-      // For small datasets, use single query
-      if (userIds.length <= batchSize) {
-        const { data, error } = await supabase
-          .from("user_profiles")
-          .select("user_id, email, role, full_name")
-          .in("user_id", userIds);
-
-        if (error) {
-          logger.error("Failed to fetch user profiles", { error, userIds: userIds.length });
-          return [];
+  // Update selectedId when records change (select first if current selection not in list)
+  useEffect(() => {
+    if (records.length > 0) {
+      setSelectedId((prev) => {
+        if (prev && records.some((row) => row.id === prev)) {
+          return prev;
         }
-        return data || [];
-      }
-
-      // For large datasets, batch queries
-      const batches = [];
-      for (let i = 0; i < userIds.length; i += batchSize) {
-        batches.push(userIds.slice(i, i + batchSize));
-      }
-
-      const results = await Promise.all(
-        batches.map((batch) =>
-          supabase
-            .from("user_profiles")
-            .select("user_id, email, role, full_name")
-            .in("user_id", batch)
-        )
-      );
-
-      return results.flatMap((r) => {
-        if (r.error) {
-          logger.error("Failed to fetch user profile batch", { error: r.error, batchSize: 0 });
-          return [];
-        }
-        return (r.data as unknown as Array<{ user_id: string; email: string | null; role: string | null; full_name: string | null }>) || [];
+        return records[0]?.id ?? null;
       });
-    },
-    []
-  );
+    } else {
+      setSelectedId(null);
+    }
+  }, [records]);
 
   // Fetch stats on mount
   useEffect(() => {
@@ -199,129 +199,7 @@ export default function AdminJSA() {
     fetchUsers();
   }, [isAdmin]);
 
-  const fetchRecords = useCallback(async () => {
-    if (!isAdmin) return;
-    setLoading(true);
-    setError(null);
-
-    const from = (page - 1) * pageSize;
-    const to = from + pageSize - 1;
-
-    try {
-      let query = supabase
-        .from("daily_jsa")
-        .select("*", { count: "exact" })
-        .order(sortField === "user_name" ? "user_id" : sortField, { ascending: sortDirection === "asc" })
-        .range(from, to);
-
-      if (statusFilter !== "all") {
-        query = query.eq("status", statusFilter);
-      }
-
-      if (dateFilter) {
-        query = query.gte("job_date", dateFilter);
-      }
-
-      if (dateEndFilter) {
-        query = query.lte("job_date", dateEndFilter);
-      }
-
-      if (searchQuery.trim()) {
-        const pattern = `%${searchQuery.trim()}%`;
-        query = query.or(
-          `work_location.ilike.${pattern},circuit_number.ilike.${pattern},notes.ilike.${pattern}`
-        );
-      }
-
-      if (signatureFilter.trim()) {
-        query = query.ilike("employee_signature", `%${signatureFilter.trim()}%`);
-      }
-
-      if (userFilter) {
-        query = query.eq("user_id", userFilter);
-      }
-
-      const { data, error: listError, count } = await query;
-
-      if (listError) {
-        throw listError;
-      }
-
-      const rows = (data as DailyJsaRecord[]) || [];
-      const userIds = Array.from(
-        new Set(rows.map((row) => row.user_id).filter(Boolean))
-      );
-      const userMap = new Map<string, UserProfileMeta>();
-
-      if (userIds.length > 0) {
-        const profiles = await fetchUserProfilesInBatches(userIds);
-        profiles.forEach((profile) => {
-          userMap.set(profile.user_id, {
-            email: profile.email,
-            role: profile.role,
-            full_name: profile.full_name,
-          });
-        });
-      }
-
-      const enriched = rows.map((row) => {
-        const meta = userMap.get(row.user_id) || ({} as UserProfileMeta);
-        return {
-          ...row,
-          user_email: meta.email || null,
-          user_name: meta.full_name || meta.email || "Unknown User",
-          user_role: meta.role || "No role assigned",
-          user_id: row.user_id, // Keep UUID for debugging/admin purposes
-        };
-      });
-
-      // Log missing user profiles for ops visibility
-      const unknownUserCount = enriched.filter((r) => r.user_name === "Unknown User").length;
-      if (unknownUserCount > 0) {
-        logger.warn("admin_jsa_unknown_users", {
-          count: unknownUserCount,
-          total_jsas: enriched.length,
-          percentage: ((unknownUserCount / enriched.length) * 100).toFixed(2),
-          affected_user_ids: enriched
-            .filter((r) => r.user_name === "Unknown User")
-            .map((r) => r.user_id)
-            .slice(0, 10), // Limit to first 10 for log size
-        });
-      }
-
-      // Sort by user_name if needed (since we can't sort by it directly in the query)
-      if (sortField === "user_name") {
-        enriched.sort((a, b) => {
-          const nameA = (a.user_name || "").toLowerCase();
-          const nameB = (b.user_name || "").toLowerCase();
-          return sortDirection === "asc" ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
-        });
-      }
-
-      setRecords(enriched);
-      setSelectedId((prev) => {
-        if (prev && enriched.some((row) => row.id === prev)) {
-          return prev;
-        }
-        return enriched[0]?.id ?? null;
-      });
-      setTotal(typeof count === "number" ? count : enriched.length);
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "Unable to load JSAs.";
-      console.error("Failed to load JSAs:", err);
-      setError(message);
-      setRecords([]);
-      setTotal(0);
-      setSelectedId(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [isAdmin, page, pageSize, searchQuery, statusFilter, dateFilter, dateEndFilter, signatureFilter, userFilter, sortField, sortDirection, fetchUserProfilesInBatches]);
-
-  useEffect(() => {
-    fetchRecords();
-  }, [fetchRecords]);
+  // Note: Data fetching is now handled by useAdminJSAQuery hook (React Query)
 
   useEffect(() => {
     setPage(1);
@@ -335,6 +213,23 @@ export default function AdminJSA() {
   // Device capabilities for animation decisions
   const caps = useMemo(() => getDeviceCapabilities(), []);
   const enableAnimations = !caps.prefersReducedMotion && !caps.isMobile;
+
+  // WF-019: Persist state changes to localStorage
+  useEffect(() => {
+    persistAdminJSAState({
+      page,
+      pageSize,
+      searchQuery,
+      statusFilter,
+      dateFilter,
+      dateEndFilter,
+      signatureFilter,
+      userFilter,
+      sortField,
+      sortDirection,
+      showFilters,
+    });
+  }, [page, pageSize, searchQuery, statusFilter, dateFilter, dateEndFilter, signatureFilter, userFilter, sortField, sortDirection, showFilters]);
 
   // Handle sort
   const handleSort = (field: SortField) => {
@@ -703,7 +598,7 @@ export default function AdminJSA() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setShowFilters(!showFilters)}
-                className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium bg-[#0c0a08]/70 border border-[#f6dcb2]/20 text-[#f8e5bb]/80 hover:border-[#f4c979]/40 hover:text-white active:bg-[#f4c979]/10 transition-all min-h-[40px] sm:min-h-[44px]"
+                className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium bg-[#0c0a08]/70 border border-[#f6dcb2]/20 text-[#f8e5bb]/80 hover:border-[#f4c979]/40 hover:text-white active:bg-[#f4c979]/10 transition-all min-h-[44px]"
               >
                 <Filter className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 <span className="hidden sm:inline">{showFilters ? "Hide" : "Show"} Filters</span>
@@ -723,14 +618,14 @@ export default function AdminJSA() {
                   <span className="hidden sm:inline">{isExporting ? "Exporting..." : "Export"}</span>
                 </motion.button>
                 <div className="absolute right-0 top-full mt-1 w-28 sm:w-32 bg-[#0c0a08] border border-[#f6dcb2]/20 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20">
-                  <button onClick={() => handleExport("csv")} disabled={isExporting} className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-[#f8e5bb]/70 hover:text-white hover:bg-white/5 active:bg-white/10 transition-colors rounded-t-xl min-h-[40px]">
-                    <FileSpreadsheet className="w-3.5 h-3.5" /> CSV
+                  <button type="button" onClick={() => handleExport("csv")} disabled={isExporting} aria-label="Export JSA as CSV" className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-[#f8e5bb]/70 hover:text-white hover:bg-white/5 active:bg-white/10 transition-colors rounded-t-xl min-h-[44px] focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-inset">
+                    <FileSpreadsheet className="w-3.5 h-3.5" aria-hidden /> CSV
                   </button>
-                  <button onClick={() => handleExport("excel")} disabled={isExporting} className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-[#f8e5bb]/70 hover:text-white hover:bg-white/5 active:bg-white/10 transition-colors min-h-[40px]">
-                    <Table className="w-3.5 h-3.5" /> Excel
+                  <button type="button" onClick={() => handleExport("excel")} disabled={isExporting} aria-label="Export JSA as Excel" className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-[#f8e5bb]/70 hover:text-white hover:bg-white/5 active:bg-white/10 transition-colors min-h-[44px] focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-inset">
+                    <Table className="w-3.5 h-3.5" aria-hidden /> Excel
                   </button>
-                  <button onClick={() => handleExport("pdf")} disabled={isExporting} className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-[#f8e5bb]/70 hover:text-white hover:bg-white/5 active:bg-white/10 transition-colors rounded-b-xl min-h-[40px]">
-                    <FileDown className="w-3.5 h-3.5" /> PDF
+                  <button type="button" onClick={() => handleExport("pdf")} disabled={isExporting} aria-label="Export JSA as PDF" className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-[#f8e5bb]/70 hover:text-white hover:bg-white/5 active:bg-white/10 transition-colors rounded-b-xl min-h-[44px] focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-inset">
+                    <FileDown className="w-3.5 h-3.5" aria-hidden /> PDF
                   </button>
                 </div>
               </div>

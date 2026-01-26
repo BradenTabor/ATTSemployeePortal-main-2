@@ -170,10 +170,12 @@ function SitesEmptyState({ onAdd }: { onAdd: () => void }) {
         Add GPS locations for weather-based safety forecasting.
       </p>
       <button
+        type="button"
         onClick={onAdd}
-        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#332308] font-semibold text-sm hover:scale-[1.02] transition-transform"
+        aria-label="Add first work site"
+        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#332308] font-semibold text-sm hover:scale-[1.02] transition-transform focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
       >
-        <Plus className="w-4 h-4" />
+        <Plus className="w-4 h-4" aria-hidden />
         Add First Site
       </button>
     </motion.div>
@@ -449,8 +451,8 @@ function SiteFormModal({
               <p className="text-xs text-white/40">GPS location for forecasting</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/5 transition-colors" aria-label="Close site form">
-            <X className="w-5 h-5 text-white/50" />
+          <button type="button" onClick={onClose} className="p-2 rounded-lg hover:bg-white/5 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]" aria-label="Close site form">
+            <X className="w-5 h-5 text-white/50" aria-hidden />
           </button>
         </div>
 
@@ -515,10 +517,11 @@ function SiteFormModal({
                 type="button"
                 onClick={handleGetCurrentLocation}
                 disabled={gettingCurrentLocation}
-                className="px-3 py-2.5 rounded-xl bg-[#f4c979]/15 border border-[#f4c979]/30 text-[#f4c979] hover:bg-[#f4c979]/25 transition-colors disabled:opacity-50"
+                aria-label={gettingCurrentLocation ? "Getting current location..." : "Use current location"}
+                className="px-3 py-2.5 rounded-xl bg-[#f4c979]/15 border border-[#f4c979]/30 text-[#f4c979] hover:bg-[#f4c979]/25 transition-colors disabled:opacity-50 focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
                 title="Use current location"
               >
-                {gettingCurrentLocation ? <Loader2 className="w-4 h-4 animate-spin" /> : <Crosshair className="w-4 h-4" />}
+                {gettingCurrentLocation ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden /> : <Crosshair className="w-4 h-4" aria-hidden />}
               </button>
             </div>
           </div>
@@ -531,7 +534,7 @@ function SiteFormModal({
                   Map
                 </label>
                 {!showMap && !hasValidCoordinates && (
-                  <button type="button" onClick={() => setShowMap(true)} className="text-xs text-[#f4c979]">
+                  <button type="button" onClick={() => setShowMap(true)} aria-label="Show map" className="text-xs text-[#f4c979] focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] rounded">
                     Show map
                   </button>
                 )}
@@ -602,16 +605,18 @@ function SiteFormModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/70 text-sm font-medium hover:bg-white/5 transition-colors"
+              aria-label="Cancel and close form"
+              className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/70 text-sm font-medium hover:bg-white/5 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#332308] text-sm font-semibold hover:scale-[1.02] transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
+              aria-label={isLoading ? "Saving site..." : isEdit ? "Save site" : "Add site"}
+              className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#332308] text-sm font-semibold hover:scale-[1.02] transition-transform disabled:opacity-50 flex items-center justify-center gap-2 focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
             >
-              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4" />{isEdit ? 'Save' : 'Add Site'}</>}
+              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden /> : <><Check className="w-4 h-4" aria-hidden />{isEdit ? 'Save' : 'Add Site'}</>}
             </button>
           </div>
         </form>
@@ -733,21 +738,26 @@ function SitesTabContent() {
         </div>
         <div className="flex gap-2">
           <button
+            type="button"
             onClick={() => setShowInactive(!showInactive)}
-            className={`px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors ${
+            aria-label={showInactive ? "Hide inactive sites" : "Show inactive sites"}
+            aria-pressed={showInactive}
+            className={`px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] ${
               showInactive ? 'bg-[#f4c979]/15 border-[#f4c979]/30 text-[#f4c979]' : 'border-white/10 text-white/50 hover:text-white/70'
             }`}
           >
             {showInactive ? 'Hide' : 'Show'} Inactive
           </button>
-          <button onClick={fetchSites} className="p-2.5 rounded-xl border border-white/10 text-white/50 hover:text-white/70 transition-colors" aria-label="Refresh work sites">
-            <RefreshCw className="w-4 h-4" />
+          <button type="button" onClick={fetchSites} className="p-2.5 rounded-xl border border-white/10 text-white/50 hover:text-white/70 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]" aria-label="Refresh work sites">
+            <RefreshCw className="w-4 h-4" aria-hidden />
           </button>
           <button
+            type="button"
             onClick={() => { setEditingSite(null); setShowModal(true); }}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#332308] font-semibold text-sm hover:scale-[1.02] transition-transform"
+            aria-label="Add work site"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#332308] font-semibold text-sm hover:scale-[1.02] transition-transform focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4" aria-hidden />
             Add Site
           </button>
         </div>
@@ -784,8 +794,11 @@ function SitesTabContent() {
                   </td>
                   <td className="px-4 py-3">
                     <button
+                      type="button"
                       onClick={() => handleToggleActive(site)}
-                      className={`px-2 py-1 rounded-lg text-xs font-medium transition-colors ${
+                      aria-label={site.is_active ? `Mark ${site.name} inactive` : `Mark ${site.name} active`}
+                      aria-pressed={site.is_active}
+                      className={`px-2 py-1 rounded-lg text-xs font-medium transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-1 ${
                         site.is_active
                           ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25'
                           : 'bg-white/5 text-white/40 border border-white/10 hover:bg-white/10'
@@ -797,18 +810,20 @@ function SitesTabContent() {
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-1">
                       <button
+                        type="button"
                         onClick={() => { setEditingSite(site); setShowModal(true); }}
-                        className="p-2 rounded-lg hover:bg-white/5 text-white/50 hover:text-white/80 transition-colors"
-                        title="Edit"
+                        className="p-2 rounded-lg hover:bg-white/5 text-white/50 hover:text-white/80 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-1"
+                        aria-label={`Edit site ${site.name}`}
                       >
-                        <Pencil className="w-4 h-4" />
+                        <Pencil className="w-4 h-4" aria-hidden />
                       </button>
                       <button
+                        type="button"
                         onClick={() => handleDelete(site)}
-                        className="p-2 rounded-lg hover:bg-red-500/10 text-white/50 hover:text-red-400 transition-colors"
-                        title="Delete"
+                        className="p-2 rounded-lg hover:bg-red-500/10 text-white/50 hover:text-red-400 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-1"
+                        aria-label={`Delete site ${site.name}`}
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-4 h-4" aria-hidden />
                       </button>
                     </div>
                   </td>

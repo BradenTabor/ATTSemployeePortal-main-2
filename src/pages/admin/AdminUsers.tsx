@@ -523,7 +523,7 @@ function AdminUsers() {
       const { data, error, count } = await query.range(from, to);
 
       if (error) {
-        console.error("Supabase error:", error.message, error.details);
+        logger.error("[AdminUsers] Supabase error:", error.message, error.details);
         toast.error(error.message || "Failed to load users");
         setUsers([]);
         return;
@@ -594,7 +594,7 @@ function AdminUsers() {
         if (!cancelled) fetchUsers();
       },
       onError: (error) => {
-        console.error("Realtime subscription error:", error);
+        logger.error("[AdminUsers] Realtime subscription error:", error);
       },
     });
 

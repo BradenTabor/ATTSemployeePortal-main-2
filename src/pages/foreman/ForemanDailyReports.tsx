@@ -535,9 +535,12 @@ function ReportHistory({
           ].map((opt) => (
             <button
               key={opt.value}
+              type="button"
               onClick={() => handleDateRangeChange(opt.value)}
+              aria-label={`Filter by ${opt.label}`}
+              aria-pressed={dateRange === opt.value}
               className={cn(
-                "px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
+                "px-3 py-1.5 rounded-lg text-xs font-medium transition-all focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#3b82f6]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]",
                 dateRange === opt.value
                   ? "bg-[#3b82f6]/25 text-[#bfdbfe] border border-[#3b82f6]/50"
                   : "bg-white/5 text-white/60 border border-white/10 hover:bg-white/10"
@@ -638,21 +641,25 @@ function ReportHistory({
           </span>
           <div className="flex items-center gap-1">
             <button
+              type="button"
               disabled={currentPage === 1}
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              className="p-1.5 rounded-lg bg-white/5 text-white/60 hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              aria-label="Previous page"
+              className="p-1.5 rounded-lg bg-white/5 text-white/60 hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#3b82f6]/50 focus-visible:ring-offset-1"
             >
-              <ChevronLeft className="w-3.5 h-3.5" />
+              <ChevronLeft className="w-3.5 h-3.5" aria-hidden />
             </button>
-            <span className="text-[11px] text-white/50 px-2 min-w-[50px] text-center">
+            <span className="text-[11px] text-white/50 px-2 min-w-[50px] text-center" aria-live="polite">
               {currentPage} / {totalPages}
             </span>
             <button
+              type="button"
               disabled={currentPage >= totalPages}
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              className="p-1.5 rounded-lg bg-white/5 text-white/60 hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              aria-label="Next page"
+              className="p-1.5 rounded-lg bg-white/5 text-white/60 hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#3b82f6]/50 focus-visible:ring-offset-1"
             >
-              <ChevronRight className="w-3.5 h-3.5" />
+              <ChevronRight className="w-3.5 h-3.5" aria-hidden />
             </button>
           </div>
         </div>

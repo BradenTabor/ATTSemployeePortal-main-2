@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { subscribeToTableChanges } from '../../lib/realtime';
 import { logger } from '../../lib/logger';
 import {
   debounce,
@@ -192,63 +191,78 @@ export function useUserAssignedJobs(userId: string | undefined) {
     perfMeasure('jobs-realtime-update');
   }, [debouncedRefetch]);
 
-  // Setup subscriptions
+  // Setup subscriptions (optimized: use single channel with multiple table subscriptions)
+  // PERF-014: Reduced from 4 separate channels to 1 channel with 4 table subscriptions
+  // This reduces WebSocket overhead while maintaining the same functionality
   const setupSubscriptions = useCallback(() => {
     if (!userId || isSubscribedRef.current) return;
 
     isSubscribedRef.current = true;
     const unsubscribeFns: (() => void)[] = [];
 
-    // Subscribe to job changes
-    unsubscribeFns.push(
-      subscribeToTableChanges({
-        channelName: `user-jobs-${userId}`,
-        table: 'job_progress_trackers',
-        onInsert: handleRealtimeUpdate,
-        onUpdate: handleRealtimeUpdate,
-        onDelete: handleRealtimeUpdate,
-        onError: (err) => logger.error('User jobs realtime error:', err),
-      })
-    );
+    // Use a single channel for all job-related tables to reduce network overhead
+    // Supabase Realtime allows multiple table subscriptions on the same channel
+    const channelName = `user-jobs-unified-${userId}`;
+    
+    // Create a single channel and subscribe to all tables on it
+    const channel = supabase.channel(channelName, {
+      config: {
+        broadcast: { self: false },
+      },
+    });
 
-    // Subscribe to assignment changes
-    unsubscribeFns.push(
-      subscribeToTableChanges({
-        channelName: `user-assignments-${userId}`,
-        table: 'job_crew_assignments',
-        onInsert: handleRealtimeUpdate,
-        onUpdate: handleRealtimeUpdate,
-        onDelete: handleRealtimeUpdate,
-        onError: (err) => logger.error('User assignments realtime error:', err),
-      })
-    );
+    // Subscribe to all tables on the same channel
+    const tables = [
+      { name: 'job_progress_trackers', label: 'jobs' },
+      { name: 'job_crew_assignments', label: 'assignments' },
+      { name: 'job_milestones', label: 'milestones' },
+      { name: 'job_progress_updates', label: 'progress-updates' },
+    ];
 
-    // Subscribe to milestone changes
-    unsubscribeFns.push(
-      subscribeToTableChanges({
-        channelName: `user-milestones-${userId}`,
-        table: 'job_milestones',
-        onInsert: handleRealtimeUpdate,
-        onUpdate: handleRealtimeUpdate,
-        onDelete: handleRealtimeUpdate,
-        onError: (err) => logger.error('User milestones realtime error:', err),
-      })
-    );
+    tables.forEach(({ name }) => {
+      // INSERT events
+      channel.on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: name },
+        () => {
+          handleRealtimeUpdate();
+        }
+      );
 
-    // Subscribe to progress updates
-    unsubscribeFns.push(
-      subscribeToTableChanges({
-        channelName: `user-progress-updates-${userId}`,
-        table: 'job_progress_updates',
-        onInsert: handleRealtimeUpdate,
-        onUpdate: handleRealtimeUpdate,
-        onDelete: handleRealtimeUpdate,
-        onError: (err) => logger.error('User progress updates realtime error:', err),
-      })
-    );
+      // UPDATE events
+      channel.on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: name },
+        () => {
+          handleRealtimeUpdate();
+        }
+      );
+
+      // DELETE events
+      channel.on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: name },
+        () => {
+          handleRealtimeUpdate();
+        }
+      );
+    });
+
+    // Subscribe to the channel
+    channel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        logger.debug(`[Jobs] Subscribed to unified realtime channel for user ${userId}`);
+      } else if (status === 'CHANNEL_ERROR') {
+        logger.error(`[Jobs] Channel error for user ${userId}`);
+      }
+    });
+
+    // Store unsubscribe function
+    unsubscribeFns.push(() => {
+      supabase.removeChannel(channel);
+    });
 
     unsubscribeFnsRef.current = unsubscribeFns;
-    logger.debug(`[Jobs] Subscribed to realtime updates for user ${userId}`);
   }, [userId, handleRealtimeUpdate]);
 
   // Cleanup subscriptions
@@ -299,8 +313,20 @@ export function useUserAssignedJobs(userId: string | undefined) {
       }
     });
 
+    // Refetch when network recovers (e.g. after ERR_NETWORK_CHANGED)
+    const handleOnline = () => {
+      if (!userId || cancelled) return;
+      logger.debug('[Jobs] Window online - refreshing data');
+      fetchAssignedJobs();
+      if (!isSubscribedRef.current) {
+        setupSubscriptions();
+      }
+    };
+    window.addEventListener('online', handleOnline);
+
     return () => {
       cancelled = true;
+      window.removeEventListener('online', handleOnline);
       cleanupSubscriptions();
       unsubscribeVisibility();
       

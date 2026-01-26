@@ -304,6 +304,7 @@ export function StepSpans({
                   layout
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
+                  data-testid="span-item"
                   className="rounded-xl border border-white/10 bg-black/30 overflow-hidden"
                 >
                   {/* Span Header */}
@@ -540,6 +541,7 @@ export function StepSpans({
         <button
           type="button"
           onClick={onAddSpan}
+          data-testid="add-span"
           className="w-full py-3 rounded-lg border border-dashed border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/50 transition-all flex items-center justify-center gap-2 text-sm font-medium touch-manipulation"
         >
           <Plus className="w-4 h-4" />

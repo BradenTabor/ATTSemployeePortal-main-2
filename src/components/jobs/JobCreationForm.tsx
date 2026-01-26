@@ -23,6 +23,7 @@ import { JobMilestoneEditor } from './JobMilestoneEditor';
 import { useCrews, useCrewDetails } from '../../hooks/useCrews';
 import { supabase } from '../../lib/supabaseClient';
 import { formToast } from '../../lib/formToast';
+import { logger } from '../../lib/logger';
 import { FormSuccessCelebration } from '../forms/FormSuccessCelebration';
 import { useAuth } from '../../contexts/AuthContext';
 import type { JobFormData, MilestoneInput, CrewMember, JobProgressTracker, SpanProgressMetric } from '../../types/jobs';
@@ -139,7 +140,7 @@ function JobCreationFormComponent({
         if (error) throw error;
         setWorkSites(data || []);
       } catch (err) {
-        console.error('Failed to fetch work sites:', err);
+        logger.error('[JobCreationForm] Failed to fetch work sites:', err);
         formToast.error('Load Failed', 'Failed to load work sites. You can still create a job manually.');
       } finally {
         setSitesLoading(false);

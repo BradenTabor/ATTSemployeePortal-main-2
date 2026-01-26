@@ -24,6 +24,7 @@ import { CollectPointsButton } from "../components/CollectPointsButton";
 import { AnnouncementDetailModal } from "../components/AnnouncementDetailModal";
 import { useAnnouncementTracking } from "../hooks/useAnnouncementTracking";
 import { formToast } from "../lib/formToast";
+import { logger } from "../lib/logger";
 
 interface Announcement {
   id: string;
@@ -94,7 +95,8 @@ const EmptyState = ({ searchTerm, onClearFilter }: { searchTerm: string; onClear
       <button
         type="button"
         onClick={onClearFilter}
-        className="mt-4 px-4 py-2 rounded-xl border border-emerald-500/30 text-emerald-300/80 text-xs font-medium hover:border-emerald-400/50 hover:text-emerald-200 transition-colors"
+        aria-label="Clear search filter"
+        className="mt-4 px-4 py-2 rounded-xl border border-emerald-500/30 text-emerald-300/80 text-xs font-medium hover:border-emerald-400/50 hover:text-emerald-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
       >
         Clear filter
       </button>
@@ -499,7 +501,8 @@ const SearchBar = ({ value, onChange, onClear, visibleCount, totalCount }: Searc
         <button
           type="button"
           onClick={onClear}
-          className="px-3 py-2.5 rounded-xl border border-emerald-500/20 text-emerald-300/70 text-xs font-medium hover:text-emerald-200 hover:border-emerald-400/40 transition whitespace-nowrap"
+          aria-label="Clear search"
+          className="px-3 py-2.5 rounded-xl border border-emerald-500/20 text-emerald-300/70 text-xs font-medium hover:text-emerald-200 hover:border-emerald-400/40 transition whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
         >
           Clear
         </button>
@@ -580,7 +583,7 @@ export default function Announcements() {
         .select("id", { count: "exact", head: true });
       
       if (countError) {
-        console.error("Error fetching count:", countError);
+        logger.error("Error fetching count:", countError);
       } else {
         const newCount = count || 0;
         // Check for new announcements
@@ -600,12 +603,12 @@ export default function Announcements() {
         .limit(limit);
 
       if (error) {
-        console.error("Error fetching announcements:", error);
+        logger.error("Error fetching announcements:", error);
       } else {
         setAnnouncements((data || []) as Announcement[]);
       }
     } catch (err) {
-      console.error("Error loading announcements:", err);
+      logger.error("Error loading announcements:", err);
       formToast.error("Load Failed", "Failed to load announcements. Pull to refresh or try again later.");
     } finally {
       if (showSpinner) setLoading(false);
@@ -621,7 +624,7 @@ export default function Announcements() {
       );
       await fetchAnnouncements(false, currentPage);
     } catch (err) {
-      console.error("Error refreshing announcements:", err);
+      logger.error("Error refreshing announcements:", err);
       formToast.error("Refresh Failed", "Failed to refresh announcements. Please try again.");
     }
     setRefreshing(false);
@@ -828,15 +831,18 @@ export default function Announcements() {
                         </motion.div>
 
                         <button
+                          type="button"
                           onClick={handleManualRefresh}
                           disabled={refreshing}
-                          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold text-xs transition-all shadow-md shadow-emerald-500/20 border border-emerald-400/30 disabled:opacity-50 group min-h-[40px]"
+                          aria-label={refreshing ? "Syncing announcements" : "Sync announcements feed"}
+                          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold text-xs transition-all shadow-md shadow-emerald-500/20 border border-emerald-400/30 disabled:opacity-50 group min-h-[40px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
                         >
                           <RefreshCcw
                             className={cn(
                               "w-3.5 h-3.5",
                               refreshing ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-300"
                             )}
+                            aria-hidden
                           />
                           {refreshing ? "Syncing..." : "Sync Feed"}
                         </button>

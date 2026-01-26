@@ -2,6 +2,7 @@ import { memo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Sparkles, Calendar, User } from 'lucide-react';
 import { cn } from '../lib/utils';
+import attsLogoStamped from '../assets/ATTS_Logo_stamped.png';
 
 interface Announcement {
   id: string;
@@ -56,23 +57,24 @@ function AnnouncementDetailModalComponent({
           className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md"
           onClick={onClose}
         >
-          <motion.div
-            initial={{ opacity: 0, y: 60, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 40, scale: 0.97 }}
-            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-            className={cn(
-              'w-full sm:max-w-2xl rounded-2xl sm:rounded-3xl border border-emerald-400/30',
-              'shadow-[0_8px_60px_-15px_rgba(16,185,129,0.4),0_-8px_60px_-15px_rgba(16,185,129,0.3)]',
-              'overflow-hidden flex flex-col',
-              'h-full sm:h-auto sm:max-h-[85vh]',
-              'm-3 sm:m-0'
-            )}
-            style={{
-              background: 'linear-gradient(145deg, rgba(4, 30, 21, 0.99) 0%, rgba(2, 15, 10, 1) 50%, rgba(1, 8, 5, 1) 100%)',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
+          {/* Wrapper to position stamped logo relative to modal */}
+          <div className="relative w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[85vh] m-3 sm:m-0">
+            <motion.div
+              initial={{ opacity: 0, y: 60, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 40, scale: 0.97 }}
+              transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+              className={cn(
+                'w-full rounded-2xl sm:rounded-3xl border border-emerald-400/30',
+                'shadow-[0_8px_60px_-15px_rgba(16,185,129,0.4),0_-8px_60px_-15px_rgba(16,185,129,0.3)]',
+                'overflow-hidden flex flex-col',
+                'h-full sm:h-auto'
+              )}
+              style={{
+                background: 'linear-gradient(145deg, rgba(4, 30, 21, 0.99) 0%, rgba(2, 15, 10, 1) 50%, rgba(1, 8, 5, 1) 100%)',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
             {/* Outer glow border effect */}
             <div className="absolute -inset-[1px] rounded-[inherit] bg-gradient-to-br from-emerald-400/40 via-emerald-500/20 to-emerald-600/30 opacity-50 blur-[1px] pointer-events-none" />
 
@@ -166,11 +168,12 @@ function AnnouncementDetailModalComponent({
                 </h2>
               </div>
               <button
+                type="button"
                 onClick={onClose}
-                className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-xl border border-emerald-500/30 text-emerald-200/70 flex items-center justify-center hover:bg-emerald-500/15 hover:border-emerald-400/50 hover:text-emerald-100 active:scale-95 transition-all touch-manipulation flex-shrink-0"
-                aria-label="Close"
+                className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-xl border border-emerald-500/30 text-emerald-200/70 flex items-center justify-center hover:bg-emerald-500/15 hover:border-emerald-400/50 hover:text-emerald-100 active:scale-95 transition-all touch-manipulation flex-shrink-0 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+                aria-label="Close announcement"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5" aria-hidden />
               </button>
             </div>
 
@@ -228,7 +231,29 @@ function AnnouncementDetailModalComponent({
                 Tap outside or press <kbd className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 font-mono">ESC</kbd> to close
               </p>
             </motion.div>
-          </motion.div>
+
+            </motion.div>
+
+            {/* ATTS Stamped Logo - Overlays the modal like a real stamp */}
+            {/* Positioned relative to modal wrapper, extending beyond modal boundaries */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8, rotate: -5 }}
+              animate={{ opacity: 1, scale: 1, rotate: 0 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ delay: 0.3, duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+              className="absolute bottom-12 right-0 pointer-events-none z-[60] sm:bottom-16"
+              style={{
+                transform: 'translate(20%, 0)',
+                filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4)) invert(1)',
+              }}
+            >
+              <img
+                src={attsLogoStamped}
+                alt="ATTS"
+                className="h-20 w-20 sm:h-28 sm:w-28 md:h-32 md:w-32 object-contain opacity-95"
+              />
+            </motion.div>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>

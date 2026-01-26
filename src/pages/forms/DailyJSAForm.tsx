@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
@@ -20,7 +20,8 @@ import {
   createFormTimer,
 } from "../../lib/telemetry";
 import { scrollToFirstError } from "../../lib/scrollToError";
-import { useJSAFormValidation } from "../../hooks/jsa";
+import { useJSAFormValidation, useJSASubmission } from "../../hooks/jsa";
+import { parseFormError, getErrorToastTitle } from "../../lib/errorHandling";
 
 // Wizard components
 import { JsaWizard, type SaveMode } from "../../components/forms/JsaWizard";
@@ -35,332 +36,35 @@ import {
   StepReview,
   type JsaSpan,
 } from "../../components/forms/jsa-steps";
+import {
+  createBlankSpan,
+  createInitialFormState,
+  transformRecordToFormState,
+  MAX_SPANS,
+  type ConditionState,
+  type DailyJsaRecord,
+  type DailyJsaFormState,
+  type ObserverSignature,
+  type SharedUser,
+} from "./dailyJSAFormState";
 
-// Re-export types for use in other pages
-export type { JsaSpan };
-
-type ConditionState = "good" | "needs_replaced";
-
-interface PpeState {
-  required: boolean;
-  condition: ConditionState;
-}
-
-interface JobSelection {
-  key: string;
-  label: string;
-  value?: string;
-}
-
-interface WeatherPayload {
-  conditions: Record<string, boolean>;
-  modifiers: Record<string, boolean>;
-}
-
-type HazardMap = Record<string, boolean>;
-type TrafficMap = Record<string, boolean>;
-
-export interface ObserverSignature {
-  name: string;
-  signature_data: string;
-  timestamp: string;
-  role?: string;
-}
-
-export type DailyJSA = {
-  id?: string;
-  user_id?: string;
-  created_at?: string;
-  updated_at?: string;
-  job_date: string | null;
-  call_in_time: string | null;
-  call_out_time: string | null;
-  work_location: string | null;
-  circuit_number: string | null;
-  nearest_hospital: string | null;
-  nearest_clinic: string | null;
-  oc_contact: string | null;
-  doc_contact: string | null;
-  gf_contact: string | null;
-  safety_contact: string | null;
-  jobs_performed: JobSelection[];
-  ppe: Record<string, PpeState>;
-  weather_conditions: WeatherPayload;
-  weather_hazards: string | null;
-  hazards_present: HazardMap;
-  traffic_hazards: TrafficMap;
-  traffic_setup: TrafficMap;
-  spans: JsaSpan[];
-  notes: string | null;
-  employee_signature: string | null;
-  observer_signatures?: ObserverSignature[] | null;
-  shared_with_users?: SharedUser[] | null;
-  status: "draft" | "completed";
-  status_changed_at?: string | null;
-  completed_at?: string | null;
-  status_history?: StatusLogEntry[];
-};
-
-interface StatusLogEntry {
-  status: "draft" | "completed";
-  timestamp: string;
-}
-
-export interface SharedUser {
-  id: string;           // user UUID (immutable)
-  email: string;         // for display
-  full_name: string;     // for display
-  role: string;          // for display/filtering
-  added_at: string;      // ISO timestamp
-  added_by: string;      // user_id who added them
-}
-
-export interface DailyJsaFormState {
-  jobDate: string;
-  callInTime: string;
-  callOutTime: string;
-  workLocation: string;
-  circuitNumber: string;
-  nearestHospital: string;
-  nearestClinic: string;
-  ocContact: string;
-  docContact: string;
-  gfContact: string;
-  safetyContact: string;
-  jobsPerformed: string[];
-  jobsOther: string;
-  ppe: Record<string, PpeState>;
-  weatherConditions: Record<string, boolean>;
-  weatherModifiers: Record<string, boolean>;
-  weatherHazards: string;
-  hazardsPresent: Record<string, boolean>;
-  trafficHazards: Record<string, boolean>;
-  trafficSetup: Record<string, boolean>;
-  spans: JsaSpan[];
-  notes: string;
-  employeeSignature: string;
-  observerSignatures: ObserverSignature[];
-  sharedWithUsers: SharedUser[];
-  status: "draft" | "completed";
-  createdAt: string | null;
-  updatedAt: string | null;
-  statusChangedAt: string | null;
-  completedAt: string | null;
-  statusHistory: StatusLogEntry[];
-}
-
-export type DailyJsaRecord = Partial<DailyJSA> & {
-  id: string;
-  user_id: string;
-  status_history?: StatusLogEntry[] | null;
-};
-
-const JOB_OPTIONS = [
-  { key: "jarraff", label: "Jarraff Trimmer" },
-  { key: "bucket_truck", label: "Bucket Truck" },
-  { key: "chip_truck", label: "Chip Truck" },
-  { key: "geo_boy", label: "Geo Boy Mulcher" },
-  { key: "skid_steer", label: "Skid Steer Grapple / Mulcher" },
-  { key: "climbing", label: "Climbing" },
-];
-
-const PPE_ITEMS = [
-  { key: "hard_hats", label: "Hard hats" },
-  { key: "safety_glasses", label: "Safety glasses" },
-  { key: "ear_plugs", label: "Ear plugs" },
-  { key: "reflective_vest", label: "Reflective vest" },
-  { key: "fall_protection", label: "Fall protection" },
-  { key: "gloves", label: "Gloves" },
-  { key: "chaps", label: "Chaps" },
-];
-
-const WEATHER_CONDITIONS = [
-  { key: "sunny", label: "Sunny" },
-  { key: "rain", label: "Rain" },
-  { key: "overcast", label: "Overcast" },
-  { key: "windy", label: "Windy" },
-];
-
-const WEATHER_MODIFIERS = [
-  { key: "hot_dry", label: "Hot / Dry" },
-  { key: "wet", label: "Wet" },
-  { key: "cold", label: "Cold" },
-  { key: "ice_snow", label: "Ice / Snow" },
-];
-
-const HAZARD_ITEMS = [
-  { key: "lines_energized", label: "Are lines energized?" },
-  { key: "secondary_voltage", label: "Secondary voltage?" },
-  { key: "open_wire_secondary", label: "Open-wire secondary?" },
-  { key: "guy_wire_present", label: "Guy wire present?" },
-  { key: "rotten_poles", label: "Rotten poles?" },
-  { key: "broken_poles", label: "Broken / damaged poles?" },
-  { key: "line_clearances_signed", label: "Line clearances needed & signed?" },
-  { key: "voltages_grounded", label: "Voltages grounded?" },
-  { key: "voltages_verified", label: "Grounds verified?" },
-];
-
-const TRAFFIC_HAZARDS = [
-  { key: "hills", label: "Hills" },
-  { key: "curves", label: "Curves" },
-  { key: "heavy_traffic", label: "Heavy traffic" },
-  { key: "construction_zone", label: "Construction zone" },
-  { key: "school_zone", label: "School zone" },
-  { key: "closing_lane", label: "Closing a lane?" },
-  { key: "flagger_needed", label: "Flagger needed?" },
-  { key: "flagger_trained", label: "Flagger trained?" },
-  { key: "has_stop_paddles", label: "Stop/Slow paddles ready?" },
-  { key: "has_radios", label: "Required radios ready?" },
-];
-
-const TRAFFIC_SETUP = [
-  { key: "warning_signs_used", label: "Proper warning signs used?" },
-  { key: "warning_signs_distance", label: "Signs at correct distance?" },
-  { key: "reflective_cones", label: "Reflective cones placed?" },
-  { key: "cone_separation", label: "Cone separation correct?" },
-  { key: "buffer_zone", label: "Buffer/Taper zone correct?" },
-];
-
-const MAX_SPANS = 21;
-const DEFAULT_SPANS = 5;
-
-const createInitialPpeState = () =>
-  PPE_ITEMS.reduce<Record<string, PpeState>>((acc, item) => {
-    acc[item.key] = { required: false, condition: "good" };
-    return acc;
-  }, {});
-
-const createBooleanMap = (items: { key: string }[]) =>
-  items.reduce<Record<string, boolean>>((acc, item) => {
-    acc[item.key] = false;
-    return acc;
-  }, {});
-
-const createBlankSpan = (spanNumber: number): JsaSpan => ({
-  spanNumber,
-  location: "",
-  hazards: "",
-  mitigation: "",
-  initials: "",
-});
-
-const createInitialFormState = (): DailyJsaFormState => {
-  const nowIso = new Date().toISOString();
-  return {
-    jobDate: nowIso.split("T")[0],
-    callInTime: "",
-    callOutTime: "",
-    workLocation: "",
-    circuitNumber: "",
-    nearestHospital: "",
-    nearestClinic: "",
-    ocContact: "",
-    docContact: "",
-    gfContact: "",
-    safetyContact: "",
-    jobsPerformed: [],
-    jobsOther: "",
-    ppe: createInitialPpeState(),
-    weatherConditions: createBooleanMap(WEATHER_CONDITIONS),
-    weatherModifiers: createBooleanMap(WEATHER_MODIFIERS),
-    weatherHazards: "",
-    hazardsPresent: createBooleanMap(HAZARD_ITEMS),
-    trafficHazards: createBooleanMap(TRAFFIC_HAZARDS),
-    trafficSetup: createBooleanMap(TRAFFIC_SETUP),
-    spans: Array.from({ length: DEFAULT_SPANS }, (_unused, idx) =>
-      createBlankSpan(idx + 1)
-    ),
-    notes: "",
-    employeeSignature: "",
-    observerSignatures: [],
-    sharedWithUsers: [],
-    status: "draft",
-    createdAt: null,
-    updatedAt: null,
-    statusChangedAt: null,
-    completedAt: null,
-    statusHistory: [],
-  };
-};
-
-function transformRecordToFormState(record: DailyJsaRecord): DailyJsaFormState {
-  const jobsRaw: Array<JobSelection | string> = Array.isArray(
-    record.jobs_performed
-  )
-    ? (record.jobs_performed as Array<JobSelection | string>)
-    : [];
-  const jobsPerformed: string[] = [];
-  let jobsOther = "";
-
-  jobsRaw.forEach((entry) => {
-    if (typeof entry === "string") {
-      if (entry.startsWith("custom:")) {
-        jobsOther = entry.replace("custom:", "");
-      } else {
-        jobsPerformed.push(entry);
-      }
-      return;
-    }
-    if (entry?.key === "custom") {
-      jobsOther = entry.label || entry.value || "";
-    } else if (entry?.key) {
-      jobsPerformed.push(entry.key);
-    }
-  });
-
-  const weather = (record.weather_conditions || {}) as Partial<WeatherPayload>;
-
-  return {
-    jobDate: record.job_date || "",
-    callInTime: record.call_in_time || "",
-    callOutTime: record.call_out_time || "",
-    workLocation: record.work_location || "",
-    circuitNumber: record.circuit_number || "",
-    nearestHospital: record.nearest_hospital || "",
-    nearestClinic: record.nearest_clinic || "",
-    ocContact: record.oc_contact || "",
-    docContact: record.doc_contact || "",
-    gfContact: record.gf_contact || "",
-    safetyContact: record.safety_contact || "",
-    jobsPerformed,
-    jobsOther,
-    ppe: record.ppe || createInitialPpeState(),
-    weatherConditions:
-      weather.conditions || createBooleanMap(WEATHER_CONDITIONS),
-    weatherModifiers: weather.modifiers || createBooleanMap(WEATHER_MODIFIERS),
-    weatherHazards: record.weather_hazards || "",
-    hazardsPresent: record.hazards_present || createBooleanMap(HAZARD_ITEMS),
-    trafficHazards: record.traffic_hazards || createBooleanMap(TRAFFIC_HAZARDS),
-    trafficSetup: record.traffic_setup || createBooleanMap(TRAFFIC_SETUP),
-    spans:
-      record.spans && record.spans.length > 0
-        ? record.spans
-        : Array.from({ length: DEFAULT_SPANS }, (_unused, idx) =>
-            createBlankSpan(idx + 1)
-          ),
-    notes: record.notes || "",
-    employeeSignature: record.employee_signature || "",
-    observerSignatures: Array.isArray(record.observer_signatures) 
-      ? record.observer_signatures 
-      : [],
-    sharedWithUsers: Array.isArray(record.shared_with_users) 
-      ? record.shared_with_users 
-      : [],
-    status: (record.status as "draft" | "completed") || "draft",
-    createdAt: record.created_at || null,
-    updatedAt: record.updated_at || null,
-    statusChangedAt: record.status_changed_at || null,
-    completedAt: record.completed_at || null,
-    statusHistory: record.status_history || [],
-  };
-}
+// Re-export types for use in other pages (preserve existing import paths)
+export type { JsaSpan } from "../../components/forms/jsa-steps";
+export type {
+  DailyJSA,
+  DailyJsaFormState,
+  DailyJsaRecord,
+  JobSelection,
+  ObserverSignature,
+  SharedUser,
+} from "./dailyJSAFormState";
 
 export default function DailyJSAForm() {
   const { id } = useParams<{ id?: string }>();
   const isEditMode = Boolean(id);
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, isAdmin, fullName } = useAuth();
-  const searchParams = new URLSearchParams(window.location.search);
 
   // Extract user initials from full name for span auto-fill
   const userInitials = useMemo(() => {
@@ -376,17 +80,25 @@ export default function DailyJSAForm() {
   );
   const [loadingRecord, setLoadingRecord] = useState(false);
   const [saving, setSaving] = useState(false);
+  // QA-002: Prevent duplicate submissions with atomic ref check
+  const submittingRef = useRef(false);
   const [persistedStatus, setPersistedStatus] =
     useState<"draft" | "completed">("draft");
 
   // Wizard state
   // Initialize currentStep from URL parameter if present (e.g., ?step=5)
+  // Validates URL parameter to prevent XSS and ensure type safety
   const getInitialStep = () => {
     const stepParam = searchParams.get('step');
     if (stepParam) {
+      // Validate: must be numeric string (no special chars that could be XSS)
+      if (!/^\d+$/.test(stepParam)) {
+        logger.warn('Invalid step parameter in URL, ignoring:', stepParam);
+        return 1;
+      }
       const step = parseInt(stepParam, 10);
-      // Validate step is in range 1-6
-      if (step >= 1 && step <= 6) {
+      // Validate step is in range 1-6 and is a valid number
+      if (!isNaN(step) && step >= 1 && step <= 6) {
         return step;
       }
     }
@@ -394,6 +106,82 @@ export default function DailyJSAForm() {
   };
 
   const [currentStep, setCurrentStep] = useState(getInitialStep);
+  const stepChangeSourceRef = useRef<'user' | 'url'>('user');
+  const searchParamsRef = useRef(searchParams);
+  searchParamsRef.current = searchParams;
+  const lastSyncedStepRef = useRef<number | null>(null);
+  const urlSyncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isInitialMountRef = useRef(true);
+
+  // Sync URL when step changes from user interaction (for deep linking).
+  // Skip initial mount and debounce to avoid "Throttling navigation" in the browser.
+  useEffect(() => {
+    if (stepChangeSourceRef.current === 'url') {
+      stepChangeSourceRef.current = 'user';
+      return;
+    }
+    if (currentStep < 1 || currentStep > 6) return;
+
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      lastSyncedStepRef.current = currentStep;
+      return;
+    }
+
+    const params = searchParamsRef.current;
+    const stepParam = params.get('step');
+    const urlStep = stepParam && /^\d+$/.test(stepParam)
+      ? parseInt(stepParam, 10)
+      : 1;
+    const urlAlreadyMatches =
+      (currentStep === 1 && !stepParam) ||
+      (currentStep > 1 && urlStep === currentStep);
+    if (urlAlreadyMatches) {
+      lastSyncedStepRef.current = currentStep;
+      return;
+    }
+    if (lastSyncedStepRef.current === currentStep) return;
+
+    const stepToSync = currentStep;
+    lastSyncedStepRef.current = currentStep;
+
+    if (urlSyncTimeoutRef.current) clearTimeout(urlSyncTimeoutRef.current);
+    urlSyncTimeoutRef.current = setTimeout(() => {
+      urlSyncTimeoutRef.current = null;
+      const newParams = new URLSearchParams(searchParamsRef.current);
+      if (stepToSync > 1) {
+        newParams.set('step', stepToSync.toString());
+      } else {
+        newParams.delete('step');
+      }
+      setSearchParams(newParams, { replace: true });
+    }, 150);
+
+    return () => {
+      if (urlSyncTimeoutRef.current) {
+        clearTimeout(urlSyncTimeoutRef.current);
+        urlSyncTimeoutRef.current = null;
+      }
+    };
+  }, [currentStep, setSearchParams]);
+
+  // Sync step only when the URL actually changed (e.g. browser back/forward).
+  // If we run whenever currentStep !== urlStep we overwrite user clicks (URL
+  // can still have ?step=1 after they click Next, and we'd reset them to 1).
+  const prevSearchParamsRef = useRef(searchParams.toString());
+  useEffect(() => {
+    const currentParamsString = searchParams.toString();
+    if (currentParamsString === prevSearchParamsRef.current) return;
+    prevSearchParamsRef.current = currentParamsString;
+
+    const stepParam = searchParams.get('step');
+    if (stepParam == null || stepParam === '') return;
+
+    const urlStep = parseInt(stepParam, 10);
+    const validUrlStep = urlStep >= 1 && urlStep <= 6 ? urlStep : 1;
+    stepChangeSourceRef.current = 'url';
+    setCurrentStep(validUrlStep);
+  }, [searchParams]);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [spanPage, setSpanPage] = useState(1);
 
@@ -423,6 +211,7 @@ export default function DailyJSAForm() {
     lastSaved,
     hasUnsavedChanges,
     saveDraft,
+    flushPendingSave,
     clearDraft,
     dismissDraft,
     markAsSaved,
@@ -434,10 +223,14 @@ export default function DailyJSAForm() {
     debounceMs: 500,
   });
 
-  // Show draft recovery modal if draft exists
+  // Show draft recovery modal if draft exists (with small delay to be less intrusive)
   useEffect(() => {
     if (hasDraft && draftData && !isEditMode) {
-      setShowDraftModal(true);
+      // Small delay to allow page to render first, making modal less intrusive
+      const timer = setTimeout(() => {
+        setShowDraftModal(true);
+      }, 500);
+      return () => clearTimeout(timer);
     }
   }, [hasDraft, draftData, isEditMode]);
 
@@ -466,9 +259,15 @@ export default function DailyJSAForm() {
   }, [form, currentStep, completedSteps, isEditMode, user?.id, saveDraft]);
 
   // Warn before closing browser/tab with unsaved changes (beforeunload)
+  // Also save draft immediately if there are unsaved changes
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (hasUnsavedChanges && !isEditMode && !showCelebration) {
+        // Save draft immediately before page unload (synchronous, bypasses debounce)
+        if (user?.id) {
+          flushPendingSave(form, currentStep, completedSteps);
+        }
+        
         e.preventDefault();
         // Most browsers ignore custom messages, but setting returnValue is required
         e.returnValue = 'You have unsaved changes. Your draft is auto-saved and can be recovered on the next visit.';
@@ -478,18 +277,9 @@ export default function DailyJSAForm() {
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [hasUnsavedChanges, isEditMode, showCelebration]);
+  }, [hasUnsavedChanges, isEditMode, showCelebration, user?.id, form, currentStep, completedSteps, flushPendingSave]);
 
-  // Update URL when step changes to enable deep-linking
-  useEffect(() => {
-    const params = new URLSearchParams();
-    if (currentStep > 1) {
-      params.set('step', currentStep.toString());
-    }
-    const queryString = params.toString();
-    const newUrl = queryString ? `?${queryString}` : window.location.pathname;
-    window.history.replaceState(null, '', newUrl);
-  }, [currentStep]);
+  // Note: URL syncing is now handled above using useSearchParams for proper React Router integration
 
   // Track form_started on mount (only for new forms)
   useEffect(() => {
@@ -541,9 +331,13 @@ export default function DailyJSAForm() {
     allErrors,
   } = useJSAFormValidation(form);
 
+  // Submission hook - handles database operations
+  const { submitJSA } = useJSASubmission();
+
   // Smart Defaults: Fetch suggestions
   const { suggestions, warnings, isLoading: suggestionsLoading } = useSmartDefaults('jsa');
   const [suggestionsVisible, setSuggestionsVisible] = useState(true);
+  const [autoAppliedDefaults, setAutoAppliedDefaults] = useState(false);
 
   // Log form_started on mount for baseline metrics
   useEffect(() => {
@@ -581,10 +375,46 @@ export default function DailyJSAForm() {
     });
   }, [handleApplySuggestion, suggestions]);
 
+  // Auto-apply high-confidence smart defaults when form is empty
+  // Also auto-apply contact fields (even with low confidence) since they're frequently used
+  useEffect(() => {
+    if (suggestions && !autoAppliedDefaults && !hasDraft && !suggestionsLoading && !isEditMode) {
+      // Check if form is essentially empty (only initial state)
+      const isFormEmpty = !form.workLocation && !form.circuitNumber && !form.jobDate;
+      
+      if (isFormEmpty) {
+        // Contact fields that should be auto-applied regardless of confidence
+        const contactFields = new Set(['ocContact', 'docContact', 'gfContact', 'safetyContact']);
+        
+        // Auto-apply high-confidence suggestions + contact fields
+        let appliedCount = 0;
+        Object.entries(suggestions).forEach(([field, suggestion]) => {
+          const isContactField = contactFields.has(field);
+          const shouldAutoApply = suggestion.confidence === 'high' || isContactField;
+          
+          if (shouldAutoApply) {
+            handleApplySuggestion(field, suggestion.value);
+            appliedCount++;
+          }
+        });
+        
+        if (appliedCount > 0) {
+          setAutoAppliedDefaults(true);
+          logger.info('smart_defaults_auto_applied', {
+            form_type: 'jsa',
+            fields_applied: appliedCount,
+            confidence: 'high',
+          });
+        }
+      }
+    }
+  }, [suggestions, autoAppliedDefaults, hasDraft, suggestionsLoading, isEditMode, form.workLocation, form.circuitNumber, form.jobDate, handleApplySuggestion]);
+
   // Computed values
   // Form validity check (for wizard navigation)
   const isFormValid = useMemo(() => {
-    const hasErrors = Object.keys(errors).some(key => errors[key]);
+    const err = errors as Partial<Record<string, string>>;
+    const hasErrors = Object.keys(err).some((key) => err[key]);
     const valid = !hasErrors && Object.keys(additionalErrors).length === 0;
     return valid;
   }, [additionalErrors, errors]);
@@ -672,14 +502,70 @@ export default function DailyJSAForm() {
     return Math.round((filled / total) * 100);
   }, [form]);
 
+  // Check for duplicate data from history (takes precedence over edit mode)
+  useEffect(() => {
+    const duplicateDataStr = sessionStorage.getItem('jsa-duplicate');
+    if (duplicateDataStr && !id) {
+      try {
+        const duplicateData = JSON.parse(duplicateDataStr) as { recordId: string; isDuplicate: boolean };
+        // Fetch the record to duplicate
+        const fetchAndDuplicate = async () => {
+          const { data, error: fetchError } = await supabase
+            .from("daily_jsa")
+            .select("*")
+            .eq("id", duplicateData.recordId)
+            .maybeSingle();
+
+          if (fetchError || !data) {
+            logger.error("Failed to load JSA for duplication:", fetchError);
+            formToast.error("Duplicate Failed", "Unable to load JSA record. Please try again.");
+            sessionStorage.removeItem('jsa-duplicate');
+            return;
+          }
+
+          // Transform record to form state (excluding signatures and metadata)
+          const parsed = transformRecordToFormState(data as DailyJsaRecord);
+          // Reset status to draft and clear signatures for new form
+          parsed.status = "draft";
+          parsed.employeeSignature = "";
+          parsed.observerSignatures = [];
+          parsed.createdAt = null;
+          parsed.updatedAt = null;
+          parsed.statusChangedAt = null;
+          parsed.completedAt = null;
+          parsed.statusHistory = [];
+
+          setForm(parsed);
+          setPersistedStatus("draft");
+          setSpanPage(1);
+          setCurrentStep(1);
+          setCompletedSteps(new Set());
+          
+          // Clear duplicate data after use
+          sessionStorage.removeItem('jsa-duplicate');
+          formToast.success("JSA Duplicated", "Previous JSA data has been loaded. Please review and update as needed.");
+        };
+        fetchAndDuplicate();
+        return;
+      } catch (err) {
+        logger.error("Failed to parse duplicate data:", err);
+        sessionStorage.removeItem('jsa-duplicate');
+      }
+    }
+  }, [id]);
+
   // Load record if editing
   useEffect(() => {
     if (!id) {
-      setForm(createInitialFormState());
-      setSpanPage(1);
-      setPersistedStatus("draft");
-      setCurrentStep(1);
-      setCompletedSteps(new Set());
+      // Only set initial state if we're not duplicating
+      const duplicateDataStr = sessionStorage.getItem('jsa-duplicate');
+      if (!duplicateDataStr) {
+        setForm(createInitialFormState());
+        setSpanPage(1);
+        setPersistedStatus("draft");
+        setCurrentStep(1);
+        setCompletedSteps(new Set());
+      }
       return;
     }
     if (!user && !isAdmin) return;
@@ -690,7 +576,7 @@ export default function DailyJSAForm() {
       // This allows delegated users to edit JSAs shared with them
       const { data, error: fetchError } = await supabase
         .from("daily_jsa")
-        .select("id, job_date, call_in_time, call_out_time, work_location, circuit_number, nearest_hospital, nearest_clinic, oc_contact, doc_contact, gf_contact, safety_contact, jobs_performed, ppe, weather_conditions, weather_hazards, hazards_present, traffic_hazards, traffic_setup, spans, supervisor_name, supervisor_signature, created_at, updated_at, status")
+        .select("id, user_id, job_date, call_in_time, call_out_time, work_location, circuit_number, nearest_hospital, nearest_clinic, oc_contact, doc_contact, gf_contact, safety_contact, jobs_performed, ppe, weather_conditions, weather_hazards, hazards_present, traffic_hazards, traffic_setup, spans, supervisor_name, supervisor_signature, created_at, updated_at, status")
         .eq("id", id)
         .maybeSingle();
 
@@ -706,7 +592,15 @@ export default function DailyJSAForm() {
         return;
       }
 
-      const parsed = transformRecordToFormState(data as DailyJsaRecord);
+      // Ensure user_id is present (use current user if missing)
+      const recordWithUserId = {
+        ...data,
+        user_id: data.user_id || user?.id || '',
+      };
+
+      // Type assertion needed because Supabase returns Partial<DailyJSA> but transformRecordToFormState expects DailyJsaRecord
+      // This is safe because we ensure user_id is present and transformRecordToFormState handles partial data
+      const parsed = transformRecordToFormState(recordWithUserId as DailyJsaRecord);
       setForm(parsed);
       setPersistedStatus(parsed.status);
       setSpanPage(1);
@@ -869,8 +763,20 @@ export default function DailyJSAForm() {
   );
 
   const handleSave = useCallback(async (mode: SaveMode = "draft") => {
+    // QA-003: Prevent duplicate submissions - atomic check using ref + state to prevent race condition
+    // Check both ref (immediate) and state (React render cycle) for maximum safety
+    if (submittingRef.current || saving) {
+      logger.warn("JSA submission already in progress, ignoring duplicate submit");
+      return;
+    }
+    // Set both ref (immediate, atomic) and state (triggers re-render to disable buttons)
+    submittingRef.current = true;
+    setSaving(true);
+    
     if (!user) {
       formToast.error("Authentication Required", "You must be signed in to save a JSA.");
+      submittingRef.current = false;
+      setSaving(false);
       return;
     }
 
@@ -884,11 +790,12 @@ export default function DailyJSAForm() {
 
       if (!isFormValid || hasAdditionalErrors) {
         // Log validation errors for debugging
-        const validationErrors = Object.keys(errors).filter(k => errors[k]);
+        const err = errors as Partial<Record<string, string>>;
+        const validationErrors = Object.keys(err).filter((k) => err[k]);
         const additionalErrorKeys = Object.keys(additionalErrors).filter(k => additionalErrors[k]);
         const allErrorKeys = Object.keys(allErrors).filter(k => allErrors[k]);
         
-        console.error('[JSA Validation Failed]', {
+        logger.error('[JSA] Validation failed on submit', {
           isFormValid,
           hasAdditionalErrors,
           validationErrors,
@@ -951,10 +858,9 @@ export default function DailyJSAForm() {
 
     // Map SaveMode to status
     const targetStatus: "draft" | "completed" = mode === "complete" ? "completed" : "draft";
-
-    setSaving(true);
     
     // Show loading overlay for all saves
+    // Note: setSaving(true) already called at start of function for immediate button disable
     if (targetStatus === "draft") {
       formToast.submitting("Saving your draft...");
     } else {
@@ -983,214 +889,65 @@ export default function DailyJSAForm() {
         : null;
 
     try {
-      const jobsPayload: JobSelection[] = [
-        ...form.jobsPerformed.map((key) => ({
-          key,
-          label: JOB_OPTIONS.find((job) => job.key === key)?.label ?? key,
-        })),
-      ];
+      // Store previous shared_with_users for audit logging (before submission)
+      const previousSharedUsers = form.sharedWithUsers || [];
 
-      if (form.jobsOther.trim()) {
-        jobsPayload.push({
-          key: "custom",
-          label: form.jobsOther.trim(),
-        });
+      // Call submission hook to handle database operations
+      const result = await submitJSA(mode, {
+        form,
+        isEditMode,
+        recordId: id,
+        persistedStatus,
+        userId: user.id,
+        previousSharedUsers,
+      });
+
+      if (!result.success || result.error) {
+        throw result.error || new Error("Submission failed");
       }
 
-      const payload: DailyJSA = {
-        job_date: form.jobDate || null,
-        call_in_time: form.callInTime || null,
-        call_out_time: form.callOutTime || null,
-        work_location: form.workLocation || null,
-        circuit_number: form.circuitNumber || null,
-        nearest_hospital: form.nearestHospital || null,
-        nearest_clinic: form.nearestClinic || null,
-        oc_contact: form.ocContact || null,
-        doc_contact: form.docContact || null,
-        gf_contact: form.gfContact || null,
-        safety_contact: form.safetyContact || null,
-        jobs_performed: jobsPayload,
-        ppe: form.ppe,
-        weather_conditions: {
-          conditions: form.weatherConditions,
-          modifiers: form.weatherModifiers,
-        },
-        weather_hazards: form.weatherHazards || null,
-        hazards_present: form.hazardsPresent,
-        traffic_hazards: form.trafficHazards,
-        traffic_setup: form.trafficSetup,
-        spans: form.spans.map(span => ({
-          ...span,
-          // Remove unpaired Unicode surrogates (incomplete emojis) that cause JSON errors
-          initials: (span.initials || '').replace(/[\uD800-\uDFFF]/g, ''),
-          location: (span.location || '').replace(/[\uD800-\uDFFF]/g, ''),
-          hazards: (span.hazards || '').replace(/[\uD800-\uDFFF]/g, ''),
-          mitigation: (span.mitigation || '').replace(/[\uD800-\uDFFF]/g, ''),
-        })),
-        notes: form.notes || null,
-        employee_signature: form.employeeSignature || null,
-        observer_signatures: Array.isArray(form.observerSignatures) 
-          ? form.observerSignatures.map(obs => ({
-              name: String(obs.name || ''),
-              signature_data: String(obs.signature_data || ''),
-              timestamp: String(obs.timestamp || new Date().toISOString()),
-              ...(obs.role && { role: String(obs.role) })
-            }))
-          : [],
-        shared_with_users: Array.isArray(form.sharedWithUsers) && form.sharedWithUsers.length > 0
-          ? form.sharedWithUsers.map(user => ({
-              id: String(user.id),
-              email: String(user.email || ''),
-              full_name: String(user.full_name || ''),
-              role: String(user.role || ''),
-              added_at: String(user.added_at || nowIso),
-              added_by: String(user.added_by || user?.id || ''),
-            }))
-          : [],
+      // Log form_submitted for baseline metrics (Smart Defaults ROI)
+      logger.info('form_submitted', {
+        form_type: 'jsa',
+        duration_seconds: Math.round((Date.now() - formStartTime.current) / 1000),
         status: targetStatus,
-        updated_at: nowIso,
-        status_changed_at: statusChangedAt,
-        completed_at: completedAt,
-        status_history: nextStatusHistory,
-      };
+        is_edit: isEditMode,
+        smart_defaults_shown: Boolean(suggestions && Object.keys(suggestions).length > 0),
+        timestamp: new Date().toISOString(),
+      });
+      
+      // Telemetry: track successful submission
+      trackFormSubmitted({
+        form_type: 'jsa',
+        duration_seconds: formTimer.current.getDuration(),
+      });
 
-      // Only add created_at for new records (not for edits)
-      if (isNewRecord) {
-        payload.created_at = nowIso;
-      }
+      // Clear draft and mark as saved
+      clearDraft();
+      markAsSaved();
 
-      if (isEditMode && id) {
-        // Store previous shared_with_users for audit logging
-        const previousSharedUsers = form.sharedWithUsers || [];
-        
-        // Prepare update payload - exclude immutable fields
-        const updatePayload = {
-          ...payload,
-          // Ensure JSONB fields are properly formatted
-          observer_signatures: payload.observer_signatures || [],
-          shared_with_users: payload.shared_with_users || [],
-          // Explicitly exclude immutable fields (RLS policies will enforce this, but good practice)
-          // user_id and created_at should NOT be in update payload
-        };
-        // Remove any fields that shouldn't be updated
-        delete (updatePayload as unknown as Record<string, unknown>).user_id;
-        delete (updatePayload as unknown as Record<string, unknown>).created_at;
-        delete (updatePayload as unknown as Record<string, unknown>).id;
-        
-        logger.debug('[JSA] Updating existing record', {
-          jsa_id: id,
-          payload_keys: Object.keys(updatePayload),
-          observer_signatures_count: Array.isArray(updatePayload.observer_signatures) ? updatePayload.observer_signatures.length : 'not array',
-          shared_with_users_count: Array.isArray(updatePayload.shared_with_users) ? updatePayload.shared_with_users.length : 'not array',
-          targetStatus,
-        });
-        
-        const { error: updateError } = await supabase
-          .from("daily_jsa")
-          .update(updatePayload)
-          .eq("id", id);
+      // Update form state with submission results
+      setForm((prev) => ({
+        ...prev,
+        status: targetStatus,
+        updatedAt: nowIso,
+        statusChangedAt,
+        completedAt,
+        createdAt: prev.createdAt || (isNewRecord ? nowIso : prev.createdAt),
+        statusHistory: nextStatusHistory,
+      }));
+      setPersistedStatus(targetStatus);
 
-        if (updateError) {
-          console.error('[JSA Update Error]', {
-            message: updateError.message,
-            details: updateError.details,
-            hint: updateError.hint,
-            code: updateError.code,
-            payload: JSON.stringify(payload, null, 2)
-          });
-          logger.error('[JSA] Update failed', {
-            error: updateError,
-            jsa_id: id,
-            payload_keys: Object.keys(payload),
-            observer_signatures_count: Array.isArray(payload.observer_signatures) ? payload.observer_signatures.length : 'not array',
-            shared_with_users_count: Array.isArray(payload.shared_with_users) ? payload.shared_with_users.length : 'not array',
-          });
-          throw updateError;
-        }
-
-        // Audit logging: Track delegation changes
-        if (user?.id) {
-          const currentSharedUsers = form.sharedWithUsers || [];
-          
-          // Find added users
-          const added = currentSharedUsers.filter(
-            (u) => !previousSharedUsers.some((p) => p.id === u.id)
-          );
-          
-          // Find removed users
-          const removed = previousSharedUsers.filter(
-            (p) => !currentSharedUsers.some((u) => u.id === p.id)
-          );
-          
-          // Log to audit table (fire and forget - don't block on errors)
-          void Promise.all([
-            ...added.map((sharedUser) =>
-              (supabase.from('jsa_sharing_audit').insert({
-                jsa_id: id,
-                action: 'added',
-                shared_user_id: sharedUser.id,
-                shared_user_email: sharedUser.email,
-                shared_user_name: sharedUser.full_name,
-                changed_by: user.id,
-              }).select() as unknown as Promise<unknown>)
-                .then(() => {
-                  // Success
-                })
-                .catch((err: unknown) => {
-                  console.error('Failed to log added user to audit:', err);
-                })
-            ),
-            ...removed.map((sharedUser) =>
-              (supabase.from('jsa_sharing_audit').insert({
-                jsa_id: id,
-                action: 'removed',
-                shared_user_id: sharedUser.id,
-                shared_user_email: sharedUser.email,
-                shared_user_name: sharedUser.full_name,
-                changed_by: user.id,
-              }).select() as unknown as Promise<unknown>)
-                .then(() => {
-                  // Success
-                })
-                .catch((err: unknown) => {
-                  console.error('Failed to log removed user to audit:', err);
-                })
-            ),
-          ]).catch((err: unknown) => {
-            console.error('Audit logging error:', err);
-          });
-        }
-
-        // Log form_submitted for baseline metrics (Smart Defaults ROI)
-        logger.info('form_submitted', {
-          form_type: 'jsa',
-          duration_seconds: Math.round((Date.now() - formStartTime.current) / 1000),
-          status: targetStatus,
-          is_edit: true,
-          smart_defaults_shown: Boolean(suggestions && Object.keys(suggestions).length > 0),
-          timestamp: new Date().toISOString(),
-        });
-        
-        // Telemetry: track successful submission
-        trackFormSubmitted({
-          form_type: 'jsa',
-          duration_seconds: formTimer.current.getDuration(),
-        });
-
-        // Clear draft and mark as saved
-        clearDraft();
-        markAsSaved();
-
+      // Handle success UI feedback
+      if (targetStatus === "completed") {
         // Invalidate compliance cache so dashboard updates immediately
         invalidateCompliance();
-
-        // Show success toast for edited JSA
-        // Note: Don't call dismiss() - let success() transition from loading state
-        if (targetStatus === "completed") {
-          // Check compliance status and get remaining forms for nudge
-          const { allComplete, remaining } = await checkAndCelebrate('jsa');
-          setRemainingForms(remaining);
-          
+        
+        // Check compliance status and get remaining forms for nudge
+        const { allComplete, remaining } = await checkAndCelebrate('jsa');
+        setRemainingForms(remaining);
+        
+        if (isEditMode) {
           formToast.success(
             "JSA Updated Successfully! ✅",
             "Your changes have been saved and the JSA has been marked as completed.",
@@ -1207,15 +964,20 @@ export default function DailyJSAForm() {
               }]
             }
           );
-          
-          // Show celebration for completed forms
-          // If all complete, the full celebration will show via celebrationProps
-          // Otherwise show the individual form celebration with remaining forms nudge
-          if (!allComplete) {
-            setShowCelebration(true);
-          }
         } else {
-          // Show success toast for draft updates
+          // Dismiss loading toast before showing celebration
+          formToast.dismiss();
+        }
+        
+        // Show celebration for completed forms
+        // If all complete, the full celebration will show via celebrationProps
+        // Otherwise show the individual form celebration with remaining forms nudge
+        if (!allComplete) {
+          setShowCelebration(true);
+        }
+      } else {
+        // Draft save success
+        if (isEditMode) {
           formToast.success(
             "Draft Updated Successfully! 💾",
             "Your changes have been saved. You can continue editing or complete this JSA later.",
@@ -1232,105 +994,8 @@ export default function DailyJSAForm() {
               }]
             }
           );
-        }
-        setForm((prev) => ({
-          ...prev,
-          status: targetStatus,
-          updatedAt: nowIso,
-          statusChangedAt,
-          completedAt,
-          createdAt: prev.createdAt || (isNewRecord ? nowIso : prev.createdAt),
-          statusHistory: nextStatusHistory,
-        }));
-        setPersistedStatus(targetStatus);
-      } else {
-        // Ensure user_id is set for new records
-        const insertPayload = { 
-          ...payload, 
-          user_id: user.id,
-          // Ensure JSONB fields are properly formatted
-          observer_signatures: payload.observer_signatures || [],
-          shared_with_users: payload.shared_with_users || [],
-        };
-        
-        logger.debug('[JSA] Inserting new record', {
-          user_id: user.id,
-          payload_keys: Object.keys(insertPayload),
-          observer_signatures_type: typeof insertPayload.observer_signatures,
-          shared_with_users_type: typeof insertPayload.shared_with_users,
-        });
-        
-        const { data, error: insertError } = await supabase
-          .from("daily_jsa")
-          .insert([insertPayload])
-          .select("id")
-          .single();
-
-        if (insertError) {
-          console.error('[JSA Insert Error]', {
-            message: insertError.message,
-            details: insertError.details,
-            hint: insertError.hint,
-            code: insertError.code,
-            payload: JSON.stringify(payload, null, 2)
-          });
-          logger.error('[JSA] Insert failed', {
-            error: insertError,
-            payload_keys: Object.keys(payload),
-            observer_signatures_count: Array.isArray(payload.observer_signatures) ? payload.observer_signatures.length : 'not array',
-            shared_with_users_count: Array.isArray(payload.shared_with_users) ? payload.shared_with_users.length : 'not array',
-          });
-          throw insertError;
-        }
-
-        // Log form_submitted for baseline metrics (Smart Defaults ROI)
-        logger.info('form_submitted', {
-          form_type: 'jsa',
-          duration_seconds: Math.round((Date.now() - formStartTime.current) / 1000),
-          status: targetStatus,
-          is_edit: false,
-          smart_defaults_shown: Boolean(suggestions && Object.keys(suggestions).length > 0),
-          timestamp: new Date().toISOString(),
-        });
-        
-        // Telemetry: track successful submission
-        trackFormSubmitted({
-          form_type: 'jsa',
-          duration_seconds: formTimer.current.getDuration(),
-        });
-
-        // Clear draft and mark as saved
-        clearDraft();
-        markAsSaved();
-
-        setForm((prev) => ({
-          ...prev,
-          status: targetStatus,
-          createdAt: nowIso,
-          updatedAt: nowIso,
-          statusChangedAt,
-          completedAt,
-          statusHistory: nextStatusHistory,
-        }));
-        setPersistedStatus(targetStatus);
-
-        if (targetStatus === "completed") {
-          // Dismiss loading toast before showing celebration
-          formToast.dismiss();
-          // Invalidate compliance cache so dashboard updates immediately
-          invalidateCompliance();
-          
-          // Check compliance status and get remaining forms for nudge
-          const { allComplete, remaining } = await checkAndCelebrate('jsa');
-          setRemainingForms(remaining);
-          
-          // If all complete, the full celebration will show via celebrationProps
-          // Otherwise show the individual form celebration with remaining forms nudge
-          if (!allComplete) {
-            setShowCelebration(true);
-          }
         } else {
-          // Show celebratory draft save success overlay
+          // Show celebratory draft save success overlay for new records
           formToast.success(
             "Draft Saved Successfully! 🎉",
             "Congratulations! Your JSA draft has been created. You can finish it later by visiting Form History. All your progress is safe!",
@@ -1346,98 +1011,41 @@ export default function DailyJSAForm() {
               autoDismiss: 8000
             }
           );
-          if (data?.id) {
-            navigate(`/forms/jsa/${data.id}`, { replace: true });
+          // Navigate to edit mode for new records
+          if (result.recordId) {
+            navigate(`/forms/jsa/${result.recordId}`, { replace: true });
           }
         }
       }
     } catch (submitError: unknown) {
-      // Extract error message properly
-      let errorMessage = "Unable to save JSA.";
-      let errorDetails: string | undefined = undefined;
-      let errorCode: string | undefined = undefined;
-      
-      if (submitError instanceof Error) {
-        errorMessage = submitError.message || errorMessage;
-      } else if (submitError && typeof submitError === 'object') {
-        // Handle Supabase errors
-        const supabaseError = submitError as unknown as { message?: string; details?: string; hint?: string; code?: string };
-        if (supabaseError.message) {
-          errorMessage = supabaseError.message;
-        }
-        if (supabaseError.details) {
-          errorDetails = typeof supabaseError.details === 'string' 
-            ? supabaseError.details 
-            : JSON.stringify(supabaseError.details);
-        }
-        if (supabaseError.hint) {
-          errorDetails = errorDetails 
-            ? `${errorDetails}. Hint: ${supabaseError.hint}`
-            : `Hint: ${supabaseError.hint}`;
-        }
-        if (supabaseError.code) {
-          errorCode = supabaseError.code as 'VALIDATION_FAILED' | 'NETWORK_ERROR' | 'SERVER_ERROR' | 'AUTH_ERROR' | 'RLS_VIOLATION';
-        }
-      } else if (submitError) {
-        // Fallback: try to stringify
-        try {
-          errorMessage = JSON.stringify(submitError);
-        } catch {
-          errorMessage = String(submitError);
-        }
+      // Ensure form state is saved as draft on error to prevent data loss
+      if (!isEditMode && user?.id) {
+        saveDraft(form, currentStep, completedSteps);
       }
       
-      // Build user-friendly error message
-      const userMessage = errorDetails 
-        ? `${errorMessage}${errorDetails ? ` (${errorDetails})` : ''}`
-        : errorMessage;
+      // Parse error using standardized utility
+      const parsedError = parseFormError(submitError, 'jsa');
       
-      console.error('[JSA Submit Error]', {
-        error: submitError,
-        errorMessage,
-        errorDetails,
-        errorCode,
-        mode,
-        isEditMode,
-        formKeys: Object.keys(form),
-        fullError: submitError,
-      });
-      
-      logger.error('[JSA] Submission failed', {
-        error: submitError,
-        mode,
-        isEditMode,
-        errorMessage,
-        errorDetails,
-        errorCode,
-      });
-      
-      formToast.error("Submission Failed", userMessage, {
-        onRetry: () => handleSave(mode),
-      });
+      formToast.error(
+        getErrorToastTitle(parsedError.isTimeout, parsedError.code),
+        parsedError.userMessage,
+        {
+          onRetry: () => handleSave(mode),
+        }
+      );
       
       // Telemetry: track server/network error
-      const validErrorCodes = ['VALIDATION_FAILED', 'NETWORK_ERROR', 'SERVER_ERROR', 'AUTH_ERROR', 'RLS_VIOLATION'];
-      const finalErrorCode = (errorCode && validErrorCodes.includes(errorCode) ? errorCode : 'SERVER_ERROR') as 'NETWORK_ERROR' | 'SERVER_ERROR' | 'VALIDATION_FAILED' | 'AUTH_ERROR' | 'RLS_VIOLATION';
-      
       trackFormSubmitError({
         form_type: 'jsa',
-        error_code: finalErrorCode || (submitError instanceof Error && submitError.message.includes('network') ? 'NETWORK_ERROR' : 'SERVER_ERROR'),
+        error_code: parsedError.code,
       });
     } finally {
       setSaving(false);
+      submittingRef.current = false; // QA-002: Reset ref on completion
     }
-  }, [user, form, isEditMode, id, persistedStatus, navigate, suggestions, clearDraft, markAsSaved, checkAndCelebrate, invalidateCompliance, additionalErrors, allErrors, errors, getStepForField, markSubmitAttempted, validateAll]);
+  }, [user, form, isEditMode, id, persistedStatus, navigate, suggestions, clearDraft, markAsSaved, saveDraft, currentStep, completedSteps, checkAndCelebrate, invalidateCompliance, additionalErrors, allErrors, errors, getStepForField, markSubmitAttempted, validateAll, submitJSA, formStartTime, formTimer, saving]);
 
   const handleComplete = useCallback(async () => {
-    console.log('[JSA] handleComplete called', {
-      isEditMode,
-      isValid: isFormValid,
-      saving,
-      formStatus: form.status,
-      formId: id,
-    });
-    
     logger.debug('[JSA] handleComplete called', {
       isEditMode,
       isValid: isFormValid,
@@ -1449,9 +1057,8 @@ export default function DailyJSAForm() {
     // Use the new save mode to complete
     try {
       await handleSave("complete");
-      console.log('[JSA] handleSave("complete") completed successfully');
+      logger.debug('[JSA] handleSave("complete") completed successfully');
     } catch (error) {
-      console.error('[JSA] handleComplete error', error);
       logger.error('[JSA] handleComplete error', { error });
       // Error is already handled in handleSave, but log it here for debugging
     }
@@ -1465,16 +1072,18 @@ export default function DailyJSAForm() {
     setCurrentStep(step);
   }, []);
 
-  // Mark current step as completed when moving forward
-  const handleSetCurrentStep = useCallback(
-    (step: number) => {
-      if (step > currentStep) {
-        setCompletedSteps((prev) => new Set([...prev, currentStep]));
-      }
-      setCurrentStep(step);
-    },
-    [currentStep]
-  );
+  const currentStepRef = useRef(currentStep);
+  currentStepRef.current = currentStep;
+
+  // Mark current step as completed when moving forward. Stable callback to avoid
+  // wizard re-renders and duplicate navigation when step changes.
+  const handleSetCurrentStep = useCallback((step: number) => {
+    const prev = currentStepRef.current;
+    if (step > prev) {
+      setCompletedSteps((prevSet) => new Set([...prevSet, prev]));
+    }
+    setCurrentStep(step);
+  }, []);
 
   // Render current step
   const renderStep = () => {
@@ -1499,19 +1108,23 @@ export default function DailyJSAForm() {
               onInputChange={handleInputChange}
               isLoading={loadingRecord}
               errors={{
-                jobDate: shouldShowError('jobDate' as unknown as keyof typeof form) ? getFieldError('jobDate' as unknown as keyof typeof form) : undefined,
-                callInTime: shouldShowError('callInTime' as unknown as keyof typeof form) ? getFieldError('callInTime' as unknown as keyof typeof form) : undefined,
-                callOutTime: shouldShowError('callOutTime' as unknown as keyof typeof form) ? getFieldError('callOutTime' as unknown as keyof typeof form) : undefined,
-                workLocation: shouldShowError('workLocation' as unknown as keyof typeof form) ? getFieldError('workLocation' as unknown as keyof typeof form) : undefined,
-                circuitNumber: shouldShowError('circuitNumber' as unknown as keyof typeof form) ? getFieldError('circuitNumber' as unknown as keyof typeof form) : undefined,
-                nearestHospital: shouldShowError('nearestHospital' as unknown as keyof typeof form) ? getFieldError('nearestHospital' as unknown as keyof typeof form) : undefined,
-                nearestClinic: shouldShowError('nearestClinic' as unknown as keyof typeof form) ? getFieldError('nearestClinic' as unknown as keyof typeof form) : undefined,
-                ocContact: shouldShowError('ocContact' as unknown as keyof typeof form) ? getFieldError('ocContact' as unknown as keyof typeof form) : undefined,
-                docContact: shouldShowError('docContact' as unknown as keyof typeof form) ? getFieldError('docContact' as unknown as keyof typeof form) : undefined,
-                gfContact: shouldShowError('gfContact' as unknown as keyof typeof form) ? getFieldError('gfContact' as unknown as keyof typeof form) : undefined,
-                safetyContact: shouldShowError('safetyContact' as unknown as keyof typeof form) ? getFieldError('safetyContact' as unknown as keyof typeof form) : undefined,
+                jobDate: shouldShowError('jobDate') ? getFieldError('jobDate') : undefined,
+                callInTime: shouldShowError('callInTime') ? getFieldError('callInTime') : undefined,
+                callOutTime: shouldShowError('callOutTime') ? getFieldError('callOutTime') : undefined,
+                workLocation: shouldShowError('workLocation') ? getFieldError('workLocation') : undefined,
+                circuitNumber: shouldShowError('circuitNumber') ? getFieldError('circuitNumber') : undefined,
+                nearestHospital: shouldShowError('nearestHospital') ? getFieldError('nearestHospital') : undefined,
+                nearestClinic: shouldShowError('nearestClinic') ? getFieldError('nearestClinic') : undefined,
+                ocContact: shouldShowError('ocContact') ? getFieldError('ocContact') : undefined,
+                docContact: shouldShowError('docContact') ? getFieldError('docContact') : undefined,
+                gfContact: shouldShowError('gfContact') ? getFieldError('gfContact') : undefined,
+                safetyContact: shouldShowError('safetyContact') ? getFieldError('safetyContact') : undefined,
               }}
-              onFieldBlur={(field) => handleFieldBlur(field as unknown as keyof typeof form)}
+              onFieldBlur={(field) => {
+                // StepJobInfo uses JobInfoFields which is a subset of DailyJsaFormState
+                // All field names match, so this is type-safe
+                handleFieldBlur(field as keyof DailyJsaFormState);
+              }}
             />
           </>
         );
@@ -1564,10 +1177,13 @@ export default function DailyJSAForm() {
             onGoToStep={handleGoToStep}
             isEditMode={isEditMode}
             errors={{
-              employeeSignature: shouldShowError('employeeSignature' as unknown as keyof typeof form) ? getFieldError('employeeSignature' as unknown as keyof typeof form) : undefined,
-              spans: shouldShowError('spans' as unknown as keyof typeof form) ? allErrors.spans : undefined,
+              employeeSignature: shouldShowError('employeeSignature') ? getFieldError('employeeSignature') : undefined,
+              spans: shouldShowError('spans') ? allErrors.spans : undefined,
             }}
-            onFieldBlur={(field) => handleFieldBlur(field as unknown as keyof typeof form)}
+            onFieldBlur={(field) => {
+              // StepReview uses "employeeSignature" which matches DailyJsaFormState
+              handleFieldBlur(field as keyof DailyJsaFormState);
+            }}
           />
         );
       default:

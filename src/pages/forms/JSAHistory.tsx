@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import CardListSkeleton from "../../components/skeletons/CardListSkeleton";
 import { supabase } from "../../lib/supabaseClient";
@@ -58,15 +58,44 @@ export default function JSAHistory() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const prefersReducedMotion = useReducedMotion();
+  const [searchParams] = useSearchParams();
+  
+  // Initialize state from URL params
   const [jsas, setJsas] = useState<DailyJsaRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
+  const searchTermFromUrl = searchParams.get('search') || '';
+  // Validate page parameter: must be numeric, default to 1 if invalid
+  const pageParam = searchParams.get('page') || '1';
+  const pageFromUrl = /^\d+$/.test(pageParam) ? parseInt(pageParam, 10) : 1;
+  const [searchTerm, setSearchTerm] = useState(searchTermFromUrl);
   const [selectedJsa, setSelectedJsa] = useState<DailyJsaRecord | null>(null);
 
   const pageSize = 20;
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(isNaN(pageFromUrl) || pageFromUrl < 1 ? 1 : pageFromUrl);
   const [totalJsas, setTotalJsas] = useState<number | null>(null);
+
+  // Sync URL params when search or page changes
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (searchTerm.trim()) {
+      params.set('search', searchTerm.trim());
+    }
+    if (currentPage > 1) {
+      params.set('page', currentPage.toString());
+    }
+    const queryString = params.toString();
+    const newUrl = queryString ? `?${queryString}` : window.location.pathname;
+    window.history.replaceState(null, '', newUrl);
+  }, [searchTerm, currentPage]);
+
+  // Initialize search term from URL on mount (only if different)
+  useEffect(() => {
+    if (searchTermFromUrl && searchTerm !== searchTermFromUrl) {
+      setSearchTerm(searchTermFromUrl);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTermFromUrl]); // Only run on mount/URL change, not when searchTerm changes
 
   const totalPages =
     totalJsas != null && totalJsas > 0
@@ -112,9 +141,12 @@ export default function JSAHistory() {
     fetchJSAs();
   }, [fetchJSAs]);
 
+  // Reset to page 1 when search term changes (but preserve in URL)
   useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm]);
+    if (searchTerm !== searchTermFromUrl) {
+      setCurrentPage(1);
+    }
+  }, [searchTerm, searchTermFromUrl]);
 
   const filteredJsas = useMemo(() => {
     if (!searchTerm.trim()) return jsas;
@@ -153,6 +185,27 @@ export default function JSAHistory() {
     },
     [navigate]
   );
+
+  // Handle "Duplicate" - transform JSA to form state and navigate
+  const handleDuplicate = useCallback((jsa: DailyJsaRecord) => {
+    // Use the same transform function that DailyJSAForm uses
+    // We'll store the raw record and let the form transform it
+    const templateData = {
+      // Store the record ID so form can fetch and transform it
+      recordId: jsa.id,
+      // Also store a flag to indicate this is a duplicate (not edit)
+      isDuplicate: true,
+    };
+
+    // Store template data in sessionStorage
+    sessionStorage.setItem('jsa-duplicate', JSON.stringify(templateData));
+    
+    // Navigate to new JSA form (no ID = new form)
+    navigate('/forms/jsa');
+    
+    // Close modal
+    setSelectedJsa(null);
+  }, [navigate]);
 
   return (
     <DashboardLayout title="JSA History">
@@ -324,6 +377,7 @@ export default function JSAHistory() {
             jsa={selectedJsa}
             onClose={closeDetail}
             onEdit={handleEdit}
+            onDuplicate={() => selectedJsa && handleDuplicate(selectedJsa)}
           />
         )}
       </AnimatePresence>

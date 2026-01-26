@@ -29,3 +29,16 @@ export const logger = {
   warn: (...args: unknown[]) => log("warn", ...args),
   error: (...args: unknown[]) => log("error", ...args),
 };
+
+/**
+ * Redact user ID for logging (SEC-005 security fix)
+ * Returns first 4 chars + "..." + last 4 chars to prevent PII leakage
+ */
+export function redactUserId(userId: string | null | undefined): string {
+  if (!userId) return '[no-user]';
+  // Redact user ID for logging (first 4 chars + last 4 chars, middle redacted)
+  if (userId.length > 8) {
+    return `${userId.substring(0, 4)}...${userId.substring(userId.length - 4)}`;
+  }
+  return '[redacted]';
+}

@@ -38,12 +38,15 @@ const ReactQueryDevtools = lazy(() =>
 );
 const Announcements = lazy(() => import("./pages/Announcements"));
 const Resources = lazy(() => import("./pages/Resources"));
+const CertificationTest = lazy(() => import("./pages/certifications/CertificationTest"));
+const PracticalEvaluation = lazy(() => import("./pages/certifications/PracticalEvaluation"));
+const ResourceDocView = lazy(() => import("./pages/ResourceDocView"));
 const Contact = lazy(() => import("./pages/Contact"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Settings = lazy(() => import("./pages/Settings"));
 
 // Admin pages
-const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard.tsx"));
 const AdminRTO = lazy(() => import("./pages/admin/AdminRTO"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminJSA = lazy(() => import("./pages/admin/AdminJSA"));
@@ -55,6 +58,8 @@ const AdminTelemetry = lazy(() => import("./pages/admin/AdminTelemetry"));
 const AdminUserActivity = lazy(() => import("./pages/admin/AdminUserActivity"));
 const RiskCalibrationDashboard = lazy(() => import("./pages/admin/RiskCalibrationDashboard"));
 const AdminOperationsHub = lazy(() => import("./pages/admin/AdminOperationsHub"));
+const AdminCertifications = lazy(() => import("./pages/admin/AdminCertifications"));
+const AdminGradeTests = lazy(() => import("./pages/admin/AdminGradeTests"));
 
 // Mechanic pages
 const MechanicDashboard = lazy(() => import("./pages/mechanic/MechanicDashboard"));
@@ -85,6 +90,7 @@ const DailyEquipmentInspectionForm = lazy(
   () => import("./pages/forms/DailyEquipmentInspectionForm")
 );
 const DailyJSAForm = lazy(() => import("./pages/forms/DailyJSAForm"));
+const TreeFellingJSAForm = lazy(() => import("./pages/forms/TreeFellingJSAForm"));
 const FormHistory = lazy(() => import("./pages/forms/FormHistory"));
 const DVIRHistory = lazy(() => import("./pages/forms/DVIRHistory"));
 const JSAHistory = lazy(() => import("./pages/forms/JSAHistory"));
@@ -205,7 +211,26 @@ function AnimatedRoutes() {
                 </PageWrapper>
               }
             />
-
+            <Route
+              path="/forms/jsa/tree-felling"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute>
+                    <TreeFellingJSAForm />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+            <Route
+              path="/forms/jsa/tree-felling/:id"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute>
+                    <TreeFellingJSAForm />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
             <Route
               path="/forms/jsa/:id"
               element={
@@ -271,6 +296,46 @@ function AnimatedRoutes() {
                 <PageWrapper>
                   <ProtectedRoute>
                     <Resources />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+            <Route
+              path="/resources/certification/:certSlug/test"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute>
+                    <CertificationTest />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+            <Route
+              path="/resources/certification/:certSlug/test/:attemptId"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute>
+                    <CertificationTest />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+            <Route
+              path="/resources/certification/:certSlug/practical/:userId"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute allowedRoles={["admin", "general_foreman"]}>
+                    <PracticalEvaluation />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+            <Route
+              path="/resources/doc/:section/:slug"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute>
+                    <ResourceDocView />
                   </ProtectedRoute>
                 </PageWrapper>
               }
@@ -596,6 +661,28 @@ function AnimatedRoutes() {
                 <PageWrapper>
                   <ProtectedRoute requiredRole="admin">
                     <AdminOperationsHub />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            {/* Certifications */}
+            <Route
+              path="/admin/certifications"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminCertifications />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+            <Route
+              path="/admin/grade-tests"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminGradeTests />
                   </ProtectedRoute>
                 </PageWrapper>
               }

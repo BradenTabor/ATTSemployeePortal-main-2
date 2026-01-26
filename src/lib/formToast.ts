@@ -21,6 +21,7 @@
  */
 
 import { toast as sonnerToast } from 'sonner';
+import { logger } from './logger';
 import type { FormToastOptions, ShowToastConfig } from '../components/ui/ToastOverlay/types';
 
 // Global reference to the toast overlay context
@@ -74,7 +75,7 @@ export const formToast = {
     
     if (!overlayContext) {
       // Fallback to Sonner if overlay not available
-      console.warn('[formToast] Overlay context not available, falling back to Sonner');
+      logger.warn('[formToast] Overlay context not available, falling back to Sonner');
       sonnerToast.loading(message);
       return;
     }
@@ -105,7 +106,7 @@ export const formToast = {
     
     if (!overlayContext) {
       // Fallback to Sonner
-      console.warn('[formToast] Overlay context not available, falling back to Sonner');
+      logger.warn('[formToast] Overlay context not available, falling back to Sonner');
       sonnerToast.success(title, { description: message });
       return;
     }
@@ -145,7 +146,7 @@ export const formToast = {
     
     if (!overlayContext) {
       // Fallback to Sonner
-      console.warn('[formToast] Overlay context not available, falling back to Sonner');
+      logger.warn('[formToast] Overlay context not available, falling back to Sonner');
       sonnerToast.error(title, { description: message });
       return;
     }
@@ -186,7 +187,7 @@ export const formToast = {
     
     if (!overlayContext) {
       // Fallback to Sonner
-      console.warn('[formToast] Overlay context not available, falling back to Sonner');
+      logger.warn('[formToast] Overlay context not available, falling back to Sonner');
       sonnerToast.info(title, { description: message });
       return;
     }

@@ -555,8 +555,10 @@ export function StepReview({
             )} />
             <input
               id="employeeSignature"
+              name="employeeSignature"
               type="text"
               value={form.employeeSignature}
+              data-testid="employee-signature"
               onChange={(e) => onInputChange("employeeSignature", e.target.value)}
               onBlur={() => onFieldBlur?.("employeeSignature")}
               placeholder="Type your full name"

@@ -423,6 +423,7 @@ function ContactForm({ userId }: ContactFormProps) {
           <button
             type="submit"
             disabled={status === "loading"}
+            aria-label={status === "loading" ? "Sending message" : status === "success" ? "Message sent" : status === "error" ? "Retry sending message" : "Send message"}
             className="inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold text-[#02150d] shadow-lg shadow-emerald-500/40 transition hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-200"
             style={{
               background: 'linear-gradient(90deg, rgba(16, 66, 42, 0.85) 5%, rgba(52, 211, 153, 1) 50%, rgba(16, 66, 42, 1) 100%)'

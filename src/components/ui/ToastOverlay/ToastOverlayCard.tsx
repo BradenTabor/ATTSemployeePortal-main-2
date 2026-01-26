@@ -119,17 +119,18 @@ export function ToastOverlayCard({ state, onDismiss }: ToastOverlayCardProps) {
       {/* Close button (hidden during loading if locked) */}
       {canDismiss && (
         <button
+          type="button"
           onClick={onDismiss}
           className={cn(
             'absolute top-4 right-4 p-2 rounded-xl',
             'text-white/40 hover:text-white hover:bg-white/10',
             'transition-colors duration-150',
-            'focus:outline-none focus:ring-2 focus:ring-white/20',
             'min-w-[44px] min-h-[44px] flex items-center justify-center',
+            'focus-visible:outline focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
           )}
           aria-label="Dismiss notification"
         >
-          <X className="w-5 h-5" />
+          <X className="w-5 h-5" aria-hidden />
         </button>
       )}
 
@@ -191,18 +192,21 @@ export function ToastOverlayCard({ state, onDismiss }: ToastOverlayCardProps) {
         {state.details && (
           <div className="w-full mt-4">
             <button
+              type="button"
               onClick={() => setIsDetailsExpanded(!isDetailsExpanded)}
+              aria-label={isDetailsExpanded ? "Hide details" : "Show details"}
+              aria-expanded={isDetailsExpanded}
               className={cn(
                 'flex items-center justify-center gap-2 w-full py-2',
                 'text-sm text-white/50 hover:text-white/70',
                 'transition-colors duration-150',
+                'focus-visible:outline focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent rounded',
               )}
-              aria-expanded={isDetailsExpanded}
             >
               {isDetailsExpanded ? (
-                <>Hide Details <ChevronUp className="w-4 h-4" /></>
+                <>Hide Details <ChevronUp className="w-4 h-4" aria-hidden /></>
               ) : (
-                <>Show Details <ChevronDown className="w-4 h-4" /></>
+                <>Show Details <ChevronDown className="w-4 h-4" aria-hidden /></>
               )}
             </button>
             <AnimatePresence>
@@ -230,8 +234,10 @@ export function ToastOverlayCard({ state, onDismiss }: ToastOverlayCardProps) {
           {/* Retry button for errors */}
           {state.type === 'error' && state.onRetry && (
             <motion.button
+              type="button"
               whileTap={{ scale: 0.97 }}
               onClick={state.onRetry}
+              aria-label="Try again"
               className={cn(
                 'flex items-center justify-center gap-2',
                 'w-full sm:w-auto px-6 py-3 rounded-xl',
@@ -240,9 +246,10 @@ export function ToastOverlayCard({ state, onDismiss }: ToastOverlayCardProps) {
                 'border border-white/10',
                 'transition-colors duration-150',
                 'min-h-[48px]',
+                'focus-visible:outline focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
               )}
             >
-              <RotateCcw className="w-4 h-4" />
+              <RotateCcw className="w-4 h-4" aria-hidden />
               Try Again
             </motion.button>
           )}
@@ -251,14 +258,17 @@ export function ToastOverlayCard({ state, onDismiss }: ToastOverlayCardProps) {
           {state.actions?.map((action, index) => (
             <motion.button
               key={index}
+              type="button"
               whileTap={{ scale: 0.97 }}
               onClick={action.onClick}
+              aria-label={typeof action.label === 'string' ? action.label : `Action ${index + 1}`}
               className={cn(
                 'flex items-center justify-center gap-2',
                 'w-full sm:w-auto px-6 py-3 rounded-xl',
                 'font-semibold text-sm',
                 'transition-colors duration-150',
                 'min-h-[48px]',
+                'focus-visible:outline focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
                 action.variant === 'primary' ? config.buttonClass : 
                 action.variant === 'destructive' ? 'bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30' :
                 'bg-white/10 hover:bg-white/15 text-white border border-white/10',
@@ -271,14 +281,17 @@ export function ToastOverlayCard({ state, onDismiss }: ToastOverlayCardProps) {
           {/* Primary dismiss/continue button */}
           {canDismiss && !isLoading && (
             <motion.button
+              type="button"
               whileTap={{ scale: 0.97 }}
               onClick={onDismiss}
+              aria-label="Continue"
               className={cn(
                 'flex items-center justify-center gap-2',
                 'w-full sm:w-auto px-8 py-3 rounded-xl',
                 'font-bold text-sm',
                 'transition-all duration-150',
                 'min-h-[48px]',
+                'focus-visible:outline focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
                 config.buttonClass,
                 'shadow-lg',
               )}
