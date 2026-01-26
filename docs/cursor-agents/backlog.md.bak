@@ -25,7 +25,7 @@ Mode: READ-ONLY AUDIT (Initialization Complete)
 
 ---
 
-### ARCHITECTURE (19 findings)
+### ARCHITECTURE (14 findings)
 
 | ID | Severity | Summary | Status | Effort | Dependencies |
 |----|----------|---------|--------|--------|--------------|
@@ -43,15 +43,10 @@ Mode: READ-ONLY AUDIT (Initialization Complete)
 | ARCH-010 | LOW | ErrorBoundary.tsx syntax error in return | ✅ ALREADY RESOLVED | XS | none |
 | ARCH-011 | LOW | useComplianceQuery return type inconsistency | ✅ DONE | XS | none |
 | ARCH-014 | LOW | IOSInstallPrompt event listener cleanup issue | ✅ DONE | XS | none |
-| ARCH-015 | MEDIUM | GeneralForemanSafetyCompliance uses SELECT * on daily_jsa | ✅ DONE | S | none |
-| ARCH-016 | MEDIUM | TodayComplianceStatus duplicates compliance logic instead of using useComplianceQuery | ✅ DONE | M | none |
-| ARCH-017 | MEDIUM | ComplianceHeroGrid duplicates compliance logic instead of using useComplianceQuery | ✅ DONE | M | none |
-| ARCH-018 | MEDIUM | PendingDefectsWidget has direct API calls in component (violates separation of concerns) | ✅ DONE | M | none |
-| ARCH-019 | MEDIUM | MissionControlCard duplicates compliance logic instead of using useComplianceQuery | ✅ DONE | M | none |
 
 ---
 
-### PERFORMANCE (19 findings)
+### PERFORMANCE (16 findings)
 
 | ID | Severity | Summary | Status | Effort | Dependencies |
 |----|----------|---------|--------|--------|--------------|
@@ -70,10 +65,7 @@ Mode: READ-ONLY AUDIT (Initialization Complete)
 | PERF-011 | LOW | jspdf libraries not code-split (200KB) | ✅ DONE | M | none |
 | PERF-013 | LOW | assetStats useMemo expensive for 1000+ fixes | ✅ DONE | M | PERF-012 |
 | PERF-014 | LOW | Four separate realtime subscriptions (network overhead) | ✅ DONE | L | none |
-| PERF-016 | MEDIUM | generate-fixes-summary edge function uses SELECT * (3 queries) | ✅ DONE | M | none| PERF-017 | MEDIUM | useAdminJSAQuery uses SELECT * on daily_jsa table | ✅ DONE | S | none |
-| PERF-018 | MEDIUM | AdminRTO uses SELECT * on rto_requests table | ✅ DONE | S | none |
-| PERF-019 | MEDIUM | usePendingDefects uses manual state instead of React Query (no caching) | ✅ DONE | S | none |
-
+| PERF-016 | MEDIUM | generate-fixes-summary edge function uses SELECT * (3 queries) | ✅ DONE | M | none
 ---
 
 ### QA (15 findings)
@@ -98,7 +90,7 @@ Mode: READ-ONLY AUDIT (Initialization Complete)
 
 ---
 
-### WORKFLOW (14 findings)
+### WORKFLOW (12 findings)
 
 | ID | Severity | Summary | Status | Effort | Dependencies |
 |----|----------|---------|--------|--------|--------------|
@@ -114,8 +106,6 @@ Mode: READ-ONLY AUDIT (Initialization Complete)
 | WF-005 | LOW | Smart defaults underutilized (incomplete coverage) | ✅ DONE | L | none |
 | WF-010 | LOW | DVIR checklist requires separate clicks for bulk operations | ✅ DONE | XS | none |
 | WF-012 | LOW | Dashboard job navigation doesn't preserve scroll position | ✅ DONE | S | none |
-| WF-019 | MEDIUM | AdminJSA filters, sort, and pagination don't persist across navigation | ✅ DONE | S | none |
-| WF-020 | MEDIUM | AdminRTO filters and pagination don't persist across navigation | ✅ DONE | S | none |
 
 ---
 
@@ -134,13 +124,13 @@ Mode: READ-ONLY AUDIT (Initialization Complete)
 | UX-008 | LOW | Required field asterisk color confuses with error state | ✅ DONE | XS | none |
 | UX-010 | LOW | Error state messages lack actionable guidance | ✅ DONE | S | none |
 | UX-011 | MEDIUM | Textarea missing min-h-[44px] for touch targets | ✅ DONE | XS | none |
-| UX-012 | MEDIUM | VoiceInputButton touch targets below 44px minimum | ✅ DONE | XS | none |
-| UX-013 | LOW | Textarea documentation inconsistent with Input/Select | ✅ DONE | XS | UX-011 |
+| UX-012 | MEDIUM | VoiceInputButton touch targets below 44px minimum | PENDING | XS | none |
+| UX-013 | LOW | Textarea documentation inconsistent with Input/Select | PENDING | XS | UX-011 |
 ---
 
 ## Summary Statistics
 
-**Total Findings**: 93
+**Total Findings**: 80
 - **CRITICAL**: 1 (SEC-010)
 - **HIGH**: 8
 - **MEDIUM**: 35
@@ -177,13 +167,3 @@ Mode: READ-ONLY AUDIT (Initialization Complete)
 3. **Database query optimization** (PERF-001-007) has high ROI - quick wins with big impact
 4. **Form submission testing** (QA-001, QA-009) prevents regressions in critical flows
 5. **Accessibility fixes** (UX-002, UX-003, UX-009) are quick XS/S efforts, high user impact
-
-### QA (3 findings)
-
-| ID | Severity | Summary | Status | Effort | Dependencies |
-|----|----------|---------|--------|--------|--------------|
-| QA-001 | MEDIUM | PendingDefectsWidget does not display error state to user | ✅ DONE | S | none |
-| QA-002 | MEDIUM | DailyJSAForm lacks duplicate submission prevention | ✅ DONE | S | none |
-| QA-003 | MEDIUM | RequestTimeOff lacks duplicate submission prevention | ✅ DONE | S | none |
-
----
