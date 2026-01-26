@@ -2,6 +2,28 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "headers": [
     {
+      "source": "/version.json",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        },
+        {
+          "key": "Expires",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "source": "/",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    },
+    {
       "source": "/assets/(.*)",
       "headers": [
         {
@@ -68,6 +90,10 @@
       "source": "/(.*)",
       "headers": [
         {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        },
+        {
           "key": "X-Frame-Options",
           "value": "DENY"
         },
@@ -88,7 +114,7 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!assets|.*\\.js|.*\\.css|.*\\.png|.*\\.webp|.*\\.json).*)",
+      "source": "/((?!assets|version\\.json|.*\\.js|.*\\.css|.*\\.png|.*\\.webp|.*\\.json).*)",
       "destination": "/index.html"
     }
   ]

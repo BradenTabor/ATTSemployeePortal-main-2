@@ -73,7 +73,7 @@ const cardBase =
 export interface JsaDetailModalProps {
   jsa: DailyJsaRecord;
   onClose: () => void;
-  onEdit: (id: string) => void;
+  onEdit: (record: DailyJsaRecord) => void;
   onDuplicate?: () => void;
 }
 
@@ -150,7 +150,7 @@ export const JsaDetailModal = memo(function JsaDetailModal({
               </span>
               <button
                 type="button"
-                onClick={() => onEdit(jsa.id)}
+                onClick={() => onEdit(jsa)}
                 className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/20 px-4 py-2 text-xs font-medium text-emerald-200 hover:bg-emerald-500/30 hover:border-emerald-400/50 focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] outline-none transition-all active:scale-95"
                 aria-label="Edit JSA"
               >

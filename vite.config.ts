@@ -1,22 +1,43 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
-import { readFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 
 // Read version from package.json at build time
 const packageJson = JSON.parse(readFileSync('./package.json', 'utf-8'));
 const appVersion = packageJson.version;
+const buildTime = new Date().toISOString();
+
+/** Generate version.json for deploy version checking (instant forced update). */
+function generateVersionFile(): Plugin {
+  return {
+    name: 'generate-version-file',
+    apply: 'build',
+    closeBundle() {
+      const versionData = {
+        version: appVersion,
+        buildTime,
+        commit: process.env.VERCEL_GIT_COMMIT_SHA ?? 'unknown',
+        environment: process.env.VERCEL_ENV ?? 'production',
+      };
+      const outputPath = path.resolve(__dirname, 'dist/version.json');
+      writeFileSync(outputPath, JSON.stringify(versionData, null, 2));
+      console.log('[Version File] Generated:', outputPath);
+    },
+  };
+}
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  // Inject app version as a global constant
+  // Inject app version as a global constant (same buildTime as version.json)
   define: {
     __APP_VERSION__: JSON.stringify(appVersion),
-    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+    __BUILD_TIME__: JSON.stringify(buildTime),
   },
   plugins: [
     react(),
+    generateVersionFile(),
     VitePWA({
       strategies: 'injectManifest',
       srcDir: 'src',

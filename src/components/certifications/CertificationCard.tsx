@@ -9,11 +9,28 @@ interface CertificationCardProps {
   record?: CertificationRecord | null;
 }
 
+function getStatusLabel(status: string | null): { text: string; className: string } | null {
+  if (!status) return null;
+  switch (status) {
+    case "active":
+      return { text: "Active", className: "text-emerald-300 font-semibold" };
+    case "expired":
+      return { text: "Expired", className: "text-red-300 font-semibold" };
+    case "pending":
+    case "written_passed":
+      return { text: "In progress", className: "text-amber-300 font-semibold" };
+    case "revoked":
+      return { text: "Revoked", className: "text-red-200/90 font-semibold" };
+    case "renewed":
+      return { text: "Renewed", className: "text-emerald-200 font-semibold" };
+    default:
+      return { text: status, className: "text-emerald-100/80 font-medium" };
+  }
+}
+
 export function CertificationCard({ cert, record }: CertificationCardProps) {
   const status = record?.status ?? null;
-  const isActive = status === "active";
-  const isExpired = status === "expired";
-  const isPending = status === "pending" || status === "written_passed";
+  const statusLabel = getStatusLabel(status);
 
   return (
     <Link
@@ -28,14 +45,9 @@ export function CertificationCard({ cert, record }: CertificationCardProps) {
           <p className="truncate text-xs font-semibold text-white sm:text-sm">{cert.name}</p>
           <p className="text-[10px] sm:text-xs leading-tight text-emerald-100/80 font-medium">
             {cert.question_count ?? "—"} questions · {cert.passing_score}% to pass
-            {record && (
+            {record && statusLabel && (
               <span className="ml-1">
-                ·{" "}
-                {isActive && (
-                  <span className="text-emerald-300 font-semibold">Active</span>
-                )}
-                {isExpired && <span className="text-red-300 font-semibold">Expired</span>}
-                {isPending && <span className="text-amber-300 font-semibold">In progress</span>}
+                · <span className={statusLabel.className}>{statusLabel.text}</span>
               </span>
             )}
           </p>

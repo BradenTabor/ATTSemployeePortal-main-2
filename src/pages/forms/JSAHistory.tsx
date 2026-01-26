@@ -179,9 +179,14 @@ export default function JSAHistory() {
   const closeDetail = () => setSelectedJsa(null);
 
   const handleEdit = useCallback(
-    (jsaId: string) => {
+    (record: DailyJsaRecord) => {
       setSelectedJsa(null);
-      setTimeout(() => navigate(`/forms/jsa/${jsaId}`), 150);
+      const jsaType = (record as DailyJsaRecord & { jsa_type?: string }).jsa_type;
+      const path =
+        jsaType === "tree_felling"
+          ? `/forms/jsa/tree-felling/${record.id}`
+          : `/forms/jsa/${record.id}`;
+      setTimeout(() => navigate(path), 150);
     },
     [navigate]
   );

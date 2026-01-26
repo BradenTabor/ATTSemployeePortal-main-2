@@ -19,6 +19,7 @@ import {
   PushNotificationPrompt,
   WhatsNewOnboarding,
 } from "./components/notifications";
+import { DeployVersionChecker } from "./components/DeployVersionChecker";
 import { IOSInstallPrompt } from "./components/pwa";
 import { queryClient } from "./lib/queryClient";
 import { PageWrapper } from "./motion";
@@ -726,6 +727,8 @@ export default function App() {
         </Router>
         {/* Corner toasts for non-form notifications */}
         <Toaster />
+        {/* Deploy version check: poll + visibility → reload when new build is live */}
+        <DeployVersionChecker />
         {/* Required Update Prompt - full-screen mandatory update when new version deployed */}
         <RequiredUpdatePrompt required={true} />
         {/* Push Notification Opt-in Prompt - shows for unsubscribed users */}

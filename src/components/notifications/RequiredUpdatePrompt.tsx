@@ -25,7 +25,7 @@ interface RequiredUpdatePromptProps {
   testMode?: boolean;
 }
 
-const UPDATE_CHECK_INTERVAL_MS = 60 * 60 * 1000; // 60 minutes
+const UPDATE_CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes (visibility + DeployVersionChecker cover fast path)
 
 function RequiredUpdatePromptComponent({ required = true, testMode = false }: RequiredUpdatePromptProps) {
   const [isUpdating, setIsUpdating] = useState(false);
@@ -61,9 +61,9 @@ function RequiredUpdatePromptComponent({ required = true, testMode = false }: Re
         }
       };
 
-      // Periodic check: every 60 minutes
+      // Periodic check: every 5 minutes
       const intervalId = setInterval(() => {
-        console.log('[PWA] Periodic update check (60 min interval)');
+        console.log('[PWA] Periodic update check (5 min interval)');
         checkForUpdate();
       }, UPDATE_CHECK_INTERVAL_MS);
 

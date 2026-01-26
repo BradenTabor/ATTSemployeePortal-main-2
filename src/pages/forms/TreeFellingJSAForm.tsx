@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { toast } from "sonner";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useAuth } from "../../contexts/AuthContext";
@@ -33,7 +33,34 @@ const EMPTY_TREE_DATA: TreeFellingData = {
   mitigation: "",
 };
 
+/** Safely parse tree_felling_data from DB into TreeFellingData */
+function parseTreeFellingData(raw: unknown): TreeFellingData {
+  if (!raw || typeof raw !== "object") return EMPTY_TREE_DATA;
+  const o = raw as Record<string, unknown>;
+  return {
+    tree_risk_assessment: (o.tree_risk_assessment as TreeFellingData["tree_risk_assessment"]) ?? {},
+    environmental_factors: (o.environmental_factors as TreeFellingData["environmental_factors"]) ?? {},
+    operational_factors: (o.operational_factors as TreeFellingData["operational_factors"]) ?? {},
+    hazards_present: typeof o.hazards_present === "string" ? o.hazards_present : "",
+    mitigation: typeof o.mitigation === "string" ? o.mitigation : "",
+  };
+}
+
+/** Map observer_signatures from DB to form shape */
+function parseObserverSignatures(raw: unknown): { name: string; signature_data: string }[] {
+  if (!Array.isArray(raw) || raw.length === 0) return [{ name: "", signature_data: "" }];
+  return raw.map((item) => {
+    const o = item && typeof item === "object" ? (item as Record<string, unknown>) : {};
+    return {
+      name: typeof o.name === "string" ? o.name : "",
+      signature_data: typeof o.signature_data === "string" ? o.signature_data : "",
+    };
+  });
+}
+
 export default function TreeFellingJSAForm() {
+  const { id } = useParams<{ id?: string }>();
+  const isEditMode = Boolean(id);
   const navigate = useNavigate();
   const { user } = useAuth();
   const [jobDate, setJobDate] = useState(() =>
@@ -47,6 +74,7 @@ export default function TreeFellingJSAForm() {
     [{ name: "", signature_data: "" }]
   );
   const [submitting, setSubmitting] = useState(false);
+  const [loadingRecord, setLoadingRecord] = useState(false);
 
   const updateTree = (section: keyof TreeFellingData, key: string, value: string) => {
     setTreeData((prev) => {
@@ -63,6 +91,41 @@ export default function TreeFellingJSAForm() {
     setSignatures((p) => [...p, { name: "", signature_data: "" }]);
   };
 
+  // Load existing record when editing
+  useEffect(() => {
+    if (!id || !user?.id) return;
+    const fetchRecord = async () => {
+      setLoadingRecord(true);
+      const { data, error } = await supabase
+        .from("daily_jsa")
+        .select(
+          "id, user_id, job_date, work_location, gf_contact, oc_contact, tree_felling_data, observer_signatures, status"
+        )
+        .eq("id", id)
+        .eq("jsa_type", "tree_felling")
+        .maybeSingle();
+
+      if (error) {
+        toast.error("Unable to load JSA. Please try again.");
+        setLoadingRecord(false);
+        return;
+      }
+      if (!data) {
+        toast.error("JSA not found or you don't have permission to edit it.");
+        setLoadingRecord(false);
+        return;
+      }
+      setJobDate((data.job_date ?? "").toString().slice(0, 10) || new Date().toISOString().slice(0, 10));
+      setWorkLocation((data.work_location ?? "") as string);
+      setGfContact((data.gf_contact ?? "") as string);
+      setOcContact((data.oc_contact ?? "") as string);
+      setTreeData(parseTreeFellingData(data.tree_felling_data));
+      setSignatures(parseObserverSignatures(data.observer_signatures));
+      setLoadingRecord(false);
+    };
+    fetchRecord();
+  }, [id, user?.id]);
+
   const handleSubmit = async (asDraft: boolean) => {
     if (!user?.id) return;
     const targetStatus = asDraft ? "draft" : "completed";
@@ -77,34 +140,50 @@ export default function TreeFellingJSAForm() {
           timestamp: now,
         }));
 
-      const { error } = await supabase.from("daily_jsa").insert({
-        user_id: user.id,
+      const payload = {
         job_date: jobDate || null,
         work_location: workLocation || null,
         gf_contact: gfContact || null,
         oc_contact: ocContact || null,
-        jsa_type: "tree_felling",
+        jsa_type: "tree_felling" as const,
         tree_felling_data: treeData,
         observer_signatures,
         status: targetStatus,
         status_changed_at: now,
         status_history: [{ status: targetStatus, timestamp: now }],
         completed_at: targetStatus === "completed" ? now : null,
-        shared_with_users: [],
-        jobs_performed: [],
-        ppe: {},
+        shared_with_users: [] as unknown[],
+        jobs_performed: [] as unknown[],
+        ppe: {} as Record<string, unknown>,
         weather_conditions: { conditions: {}, modifiers: {} },
-        weather_hazards: null,
-        hazards_present: {},
-        traffic_hazards: {},
-        traffic_setup: {},
-        spans: [],
-        notes: null,
-        employee_signature: null,
-      });
+        weather_hazards: null as string | null,
+        hazards_present: {} as Record<string, unknown>,
+        traffic_hazards: {} as Record<string, unknown>,
+        traffic_setup: {} as Record<string, unknown>,
+        spans: [] as unknown[],
+        notes: null as string | null,
+        employee_signature: null as string | null,
+        updated_at: now,
+      };
 
-      if (error) throw error;
-      toast.success(asDraft ? "Draft saved." : "Tree Felling JSA submitted.");
+      if (isEditMode && id) {
+        const { error } = await supabase
+          .from("daily_jsa")
+          .update(payload)
+          .eq("id", id)
+          .eq("user_id", user.id);
+
+        if (error) throw error;
+        toast.success(asDraft ? "Draft updated." : "Tree Felling JSA updated.");
+      } else {
+        const { error } = await supabase.from("daily_jsa").insert({
+          ...payload,
+          user_id: user.id,
+        });
+
+        if (error) throw error;
+        toast.success(asDraft ? "Draft saved." : "Tree Felling JSA submitted.");
+      }
       navigate("/forms-history/jsa");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Submit failed.");
@@ -113,13 +192,19 @@ export default function TreeFellingJSAForm() {
     }
   };
 
+  const isLoading = isEditMode && loadingRecord;
+
   return (
-    <DashboardLayout title="Tree Felling JSA">
+    <DashboardLayout title={isEditMode ? "Edit Tree Felling JSA" : "Tree Felling JSA"}>
       <div className="mx-auto max-w-2xl space-y-6 px-4 pb-8">
+        {isLoading && (
+          <p className="text-sm text-amber-300" role="status">Loading JSA…</p>
+        )}
         <p className="text-sm text-gray-400">
           Specialized JSA for tree felling operations. Complete tree risk, environmental and operational factors, then sign.
         </p>
 
+        <fieldset className="space-y-6" disabled={isLoading} aria-busy={isLoading}>
         <section className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
           <h3 className="text-sm font-semibold text-white">Date & location</h3>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -129,7 +214,8 @@ export default function TreeFellingJSAForm() {
                 type="date"
                 value={jobDate}
                 onChange={(e) => setJobDate(e.target.value)}
-                className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm text-white"
+                disabled={isLoading}
+                className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm text-white disabled:opacity-60"
               />
             </div>
             <div>
@@ -302,11 +388,13 @@ export default function TreeFellingJSAForm() {
           ))}
         </section>
 
+        </fieldset>
+
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => handleSubmit(true)}
-            disabled={submitting}
+            disabled={submitting || isLoading}
             className="rounded-lg bg-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-white/20 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
             aria-label="Save draft"
           >
@@ -315,11 +403,11 @@ export default function TreeFellingJSAForm() {
           <button
             type="button"
             onClick={() => handleSubmit(false)}
-            disabled={submitting}
+            disabled={submitting || isLoading}
             className="rounded-lg bg-amber-500/20 px-4 py-2 text-sm font-medium text-amber-400 hover:bg-amber-500/30 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-            aria-label="Submit Tree Felling JSA"
+            aria-label={isEditMode ? "Update Tree Felling JSA" : "Submit Tree Felling JSA"}
           >
-            Submit
+            {isEditMode ? "Update" : "Submit"}
           </button>
           <Link
             to="/forms"
