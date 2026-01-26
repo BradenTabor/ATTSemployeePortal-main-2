@@ -1,0 +1,6 @@
+question_number,category,difficulty,question_type,question_text,option_a,option_b,option_c,option_d,correct_answer,points
+1,hardware,easy,multiple_choice,What is the main lifting arm of a bucket truck called?,Jib,Boom,Bucket,Turret,B,1
+2,hardware,easy,true_false,The bucket is typically rated for two workers.,True,False,,,B,1
+3,knots,easy,multiple_choice,Which knot forms a fixed loop at the end of a rope?,Clove hitch,Bowline,Half hitch,Timber hitch,B,1
+4,observation,easy,true_false,Proper PPE for bucket work includes a full-body harness and hard hat.,True,False,,,A,1
+5,observation,easy,true_false,Before ascending the operator should perform a pre-use inspection.,True,False,,,A,1
