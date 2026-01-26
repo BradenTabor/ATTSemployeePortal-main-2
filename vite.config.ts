@@ -37,12 +37,14 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      'jspdf': path.resolve(__dirname, 'node_modules/jspdf/dist/jspdf.es.min.js'),
+      // Removed jspdf alias to ensure proper code-splitting via dynamic imports
     },
   },
   build: {
     minify: 'esbuild',
-    // Reduced from 800kb to 500kb for stricter chunk size monitoring
+    // Developer visibility: warn when a chunk exceeds 500 KiB after minification.
+    // Strict enforcement is in scripts/checkBundleSize.mjs (vendor-react, vendor-supabase, main-index).
+    // If build logs are noisy, raise this (e.g. 550) but do not relax checkBundleSize.mjs thresholds.
     chunkSizeWarningLimit: 500,
     sourcemap: false,
     // Enable CSS code splitting
@@ -97,8 +99,8 @@ export default defineConfig(({ mode }) => ({
       'react',
       'react-dom',
       '@tanstack/react-query',
+      'lucide-react', // Include for better dev performance and tree-shaking
     ],
-    exclude: ['lucide-react'],
   },
   // Server optimizations for dev
   server: {
@@ -106,6 +108,7 @@ export default defineConfig(({ mode }) => ({
     warmup: {
       clientFiles: [
         './src/pages/Dashboard.tsx',
+        './src/pages/admin/AdminDashboard.tsx',
         './src/components/dashboard/DashboardAvatar.tsx',
         './src/components/avatars/**/*.tsx',
       ],

@@ -1,11 +1,26 @@
 /**
  * Playwright E2E Test Configuration
- * 
+ *
  * Configuration for end-to-end tests of safety-critical forms.
  * Supports desktop and mobile viewports.
  */
 
+import os from 'node:os';
 import { defineConfig, devices } from '@playwright/test';
+
+/** Number of workers: env override, or CI-optimized, or Playwright default (local). */
+function getWorkers(): number | undefined {
+  const envWorkers = process.env.PLAYWRIGHT_WORKERS;
+  if (envWorkers !== undefined && envWorkers !== '') {
+    const n = parseInt(envWorkers, 10);
+    if (Number.isFinite(n) && n >= 1) return n;
+  }
+  if (process.env.CI) {
+    const cores = os.cpus().length;
+    return Math.min(6, Math.max(2, Math.floor(cores / 2)));
+  }
+  return undefined;
+}
 
 /**
  * Read environment variables from file.
@@ -27,9 +42,9 @@ export default defineConfig({
   
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
+
+  /* Worker count: override via PLAYWRIGHT_WORKERS; in CI use 2–6 workers by CPU; locally use Playwright default. */
+  workers: getWorkers(),
   
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
@@ -88,11 +103,11 @@ export default defineConfig({
     },
   ],
 
-  /* Run your local dev server before starting the tests */
+  /* Run your local dev server before starting the tests (reuse if already running) */
   webServer: {
     command: 'npm run dev',
     url: 'http://localhost:5173',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: true,
     timeout: 120 * 1000,
   },
   

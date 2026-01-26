@@ -1,7 +1,7 @@
 import { promises as fs } from "fs";
 import path from "path";
 
-// Bundle size thresholds (in bytes)
+// Bundle size thresholds (in bytes). CI enforcement; see also vite.config.ts chunkSizeWarningLimit (dev visibility).
 // Note: main-index increased to 220KB on 2026-01-21 during production audit
 // to accommodate recent feature additions. Target for future optimization.
 const THRESHOLDS = [
