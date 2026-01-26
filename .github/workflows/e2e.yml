@@ -1,0 +1,110 @@
+# E2E tests with Playwright – sharded across parallel jobs for speed.
+# Merge job produces a single HTML report from all shards.
+
+name: E2E
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+env:
+  CI: true
+  PLAYWRIGHT_BASE_URL: http://localhost:5173
+
+jobs:
+  e2e:
+    name: E2E (shard ${{ matrix.shard }}/${{ matrix.shards }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+        shards: [3]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Chromium only for faster CI; use `npx playwright install --with-deps` for all browsers
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright tests (shard ${{ matrix.shard }}/${{ matrix.shards }})
+        run: >
+          npx playwright test
+          --shard=${{ matrix.shard }}/${{ matrix.shards }}
+          --reporter=blob,outputDir=blob-report
+
+      - name: Upload blob report
+        uses: actions/upload-artifact@v4
+        with:
+          name: blob-${{ matrix.shard }}
+          path: blob-report/
+          retention-days: 1
+
+  merge-reports:
+    name: Merge reports
+    runs-on: ubuntu-latest
+    needs: e2e
+    if: always() && !cancelled() && needs.e2e.result != 'cancelled'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright (for merge-reports)
+        run: npx playwright install --with-deps chromium
+
+      - name: Download blob reports
+        uses: actions/download-artifact@v4
+        with:
+          path: blob-reports
+          pattern: blob-*
+          merge-multiple: false
+
+      - name: Merge Playwright reports
+        run: npx playwright merge-reports blob-reports/* --reporter=html,tests/e2e-report
+
+      - name: Upload merged HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: tests/e2e-report/
+          retention-days: 7
+
+  fail-if-failed:
+    name: Fail if any shard failed
+    runs-on: ubuntu-latest
+    needs: [e2e, merge-reports]
+    if: always() && !cancelled()
+    steps:
+      - name: Check e2e result
+        run: |
+          if [ "${{ needs.e2e.result }}" != "success" ]; then
+            echo "E2E shards did not all succeed: ${{ needs.e2e.result }}"
+            exit 1
+          fi
+      - name: Check merge result
+        run: |
+          if [ "${{ needs.merge-reports.result }}" != "success" ]; then
+            echo "Merge reports failed: ${{ needs.merge-reports.result }}"
+            exit 1
+          fi
