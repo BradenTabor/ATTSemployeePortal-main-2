@@ -9,20 +9,23 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
+const testsDir = __dirname;
+
 export default defineConfig({
+  root: path.resolve(testsDir, '..'),
   plugins: [react()],
   test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: ['../vitest.setup.ts'],
     include: [
-      './unit/**/*.test.ts',
-      './unit/**/*.test.tsx',
+      'tests/unit/**/*.test.ts',
+      'tests/unit/**/*.test.tsx',
     ],
     exclude: [
-      './e2e/**/*',
-      './node_modules/**/*',
+      'tests/e2e/**/*',
+      '**/node_modules/**',
     ],
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['vitest.setup.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -42,8 +45,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, '../src'),
-      '@tests': path.resolve(__dirname, '.'),
+      '@': path.resolve(testsDir, '../src'),
+      '@tests': testsDir,
     },
   },
 });

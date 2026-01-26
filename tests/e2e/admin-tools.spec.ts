@@ -10,7 +10,7 @@ import { loginAs } from './helpers/auth';
 test.describe('Admin Dashboard', () => {
   test.beforeEach(async ({ page }) => {
     await loginAs(page, 'admin');
-    await page.goto('/admin/dashboard');
+    await page.goto('/admin');
     await page.waitForLoadState('networkidle');
   });
 
@@ -191,12 +191,12 @@ test.describe('Admin Job Progress', () => {
 test.describe('Admin Job Tracker', () => {
   test.beforeEach(async ({ page }) => {
     await loginAs(page, 'admin');
-    await page.goto('/admin/job-tracker');
+    await page.goto('/admin/operations');
     await page.waitForLoadState('networkidle');
   });
 
   test('should display job tracker', async ({ page }) => {
-    const tracker = page.locator('[data-testid="job-tracker"], main');
+    const tracker = page.locator('[data-testid="job-tracker"], main, [data-testid="operations-hub"]');
     await expect(tracker).toBeVisible();
   });
 });
@@ -244,7 +244,7 @@ test.describe('Admin Authorization', () => {
     await loginAs(page, 'employee');
     
     const adminPages = [
-      '/admin/dashboard',
+      '/admin',
       '/admin/users',
       '/admin/jsa',
       '/admin/rto',

@@ -8,8 +8,13 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { config } from 'dotenv';
+import { join } from 'path';
 
-// Load environment variables
+// Load .env from project root (Node/tsx don't load it automatically)
+config({ path: join(process.cwd(), '.env') });
+config({ path: join(process.cwd(), '.env.local') });
+
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 

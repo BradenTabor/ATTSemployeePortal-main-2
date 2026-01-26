@@ -32,33 +32,70 @@ const TEST_CREDENTIALS: Record<TestRole, { email: string; password: string }> = 
 };
 
 /**
- * Log in as a test user
+ * Log in as a test user.
+ * Requires test users to exist in Supabase — run `npm run test:setup` first.
  */
 export async function loginAs(page: Page, role: TestRole): Promise<void> {
   const credentials = TEST_CREDENTIALS[role];
-  
-  // Navigate to login page
+
   await page.goto('/');
-  
-  // Wait for the page to load
-  await page.waitForLoadState('networkidle');
-  
-  // Check if already logged in
-  const dashboardVisible = await page.locator('[data-testid="dashboard"]').isVisible().catch(() => false);
-  if (dashboardVisible) {
-    // Already logged in, check if correct role
+  await page.waitForLoadState('domcontentloaded');
+
+  // If already on an app route (session restored), we're done
+  const url = page.url();
+  if (/\/(dashboard|admin|forms|mechanic-dashboard|general-foreman-dashboard|safety-officer-dashboard|foreman-dashboard)(\/|$)/.test(new URL(url).pathname)) {
     return;
   }
-  
-  // Fill login form
-  await page.fill('[data-testid="email-input"], input[type="email"], input[name="email"]', credentials.email);
-  await page.fill('[data-testid="password-input"], input[type="password"], input[name="password"]', credentials.password);
-  
-  // Submit login
-  await page.click('[data-testid="login-button"], button[type="submit"]');
-  
-  // Wait for navigation to dashboard
-  await expect(page).toHaveURL(/dashboard|forms/, { timeout: 15000 });
+
+  // Wait for login form (Home uses id="auth-email" / id="auth-password")
+  const emailInput = page.locator('#auth-email').or(page.locator('input[type="email"]')).first();
+  await emailInput.waitFor({ state: 'visible', timeout: 10000 });
+  await emailInput.fill(credentials.email);
+  await page.locator('#auth-password').or(page.locator('input[type="password"]')).first().fill(credentials.password);
+
+  await page.click('button[type="submit"]');
+  await page.waitForLoadState('domcontentloaded');
+
+  // Wait for redirect to any dashboard (allow 20s for Supabase + AuthContext)
+  const dashboardRegex = /\/(dashboard|admin|forms|mechanic-dashboard|general-foreman-dashboard|safety-officer-dashboard|foreman-dashboard)(\/|$)/;
+  try {
+    await expect(page).toHaveURL(dashboardRegex, { timeout: 20000 });
+    await dismissOnboardingIfPresent(page);
+  } catch {
+    const stillOnLogin = await page.locator('#auth-email, input[type="email"]').isVisible().catch(() => false);
+    const errorText = await page.locator('.border-red-500\\/20, [role="alert"], .text-destructive').textContent().catch(() => '');
+    if (stillOnLogin) {
+      throw new Error(
+        `E2E login failed (role: ${role}). Page stayed on login. ` +
+          (errorText ? `Auth error: ${errorText.slice(0, 200)}. ` : '') +
+          'Ensure test users exist: run `npm run test:setup` and that VITE_SUPABASE_URL / Supabase keys point to the same project.'
+      );
+    }
+    throw new Error(`E2E login failed: expected redirect to dashboard, got ${page.url()}`);
+  }
+}
+
+/**
+ * Dismiss "What's New" onboarding modal if present (so it does not block form interactions).
+ * Call after login or after navigating to a page that might show the modal.
+ */
+export async function dismissOnboardingIfPresent(page: Page): Promise<void> {
+  // Prevent modal from showing in this session (localStorage key used by appVersion)
+  await page.evaluate(() => {
+    try {
+      localStorage.setItem('atts_onboarding_completed_version', '999.0.0');
+    } catch {
+      // ignore
+    }
+  });
+  const dialog = page.getByRole('dialog', { name: /What's New in ATTS Portal/i });
+  if (await dialog.isVisible().catch(() => false)) {
+    const skipButton = page.locator('button:has-text("Skip")').first();
+    if (await skipButton.isVisible().catch(() => false)) {
+      await skipButton.click({ force: true });
+      await dialog.waitFor({ state: 'hidden', timeout: 3000 }).catch(() => {});
+    }
+  }
 }
 
 /**

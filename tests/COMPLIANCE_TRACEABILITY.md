@@ -237,7 +237,19 @@ This document maps regulatory requirements to test coverage for DVIR, JSA, and E
 
 ---
 
-## 9. Certification Statement
+## 9. E2E Test Setup (Photo Upload Tests)
+
+Before running E2E tests that upload photos (DVIR, Equipment Inspection), generate test fixtures:
+
+```bash
+npm run test:fixtures
+```
+
+This populates `tests/fixtures/` with placeholder images (e.g. `oil-dipstick.jpg`, `hydraulic.jpg`, `tire.jpg`, `overview.jpg`) and `invalid-file.pdf`. Without these files, photo-upload E2E tests will fail with "file not found". In CI, add a step that runs `npm run test:fixtures` before E2E, or commit the generated fixtures.
+
+---
+
+## 10. Certification Statement
 
 This compliance traceability matrix documents the test coverage for safety-critical forms in the ATTS Employee Portal. All tests are designed to verify compliance with:
 
