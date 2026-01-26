@@ -103,6 +103,8 @@ const ELIGIBLE_FIELDS: Record<string, string[]> = {
     'doc_contact',
     'gf_contact',
     'safety_contact',
+    'call_in_time',
+    'call_out_time',
   ],
 };
 

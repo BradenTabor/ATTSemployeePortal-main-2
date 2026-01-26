@@ -321,7 +321,9 @@ Deno.serve(async (req: Request) => {
       if (notifError) {
         // Duplicate check
         if (notifError.code === '23505') {
-          console.log(`[check-compliance-9am] Skipping duplicate: ${missing.userId}`);
+          // SEC-005: Redact user ID in logs
+          const redactedId = missing.userId.substring(0, 4) + '...' + missing.userId.substring(missing.userId.length - 4);
+          console.log(`[check-compliance-9am] Skipping duplicate: ${redactedId}`);
           webhooksSkipped++;
           continue;
         }
@@ -335,7 +337,9 @@ Deno.serve(async (req: Request) => {
       // Skip if dry run or notifications disabled
       if (dryRun || !notificationsEnabled) {
         const reason = dryRun ? 'dry_run' : 'notifications_disabled';
-        console.log(`[check-compliance-9am] Skipping webhook (${reason}): ${missing.userId}`);
+        // SEC-005: Redact user ID in logs
+        const redactedId = missing.userId.substring(0, 4) + '...' + missing.userId.substring(missing.userId.length - 4);
+        console.log(`[check-compliance-9am] Skipping webhook (${reason}): ${redactedId}`);
         
         await supabase
           .from('compliance_notifications')

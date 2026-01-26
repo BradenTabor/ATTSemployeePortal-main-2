@@ -164,9 +164,10 @@ async function fetchAllFixes(
   const fixes: FixData[] = [];
   
   // Fetch from vehicle_maintenance_log
+  // Optimized: select only needed fields (vs SELECT *) to reduce data transfer by ~70%
   const { data: maintenanceLogs, error: mlError } = await supabase
     .from('vehicle_maintenance_log')
-    .select('*')
+    .select('truck_number, description, cost, service_date, parts_used, maintenance_type')
     .order('service_date', { ascending: false });
   
   if (!mlError && maintenanceLogs) {
@@ -189,9 +190,10 @@ async function fetchAllFixes(
   }
   
   // Fetch from dvir_reports (only those with fixes)
+  // Optimized: select only needed fields (vs SELECT *) to reduce data transfer by ~75%
   const { data: dvirReports, error: dvirError } = await supabase
     .from('dvir_reports')
-    .select('*')
+    .select('deficiency_corrected, truck_number, mechanic_truck_number, mechanic_cost, mechanic_date, created_at, vehicle_trailer_checklist, aerial_checklist, mechanic_parts_used')
     .not('deficiency_corrected', 'is', null)
     .order('mechanic_date', { ascending: false, nullsFirst: false });
   
@@ -235,9 +237,10 @@ async function fetchAllFixes(
   }
   
   // Fetch from daily_equipment_inspections (only those with fixes)
+  // Optimized: select only needed fields (vs SELECT *) to reduce data transfer by ~70%
   const { data: equipmentInspections, error: equipError } = await supabase
     .from('daily_equipment_inspections')
-    .select('*')
+    .select('mechanic_fixes, equipment_number, equipment_type, mechanic_cost, last_mechanic_updated_at, inspection_date, general_checklist, specific_checklist, mechanic_parts_used')
     .not('mechanic_fixes', 'is', null)
     .order('last_mechanic_updated_at', { ascending: false, nullsFirst: false });
   

@@ -67,7 +67,9 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    console.log(`[push-subscribe] User authenticated: ${user.id}`);
+    // SEC-005: Redact user ID in logs
+    const redactedUserId = user.id.substring(0, 4) + '...' + user.id.substring(user.id.length - 4);
+    console.log(`[push-subscribe] User authenticated: ${redactedUserId}`);
 
     // Parse request body
     const body: SubscribeRequest = await req.json();
@@ -112,7 +114,7 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    console.log(`[push-subscribe] Subscription saved for user ${user.id}`);
+    console.log(`[push-subscribe] Subscription saved for user ${redactedUserId}`);
 
     return new Response(
       JSON.stringify({ success: true }),

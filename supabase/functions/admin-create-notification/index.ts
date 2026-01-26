@@ -100,12 +100,18 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    console.log(`[admin-create-notification] Authenticated user: ${user.id}`);
+    // SEC-005: Redact user ID in logs
+    const redactedUserId = user.id.substring(0, 4) + '...' + user.id.substring(user.id.length - 4);
+    console.log(`[admin-create-notification] Authenticated user: ${redactedUserId}`);
 
     // ===========================================
-    // Step 2: Verify Admin Role
+    // Step 2: Verify Admin Role (SEC-008: Use service role to bypass RLS)
     // ===========================================
-    const { data: appUser, error: appUserError } = await userClient
+    // SEC-008: Use service role client to verify role independently of RLS
+    // This prevents privilege escalation if RLS policies are misconfigured
+    const serviceClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    
+    const { data: appUser, error: appUserError } = await serviceClient
       .from("app_users")
       .select("role")
       .eq("user_id", user.id)
@@ -121,7 +127,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (appUser.role !== "admin") {
-      console.warn(`[admin-create-notification] Non-admin user attempted access: ${user.id} (role: ${appUser.role})`);
+      console.warn(`[admin-create-notification] Non-admin user attempted access: ${redactedUserId} (role: ${appUser.role})`);
       const response: ErrorResponse = { success: false, error: "Forbidden: Admin access required" };
       return new Response(JSON.stringify(response), {
         status: 403,
@@ -129,7 +135,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    console.log(`[admin-create-notification] Admin access verified for user: ${user.id}`);
+    console.log(`[admin-create-notification] Admin access verified for user: ${redactedUserId}`);
 
     // ===========================================
     // Step 3: Parse and Validate Request Body

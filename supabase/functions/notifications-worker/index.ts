@@ -158,7 +158,9 @@ Deno.serve(async (req: Request) => {
         .is("revoked_at", null);
 
       if (subError) {
-        console.error(`[notifications-worker] Error fetching subscriptions for user ${notification.user_id}:`, subError);
+        // SEC-005: Redact user ID in logs
+        const redactedId = notification.user_id.substring(0, 4) + '...' + notification.user_id.substring(notification.user_id.length - 4);
+        console.error(`[notifications-worker] Error fetching subscriptions for user ${redactedId}:`, subError);
         failed++;
         continue;
       }
