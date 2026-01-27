@@ -42,7 +42,9 @@ export function parseFormError(
 
   // Handle Error instances
   if (error instanceof Error) {
-    const msg = error.message.toLowerCase();
+    const rawMessage = error.message || '';
+    const displayMessage = rawMessage === '[object Object]' ? 'An unexpected error occurred' : rawMessage;
+    const msg = displayMessage.toLowerCase();
     
     // Check for timeout patterns
     if (msg.includes('timeout') || msg.includes('deadline exceeded') || msg.includes('network')) {
@@ -51,7 +53,7 @@ export function parseFormError(
       errorDetails = 'The request took too long. Please check your connection and try again.';
       errorCode = 'NETWORK_ERROR';
     } else {
-      errorMessage = error.message;
+      errorMessage = displayMessage;
       
       // Infer error code from message
       if (msg.includes('network') || msg.includes('fetch')) {

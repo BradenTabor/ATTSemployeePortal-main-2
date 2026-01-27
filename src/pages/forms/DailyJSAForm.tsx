@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
@@ -22,6 +22,7 @@ import {
 import { scrollToFirstError } from "../../lib/scrollToError";
 import { useJSAFormValidation, useJSASubmission } from "../../hooks/jsa";
 import { parseFormError, getErrorToastTitle } from "../../lib/errorHandling";
+import { getRoleDashboard } from "../../lib/navigation";
 
 // Wizard components
 import { JsaWizard, type SaveMode } from "../../components/forms/JsaWizard";
@@ -63,8 +64,9 @@ export default function DailyJSAForm() {
   const { id } = useParams<{ id?: string }>();
   const isEditMode = Boolean(id);
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { user, isAdmin, fullName } = useAuth();
+  const { user, isAdmin, fullName, role } = useAuth();
 
   // Extract user initials from full name for span auto-fill
   const userInitials = useMemo(() => {
@@ -82,6 +84,8 @@ export default function DailyJSAForm() {
   const [saving, setSaving] = useState(false);
   // QA-002: Prevent duplicate submissions with atomic ref check
   const submittingRef = useRef(false);
+  // Skip fetch when we already applied passed state from create (effect re-runs after clearing state)
+  const usedFromCreateForIdRef = useRef<string | null>(null);
   const [persistedStatus, setPersistedStatus] =
     useState<"draft" | "completed">("draft");
 
@@ -568,6 +572,41 @@ export default function DailyJSAForm() {
       }
       return;
     }
+
+    // Optimistic navigation: use passed state from create (skip fetch)
+    const locationState = location.state as {
+      fromCreate?: boolean;
+      form?: DailyJsaFormState;
+      persistedStatus?: "draft" | "completed";
+      completedSteps?: number[];
+      currentStep?: number;
+      spanPage?: number;
+    } | null;
+    if (locationState?.fromCreate && locationState.form) {
+      logger.info('[JSA] Using passed state from create (skipping fetch)', { id });
+      usedFromCreateForIdRef.current = id;
+      setForm(locationState.form);
+      setPersistedStatus(locationState.persistedStatus ?? "draft");
+      if (locationState.completedSteps != null) {
+        setCompletedSteps(new Set(locationState.completedSteps));
+      }
+      if (locationState.currentStep !== undefined) {
+        setCurrentStep(locationState.currentStep);
+      }
+      if (locationState.spanPage !== undefined) {
+        setSpanPage(locationState.spanPage);
+      }
+      setLoadingRecord(false);
+      navigate(`/forms/jsa/${id}`, { replace: true, state: null });
+      return;
+    }
+
+    // Effect re-ran after clearing state; skip fetch since we already applied passed state
+    if (usedFromCreateForIdRef.current === id) {
+      usedFromCreateForIdRef.current = null;
+      return;
+    }
+
     if (!user && !isAdmin) return;
 
       const fetchRecord = async () => {
@@ -610,7 +649,7 @@ export default function DailyJSAForm() {
       setLoadingRecord(false);
     };
     fetchRecord();
-  }, [id, user, isAdmin]);
+  }, [id, user, isAdmin, location.state, navigate]);
 
   // Handlers
   const handleInputChange = useCallback(
@@ -1011,9 +1050,19 @@ export default function DailyJSAForm() {
               autoDismiss: 8000
             }
           );
-          // Navigate to edit mode for new records
+          // Navigate to edit mode for new records (pass state to skip fetch and avoid race)
           if (result.recordId) {
-            navigate(`/forms/jsa/${result.recordId}`, { replace: true });
+            navigate(`/forms/jsa/${result.recordId}`, {
+              replace: true,
+              state: {
+                fromCreate: true,
+                form,
+                persistedStatus: targetStatus,
+                completedSteps: Array.from(completedSteps),
+                currentStep,
+                spanPage,
+              },
+            });
           }
         }
       }
@@ -1043,7 +1092,7 @@ export default function DailyJSAForm() {
       setSaving(false);
       submittingRef.current = false; // QA-002: Reset ref on completion
     }
-  }, [user, form, isEditMode, id, persistedStatus, navigate, suggestions, clearDraft, markAsSaved, saveDraft, currentStep, completedSteps, checkAndCelebrate, invalidateCompliance, additionalErrors, allErrors, errors, getStepForField, markSubmitAttempted, validateAll, submitJSA, formStartTime, formTimer, saving]);
+  }, [user, form, isEditMode, id, persistedStatus, navigate, suggestions, clearDraft, markAsSaved, saveDraft, currentStep, completedSteps, spanPage, checkAndCelebrate, invalidateCompliance, additionalErrors, allErrors, errors, getStepForField, markSubmitAttempted, validateAll, submitJSA, formStartTime, formTimer, saving]);
 
   const handleComplete = useCallback(async () => {
     logger.debug('[JSA] handleComplete called', {
@@ -1065,8 +1114,8 @@ export default function DailyJSAForm() {
   }, [handleSave, isEditMode, isFormValid, saving, form.status, id]);
 
   const handleBack = useCallback(() => {
-    navigate("/dashboard");
-  }, [navigate]);
+    navigate(getRoleDashboard(role));
+  }, [navigate, role]);
 
   const handleGoToStep = useCallback((step: number) => {
     setCurrentStep(step);
@@ -1194,8 +1243,8 @@ export default function DailyJSAForm() {
   // Handle celebration continue
   const handleCelebrationContinue = useCallback(() => {
     setShowCelebration(false);
-    navigate("/dashboard");
-  }, [navigate]);
+    navigate(getRoleDashboard(role));
+  }, [navigate, role]);
 
   return (
     <DashboardLayout title="Daily JSA" hideHeader>

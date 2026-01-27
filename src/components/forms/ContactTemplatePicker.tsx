@@ -7,6 +7,7 @@
  */
 
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users,
@@ -20,6 +21,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useUserContactTemplates, type ContactTemplate } from '../../hooks/user';
+import { useModalOverlay } from '../../hooks/useModalOverlay';
 
 // =============================================================================
 // TYPES
@@ -58,6 +60,7 @@ interface SaveTemplateModalProps {
 function SaveTemplateModal({ isOpen, onClose, onSave, isSaving }: SaveTemplateModalProps) {
   const [name, setName] = useState('');
   const [makeDefault, setMakeDefault] = useState(false);
+  const { modalRef, zIndex } = useModalOverlay({ isOpen, onClose, zIndex: 101 });
 
   const handleSave = async () => {
     if (!name.trim()) return;
@@ -68,16 +71,22 @@ function SaveTemplateModal({ isOpen, onClose, onSave, isSaving }: SaveTemplateMo
 
   if (!isOpen) return null;
 
-  return (
+  const content = (
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+        className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+        style={{ zIndex }}
         onClick={onClose}
+        aria-hidden
       >
         <motion.div
+          ref={modalRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="save-template-modal-title"
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
@@ -90,7 +99,7 @@ function SaveTemplateModal({ isOpen, onClose, onSave, isSaving }: SaveTemplateMo
               <div className="p-2 rounded-xl bg-emerald-500/20">
                 <Users className="w-4 h-4 text-emerald-400" />
               </div>
-              <h3 className="font-semibold text-white">Save Contact Template</h3>
+              <h3 id="save-template-modal-title" className="font-semibold text-white">Save Contact Template</h3>
             </div>
             <button
               onClick={onClose}
@@ -166,6 +175,8 @@ function SaveTemplateModal({ isOpen, onClose, onSave, isSaving }: SaveTemplateMo
       </motion.div>
     </AnimatePresence>
   );
+
+  return typeof document !== 'undefined' ? createPortal(content, document.body) : null;
 }
 
 // =============================================================================

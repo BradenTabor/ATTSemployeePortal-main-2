@@ -1,9 +1,14 @@
 #!/bin/bash
 # =============================================================================
-# Deploy Cron Job with Service Role Authentication
+# Deploy Cron Jobs with Service Role Authentication
 # =============================================================================
 #
-# This script updates the safety-announcement cron job with proper authentication.
+# This script deploys all scheduled cron jobs with proper authentication:
+#   - safety-announcement-7am (Mon-Fri 7 AM CST)
+#   - admin-safety-forecast (Mon-Fri 6:30 AM CST) - writes to risk_score_history
+#   - auto-tune-risk-algorithm (Sunday 2 AM UTC) - weekly tuning
+#   - check-algorithm-performance (Daily 3 AM UTC) - rollback checker
+#
 # It avoids committing the service role key to the repository.
 #
 # Usage:
@@ -22,7 +27,7 @@
 
 set -e
 
-echo "🔐 Deploying cron job with service role authentication..."
+echo "🔐 Deploying cron jobs with service role authentication..."
 echo ""
 
 # Get service role key from environment or prompt
@@ -87,18 +92,24 @@ if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
 fi
 
 echo ""
-echo "🔄 Updating cron job..."
+echo "🔄 Updating cron jobs..."
 
-# Execute SQL to update the cron job
+# Execute SQL to update all cron jobs
 psql "$SUPABASE_DB_URL" <<SQL
--- Remove existing job
-SELECT cron.unschedule('safety-announcement-7am');
+-- =============================================================================
+-- 1. Safety Announcement (7 AM CST Mon-Fri)
+-- =============================================================================
+DO \$\$
+BEGIN
+  PERFORM cron.unschedule('safety-announcement-7am');
+EXCEPTION WHEN others THEN
+  RAISE NOTICE 'safety-announcement-7am did not exist';
+END \$\$;
 
--- Create new job with authentication
 SELECT cron.schedule(
   'safety-announcement-7am',
   '0 13 * * 1-5',
-  \$\$
+  \$cron\$
   SELECT net.http_post(
     url := 'https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/generate-safety-announcement',
     headers := jsonb_build_object(
@@ -107,30 +118,119 @@ SELECT cron.schedule(
     ),
     body := '{"windowHours": 48}'::jsonb
   );
-  \$\$
+  \$cron\$
 );
 
--- Verify the job was created
+-- =============================================================================
+-- 2. Admin Safety Forecast (6:30 AM CST Mon-Fri) - writes to risk_score_history
+-- =============================================================================
+DO \$\$
+BEGIN
+  PERFORM cron.unschedule('admin-safety-forecast');
+EXCEPTION WHEN others THEN
+  RAISE NOTICE 'admin-safety-forecast did not exist';
+END \$\$;
+
+SELECT cron.schedule(
+  'admin-safety-forecast',
+  '30 12 * * 1-5',
+  \$cron\$
+  SELECT net.http_post(
+    url := 'https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/admin-safety-forecast-cron',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer $SUPABASE_SERVICE_ROLE_KEY'
+    ),
+    body := '{}'::jsonb
+  );
+  \$cron\$
+);
+
+-- =============================================================================
+-- 3. Auto-Tune Risk Algorithm (Sunday 2 AM UTC)
+-- =============================================================================
+DO \$\$
+BEGIN
+  PERFORM cron.unschedule('auto-tune-risk-algorithm');
+EXCEPTION WHEN others THEN
+  RAISE NOTICE 'auto-tune-risk-algorithm did not exist';
+END \$\$;
+
+SELECT cron.schedule(
+  'auto-tune-risk-algorithm',
+  '0 2 * * 0',
+  \$cron\$
+  SELECT net.http_post(
+    url := 'https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/auto-tune-risk-algorithm',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer $SUPABASE_SERVICE_ROLE_KEY'
+    ),
+    body := '{}'::jsonb
+  );
+  \$cron\$
+);
+
+-- =============================================================================
+-- 4. Check Algorithm Performance (Daily 3 AM UTC)
+-- =============================================================================
+DO \$\$
+BEGIN
+  PERFORM cron.unschedule('check-algorithm-performance');
+EXCEPTION WHEN others THEN
+  RAISE NOTICE 'check-algorithm-performance did not exist';
+END \$\$;
+
+SELECT cron.schedule(
+  'check-algorithm-performance',
+  '0 3 * * *',
+  \$cron\$
+  SELECT net.http_post(
+    url := 'https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/check-algorithm-performance',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer $SUPABASE_SERVICE_ROLE_KEY'
+    ),
+    body := '{}'::jsonb
+  );
+  \$cron\$
+);
+
+-- =============================================================================
+-- Verify all jobs
+-- =============================================================================
 SELECT jobname, schedule, active 
 FROM cron.job 
-WHERE jobname = 'safety-announcement-7am';
+WHERE jobname IN (
+  'safety-announcement-7am',
+  'admin-safety-forecast',
+  'auto-tune-risk-algorithm',
+  'check-algorithm-performance'
+)
+ORDER BY jobname;
 SQL
 
 if [ $? -eq 0 ]; then
   echo ""
-  echo "✅ Cron job updated successfully!"
+  echo "✅ All cron jobs deployed successfully!"
   echo ""
-  echo "📊 To verify, run:"
-  echo "   SELECT * FROM public.cron_job_runs LIMIT 5;"
+  echo "📋 Jobs scheduled:"
+  echo "   • safety-announcement-7am     - Mon-Fri 7:00 AM CST (13:00 UTC)"
+  echo "   • admin-safety-forecast       - Mon-Fri 6:30 AM CST (12:30 UTC)"
+  echo "   • auto-tune-risk-algorithm    - Sunday 2:00 AM UTC"
+  echo "   • check-algorithm-performance - Daily 3:00 AM UTC"
   echo ""
-  echo "🧪 To test manually:"
-  echo "   curl -X POST https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/generate-safety-announcement \\"
+  echo "📊 To verify execution history:"
+  echo "   SELECT * FROM public.cron_job_runs ORDER BY start_time DESC LIMIT 10;"
+  echo ""
+  echo "🧪 To test the safety forecast manually:"
+  echo "   curl -X POST https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/admin-safety-forecast-cron \\"
   echo "     -H \"Authorization: Bearer \$SUPABASE_SERVICE_ROLE_KEY\" \\"
   echo "     -H \"Content-Type: application/json\" \\"
-  echo "     -d '{\"windowHours\": 48, \"dryRun\": true}'"
+  echo "     -d '{\"dryRun\": true}'"
 else
   echo ""
-  echo "❌ Failed to update cron job"
+  echo "❌ Failed to deploy cron jobs"
   exit 1
 fi
 

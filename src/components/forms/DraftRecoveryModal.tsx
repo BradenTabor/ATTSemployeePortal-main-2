@@ -8,8 +8,10 @@
  */
 
 import { motion, AnimatePresence } from 'framer-motion';
+import { createPortal } from 'react-dom';
 import { FileText, Clock, Trash2, RotateCcw } from 'lucide-react';
 import type { DraftData } from '../../hooks/useFormPersistence';
+import { useModalOverlay } from '../../hooks/useModalOverlay';
 
 interface DraftRecoveryModalProps<T> {
   /** Whether the modal is visible */
@@ -50,33 +52,42 @@ export function DraftRecoveryModal<T>({
   onDiscard,
 }: DraftRecoveryModalProps<T>) {
   const savedAt = draft?.savedAt ? new Date(draft.savedAt) : null;
+  const { modalRef, zIndex } = useModalOverlay({ isOpen, onClose: onDiscard, zIndex: 100 });
 
-  return (
+  if (!isOpen || !draft) return null;
+
+  const content = (
     <AnimatePresence>
-      {isOpen && draft && (
+      <motion.div
+        className="fixed inset-0 flex items-center justify-center p-4"
+        style={{ zIndex }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        aria-hidden
+      >
+        {/* Backdrop */}
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="absolute inset-0 bg-black/70 backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-        >
-          {/* Backdrop */}
-          <motion.div
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onDiscard}
-          />
+          onClick={onDiscard}
+        />
 
-          {/* Modal */}
-          <motion.div
-            className="relative w-full max-w-sm bg-gradient-to-br from-gray-900 via-gray-900 to-gray-950 rounded-2xl border border-white/10 shadow-2xl overflow-hidden"
-            initial={{ scale: 0.9, y: 20, opacity: 0 }}
-            animate={{ scale: 1, y: 0, opacity: 1 }}
-            exit={{ scale: 0.9, y: 20, opacity: 0 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          >
+        {/* Modal */}
+        <motion.div
+          ref={modalRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="draft-recovery-modal-title"
+          className="relative w-full max-w-sm bg-gradient-to-br from-gray-900 via-gray-900 to-gray-950 rounded-2xl border border-white/10 shadow-2xl overflow-hidden"
+          initial={{ scale: 0.9, y: 20, opacity: 0 }}
+          animate={{ scale: 1, y: 0, opacity: 1 }}
+          exit={{ scale: 0.9, y: 20, opacity: 0 }}
+          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+          onClick={(e) => e.stopPropagation()}
+        >
             {/* Glow accent */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-24 bg-emerald-500/20 blur-3xl pointer-events-none" />
 
@@ -90,7 +101,7 @@ export function DraftRecoveryModal<T>({
               </div>
 
               {/* Title */}
-              <h3 className="text-lg font-bold text-white text-center mb-1">
+              <h3 id="draft-recovery-modal-title" className="text-lg font-bold text-white text-center mb-1">
                 Resume Draft?
               </h3>
 
@@ -137,10 +148,11 @@ export function DraftRecoveryModal<T>({
               </div>
             </div>
           </motion.div>
-        </motion.div>
-      )}
+      </motion.div>
     </AnimatePresence>
   );
+
+  return typeof document !== 'undefined' ? createPortal(content, document.body) : null;
 }
 
 export default DraftRecoveryModal;

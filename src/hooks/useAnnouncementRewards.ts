@@ -1,8 +1,14 @@
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabaseClient';
 import { logger } from '../lib/logger';
 import { toast } from '../lib/toast';
 import { useAuth } from '../contexts/AuthContext';
+import {
+  isWithinRewardClaimWindow,
+  getRewardClaimWindowMessage,
+  getTimeUntilClaimWindowOpens,
+} from '../lib/complianceHelpers';
 
 /**
  * Announcement reward record from the database
@@ -70,19 +76,45 @@ export function useHasClaimedReward(announcementId: string | undefined) {
   };
 }
 
+const REWARD_CLAIM_WINDOW_ERROR =
+  'Safety rewards can only be claimed between 7 AM and 9 AM Central.';
+
 /**
- * Claim a reward for an announcement
+ * Reactive hook for the safety reward claim window (7–9 AM Central).
+ * Updates on an interval so the UI can enable/disable the claim button at 7 AM / 9 AM.
+ */
+export function useRewardClaimWindow() {
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const isWithinClaimWindow = isWithinRewardClaimWindow(now);
+  const message = getRewardClaimWindowMessage(now);
+  const timeUntilOpens = getTimeUntilClaimWindowOpens(now);
+
+  return { isWithinClaimWindow, message, timeUntilOpens };
+}
+
+/**
+ * Claim a reward for an announcement (allowed only 7–9 AM Central).
  */
 export function useClaimReward() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  
+
   return useMutation({
     mutationFn: async (announcementId: string) => {
       if (!user?.id) {
         throw new Error('Must be logged in to claim rewards');
       }
-      
+
+      if (!isWithinRewardClaimWindow()) {
+        throw new Error(REWARD_CLAIM_WINDOW_ERROR);
+      }
+
       const { data, error } = await supabase
         .from('announcement_rewards')
         .insert({
@@ -94,9 +126,12 @@ export function useClaimReward() {
         .single();
       
       if (error) {
-        // Check if it's a duplicate claim error (unique constraint violation)
         if (error.code === '23505') {
           throw new Error('You have already claimed this reward');
+        }
+        // Map RLS/trigger denial (e.g. outside claim window) to user-friendly message
+        if (error.code === '42501' || error.message?.includes('7 AM and 9 AM')) {
+          throw new Error(REWARD_CLAIM_WINDOW_ERROR);
         }
         logger.error('Failed to claim reward:', error);
         throw new Error('Failed to claim reward');
@@ -198,19 +233,23 @@ export function useAnnouncementReward(announcementId: string | undefined) {
   const { data: hasClaimed, isLoading: isCheckingClaim } = useHasClaimedReward(announcementId);
   const { mutate: claimReward, isPending: isClaiming } = useClaimReward();
   const { data: totalPoints } = useTotalPoints();
-  
+  const { isWithinClaimWindow, message, timeUntilOpens } = useRewardClaimWindow();
+
   const handleClaim = () => {
-    if (announcementId && !hasClaimed && !isClaiming) {
+    if (announcementId && !hasClaimed && !isClaiming && isWithinClaimWindow) {
       claimReward(announcementId);
     }
   };
-  
+
   return {
     hasClaimed: hasClaimed,
     isCheckingClaim,
     isClaiming,
     totalPoints: totalPoints ?? 0,
     claimReward: handleClaim,
+    isWithinClaimWindow,
+    claimWindowMessage: message,
+    timeUntilClaimOpens: timeUntilOpens,
   };
 }
 

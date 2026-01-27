@@ -5,6 +5,7 @@
  */
 
 import { useState, useMemo, memo, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Trophy,
@@ -28,6 +29,7 @@ import {
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useAuth } from "../../contexts/AuthContext";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
+import { useModalOverlay } from "../../hooks/useModalOverlay";
 import { cn } from "../../lib/utils";
 import {
   useSafetyAnalytics,
@@ -252,7 +254,7 @@ const PeriodSelector = memo(function PeriodSelector({
   );
 });
 
-// User detail modal (compact)
+// User detail modal (compact) - portaled so it sits above layout (ReturnButton, etc.)
 const UserDetailModal = memo(function UserDetailModal({
   userId,
   isOpen,
@@ -265,19 +267,26 @@ const UserDetailModal = memo(function UserDetailModal({
   period: Period;
 }) {
   const { data: userDetail, isLoading } = useUserSafetyDetail(userId || '', period);
-  
+  const { modalRef, zIndex } = useModalOverlay({ isOpen, onClose, zIndex: 100 });
+
   if (!isOpen) return null;
-  
-  return (
+
+  const content = (
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        style={{ zIndex }}
         onClick={onClose}
+        aria-hidden
       >
         <motion.div
+          ref={modalRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="safety-user-detail-title"
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
@@ -297,7 +306,7 @@ const UserDetailModal = memo(function UserDetailModal({
                   {userDetail.full_name.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1">
-                  <h2 className="text-sm font-bold text-white">{userDetail.full_name}</h2>
+                  <h2 id="safety-user-detail-title" className="text-sm font-bold text-white">{userDetail.full_name}</h2>
                   <p className="text-[10px] text-[#f6dcb2]/50 capitalize">{userDetail.role.replace('_', ' ')}</p>
                 </div>
                 <SafetyScoreBadge score={userDetail.safety_score} />
@@ -387,6 +396,8 @@ const UserDetailModal = memo(function UserDetailModal({
       </motion.div>
     </AnimatePresence>
   );
+
+  return typeof document !== 'undefined' ? createPortal(content, document.body) : null;
 });
 
 // Form breakdown mini chart
@@ -669,9 +680,11 @@ function SafetyAnalyticsDashboard() {
                     <div className="space-y-2">
                       {[1, 2, 3].map(i => <div key={i} className="h-4 bg-white/5 rounded animate-pulse" />)}
                     </div>
+                  ) : (data?.formBreakdown && (data.formBreakdown[0]?.submissions ?? 0) + (data.formBreakdown[1]?.submissions ?? 0) + (data.formBreakdown[2]?.submissions ?? 0) === 0 ? (
+                    <p className="text-[10px] text-white/40 italic">No compliance data for this period</p>
                   ) : (
                     <FormBreakdownMini data={data?.formBreakdown || []} />
-                  )}
+                  ))}
                 </motion.div>
                 
                 {/* Quick Stats */}
@@ -682,16 +695,20 @@ function SafetyAnalyticsDashboard() {
                   className="rounded-xl border border-[#f6dcb2]/15 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] p-3"
                 >
                   <div className="text-[10px] font-semibold text-white/60 uppercase tracking-wider mb-2">Stats</div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="text-center p-2 rounded-lg bg-white/[0.03] border border-white/5">
-                      <div className="text-lg font-bold text-white">{data?.stats.total_compliance_days || 0}</div>
-                      <div className="text-[8px] text-white/40 uppercase">Days</div>
+                  {(data?.stats.total_compliance_days ?? 0) === 0 && (data?.stats.full_compliance_users ?? 0) === 0 && !isLoading ? (
+                    <p className="text-[10px] text-white/40 italic">No compliance days in this period</p>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="text-center p-2 rounded-lg bg-white/[0.03] border border-white/5">
+                        <div className="text-lg font-bold text-white">{data?.stats.total_compliance_days || 0}</div>
+                        <div className="text-[8px] text-white/40 uppercase">Days</div>
+                      </div>
+                      <div className="text-center p-2 rounded-lg bg-white/[0.03] border border-white/5">
+                        <div className="text-lg font-bold text-white">{data?.stats.full_compliance_users || 0}</div>
+                        <div className="text-[8px] text-white/40 uppercase">100%</div>
+                      </div>
                     </div>
-                    <div className="text-center p-2 rounded-lg bg-white/[0.03] border border-white/5">
-                      <div className="text-lg font-bold text-white">{data?.stats.full_compliance_users || 0}</div>
-                      <div className="text-[8px] text-white/40 uppercase">100%</div>
-                    </div>
-                  </div>
+                  )}
                 </motion.div>
               </div>
             </div>

@@ -237,13 +237,14 @@ function ReturnButtonComponent() {
         shortLabel = "Admin";
         target = "/admin";
       } else if (path === "/admin") {
-        label = "General Dashboard";
-        shortLabel = "Dashboard";
+        label = "Main Dashboard";
+        shortLabel = "Main";
         target = "/dashboard";
-      } else if (path.startsWith("/") && path !== "/dashboard" && path !== "/") {
-        label = "Dashboard";
-        shortLabel = "Dashboard";
-        target = "/dashboard";
+      } else if (path !== "/" && path !== "/admin") {
+        // Any other page (Main Dashboard, General Foreman, Foreman, etc.): offer return to Admin
+        label = "Admin Dashboard";
+        shortLabel = "Admin";
+        target = "/admin";
       }
     } else {
       if (path.startsWith("/") && path !== "/dashboard" && path !== "/") {

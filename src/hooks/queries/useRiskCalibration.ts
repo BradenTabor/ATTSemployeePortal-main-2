@@ -237,6 +237,7 @@ export function useAutoTuningConfig() {
     },
     staleTime: 1000 * 60, // 1 minute
     gcTime: 1000 * 60 * 5, // 5 minutes
+    refetchInterval: 1000 * 60 * 2, // Refresh every 2 minutes
   });
 }
 
@@ -304,7 +305,8 @@ export function useTuningRuns() {
       if (error) throw new Error(error.message);
       return data as TuningRun[];
     },
-    staleTime: 1000 * 60,
+    staleTime: 1000 * 60, // 1 minute
+    refetchInterval: 1000 * 60 * 2, // Refresh every 2 minutes
   });
 }
 
@@ -339,6 +341,7 @@ export function useAccuracyStats(days: number = 30) {
       }) as AccuracyStats;
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchInterval: 1000 * 60 * 5, // Refresh every 5 minutes (accuracy changes slowly)
   });
 }
 
@@ -359,7 +362,8 @@ export function useRiskScoreHistory(dateRange: { start: string; end: string }) {
       if (error) throw new Error(error.message);
       return data as RiskScoreHistory[];
     },
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchInterval: 1000 * 60 * 5, // Refresh every 5 minutes
   });
 }
 
@@ -379,7 +383,8 @@ export function useActiveAlgorithmConfig() {
       if (error) throw new Error(error.message);
       return data as AlgorithmConfig;
     },
-    staleTime: 1000 * 60,
+    staleTime: 1000 * 60, // 1 minute
+    refetchInterval: 1000 * 60 * 2, // Refresh every 2 minutes
   });
 }
 
@@ -400,7 +405,8 @@ export function useSafetyIncidents(dateRange: { start: string; end: string }) {
       if (error) throw new Error(error.message);
       return data as SafetyIncident[];
     },
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchInterval: 1000 * 60 * 5, // Refresh every 5 minutes
   });
 }
 

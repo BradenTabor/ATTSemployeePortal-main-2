@@ -1,7 +1,9 @@
-import { memo, useCallback, useEffect, useRef } from 'react';
+import { memo } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Star, Calendar, Trophy, Clock, FileText } from 'lucide-react';
 import type { GroupedUserReward, UserClaimDetail } from '../../hooks/queries/useAdminRewards';
+import { useModalOverlay } from '../../hooks/useModalOverlay';
 
 interface UserRewardsDetailModalProps {
   user: GroupedUserReward | null;
@@ -78,62 +80,34 @@ const ClaimRow = memo(({ claim, index }: { claim: UserClaimDetail; index: number
 ClaimRow.displayName = 'ClaimRow';
 
 function UserRewardsDetailModalComponent({ user, isOpen, onClose }: UserRewardsDetailModalProps) {
-  const overlayRef = useRef<HTMLDivElement>(null);
-  const modalRef = useRef<HTMLDivElement>(null);
+  const { modalRef, zIndex } = useModalOverlay({ isOpen, onClose, zIndex: 100 });
 
-  // Close on escape key
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
-      }
-    };
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [isOpen, onClose]);
+  if (!isOpen || !user) return null;
 
-  // Close on overlay click
-  const handleOverlayClick = useCallback(
-    (e: React.MouseEvent) => {
-      if (e.target === overlayRef.current) {
-        onClose();
-      }
-    },
-    [onClose]
-  );
-
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen]);
-
-  return (
+  const content = (
     <AnimatePresence>
-      {isOpen && user && (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+        className="fixed inset-0 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+        style={{ zIndex }}
+        onClick={(e) => e.target === e.currentTarget && onClose()}
+        aria-hidden
+      >
         <motion.div
-          ref={overlayRef}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          onClick={handleOverlayClick}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+          ref={modalRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="user-rewards-detail-modal-title"
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          onClick={(e) => e.stopPropagation()}
+          className="relative w-full max-w-lg max-h-[85vh] flex flex-col rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] shadow-[0_40px_100px_rgba(0,0,0,0.8)]"
         >
-          <motion.div
-            ref={modalRef}
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="relative w-full max-w-lg max-h-[85vh] flex flex-col rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] shadow-[0_40px_100px_rgba(0,0,0,0.8)]"
-          >
             {/* Ambient glow overlays */}
             <div className="pointer-events-none absolute inset-0 rounded-3xl bg-[radial-gradient(circle_at_20%_0%,rgba(247,228,189,0.1),transparent_50%)] opacity-80" />
             <div className="pointer-events-none absolute inset-0 rounded-3xl bg-[radial-gradient(circle_at_bottom_right,rgba(209,152,57,0.06),transparent_40%)]" />
@@ -158,7 +132,7 @@ function UserRewardsDetailModalComponent({ user, isOpen, onClose }: UserRewardsD
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-xl font-bold text-[#fff6dd] truncate">
+                  <h2 id="user-rewards-detail-modal-title" className="text-xl font-bold text-[#fff6dd] truncate">
                     {user.full_name || 'Unknown User'}
                   </h2>
                   <p className="text-sm text-[#f4c979] truncate">
@@ -217,10 +191,11 @@ function UserRewardsDetailModalComponent({ user, isOpen, onClose }: UserRewardsD
               </div>
             </div>
           </motion.div>
-        </motion.div>
-      )}
+      </motion.div>
     </AnimatePresence>
   );
+
+  return typeof document !== 'undefined' ? createPortal(content, document.body) : null;
 }
 
 export const UserRewardsDetailModal = memo(UserRewardsDetailModalComponent);

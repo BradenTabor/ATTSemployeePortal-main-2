@@ -29,6 +29,8 @@ import {
   ClipboardCheck,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { getRoleDashboard } from '../../lib/navigation';
 
 interface FullComplianceCelebrationProps {
   /** Whether to show the celebration */
@@ -211,6 +213,7 @@ export function FullComplianceCelebration({
   onDismiss,
 }: FullComplianceCelebrationProps) {
   const navigate = useNavigate();
+  const { role } = useAuth();
   const [showConfetti, setShowConfetti] = useState(false);
   
   // Generate particles on mount
@@ -248,8 +251,8 @@ export function FullComplianceCelebration({
 
   const handleContinue = useCallback(() => {
     onDismiss();
-    navigate('/dashboard');
-  }, [onDismiss, navigate]);
+    navigate(getRoleDashboard(role));
+  }, [onDismiss, navigate, role]);
 
   // Don't render if not visible
   if (!isVisible) return null;

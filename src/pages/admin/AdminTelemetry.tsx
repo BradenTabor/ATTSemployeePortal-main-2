@@ -155,8 +155,8 @@ function SummarySection({ data }: SummarySectionProps) {
 
   return (
     <motion.div variants={itemVariants}>
-      {/* Mobile: Horizontal scrolling compact strip */}
-      <div className="sm:hidden overflow-x-auto -mx-4 px-4 pb-1">
+      {/* Mobile: Horizontal scrolling compact strip — break out to viewport edges */}
+      <div className="sm:hidden overflow-x-auto -mx-2.5 px-2.5 pb-1 sm:-mx-4 sm:px-4">
         <div className="flex gap-1">
           <MobileStatChip label="Events" value={data.summary.total_events} icon={<Activity className="w-2.5 h-2.5" />} color="emerald" />
           <MobileStatChip label="Sessions" value={data.summary.unique_sessions} icon={<Users className="w-2.5 h-2.5" />} color="blue" />
@@ -292,7 +292,7 @@ function FormPerformanceSection({ completionTimes, byType }: FormPerformanceSect
       </div>
 
       {/* Mobile: Compact horizontal scrolling cards */}
-      <div className="sm:hidden overflow-x-auto -mx-2 px-2 pb-1">
+      <div className="sm:hidden overflow-x-auto -mx-2.5 px-2.5 pb-1">
         <div className="flex gap-1.5">
           {formStats.map((item) => {
             const meta = FORM_TYPE_META[item.form_type];
@@ -1294,14 +1294,20 @@ export default function AdminTelemetry() {
 
   return (
     <DashboardLayout title="Telemetry Dashboard">
-      <div className="max-w-7xl mx-auto space-y-1.5 sm:space-y-5">
+      <div className="w-full max-w-7xl mx-auto px-2.5 sm:px-4 overflow-x-hidden space-y-1.5 sm:space-y-5">
         {/* Compact Header */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between gap-1.5 sm:gap-2"
+          className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
         >
-          {/* Title - hidden on mobile since navbar shows it */}
+          {/* Mobile: short title row + date row */}
+          <div className="flex sm:hidden items-center gap-2 min-w-0">
+            <Database className="w-4 h-4 text-emerald-400 shrink-0" />
+            <h1 className="text-base font-bold text-white truncate">Telemetry</h1>
+          </div>
+
+          {/* Title - hidden on mobile (we show short title above) */}
           <div className="hidden sm:block">
             <div className="flex items-center gap-2">
               <Database className="w-5 h-5 text-emerald-400" />
@@ -1313,7 +1319,7 @@ export default function AdminTelemetry() {
           </div>
 
           {/* Mobile-only compact date selector */}
-          <div className="flex sm:hidden items-center gap-0.5 p-0.5 rounded-md bg-white/5 border border-white/10 overflow-x-auto">
+          <div className="flex sm:hidden items-center gap-0.5 p-0.5 rounded-md bg-white/5 border border-white/10 overflow-x-auto min-w-0 shrink-0">
             {DATE_RANGE_OPTIONS.map((option) => (
               <button
                 key={option.days}
@@ -1381,14 +1387,14 @@ export default function AdminTelemetry() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="rounded-2xl border border-red-500/30 bg-red-500/10 p-6 text-center"
+            className="rounded-xl sm:rounded-2xl border border-red-500/30 bg-red-500/10 p-4 sm:p-6 text-center"
           >
-            <AlertTriangle className="w-8 h-8 text-red-400 mx-auto mb-3" />
-            <h3 className="text-lg font-semibold text-white mb-2">Error Loading Data</h3>
-            <p className="text-sm text-white/60 mb-4">{error.message}</p>
+            <AlertTriangle className="w-6 h-6 sm:w-8 sm:h-8 text-red-400 mx-auto mb-2 sm:mb-3" />
+            <h3 className="text-base sm:text-lg font-semibold text-white mb-1.5 sm:mb-2">Error Loading Data</h3>
+            <p className="text-xs sm:text-sm text-white/60 mb-3 sm:mb-4 break-words">{error.message}</p>
             <button
               onClick={() => refetch()}
-              className="px-4 py-2 rounded-xl bg-red-500/20 text-red-300 text-sm font-medium hover:bg-red-500/30 transition-colors"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-red-500/20 text-red-300 text-xs sm:text-sm font-medium hover:bg-red-500/30 transition-colors"
             >
               Try Again
             </button>
@@ -1397,13 +1403,13 @@ export default function AdminTelemetry() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center justify-center py-16 text-center"
+            className="flex flex-col items-center justify-center py-8 sm:py-16 text-center px-2"
           >
-            <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-4">
-              <Activity className="w-8 h-8 text-emerald-400/60" />
+            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-3 sm:mb-4">
+              <Activity className="w-6 h-6 sm:w-8 sm:h-8 text-emerald-400/60" />
             </div>
-            <h3 className="text-lg font-semibold text-white mb-2">No Telemetry Data Yet</h3>
-            <p className="text-sm text-white/50 max-w-md">
+            <h3 className="text-base sm:text-lg font-semibold text-white mb-1.5 sm:mb-2">No Telemetry Data Yet</h3>
+            <p className="text-xs sm:text-sm text-white/50 max-w-md">
               Telemetry data will appear here once users start interacting with forms and announcements.
             </p>
           </motion.div>
@@ -1426,27 +1432,27 @@ export default function AdminTelemetry() {
             {/* Activity Timeline */}
             <TimelineSection data={data.timeline} />
 
-            {/* Two Column Layout */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-5">
+            {/* Two Column Layout — single column on mobile with reduced gap */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-5">
               <AnnouncementSection data={data.announcements} />
               <DuplicateSection data={data.duplicates} />
             </div>
 
-            {/* Three Column Layout - Horizontal scroll on mobile */}
-            <div className="sm:hidden overflow-x-auto -mx-4 px-4 pb-1">
-              <div className="flex gap-1.5 min-w-max">
-                <div className="w-52 shrink-0">
+            {/* Mobile: Horizontal scroll for Routes, Errors, Events — match container padding */}
+            <div className="sm:hidden overflow-x-auto -mx-2.5 sm:-mx-4 px-2.5 sm:px-4 pb-1">
+              <div className="flex gap-2 min-w-max">
+                <div className="w-[72vw] max-w-[280px] shrink-0">
                   <RouteAnalytics routes={routeStats || []} isLoading={routesLoading} />
                 </div>
-                <div className="w-52 shrink-0">
+                <div className="w-[72vw] max-w-[280px] shrink-0">
                   <ErrorBreakdownSection errors={errorBreakdown || []} isLoading={errorsLoading} />
                 </div>
-                <div className="w-52 shrink-0">
+                <div className="w-[72vw] max-w-[280px] shrink-0">
                   <RawEventsLog events={rawEvents || []} isLoading={rawEventsLoading} />
                 </div>
               </div>
             </div>
-            <div className="hidden sm:grid lg:grid-cols-3 gap-5">
+            <div className="hidden sm:grid lg:grid-cols-3 gap-3 lg:gap-5">
               <RouteAnalytics routes={routeStats || []} isLoading={routesLoading} />
               <ErrorBreakdownSection errors={errorBreakdown || []} isLoading={errorsLoading} />
               <RawEventsLog events={rawEvents || []} isLoading={rawEventsLoading} />

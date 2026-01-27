@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, UserPlus, CheckCircle2, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
@@ -6,6 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import type { SharedUser } from '../../pages/forms/DailyJSAForm';
 import { cn } from '../../lib/utils';
 import { logger } from '../../lib/logger';
+import { useModalOverlay } from '../../hooks/useModalOverlay';
 
 interface JsaUserSelectorProps {
   selectedUsers: SharedUser[];
@@ -123,10 +125,11 @@ export function JsaUserSelector({
     [selectedUsers]
   );
 
+  const { modalRef, zIndex } = useModalOverlay({ isOpen, onClose, zIndex: 101 });
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+  const content = (
+    <div className="fixed inset-0 flex items-end sm:items-center justify-center" style={{ zIndex }} aria-hidden>
       {/* Backdrop */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -138,6 +141,10 @@ export function JsaUserSelector({
 
       {/* Modal */}
       <motion.div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="jsa-user-selector-title"
         initial={{ opacity: 0, y: 100 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 100 }}
@@ -149,7 +156,7 @@ export function JsaUserSelector({
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
           <div className="flex items-center gap-2">
             <UserPlus className="w-5 h-5 text-emerald-400" />
-            <h3 className="text-lg font-bold text-white">Share JSA</h3>
+            <h3 id="jsa-user-selector-title" className="text-lg font-bold text-white">Share JSA</h3>
           </div>
           <button
             onClick={onClose}
@@ -283,4 +290,6 @@ export function JsaUserSelector({
       </motion.div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(content, document.body) : null;
 }

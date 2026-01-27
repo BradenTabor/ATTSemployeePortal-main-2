@@ -1,8 +1,10 @@
-import { memo, useEffect } from 'react';
+import { memo } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Sparkles, Calendar, User } from 'lucide-react';
 import { cn } from '../lib/utils';
 import attsLogoStamped from '../assets/ATTS_Logo_stamped.png';
+import { useModalOverlay } from '../hooks/useModalOverlay';
 
 interface Announcement {
   id: string;
@@ -26,117 +28,42 @@ function AnnouncementDetailModalComponent({
   onClose,
   formatDate,
 }: AnnouncementDetailModalProps) {
-  // Handle escape key
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      window.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden';
-    }
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen, onClose]);
+  const { modalRef, zIndex } = useModalOverlay({ isOpen, onClose, zIndex: 100 });
 
   if (!announcement) return null;
+  if (!isOpen) return null;
 
-  return (
+  const content = (
     <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md"
-          onClick={onClose}
-        >
-          {/* Wrapper to position stamped logo relative to modal */}
-          <div className="relative w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[85vh] m-3 sm:m-0">
-            <motion.div
-              initial={{ opacity: 0, y: 60, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 40, scale: 0.97 }}
-              transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-              className={cn(
-                'w-full rounded-2xl sm:rounded-3xl border border-emerald-400/30',
-                'shadow-[0_8px_60px_-15px_rgba(16,185,129,0.4),0_-8px_60px_-15px_rgba(16,185,129,0.3)]',
-                'overflow-hidden flex flex-col',
-                'h-full sm:h-auto'
-              )}
-              style={{
-                background: 'linear-gradient(145deg, rgba(4, 30, 21, 0.99) 0%, rgba(2, 15, 10, 1) 50%, rgba(1, 8, 5, 1) 100%)',
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-            {/* Outer glow border effect */}
-            <div className="absolute -inset-[1px] rounded-[inherit] bg-gradient-to-br from-emerald-400/40 via-emerald-500/20 to-emerald-600/30 opacity-50 blur-[1px] pointer-events-none" />
-
-            {/* Premium top shine line */}
-            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-300/70 to-transparent" />
-
-            {/* Mobile drag handle indicator */}
-            <div className="sm:hidden absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 rounded-full bg-white/20" />
-
-            {/* Floating orbs - decorative ambient lighting */}
-            <motion.div
-              className="absolute w-64 h-64 rounded-full pointer-events-none"
-              style={{
-                background: 'radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, transparent 70%)',
-                top: '-15%',
-                left: '-10%',
-                filter: 'blur(40px)',
-              }}
-              animate={{
-                x: [0, 20, 0],
-                y: [0, 15, 0],
-                scale: [1, 1.1, 1],
-              }}
-              transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-            />
-            <motion.div
-              className="absolute w-48 h-48 rounded-full pointer-events-none"
-              style={{
-                background: 'radial-gradient(circle, rgba(52, 211, 153, 0.15) 0%, transparent 70%)',
-                bottom: '-10%',
-                right: '-5%',
-                filter: 'blur(35px)',
-              }}
-              animate={{
-                x: [0, -15, 0],
-                y: [0, -10, 0],
-                scale: [1, 1.15, 1],
-              }}
-              transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-            />
-
-            {/* Grid pattern overlay */}
-            <div
-              className="absolute inset-0 opacity-[0.02] pointer-events-none"
-              style={{
-                backgroundImage: `
-                  linear-gradient(rgba(16, 185, 129, 0.5) 1px, transparent 1px),
-                  linear-gradient(90deg, rgba(16, 185, 129, 0.5) 1px, transparent 1px)
-                `,
-                backgroundSize: '40px 40px',
-              }}
-            />
-
-            {/* Corner accent decorations */}
-            <div className="absolute top-3 right-14 w-16 h-16 pointer-events-none opacity-40">
-              <div className="absolute top-0 right-0 w-8 h-[1px] bg-gradient-to-l from-emerald-400/80 to-transparent" />
-              <div className="absolute top-0 right-0 w-[1px] h-8 bg-gradient-to-b from-emerald-400/80 to-transparent" />
-            </div>
-            <div className="absolute bottom-3 left-3 w-16 h-16 pointer-events-none opacity-40">
-              <div className="absolute bottom-0 left-0 w-8 h-[1px] bg-gradient-to-r from-emerald-400/80 to-transparent" />
-              <div className="absolute bottom-0 left-0 w-[1px] h-8 bg-gradient-to-t from-emerald-400/80 to-transparent" />
-            </div>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 flex items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md"
+        style={{ zIndex }}
+        onClick={onClose}
+        aria-hidden
+      >
+        {/* Wrapper to position stamped logo relative to modal */}
+        <div className="relative w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[85vh] m-3 sm:m-0">
+          <motion.div
+            ref={modalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="announcement-detail-modal-title"
+            initial={{ opacity: 0, y: 60, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 40, scale: 0.97 }}
+            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+            className={cn(
+              'w-full rounded-2xl sm:rounded-3xl border border-emerald-400/30',
+              'bg-gradient-to-br from-[#04150f] via-[#041812] to-[#03120c]',
+              'shadow-lg shadow-emerald-900/25 overflow-hidden flex flex-col h-full sm:h-auto'
+            )}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-300/50 to-transparent pointer-events-none" />
+            <div className="sm:hidden absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 rounded-full bg-white/20 pointer-events-none" aria-hidden />
 
             {/* Header */}
             <div className="relative flex items-center justify-between px-5 pt-6 pb-4 sm:px-6 sm:py-5 border-b border-emerald-500/20 bg-emerald-900/10 flex-shrink-0">
@@ -156,6 +83,7 @@ function AnnouncementDetailModalComponent({
                   </div>
                 </div>
                 <h2
+                  id="announcement-detail-modal-title"
                   className="text-lg sm:text-xl md:text-2xl font-black leading-tight mt-2"
                   style={{
                     background: 'linear-gradient(135deg, #ffffff 0%, #d1fae5 50%, #a7f3d0 100%)',
@@ -170,7 +98,7 @@ function AnnouncementDetailModalComponent({
               <button
                 type="button"
                 onClick={onClose}
-                className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-xl border border-emerald-500/30 text-emerald-200/70 flex items-center justify-center hover:bg-emerald-500/15 hover:border-emerald-400/50 hover:text-emerald-100 active:scale-95 transition-all touch-manipulation flex-shrink-0 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+                className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-xl border border-emerald-500/30 text-emerald-200/70 flex items-center justify-center hover:bg-emerald-500/15 hover:border-emerald-400/50 hover:text-emerald-100 active:scale-95 transition-all touch-manipulation flex-shrink-0 min-w-[44px] min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
                 aria-label="Close announcement"
               >
                 <X className="w-5 h-5" aria-hidden />
@@ -253,11 +181,12 @@ function AnnouncementDetailModalComponent({
                 className="h-20 w-20 sm:h-28 sm:w-28 md:h-32 md:w-32 object-contain opacity-95"
               />
             </motion.div>
-          </div>
-        </motion.div>
-      )}
+        </div>
+      </motion.div>
     </AnimatePresence>
   );
+
+  return typeof document !== 'undefined' ? createPortal(content, document.body) : null;
 }
 
 export const AnnouncementDetailModal = memo(AnnouncementDetailModalComponent);

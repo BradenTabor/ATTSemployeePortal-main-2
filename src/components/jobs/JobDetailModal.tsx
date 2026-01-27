@@ -1,5 +1,7 @@
 import { memo, useState, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useModalOverlay } from '../../hooks/useModalOverlay';
 import {
   X,
   MapPin,
@@ -186,15 +188,24 @@ function JobDetailModalComponent({
     { status: 'cancelled' as JobStatus, icon: XCircle, label: 'Cancel', show: job.status !== 'cancelled' },
   ].filter(a => a.show);
 
-  return (
+  const { modalRef, zIndex } = useModalOverlay({ isOpen: true, onClose, zIndex: 100 });
+
+  const content = (
+    <>
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      style={{ zIndex }}
       onClick={onClose}
+      aria-hidden
     >
       <motion.div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="job-detail-modal-title"
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -230,7 +241,7 @@ function JobDetailModalComponent({
                     Created {formatDateForDisplay(job.created_at)}
                   </span>
                 </div>
-                <h2 className="text-2xl font-bold text-white">{job.job_name}</h2>
+                <h2 id="job-detail-modal-title" className="text-2xl font-bold text-white">{job.job_name}</h2>
                 {job.job_location && (
                   <p className="flex items-center gap-2 text-sm text-white/60 mt-1">
                     <MapPin className="w-4 h-4 text-[#f4c979]/60" />
@@ -569,7 +580,8 @@ function JobDetailModalComponent({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            className="fixed inset-0 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            style={{ zIndex: 101 }}
             onClick={cancelMilestoneToggle}
           >
             <motion.div
@@ -640,7 +652,10 @@ function JobDetailModalComponent({
         )}
       </AnimatePresence>
     </motion.div>
+    </>
   );
+
+  return typeof document !== 'undefined' ? createPortal(content, document.body) : null;
 }
 
 export const JobDetailModal = memo(JobDetailModalComponent);

@@ -1,6 +1,6 @@
 import { useCallback, memo, useMemo, Suspense, lazy, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { ScrollReveal } from '../motion';
 import {
   RefreshCw,
@@ -18,6 +18,7 @@ import {
   initLongTaskObserver,
 } from '../lib/mobilePerf';
 import { logger } from '../lib/logger';
+import { getRoleDashboard } from '../lib/navigation';
 import type { JobProgressTracker } from '../types/jobs';
 
 // Dashboard components
@@ -276,7 +277,7 @@ const AssignedJobsSection = memo(function AssignedJobsSection({
 
 function Dashboard() {
   const navigate = useNavigate();
-  const { user, signOut, setSession } = useAuth();
+  const { user, signOut, setSession, role } = useAuth();
 
   // State for compliance sync with QuickActions
   const [complianceState, setComplianceState] = useState({
@@ -387,6 +388,13 @@ function Dashboard() {
     }
     return undefined;
   }, [assignedJobs]);
+
+  // Send role users to their dashboard (e.g. notification links to /dashboard).
+  // Admin can navigate the entire app, so allow them to stay on /dashboard when they choose.
+  const roleDashboard = getRoleDashboard(role);
+  if (role !== 'admin' && roleDashboard !== '/dashboard') {
+    return <Navigate to={roleDashboard} replace />;
+  }
 
   return (
     <DashboardLayout title="Employee Hub">

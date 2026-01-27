@@ -93,7 +93,7 @@ export default function DashboardLayout({ title, children, hideHeader = false }:
         )}
 
         {/* Main Content */}
-        <main className="flex flex-col items-center justify-start w-full flex-1 pb-8">
+        <main className="flex flex-col items-center justify-start w-full pb-8">
           {children}
         </main>
       </div>

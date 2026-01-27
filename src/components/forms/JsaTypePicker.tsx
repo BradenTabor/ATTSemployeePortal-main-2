@@ -1,5 +1,7 @@
 import { useNavigate } from "react-router-dom";
+import { createPortal } from "react-dom";
 import { HardHat, TreeDeciduous, X } from "lucide-react";
+import { useModalOverlay } from "../../hooks/useModalOverlay";
 
 interface JsaTypePickerProps {
   open: boolean;
@@ -25,6 +27,7 @@ const OPTIONS = [
 
 export function JsaTypePicker({ open, onClose }: JsaTypePickerProps) {
   const navigate = useNavigate();
+  const { modalRef, zIndex } = useModalOverlay({ isOpen: open, onClose, zIndex: 100 });
 
   if (!open) return null;
 
@@ -33,15 +36,21 @@ export function JsaTypePicker({ open, onClose }: JsaTypePickerProps) {
     navigate(to);
   };
 
-  return (
+  const content = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="jsa-picker-title"
+      className="fixed inset-0 flex items-center justify-center bg-black/60 p-4"
+      style={{ zIndex }}
+      aria-hidden
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="w-full max-w-md rounded-xl border border-white/10 bg-neutral-900 p-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="jsa-picker-title"
+        className="w-full max-w-md rounded-xl border border-white/10 bg-neutral-900 p-4 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between mb-4">
           <h2 id="jsa-picker-title" className="text-base font-semibold text-white">
             Choose JSA type
@@ -80,4 +89,6 @@ export function JsaTypePicker({ open, onClose }: JsaTypePickerProps) {
       </div>
     </div>
   );
+
+  return typeof document !== "undefined" ? createPortal(content, document.body) : null;
 }

@@ -1,5 +1,7 @@
 import { memo } from "react";
+import { createPortal } from "react-dom";
 import { motion, useReducedMotion } from "framer-motion";
+import { useModalOverlay } from "../../hooks/useModalOverlay";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -93,14 +95,17 @@ export const JsaDetailModal = memo(function JsaDetailModal({
     : [];
   const hasHazards = siteHazards.length > 0 || trafficHazards.length > 0;
   const wc = jsa.weather_conditions as { conditions?: Record<string, boolean> } | undefined;
+  const { modalRef, zIndex } = useModalOverlay({ isOpen: true, onClose, zIndex: 100 });
 
-  return (
+  const content = (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      className="fixed inset-0 z-40 flex items-center justify-center px-4"
+      className="fixed inset-0 flex items-center justify-center px-4"
+      style={{ zIndex }}
+      aria-hidden
     >
       <motion.div
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
@@ -108,6 +113,10 @@ export const JsaDetailModal = memo(function JsaDetailModal({
         aria-hidden
       />
       <motion.div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="jsa-detail-modal-title"
         initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 16, scale: prefersReducedMotion ? 1 : 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={
@@ -115,7 +124,7 @@ export const JsaDetailModal = memo(function JsaDetailModal({
             ? { duration: 0.2 }
             : { type: "spring", damping: 28, stiffness: 300 }
         }
-        className="relative z-50 w-full max-w-full sm:max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-gradient-to-br from-[#0a0f0d] via-[#0d1612] to-[#0a120e] p-5 sm:p-8 shadow-2xl"
+        className="relative z-10 w-full max-w-full sm:max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-gradient-to-br from-[#0a0f0d] via-[#0d1612] to-[#0a120e] p-5 sm:p-8 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
           {/* Header */}
@@ -130,7 +139,7 @@ export const JsaDetailModal = memo(function JsaDetailModal({
                   <p className="text-[10px] text-white/40 mt-0.5">Submitted {formatDateTime(jsa.created_at)}</p>
                 </div>
               </div>
-              <h2 className="text-xl sm:text-2xl font-bold text-white break-words leading-tight">
+              <h2 id="jsa-detail-modal-title" className="text-xl sm:text-2xl font-bold text-white break-words leading-tight">
                 {jsa.work_location || "N/A"}
               </h2>
               {jsa.circuit_number && (
@@ -477,6 +486,8 @@ export const JsaDetailModal = memo(function JsaDetailModal({
         </motion.div>
     </motion.div>
   );
+
+  return typeof document !== "undefined" ? createPortal(content, document.body) : null;
 });
 
 export default JsaDetailModal;

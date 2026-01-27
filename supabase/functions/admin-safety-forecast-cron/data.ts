@@ -3,7 +3,100 @@
  */
 
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
-import { WorkSite, CrewMember, CrewResult, CrewRiskFactors } from './types.ts';
+import { WorkSite, CrewMember, CrewResult, CrewRiskFactors, AlgorithmConfig, RiskLevel, RiskFactorsBreakdown } from './types.ts';
+
+// =============================================================================
+// ALGORITHM CONFIG
+// =============================================================================
+
+/**
+ * Fetch the active risk algorithm configuration from database
+ */
+export async function getActiveAlgorithmConfig(supabase: SupabaseClient): Promise<AlgorithmConfig | null> {
+  const { data, error } = await supabase
+    .from('risk_algorithm_config')
+    .select('*')
+    .eq('is_active', true)
+    .single();
+
+  if (error) {
+    console.error('[Config] Failed to fetch active algorithm config:', error.message);
+    return null;
+  }
+
+  return data as AlgorithmConfig;
+}
+
+// =============================================================================
+// RISK SCORE HISTORY
+// =============================================================================
+
+export interface RiskScoreHistoryRecord {
+  date_for: string;
+  work_site_id: string;
+  work_site_name: string;
+  total_score: number;
+  risk_level: RiskLevel;
+  weather_factors: Record<string, unknown>;
+  crew_factors: Record<string, unknown>;
+  equipment_factors: Record<string, unknown>;
+  temporal_factors: Record<string, unknown>;
+  top_drivers: string[];
+  recommendations: string[];
+  algorithm_version: string;
+}
+
+/**
+ * Save a risk score to history for calibration tracking
+ */
+export async function saveRiskScoreToHistory(
+  supabase: SupabaseClient,
+  record: RiskScoreHistoryRecord
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('risk_score_history')
+    .upsert(record, {
+      onConflict: 'date_for,work_site_id',
+      ignoreDuplicates: false,
+    })
+    .select('id')
+    .single();
+
+  if (error) {
+    console.error('[History] Failed to save risk score:', error.message);
+    return null;
+  }
+
+  return data?.id || null;
+}
+
+/**
+ * Save multiple risk scores to history in a batch
+ */
+export async function saveRiskScoresToHistory(
+  supabase: SupabaseClient,
+  records: RiskScoreHistoryRecord[]
+): Promise<{ saved: number; failed: number }> {
+  if (records.length === 0) {
+    return { saved: 0, failed: 0 };
+  }
+
+  const { data, error } = await supabase
+    .from('risk_score_history')
+    .upsert(records, {
+      onConflict: 'date_for,work_site_id',
+      ignoreDuplicates: false,
+    })
+    .select('id');
+
+  if (error) {
+    console.error('[History] Failed to batch save risk scores:', error.message);
+    return { saved: 0, failed: records.length };
+  }
+
+  const savedCount = data?.length || 0;
+  return { saved: savedCount, failed: records.length - savedCount };
+}
 
 // =============================================================================
 // WORK SITES

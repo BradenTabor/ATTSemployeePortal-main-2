@@ -22,14 +22,22 @@ declare const Deno: {
  */
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 
 // Import from extracted modules
-import { SiteRiskData } from './types.ts';
+import { SiteRiskData, AlgorithmConfig } from './types.ts';
 import { getTodayInTimezone, isWeekday, isMonday } from './utils.ts';
 import { getWeatherForSite } from './weather.ts';
-import { calculateRiskScore, getRiskLevel } from './risk.ts';
-import { getActiveWorkSites, getCrewForSite, analyzeCrewRisk, getRecentDefects } from './data.ts';
+import { calculateRiskScore, getRiskLevel, DEFAULT_ALGORITHM_CONFIG } from './risk.ts';
+import { 
+  getActiveWorkSites, 
+  getCrewForSite, 
+  analyzeCrewRisk, 
+  getRecentDefects,
+  getActiveAlgorithmConfig,
+  saveRiskScoresToHistory,
+  RiskScoreHistoryRecord
+} from './data.ts';
 import { generateForecastEmail, sendGmailEmail } from './email.ts';
 import { sendLeadershipPushNotifications } from './notifications.ts';
 
@@ -100,6 +108,16 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Fetch algorithm config for calibration-aware calculations
+    console.log('[Forecast] Fetching algorithm config...');
+    const algorithmConfig = await getActiveAlgorithmConfig(supabase);
+    const algorithmVersion = algorithmConfig?.version || DEFAULT_ALGORITHM_CONFIG.version;
+    if (algorithmConfig) {
+      console.log('[Forecast] Using algorithm config:', algorithmVersion);
+    } else {
+      console.log('[Forecast] No active config found, using defaults');
+    }
+
     // Fetch data
     console.log('[Forecast] Fetching work sites...');
     const sites = await getActiveWorkSites(supabase);
@@ -111,6 +129,7 @@ Deno.serve(async (req) => {
 
     // Calculate risk for each site
     const siteRisks: SiteRiskData[] = [];
+    const historyRecords: RiskScoreHistoryRecord[] = [];
     let hasWeatherError = false;
 
     for (const site of sites) {
@@ -127,7 +146,8 @@ Deno.serve(async (req) => {
       // Filter defects for trucks potentially assigned to this site (simplified)
       const siteDefects = allDefects.slice(0, 3); // For now, show top defects
 
-      const riskScore = calculateRiskScore(weather, crewRisk, siteDefects, isMondayFlag);
+      // Calculate risk using algorithm config (for calibration)
+      const riskScore = calculateRiskScore(weather, crewRisk, siteDefects, isMondayFlag, algorithmConfig || undefined);
 
       siteRisks.push({
         site,
@@ -136,6 +156,29 @@ Deno.serve(async (req) => {
         defects: siteDefects,
         riskScore,
       });
+
+      // Prepare history record for calibration tracking
+      historyRecords.push({
+        date_for: dateFor,
+        work_site_id: site.id,
+        work_site_name: site.name,
+        total_score: riskScore.total,
+        risk_level: riskScore.level,
+        weather_factors: riskScore.breakdown.weatherFactors,
+        crew_factors: riskScore.breakdown.crewFactors,
+        equipment_factors: riskScore.breakdown.equipmentFactors,
+        temporal_factors: riskScore.breakdown.temporalFactors,
+        top_drivers: riskScore.drivers,
+        recommendations: riskScore.recommendations,
+        algorithm_version: algorithmVersion,
+      });
+    }
+
+    // Save risk scores to history for calibration (non-blocking)
+    if (!dryRun && historyRecords.length > 0) {
+      console.log('[Forecast] Saving', historyRecords.length, 'risk scores to history...');
+      const { saved, failed } = await saveRiskScoresToHistory(supabase, historyRecords);
+      console.log('[Forecast] Saved', saved, 'risk scores, failed:', failed);
     }
 
     // Sort by risk (highest first)
@@ -161,7 +204,7 @@ Deno.serve(async (req) => {
 
     const overallRisk = {
       total: overallScore,
-      level: getRiskLevel(overallScore),
+      level: getRiskLevel(overallScore, algorithmConfig || undefined),
       drivers: topDrivers,
       recommendations: allRecommendations.slice(0, 6),
     };
@@ -214,10 +257,12 @@ Deno.serve(async (req) => {
         status: 'completed',
         dateFor,
         sitesProcessed: sites.length,
+        algorithmVersion,
         overallRisk: {
           score: overallRisk.total,
           level: overallRisk.level,
         },
+        historyRecordsSaved: dryRun ? 0 : historyRecords.length,
         emailSent: emailResult.success,
         emailError: emailResult.error,
         dryRun,

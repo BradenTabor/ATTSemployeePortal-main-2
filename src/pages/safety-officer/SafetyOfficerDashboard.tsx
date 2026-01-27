@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { SAFETY_OFFICER_NAV_CARDS, getCommonNavCards } from "../../components/admin/adminNavConfig";
 import { useAuth } from "../../contexts/AuthContext";
+import { getRoleDashboard } from "../../lib/navigation";
 import { WelcomeHeader } from "../../components/dashboard";
 import BrandedNavCard from "../../components/BrandedNavCard";
 import { EnableNotificationsButton } from "../../components/notifications";
@@ -74,7 +75,7 @@ export default function SafetyOfficerDashboard() {
             <h2 className="text-2xl font-bold text-white mb-2">Access Denied</h2>
             <p className="text-gray-400 mb-6">You don't have permission to view this page.</p>
             <button
-              onClick={() => navigate("/dashboard")}
+              onClick={() => navigate(getRoleDashboard(role))}
               className="px-6 py-3 bg-[#dc2626] hover:bg-[#b91c1c] text-white rounded-xl font-semibold transition-colors"
             >
               Return to Dashboard

@@ -1,11 +1,13 @@
 import { useMemo, useState, FormEvent, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { useModalOverlay } from "../../hooks/useModalOverlay";
 import { Shield, Megaphone, Sparkles, Inbox, X, Filter, LayoutGrid, Pencil, Bell } from "lucide-react";
 import IncidentLoggingModal from "../../components/admin/IncidentLoggingModal";
 import SafetyIncidentsList from "../../components/admin/SafetyIncidentsList";
 import DashboardLayout from "../../layouts/DashboardLayout";
-import { ADMIN_CORE_NAV_CARDS } from "../../components/admin/adminNavConfig";
+import { ADMIN_CORE_NAV_CARDS, ADMIN_ROLE_DASHBOARDS_NAV_CARDS } from "../../components/admin/adminNavConfig";
 import { TextEffect } from "../../components/ui/TextEffect";
 import { getDeviceCapabilities } from "../../lib/mobilePerf";
 import { GoldCollapsibleSection } from "../../components/admin/GoldCollapsibleSection";
@@ -98,6 +100,96 @@ const CONTACT_TOPIC_LABELS: Record<string, string> = {
   safety: "Safety",
   payroll: "Payroll",
 };
+
+function ContactRequestModalContent({
+  request,
+  onClose,
+}: {
+  request: ContactRequest;
+  onClose: () => void;
+}) {
+  const { modalRef, zIndex } = useModalOverlay({ isOpen: true, onClose, zIndex: 100 });
+  return (
+    <AnimatePresence>
+      <motion.div
+        className="fixed inset-0 flex items-center justify-center px-4 py-8"
+        style={{ zIndex }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+        aria-hidden
+        onClick={(e) => e.target === e.currentTarget && onClose()}
+      >
+        <motion.div
+          className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+          onClick={onClose}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        />
+        <motion.div
+          ref={modalRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="contact-request-title"
+          className="relative w-full max-w-2xl rounded-3xl border border-[#f4c979]/20 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] p-6 text-white shadow-[0_45px_80px_rgba(0,0,0,0.7)] space-y-4"
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p
+                id="contact-request-title"
+                className="text-sm font-semibold tracking-[0.3em] uppercase text-[#f4c979]"
+              >
+                Contact message
+              </p>
+              <p className="text-2xl font-semibold text-white mt-1">{request.name}</p>
+              <a
+                href={`mailto:${request.email}`}
+                className="text-sm text-[#f4c979] hover:text-white"
+              >
+                {request.email}
+              </a>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-full border border-white/10 bg-white/5 p-2 text-white/70 hover:text-white hover:bg-white/10 transition"
+              aria-label="Close full message"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3">
+            <div className="flex items-center justify-between text-xs text-white/70 uppercase tracking-[0.3em]">
+              <span>{CONTACT_TOPIC_LABELS[request.topic] ?? request.topic}</span>
+              <span>{new Date(request.submitted_at).toLocaleString()}</span>
+            </div>
+            <p className="text-sm text-white/90 leading-relaxed whitespace-pre-line">
+              {request.message}
+            </p>
+          </div>
+          <div className="flex justify-end">
+            <motion.button
+              type="button"
+              onClick={onClose}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.98 }}
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-transparent bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] px-5 py-2 text-sm font-semibold text-[#2e1b02] shadow-[0_10px_25px_rgba(244,201,121,0.3)] transition"
+            >
+              Close
+            </motion.button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
 
 // Helper to get persisted tab or default
 function getPersistedTab(): string {
@@ -381,6 +473,32 @@ export default function AdminDashboard() {
       exit="exit"
       className="space-y-4"
     >
+      {/* Role dashboards — admin can navigate the entire app (compact row) */}
+      <motion.div
+        variants={itemVariants}
+        initial="hidden"
+        animate="visible"
+        className="space-y-1.5"
+      >
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-[#f8e5bb]/70 px-0.5">
+          Navigate app
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+          {ADMIN_ROLE_DASHBOARDS_NAV_CARDS.map((card, index) => (
+            <motion.div key={card.to} variants={itemVariants} custom={index}>
+              <BrandedNavCard
+                title={card.title}
+                description={card.description}
+                icon={card.icon}
+                to={card.to}
+                variant={card.variant ?? "gold"}
+                compact
+              />
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
+
       <motion.div 
         className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
         variants={containerVariants}
@@ -1054,86 +1172,15 @@ export default function AdminDashboard() {
           onClose={() => setShowIncidentModal(false)}
         />
 
-        {/* Contact Request Modal */}
-        <AnimatePresence>
-          {expandedRequest && (
-            <motion.div
-              className="fixed inset-0 z-[70] flex items-center justify-center px-4 py-8"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="contact-request-title"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              <motion.div
-                className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-                onClick={() => setExpandedRequest(null)}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              />
-              <motion.div 
-                className="relative w-full max-w-2xl rounded-3xl border border-[#f4c979]/20 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] p-6 text-white shadow-[0_45px_80px_rgba(0,0,0,0.7)] space-y-4"
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p
-                      id="contact-request-title"
-                      className="text-sm font-semibold tracking-[0.3em] uppercase text-[#f4c979]"
-                    >
-                      Contact message
-                    </p>
-                    <p className="text-2xl font-semibold text-white mt-1">
-                      {expandedRequest.name}
-                    </p>
-                    <a
-                      href={`mailto:${expandedRequest.email}`}
-                      className="text-sm text-[#f4c979] hover:text-white"
-                    >
-                      {expandedRequest.email}
-                    </a>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setExpandedRequest(null)}
-                    className="rounded-full border border-white/10 bg-white/5 p-2 text-white/70 hover:text-white hover:bg-white/10 transition"
-                    aria-label="Close full message"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3">
-                  <div className="flex items-center justify-between text-xs text-white/70 uppercase tracking-[0.3em]">
-                    <span>{CONTACT_TOPIC_LABELS[expandedRequest.topic] ?? expandedRequest.topic}</span>
-                    <span>{new Date(expandedRequest.submitted_at).toLocaleString()}</span>
-                  </div>
-                  <p className="text-sm text-white/90 leading-relaxed whitespace-pre-line">
-                    {expandedRequest.message}
-                  </p>
-                </div>
-
-                <div className="flex justify-end">
-                  <motion.button
-                    type="button"
-                    onClick={() => setExpandedRequest(null)}
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="inline-flex items-center justify-center gap-2 rounded-full border border-transparent bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] px-5 py-2 text-sm font-semibold text-[#2e1b02] shadow-[0_10px_25px_rgba(244,201,121,0.3)] transition"
-                  >
-                    Close
-                  </motion.button>
-                </div>
-              </motion.div>
-            </motion.div>
+        {/* Contact Request Modal - portaled so it sits above layout */}
+        {expandedRequest &&
+          createPortal(
+            <ContactRequestModalContent
+              request={expandedRequest}
+              onClose={() => setExpandedRequest(null)}
+            />,
+            document.body
           )}
-        </AnimatePresence>
       </>
     </DashboardLayout>
   );

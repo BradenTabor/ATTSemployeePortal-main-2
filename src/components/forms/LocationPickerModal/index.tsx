@@ -5,12 +5,14 @@
  * Accessible, mobile-friendly, with graceful error handling.
  */
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { X, AlertCircle, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../../lib/utils';
 import { useGoogleMaps } from '../../../hooks/useGoogleMaps';
 import { useLocationPicker } from '../../../hooks/useLocationPicker';
+import { useModalOverlay } from '../../../hooks/useModalOverlay';
 import { getSearchPlaceholder, getModalTitle } from '../../../utils/formatLocation';
 import type { LocationPickerModalProps } from '../../../types/location.types';
 
@@ -24,7 +26,7 @@ export function LocationPickerModal({
   onSelect,
   locationType,
 }: Omit<LocationPickerModalProps, 'initialValue'>) {
-  const modalRef = useRef<HTMLDivElement>(null);
+  const { modalRef, zIndex } = useModalOverlay({ isOpen, onClose, zIndex: 100 });
   const { isLoaded, loadError, isApiKeyMissing } = useGoogleMaps();
 
   const {
@@ -55,35 +57,6 @@ export function LocationPickerModal({
     },
   });
 
-  // Handle escape key
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
-
-  // Focus trap and body scroll lock
-  useEffect(() => {
-    if (isOpen && modalRef.current) {
-      const focusableElements = modalRef.current.querySelectorAll(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      );
-      const firstFocusable = focusableElements[0] as HTMLElement;
-      firstFocusable?.focus();
-
-      // Lock body scroll on mobile
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = '';
-      };
-    }
-  }, [isOpen]);
-
   // Handle backdrop click
   const handleBackdropClick = useCallback((e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
@@ -99,30 +72,34 @@ export function LocationPickerModal({
   const title = getModalTitle(locationType);
   const placeholder = getSearchPlaceholder(locationType);
 
-  return (
+  if (!isOpen) return null;
+
+  const content = (
     <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-6"
-          onClick={handleBackdropClick}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="location-picker-title"
-        >
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+        className="fixed inset-0 flex items-end sm:items-center justify-center sm:p-6"
+        style={{ zIndex }}
+        onClick={handleBackdropClick}
+        aria-hidden
+      >
           {/* Backdrop */}
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
 
           {/* Modal - Full screen on mobile, centered modal on desktop */}
           <motion.div
             ref={modalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="location-picker-title"
             initial={{ y: '100%', opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: '100%', opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            onClick={(e) => e.stopPropagation()}
             className={cn(
               "relative w-full overflow-hidden",
               "bg-gradient-to-b from-gray-900/95 to-black/95",
@@ -269,9 +246,10 @@ export function LocationPickerModal({
             </div>
           </motion.div>
         </motion.div>
-      )}
     </AnimatePresence>
   );
+
+  return typeof document !== 'undefined' ? createPortal(content, document.body) : null;
 }
 
 export default LocationPickerModal;

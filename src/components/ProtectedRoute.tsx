@@ -1,29 +1,12 @@
 import { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { getRoleDashboard } from "../lib/navigation";
 import LoadingScreen from "./LoadingScreen";
 
 // Client-side guard only. Admin mutations must be enforced server-side via RLS (see docs/SECURITY_AUDIT_ADMIN_RLS.md).
 // Matches DB constraint: check (role in ('employee', 'admin', 'manager', 'mechanic', 'general_foreman', 'safety_officer', 'foreman'))
 type UserRole = "employee" | "admin" | "mechanic" | "manager" | "general_foreman" | "safety_officer" | "foreman";
-
-// Helper function to get the appropriate dashboard for each role
-const getRoleDashboard = (role: string | null): string => {
-  switch (role) {
-    case 'admin':
-      return '/admin';
-    case 'mechanic':
-      return '/mechanic-dashboard';
-    case 'general_foreman':
-      return '/general-foreman-dashboard';
-    case 'safety_officer':
-      return '/safety-officer-dashboard';
-    case 'foreman':
-      return '/foreman-dashboard';
-    default:
-      return '/dashboard';
-  }
-};
 
 interface ProtectedRouteProps {
   children: ReactNode;

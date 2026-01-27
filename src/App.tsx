@@ -95,6 +95,7 @@ const TreeFellingJSAForm = lazy(() => import("./pages/forms/TreeFellingJSAForm")
 const FormHistory = lazy(() => import("./pages/forms/FormHistory"));
 const DVIRHistory = lazy(() => import("./pages/forms/DVIRHistory"));
 const JSAHistory = lazy(() => import("./pages/forms/JSAHistory"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -689,23 +690,12 @@ function AnimatedRoutes() {
               }
             />
 
-            {/* 404 Catch-all Route */}
+            {/* 404 Catch-all Route - "Go to Dashboard" is role-aware */}
             <Route
               path="*"
               element={
                 <PageWrapper className="min-h-screen bg-gradient-to-br from-neutral-900 via-black to-neutral-900 flex items-center justify-center">
-                  <div className="text-center">
-                    <h1 className="text-6xl font-bold text-white mb-4">
-                      404
-                    </h1>
-                    <p className="text-gray-400 mb-6">Page not found</p>
-                    <a
-                      href="/dashboard"
-                      className="inline-block px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
-                    >
-                      Go to Dashboard
-                    </a>
-                  </div>
+                  <NotFound />
                 </PageWrapper>
               }
             />

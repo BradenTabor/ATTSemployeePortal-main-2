@@ -5,7 +5,9 @@
  */
 
 import { useState, useMemo, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { useModalOverlay } from "../../hooks/useModalOverlay";
 import {
   AlertTriangle,
   Calendar,
@@ -177,20 +179,27 @@ function IncidentDetailModal({
     return employee?.full_name || `User: ${userId.slice(0, 8)}...`;
   };
 
-  return (
+  const { modalRef, zIndex } = useModalOverlay({ isOpen: true, onClose, zIndex: 100 });
+
+  const content = (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/70 backdrop-blur-sm"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+      className="fixed inset-0 flex items-center justify-center p-3 bg-black/70 backdrop-blur-sm"
+      style={{ zIndex }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      aria-hidden
     >
       <motion.div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="incident-detail-modal-title"
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        onClick={(e) => e.stopPropagation()}
         className={cn(
           "w-full max-w-md max-h-[85vh] overflow-hidden rounded-xl border",
           severityConfig.borderClass,
@@ -204,7 +213,7 @@ function IncidentDetailModal({
               <AlertTriangle className="w-3.5 h-3.5" />
             </div>
             <div>
-              <h2 className="text-xs font-semibold text-white">Incident Details</h2>
+              <h2 id="incident-detail-modal-title" className="text-xs font-semibold text-white">Incident Details</h2>
               <p className="text-[9px] text-white/50">ID: {incident.id.slice(0, 8)}...</p>
             </div>
           </div>
@@ -336,6 +345,8 @@ function IncidentDetailModal({
       </motion.div>
     </motion.div>
   );
+
+  return typeof document !== "undefined" ? createPortal(content, document.body) : null;
 }
 
 // ============================================================================

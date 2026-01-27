@@ -13,6 +13,8 @@ interface BrandedNavCardProps {
   icon?: ReactNode;
   to: string;
   variant?: CardVariant;
+  /** Smaller card with no description, for dense grids */
+  compact?: boolean;
   /** Mark as coming soon - disables link and shows badge */
   comingSoon?: boolean;
   /** Unique ID for pinning (required for pin functionality) */
@@ -174,6 +176,7 @@ export default function BrandedNavCard({
   icon,
   to,
   variant = "emerald",
+  compact = false,
   comingSoon = false,
   itemId,
   isPinned = false,
@@ -264,7 +267,8 @@ export default function BrandedNavCard({
         {/* Outer wrapper with gradient border - RESTORED ORIGINAL STYLING */}
         <div
           className={cn(
-            "relative w-full p-[2px] rounded-2xl overflow-hidden shadow-lg transition-all duration-300 ease-out",
+            "relative w-full p-[2px] overflow-hidden shadow-lg transition-all duration-300 ease-out",
+            compact ? "rounded-xl" : "rounded-2xl",
             selected.outer,
             !comingSoon && selected.outerHover,
             !comingSoon && selected.glow,
@@ -296,10 +300,10 @@ export default function BrandedNavCard({
           {/* Inner card with gradient background - RESTORED ORIGINAL STYLING */}
           <div
             className={cn(
-              "relative h-full w-full rounded-xl sm:rounded-2xl px-3 py-2.5 sm:px-4 sm:py-3.5 md:px-5 md:py-4",
-              "flex items-center gap-2.5 sm:gap-3.5",
-              "min-h-[52px] sm:min-h-[60px]", // Touch target
-              "border transition-all duration-300",
+              "relative h-full w-full flex items-center border transition-all duration-300",
+              compact
+                ? "rounded-[10px] px-2.5 py-2 sm:px-3 sm:py-2 gap-2 min-h-[44px] sm:min-h-[48px]"
+                : "rounded-xl sm:rounded-2xl px-3 py-2.5 sm:px-4 sm:py-3.5 md:px-5 md:py-4 gap-2.5 sm:gap-3.5 min-h-[52px] sm:min-h-[60px]",
               selected.innerBorder,
               !caps.isLowEnd && "backdrop-blur-xl"
             )}
@@ -320,7 +324,7 @@ export default function BrandedNavCard({
               >
                 {/* Outer glow ring */}
                 <div className={cn(
-                  "absolute -inset-0.5 rounded-xl bg-gradient-to-br opacity-60 blur-[2px] transition-opacity duration-300",
+                  "absolute -inset-0.5 rounded-lg bg-gradient-to-br opacity-60 blur-[2px] transition-opacity duration-300",
                   "group-hover:opacity-100",
                   selected.iconBorderGradient
                 )} />
@@ -328,10 +332,8 @@ export default function BrandedNavCard({
                 {/* Icon container with gradient background */}
                 <div
                   className={cn(
-                    "relative flex items-center justify-center",
-                    "w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12",
-                    "rounded-lg sm:rounded-xl transition-all duration-300",
-                    "bg-gradient-to-br",
+                    "relative flex items-center justify-center rounded-lg transition-all duration-300 bg-gradient-to-br",
+                    compact ? "w-7 h-7 sm:w-8 sm:h-8 rounded-lg" : "w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-lg sm:rounded-xl",
                     selected.iconGradient,
                     selected.iconGlow,
                     selected.iconGlowHover
@@ -339,13 +341,15 @@ export default function BrandedNavCard({
                 >
                   {/* Inner border highlight */}
                   <div className={cn(
-                    "absolute inset-[1px] rounded-[8px] sm:rounded-[10px] bg-gradient-to-br opacity-50",
+                    "absolute inset-[1px] bg-gradient-to-br opacity-50",
+                    compact ? "rounded-[6px]" : "rounded-[8px] sm:rounded-[10px]",
                     selected.iconGradient
                   )} />
                   
                   {/* Icon */}
                   <div className={cn(
-                    "relative z-10 w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 transition-colors duration-300",
+                    "relative z-10 transition-colors duration-300",
+                    compact ? "w-3.5 h-3.5 sm:w-4 sm:h-4" : "w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6",
                     "[&>svg]:w-full [&>svg]:h-full [&>svg]:drop-shadow-[0_0_3px_currentColor]",
                     selected.iconColor,
                     selected.iconColorHover
@@ -360,13 +364,14 @@ export default function BrandedNavCard({
             <div className="flex-1 min-w-0">
               <h3
                 className={cn(
-                  "text-xs sm:text-sm md:text-base font-semibold tracking-wide truncate",
+                  "font-semibold tracking-wide truncate",
+                  compact ? "text-xs" : "text-xs sm:text-sm md:text-base",
                   selected.title
                 )}
               >
                 {title}
               </h3>
-              {description && (
+              {description && !compact && (
                 <p className={cn(
                   "text-[10px] sm:text-xs md:text-sm mt-0.5 line-clamp-1 sm:line-clamp-2 opacity-90",
                   selected.description
@@ -390,7 +395,10 @@ export default function BrandedNavCard({
               transition={{ type: "spring", stiffness: 400, damping: 25 }}
             >
               <ChevronRight 
-                className="w-4 h-4 sm:w-5 sm:h-5 drop-shadow-[0_0_4px_currentColor]" 
+                className={cn(
+                  "drop-shadow-[0_0_4px_currentColor]",
+                  compact ? "w-3 h-3 sm:w-3.5 sm:h-3.5" : "w-4 h-4 sm:w-5 sm:h-5"
+                )} 
                 strokeWidth={2.5} 
               />
             </motion.div>

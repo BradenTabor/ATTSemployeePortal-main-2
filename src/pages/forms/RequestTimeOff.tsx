@@ -7,6 +7,7 @@ import { useRTOSubmission, useRTOUserProfile } from "../../hooks/rto";
 import { DateField, TimeField } from "../../components/forms/GlassyPickers";
 import { CalendarDays, Clock } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
+import { getRoleDashboard } from "../../lib/navigation";
 import { FormSuccessCelebration } from "../../components/forms/FormSuccessCelebration";
 import {
   trackFormStarted,
@@ -14,7 +15,7 @@ import {
 } from "../../lib/telemetry";
 
 export default function RequestTimeOff() {
-  const { user, fullName: userFullName } = useAuth();
+  const { user, fullName: userFullName, role } = useAuth();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: "",
@@ -206,8 +207,8 @@ export default function RequestTimeOff() {
   const handleCelebrationContinue = useCallback(() => {
     setShowCelebration(false);
     setStatus("idle");
-    navigate("/dashboard");
-  }, [navigate]);
+    navigate(getRoleDashboard(role));
+  }, [navigate, role]);
 
   return (
     <DashboardLayout title="Request Time Off">

@@ -90,7 +90,7 @@ export function useJSASubmission() {
       job_date: form.jobDate || null,
       call_in_time: form.callInTime || null,
       call_out_time: form.callOutTime || null,
-      work_location: form.workLocation || null,
+      work_location: form.workLocation?.trim() ?? '',
       circuit_number: form.circuitNumber || null,
       nearest_hospital: form.nearestHospital || null,
       nearest_clinic: form.nearestClinic || null,
@@ -177,7 +177,11 @@ export function useJSASubmission() {
             error: updateError,
             jsa_id: recordId,
           });
-          throw updateError;
+          const msg =
+            updateError && typeof updateError === 'object' && 'message' in updateError
+              ? String((updateError as { message?: string }).message)
+              : 'JSA update failed';
+          throw new Error(msg || 'JSA update failed');
         }
 
         // Audit logging: Track delegation changes
@@ -246,16 +250,26 @@ export function useJSASubmission() {
           logger.error('[JSA] Insert failed', {
             error: insertError,
           });
-          throw insertError;
+          const msg =
+            insertError && typeof insertError === 'object' && 'message' in insertError
+              ? String((insertError as { message?: string }).message)
+              : 'JSA insert failed';
+          throw new Error(msg || 'JSA insert failed');
         }
 
         return { success: true, recordId: data?.id };
       }
     } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error : new Error(String(error)),
-      };
+      let err: Error;
+      if (error instanceof Error) {
+        err = error;
+      } else if (error && typeof error === 'object' && 'message' in error) {
+        const msg = String((error as { message?: string }).message || 'Submission failed');
+        err = new Error(msg);
+      } else {
+        err = new Error(String(error));
+      }
+      return { success: false, error: err };
     }
   }, []);
 

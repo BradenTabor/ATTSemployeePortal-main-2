@@ -672,10 +672,10 @@ export default function MechanicDVIRCenter() {
 
   return (
     <DashboardLayout title="Mechanic DVIR Center">
-      <div className="w-full min-h-screen bg-gradient-to-br from-[#1a0804] via-[#0f0402] to-[#0a0201]">
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pb-4 pt-4 sm:pt-6">
-          {/* Premium Glass Header - Ember Theme */}
-          <div className="mb-5 md:mb-6">
+      <div className="w-full min-h-screen bg-gradient-to-br from-[#1a0804] via-[#0f0402] to-[#0a0201] overflow-x-hidden">
+        <div className="w-full max-w-7xl mx-auto px-2.5 sm:px-4 md:px-6 pb-3 pt-3 sm:pb-4 sm:pt-4 md:pt-6">
+          {/* Premium Glass Header - Ember Theme (compressed on mobile) */}
+          <div className="mb-3 sm:mb-5 md:mb-6">
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -683,7 +683,7 @@ export default function MechanicDVIRCenter() {
               className="relative"
             >
               <div 
-                className="relative overflow-hidden rounded-2xl md:rounded-3xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
+                className="relative overflow-hidden rounded-xl sm:rounded-2xl md:rounded-3xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
                 style={{
                   backdropFilter: 'blur(24px) saturate(180%)',
                   WebkitBackdropFilter: 'blur(24px) saturate(180%)',
@@ -699,28 +699,28 @@ export default function MechanicDVIRCenter() {
                 <div className="absolute top-0 bottom-0 right-0 w-[1px] bg-gradient-to-b from-transparent via-black/[0.1] to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-black/[0.15] to-transparent" />
 
-                <div className="relative px-5 py-4 md:px-7 md:py-5">
-                  <div className="flex items-center gap-3 mb-3">
-                    <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.2 }} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30">
-                      <Flame className="w-3.5 h-3.5 text-amber-400" />
-                      <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-amber-200">Mechanics</span>
+                <div className="relative px-3 py-3 sm:px-5 sm:py-4 md:px-7 md:py-5">
+                  <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                    <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.2 }} className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl bg-amber-500/15 border border-amber-500/30">
+                      <Flame className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400" />
+                      <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.15em] sm:tracking-[0.2em] font-bold text-amber-200">Mechanics</span>
                     </motion.div>
-                    <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.3 }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#1a0804]/60 border border-amber-500/20">
-                      <Wrench className="w-3 h-3 text-amber-400" />
-                      <span className="text-[9px] uppercase tracking-wider font-semibold text-amber-200/70">{role === "admin" ? "ADMIN" : "MECH"}</span>
+                    <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.3 }} className="flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-md sm:rounded-lg bg-[#1a0804]/60 border border-amber-500/20">
+                      <Wrench className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-amber-400" />
+                      <span className="text-[8px] sm:text-[9px] uppercase tracking-wider font-semibold text-amber-200/70">{role === "admin" ? "ADMIN" : "MECH"}</span>
                     </motion.div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <motion.div initial={{ scaleY: 0, opacity: 0 }} animate={{ scaleY: 1, opacity: 1 }} transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }} className="w-1 h-14 md:h-16 rounded-full bg-gradient-to-b from-amber-400 via-orange-500 to-red-600 origin-top flex-shrink-0" style={{ boxShadow: '0 0 20px rgba(251, 146, 60, 0.4), 0 0 40px rgba(251, 146, 60, 0.2)' }} />
+                  <div className="flex items-center gap-2 sm:gap-4">
+                    <motion.div initial={{ scaleY: 0, opacity: 0 }} animate={{ scaleY: 1, opacity: 1 }} transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }} className="w-0.5 sm:w-1 h-10 sm:h-14 md:h-16 rounded-full bg-gradient-to-b from-amber-400 via-orange-500 to-red-600 origin-top flex-shrink-0" style={{ boxShadow: '0 0 20px rgba(251, 146, 60, 0.4), 0 0 40px rgba(251, 146, 60, 0.2)' }} />
                     <div className="flex-1 min-w-0">
                       {enableAnimations ? (
-                        <TextEffect as="h1" preset="blurSlide" per="char" delay={0.15} className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight" segmentWrapperClassName="bg-gradient-to-r from-white via-amber-100 to-white/90 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(251,146,60,0.3)]">
+                        <TextEffect as="h1" preset="blurSlide" per="char" delay={0.15} className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black tracking-tight" segmentWrapperClassName="bg-gradient-to-r from-white via-amber-100 to-white/90 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(251,146,60,0.3)]">
                           DVIR Center
                         </TextEffect>
                       ) : (
-                        <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight bg-gradient-to-r from-white via-amber-100 to-white/90 bg-clip-text text-transparent">DVIR Center</h1>
+                        <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black tracking-tight bg-gradient-to-r from-white via-amber-100 to-white/90 bg-clip-text text-transparent">DVIR Center</h1>
                       )}
-                      <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.7 }} className="mt-1.5 md:mt-2 text-xs sm:text-sm text-amber-200/50 font-medium leading-relaxed max-w-xl">
+                      <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.7 }} className="mt-1 sm:mt-1.5 md:mt-2 text-[11px] sm:text-xs md:text-sm text-amber-200/50 font-medium leading-relaxed max-w-xl">
                         Review inspections and document repairs
                       </motion.p>
                     </div>
@@ -730,13 +730,13 @@ export default function MechanicDVIRCenter() {
             </motion.div>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {/* Compact Filter Bar - Not collapsible for faster access */}
             <ScrollRevealSection delay={0}>
-              <div className="rounded-xl border border-[#ff9350]/15 bg-gradient-to-r from-[#0c0402] to-[#120805] p-3">
-                <div className="flex flex-col sm:flex-row gap-3">
+              <div className="rounded-lg sm:rounded-xl border border-[#ff9350]/15 bg-gradient-to-r from-[#0c0402] to-[#120805] p-2 sm:p-3">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                   {/* Status Toggle */}
-                  <div className="flex gap-1 p-1 bg-black/30 rounded-lg border border-white/5">
+                  <div className="flex gap-0.5 sm:gap-1 p-0.5 sm:p-1 bg-black/30 rounded-md sm:rounded-lg border border-white/5">
                     {[
                       { id: "failed", label: "Need Review", icon: AlertTriangle, count: failedReports.length, color: "text-red-400" },
                       { id: "passed", label: "Passed", icon: CheckCircle2, count: passedReports.length, color: "text-emerald-400" },
@@ -747,15 +747,15 @@ export default function MechanicDVIRCenter() {
                           setActiveTab(id as "failed" | "passed");
                           setCurrentPage(1);
                         }}
-                        className={`flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-all ${
+                        className={`flex-1 inline-flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded text-[11px] sm:text-xs font-medium transition-all ${
                           activeTab === id
                             ? "bg-gradient-to-r from-[#ff9350] to-[#e87830] text-white shadow-md"
                             : "text-white/60 hover:text-white hover:bg-white/5"
                         }`}
                       >
-                        <Icon className={`w-3.5 h-3.5 ${activeTab === id ? "text-white" : color}`} />
+                        <Icon className={`w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0 ${activeTab === id ? "text-white" : color}`} />
                         <span className="hidden sm:inline">{label}</span>
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                        <span className={`px-1 sm:px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-bold ${
                           activeTab === id ? "bg-white/20" : "bg-white/10"
                         }`}>
                           {count}
@@ -765,8 +765,8 @@ export default function MechanicDVIRCenter() {
                   </div>
 
                   {/* Search */}
-                  <div className="relative flex-1">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                  <div className="relative flex-1 min-w-0">
+                    <Search className="absolute left-2 sm:left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/30 flex-shrink-0" />
                     <input
                       type="text"
                       placeholder="Search truck or driver..."
@@ -775,7 +775,7 @@ export default function MechanicDVIRCenter() {
                         setSearchQuery(e.target.value);
                         setCurrentPage(1);
                       }}
-                      className="w-full bg-black/30 border border-white/10 rounded-lg pl-8 pr-8 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-[#ff9350]/50 focus:border-[#ff9350]/30 transition-all"
+                      className="w-full min-w-0 bg-black/30 border border-white/10 rounded-md sm:rounded-lg pl-7 sm:pl-8 pr-7 sm:pr-8 py-1.5 sm:py-2 text-xs sm:text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-[#ff9350]/50 focus:border-[#ff9350]/30 transition-all"
                     />
                     {searchQuery && (
                       <button
@@ -783,10 +783,10 @@ export default function MechanicDVIRCenter() {
                           setSearchQuery("");
                           setCurrentPage(1);
                         }}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
+                        className="absolute right-2 sm:right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors p-0.5"
                         aria-label="Clear search"
                       >
-                        <X className="w-4 h-4" />
+                        <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       </button>
                     )}
                   </div>
@@ -795,9 +795,9 @@ export default function MechanicDVIRCenter() {
                   {hasActiveFilters && (
                     <button
                       onClick={clearFilters}
-                      className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium text-amber-400/80 hover:text-amber-300 hover:bg-amber-500/10 border border-amber-500/20 transition-all"
+                      className="inline-flex items-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-md sm:rounded-lg text-[11px] sm:text-xs font-medium text-amber-400/80 hover:text-amber-300 hover:bg-amber-500/10 border border-amber-500/20 transition-all"
                     >
-                      <X className="w-3 h-3" />
+                      <X className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                       Clear
                     </button>
                   )}
@@ -826,11 +826,11 @@ export default function MechanicDVIRCenter() {
               )}
 
               {!loading && !error && (
-                <div className="grid gap-4 lg:grid-cols-3">
+                <div className="grid gap-3 sm:gap-4 lg:grid-cols-3">
                   {/* Left: Reports List - Compact */}
-                  <div className="rounded-xl border border-white/10 bg-[#080403] overflow-hidden flex flex-col">
+                  <div className="rounded-lg sm:rounded-xl border border-white/10 bg-[#080403] overflow-hidden flex flex-col min-h-0">
                     {/* Compact header */}
-                    <div className="flex items-center justify-between px-3 py-2 bg-gradient-to-r from-white/5 to-transparent border-b border-white/5">
+                    <div className="flex items-center justify-between px-2 sm:px-3 py-1.5 sm:py-2 bg-gradient-to-r from-white/5 to-transparent border-b border-white/5 shrink-0">
                       <div className="flex items-center gap-2">
                         <div className={`w-2 h-2 rounded-full ${activeTab === "failed" ? "bg-red-400" : "bg-emerald-400"}`} />
                         <span className="text-xs font-medium text-white/80">
@@ -862,8 +862,8 @@ export default function MechanicDVIRCenter() {
                       )}
                     </div>
 
-                    {/* Scrollable list - more compact */}
-                    <div className="max-h-[500px] overflow-y-auto flex-1 divide-y divide-white/[0.03]">
+                    {/* Scrollable list - shorter on mobile so detail panel is visible */}
+                    <div className="max-h-[220px] sm:max-h-[320px] lg:max-h-[500px] overflow-y-auto flex-1 min-h-0 divide-y divide-white/[0.03]">
                       {filteredReports.length === 0 ? (
                         <div className="p-4 text-center text-white/50">
                           <CheckCircle2 className="w-8 h-8 text-white/20 mx-auto mb-2" />
@@ -888,21 +888,21 @@ export default function MechanicDVIRCenter() {
                   </div>
 
                   {/* Right: Detail View - Compact */}
-                  <div className="lg:col-span-2">
+                  <div className="lg:col-span-2 min-w-0">
                     <AnimatePresence mode="wait">
                       {!selectedReport ? (
                         <motion.div
                           key="empty-state"
                           {...(prefersReducedMotion ? pageTransitionReduced : pageTransition)}
-                          className="h-full min-h-[300px] rounded-xl border border-white/5 bg-[#050302] p-6 flex flex-col items-center justify-center text-center"
+                          className="h-full min-h-[200px] sm:min-h-[280px] lg:min-h-[300px] rounded-lg sm:rounded-xl border border-white/5 bg-[#050302] p-4 sm:p-6 flex flex-col items-center justify-center text-center"
                         >
-                          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 mb-3">
-                            <ClipboardList className="w-5 h-5 text-amber-400/70" />
+                          <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-amber-500/10 border border-amber-500/20 mb-2 sm:mb-3">
+                            <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400/70" />
                           </div>
-                          <p className="text-sm font-medium text-white/80 mb-0.5">
+                          <p className="text-xs sm:text-sm font-medium text-white/80 mb-0.5">
                             Select a DVIR
                           </p>
-                          <p className="text-xs text-white/40">
+                          <p className="text-[11px] sm:text-xs text-white/40">
                             Choose a report to view details
                           </p>
                         </motion.div>
@@ -910,37 +910,37 @@ export default function MechanicDVIRCenter() {
                         <motion.div
                           key={selectedId}
                           {...(prefersReducedMotion ? pageTransitionReduced : pageTransition)}
-                          className="space-y-3"
+                          className="space-y-2 sm:space-y-3"
                         >
                           {/* Report Details Card - Compact */}
-                          <div className="rounded-xl border border-white/10 bg-[#050302] overflow-hidden">
+                          <div className="rounded-lg sm:rounded-xl border border-white/10 bg-[#050302] overflow-hidden min-w-0">
                             {/* Card Header - Compact with contrast */}
-                            <div className="bg-gradient-to-r from-amber-500/8 to-transparent border-b border-white/5 px-4 py-3">
-                              <div className="flex items-center justify-between gap-3">
-                                <div className="flex items-center gap-3 min-w-0">
-                                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
-                                    <Truck className="w-5 h-5 text-amber-400" />
+                            <div className="bg-gradient-to-r from-amber-500/8 to-transparent border-b border-white/5 px-3 sm:px-4 py-2 sm:py-3">
+                              <div className="flex items-center justify-between gap-2 sm:gap-3 flex-wrap">
+                                <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-md sm:rounded-lg bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
+                                    <Truck className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
                                   </div>
                                   <div className="min-w-0">
-                                    <h3 className="text-base font-semibold text-white truncate">
+                                    <h3 className="text-sm sm:text-base font-semibold text-white truncate">
                                       Truck {selectedReport.truck_number || "N/A"}
                                     </h3>
-                                    <div className="flex items-center gap-2 text-xs text-white/50">
+                                    <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-white/50 flex-wrap">
                                       <span className="truncate">{selectedReport.drivers_name || "Unknown"}</span>
                                       <span className="text-white/20">•</span>
                                       <span>{selectedReport.mileage?.toLocaleString() || "—"} mi</span>
                                     </div>
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-2 flex-shrink-0">
+                                <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                                   {hasMechanicUpdate(selectedReport) && (
-                                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-500/15 border border-amber-500/25 rounded text-[10px] font-medium text-amber-300">
-                                      <Wrench className="w-3 h-3" />
+                                    <span className="inline-flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-amber-500/15 border border-amber-500/25 rounded text-[9px] sm:text-[10px] font-medium text-amber-300">
+                                      <Wrench className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                                       Fixed
                                     </span>
                                   )}
                                   <span
-                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${
+                                    className={`inline-flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium ${
                                       getStatus(selectedReport) === "failed"
                                         ? "bg-red-500/15 text-red-300 border border-red-500/25"
                                         : "bg-emerald-500/15 text-emerald-300 border border-emerald-500/25"
@@ -963,7 +963,7 @@ export default function MechanicDVIRCenter() {
                             </div>
 
                             {/* Card Body - Compact */}
-                            <div className="px-4 py-4 space-y-4">
+                            <div className="px-3 sm:px-4 py-3 sm:py-4 space-y-3 sm:space-y-4">
                               {/* Failed Items - Compact */}
                               {(() => {
                                 const { vehicleFails, aerialFails, allFails } = getFailedItems(selectedReport);
@@ -984,9 +984,9 @@ export default function MechanicDVIRCenter() {
                                       {allFails.length} Failed Item{allFails.length !== 1 ? "s" : ""}
                                     </div>
 
-                                    <div className="grid gap-2 sm:grid-cols-2">
+                                    <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
                                       {vehicleFails.length > 0 && (
-                                        <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-2.5 max-h-40 overflow-y-auto">
+                                        <div className="rounded-md sm:rounded-lg border border-red-500/20 bg-red-500/5 p-2 sm:p-2.5 max-h-32 sm:max-h-40 overflow-y-auto">
                                           <div className="text-[10px] uppercase tracking-wider text-red-300/70 mb-1.5">Vehicle / Trailer</div>
                                           <ul className="space-y-1">
                                             {vehicleFails.map((label) => (
@@ -1000,7 +1000,7 @@ export default function MechanicDVIRCenter() {
                                       )}
 
                                       {aerialFails.length > 0 && (
-                                        <div className="rounded-lg border border-orange-500/20 bg-orange-500/5 p-2.5 max-h-40 overflow-y-auto">
+                                        <div className="rounded-md sm:rounded-lg border border-orange-500/20 bg-orange-500/5 p-2 sm:p-2.5 max-h-32 sm:max-h-40 overflow-y-auto">
                                           <div className="text-[10px] uppercase tracking-wider text-orange-300/70 mb-1.5">Aerial Lift</div>
                                           <ul className="space-y-1">
                                             {aerialFails.map((label) => (
@@ -1018,14 +1018,14 @@ export default function MechanicDVIRCenter() {
                               })()}
 
                               {/* Driver Notes & Vehicle Details - Compact row */}
-                              <div className="grid gap-2 sm:grid-cols-2">
-                                <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2.5">
+                              <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
+                                <div className="rounded-md sm:rounded-lg border border-white/5 bg-white/[0.02] p-2 sm:p-2.5">
                                   <div className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Driver Notes</div>
                                   <p className="text-xs text-white/60 line-clamp-2">
                                     {selectedReport.notes?.trim() || "No notes"}
                                   </p>
                                 </div>
-                                <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2.5">
+                                <div className="rounded-md sm:rounded-lg border border-white/5 bg-white/[0.02] p-2 sm:p-2.5">
                                   <div className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Vehicle Info</div>
                                   <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10px] text-white/50">
                                     <span>Chipper: {selectedReport.chipper_number || "—"}</span>
@@ -1036,17 +1036,17 @@ export default function MechanicDVIRCenter() {
 
                               {/* Full Checklist Review - Collapsible & Compact */}
                               <details className="group">
-                                <summary className="flex items-center justify-between cursor-pointer py-2 text-xs font-medium text-white/60 hover:text-white/80 transition-colors">
+                                <summary className="flex items-center justify-between cursor-pointer py-1.5 sm:py-2 text-[11px] sm:text-xs font-medium text-white/60 hover:text-white/80 transition-colors">
                                   <span className="flex items-center gap-1.5">
                                     <ListChecks className="w-3.5 h-3.5 text-amber-400/70" />
                                     Full Checklist Review
                                   </span>
                                   <ChevronRight className="w-3.5 h-3.5 transition-transform group-open:rotate-90" />
                                 </summary>
-                                <div className="grid gap-2 sm:grid-cols-2 pt-2">
-                                  <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2.5">
-                                    <div className="text-[10px] uppercase tracking-wider text-white/30 mb-2">Vehicle / Trailer</div>
-                                    <div className="max-h-48 overflow-y-auto space-y-0.5">
+                                <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 pt-1.5 sm:pt-2">
+                                  <div className="rounded-md sm:rounded-lg border border-white/5 bg-white/[0.02] p-2 sm:p-2.5">
+                                    <div className="text-[10px] uppercase tracking-wider text-white/30 mb-1.5 sm:mb-2">Vehicle / Trailer</div>
+                                    <div className="max-h-36 sm:max-h-48 overflow-y-auto space-y-0.5">
                                       {VEHICLE_TRAILER_ITEMS.map((item) => {
                                         const value = selectedReport.vehicle_trailer_checklist?.[item.id];
                                         const status = value === "P" ? "pass" : value === "F" ? "fail" : value === "N/A" ? "na" : "pending";
@@ -1062,9 +1062,9 @@ export default function MechanicDVIRCenter() {
                                     </div>
                                   </div>
 
-                                  <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2.5">
-                                    <div className="text-[10px] uppercase tracking-wider text-white/30 mb-2">Aerial Lift</div>
-                                    <div className="max-h-48 overflow-y-auto space-y-0.5">
+                                  <div className="rounded-md sm:rounded-lg border border-white/5 bg-white/[0.02] p-2 sm:p-2.5">
+                                    <div className="text-[10px] uppercase tracking-wider text-white/30 mb-1.5 sm:mb-2">Aerial Lift</div>
+                                    <div className="max-h-36 sm:max-h-48 overflow-y-auto space-y-0.5">
                                       {AERIAL_LIFT_ITEMS.map((item) => {
                                         const value = selectedReport.aerial_checklist?.[item.id];
                                         const status = value === "P" ? "pass" : value === "F" ? "fail" : value === "N/A" ? "na" : "pending";
@@ -1084,7 +1084,7 @@ export default function MechanicDVIRCenter() {
 
                               {/* Photos Section - Collapsible */}
                               <details className="group">
-                                <summary className="flex items-center justify-between cursor-pointer py-2 text-xs font-medium text-white/60 hover:text-white/80 transition-colors">
+                                <summary className="flex items-center justify-between cursor-pointer py-1.5 sm:py-2 text-[11px] sm:text-xs font-medium text-white/60 hover:text-white/80 transition-colors">
                                   <span className="flex items-center gap-1.5">
                                     <Images className="w-3.5 h-3.5 text-amber-400/70" />
                                     Photos ({mediaEntries.length})
@@ -1094,7 +1094,7 @@ export default function MechanicDVIRCenter() {
                                 {mediaEntries.length === 0 ? (
                                   <p className="text-[11px] text-white/40 pt-1">No photos uploaded</p>
                                 ) : (
-                                  <div className="grid grid-cols-3 gap-2 pt-2">
+                                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2 pt-1.5 sm:pt-2">
                                     {mediaEntries.map((media) => (
                                       <a
                                         key={media.label}
@@ -1103,8 +1103,8 @@ export default function MechanicDVIRCenter() {
                                         rel="noopener noreferrer"
                                         className="group/img block rounded-lg border border-white/5 bg-black/30 overflow-hidden transition-all hover:border-amber-500/30"
                                       >
-                                        <img src={media.url} alt={media.label} className="h-20 w-full object-cover transition-transform duration-200 group-hover/img:scale-105" />
-                                        <div className="px-1.5 py-1 text-[9px] text-white/40 truncate">{media.label}</div>
+                                        <img src={media.url} alt={media.label} className="h-16 sm:h-20 w-full object-cover transition-transform duration-200 group-hover/img:scale-105" />
+                                        <div className="px-1 sm:px-1.5 py-0.5 sm:py-1 text-[8px] sm:text-[9px] text-white/40 truncate">{media.label}</div>
                                       </a>
                                     ))}
                                   </div>
@@ -1113,7 +1113,7 @@ export default function MechanicDVIRCenter() {
 
                               {/* Signatures Section - Collapsible */}
                               <details className="group">
-                                <summary className="flex items-center justify-between cursor-pointer py-2 text-xs font-medium text-white/60 hover:text-white/80 transition-colors">
+                                <summary className="flex items-center justify-between cursor-pointer py-1.5 sm:py-2 text-[11px] sm:text-xs font-medium text-white/60 hover:text-white/80 transition-colors">
                                   <span className="flex items-center gap-1.5">
                                     <FileSignature className="w-3.5 h-3.5 text-amber-400/70" />
                                     Signatures ({signatureEntries.length})
@@ -1123,7 +1123,7 @@ export default function MechanicDVIRCenter() {
                                 {signatureEntries.length === 0 ? (
                                   <p className="text-[11px] text-white/40 pt-1">No signatures</p>
                                 ) : (
-                                  <div className="grid grid-cols-2 gap-2 pt-2">
+                                  <div className="grid grid-cols-2 gap-1.5 sm:gap-2 pt-1.5 sm:pt-2">
                                     {signatureEntries.map((signature) =>
                                       "url" in signature && signature.url ? (
                                         <a
@@ -1153,26 +1153,26 @@ export default function MechanicDVIRCenter() {
                           </div>
 
                           {/* Mechanic Update Form - Enhanced with Cost & Parts */}
-                          <div className="rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-950/30 to-[#050302] overflow-hidden">
-                            <div className="flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-amber-500/10 to-transparent border-b border-amber-500/10">
-                              <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/25 flex items-center justify-center">
-                                  <Wrench className="w-3.5 h-3.5 text-amber-400" />
+                          <div className="rounded-lg sm:rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-950/30 to-[#050302] overflow-hidden min-w-0">
+                            <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-amber-500/10 to-transparent border-b border-amber-500/10">
+                              <div className="flex items-center gap-1.5 sm:gap-2">
+                                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-md sm:rounded-lg bg-amber-500/15 border border-amber-500/25 flex items-center justify-center">
+                                  <Wrench className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400" />
                                 </div>
-                                <span className="text-sm font-medium text-white">Record Fix</span>
+                                <span className="text-xs sm:text-sm font-medium text-white">Record Fix</span>
                               </div>
                             </div>
 
-                            <div className="px-4 py-3 space-y-3">
+                            <div className="px-3 sm:px-4 py-2 sm:py-3 space-y-2 sm:space-y-3">
                               {/* Truck # & Date Row */}
-                              <div className="grid grid-cols-2 gap-2">
+                              <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
                                 <div>
                                   <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Truck #</label>
                                   <input
                                     value={updateTruckNumber}
                                     onChange={(e) => setUpdateTruckNumber(e.target.value)}
                                     placeholder="e.g., 101"
-                                    className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all min-h-[40px]"
+                                    className="w-full min-w-0 bg-black/30 border border-white/10 text-white text-xs sm:text-sm rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all min-h-[36px] sm:min-h-[40px]"
                                   />
                                 </div>
                                 <DateField
@@ -1180,29 +1180,29 @@ export default function MechanicDVIRCenter() {
                                   value={updateDate}
                                   onValueChange={setUpdateDate}
                                   variant="ember"
-                                  containerClassName="text-white [&_label]:text-[10px] [&_label]:uppercase [&_label]:tracking-wider [&_label]:text-white/40 [&_label]:mb-1"
-                                  labelClassName="!text-[10px] !uppercase !tracking-wider !text-white/40"
-                                  className="!rounded-lg !py-2 !px-3 !text-sm border-amber-500/20 !min-h-[40px]"
+                                  containerClassName="text-white [&_label]:text-[9px] sm:[&_label]:text-[10px] [&_label]:uppercase [&_label]:tracking-wider [&_label]:text-white/40 [&_label]:mb-1"
+                                  labelClassName="!text-[9px] sm:!text-[10px] !uppercase !tracking-wider !text-white/40"
+                                  className="!rounded-md sm:!rounded-lg !py-1.5 sm:!py-2 !px-2 sm:!px-3 !text-xs sm:!text-sm border-amber-500/20 !min-h-[36px] sm:!min-h-[40px]"
                                 />
                               </div>
 
                               {/* Fix Description */}
                               <div>
-                                <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Fix Applied *</label>
+                                <label className="block text-[9px] sm:text-[10px] uppercase tracking-wider text-white/40 mb-0.5 sm:mb-1">Fix Applied *</label>
                                 <textarea
                                   value={updateDeficiencyCorrected}
                                   onChange={(e) => setUpdateDeficiencyCorrected(e.target.value)}
                                   placeholder="What was done? E.g., Replaced brake pads..."
                                   rows={2}
-                                  className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all resize-none"
+                                  className="w-full min-w-0 bg-black/30 border border-white/10 text-white text-xs sm:text-sm rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all resize-none"
                                 />
                               </div>
 
                               {/* Cost Input */}
                               <div>
-                                <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Cost (Optional)</label>
+                                <label className="block text-[9px] sm:text-[10px] uppercase tracking-wider text-white/40 mb-0.5 sm:mb-1">Cost (Optional)</label>
                                 <div className="relative">
-                                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                                  <DollarSign className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/30" />
                                   <input
                                     type="number"
                                     step="0.01"
@@ -1210,38 +1210,38 @@ export default function MechanicDVIRCenter() {
                                     value={updateCost}
                                     onChange={(e) => setUpdateCost(e.target.value)}
                                     placeholder="0.00"
-                                    className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all min-h-[40px]"
+                                    className="w-full bg-black/30 border border-white/10 text-white text-xs sm:text-sm rounded-md sm:rounded-lg pl-8 sm:pl-9 pr-2 sm:pr-3 py-1.5 sm:py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all min-h-[36px] sm:min-h-[40px]"
                                   />
                                 </div>
                               </div>
 
-                              {/* Parts Used */}
+                              {/* Parts Used - stacked on mobile, grid on sm+ */}
                               <div>
-                                <div className="flex items-center justify-between mb-2">
-                                  <label className="text-[10px] uppercase tracking-wider text-white/40">
+                                <div className="flex items-center justify-between mb-1 sm:mb-2">
+                                  <label className="text-[9px] sm:text-[10px] uppercase tracking-wider text-white/40">
                                     Parts Used (Optional)
                                   </label>
                                   <button
                                     type="button"
                                     onClick={handleAddPart}
-                                    className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium text-amber-400/80 hover:text-amber-300 hover:bg-amber-500/10 transition-colors"
+                                    className="inline-flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-[9px] sm:text-[10px] font-medium text-amber-400/80 hover:text-amber-300 hover:bg-amber-500/10 transition-colors"
                                   >
-                                    <Plus className="w-3 h-3" />
+                                    <Plus className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                                     Add Part
                                   </button>
                                 </div>
                                 
                                 {updateParts.length > 0 && (
-                                  <div className="space-y-2">
+                                  <div className="space-y-1.5 sm:space-y-2">
                                     {updateParts.map((part, index) => (
-                                      <div key={index} className="flex gap-1.5 items-start">
-                                        <div className="flex-1 grid grid-cols-3 gap-1.5">
+                                      <div key={index} className="flex gap-1 sm:gap-1.5 items-start">
+                                        <div className="flex-1 min-w-0 grid grid-cols-2 sm:grid-cols-3 gap-1 sm:gap-1.5">
                                           <input
                                             type="text"
                                             placeholder="Part name"
                                             value={part.part_name}
                                             onChange={(e) => handlePartChange(index, { ...part, part_name: e.target.value })}
-                                            className="col-span-2 sm:col-span-1 bg-black/30 border border-white/10 text-white text-xs rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all min-h-[36px]"
+                                            className="col-span-2 sm:col-span-1 min-w-0 bg-black/30 border border-white/10 text-white text-[11px] sm:text-xs rounded-md sm:rounded-lg px-2 sm:px-2.5 py-1.5 sm:py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all min-h-[32px] sm:min-h-[36px]"
                                           />
                                           <input
                                             type="number"
@@ -1249,22 +1249,22 @@ export default function MechanicDVIRCenter() {
                                             min={1}
                                             value={part.quantity || ""}
                                             onChange={(e) => handlePartChange(index, { ...part, quantity: parseInt(e.target.value) || 1 })}
-                                            className="bg-black/30 border border-white/10 text-white text-xs rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all min-h-[36px]"
+                                            className="min-w-0 bg-black/30 border border-white/10 text-white text-[11px] sm:text-xs rounded-md sm:rounded-lg px-2 sm:px-2.5 py-1.5 sm:py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all min-h-[32px] sm:min-h-[36px]"
                                           />
                                           <input
                                             type="text"
                                             placeholder="Part #"
                                             value={part.part_number || ""}
                                             onChange={(e) => handlePartChange(index, { ...part, part_number: e.target.value })}
-                                            className="bg-black/30 border border-white/10 text-white text-xs rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all min-h-[36px]"
+                                            className="min-w-0 bg-black/30 border border-white/10 text-white text-[11px] sm:text-xs rounded-md sm:rounded-lg px-2 sm:px-2.5 py-1.5 sm:py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all min-h-[32px] sm:min-h-[36px]"
                                           />
                                         </div>
                                         <button
                                           type="button"
                                           onClick={() => handlePartRemove(index)}
-                                          className="p-2 rounded-lg text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors min-h-[36px]"
+                                          className="p-1.5 sm:p-2 rounded-md sm:rounded-lg text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors min-h-[32px] sm:min-h-[36px] shrink-0"
                                         >
-                                          <Trash2 className="w-3.5 h-3.5" />
+                                          <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                                         </button>
                                       </div>
                                     ))}
@@ -1272,22 +1272,22 @@ export default function MechanicDVIRCenter() {
                                 )}
                                 
                                 {updateParts.length === 0 && (
-                                  <div className="rounded-lg border border-dashed border-white/10 p-3 text-center">
-                                    <Package className="w-5 h-5 text-white/20 mx-auto mb-1" />
-                                    <p className="text-[10px] text-white/30">No parts added yet</p>
+                                  <div className="rounded-md sm:rounded-lg border border-dashed border-white/10 p-2 sm:p-3 text-center">
+                                    <Package className="w-4 h-4 sm:w-5 sm:h-5 text-white/20 mx-auto mb-0.5 sm:mb-1" />
+                                    <p className="text-[9px] sm:text-[10px] text-white/30">No parts added yet</p>
                                   </div>
                                 )}
                               </div>
 
                               {/* Remarks */}
                               <div>
-                                <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Additional Notes (Optional)</label>
+                                <label className="block text-[9px] sm:text-[10px] uppercase tracking-wider text-white/40 mb-0.5 sm:mb-1">Additional Notes (Optional)</label>
                                 <textarea
                                   value={updateRemarks}
                                   onChange={(e) => setUpdateRemarks(e.target.value)}
                                   rows={2}
                                   placeholder="Any additional details..."
-                                  className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all resize-none"
+                                  className="w-full min-w-0 bg-black/30 border border-white/10 text-white text-xs sm:text-sm rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all resize-none"
                                 />
                               </div>
 
@@ -1312,7 +1312,7 @@ export default function MechanicDVIRCenter() {
                                 type="button"
                                 onClick={handleSaveUpdate}
                                 disabled={savingUpdate}
-                                className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg hover:shadow-amber-500/20 min-h-[44px]"
+                                className="w-full inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-md sm:rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg hover:shadow-amber-500/20 min-h-[40px] sm:min-h-[44px]"
                               >
                                 {savingUpdate ? (
                                   <>

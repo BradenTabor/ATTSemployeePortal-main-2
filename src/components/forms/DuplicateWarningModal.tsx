@@ -9,8 +9,10 @@
  */
 
 import { motion, AnimatePresence } from "framer-motion";
+import { createPortal } from "react-dom";
 import { AlertTriangle, Eye, FileCheck, X, Clock, User } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { useModalOverlay } from "../../hooks/useModalOverlay";
 
 // ============================================================================
 // TYPES
@@ -104,26 +106,35 @@ export function DuplicateWarningModal({
     }
   );
 
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          initial="hidden"
-          animate="visible"
-          exit="exit"
-        >
-          {/* Backdrop */}
-          <motion.div
-            variants={overlayVariants}
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-            onClick={onClose}
-          />
+  const { modalRef, zIndex } = useModalOverlay({ isOpen, onClose, zIndex: 100 });
+  if (!isOpen) return null;
 
-          {/* Modal */}
-          <motion.div
-            variants={modalVariants}
-            className={cn(
+  const content = (
+    <AnimatePresence>
+      <motion.div
+        className="fixed inset-0 flex items-center justify-center p-4"
+        style={{ zIndex }}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        aria-hidden
+      >
+        {/* Backdrop */}
+        <motion.div
+          variants={overlayVariants}
+          className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+          onClick={onClose}
+        />
+
+        {/* Modal */}
+        <motion.div
+          ref={modalRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="duplicate-warning-modal-title"
+          variants={modalVariants}
+          onClick={(e) => e.stopPropagation()}
+          className={cn(
               "relative w-full max-w-md rounded-3xl overflow-hidden",
               "bg-gradient-to-br from-[#1a1510] via-[#0f0a08] to-[#080504]",
               "border border-amber-500/30 shadow-2xl shadow-amber-500/10"
@@ -150,7 +161,7 @@ export function DuplicateWarningModal({
                   <AlertTriangle className="w-6 h-6 text-amber-400" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-white">
+                  <h2 id="duplicate-warning-modal-title" className="text-lg font-bold text-white">
                     Duplicate Detected
                   </h2>
                   <p className="text-sm text-white/60 mt-1">
@@ -260,10 +271,11 @@ export function DuplicateWarningModal({
               </button>
             </div>
           </motion.div>
-        </motion.div>
-      )}
+      </motion.div>
     </AnimatePresence>
   );
+
+  return typeof document !== "undefined" ? createPortal(content, document.body) : null;
 }
 
 export default DuplicateWarningModal;

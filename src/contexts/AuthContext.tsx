@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabaseClient';
 import { logger } from "../lib/logger";
 import { setCurrentUserId, clearSession as clearTelemetrySession, clearTelemetryStorage } from '../lib/telemetry';
 import { redactUserId } from '../lib/logger';
+import { LOCAL_STORAGE_KEYS_PRESERVED_ON_LOGOUT } from '../lib/appVersion';
 
 
 // Matches DB constraint: check (role in ('employee', 'admin', 'manager', 'mechanic', 'general_foreman', 'safety_officer', 'foreman'))
@@ -468,11 +469,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearCachedProfile();
       clearTelemetrySession();
       
-      // SEC-001: Clear localStorage on logout to prevent data leakage
+      // SEC-001: Clear localStorage on logout to prevent data leakage.
+      // Preserve non-sensitive UX keys (e.g. onboarding completed version) so
+      // "What's New" shows only once per app version, not on every login.
       try {
+        const preserved: Record<string, string> = {};
+        for (const key of LOCAL_STORAGE_KEYS_PRESERVED_ON_LOGOUT) {
+          const value = localStorage.getItem(key);
+          if (value !== null) preserved[key] = value;
+        }
         localStorage.clear();
         clearTelemetryStorage(); // Also clear telemetry-specific storage
-        logger.debug('[AuthContext] localStorage cleared on sign out');
+        for (const [key, value] of Object.entries(preserved)) {
+          localStorage.setItem(key, value);
+        }
+        logger.debug('[AuthContext] localStorage cleared on sign out (UX keys preserved)');
       } catch (error) {
         logger.warn('[AuthContext] Failed to clear localStorage:', error);
       }

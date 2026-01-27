@@ -17,6 +17,7 @@ import {
   Trophy,
   BarChart3,
   Activity,
+  LayoutGrid,
 } from "lucide-react";
 import type { AdminNavCardConfig } from "./AdminPremiumScaffold";
 
@@ -163,6 +164,45 @@ export const ADMIN_CORE_NAV_CARDS: AdminNavCardConfig[] = [
     icon: <Award className="w-8 h-8 text-[#f4c979]" />,
     to: "/admin/certifications",
     variant: "gold",
+  },
+];
+
+/** Role dashboard links so admin can navigate the entire app from Admin. */
+export const ADMIN_ROLE_DASHBOARDS_NAV_CARDS: AdminNavCardConfig[] = [
+  {
+    title: "General Foreman Dashboard",
+    description: "Crew oversight, safety compliance, equipment logs.",
+    icon: <HardHat className="w-8 h-8 text-[#c084fc]" />,
+    to: "/general-foreman-dashboard",
+    variant: "purple",
+  },
+  {
+    title: "Foreman Dashboard",
+    description: "Crew management and daily reports.",
+    icon: <Users className="w-8 h-8 text-[#bfdbfe]" />,
+    to: "/foreman-dashboard",
+    variant: "bluewhite",
+  },
+  {
+    title: "Safety Officer Dashboard",
+    description: "Safety compliance and incident tracking.",
+    icon: <Shield className="w-8 h-8 text-[#fecaca]" />,
+    to: "/safety-officer-dashboard",
+    variant: "redwhite",
+  },
+  {
+    title: "Mechanic Dashboard",
+    description: "DVIR queue and fleet maintenance.",
+    icon: <Wrench className="w-8 h-8 text-[#ffb887]" />,
+    to: "/mechanic-dashboard",
+    variant: "ember",
+  },
+  {
+    title: "Main Dashboard",
+    description: "Employee hub: jobs, forms, announcements.",
+    icon: <LayoutGrid className="w-8 h-8 text-emerald-300" />,
+    to: "/dashboard",
+    variant: "emerald",
   },
 ];
 

@@ -7,27 +7,9 @@ import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../contexts/AuthContext";
 import logo from "../assets/ATTS_Logo-removebg-preview.png";
 import { logger } from "../lib/logger";
-
+import { getRoleDashboard } from "../lib/navigation";
 
 type AuthMode = "login" | "signup";
-
-// Helper function to get the appropriate dashboard for each role
-const getRoleDashboard = (role: string | null): string => {
-  switch (role) {
-    case 'admin':
-      return '/admin';
-    case 'mechanic':
-      return '/mechanic-dashboard';
-    case 'general_foreman':
-      return '/general-foreman-dashboard';
-    case 'safety_officer':
-      return '/safety-officer-dashboard';
-    case 'foreman':
-      return '/foreman-dashboard';
-    default:
-      return '/dashboard';
-  }
-};
 
 export default function Home() {
   const navigate = useNavigate();

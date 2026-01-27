@@ -14,6 +14,10 @@ const TIMEZONE = 'America/Chicago';
 const CUTOFF_HOUR = 9; // 9:00 AM
 const CUTOFF_MINUTE = 0;
 
+// Safety reward claim window: 7:00–9:00 AM Central (same day as announcement publish + compliance cutoff)
+export const REWARD_CLAIM_START_HOUR = 7;
+export const REWARD_CLAIM_END_HOUR = 9;
+
 /**
  * Get today's date string in YYYY-MM-DD format (Chicago timezone)
  */
@@ -132,6 +136,54 @@ export function isSubmissionAllowed(now: Date = new Date()): boolean {
   if (isWeekend(now)) return false;
   const { isPast } = getTimeUntilCutoff(now);
   return !isPast;
+}
+
+/**
+ * Check if current time is within the safety reward claim window (7:00–9:00 AM Central).
+ * Inclusive of 7:00 AM, exclusive of 9:00 AM (8:59 allowed).
+ */
+export function isWithinRewardClaimWindow(now: Date = new Date()): boolean {
+  const chicagoNow = toZonedTime(now, TIMEZONE);
+  const hour = chicagoNow.getHours();
+  const minute = chicagoNow.getMinutes();
+  const totalMinutes = hour * 60 + minute;
+  const startMinutes = REWARD_CLAIM_START_HOUR * 60;
+  const endMinutes = REWARD_CLAIM_END_HOUR * 60;
+  return totalMinutes >= startMinutes && totalMinutes < endMinutes;
+}
+
+/**
+ * Message for UI when outside the reward claim window; null when inside.
+ */
+export function getRewardClaimWindowMessage(now: Date = new Date()): string | null {
+  if (isWithinRewardClaimWindow(now)) return null;
+  const chicagoNow = toZonedTime(now, TIMEZONE);
+  const hour = chicagoNow.getHours();
+  const minute = chicagoNow.getMinutes();
+  const totalMinutes = hour * 60 + minute;
+  const startMinutes = REWARD_CLAIM_START_HOUR * 60;
+  if (totalMinutes < startMinutes) {
+    return 'Claim opens at 7 AM Central';
+  }
+  return 'Claim window closed (7–9 AM Central)';
+}
+
+/**
+ * Time until the reward claim window opens (7 AM Central). Returns null when already at or past 7 AM.
+ */
+export function getTimeUntilClaimWindowOpens(
+  now: Date = new Date()
+): { hours: number; minutes: number } | null {
+  const chicagoNow = toZonedTime(now, TIMEZONE);
+  const windowOpen = new Date(chicagoNow);
+  windowOpen.setHours(REWARD_CLAIM_START_HOUR, 0, 0, 0);
+  const diff = windowOpen.getTime() - chicagoNow.getTime();
+  if (diff <= 0) return null;
+  const totalMinutes = Math.floor(diff / (1000 * 60));
+  return {
+    hours: Math.floor(totalMinutes / 60),
+    minutes: totalMinutes % 60,
+  };
 }
 
 /**

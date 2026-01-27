@@ -84,6 +84,27 @@ export interface SafetyAnalyticsResult {
 // HELPERS
 // ============================================================================
 
+/** Normalize form type from DB/casing variants to our canonical keys. */
+function normalizeFormType(form: unknown): 'dvir' | 'equipment' | 'jsa' | null {
+  if (form == null) return null;
+  const s = String(form).toLowerCase().trim();
+  if (s === 'dvir') return 'dvir';
+  if (s === 'equipment' || s === 'equipment_inspection' || s === 'equip') return 'equipment';
+  if (s === 'jsa') return 'jsa';
+  return null;
+}
+
+/** Ensure value is an array of strings (handles Supabase/Postgres array shape). */
+function asFormArray(forms_completed: unknown): string[] {
+  if (Array.isArray(forms_completed)) {
+    return forms_completed.map((f) => (typeof f === 'string' ? f : String(f)));
+  }
+  if (forms_completed != null && typeof forms_completed === 'object' && !Array.isArray(forms_completed)) {
+    return Object.values(forms_completed).map((f) => String(f));
+  }
+  return [];
+}
+
 function getDateRange(period: Period): { start: string | null; end: string | null } {
   const now = new Date();
   const today = now.toISOString().split('T')[0];
@@ -206,8 +227,7 @@ export function useSafetyAnalytics(period: Period = 'month', leaderboardLimit: n
       const stats = calculateStats(
         complianceData,
         announcementData,
-        usersData,
-        leaderboard
+        usersData
       );
       
       // Calculate form breakdown
@@ -559,8 +579,7 @@ async function buildUnifiedLeaderboardFromRPC(
 function calculateStats(
   complianceData: ComplianceRecord[],
   announcementData: AnnouncementRecord[],
-  usersData: UserRecord[],
-  leaderboard: UnifiedLeaderboardEntry[]
+  usersData: UserRecord[]
 ): SafetyAnalyticsStats {
   // Get unique user IDs with any activity
   const activeUserIds = new Set<string>();
@@ -571,15 +590,30 @@ function calculateStats(
   const totalCompliancePoints = complianceData.reduce((sum, r) => sum + r.points_awarded, 0);
   const totalAnnouncementPoints = announcementData.reduce((sum, r) => sum + r.points_awarded, 0);
   
-  // Calculate compliance metrics
+  // Calculate compliance metrics from full compliance data (not capped leaderboard)
   const uniqueComplianceDays = new Set(complianceData.map(r => `${r.user_id}-${r.date_for}`));
-  const fullComplianceRecords = complianceData.filter(r => r.forms_completed?.length === 3);
+  const isFullCompliance = (r: ComplianceRecord) => asFormArray(r.forms_completed).length === 3;
+  const fullComplianceRecords = complianceData.filter(isFullCompliance);
   const fullComplianceUsers = new Set(fullComplianceRecords.map(r => r.user_id)).size;
-  
-  // Average compliance rate from leaderboard
-  const avgComplianceRate = leaderboard.length > 0
-    ? leaderboard.reduce((sum, e) => sum + e.compliance_rate, 0) / leaderboard.length
-    : 0;
+
+  // Per-user compliance rate from all compliance data, then average (calibrated org-wide)
+  const userComplianceDays = new Map<string, { total: number; full: number }>();
+  complianceData.forEach((r) => {
+    const cur = userComplianceDays.get(r.user_id) ?? { total: 0, full: 0 };
+    cur.total += 1;
+    if (isFullCompliance(r)) cur.full += 1;
+    userComplianceDays.set(r.user_id, cur);
+  });
+  let sumRates = 0;
+  let countUsersWithCompliance = 0;
+  userComplianceDays.forEach(({ total, full }) => {
+    if (total > 0) {
+      sumRates += (full / total) * 100;
+      countUsersWithCompliance += 1;
+    }
+  });
+  const avgComplianceRate =
+    countUsersWithCompliance > 0 ? sumRates / countUsersWithCompliance : 0;
   
   // Announcement metrics
   const totalAnnouncementsClaimed = announcementData.length;
@@ -608,19 +642,17 @@ function calculateStats(
 
 function calculateFormBreakdown(complianceData: ComplianceRecord[]): FormBreakdown[] {
   const counts = { dvir: 0, equipment: 0, jsa: 0 };
-  
-  complianceData.forEach(record => {
-    if (record.forms_completed) {
-      record.forms_completed.forEach(form => {
-        if (form in counts) {
-          counts[form as keyof typeof counts] += 1;
-        }
-      });
-    }
+
+  complianceData.forEach((record) => {
+    const forms = asFormArray(record.forms_completed);
+    forms.forEach((form) => {
+      const key = normalizeFormType(form);
+      if (key) counts[key] += 1;
+    });
   });
-  
+
   const total = counts.dvir + counts.equipment + counts.jsa;
-  
+
   return [
     { form_type: 'dvir', submissions: counts.dvir, percentage: total > 0 ? Math.round((counts.dvir / total) * 100) : 0 },
     { form_type: 'equipment', submissions: counts.equipment, percentage: total > 0 ? Math.round((counts.equipment / total) * 100) : 0 },
@@ -719,14 +751,15 @@ export function useUserSafetyDetail(userId: string, period: Period = 'month') {
       const compliancePoints = (complianceData || []).reduce((sum, r) => sum + (r.points_awarded || 0), 0);
       const announcementPoints = (announcementData || []).reduce((sum, r) => sum + (r.points_awarded || 0), 0);
       const complianceDays = complianceData?.length || 0;
-      const fullComplianceDays = (complianceData || []).filter(r => r.forms_completed?.length === 3).length;
+      const fullComplianceDays = (complianceData || []).filter((r) => asFormArray(r.forms_completed).length === 3).length;
       const complianceRate = complianceDays > 0 ? Math.round((fullComplianceDays / complianceDays) * 100) : 0;
-      
+
       // Forms breakdown
       const formCounts = { dvir: 0, equipment: 0, jsa: 0 };
-      (complianceData || []).forEach(record => {
-        (record.forms_completed || []).forEach((form: string) => {
-          if (form in formCounts) formCounts[form as keyof typeof formCounts] += 1;
+      (complianceData || []).forEach((record) => {
+        asFormArray(record.forms_completed).forEach((form) => {
+          const key = normalizeFormType(form);
+          if (key) formCounts[key] += 1;
         });
       });
       const totalForms = formCounts.dvir + formCounts.equipment + formCounts.jsa;
@@ -739,7 +772,7 @@ export function useUserSafetyDetail(userId: string, period: Period = 'month') {
           date: record.date_for,
           type: 'compliance',
           points: record.points_awarded,
-          details: `Completed ${record.forms_completed?.join(', ') || 'forms'}`,
+          details: `Completed ${asFormArray(record.forms_completed).join(', ') || 'forms'}`,
         });
       });
       

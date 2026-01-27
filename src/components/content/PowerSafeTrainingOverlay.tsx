@@ -7,9 +7,11 @@
  * Optimized for mobile screens.
  */
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ExternalLink, Shield, CheckCircle2, Copy, Check, StickyNote } from 'lucide-react';
+import { useModalOverlay } from '../../hooks/useModalOverlay';
 
 interface PowerSafeTrainingOverlayProps {
   isOpen: boolean;
@@ -85,24 +87,7 @@ function CopyButton({ text, label, compact = false }: { text: string; label: str
 
 export function PowerSafeTrainingOverlay({ isOpen, onClose, onPinStickyNote }: PowerSafeTrainingOverlayProps) {
   const isMobile = useIsMobile();
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      window.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden';
-    }
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen, onClose]);
+  const { modalRef, zIndex } = useModalOverlay({ isOpen, onClose, zIndex: 100 });
 
   const handlePinAndOpen = useCallback(() => {
     if (isMobile) {
@@ -120,31 +105,35 @@ export function PowerSafeTrainingOverlay({ isOpen, onClose, onPinStickyNote }: P
     onPinStickyNote?.();
   }, [onPinStickyNote, isMobile]);
 
-  return (
+  if (!isOpen) return null;
+
+  const content = (
     <AnimatePresence>
-      {isOpen && (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/90 backdrop-blur-md"
+        style={{ zIndex }}
+        onClick={onClose}
+        aria-hidden
+      >
+        {/* Modal container - slides up on mobile like a bottom sheet */}
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/90 backdrop-blur-md"
-          onClick={onClose}
+          ref={modalRef}
           role="dialog"
           aria-modal="true"
           aria-labelledby="power-safe-title"
+          initial={{ opacity: 0, y: isMobile ? '100%' : 60, scale: isMobile ? 1 : 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: isMobile ? '100%' : 40, scale: isMobile ? 1 : 0.97 }}
+          transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+          className="relative w-full sm:max-w-xl max-h-[95vh] sm:max-h-[85vh] overflow-hidden rounded-t-2xl sm:rounded-2xl border-t sm:border border-purple-400/30 shadow-[0_-8px_40px_-10px_rgba(139,92,246,0.4)]"
+          style={{
+            background: 'linear-gradient(145deg, rgba(30, 10, 40, 0.99) 0%, rgba(15, 5, 25, 1) 50%, rgba(5, 2, 10, 1) 100%)',
+          }}
+          onClick={(e) => e.stopPropagation()}
         >
-          {/* Modal container - slides up on mobile like a bottom sheet */}
-          <motion.div
-            initial={{ opacity: 0, y: isMobile ? '100%' : 60, scale: isMobile ? 1 : 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: isMobile ? '100%' : 40, scale: isMobile ? 1 : 0.97 }}
-            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-            className="relative w-full sm:max-w-xl max-h-[95vh] sm:max-h-[85vh] overflow-hidden rounded-t-2xl sm:rounded-2xl border-t sm:border border-purple-400/30 shadow-[0_-8px_40px_-10px_rgba(139,92,246,0.4)]"
-            style={{
-              background: 'linear-gradient(145deg, rgba(30, 10, 40, 0.99) 0%, rgba(15, 5, 25, 1) 50%, rgba(5, 2, 10, 1) 100%)',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
             {/* Glow border effect - hidden on mobile for performance */}
             <div className="hidden sm:block absolute -inset-[1px] rounded-[inherit] bg-gradient-to-br from-purple-400/40 via-pink-500/20 to-blue-500/30 opacity-50 blur-[1px] pointer-events-none" />
 
@@ -313,9 +302,10 @@ export function PowerSafeTrainingOverlay({ isOpen, onClose, onPinStickyNote }: P
             </div>
           </motion.div>
         </motion.div>
-      )}
     </AnimatePresence>
   );
+
+  return typeof document !== 'undefined' ? createPortal(content, document.body) : null;
 }
 
 /**

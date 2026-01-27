@@ -45,6 +45,17 @@ const STORAGE_KEYS = {
 } as const;
 
 /**
+ * Keys to preserve across logout so "What's New" and similar UX state
+ * only show once per app version, not once per login.
+ * Non-sensitive; only version/preference flags.
+ */
+export const LOCAL_STORAGE_KEYS_PRESERVED_ON_LOGOUT: readonly string[] = [
+  STORAGE_KEYS.LAST_SEEN_VERSION,
+  STORAGE_KEYS.ONBOARDING_COMPLETED_VERSION,
+  STORAGE_KEYS.PROFILE_DISCOVERY_SHOWN,
+] as const;
+
+/**
  * Get the last version the user has seen/acknowledged
  */
 export function getLastSeenVersion(): string | null {

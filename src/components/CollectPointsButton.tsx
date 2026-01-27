@@ -1,6 +1,6 @@
 import { memo, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gift, Check, Sparkles, Loader2 } from 'lucide-react';
+import { Gift, Check, Sparkles, Loader2, Clock } from 'lucide-react';
 import { useAnnouncementReward, isRewardEligible } from '../hooks/useAnnouncementRewards';
 import { cn } from '../lib/utils';
 import { getDeviceCapabilities } from '../lib/mobilePerf';
@@ -28,26 +28,37 @@ function CollectPointsButtonComponent({
   className,
   compact = false,
 }: CollectPointsButtonProps) {
-  const { hasClaimed, isCheckingClaim, isClaiming, claimReward } = useAnnouncementReward(announcementId);
+  const {
+    hasClaimed,
+    isCheckingClaim,
+    isClaiming,
+    claimReward,
+    isWithinClaimWindow,
+    claimWindowMessage,
+    timeUntilClaimOpens,
+  } = useAnnouncementReward(announcementId);
   const [showCelebration, setShowCelebration] = useState(false);
-  
-  // Device capabilities for animation decisions
+
   const caps = useMemo(() => getDeviceCapabilities(), []);
   const enableHeavyAnimations = !caps.prefersReducedMotion && !caps.isMobile && !caps.isLowEnd;
-  
-  // Don't render if not a Safety AI announcement
+
   if (!isRewardEligible(author)) {
     return null;
   }
-  
-  // Handle claim with celebration animation
+
   const handleClaim = () => {
-    if (!hasClaimed && !isClaiming) {
+    if (!hasClaimed && !isClaiming && isWithinClaimWindow) {
       claimReward();
       setShowCelebration(true);
       setTimeout(() => setShowCelebration(false), 2000);
     }
   };
+
+  const countdownText =
+    timeUntilClaimOpens &&
+    (timeUntilClaimOpens.hours > 0
+      ? `${timeUntilClaimOpens.hours}h ${timeUntilClaimOpens.minutes}m`
+      : `${timeUntilClaimOpens.minutes}m`);
   
   // Loading state while checking claim status
   if (isCheckingClaim) {
@@ -97,10 +108,33 @@ function CollectPointsButtonComponent({
     );
   }
   
-  // Unclaimed state - interactive button
+  // Unclaimed but outside claim window (7–9 AM Central) — show disabled state and countdown
+  if (!hasClaimed && !isWithinClaimWindow) {
+    return (
+      <div
+        className={cn(
+          "flex items-center gap-2 px-4 py-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5",
+          compact && "px-3 py-1.5 gap-1.5",
+          className
+        )}
+        title={claimWindowMessage ?? undefined}
+      >
+        <Clock className={cn("w-4 h-4 text-emerald-400/60", compact && "w-3.5 h-3.5")} />
+        <span className={cn("text-xs text-emerald-300/70", compact && "text-[10px]")}>
+          {claimWindowMessage}
+          {countdownText && (
+            <span className="ml-1 font-medium">
+              · Claim opens in {countdownText}
+            </span>
+          )}
+        </span>
+      </div>
+    );
+  }
+
+  // Unclaimed state - interactive button (within 7–9 AM window)
   return (
     <div className={cn("relative", className)}>
-      {/* Celebration particles - only on capable devices */}
       {enableHeavyAnimations && (
         <AnimatePresence>
           {showCelebration && (
@@ -135,7 +169,7 @@ function CollectPointsButtonComponent({
           )}
         </AnimatePresence>
       )}
-      
+
       <motion.button
         onClick={handleClaim}
         disabled={isClaiming}

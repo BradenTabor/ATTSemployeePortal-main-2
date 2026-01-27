@@ -18,7 +18,6 @@ import { ExpandableSection } from "../components/dashboard/ExpandableSection";
 import { DashboardAvatar } from "../components/dashboard/DashboardAvatar";
 import CardListSkeleton from "../components/skeletons/CardListSkeleton";
 import { cn } from "../lib/utils";
-import { TextEffect } from "../components/ui/TextEffect";
 import { getDeviceCapabilities } from "../lib/mobilePerf";
 import { CollectPointsButton } from "../components/CollectPointsButton";
 import { AnnouncementDetailModal } from "../components/AnnouncementDetailModal";
@@ -35,27 +34,44 @@ interface Announcement {
   created_at: string;
 }
 
-// Skeleton for featured announcement - compact design
+// ============================================
+// DESIGN TOKENS
+// ============================================
+const TYPOGRAPHY = {
+  pageTitle: "text-xl sm:text-2xl md:text-3xl font-bold leading-tight tracking-tight",
+  cardTitle: "text-lg md:text-xl font-semibold leading-snug line-clamp-2",
+  cardTitleFeatured: "text-2xl sm:text-3xl md:text-4xl font-black leading-tight tracking-tight",
+  body: "text-sm md:text-base leading-relaxed line-clamp-3",
+  bodyFeatured: "text-sm sm:text-base md:text-lg text-white/70 leading-relaxed font-light",
+  metadata: "text-xs md:text-sm text-white/60 leading-snug",
+  badge: "text-[10px] sm:text-xs font-bold tracking-wide uppercase",
+} as const;
+
+const CARD_BASE =
+  "rounded-2xl border bg-gradient-to-br from-[#04150f] via-[#041812] to-[#03120c] transition-all duration-200";
+const CARD_STYLES = {
+  featured: `${CARD_BASE} border-emerald-400/30 shadow-lg shadow-emerald-900/20 hover:shadow-xl hover:shadow-emerald-900/30 hover:border-emerald-400/50`,
+  feed: `${CARD_BASE} border-emerald-500/20 shadow-md shadow-emerald-900/10 hover:shadow-lg hover:shadow-emerald-900/20 hover:border-emerald-400/40 p-4 md:p-5`,
+} as const;
+
+const FOCUS_RING =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]";
+
 const FeaturedAnnouncementSkeleton = () => (
-  <div 
-    className="rounded-2xl md:rounded-3xl border border-emerald-500/20 relative overflow-hidden"
-    style={{
-      background: 'radial-gradient(ellipse at 30% 20%, rgba(5, 77, 53, 0.4) 0%, rgba(3, 18, 12, 0.95) 70%)',
-    }}
-  >
-    <div className="p-4 sm:p-6 md:p-8 space-y-4">
+  <div className={cn(CARD_STYLES.featured, "overflow-hidden")}>
+    <div className="p-5 sm:p-6 md:p-8 space-y-4">
       <div className="flex items-center gap-3">
-        <div className="h-6 w-20 bg-emerald-500/20 rounded-full animate-pulse" />
-        <div className="h-4 w-24 bg-white/5 rounded animate-pulse" />
+        <div className="h-6 w-24 bg-emerald-500/20 rounded-full animate-pulse" />
+        <div className="h-4 w-28 bg-white/5 rounded animate-pulse" />
       </div>
-      <div className="h-8 w-3/4 bg-white/10 rounded-lg animate-pulse" />
+      <div className="h-8 w-3/4 max-w-md bg-white/10 rounded-lg animate-pulse" />
       <div className="space-y-2">
         <div className="h-4 w-full bg-white/5 rounded animate-pulse" />
         <div className="h-4 w-2/3 bg-white/5 rounded animate-pulse" />
       </div>
-      <div className="pt-4 border-t border-emerald-500/10 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-emerald-500/20 animate-pulse" />
-        <div className="space-y-1.5">
+      <div className="pt-5 border-t border-emerald-500/10 flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-emerald-500/20 animate-pulse shrink-0" />
+        <div className="space-y-1.5 flex-1 min-w-0">
           <div className="h-3 w-24 bg-white/10 rounded animate-pulse" />
           <div className="h-2 w-16 bg-white/5 rounded animate-pulse" />
         </div>
@@ -64,7 +80,6 @@ const FeaturedAnnouncementSkeleton = () => (
   </div>
 );
 
-// Skeleton for loading state
 const AnnouncementsSkeleton = () => (
   <div className="space-y-6">
     <FeaturedAnnouncementSkeleton />
@@ -72,21 +87,21 @@ const AnnouncementsSkeleton = () => (
   </div>
 );
 
-// Empty state component - compact premium design
 const EmptyState = ({ searchTerm, onClearFilter }: { searchTerm: string; onClearFilter: () => void }) => (
-  <motion.div
+  <motion.section
     initial={{ opacity: 0, y: 16 }}
     animate={{ opacity: 1, y: 0 }}
-    className="flex flex-col items-center justify-center py-10 sm:py-12 text-center rounded-2xl border border-emerald-500/20"
-    style={{
-      background: 'linear-gradient(135deg, rgba(4, 21, 15, 0.9) 0%, rgba(2, 13, 9, 0.95) 100%)',
-    }}
+    className={cn(
+      "flex flex-col items-center justify-center py-10 sm:py-12 text-center rounded-2xl border border-emerald-500/20",
+      "bg-gradient-to-br from-[#04150f] via-[#041812] to-[#03120c]"
+    )}
+    aria-label="No announcements"
   >
-    <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-400/25 mb-4">
+    <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-400/25 mb-4" aria-hidden>
       <Megaphone className="w-8 h-8 text-emerald-300/70" />
     </div>
-    <h3 className="text-xl font-bold text-white mb-2">All quiet for now</h3>
-    <p className="text-xs sm:text-sm text-white/60 max-w-sm px-4">
+    <h2 className={cn(TYPOGRAPHY.cardTitle, "text-white mb-2")}>All quiet for now</h2>
+    <p className={cn(TYPOGRAPHY.body, "text-white/60 max-w-sm px-4 line-clamp-none")}>
       {searchTerm
         ? `No announcements match "${searchTerm}". Try adjusting your keywords.`
         : "New broadcasts from leadership will appear here automatically."}
@@ -96,12 +111,15 @@ const EmptyState = ({ searchTerm, onClearFilter }: { searchTerm: string; onClear
         type="button"
         onClick={onClearFilter}
         aria-label="Clear search filter"
-        className="mt-4 px-4 py-2 rounded-xl border border-emerald-500/30 text-emerald-300/80 text-xs font-medium hover:border-emerald-400/50 hover:text-emerald-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+        className={cn(
+          "mt-4 px-4 py-2 rounded-xl border border-emerald-500/30 text-emerald-300/80 text-xs font-medium hover:border-emerald-400/50 hover:text-emerald-200 transition-colors min-h-[44px]",
+          FOCUS_RING
+        )}
       >
         Clear filter
       </button>
     )}
-  </motion.div>
+  </motion.section>
 );
 
 // Featured announcement card - Ultra Premium design
@@ -123,6 +141,13 @@ const FeaturedAnnouncementCard = ({ announcement, formatDate, onClick }: Feature
     { source: 'announcements_page' }
   );
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onClick?.();
+    }
+  };
+
   return (
   <motion.article
     ref={trackingRef}
@@ -133,11 +158,13 @@ const FeaturedAnnouncementCard = ({ announcement, formatDate, onClick }: Feature
     whileHover={enableHeavyAnimations ? { y: -4 } : undefined}
     whileTap={enableHeavyAnimations ? { scale: 0.995 } : undefined}
     onClick={onClick}
-    className="relative overflow-hidden rounded-2xl md:rounded-[28px] border border-emerald-400/30 shadow-[0_8px_40px_-20px_rgba(16,185,129,0.4)] cursor-pointer group/featured"
-    style={{
-      background: 'linear-gradient(145deg, rgba(4, 30, 21, 0.98) 0%, rgba(2, 15, 10, 1) 50%, rgba(1, 8, 5, 1) 100%)',
-      willChange: enableHeavyAnimations ? 'transform' : 'auto',
-    }}
+    onKeyDown={handleKeyDown}
+    tabIndex={0}
+    role="button"
+    data-testid="announcement-item"
+    aria-label={`Read announcement: ${announcement.title}`}
+    className={cn("relative overflow-hidden cursor-pointer group/featured", CARD_STYLES.featured, FOCUS_RING)}
+    style={{ willChange: enableHeavyAnimations ? "transform" : "auto" }}
   >
     {/* Outer glow border effect - static */}
     <div className="absolute -inset-[1px] rounded-[inherit] bg-gradient-to-br from-emerald-400/40 via-emerald-500/20 to-emerald-600/30 opacity-60 blur-[1px] pointer-events-none" />
@@ -387,89 +414,87 @@ const AnnouncementCard = forwardRef<HTMLDivElement, AnnouncementCardProps>(
     { source: 'announcements_page' }
   );
 
-  // Combine refs
   const setRefs = (element: HTMLDivElement | null) => {
-    // Set tracking ref
     trackingRef(element);
-    // Forward the ref
-    if (typeof ref === 'function') {
-      ref(element);
-    } else if (ref) {
-      ref.current = element;
+    if (typeof ref === "function") ref(element);
+    else if (ref) ref.current = element;
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onClick?.();
     }
   };
 
   return (
-  <motion.div
-    ref={setRefs}
-    layout={false}
-    initial={enableAnimations ? { opacity: 0, y: 16 } : { opacity: 0 }}
-    animate={{ opacity: 1, y: 0 }}
-    exit={enableAnimations ? { opacity: 0, y: -16, transition: { duration: 0.15 } } : { opacity: 0 }}
-    transition={{ delay: enableAnimations ? Math.min(index * 0.03, 0.15) : 0, duration: 0.25 }}
-    whileHover={enableAnimations ? { y: -4, transition: { duration: 0.2 } } : undefined}
-    whileTap={enableAnimations ? { scale: 0.98 } : undefined}
-    onClick={onClick}
-    className="group relative overflow-hidden rounded-2xl border border-emerald-500/20 hover:border-emerald-400/40 transition-colors duration-200 cursor-pointer"
-    style={{
-      background: 'linear-gradient(135deg, rgba(4, 21, 15, 0.9) 0%, rgba(2, 13, 9, 0.95) 100%)',
-    }}
-  >
-    {/* Subtle top glow line */}
-    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-    
-    {/* Hover glow effect */}
-    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/8 via-transparent to-emerald-400/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-    
-    <div className="relative p-4 flex flex-col gap-3 h-full">
-      {/* Header with timestamp */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-emerald-300/50 font-medium">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/70" />
-          Update
-        </div>
-        <span className="text-[10px] text-white/40 tabular-nums">
-          {new Date(announcement.created_at).toLocaleTimeString("en-US", {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-        </span>
-      </div>
-
-      {/* Title */}
-      <h3 className="text-base font-bold text-white leading-snug line-clamp-2 group-hover:text-emerald-100 transition-colors">
-        {announcement.title}
-      </h3>
-      
-      {/* Message - more compact */}
-      <p className="text-xs sm:text-sm text-white/60 leading-relaxed line-clamp-2">
-        {announcement.message}
-      </p>
-
-      {/* Footer - compact author section */}
-      <div className="mt-auto flex items-center justify-between pt-3 border-t border-emerald-500/10">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold text-xs shadow-md shadow-emerald-500/20">
-            {(announcement.author || "A").charAt(0).toUpperCase()}
+    <motion.article
+      ref={setRefs}
+      layout={false}
+      initial={enableAnimations ? { opacity: 0, y: 16 } : { opacity: 0 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={enableAnimations ? { opacity: 0, y: -16, transition: { duration: 0.15 } } : { opacity: 0 }}
+      transition={{ delay: enableAnimations ? Math.min(index * 0.03, 0.15) : 0, duration: 0.25 }}
+      whileHover={enableAnimations ? { y: -4, transition: { duration: 0.2 } } : undefined}
+      whileTap={enableAnimations ? { scale: 0.98 } : undefined}
+      onClick={onClick}
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+      role="button"
+      data-testid="announcement-item"
+      aria-label={`Read announcement: ${announcement.title}`}
+      className={cn(
+        "group relative overflow-hidden cursor-pointer flex flex-col",
+        CARD_STYLES.feed,
+        FOCUS_RING
+      )}
+    >
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+      <div className="relative flex flex-col gap-3 h-full min-h-0">
+        <div className="flex items-center justify-between gap-2">
+          <div className={cn("flex items-center gap-2 font-medium", TYPOGRAPHY.badge, "text-emerald-300/50")}>
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/70 shrink-0" />
+            Update
           </div>
-          <div className="min-w-0">
-            <p className="text-xs font-medium text-white/80 truncate">
-              {announcement.author || "ATTS"}
-            </p>
-            <p className="text-[10px] text-emerald-300/40">{formatDate(announcement.created_at)}</p>
+          <span className={cn(TYPOGRAPHY.metadata, "tabular-nums")}>
+            {new Date(announcement.created_at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+          </span>
+        </div>
+
+        <h3 className={cn(TYPOGRAPHY.cardTitle, "text-white group-hover:text-emerald-100 transition-colors")}>
+          {announcement.title}
+        </h3>
+
+        <p className={cn(TYPOGRAPHY.body, "text-white/60 line-clamp-2")}>
+          {announcement.message}
+        </p>
+
+        <div className="mt-auto flex items-center justify-between gap-2 pt-3 border-t border-emerald-500/10">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold text-xs shadow-md shadow-emerald-500/20 shrink-0">
+              {(announcement.author || "A").charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-white/80 truncate">{announcement.author || "ATTS"}</p>
+              <p className={cn(TYPOGRAPHY.metadata, "text-emerald-300/40")}>{formatDate(announcement.created_at)}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {announcement.author === "Safety AI" && (
+              <CollectPointsButton
+                announcementId={announcement.id}
+                author={announcement.author}
+                compact
+              />
+            )}
+            <span className="flex items-center gap-0.5 text-emerald-300/70 text-xs font-semibold sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+              <span className="hidden sm:inline">View</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </span>
           </div>
         </div>
-        <motion.div
-          whileHover={{ x: 2 }}
-          className="flex items-center gap-0.5 text-emerald-300/70 text-xs font-semibold sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
-        >
-          <span className="hidden sm:inline">View</span>
-          <span className="sm:hidden text-[10px]">Read</span>
-          <ChevronRight className="w-3.5 h-3.5" />
-        </motion.div>
       </div>
-    </div>
-  </motion.div>
+    </motion.article>
   );
 });
 
@@ -486,15 +511,18 @@ interface SearchBarProps {
 
 const SearchBar = ({ value, onChange, onClear, visibleCount, totalCount }: SearchBarProps) => (
   <div className="space-y-3">
-    {/* Search input row */}
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
       <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-300/50" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-300/50 pointer-events-none" aria-hidden />
         <input
           value={value}
           onChange={(event) => onChange(event.target.value)}
           placeholder="Search by title, message, or author..."
-          className="w-full rounded-xl bg-[#020d09] border border-emerald-500/20 pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-white/35 focus:border-emerald-400/50 focus:ring-1 focus:ring-emerald-400/30 outline-none transition"
+          aria-label="Search announcements"
+          className={cn(
+            "w-full rounded-xl bg-[#020d09] border border-emerald-500/20 pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-white/35 focus:border-emerald-400/50 focus:ring-1 focus:ring-emerald-400/30 outline-none transition",
+            FOCUS_RING
+          )}
         />
       </div>
       {value && (
@@ -509,14 +537,17 @@ const SearchBar = ({ value, onChange, onClear, visibleCount, totalCount }: Searc
       )}
     </div>
     
-    {/* Stats row - compact */}
     <div className="flex items-center justify-between gap-3 text-[10px] sm:text-xs">
-      <div className="flex items-center gap-1.5 text-emerald-300/50">
-        <Sparkles className="w-3 h-3" />
+      <div
+        className="flex items-center gap-1.5 text-emerald-300/50"
+        aria-live="polite"
+        aria-label={`Showing ${visibleCount} of ${totalCount} announcements`}
+      >
+        <Sparkles className="w-3 h-3 shrink-0" />
         <span><span className="text-white font-medium">{visibleCount}</span> of {totalCount}</span>
       </div>
       <div className="flex items-center gap-1.5 text-white/40">
-        <Signal className="w-3 h-3 text-emerald-400/60" />
+        <Signal className="w-3 h-3 text-emerald-400/60 shrink-0" />
         <span>{visibleCount ? "Live" : "Idle"}</span>
       </div>
     </div>
@@ -702,73 +733,42 @@ export default function Announcements() {
   }, [latestAnnouncement]);
 
   // Hero config - compact with inline badge
-  // Device capabilities for animation decisions
-  const caps = useMemo(() => getDeviceCapabilities(), []);
-  const enableAnimations = !caps.prefersReducedMotion && !caps.isMobile;
 
   return (
     <DashboardLayout title="Announcements">
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pb-4 pt-4 sm:pt-6">
-        {/* Premium Glass Header - Emerald Theme */}
-        <div className="mb-5 md:mb-6">
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="relative"
-          >
-            <div 
-              className="relative overflow-hidden rounded-2xl md:rounded-3xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
-              style={{
-                // Reduce backdrop-filter blur on mobile for better performance
-                backdropFilter: caps.isMobile ? 'blur(8px)' : 'blur(24px) saturate(180%)',
-                WebkitBackdropFilter: caps.isMobile ? 'blur(8px)' : 'blur(24px) saturate(180%)',
-                background: caps.isMobile 
-                  ? 'linear-gradient(145deg, rgba(4, 30, 21, 0.9) 0%, rgba(2, 15, 10, 0.85) 50%, rgba(1, 8, 5, 0.8) 100%)'
-                  : 'linear-gradient(145deg, rgba(4, 30, 21, 0.6) 0%, rgba(2, 15, 10, 0.5) 50%, rgba(1, 8, 5, 0.4) 100%)',
-                boxShadow: caps.isMobile ? '0 8px 32px rgba(0,0,0,0.4)' : 'inset 0 0 15px rgba(125, 225, 180, 0.05), 0 8px 32px rgba(0,0,0,0.4)',
-              }}
-            >
-              <div className="absolute inset-0 opacity-70 pointer-events-none" style={{ background: 'linear-gradient(125deg, rgba(255,255,255,0.15) 0%, transparent 30%, transparent 70%, rgba(255,255,255,0.05) 100%)' }} />
-              <div className="absolute inset-0 opacity-50 pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 50%)' }} />
-              <div className="absolute top-0 left-0 w-24 h-24 rounded-full opacity-30 pointer-events-none" style={{ background: 'radial-gradient(circle at 50% 50%, rgba(125,225,180,0.3) 0%, transparent 70%)', filter: 'blur(15px)' }} />
-              <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-white/[0.15] to-transparent" />
-              <div className="absolute top-0 bottom-0 left-0 w-[1px] bg-gradient-to-b from-transparent via-white/[0.1] to-transparent" />
-              <div className="absolute top-0 bottom-0 right-0 w-[1px] bg-gradient-to-b from-transparent via-black/[0.1] to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-black/[0.15] to-transparent" />
-
-              <div className="relative px-5 py-4 md:px-7 md:py-5">
-                <div className="flex items-center gap-3 mb-3">
-                  <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.2 }} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30">
-                    <Megaphone className="w-3.5 h-3.5 text-emerald-400" />
-                    <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-emerald-200">Company Signals</span>
-                  </motion.div>
-                  {latestAnnouncement && (
-                    <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.3 }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#03150f]/60 border border-emerald-500/20">
-                      <Calendar className="w-3 h-3 text-emerald-400" />
-                      <span className="text-[9px] uppercase tracking-wider font-semibold text-emerald-200/70">Updated {latestDateInfo.date}</span>
-                    </motion.div>
-                  )}
-                </div>
-                <div className="flex items-center gap-4">
-                  <motion.div initial={{ scaleY: 0, opacity: 0 }} animate={{ scaleY: 1, opacity: 1 }} transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }} className="w-1 h-14 md:h-16 rounded-full bg-gradient-to-b from-emerald-400 via-emerald-500 to-emerald-600 origin-top flex-shrink-0" style={{ boxShadow: '0 0 20px rgba(16, 185, 129, 0.4), 0 0 40px rgba(16, 185, 129, 0.2)' }} />
-                  <div className="flex-1 min-w-0">
-                    {enableAnimations ? (
-                      <TextEffect as="h1" preset="blurSlide" per="char" delay={0.15} className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight" segmentWrapperClassName="bg-gradient-to-r from-white via-emerald-100 to-white/90 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(125,225,180,0.3)]">
-                        Announcements
-                      </TextEffect>
-                    ) : (
-                      <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight bg-gradient-to-r from-white via-emerald-100 to-white/90 bg-clip-text text-transparent">Announcements</h1>
-                    )}
-                    <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.7 }} className="mt-1.5 md:mt-2 text-xs sm:text-sm text-emerald-200/50 font-medium leading-relaxed max-w-xl">
-                      Broadcasts from leadership, safety, and operations
-                    </motion.p>
-                  </div>
-                </div>
-              </div>
+      <div
+        className="w-full max-w-7xl mx-auto px-4 sm:px-6 pb-4 pt-4 sm:pt-6 min-w-0 overflow-x-hidden"
+        data-testid="announcements"
+      >
+        {/* Header */}
+        <header className="mb-6 md:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <div>
+              <h1
+                className={cn(
+                  TYPOGRAPHY.pageTitle,
+                  "bg-gradient-to-r from-white via-emerald-100 to-white/90 bg-clip-text text-transparent"
+                )}
+              >
+                Announcements
+              </h1>
+              <p className={cn(TYPOGRAPHY.metadata, "mt-1 max-w-xl")}>
+                Broadcasts from leadership, safety, and operations
+              </p>
             </div>
-          </motion.div>
-        </div>
+            {latestAnnouncement && (
+              <div
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20"
+                aria-label={`Last updated ${latestDateInfo.date}`}
+              >
+                <Calendar className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span className={cn(TYPOGRAPHY.badge, "text-emerald-200/80")}>
+                  Updated {latestDateInfo.date}
+                </span>
+              </div>
+            )}
+          </div>
+        </header>
 
         <div className="w-full space-y-4 md:space-y-6">
           {/* Content sections */}
@@ -834,8 +834,11 @@ export default function Announcements() {
                           type="button"
                           onClick={handleManualRefresh}
                           disabled={refreshing}
-                          aria-label={refreshing ? "Syncing announcements" : "Sync announcements feed"}
-                          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold text-xs transition-all shadow-md shadow-emerald-500/20 border border-emerald-400/30 disabled:opacity-50 group min-h-[40px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+                          aria-label={refreshing ? "Syncing announcements" : "Refresh announcements"}
+                          className={cn(
+                            "inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold text-xs transition-all shadow-md shadow-emerald-500/20 border border-emerald-400/30 disabled:opacity-50 group min-h-[44px] min-w-[44px]",
+                            FOCUS_RING
+                          )}
                         >
                           <RefreshCcw
                             className={cn(
@@ -849,10 +852,10 @@ export default function Announcements() {
                       </div>
                     </div>
 
-                    {/* Announcements grid */}
                     <motion.div
                       layout
-                      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"
+                      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"
+                      data-testid="announcement-list"
                     >
                       <AnimatePresence mode="popLayout">
                         {paginatedAnnouncements.map((announcement, idx) => (
