@@ -62,7 +62,7 @@ jobs:
           npx playwright test
           --project=chromium
           --shard=${{ matrix.shard }}/${{ matrix.shards }}
-          --reporter=blob,outputDir=blob-report
+          --reporter=blob
 
       - name: Upload blob report
         uses: actions/upload-artifact@v4
@@ -100,7 +100,8 @@ jobs:
           merge-multiple: false
 
       - name: Merge Playwright reports
-        run: npx playwright merge-reports blob-reports/* --reporter=html,tests/e2e-report
+        run: |
+          npx playwright merge-reports blob-reports --reporter=html --output=tests/e2e-report
 
       - name: Upload merged HTML report
         uses: actions/upload-artifact@v4
