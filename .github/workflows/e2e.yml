@@ -1,5 +1,10 @@
 # E2E tests with Playwright – sharded across parallel jobs for speed.
 # Merge job produces a single HTML report from all shards.
+#
+# Required GitHub Secrets (Settings > Secrets and variables > Actions):
+#   - VITE_SUPABASE_URL: Your Supabase project URL
+#   - VITE_SUPABASE_ANON_KEY: Your Supabase anonymous key
+#   - SUPABASE_SERVICE_ROLE_KEY: Your Supabase service role key (for test user seeding)
 
 name: E2E
 
@@ -12,6 +17,10 @@ on:
 env:
   CI: true
   PLAYWRIGHT_BASE_URL: http://localhost:5173
+  # Supabase environment variables (from GitHub secrets)
+  VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+  VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+  SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
 jobs:
   e2e:
@@ -39,9 +48,19 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      # Seed test users if service role key is available
+      - name: Seed test users
+        if: env.SUPABASE_SERVICE_ROLE_KEY != ''
+        run: npm run test:setup
+        continue-on-error: true
+
       - name: Run Playwright tests (shard ${{ matrix.shard }}/${{ matrix.shards }})
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: >
           npx playwright test
+          --project=chromium
           --shard=${{ matrix.shard }}/${{ matrix.shards }}
           --reporter=blob,outputDir=blob-report
 
