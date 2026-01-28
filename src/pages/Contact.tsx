@@ -209,7 +209,7 @@ export default function Contact() {
             </div>
           </section>
 
-          <ContactForm userId={user?.id ?? null} />
+          <ContactForm userId={user?.id ?? null} userEmail={user?.email ?? null} />
           <LazyMap />
         </div>
       </div>
@@ -219,9 +219,10 @@ export default function Contact() {
 
 interface ContactFormProps {
   userId: string | null;
+  userEmail: string | null;
 }
 
-function ContactForm({ userId }: ContactFormProps) {
+function ContactForm({ userId, userEmail }: ContactFormProps) {
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -233,6 +234,13 @@ function ContactForm({ userId }: ContactFormProps) {
     "idle"
   );
   const [showConfetti, setShowConfetti] = useState(false);
+
+  // Pre-fill email from user profile
+  useEffect(() => {
+    if (userEmail && !form.email) {
+      setForm((prev) => ({ ...prev, email: userEmail }));
+    }
+  }, [userEmail, form.email]);
 
   const handleChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -327,7 +335,7 @@ function ContactForm({ userId }: ContactFormProps) {
             name="name"
             value={form.name}
             onChange={handleChange}
-            className="w-full rounded-2xl border border-white/15 bg-black/40 px-4 py-3 text-white placeholder:text-white/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
+            className="w-full rounded-2xl border border-white/15 bg-black/40 px-4 py-3 text-base text-white placeholder:text-white/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
             placeholder="Jane Crewlead"
             aria-invalid={errors.name ? "true" : "false"}
             aria-describedby={errors.name ? "name-error" : undefined}
@@ -352,7 +360,7 @@ function ContactForm({ userId }: ContactFormProps) {
             type="email"
             value={form.email}
             onChange={handleChange}
-            className="w-full rounded-2xl border border-white/15 bg-black/40 px-4 py-3 text-white placeholder:text-white/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
+            className="w-full rounded-2xl border border-white/15 bg-black/40 px-4 py-3 text-base text-white placeholder:text-white/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
             placeholder="name@alltts.com"
             aria-invalid={errors.email ? "true" : "false"}
             aria-describedby={errors.email ? "email-error" : undefined}
@@ -377,7 +385,7 @@ function ContactForm({ userId }: ContactFormProps) {
               name="topic"
               value={form.topic}
               onChange={handleChange}
-              className="w-full rounded-2xl border border-white/15 bg-black/40 px-4 py-3 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
+              className="w-full rounded-2xl border border-white/15 bg-black/40 px-4 py-3 text-base text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
             >
               <option value="general">General question</option>
               <option value="hr">Human Resources</option>
@@ -407,7 +415,7 @@ function ContactForm({ userId }: ContactFormProps) {
             value={form.message}
             onChange={handleChange}
             rows={5}
-            className="w-full rounded-2xl border border-white/15 bg-black/40 px-4 py-3 text-white placeholder:text-white/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
+            className="w-full rounded-2xl border border-white/15 bg-black/40 px-4 py-3 text-base text-white placeholder:text-white/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
             placeholder="Share details so we can route your request."
             aria-invalid={errors.message ? "true" : "false"}
             aria-describedby={errors.message ? "message-error" : undefined}

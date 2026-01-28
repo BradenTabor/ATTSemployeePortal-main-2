@@ -67,9 +67,13 @@ export function JsaStepProgress({
                   type="button"
                   onClick={() => onStepClick?.(step.id)}
                   disabled={!onStepClick}
+                  data-active={isCurrent ? "true" : undefined}
+                  aria-current={isCurrent ? "step" : undefined}
+                  aria-label={`Step ${step.id}: ${step.title}${isCompleted || isPast ? ', completed' : ''}${isCurrent ? ', current step' : ''}`}
                   className={cn(
                     "flex flex-col items-center gap-2 group",
-                    onStepClick && "cursor-pointer"
+                    onStepClick && "cursor-pointer",
+                    isCurrent && "active-step"
                   )}
                 >
                   <motion.div

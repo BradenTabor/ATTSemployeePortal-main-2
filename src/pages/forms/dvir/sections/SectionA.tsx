@@ -40,7 +40,7 @@ export function SectionA({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* TRUCK NUMBER as dropdown - Enhanced */}
         <div className="sm:col-span-1">
-          <label className="flex items-center gap-2 text-xs text-gray-300 mb-1">
+          <label htmlFor="truckNumber" className="flex items-center gap-2 text-xs text-gray-300 mb-1">
             <Truck className="w-3.5 h-3.5 text-emerald-400" />
             SELECT TRUCK *
           </label>
@@ -55,7 +55,7 @@ export function SectionA({
             onBlur={() => handleFieldBlur('truckNumber' as keyof DVIRFormState)}
             className={cn(
               "w-full rounded-xl bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900",
-              "border px-4 py-3 text-sm text-white font-medium",
+              "border px-4 py-3 text-base text-white font-medium",
               "focus:outline-none focus:ring-2 transition-all",
               shouldShowError('truckNumber' as keyof DVIRFormState) && getFieldError('truckNumber' as keyof DVIRFormState)
                 ? "border-rose-500/50 focus:ring-rose-400/50"
@@ -64,6 +64,7 @@ export function SectionA({
                   : "border-gray-700 focus:ring-emerald-400/50"
             )}
             title="Select truck number"
+            aria-required="true"
             aria-invalid={shouldShowError('truckNumber' as keyof DVIRFormState) && !!getFieldError('truckNumber' as keyof DVIRFormState)}
             aria-describedby={shouldShowError('truckNumber' as keyof DVIRFormState) && getFieldError('truckNumber' as keyof DVIRFormState) ? "truckNumber-error" : undefined}
           >
@@ -112,13 +113,14 @@ export function SectionA({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* CHIPPER NUMBER as dropdown */}
         <div>
-          <label className="block text-xs text-gray-300 mb-1">
+          <label htmlFor="chipperNumber" className="block text-xs text-gray-300 mb-1">
             CHIPPER NUMBER
           </label>
           <select
+            id="chipperNumber"
             value={form.chipperNumber}
             onChange={(e) => setForm((prev) => ({ ...prev, chipperNumber: e.target.value }))}
-            className="w-full rounded-xl bg-black/70 border border-gray-700 px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all"
+            className="w-full rounded-xl bg-black/70 border border-gray-700 px-3 py-2.5 text-base text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all"
             title="Select chipper number"
           >
             <option value="">Select Chipper Number</option>
@@ -132,13 +134,14 @@ export function SectionA({
 
         {/* TRAILER NUMBER as dropdown */}
         <div>
-          <label className="block text-xs text-gray-300 mb-1">
+          <label htmlFor="trailerNumber" className="block text-xs text-gray-300 mb-1">
             TRAILER NUMBER
           </label>
           <select
+            id="trailerNumber"
             value={form.trailerNumber}
             onChange={(e) => setForm((prev) => ({ ...prev, trailerNumber: e.target.value }))}
-            className="w-full rounded-xl bg-black/70 border border-gray-700 px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all"
+            className="w-full rounded-xl bg-black/70 border border-gray-700 px-3 py-2.5 text-base text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all"
             title="Select trailer number"
           >
             <option value="">Select Trailer Number</option>
@@ -151,26 +154,28 @@ export function SectionA({
         </div>
 
         <div>
-          <label className="block text-xs text-gray-300 mb-1">
+          <label htmlFor="truckGvwr" className="block text-xs text-gray-300 mb-1">
             TRUCK GVWR
           </label>
           <input
+            id="truckGvwr"
             value={form.truckGvwr}
             onChange={(e) => setForm((prev) => ({ ...prev, truckGvwr: e.target.value }))}
             placeholder="e.g., 26,000 lbs"
-            className="w-full rounded-xl bg-black/70 border border-gray-700 px-3 py-2.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all"
+            className="w-full rounded-xl bg-black/70 border border-gray-700 px-3 py-2.5 text-base text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all"
           />
         </div>
 
         <div>
-          <label className="block text-xs text-gray-300 mb-1">
+          <label htmlFor="trailerChipperGvwr" className="block text-xs text-gray-300 mb-1">
             TRAILER / CHIPPER GVWR
           </label>
           <input
+            id="trailerChipperGvwr"
             value={form.trailerChipperGvwr}
             onChange={(e) => setForm((prev) => ({ ...prev, trailerChipperGvwr: e.target.value }))}
             placeholder="e.g., 14,000 lbs"
-            className="w-full rounded-xl bg-black/70 border border-gray-700 px-3 py-2.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all"
+            className="w-full rounded-xl bg-black/70 border border-gray-700 px-3 py-2.5 text-base text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all"
           />
         </div>
       </div>
@@ -223,12 +228,13 @@ export function SectionA({
             onBlur={() => handleFieldBlur('driversName' as keyof DVIRFormState)}
             placeholder="Enter full name"
             className={cn(
-              "w-full rounded-md bg-black/70 border px-3 py-2 text-sm text-white",
+              "w-full rounded-md bg-black/70 border px-3 py-2 text-base text-white",
               "focus:outline-none focus:ring-2 transition-all",
               shouldShowError('driversName' as keyof DVIRFormState) && getFieldError('driversName' as keyof DVIRFormState)
                 ? "border-rose-500/50 focus:ring-rose-400/50"
                 : "border-gray-700 focus:ring-emerald-400/50"
             )}
+            aria-required="true"
             aria-invalid={shouldShowError('driversName' as keyof DVIRFormState) && !!getFieldError('driversName' as keyof DVIRFormState)}
             aria-describedby={shouldShowError('driversName' as keyof DVIRFormState) && getFieldError('driversName' as keyof DVIRFormState) ? "driversName-error" : undefined}
           />
@@ -258,7 +264,7 @@ export function SectionA({
             value={form.driversLicenseNumber}
             onChange={(e) => setForm((prev) => ({ ...prev, driversLicenseNumber: e.target.value }))}
             placeholder="Enter license number"
-            className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-sm text-white"
+            className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-base text-white"
           />
         </div>
 
@@ -271,7 +277,7 @@ export function SectionA({
             value={form.driversLicenseClass}
             onChange={(e) => setForm((prev) => ({ ...prev, driversLicenseClass: e.target.value }))}
             placeholder="e.g., Class A, B, C"
-            className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-sm text-white"
+            className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-base text-white"
           />
         </div>
 
@@ -284,7 +290,7 @@ export function SectionA({
             value={form.driversLicenseExp}
             onChange={(e) => setForm((prev) => ({ ...prev, driversLicenseExp: e.target.value }))}
             placeholder="MM/DD/YYYY"
-            className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-sm text-white"
+            className="w-full rounded-md bg-black/70 border border-gray-700 px-3 py-2 text-base text-white"
           />
         </div>
       </div>

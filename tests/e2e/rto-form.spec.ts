@@ -150,15 +150,36 @@ test.describe('Request Time Off Form', () => {
       await page.click('button[type="submit"]');
 
       // Success: celebration, "Submitted ✓", or success toast. If backend fails in E2E, error toast is acceptable.
+      const heading = page.getByRole('heading', { name: /Request Submitted/i }).first();
+      const button = page.getByRole('button', { name: /Submitted/i }).first();
+      const successAlert = page.getByRole('alert').filter({ hasText: /success|submitted|request|pending approval/i }).first();
+      const successToast = page.locator('[data-sonner-toast][data-type="success"]').first();
+      const toastSuccess = page.locator('.toast-success').first();
+      const successText = page.getByText(/submitted|success|received|pending approval/i).first();
+      const errorAlert = page.getByRole('alert').filter({ hasText: /failed|error/i }).first();
+      
+      // Wait for any success indicator
       await Promise.race([
-        page.getByRole('heading', { name: /Request Submitted/i }).waitFor({ state: 'visible', timeout: 20000 }),
-        page.getByRole('button', { name: /Submitted/i }).waitFor({ state: 'visible', timeout: 20000 }),
-        page.getByRole('alert').filter({ hasText: /success|submitted|request|pending approval/i }).waitFor({ state: 'visible', timeout: 20000 }),
-        page.locator('[data-sonner-toast][data-type="success"], .toast-success').waitFor({ state: 'visible', timeout: 20000 }),
-        page.getByText(/submitted|success|received|pending approval/i).waitFor({ state: 'visible', timeout: 20000 }),
-        page.getByRole('alert').filter({ hasText: /failed|error/i }).waitFor({ state: 'visible', timeout: 20000 }),
-        page.locator('[data-sonner-toast][data-type="error"]').waitFor({ state: 'visible', timeout: 20000 }),
+        heading.waitFor({ state: 'visible', timeout: 20000 }).catch(() => {}),
+        button.waitFor({ state: 'visible', timeout: 20000 }).catch(() => {}),
+        successAlert.waitFor({ state: 'visible', timeout: 20000 }).catch(() => {}),
+        successToast.waitFor({ state: 'visible', timeout: 20000 }).catch(() => {}),
+        toastSuccess.waitFor({ state: 'visible', timeout: 20000 }).catch(() => {}),
+        successText.waitFor({ state: 'visible', timeout: 20000 }).catch(() => {}),
+        errorAlert.waitFor({ state: 'visible', timeout: 20000 }).catch(() => {})
       ]);
+      
+      // Check which one appeared
+      const headingVisible = await heading.isVisible().catch(() => false);
+      const buttonVisible = await button.isVisible().catch(() => false);
+      const alertVisible = await successAlert.isVisible().catch(() => false);
+      const toastVisible = await successToast.isVisible().catch(() => false);
+      const classVisible = await toastSuccess.isVisible().catch(() => false);
+      const textVisible = await successText.isVisible().catch(() => false);
+      const errorVisible = await errorAlert.isVisible().catch(() => false);
+      
+      // Should have some indication (success or error)
+      expect(headingVisible || buttonVisible || alertVisible || toastVisible || classVisible || textVisible || errorVisible).toBe(true);
       // If we got here, submit produced some feedback; success is preferred but E2E may lack RTO backend
     });
 

@@ -77,9 +77,20 @@ test.describe('DVIR Form', () => {
       await expect(submitBtn).toBeEnabled({ timeout: 20000 });
       await submitBtn.click();
 
-      await expect(
-        page.locator('[data-sonner-toast][data-type="success"]').or(page.getByRole('heading', { name: /Submitted Successfully/i })).first()
-      ).toBeVisible({ timeout: 25000 });
+      // Check for success toast or heading
+      const successToast = page.locator('[data-sonner-toast][data-type="success"]').first();
+      const successHeading = page.getByRole('heading', { name: /Submitted Successfully/i }).first();
+      
+      // Wait for either to appear
+      await Promise.race([
+        successToast.waitFor({ state: 'visible', timeout: 25000 }).catch(() => {}),
+        successHeading.waitFor({ state: 'visible', timeout: 25000 }).catch(() => {})
+      ]);
+      
+      const toastVisible = await successToast.isVisible().catch(() => false);
+      const headingVisible = await successHeading.isVisible().catch(() => false);
+      
+      expect(toastVisible || headingVisible).toBe(true);
     });
 
     test('should allow uploading optional photos', async ({ page }) => {
@@ -212,18 +223,28 @@ test.describe('DVIR Form', () => {
       await submitButton.scrollIntoViewIfNeeded();
       await expect(submitButton).toBeEnabled({ timeout: 15000 });
 
-      await Promise.all([
-        submitButton.click(),
+      // Try multiple rapid clicks
+      const clickPromises = [
         submitButton.click().catch(() => {}),
         submitButton.click().catch(() => {}),
-      ]);
+        submitButton.click().catch(() => {}),
+      ];
+      
+      await Promise.all(clickPromises);
 
       await page.waitForTimeout(5000);
-      const successToast = page.locator('[data-sonner-toast][data-type="success"]');
-      const successHeading = page.getByRole('heading', { name: /Submitted Successfully/i });
-      const hasSuccess = await successToast.isVisible().catch(() => false) || await successHeading.isVisible().catch(() => false);
-      const stillSubmitting = await page.getByRole('button', { name: /Submitting/ }).isVisible().catch(() => false);
-      expect(hasSuccess || stillSubmitting).toBe(true);
+      
+      // Check for success indicators
+      const successToast = page.locator('[data-sonner-toast][data-type="success"]').first();
+      const successHeading = page.getByRole('heading', { name: /Submitted Successfully/i }).first();
+      const submittingButton = page.getByRole('button', { name: /Submitting/i }).first();
+      
+      const toastVisible = await successToast.isVisible().catch(() => false);
+      const headingVisible = await successHeading.isVisible().catch(() => false);
+      const stillSubmitting = await submittingButton.isVisible().catch(() => false);
+      
+      // Should have success OR still be submitting (prevented double submission)
+      expect(toastVisible || headingVisible || stillSubmitting).toBe(true);
     });
   });
 

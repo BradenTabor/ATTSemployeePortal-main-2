@@ -103,7 +103,7 @@ export const MileageInput = ({ value, onChange, truckNumber, previousMileage }: 
 
   return (
     <div className="space-y-2">
-      <label className="flex items-center gap-2 text-xs text-gray-300">
+      <label htmlFor="mileage" className="flex items-center gap-2 text-xs text-gray-300">
         <Gauge className="w-3.5 h-3.5 text-emerald-400" />
         ODOMETER READING *
       </label>
@@ -152,6 +152,7 @@ export const MileageInput = ({ value, onChange, truckNumber, previousMileage }: 
               "tabular-nums"
             )}
             aria-label="Vehicle mileage"
+            aria-required="true"
           />
           
           {/* Unit label */}

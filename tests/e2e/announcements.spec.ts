@@ -16,7 +16,15 @@ test.describe('Announcements Display', () => {
     await page.goto('/announcements');
     await page.waitForLoadState('networkidle');
     
-    await expect(page.locator('[data-testid="announcements"], main')).toBeVisible();
+    // Use specific selector to avoid strict mode violation (both main and data-testid exist)
+    const announcementsDiv = page.locator('[data-testid="announcements"]');
+    const mainElement = page.locator('main').first();
+    
+    // Either the specific div or main should be visible
+    const divVisible = await announcementsDiv.isVisible().catch(() => false);
+    const mainVisible = await mainElement.isVisible().catch(() => false);
+    
+    expect(divVisible || mainVisible).toBe(true);
   });
 
   test('should show announcement list', async ({ page }) => {
@@ -189,7 +197,15 @@ test.describe('Announcements - Mobile', () => {
     await page.goto('/announcements');
     await page.waitForLoadState('networkidle');
     
-    await expect(page.locator('[data-testid="announcements"], main')).toBeVisible();
+    // Use specific selector to avoid strict mode violation (both main and data-testid exist)
+    const announcementsDiv = page.locator('[data-testid="announcements"]');
+    const mainElement = page.locator('main').first();
+    
+    // Either the specific div or main should be visible
+    const divVisible = await announcementsDiv.isVisible().catch(() => false);
+    const mainVisible = await mainElement.isVisible().catch(() => false);
+    
+    expect(divVisible || mainVisible).toBe(true);
     
     // Announcements should be readable
     const announcement = page.locator('[data-testid="announcement-item"], article').first();

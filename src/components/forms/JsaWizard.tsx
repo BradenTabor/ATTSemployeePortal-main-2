@@ -264,11 +264,14 @@ export function JsaWizard({
                   onClick={() => goToStep(step.id)}
                   whileTap={{ scale: 0.95 }}
                   data-testid={`jsa-step-${step.id}`}
+                  data-active={isActive ? "true" : undefined}
+                  aria-current={isActive ? "step" : undefined}
+                  aria-label={`Step ${step.id}: ${step.title}${isComplete ? ', completed' : ''}${isActive ? ', current step' : ''}`}
                   className={cn(
                     // Increased min-height for better touch targets (44px minimum)
                     "relative flex-shrink-0 flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl text-xs font-medium transition-all touch-manipulation",
                     isActive
-                      ? "bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 shadow-lg shadow-emerald-900/20"
+                      ? "bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 shadow-lg shadow-emerald-900/20 active-step"
                       : isComplete
                       ? "bg-white/5 text-white/70 hover:bg-white/10 border border-transparent"
                       : "bg-transparent text-white/40 hover:text-white/60 border border-transparent"
