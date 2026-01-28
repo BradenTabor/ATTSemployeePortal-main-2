@@ -109,11 +109,12 @@ describe('DVIRForm Component Integration', () => {
   });
 
   it('should display validation errors when submitting empty form', async () => {
-    // This test would require more setup to actually trigger submission
-    // For now, it demonstrates the pattern for component integration tests
+    // Render and wait for async updates (profile fetch, etc.) to settle to avoid act() warnings
     renderWithProviders(<DVIRForm />);
-    
-    // Form should be visible
+    await waitFor(() => {
+      expect(screen.getByText(/Daily Vehicle Inspection/i)).toBeInTheDocument();
+    });
+    // Form should be visible; validation-on-submit would require userEvent.click(submit) + waitFor
     expect(screen.getByText(/Daily Vehicle Inspection/i)).toBeInTheDocument();
   });
 });
