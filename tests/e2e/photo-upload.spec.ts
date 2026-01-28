@@ -192,8 +192,6 @@ test.describe('Photo Upload Tests', () => {
       await page.goto('/dashboard/forms/dvir');
       await page.waitForSelector('form');
       
-      const fileInput = page.locator('input[type="file"][name*="oil"], [data-testid="oil-dipstick-upload"]');
-      
       const fileInput = page.locator('input[type="file"][name*="oil"], [data-testid="oil-dipstick-upload"], input[type="file"]').first();
       const inputExists = await fileInput.isVisible().catch(() => false);
       
@@ -223,8 +221,6 @@ test.describe('Photo Upload Tests', () => {
       await page.goto('/dashboard/forms/dvir');
       await page.waitForSelector('form');
       
-      const fileInput = page.locator('input[type="file"][name*="oil"], [data-testid="oil-dipstick-upload"]');
-      
       const fileInput = page.locator('input[type="file"][name*="oil"], [data-testid="oil-dipstick-upload"], input[type="file"]').first();
       const inputExists = await fileInput.isVisible().catch(() => false);
       
@@ -252,8 +248,6 @@ test.describe('Photo Upload Tests', () => {
     test('should allow replacing uploaded photo', async ({ page }) => {
       await page.goto('/dashboard/forms/dvir');
       await page.waitForSelector('form');
-      
-      const fileInput = page.locator('input[type="file"][name*="oil"], [data-testid="oil-dipstick-upload"]');
       
       const fileInput = page.locator('input[type="file"][name*="oil"], [data-testid="oil-dipstick-upload"], input[type="file"]').first();
       const inputExists = await fileInput.isVisible().catch(() => false);
