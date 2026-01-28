@@ -115,6 +115,7 @@ export default function DailyJSAForm() {
   searchParamsRef.current = searchParams;
   const lastSyncedStepRef = useRef<number | null>(null);
   const urlSyncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const redirectOnNotFoundRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isInitialMountRef = useRef(true);
 
   // Sync URL when step changes from user interaction (for deep linking).
@@ -613,11 +614,12 @@ export default function DailyJSAForm() {
       setLoadingRecord(true);
       // Remove user_id filter - let RLS policies handle access control
       // This allows delegated users to edit JSAs shared with them
+      // Fetch full record for edit; SELECT * is acceptable here (single record by ID, user-initiated)
       const { data, error: fetchError } = await supabase
         .from("daily_jsa")
-        .select("id, user_id, job_date, call_in_time, call_out_time, work_location, circuit_number, nearest_hospital, nearest_clinic, oc_contact, doc_contact, gf_contact, safety_contact, jobs_performed, ppe, weather_conditions, weather_hazards, hazards_present, traffic_hazards, traffic_setup, spans, supervisor_name, supervisor_signature, created_at, updated_at, status")
+        .select("*")
         .eq("id", id)
-        .maybeSingle();
+        .maybeSingle<DailyJsaRecord>();
 
       if (fetchError) {
         formToast.error("Load Error", "Unable to load JSA record. Please try again.");
@@ -628,6 +630,11 @@ export default function DailyJSAForm() {
       if (!data) {
         formToast.error("Not Found", "JSA not found or you do not have permission to view it.");
         setLoadingRecord(false);
+        if (redirectOnNotFoundRef.current) clearTimeout(redirectOnNotFoundRef.current);
+        redirectOnNotFoundRef.current = setTimeout(() => {
+          redirectOnNotFoundRef.current = null;
+          navigate("/forms-history/jsa");
+        }, 2000);
         return;
       }
 
@@ -649,6 +656,12 @@ export default function DailyJSAForm() {
       setLoadingRecord(false);
     };
     fetchRecord();
+    return () => {
+      if (redirectOnNotFoundRef.current) {
+        clearTimeout(redirectOnNotFoundRef.current);
+        redirectOnNotFoundRef.current = null;
+      }
+    };
   }, [id, user, isAdmin, location.state, navigate]);
 
   // Handlers
