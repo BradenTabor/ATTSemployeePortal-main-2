@@ -120,8 +120,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     fullName: string | null;
     avatarUrl: string | null;
   }
-  
-  const fetchUserProfile = useCallback(async (userId: string, skipCache = false): Promise<UserProfile | null> => {
+
+  /** Result: profile + blocked flag. blocked=true when user has no app_users row (removed/blocked). */
+  type FetchProfileResult = { profile: UserProfile | null; blocked: boolean };
+
+  const fetchUserProfile = useCallback(async (userId: string, skipCache = false): Promise<FetchProfileResult> => {
     try {
       logger.info(`[AuthContext] Fetching profile for user_id: ${userId}`);
       
@@ -130,7 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const cached = getCachedProfile(userId);
         if (cached) {
           logger.info(`[AuthContext] Using cached profile for ${redactUserId(userId)}`, { role: cached.role, fullName: cached.fullName, avatarUrl: cached.avatarUrl != null ? '[present]' : null });
-          return { role: cached.role, fullName: cached.fullName, avatarUrl: cached.avatarUrl };
+          return { profile: { role: cached.role, fullName: cached.fullName, avatarUrl: cached.avatarUrl }, blocked: false };
         }
       }
       
@@ -160,9 +163,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           `[AuthContext] Profile fetch timed out for ${redactUserId(userId)}, using cached values.`
         );
         return {
-          role: lastKnownRoleRef.current ?? 'employee',
-          fullName: lastKnownFullNameRef.current,
-          avatarUrl: lastKnownAvatarUrlRef.current,
+          profile: {
+            role: lastKnownRoleRef.current ?? 'employee',
+            fullName: lastKnownFullNameRef.current,
+            avatarUrl: lastKnownAvatarUrlRef.current,
+          },
+          blocked: false,
         };
       }
 
@@ -176,12 +182,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         logger.error(`[AuthContext] Error fetching user profile for ${redactUserId(userId)}:`, error.message);
-        return null;
+        return { profile: null, blocked: false };
       }
 
       if (!data) {
-        logger.warn(`[AuthContext] No app_users record found for user_id: ${redactUserId(userId)}`);
-        return { role: 'employee', fullName: null, avatarUrl: null };
+        logger.warn(`[AuthContext] No app_users record found for user_id: ${redactUserId(userId)} (user removed or blocked)`);
+        return { profile: null, blocked: true };
       }
 
       const rawRole = data?.role;
@@ -217,13 +223,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCachedProfile(userId, normalizedRole, rawFullName || null, publicAvatarUrl);
 
       return {
-        role: normalizedRole,
-        fullName: rawFullName || null,
-        avatarUrl: publicAvatarUrl,
+        profile: {
+          role: normalizedRole,
+          fullName: rawFullName || null,
+          avatarUrl: publicAvatarUrl,
+        },
+        blocked: false,
       };
     } catch (error) {
       logger.error(`[AuthContext] Failed to fetch user profile for ${redactUserId(userId)}:`, error);
-      return null;
+      return { profile: null, blocked: false };
     }
   }, []);
 
@@ -252,42 +261,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (mounted) {
           if (session) {
-            const profile = await fetchUserProfile(session.user.id);
-            
-            // If fetch failed (returned null), preserve last known values
-            const finalRole: UserRole = profile?.role ?? lastKnownRoleRef.current ?? 'employee';
-            const finalFullName = profile?.fullName ?? lastKnownFullNameRef.current ?? null;
-            const finalAvatarUrl = profile?.avatarUrl ?? lastKnownAvatarUrlRef.current ?? null;
-            
-            if (profile !== null) {
-              // Only update refs when we get valid data from DB
-              lastKnownRoleRef.current = profile.role;
-              lastKnownFullNameRef.current = profile.fullName;
-              lastKnownAvatarUrlRef.current = profile.avatarUrl;
-              logger.info(`[AuthContext] Initial auth: Set profile for ${session.user.id}`, { role: profile.role, fullName: profile.fullName, avatarUrl: profile.avatarUrl });
+            const result = await fetchUserProfile(session.user.id);
+
+            // User has no app_users row (removed/blocked) — sign out and clear access
+            if (result.blocked) {
+              logger.warn(`[AuthContext] User has no app access (removed/blocked), signing out`);
+              lastKnownRoleRef.current = null;
+              lastKnownFullNameRef.current = null;
+              lastKnownAvatarUrlRef.current = null;
+              clearCachedProfile();
+              setCurrentUserId(null);
+              await supabase.auth.signOut();
+              setSessionState(null);
+              setUser(null);
+              setRole(null);
+              setFullName(null);
+              setAvatarUrl(null);
+              setIsAdmin(false);
+              setIsMechanic(false);
+              setHasMechanicAccess(false);
             } else {
-              logger.warn(`[AuthContext] Initial auth: Profile fetch failed, preserving last known values`);
+              const profile = result.profile;
+              // If fetch failed (returned null), preserve last known values
+              const finalRole: UserRole = profile?.role ?? lastKnownRoleRef.current ?? 'employee';
+              const finalFullName = profile?.fullName ?? lastKnownFullNameRef.current ?? null;
+              const finalAvatarUrl = profile?.avatarUrl ?? lastKnownAvatarUrlRef.current ?? null;
+
+              if (profile !== null) {
+                lastKnownRoleRef.current = profile.role;
+                lastKnownFullNameRef.current = profile.fullName;
+                lastKnownAvatarUrlRef.current = profile.avatarUrl;
+                logger.info(`[AuthContext] Initial auth: Set profile for ${session.user.id}`, { role: profile.role, fullName: profile.fullName, avatarUrl: profile.avatarUrl });
+              } else {
+                logger.warn(`[AuthContext] Initial auth: Profile fetch failed, preserving last known values`);
+              }
+
+              const extendedSession: ExtendedSession = {
+                ...session,
+                role: finalRole || undefined,
+              };
+
+              const isAdminUser = finalRole === 'admin';
+              const isMechanicUser = finalRole === 'mechanic';
+              const hasMechanicAccessUser = isAdminUser || isMechanicUser;
+
+              setSessionState(extendedSession);
+              setUser(session.user);
+              setRole(finalRole);
+              setFullName(finalFullName);
+              setAvatarUrl(finalAvatarUrl);
+              setIsAdmin(isAdminUser);
+              setIsMechanic(isMechanicUser);
+              setHasMechanicAccess(hasMechanicAccessUser);
+              setCurrentUserId(session.user.id);
             }
-            
-            const extendedSession: ExtendedSession = {
-              ...session,
-              role: finalRole || undefined,
-            };
-
-            const isAdminUser = finalRole === 'admin';
-            const isMechanicUser = finalRole === 'mechanic';
-            const hasMechanicAccessUser = isAdminUser || isMechanicUser;
-
-            setSessionState(extendedSession);
-            setUser(session.user);
-            setRole(finalRole);
-            setFullName(finalFullName);
-            setAvatarUrl(finalAvatarUrl);
-            setIsAdmin(isAdminUser);
-            setIsMechanic(isMechanicUser);
-            setHasMechanicAccess(hasMechanicAccessUser);
-            // Set telemetry user context for event tracking
-            setCurrentUserId(session.user.id);
           } else {
             // No session - clear everything including last known values and cache
             lastKnownRoleRef.current = null;
@@ -348,47 +375,61 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (mounted) {
         if (session) {
-          // Fetch user profile on auth state change
-          const profile = await fetchUserProfile(session.user.id);
-          
-          // If fetch failed (returned null), preserve last known values
-          const finalRole: UserRole = profile?.role ?? lastKnownRoleRef.current ?? 'employee';
-          const finalFullName = profile?.fullName ?? lastKnownFullNameRef.current ?? null;
-          const finalAvatarUrl = profile?.avatarUrl ?? lastKnownAvatarUrlRef.current ?? null;
-          
-          if (profile !== null) {
-            // Only update refs when we get valid data from DB
-            lastKnownRoleRef.current = profile.role;
-            lastKnownFullNameRef.current = profile.fullName;
-            lastKnownAvatarUrlRef.current = profile.avatarUrl;
-            logger.info(`[AuthContext] Auth state change (${event}): Set profile for ${redactUserId(session.user.id)}`, { role: profile.role, fullName: profile.fullName != null ? '[present]' : null, avatarUrl: profile.avatarUrl != null ? '[present]' : null });
+          const result = await fetchUserProfile(session.user.id);
+
+          if (result.blocked) {
+            logger.warn(`[AuthContext] User has no app access (removed/blocked), signing out`);
+            lastKnownRoleRef.current = null;
+            lastKnownFullNameRef.current = null;
+            lastKnownAvatarUrlRef.current = null;
+            clearCachedProfile();
+            setCurrentUserId(null);
+            await supabase.auth.signOut();
+            setSessionState(null);
+            setUser(null);
+            setRole(null);
+            setFullName(null);
+            setAvatarUrl(null);
+            setIsAdmin(false);
+            setIsMechanic(false);
+            setHasMechanicAccess(false);
           } else {
-            logger.warn(`[AuthContext] Auth state change (${event}): Profile fetch failed, preserving last known values`);
-          }
-          
-          const extendedSession: ExtendedSession = {
-            ...session,
-            role: finalRole || undefined,
-          };
+            const profile = result.profile;
+            const finalRole: UserRole = profile?.role ?? lastKnownRoleRef.current ?? 'employee';
+            const finalFullName = profile?.fullName ?? lastKnownFullNameRef.current ?? null;
+            const finalAvatarUrl = profile?.avatarUrl ?? lastKnownAvatarUrlRef.current ?? null;
 
-          // Compute derived booleans
-          const isAdminUser = finalRole === 'admin';
-          const isMechanicUser = finalRole === 'mechanic';
-          const hasMechanicAccessUser = isAdminUser || isMechanicUser;
+            if (profile !== null) {
+              lastKnownRoleRef.current = profile.role;
+              lastKnownFullNameRef.current = profile.fullName;
+              lastKnownAvatarUrlRef.current = profile.avatarUrl;
+              logger.info(`[AuthContext] Auth state change (${event}): Set profile for ${redactUserId(session.user.id)}`, { role: profile.role, fullName: profile.fullName != null ? '[present]' : null, avatarUrl: profile.avatarUrl != null ? '[present]' : null });
+            } else {
+              logger.warn(`[AuthContext] Auth state change (${event}): Profile fetch failed, preserving last known values`);
+            }
 
-          setSessionState(extendedSession);
-          setUser(session.user);
-          setRole(finalRole);
-          setFullName(finalFullName);
-          setAvatarUrl(finalAvatarUrl);
-          setIsAdmin(isAdminUser);
-          setIsMechanic(isMechanicUser);
-          setHasMechanicAccess(hasMechanicAccessUser);
+            const extendedSession: ExtendedSession = {
+              ...session,
+              role: finalRole || undefined,
+            };
 
-          if (event === 'SIGNED_IN') {
-            logger.info(`[AuthContext] User signed in with role: ${finalRole}`);
-            // Set telemetry user context for event tracking
+            const isAdminUser = finalRole === 'admin';
+            const isMechanicUser = finalRole === 'mechanic';
+            const hasMechanicAccessUser = isAdminUser || isMechanicUser;
+
+            setSessionState(extendedSession);
+            setUser(session.user);
+            setRole(finalRole);
+            setFullName(finalFullName);
+            setAvatarUrl(finalAvatarUrl);
+            setIsAdmin(isAdminUser);
+            setIsMechanic(isMechanicUser);
+            setHasMechanicAccess(hasMechanicAccessUser);
             setCurrentUserId(session.user.id);
+
+            if (event === 'SIGNED_IN') {
+              logger.info(`[AuthContext] User signed in with role: ${finalRole}`);
+            }
           }
         } else {
           // No session - clear everything including last known values and cache
@@ -418,8 +459,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sess.then(({ data: { session } }) => {
         if (session?.user?.id) {
           logger.info('[AuthContext] Window online – refetching profile');
-          fetchUserProfile(session.user.id, true).then((profile) => {
-            if (!mounted || !profile) return;
+          fetchUserProfile(session.user.id, true).then((result) => {
+            if (!mounted) return;
+            if (result.blocked) {
+              supabase.auth.signOut();
+              return;
+            }
+            const profile = result.profile;
+            if (!profile) return;
             lastKnownRoleRef.current = profile.role;
             lastKnownFullNameRef.current = profile.fullName;
             lastKnownAvatarUrlRef.current = profile.avatarUrl;
@@ -520,14 +567,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Refresh avatar URL after upload - skips cache to get fresh data
   const refreshAvatar = useCallback(async () => {
     if (!user?.id) return;
-    
+
     logger.info(`[AuthContext] Refreshing avatar for user: ${user.id}`);
-    const profile = await fetchUserProfile(user.id, true); // Skip cache
-    
+    const result = await fetchUserProfile(user.id, true); // Skip cache
+
+    if (result.blocked) {
+      await supabase.auth.signOut();
+      return;
+    }
+    const profile = result.profile;
     if (profile) {
       setAvatarUrl(profile.avatarUrl);
       lastKnownAvatarUrlRef.current = profile.avatarUrl;
-      // Update cache with new avatar URL
       setCachedProfile(user.id, role, fullName, profile.avatarUrl);
       logger.info(`[AuthContext] Avatar refreshed:`, profile.avatarUrl);
     }

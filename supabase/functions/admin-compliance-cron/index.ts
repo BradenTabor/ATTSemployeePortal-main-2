@@ -40,7 +40,6 @@ const ADMIN_RECIPIENTS = [
   'mike@alltts.com',
   'steve@alltts.com',
   'brandon@alltts.com',
-  'weston@alltts.com',
 ];
 
 // Make.com webhook
