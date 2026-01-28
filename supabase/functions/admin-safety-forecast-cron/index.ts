@@ -60,10 +60,48 @@ const DEFAULT_TIMEZONE = 'America/Chicago';
 const GMAIL_USER = Deno.env.get('GMAIL_USER') || 'allterraintreeservice.po@gmail.com';
 const GMAIL_APP_PASSWORD = Deno.env.get('GMAIL_APP_PASSWORD') || '';
 
-// Admin email recipients
-const ADMIN_RECIPIENTS = (Deno.env.get('ADMIN_EMAIL_RECIPIENTS') || 
+// Fallback recipients (used if DB fetch fails or list empty)
+const FALLBACK_RECIPIENTS = (Deno.env.get('ADMIN_EMAIL_RECIPIENTS') || 
   'bradenleetabor@gmail.com,shane@alltts.com,dusty@alltts.com,mike@alltts.com,steve@alltts.com,brandon@alltts.com'
-).split(',').map(e => e.trim());
+).split(',').map(e => e.trim()).filter(Boolean);
+
+const EMAIL_REGEX = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+function isValidEmail(email: string): boolean {
+  return EMAIL_REGEX.test(email);
+}
+
+async function getEmailRecipients(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  listKey: 'compliance_summary' | 'safety_forecast',
+  fallback: string[]
+): Promise<string[]> {
+  try {
+    const { data, error } = await supabase
+      .from('email_recipient_lists')
+      .select('email')
+      .eq('list_key', listKey);
+
+    if (error) {
+      console.error('[Forecast] Recipients DB error:', error);
+      return fallback;
+    }
+    if (!data || data.length === 0) {
+      console.warn('[Forecast] No recipients for', listKey, ', using fallback');
+      return fallback;
+    }
+    const emails = data.map((r: { email: string }) => r.email).filter(isValidEmail);
+    if (emails.length === 0) {
+      console.error('[Forecast] All fetched emails invalid, using fallback');
+      return fallback;
+    }
+    console.log('[Forecast] Loaded', emails.length, 'recipients for', listKey);
+    return emails;
+  } catch (err) {
+    console.error('[Forecast] Recipients error:', err);
+    return fallback;
+  }
+}
 
 // Weather API
 const OPENWEATHER_API_KEY = Deno.env.get('OPENWEATHERMAP_API_KEY') || '';
@@ -232,15 +270,24 @@ Deno.serve(async (req) => {
     );
 
     let emailResult: { success: boolean; error?: string } = { success: false, error: 'Skipped (dry run)' };
+    let recipients: string[] = [];
     if (!dryRun) {
+      recipients = await getEmailRecipients(supabase, 'safety_forecast', FALLBACK_RECIPIENTS);
       emailResult = await sendGmailEmail(
         subject,
         textBody,
         htmlBody,
         GMAIL_USER,
         GMAIL_APP_PASSWORD,
-        ADMIN_RECIPIENTS
+        recipients
       );
+      const { error: logErr } = await supabase.from('email_send_log').insert({
+        list_key: 'safety_forecast',
+        recipients,
+        success: emailResult.success,
+        error_message: emailResult.error ?? null,
+      });
+      if (logErr) console.error('[Forecast] Failed to write email_send_log:', logErr);
     }
 
     // Send push notifications for elevated risk

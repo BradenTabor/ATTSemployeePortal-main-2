@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, memo, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, Search, Filter, Mail, Calendar, Shield, Sparkles, X, Clock, Award } from "lucide-react";
+import { Users, Search, Filter, Mail, Calendar, Shield, Sparkles, X, Clock, Award, Ban, CheckCircle, Trash2 } from "lucide-react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../contexts/AuthContext";
@@ -16,6 +16,7 @@ import { differenceInMonths } from "date-fns";
 
 interface AppUser {
   id: string;
+  user_id: string;
   email: string;
   full_name: string | null;
   role: string;
@@ -23,6 +24,7 @@ interface AppUser {
   created_at: string;
   hire_date: string | null;
   experience_level: 'apprentice' | 'journeyman' | 'expert' | null;
+  status?: string;
 }
 
 interface TenureInfo {
@@ -380,8 +382,192 @@ const ExperienceEditModal = ({ user, isOpen, onClose, onSave, saving }: Experien
   );
 };
 
+const BlockUserModal = ({
+  user,
+  isOpen,
+  onClose,
+  onConfirm,
+  pending,
+}: {
+  user: AppUser;
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: (reason: string) => Promise<void>;
+  pending: boolean;
+}) => {
+  const [reason, setReason] = useState('');
+
+  if (!isOpen) return null;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        onClick={onClose}
+      >
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          onClick={(e) => e.stopPropagation()}
+          className="relative w-full max-w-md rounded-2xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] p-6 shadow-2xl"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center">
+                <Ban className="w-5 h-5 text-amber-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">Block User</h3>
+                <p className="text-xs text-[#c7b696]">{user.full_name || user.email}</p>
+              </div>
+            </div>
+            <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/5" aria-label="Close">
+              <X className="w-5 h-5 text-[#c7b696]" />
+            </button>
+          </div>
+          <p className="text-sm text-[#c7b696] mb-4">
+            This will prevent the user from logging in. Their data will be preserved and the account can be unblocked later.
+          </p>
+          <div>
+            <label className="block text-xs font-semibold text-[#f4c979]/80 uppercase tracking-wider mb-2">Reason (optional)</label>
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="e.g. Policy violation, Suspicious activity..."
+              rows={3}
+              className="w-full rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-4 py-3 text-sm text-[#fdf4db] placeholder:text-[#8a7a5c] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 resize-none"
+            />
+          </div>
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={onClose}
+              disabled={pending}
+              className="flex-1 px-4 py-3 rounded-xl border border-[#f6dcb2]/25 text-sm font-semibold text-[#fdf4db] hover:bg-white/5 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => onConfirm(reason)}
+              disabled={pending}
+              className="flex-1 px-4 py-3 rounded-xl bg-amber-500/20 border border-amber-500/40 text-sm font-semibold text-amber-200 hover:bg-amber-500/30 disabled:opacity-50"
+            >
+              {pending ? 'Blocking...' : 'Block User'}
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
+const DeleteUserModal = ({
+  user,
+  isOpen,
+  onClose,
+  onConfirm,
+  pending,
+}: {
+  user: AppUser;
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: (reason: string) => Promise<void>;
+  pending: boolean;
+}) => {
+  const [reason, setReason] = useState('');
+  const [confirmEmail, setConfirmEmail] = useState('');
+  const isValid = confirmEmail.trim().toLowerCase() === (user.email || '').toLowerCase() && reason.trim().length > 0;
+
+  if (!isOpen) return null;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        onClick={onClose}
+      >
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          onClick={(e) => e.stopPropagation()}
+          className="relative w-full max-w-md rounded-2xl border border-red-500/30 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] p-6 shadow-2xl"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-red-500/15 border border-red-500/30 flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">Permanently Delete User</h3>
+                <p className="text-xs text-[#c7b696]">{user.full_name || user.email}</p>
+              </div>
+            </div>
+            <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/5" aria-label="Close">
+              <X className="w-5 h-5 text-[#c7b696]" />
+            </button>
+          </div>
+          <p className="text-sm text-[#c7b696] mb-4">
+            This action <strong>cannot be undone</strong>. The user will be removed from Supabase and all app access. Consider blocking instead if the ban might be temporary.
+          </p>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-[#f4c979]/80 uppercase tracking-wider mb-2">Reason (required)</label>
+              <textarea
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder="e.g. GDPR deletion request, Spam account..."
+                rows={2}
+                className="w-full rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-4 py-3 text-sm text-[#fdf4db] placeholder:text-[#8a7a5c] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 resize-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[#f4c979]/80 uppercase tracking-wider mb-2">
+                Type <span className="text-[#c7b696] font-normal">"{user.email}"</span> to confirm
+              </label>
+              <input
+                type="text"
+                value={confirmEmail}
+                onChange={(e) => setConfirmEmail(e.target.value)}
+                placeholder={user.email}
+                className="w-full rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-4 py-3 text-sm text-[#fdf4db] placeholder:text-[#8a7a5c] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60"
+              />
+            </div>
+          </div>
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={onClose}
+              disabled={pending}
+              className="flex-1 px-4 py-3 rounded-xl border border-[#f6dcb2]/25 text-sm font-semibold text-[#fdf4db] hover:bg-white/5 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => onConfirm(reason)}
+              disabled={pending || !isValid}
+              className="flex-1 px-4 py-3 rounded-xl bg-red-500/20 border border-red-500/40 text-sm font-semibold text-red-200 hover:bg-red-500/30 disabled:opacity-50"
+            >
+              {pending ? 'Deleting...' : 'Delete Permanently'}
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
 function AdminUsers() {
-  const { role: currentUserRole, user } = useAuth();
+  const { role: currentUserRole, user: authUser } = useAuth();
   const [users, setUsers] = useState<AppUser[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -401,6 +587,11 @@ function AdminUsers() {
   // Experience editing state
   const [experienceModalUser, setExperienceModalUser] = useState<AppUser | null>(null);
   const [savingExperience, setSavingExperience] = useState(false);
+  const [blockModalUser, setBlockModalUser] = useState<AppUser | null>(null);
+  const [deleteModalUser, setDeleteModalUser] = useState<AppUser | null>(null);
+  const [blockPending, setBlockPending] = useState(false);
+  const [deletePending, setDeletePending] = useState(false);
+  const [unblockPending, setUnblockPending] = useState(false);
 
   const totalPages =
     totalUsers && totalUsers > 0 ? Math.max(1, Math.ceil(totalUsers / pageSize)) : 1;
@@ -418,7 +609,7 @@ function AdminUsers() {
     ): Promise<{ success: boolean; error?: string }> => {
       try {
         // Safety check: prevent self-demotion from admin
-        if (user?.email === targetEmail && newRole !== 'admin') {
+        if (authUser?.email === targetEmail && newRole !== 'admin') {
           return {
             success: false,
             error: 'You cannot demote yourself from admin role',
@@ -441,7 +632,7 @@ function AdminUsers() {
         return { success: false, error: 'Unexpected error occurred' };
       }
     },
-    [user?.email]
+    [authUser?.email]
   );
 
   // Handle role change with save
@@ -509,7 +700,7 @@ function AdminUsers() {
 
       let query = supabase
         .from("user_profiles")
-        .select("id, email, full_name, role, avatar_url, created_at, hire_date, experience_level", { count: "exact" })
+        .select("id, user_id, email, full_name, role, avatar_url, created_at, hire_date, experience_level, status", { count: "exact" })
         .order("created_at", { ascending: false });
 
       if (debouncedSearchQuery.trim()) {
@@ -531,6 +722,7 @@ function AdminUsers() {
 
       type SupabaseUserRow = {
         id: string;
+        user_id: string;
         email: string | null;
         full_name: string | null;
         role: string;
@@ -538,6 +730,7 @@ function AdminUsers() {
         created_at: string;
         hire_date: string | null;
         experience_level: 'apprentice' | 'journeyman' | 'expert' | null;
+        status: string | null;
       };
 
       // Helper to convert avatar storage path to public URL
@@ -549,6 +742,7 @@ function AdminUsers() {
 
       const formattedUsers = (data || []).map((user: SupabaseUserRow) => ({
         id: user.id,
+        user_id: user.user_id,
         email: user.email || "N/A",
         full_name: user.full_name,
         role: user.role,
@@ -556,6 +750,7 @@ function AdminUsers() {
         created_at: user.created_at,
         hire_date: user.hire_date,
         experience_level: user.experience_level,
+        status: user.status ?? 'active',
       }));
 
       setUsers(formattedUsers);
@@ -570,6 +765,80 @@ function AdminUsers() {
       setLoading(false);
     }
   }, [currentPage, pageSize, debouncedSearchQuery, roleFilter]);
+
+  const handleBlock = useCallback(
+    async (u: AppUser, reason: string) => {
+      setBlockPending(true);
+      try {
+        const { data, error } = await supabase.functions.invoke<{ success?: boolean; error?: string; details?: string }>('block-user', {
+          body: { userId: u.user_id, reason: reason.trim() || undefined },
+        });
+        if (error) throw error;
+        if (data?.error) {
+          toast.error(data.details || data.error);
+          return;
+        }
+        toast.success('User blocked');
+        setBlockModalUser(null);
+        await fetchUsers();
+      } catch (err) {
+        logger.error('Block user error:', err);
+        toast.error((err as Error)?.message || 'Failed to block user');
+      } finally {
+        setBlockPending(false);
+      }
+    },
+    [fetchUsers]
+  );
+
+  const handleUnblock = useCallback(
+    async (u: AppUser) => {
+      setUnblockPending(true);
+      try {
+        const { data, error } = await supabase.functions.invoke<{ success?: boolean; error?: string; details?: string }>('unblock-user', {
+          body: { userId: u.user_id },
+        });
+        if (error) throw error;
+        if (data?.error) {
+          toast.error(data.details || data.error);
+          return;
+        }
+        toast.success('User unblocked');
+        await fetchUsers();
+      } catch (err) {
+        logger.error('Unblock user error:', err);
+        toast.error((err as Error)?.message || 'Failed to unblock user');
+      } finally {
+        setUnblockPending(false);
+      }
+    },
+    [fetchUsers]
+  );
+
+  const handleDelete = useCallback(
+    async (u: AppUser, reason: string) => {
+      setDeletePending(true);
+      try {
+        const { data, error } = await supabase.functions.invoke<{ success?: boolean; error?: string; details?: string }>('delete-user', {
+          body: { userId: u.user_id, reason: reason.trim() || undefined },
+        });
+        if (error) throw error;
+        if (data?.error) {
+          toast.error(data.details || data.error);
+          return;
+        }
+        toast.success('User deleted');
+        setDeleteModalUser(null);
+        await fetchUsers();
+      } catch (err) {
+        logger.error('Delete user error:', err);
+        toast.error((err as Error)?.message || 'Failed to delete user');
+      } finally {
+        setDeletePending(false);
+      }
+    },
+    [fetchUsers]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -833,13 +1102,20 @@ function AdminUsers() {
                             </div>
                           </td>
                           <td className="px-6 py-5">
-                            <span
-                              className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${getRoleBadgeClass(
-                                user.role
-                              )}`}
-                            >
-                              {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                            </span>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span
+                                className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${getRoleBadgeClass(
+                                  user.role
+                                )}`}
+                              >
+                                {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                              </span>
+                              {user.status === 'blocked' && (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                  <Ban className="w-3 h-3" /> Blocked
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="px-6 py-5">
                             {(() => {
@@ -918,7 +1194,7 @@ function AdminUsers() {
                                 </button>
                               </div>
                             ) : (
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <button
                                   onClick={() => {
                                     setEditingRoleUserId(user.id);
@@ -934,6 +1210,32 @@ function AdminUsers() {
                                 >
                                   Edit Experience
                                 </button>
+                                {user.user_id !== authUser?.id && (
+                                  <>
+                                    {user.status === 'blocked' ? (
+                                      <button
+                                        onClick={() => handleUnblock(user)}
+                                        disabled={unblockPending}
+                                        className="px-3 py-1.5 rounded-xl border border-emerald-500/30 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/10 transition-colors disabled:opacity-50 flex items-center gap-1"
+                                      >
+                                        <CheckCircle className="w-3 h-3" /> Unblock
+                                      </button>
+                                    ) : (
+                                      <button
+                                        onClick={() => setBlockModalUser(user)}
+                                        className="px-3 py-1.5 rounded-xl border border-amber-500/30 text-xs font-semibold text-amber-300 hover:bg-amber-500/10 transition-colors flex items-center gap-1"
+                                      >
+                                        <Ban className="w-3 h-3" /> Block
+                                      </button>
+                                    )}
+                                    <button
+                                      onClick={() => setDeleteModalUser(user)}
+                                      className="px-3 py-1.5 rounded-xl border border-red-500/30 text-xs font-semibold text-red-300 hover:bg-red-500/10 transition-colors flex items-center gap-1"
+                                    >
+                                      <Trash2 className="w-3 h-3" /> Delete
+                                    </button>
+                                  </>
+                                )}
                               </div>
                             )}
                           </td>
@@ -1010,6 +1312,28 @@ function AdminUsers() {
           onClose={() => setExperienceModalUser(null)}
           onSave={handleExperienceUpdate}
           saving={savingExperience}
+        />
+      )}
+
+      {/* Block User Modal */}
+      {blockModalUser && (
+        <BlockUserModal
+          user={blockModalUser}
+          isOpen={!!blockModalUser}
+          onClose={() => setBlockModalUser(null)}
+          onConfirm={(reason) => handleBlock(blockModalUser, reason)}
+          pending={blockPending}
+        />
+      )}
+
+      {/* Delete User Modal */}
+      {deleteModalUser && (
+        <DeleteUserModal
+          user={deleteModalUser}
+          isOpen={!!deleteModalUser}
+          onClose={() => setDeleteModalUser(null)}
+          onConfirm={(reason) => handleDelete(deleteModalUser, reason)}
+          pending={deletePending}
         />
       )}
     </DashboardLayout>

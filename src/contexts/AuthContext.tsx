@@ -140,10 +140,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const timeoutSentinel = Symbol('profile-timeout');
       let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
-      // Fetch role, full_name, and avatar_url in single query
+      // Fetch role, full_name, avatar_url, status in single query
       const fetchPromise = supabase
         .from('app_users')
-        .select('role, full_name, avatar_url, user_id, email')
+        .select('role, full_name, avatar_url, user_id, email, status')
         .eq('user_id', userId)
         .maybeSingle();
 
@@ -178,6 +178,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         avatar_url: string | null;
         user_id: string; 
         email: string | null;
+        status: string | null;
       }>;
 
       if (error) {
@@ -187,6 +188,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!data) {
         logger.warn(`[AuthContext] No app_users record found for user_id: ${redactUserId(userId)} (user removed or blocked)`);
+        return { profile: null, blocked: true };
+      }
+
+      if (data.status === 'blocked') {
+        logger.warn(`[AuthContext] User ${redactUserId(userId)} is blocked (no app access)`);
         return { profile: null, blocked: true };
       }
 

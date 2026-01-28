@@ -61,6 +61,7 @@ const RiskCalibrationDashboard = lazy(() => import("./pages/admin/RiskCalibratio
 const AdminOperationsHub = lazy(() => import("./pages/admin/AdminOperationsHub"));
 const AdminCertifications = lazy(() => import("./pages/admin/AdminCertifications"));
 const AdminGradeTests = lazy(() => import("./pages/admin/AdminGradeTests"));
+const AdminEmailRecipients = lazy(() => import("./pages/admin/AdminEmailRecipients"));
 
 // Mechanic pages
 const MechanicDashboard = lazy(() => import("./pages/mechanic/MechanicDashboard"));
@@ -550,6 +551,17 @@ function AnimatedRoutes() {
                 <PageWrapper>
                   <ProtectedRoute requiredRole="admin">
                     <AdminUsers />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            <Route
+              path="/admin/email-recipients"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminEmailRecipients />
                   </ProtectedRoute>
                 </PageWrapper>
               }

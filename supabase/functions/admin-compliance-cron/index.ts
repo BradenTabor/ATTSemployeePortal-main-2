@@ -32,8 +32,8 @@ const DEFAULT_CUTOFF = '09:00';
 const GMAIL_USER = Deno.env.get('GMAIL_USER') || 'allterraintreeservice.po@gmail.com';
 const GMAIL_APP_PASSWORD = Deno.env.get('GMAIL_APP_PASSWORD') || '';
 
-// Admin email recipients
-const ADMIN_RECIPIENTS = [
+// Fallback recipients (used if DB fetch fails or list empty)
+const FALLBACK_RECIPIENTS = [
   'bradenleetabor@gmail.com',
   'shane@alltts.com',
   'dusty@alltts.com',
@@ -41,6 +41,11 @@ const ADMIN_RECIPIENTS = [
   'steve@alltts.com',
   'brandon@alltts.com',
 ];
+
+const EMAIL_REGEX = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+function isValidEmail(email: string): boolean {
+  return EMAIL_REGEX.test(email);
+}
 
 // Make.com webhook
 const MAKE_WEBHOOK_URL = Deno.env.get('MAKE_WEBHOOK_URL') || 'https://hook.us2.make.com/hdty3eds1lpldxt2ne4amq1dgdohmvpc';
@@ -245,6 +250,45 @@ function generateEmailContent(
 }
 
 // =============================================================================
+// RECIPIENTS - Fetch from DB with fallback
+// =============================================================================
+
+type SupabaseClient = ReturnType<typeof createClient>;
+
+async function getEmailRecipients(
+  supabase: SupabaseClient,
+  listKey: 'compliance_summary' | 'safety_forecast',
+  fallback: string[]
+): Promise<string[]> {
+  try {
+    const { data, error } = await supabase
+      .from('email_recipient_lists')
+      .select('email')
+      .eq('list_key', listKey);
+
+    if (error) {
+      console.error(`[Recipients] DB error for ${listKey}:`, error.message);
+      console.warn('[Recipients] Using fallback:', fallback.join(', '));
+      return fallback;
+    }
+    if (!data || data.length === 0) {
+      console.warn(`[Recipients] No recipients for ${listKey}, using fallback`);
+      return fallback;
+    }
+    const emails = data.map((r: { email: string }) => r.email).filter(isValidEmail);
+    if (emails.length === 0) {
+      console.error('[Recipients] All fetched emails invalid, using fallback');
+      return fallback;
+    }
+    console.log(`[Recipients] Loaded ${emails.length} for ${listKey}`);
+    return emails;
+  } catch (err) {
+    console.error('[Recipients] Unexpected error:', err);
+    return fallback;
+  }
+}
+
+// =============================================================================
 // EMAIL SENDING - Using Gmail SMTP directly via raw socket
 // =============================================================================
 
@@ -253,6 +297,7 @@ function base64Encode(str: string): string {
 }
 
 async function sendGmailEmail(
+  recipients: string[],
   subject: string,
   textBody: string,
   htmlBody: string
@@ -261,11 +306,13 @@ async function sendGmailEmail(
     console.error('[Email] GMAIL_APP_PASSWORD not configured');
     return { success: false, error: 'GMAIL_APP_PASSWORD not configured' };
   }
+  if (recipients.length === 0) {
+    return { success: false, error: 'No recipients' };
+  }
 
   try {
-    // Create a simple HTML-only email (most reliable)
     const boundary = `boundary_${Date.now()}`;
-    const toList = ADMIN_RECIPIENTS.join(', ');
+    const toList = recipients.join(', ');
     
     // Build the raw email
     const rawEmail = [
@@ -337,7 +384,7 @@ async function sendGmailEmail(
     response = await sendCommand(`MAIL FROM:<${GMAIL_USER}>`);
     console.log('[SMTP] FROM:', response.trim());
 
-    for (const recipient of ADMIN_RECIPIENTS) {
+    for (const recipient of recipients) {
       response = await sendCommand(`RCPT TO:<${recipient}>`);
       console.log('[SMTP] RCPT:', response.trim());
     }
@@ -345,7 +392,6 @@ async function sendGmailEmail(
     response = await sendCommand('DATA');
     console.log('[SMTP] DATA:', response.trim());
 
-    // Send the email data
     await conn.write(encoder.encode(rawEmail + '\r\n.\r\n'));
     response = await readResponse();
     console.log('[SMTP] Sent:', response.trim());
@@ -355,7 +401,7 @@ async function sendGmailEmail(
 
     conn.close();
 
-    console.log('[Email] Successfully sent to', ADMIN_RECIPIENTS.length, 'recipients');
+    console.log('[Email] Successfully sent to', recipients.length, 'recipients');
     return { success: true };
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
@@ -481,9 +527,21 @@ serve(async (req) => {
       nonCompliantUsers
     );
 
+    // Fetch recipients from DB (fallback to defaults)
+    const recipients = await getEmailRecipients(supabase, 'compliance_summary', FALLBACK_RECIPIENTS);
+
     // Send email via Gmail
     console.log('[Compliance] Sending email via Gmail...');
-    const emailResult = await sendGmailEmail(subject, textBody, htmlBody);
+    const emailResult = await sendGmailEmail(recipients, subject, textBody, htmlBody);
+
+    // Log send attempt
+    const { error: logErr } = await supabase.from('email_send_log').insert({
+      list_key: 'compliance_summary',
+      recipients,
+      success: emailResult.success,
+      error_message: emailResult.error ?? null,
+    });
+    if (logErr) console.error('[Compliance] Failed to write email_send_log:', logErr);
 
     // Send to Make.com webhook
     console.log('[Compliance] Sending to webhook...');
@@ -492,7 +550,7 @@ serve(async (req) => {
       dateFor,
       subject,
       emailBody: textBody,
-      recipients: ADMIN_RECIPIENTS,
+      recipients,
       summary: {
         totalRequired: requiredUsers?.length || 0,
         totalCompliant: compliantCount,

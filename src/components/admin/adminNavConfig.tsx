@@ -18,6 +18,7 @@ import {
   BarChart3,
   Activity,
   LayoutGrid,
+  Mail,
 } from "lucide-react";
 import type { AdminNavCardConfig } from "./AdminPremiumScaffold";
 
@@ -100,6 +101,13 @@ export const ADMIN_CORE_NAV_CARDS: AdminNavCardConfig[] = [
     description: "Manage user accounts and permissions.",
     icon: <Users className="w-8 h-8 text-[#f4c979]" />,
     to: "/admin/users",
+    variant: "gold",
+  },
+  {
+    title: "Email Recipients",
+    description: "Manage compliance and safety forecast email lists.",
+    icon: <Mail className="w-8 h-8 text-[#f4c979]" />,
+    to: "/admin/email-recipients",
     variant: "gold",
   },
   {
