@@ -548,8 +548,10 @@ async function fillAndSubmitRTO(page: Page, data: RTORunData): Promise<void> {
     }
   }
 
-  // Submit
-  await page.click('button[type="submit"]');
+  // Submit - use data-testid for reliable selection
+  const submitBtn = page.locator('[data-testid="rto-submit-button"]');
+  await submitBtn.scrollIntoViewIfNeeded();
+  await submitBtn.click();
   await page.waitForTimeout(3000);
 
   // Assert success - RTO has various success indicators
