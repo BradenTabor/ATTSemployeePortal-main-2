@@ -21,11 +21,18 @@ import {
   ShieldAlert,
   XCircle,
   Loader2,
+  Download,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { supabase } from "../../lib/supabaseClient";
 import { logger } from "../../lib/logger";
+import { toast } from "../../lib/toast";
 import { useSafetyIncidents, type SafetyIncident } from "../../hooks/queries/useRiskCalibration";
+import {
+  fetchOsha300Rows,
+  downloadOsha300CsvFromRows,
+  type Osha300Row,
+} from "../../lib/osha300Export";
 
 // ============================================================================
 // TYPES
@@ -35,6 +42,19 @@ interface SafetyIncidentsListProps {
   onLogIncident: () => void;
   className?: string;
 }
+
+// OSHA 300 preview table columns
+const OSHA_300_PREVIEW_COLUMNS: { key: keyof Osha300Row; label: string }[] = [
+  { key: "case_number", label: "Case #" },
+  { key: "employee_name", label: "Employee" },
+  { key: "job_title", label: "Job Title" },
+  { key: "date_of_injury", label: "Date of Injury" },
+  { key: "where_event_occurred", label: "Where Occurred" },
+  { key: "classification", label: "Classification" },
+  { key: "days_away", label: "Days Away" },
+  { key: "days_restricted", label: "Days Restricted" },
+  { key: "reported_at", label: "Reported At" },
+];
 
 // ============================================================================
 // CONSTANTS
@@ -367,6 +387,12 @@ export default function SafetyIncidentsList({ onLogIncident, className }: Safety
   const [selectedIncident, setSelectedIncident] = useState<SafetyIncident | null>(null);
   const [filterSeverity, setFilterSeverity] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [showOsha300Preview, setShowOsha300Preview] = useState(false);
+  const [osha300PreviewData, setOsha300PreviewData] = useState<{
+    rows: Osha300Row[];
+    dateTo: string;
+  } | null>(null);
+  const [osha300PreviewLoading, setOsha300PreviewLoading] = useState(false);
 
   // Fetch incidents for the last 90 days
   // Date range is calculated once per component instance via useState initializer
@@ -441,7 +467,32 @@ export default function SafetyIncidentsList({ onLogIncident, className }: Safety
             </div>
           </div>
           <button
+            type="button"
+            onClick={async () => {
+              setOsha300PreviewLoading(true);
+              setShowOsha300Preview(true);
+              try {
+                const { rows, dateTo } = await fetchOsha300Rows();
+                setOsha300PreviewData({ rows, dateTo });
+              } catch (e) {
+                logger.error("[SafetyIncidentsList] OSHA 300 fetch failed", e);
+                toast.error("Could not load report", (e as Error)?.message ?? "Failed to load OSHA 300 log");
+                setShowOsha300Preview(false);
+              } finally {
+                setOsha300PreviewLoading(false);
+              }
+            }}
+            disabled={osha300PreviewLoading}
+            aria-label="Preview and export OSHA 300 log (CSV)"
+            className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-[10px] font-medium text-white/70 disabled:opacity-50 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-400/50"
+          >
+            <Download className="w-3 h-3" aria-hidden />
+            OSHA 300
+          </button>
+          <button
+            type="button"
             onClick={onLogIncident}
+            aria-label="Log new safety incident"
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-300 text-xs font-medium transition-colors"
           >
             Log <span className="hidden sm:inline">Incident</span>
@@ -585,6 +636,127 @@ export default function SafetyIncidentsList({ onLogIncident, className }: Safety
           />
         )}
       </AnimatePresence>
+
+      {/* OSHA 300 Preview Modal — preview report before downloading or closing */}
+      {showOsha300Preview &&
+        createPortal(
+          <AnimatePresence>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                  setShowOsha300Preview(false);
+                  setOsha300PreviewData(null);
+                }
+              }}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98 }}
+                className="w-full max-w-4xl max-h-[90vh] flex flex-col rounded-xl border border-red-500/30 bg-gradient-to-br from-[#140a0a] via-[#0a0505] to-[#020205] shadow-xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+                  <div>
+                    <h3 className="text-base font-semibold text-white">OSHA 300 Log Preview</h3>
+                    <p className="text-[10px] text-white/50 mt-0.5">
+                      Review the report below, then download CSV or close.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowOsha300Preview(false);
+                      setOsha300PreviewData(null);
+                    }}
+                    className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+                    aria-label="Close preview"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-auto min-h-0 p-4">
+                  {osha300PreviewLoading ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-white/60">
+                      <Loader2 className="w-8 h-8 animate-spin text-red-400 mb-3" />
+                      <span className="text-sm">Loading OSHA 300 log...</span>
+                    </div>
+                  ) : osha300PreviewData?.rows.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-white/50 text-center max-w-sm mx-auto">
+                      <FileText className="w-10 h-10 mb-3 opacity-50" />
+                      <p className="text-sm font-medium text-white/70">No recordable incidents in the last 366 days</p>
+                      <p className="text-xs mt-2">
+                        The OSHA 300 log only includes <strong className="text-white/60">Recordable</strong>, <strong className="text-white/60">Lost Time</strong>, and <strong className="text-white/60">Fatality</strong>. Near-miss and first-aid are not listed here.
+                      </p>
+                      <p className="text-[10px] mt-3 text-white/40">You can still download a CSV with headers.</p>
+                    </div>
+                  ) : osha300PreviewData ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="border-b border-white/10 text-white/60">
+                            {OSHA_300_PREVIEW_COLUMNS.map((col) => (
+                              <th key={col.key} className="py-2 px-2 font-medium whitespace-nowrap">
+                                {col.label}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {osha300PreviewData.rows.map((row, idx) => (
+                            <tr
+                              key={row.case_number ?? idx}
+                              className="border-b border-white/5 hover:bg-white/[0.02]"
+                            >
+                              {OSHA_300_PREVIEW_COLUMNS.map((col) => (
+                                <td key={col.key} className="py-2 px-2 text-white/80 max-w-[180px] truncate" title={String(row[col.key] ?? "")}>
+                                  {row[col.key] != null ? String(row[col.key]) : "—"}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-white/10 bg-black/20">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowOsha300Preview(false);
+                      setOsha300PreviewData(null);
+                    }}
+                    className="px-4 py-2 rounded-lg text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!osha300PreviewData}
+                    onClick={() => {
+                      if (osha300PreviewData) {
+                        downloadOsha300CsvFromRows(osha300PreviewData.rows, osha300PreviewData.dateTo);
+                        toast.success("OSHA 300 log downloaded");
+                      }
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30 transition-colors disabled:opacity-50 disabled:pointer-events-none"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download CSV
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          </AnimatePresence>,
+          document.body
+        )}
     </>
   );
 }

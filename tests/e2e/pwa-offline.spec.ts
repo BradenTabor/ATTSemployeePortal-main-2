@@ -300,22 +300,25 @@ test.describe('Data Persistence', () => {
   test('should show unsaved changes warning on navigation', async ({ page }) => {
     await loginAs(page, 'employee');
     await page.goto('/dashboard/forms/dvir');
-    await page.waitForSelector('form');
-    
-    // Fill data
-    await page.fill('input[name="truckNumber"], [data-testid="truck-number"]', 'UNSAVED-TEST');
-    
-    // Set up dialog handler
+    await page.waitForSelector('[data-testid="dvir-form"], form');
+    const truckSelect = page.locator('select[name="truckNumber"], [data-testid="truck-number"]').first();
+    const truckInput = page.locator('input[name="truckNumber"]').first();
+    if (await truckSelect.isVisible().catch(() => false)) {
+      await truckSelect.selectOption({ index: 1 });
+    } else if (await truckInput.isVisible().catch(() => false)) {
+      await truckInput.fill('UNSAVED-TEST');
+    } else {
+      const driversNameInput = page.locator('input[name="driversName"], #driversName, [data-testid="drivers-name"]').first();
+      if (await driversNameInput.isVisible().catch(() => false)) {
+        await driversNameInput.fill('UNSAVED-TEST-DRIVER');
+      }
+    }
     let dialogShown = false;
     page.on('dialog', async dialog => {
       dialogShown = true;
       await dialog.dismiss();
     });
-    
-    // Try to navigate away
     await page.goto('/dashboard');
-    
-    // Document whether warning was shown
     console.log(`Unsaved changes warning shown: ${dialogShown}`);
   });
 });

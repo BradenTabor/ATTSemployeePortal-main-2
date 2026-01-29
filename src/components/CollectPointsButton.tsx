@@ -11,6 +11,8 @@ interface CollectPointsButtonProps {
   className?: string;
   /** Compact mode for smaller displays */
   compact?: boolean;
+  /** Only the latest signal announcement is claimable; when false, button is hidden (Option A) */
+  isClaimable?: boolean;
 }
 
 /**
@@ -27,6 +29,7 @@ function CollectPointsButtonComponent({
   author,
   className,
   compact = false,
+  isClaimable = true,
 }: CollectPointsButtonProps) {
   const {
     hasClaimed,
@@ -43,6 +46,10 @@ function CollectPointsButtonComponent({
   const enableHeavyAnimations = !caps.prefersReducedMotion && !caps.isMobile && !caps.isLowEnd;
 
   if (!isRewardEligible(author)) {
+    return null;
+  }
+
+  if (!isClaimable) {
     return null;
   }
 

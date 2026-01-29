@@ -1,5 +1,19 @@
 import '@testing-library/jest-dom/vitest';
 
+// IntersectionObserver mock for framer-motion useInView (BlurFade, etc.) in jsdom
+class MockIntersectionObserver implements IntersectionObserver {
+  readonly root: Element | null = null;
+  readonly rootMargin: string = '';
+  readonly thresholds: readonly number[] = [];
+  observe = () => {};
+  unobserve = () => {};
+  disconnect = () => {};
+  takeRecords = (): IntersectionObserverEntry[] => [];
+}
+if (typeof globalThis.IntersectionObserver === 'undefined') {
+  globalThis.IntersectionObserver = MockIntersectionObserver as unknown as typeof IntersectionObserver;
+}
+
 // Minimal canvas 2d mock for DVIR/JSA forms (signature, image preview) in jsdom
 if (typeof HTMLCanvasElement !== 'undefined') {
   /* eslint-disable @typescript-eslint/no-unused-vars -- getContext signature, params unused in mock */

@@ -163,10 +163,11 @@ function FloatingActionButtonComponent({
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.05 }}
                     onClick={scrollToTop}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/10 border border-white/20 shadow-lg backdrop-blur-sm hover:bg-white/15 transition-colors"
+                    aria-label="Scroll back to top"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/10 border border-white/20 shadow-lg backdrop-blur-sm hover:bg-white/15 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
                   >
                     <span className="text-xs font-medium text-white/80">Back to top</span>
-                    <ChevronUp className="w-4 h-4 text-white/60" />
+                    <ChevronUp className="w-4 h-4 text-white/60" aria-hidden />
                   </motion.button>
                 )}
 
@@ -180,15 +181,17 @@ function FloatingActionButtonComponent({
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: (index + 1) * 0.05 }}
                       onClick={() => handleAction(action.path)}
+                      aria-label={`Open ${action.label}`}
                       className={`
                         flex items-center gap-2 px-4 py-2.5 rounded-full
                         ${action.bgColor} border border-white/10
                         shadow-lg backdrop-blur-sm
                         hover:scale-105 transition-transform
+                        focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400
                       `}
                     >
                       <span className={`text-xs font-medium ${action.color}`}>{action.label}</span>
-                      <Icon className={`w-4 h-4 ${action.color}`} />
+                      <Icon className={`w-4 h-4 ${action.color}`} aria-hidden />
                     </motion.button>
                   );
                 })}
@@ -210,6 +213,7 @@ function FloatingActionButtonComponent({
               flex items-center justify-center
               border-2 border-emerald-300/30
               transition-transform
+              focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400
             `}
           >
             {/* Glow effect */}

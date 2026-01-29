@@ -30,6 +30,8 @@ module.exports = {
       reportFilenamePattern: "lighthouse-%%PATHNAME%%-%%DATETIME%%.html",
     },
     assert: {
+      // CI thresholds (current): perf ≥ 0.8, a11y/best-practices/SEO ≥ 0.9.
+      // DOE protocol targets (improvement goal): perf ≥ 0.9, accessibility ≥ 0.95.
       assertions: {
         "categories:performance": ["warn", { minScore: 0.8 }],
         "categories:accessibility": ["warn", { minScore: 0.9 }],

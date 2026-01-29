@@ -297,13 +297,13 @@ function JobCreationFormComponent({
   }, [onCancel]);
 
   const inputClassName = cn(
-    'w-full bg-[#050402]/80 border border-[#f6dcb2]/20 rounded-2xl px-4 py-3',
-    'text-white placeholder:text-white/30',
+    'w-full bg-[#050402]/80 border border-[#f6dcb2]/20 rounded-xl sm:rounded-2xl px-3 py-2.5 sm:px-4 sm:py-3',
+    'text-white placeholder:text-white/30 text-sm',
     'focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60',
     'disabled:opacity-50 disabled:cursor-not-allowed'
   );
 
-  const labelClassName = 'text-xs uppercase tracking-[0.3em] text-[#f3d9a4]/70 flex items-center gap-2 mb-2';
+  const labelClassName = 'text-[11px] sm:text-xs uppercase tracking-[0.25em] sm:tracking-[0.3em] text-[#f3d9a4]/70 flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2';
 
   return (
     <>
@@ -324,21 +324,21 @@ function JobCreationFormComponent({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         onSubmit={handleSubmit}
-        className="space-y-6"
+        className="space-y-4 sm:space-y-6"
       >
       {/* Header */}
-      <div className="flex items-center justify-between pb-4 border-b border-white/10">
-        <h3 className="text-xl font-bold text-white flex items-center gap-2">
-          <Briefcase className="w-5 h-5 text-[#f4c979]" />
-          {isEditing ? 'Edit Job' : 'Create New Job'}
+      <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-white/10">
+        <h3 className="text-lg sm:text-xl font-bold text-white flex items-center gap-1.5 sm:gap-2 min-w-0">
+          <Briefcase className="w-4 h-4 sm:w-5 sm:h-5 text-[#f4c979] flex-shrink-0" />
+          <span className="truncate">{isEditing ? 'Edit Job' : 'Create New Job'}</span>
         </h3>
         <button
           type="button"
           onClick={onCancel}
-          className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/5 transition-colors"
+          className="p-1.5 sm:p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/5 transition-colors flex-shrink-0"
           aria-label="Close job form"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
       </div>
 
@@ -347,7 +347,7 @@ function JobCreationFormComponent({
         <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
-          className="p-4 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 text-sm"
+          className="p-3 sm:p-4 rounded-lg sm:rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 text-xs sm:text-sm"
         >
           {error}
         </motion.div>
@@ -377,17 +377,17 @@ function JobCreationFormComponent({
         <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
-          className="rounded-2xl border border-[#f4c979]/20 bg-[#f4c979]/5 p-4 space-y-4"
+          className="rounded-xl sm:rounded-2xl border border-[#f4c979]/20 bg-[#f4c979]/5 p-3 sm:p-4 space-y-3 sm:space-y-4"
         >
-          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-[#f4c979]/80">
-            <Target className="w-4 h-4" />
+          <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs uppercase tracking-[0.25em] sm:tracking-[0.3em] text-[#f4c979]/80">
+            <Target className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             Quick Assignment (Optional)
           </div>
-          <p className="text-xs text-white/50 -mt-2">
+          <p className="text-[11px] sm:text-xs text-white/50 -mt-1 sm:-mt-2">
             Select a work site and/or crew to auto-fill location and team members.
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {/* Work Site Dropdown */}
             <div>
               <label className={labelClassName}>
@@ -463,7 +463,7 @@ function JobCreationFormComponent({
           <Target className="w-4 h-4 text-[#f4c979]" />
           Tracking Mode *
         </label>
-        <div className="flex flex-col sm:flex-row gap-3 mt-2">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-1.5 sm:mt-2">
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="radio"
@@ -474,7 +474,7 @@ function JobCreationFormComponent({
               disabled={submitting}
               className="w-4 h-4 text-[#f4c979] border-white/20 bg-[#050402]"
             />
-            <span className="text-sm text-white/80">Timeline Progress (Date-based)</span>
+            <span className="text-xs sm:text-sm text-white/80">Timeline Progress (Date-based)</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -486,10 +486,10 @@ function JobCreationFormComponent({
               disabled={submitting}
               className="w-4 h-4 text-[#f4c979] border-white/20 bg-[#050402]"
             />
-            <span className="text-sm text-white/80">Job Progress (Span-based)</span>
+            <span className="text-xs sm:text-sm text-white/80">Job Progress (Span-based)</span>
           </label>
         </div>
-        <p className="text-xs text-white/40 mt-1">
+        <p className="text-[11px] sm:text-xs text-white/40 mt-0.5 sm:mt-1">
           {formData.tracking_type === 'timeline'
             ? 'Progress calculated based on start/end dates'
             : 'Progress tracked by crew span completion updates'}
@@ -502,9 +502,9 @@ function JobCreationFormComponent({
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
           exit={{ opacity: 0, height: 0 }}
-          className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4 space-y-4"
+          className="rounded-xl sm:rounded-2xl border border-blue-500/20 bg-blue-500/5 p-3 sm:p-4 space-y-3 sm:space-y-4"
         >
-          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-blue-300/80">
+          <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs uppercase tracking-[0.25em] sm:tracking-[0.3em] text-blue-300/80">
             <Ruler className="w-4 h-4" />
             Span Progress Configuration
           </div>
@@ -634,7 +634,7 @@ function JobCreationFormComponent({
 
       {/* Date Range */}
       {formData.tracking_type === 'timeline' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <div>
             <label className={labelClassName}>
               <Calendar className="w-4 h-4 text-[#f4c979]" />
@@ -691,8 +691,8 @@ function JobCreationFormComponent({
           onChange={(e) => updateField('job_description', e.target.value)}
           placeholder="Describe the job scope and objectives..."
           disabled={submitting}
-          rows={3}
-          className={cn(inputClassName, 'resize-none')}
+          rows={2}
+          className={cn(inputClassName, 'resize-none min-h-[4.5rem] sm:min-h-0')}
         />
       </div>
 
@@ -707,8 +707,8 @@ function JobCreationFormComponent({
           onChange={(e) => updateField('job_specs', e.target.value)}
           placeholder="Technical specifications, requirements..."
           disabled={submitting}
-          rows={3}
-          className={cn(inputClassName, 'resize-none')}
+          rows={2}
+          className={cn(inputClassName, 'resize-none min-h-[4.5rem] sm:min-h-0')}
         />
       </div>
 
@@ -745,17 +745,17 @@ function JobCreationFormComponent({
           placeholder="Additional notes or comments..."
           disabled={submitting}
           rows={2}
-          className={cn(inputClassName, 'resize-none')}
+          className={cn(inputClassName, 'resize-none min-h-[3.5rem] sm:min-h-0')}
         />
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
+      {/* Actions — stack on mobile for better tap targets */}
+      <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3 pt-3 sm:pt-4 border-t border-white/10">
         <button
           type="button"
           onClick={onCancel}
           disabled={submitting}
-          className="px-5 py-2.5 rounded-xl border border-white/20 text-white/80 text-sm font-semibold hover:bg-white/5 transition-colors disabled:opacity-50"
+          className="w-full sm:w-auto px-4 py-2.5 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl border border-white/20 text-white/80 text-xs sm:text-sm font-semibold hover:bg-white/5 transition-colors disabled:opacity-50 min-h-[44px]"
         >
           Cancel
         </button>
@@ -765,7 +765,7 @@ function JobCreationFormComponent({
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           className={cn(
-            'inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all',
+            'w-full sm:w-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-4 py-2.5 sm:px-6 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all min-h-[44px]',
             'bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#2e1b02]',
             'hover:shadow-[0_0_20px_rgba(244,201,121,0.3)]',
             'disabled:opacity-50 disabled:cursor-not-allowed'

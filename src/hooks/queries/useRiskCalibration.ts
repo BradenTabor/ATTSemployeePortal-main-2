@@ -177,6 +177,11 @@ export interface IncidentFormData {
   incident_time: string | null;  // OSHA 301: Time of incident (HH:MM)
   work_site_id: string | null;
   work_site_name: string | null;
+
+  // Traceability (P0 — job/crew/supervisor for insurer/regulator)
+  job_id: string | null;
+  crew_id: string | null;
+  supervisor_id: string | null;
   
   // Classification (OSHA 300)
   severity: 'near_miss' | 'first_aid' | 'recordable' | 'lost_time' | 'fatality';

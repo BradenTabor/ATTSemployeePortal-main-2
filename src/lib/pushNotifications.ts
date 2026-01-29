@@ -295,6 +295,28 @@ export const NotificationBuilders = {
       entity_id: announcement.id,
     };
   },
+
+  /**
+   * Build a notification for new signup (admin-only).
+   * Used by the notify-admins-new-signup Edge Function when a new user is inserted into app_users.
+   * Frontend does not call this; the Database Webhook on app_users INSERT invokes the Edge Function.
+   *
+   * @param user - New user details (email, full_name)
+   * @returns CreateNotificationRequest targeting admin role
+   */
+  newSignup: (user: { email?: string | null; full_name?: string | null }): CreateNotificationRequest => {
+    const displayName = (user.full_name ?? '').trim() || user.email || 'A new user';
+    return {
+      category: 'admin_notice',
+      severity: 'medium',
+      target_type: 'role',
+      target_ref: 'admin',
+      title: 'New signup',
+      body: `${displayName} just created an account.`,
+      url: '/admin/users',
+      entity_type: 'user',
+    };
+  },
 };
 
 // ============================================

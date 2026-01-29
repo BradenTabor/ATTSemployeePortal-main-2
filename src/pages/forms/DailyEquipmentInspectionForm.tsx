@@ -30,47 +30,29 @@ import {
   createFormTimer,
 } from "../../lib/telemetry";
 import { parseFormError, getErrorToastTitle } from "../../lib/errorHandling";
-import { useFormValidation, type ValidationRule } from "../../hooks/useFormValidation";
 import { validators as formValidators } from "../../lib/formValidation";
-import { validators } from "../../lib/formValidation";
+import { useEquipmentFormValidation } from "../../hooks/equipment";
+import {
+  type ChecklistValue,
+  type ChecklistItem,
+  type EquipmentFormState,
+  type PhotoState,
+  type PhotoTypes,
+  type EquipmentTypeOption,
+  type EquipmentTemplate,
+  type EquipmentFormFieldKey,
+  GENERAL_ITEMS,
+  EQUIPMENT_NUMBERS_BY_TYPE,
+  EQUIPMENT_TYPE_OPTIONS,
+} from "./equipmentConstants";
+import { compressImage } from "../../lib/imageCompression";
 import { ValidationSummary } from "../../components/forms/ValidationSummary";
 import { ValidatedSubmitButton } from "../../components/forms/ValidatedSubmitButton";
 import { scrollToFirstError } from "../../lib/scrollToError";
 import { AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 
-type ChecklistValue = "" | "P" | "F" | "N/A";
-
-interface ChecklistItem {
-  id: string;
-  label: string;
-}
-
-// General checklist items (Section A)
-const GENERAL_ITEMS: ChecklistItem[] = [
-  { id: "engine_oil_level", label: "Engine oil level" },
-  { id: "engine_coolant_level", label: "Engine coolant level" },
-  { id: "hydraulic_fluid_level", label: "Hydraulic fluid level" },
-  { id: "engine_bay_debris", label: "Engine bay clear of debris" },
-  { id: "windshield", label: "Windshield" },
-  { id: "seat", label: "Seat" },
-  { id: "steering_systems", label: "Steering systems" },
-  { id: "lights_signals", label: "Lights & warning signals" },
-  { id: "housekeeping", label: "Housekeeping / cab cleanliness" },
-  { id: "muffler", label: "Muffler" },
-  { id: "seat_belts", label: "Seat belts" },
-  { id: "mirrors_cameras", label: "Mirrors / backup cameras" },
-  { id: "backup_beepers", label: "Backup beepers" },
-  { id: "battery_cables", label: "Battery cables secure" },
-  { id: "wipers", label: "Windshield wipers" },
-  { id: "brakes", label: "Brakes" },
-  { id: "fire_extinguisher", label: "Fire extinguisher" },
-  { id: "first_aid_kit", label: "First aid kit" },
-  { id: "emergency_kill", label: "Emergency kill switch" },
-  { id: "grease", label: "Grease (within last 8 hours)" },
-];
-
-// Specific equipment checklist groups (Section B)
+// Specific equipment checklist groups (Section B) — form-only; general list in equipmentConstants
 const SKY_TRIM_ITEMS: ChecklistItem[] = [
   { id: "tires", label: "Tires" },
   { id: "wheels", label: "Wheels / lugs" },
@@ -103,8 +85,6 @@ const SKID_STEER_ITEMS: ChecklistItem[] = [
   { id: "system_function", label: "System function test" },
 ];
 
-type EquipmentTemplate = "sky_trim" | "geo_boy" | "skid_steer" | "";
-
 function getSpecificItems(template: EquipmentTemplate): ChecklistItem[] {
   switch (template) {
     case "sky_trim":
@@ -117,10 +97,6 @@ function getSpecificItems(template: EquipmentTemplate): ChecklistItem[] {
       return [];
   }
 }
-
-type PhotoTypes = "overview" | "damage" | "attachments" | "hydraulic";
-
-type PhotoState = Partial<Record<PhotoTypes, File>>;
 
 const BUCKET_NAME = "equipment-inspection-photos";
 
@@ -161,29 +137,6 @@ const PHOTO_KEYS_ORDER = PHOTO_DEFINITIONS.map((photo) => photo.key);
 
 const calcPercentage = (current: number, total: number) =>
   total === 0 ? 0 : Math.round((current / total) * 100);
-
-const EQUIPMENT_TYPE_OPTIONS = ["Geo-Boy", "Grapple", "Jarraff", "Mulcher", "Skidsteer"] as const;
-type EquipmentTypeOption = (typeof EQUIPMENT_TYPE_OPTIONS)[number];
-
-const EQUIPMENT_NUMBERS_BY_TYPE: Record<EquipmentTypeOption, string[]> = {
-  "Geo-Boy": ["G-126", "G-140", "G-157"],
-  Grapple: ["211"],
-  Jarraff: ["J-109", "J-119", "J-129", "J-138", "J-152"],
-  Mulcher: ["212", "213"],
-  Skidsteer: ["118", "135", "136"],
-};
-
-// Consolidated form state for persistence (excludes files which can't be serialized)
-export interface EquipmentFormState {
-  submittedBy: string;
-  equipmentType: EquipmentTypeOption | "";
-  equipmentNumber: string;
-  inspectionDate: string;
-  template: EquipmentTemplate;
-  notes: string;
-  generalChecklist: Record<string, ChecklistValue>;
-  specificChecklist: Record<string, ChecklistValue>;
-}
 
 // Get today's date in America/Chicago timezone (matches compliance queries)
 function getTodayChicagoDate(): string {
@@ -233,6 +186,9 @@ export default function DailyEquipmentInspectionForm() {
 
   // Photos state (Files can't be persisted to localStorage)
   const [photos, setPhotos] = useState<PhotoState>({});
+  /** Phase 2: optional batch of extra photos */
+  const [additionalPhotos, setAdditionalPhotos] = useState<File[]>([]);
+  const additionalPhotosInputRef = useRef<HTMLInputElement | null>(null);
   const overviewRef = useRef<HTMLInputElement | null>(null);
   const damageRef = useRef<HTMLInputElement | null>(null);
   const attachmentsRef = useRef<HTMLInputElement | null>(null);
@@ -344,82 +300,21 @@ export default function DailyEquipmentInspectionForm() {
     [form.equipmentType]
   );
 
-  // Validation rules for Equipment form
-  const validationRules = useMemo<ValidationRule<EquipmentFormState & { photos?: PhotoState }>[]>(() => [
-    {
-      field: 'submittedBy',
-      validator: (value: unknown) => validators.required(value) || (typeof value === 'string' && value?.trim() ? null : "Submitted By is required"),
-    },
-    {
-      field: 'equipmentType',
-      validator: (value: unknown) => validators.required(value) || (value ? null : "Select an equipment type"),
-    },
-    {
-      field: 'equipmentNumber',
-      validator: (value: unknown) => {
-        if (!value || !String(value).trim()) {
-          return "Select an equipment number";
-        }
-        const currentAvailable = form.equipmentType ? EQUIPMENT_NUMBERS_BY_TYPE[form.equipmentType] ?? [] : [];
-        if (!currentAvailable.includes(String(value).trim())) {
-          return "Select a valid equipment number for the chosen type";
-        }
-        return null;
-      },
-    },
-    {
-      field: 'generalChecklist',
-      validator: (value: unknown) => {
-        const count = Object.keys((value as Record<string, unknown>) || {}).filter(
-          (key) => (value as Record<string, unknown>)[key] === "P" || (value as Record<string, unknown>)[key] === "F" || (value as Record<string, unknown>)[key] === "N/A"
-        ).length;
-        if (count < GENERAL_ITEMS.length) {
-          return `Complete general checklist: ${count}/${GENERAL_ITEMS.length} items checked`;
-        }
-        return null;
-      },
-    },
-    // Specific checklist is optional - no validation requirement
-  ], [form.equipmentType]);
-
-  // Extended form state for validation (includes non-persisted fields)
-  const extendedFormState = useMemo(() => ({
-    ...form,
-    photos,
-  }), [form, photos]);
-
-  // Form validation hook
+  // Equipment form validation (extracted hook — aligns with DVIR/JSA pattern)
   const {
-    errors,
     getFieldError,
     shouldShowError,
     validateAll,
     markSubmitAttempted,
     handleFieldBlur,
-  } = useFormValidation(extendedFormState, validationRules, {
-    validateOnChange: true,
-    showErrorsAfterSubmitAttempt: false,
-  });
+    additionalErrors,
+    allErrors,
+  } = useEquipmentFormValidation(form, photos);
 
-  // Additional validation for non-form-state fields
-  const additionalErrors = useMemo(() => {
-    const errs: Record<string, string> = {};
-    
-    // Hydraulic photo is required
-    if (!photos.hydraulic) {
-      errs.hydraulicPhoto = "Hydraulic fluid level photo is required before submitting";
-    }
-    
-    // Specific checklist is optional - no validation required
-    // General checklist validation is handled in validationRules above
-    
-    return errs;
-  }, [photos.hydraulic]);
-
-  // Combined errors
-  const allErrors = useMemo(() => {
-    return { ...errors, ...additionalErrors };
-  }, [errors, additionalErrors]);
+  // Re-validate general checklist when it changes so errors clear after "All Pass" / item toggles.
+  useEffect(() => {
+    validateAll();
+  }, [form.generalChecklist, validateAll]);
 
   // Form persistence (auto-save drafts to localStorage)
   const {
@@ -437,20 +332,51 @@ export default function DailyEquipmentInspectionForm() {
     userId: user?.id,
     createInitialState: createInitialEquipmentFormState,
     isEditMode: false,
-    debounceMs: 500,
+    debounceMs: 300,
   });
-  
-  // Show draft recovery modal if draft exists
+
+  // Refs for flush-on-unmount
+  const formRef = useRef(form);
+  const currentStepRef = useRef(currentStep);
+  const completedStepsRef = useRef(completedSteps);
+  formRef.current = form;
+  currentStepRef.current = currentStep;
+  completedStepsRef.current = completedSteps;
+
+  // Auto-restore drafts saved very recently (same session / remount recovery)
+  const didAutoRestoreRef = useRef(false);
   useEffect(() => {
-    if (hasDraft && draftData) {
-      // Small delay to allow page to render first, making modal less intrusive
-      const timer = setTimeout(() => {
-        setShowDraftModal(true);
-      }, 500);
-      return () => clearTimeout(timer);
+    if (!hasDraft || !draftData) return;
+    const savedAtMs = draftData.savedAt ? new Date(draftData.savedAt).getTime() : 0;
+    const draftAgeMs = savedAtMs ? Date.now() - savedAtMs : Infinity;
+    const AUTO_RESTORE_WINDOW_MS = 60_000;
+    if (draftAgeMs < AUTO_RESTORE_WINDOW_MS) {
+      setForm(draftData.form);
+      setCurrentStep(draftData.currentStep);
+      setCompletedSteps(new Set(draftData.completedSteps));
+      clearDraft();
+      didAutoRestoreRef.current = true;
+      setShowDraftModal(false);
+      formToast.success("Draft restored", "Your recent progress has been restored.");
     }
-  }, [hasDraft, draftData]);
-  
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Run once on mount; hasDraft/draftData/clearDraft are stable from initial hook state.
+  }, []);
+
+  // Show draft recovery modal if draft exists; skip if we auto-restored.
+  // Ignore "empty" drafts: step 1, 0 completed, AND form matches initial (opened and left).
+  useEffect(() => {
+    if (!hasDraft || !draftData || didAutoRestoreRef.current) return;
+    const noSteps = draftData.currentStep === 1 && (draftData.completedSteps?.length ?? 0) === 0;
+    const formMatchesInitial =
+      JSON.stringify(draftData.form) === JSON.stringify(createInitialEquipmentFormState());
+    if (noSteps && formMatchesInitial) {
+      clearDraft();
+      return;
+    }
+    const timer = setTimeout(() => setShowDraftModal(true), 500);
+    return () => clearTimeout(timer);
+  }, [hasDraft, draftData, clearDraft]);
+
   // Handle draft restoration
   const handleRestoreDraft = useCallback(() => {
     if (draftData) {
@@ -474,7 +400,16 @@ export default function DailyEquipmentInspectionForm() {
       saveDraft(form, currentStep, completedSteps);
     }
   }, [form, currentStep, completedSteps, user?.id, saveDraft]);
-  
+
+  // Flush draft on unmount
+  useEffect(() => {
+    return () => {
+      if (user?.id) {
+        flushPendingSave(formRef.current, currentStepRef.current, completedStepsRef.current);
+      }
+    };
+  }, [user?.id, flushPendingSave]);
+
   // Warn before closing browser/tab with unsaved changes (beforeunload)
   // Also warn if photos are selected (photos can't be persisted to localStorage)
   // Save draft immediately if there are unsaved changes
@@ -592,8 +527,9 @@ export default function DailyEquipmentInspectionForm() {
   }
 
   const uploadPhoto = useCallback(
-    async (file: File, kind: PhotoTypes) => {
-      const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    async (file: File, kind: PhotoTypes | string) => {
+      const compressed = await compressImage(file);
+      const extension = compressed.name.split(".").pop()?.toLowerCase() || "jpg";
       const safeEquipment = form.equipmentNumber.trim().replace(/\s+/g, "-").toLowerCase() || "equipment";
       const safeUserBucket = user?.id ?? "anonymous";
       const safeDate = form.inspectionDate || getTodayChicagoDate();
@@ -605,10 +541,10 @@ export default function DailyEquipmentInspectionForm() {
 
       const { error } = await supabase.storage
         .from(BUCKET_NAME)
-        .upload(objectPath, file, {
+        .upload(objectPath, compressed, {
           cacheControl: "3600",
           upsert: false,
-          contentType: file.type || "image/jpeg",
+          contentType: compressed.type || "image/jpeg",
         });
 
       if (error) {
@@ -649,32 +585,23 @@ export default function DailyEquipmentInspectionForm() {
     // Mark submit as attempted to show all errors
     markSubmitAttempted();
 
-    // Validate all fields
-    const isFormValid = validateAll();
+    // Validate all fields; use returned errors for scroll/toast (state may not have updated yet)
+    const { isValid: isFormValid, errors: validationErrors } = validateAll();
     const hasAdditionalErrors = Object.keys(additionalErrors).length > 0;
+    const freshErrors = { ...(validationErrors as Record<string, string>), ...additionalErrors };
 
     if (!isFormValid || hasAdditionalErrors) {
-      // Track validation errors
-      Object.keys(allErrors).forEach(field => {
-        if ((allErrors as Record<string, string>)[field]) {
-          trackFormSubmitError({ 
-            form_type: 'equipment', 
-            error_code: 'VALIDATION_FAILED', 
-            field_name: field 
-          });
+      Object.keys(freshErrors).forEach((field) => {
+        if (freshErrors[field]) {
+          trackFormSubmitError({ form_type: 'equipment', error_code: 'VALIDATION_FAILED', field_name: field });
         }
       });
-
-      // Show validation summary and scroll to first error
-      scrollToFirstError(allErrors, { offset: 120 });
-      
-      // Show error toast with summary
-      const errorCount = Object.keys(allErrors).filter(k => (allErrors as Record<string, string>)[k]).length;
+      scrollToFirstError(freshErrors, { offset: 120 });
+      const errorCount = Object.keys(freshErrors).filter((k) => freshErrors[k]).length;
       formToast.error(
-        "Validation Error",
+        'Validation Error',
         `Please fix ${errorCount} ${errorCount === 1 ? 'issue' : 'issues'} before submitting.`,
       );
-      
       submittingRef.current = false;
       setSubmitting(false);
       return;
@@ -688,6 +615,7 @@ export default function DailyEquipmentInspectionForm() {
 
     const uploadedPaths: string[] = [];
     const photoPathMap: Partial<Record<PhotoTypes, string>> = {};
+    const additionalPaths: string[] = [];
 
     try {
       for (const key of PHOTO_KEYS_ORDER) {
@@ -695,6 +623,13 @@ export default function DailyEquipmentInspectionForm() {
         if (!file) continue;
         const objectPath = await uploadPhoto(file, key);
         photoPathMap[key] = objectPath;
+        uploadedPaths.push(objectPath);
+      }
+
+      for (let i = 0; i < additionalPhotos.length; i++) {
+        const file = additionalPhotos[i];
+        const objectPath = await uploadPhoto(file, `additional-${i}`);
+        additionalPaths.push(objectPath);
         uploadedPaths.push(objectPath);
       }
 
@@ -712,6 +647,7 @@ export default function DailyEquipmentInspectionForm() {
         damage_photo_path: photoPathMap.damage ?? null,
         attachments_photo_path: photoPathMap.attachments ?? null,
         hydraulic_photo_path: photoPathMap.hydraulic ?? null,
+        additional_photo_paths: additionalPaths.length > 0 ? additionalPaths : null,
       };
 
       const { error: insertError } = await supabase
@@ -756,6 +692,7 @@ export default function DailyEquipmentInspectionForm() {
         submittedBy: defaultSubmitterName,
       });
       setPhotos({});
+      setAdditionalPhotos([]);
       setCurrentStep(1);
       setCompletedSteps(new Set());
     } catch (err: unknown) {
@@ -1010,24 +947,25 @@ export default function DailyEquipmentInspectionForm() {
                 <input
                   id="submittedBy"
                   name="submittedBy"
+                  data-testid="submitted-by-input"
                   value={form.submittedBy}
                   onChange={(e) => {
                     setForm(prev => ({ ...prev, submittedBy: e.target.value }));
-                    handleFieldBlur('submittedBy' as unknown as keyof typeof extendedFormState);
+                    handleFieldBlur('submittedBy' as EquipmentFormFieldKey);
                   }}
-                  onBlur={() => handleFieldBlur('submittedBy' as unknown as keyof typeof extendedFormState)}
+                  onBlur={() => handleFieldBlur('submittedBy' as EquipmentFormFieldKey)}
                   placeholder="Operator name"
                   className={cn(
                     "w-full rounded-xl border bg-white/[0.03] px-3 py-2 text-sm text-white placeholder:text-white/40",
                     "focus:outline-none focus:ring-2 transition-all",
-                    shouldShowError('submittedBy' as unknown as keyof typeof extendedFormState) && getFieldError('submittedBy' as unknown as keyof typeof extendedFormState)
+                    shouldShowError('submittedBy' as EquipmentFormFieldKey) && getFieldError('submittedBy' as EquipmentFormFieldKey)
                       ? "border-rose-500/50 focus:ring-rose-400/50"
                       : "border-white/10 focus:ring-emerald-400/60"
                   )}
-                  aria-invalid={shouldShowError('submittedBy' as unknown as keyof typeof extendedFormState) && !!getFieldError('submittedBy' as unknown as keyof typeof extendedFormState)}
-                  aria-describedby={shouldShowError('submittedBy' as unknown as keyof typeof extendedFormState) && getFieldError('submittedBy' as unknown as keyof typeof extendedFormState) ? "submittedBy-error" : undefined}
+                  aria-invalid={shouldShowError('submittedBy' as EquipmentFormFieldKey) && !!getFieldError('submittedBy' as EquipmentFormFieldKey)}
+                  aria-describedby={shouldShowError('submittedBy' as EquipmentFormFieldKey) && getFieldError('submittedBy' as EquipmentFormFieldKey) ? "submittedBy-error" : undefined}
                 />
-                {shouldShowError('submittedBy' as unknown as keyof typeof extendedFormState) && getFieldError('submittedBy' as unknown as keyof typeof extendedFormState) && (
+                {shouldShowError('submittedBy' as EquipmentFormFieldKey) && getFieldError('submittedBy' as EquipmentFormFieldKey) && (
                   <motion.p 
                     id="submittedBy-error"
                     role="alert"
@@ -1036,7 +974,7 @@ export default function DailyEquipmentInspectionForm() {
                     className="text-xs text-rose-400 mt-1 flex items-center gap-1"
                   >
                     <AlertTriangle className="w-3 h-3" />
-                    {getFieldError('submittedBy' as unknown as keyof typeof extendedFormState)}
+                    {getFieldError('submittedBy' as EquipmentFormFieldKey)}
                   </motion.p>
                 )}
               </div>
@@ -1048,22 +986,23 @@ export default function DailyEquipmentInspectionForm() {
                 <select
                   id="equipmentType"
                   name="equipmentType"
+                  data-testid="equipment-type-select"
                   value={form.equipmentType}
                   onChange={(e) => {
                     handleEquipmentTypeSelect(e.target.value as EquipmentTypeOption | "");
-                    handleFieldBlur('equipmentType' as unknown as keyof typeof extendedFormState);
+                    handleFieldBlur('equipmentType' as EquipmentFormFieldKey);
                   }}
-                  onBlur={() => handleFieldBlur('equipmentType' as unknown as keyof typeof extendedFormState)}
+                  onBlur={() => handleFieldBlur('equipmentType' as EquipmentFormFieldKey)}
                   aria-label="Equipment type"
                   className={cn(
                     "w-full rounded-xl border bg-white/[0.03] px-2 py-2 text-sm text-white",
                     "focus:outline-none focus:ring-2 transition-all",
-                    shouldShowError('equipmentType' as unknown as keyof typeof extendedFormState) && getFieldError('equipmentType' as unknown as keyof typeof extendedFormState)
+                    shouldShowError('equipmentType' as EquipmentFormFieldKey) && getFieldError('equipmentType' as EquipmentFormFieldKey)
                       ? "border-rose-500/50 focus:ring-rose-400/50"
                       : "border-white/10 focus:ring-emerald-400/60"
                   )}
-                  aria-invalid={shouldShowError('equipmentType' as unknown as keyof typeof extendedFormState) && !!getFieldError('equipmentType' as unknown as keyof typeof extendedFormState)}
-                  aria-describedby={shouldShowError('equipmentType' as unknown as keyof typeof extendedFormState) && getFieldError('equipmentType' as unknown as keyof typeof extendedFormState) ? "equipmentType-error" : undefined}
+                  aria-invalid={shouldShowError('equipmentType' as EquipmentFormFieldKey) && !!getFieldError('equipmentType' as EquipmentFormFieldKey)}
+                  aria-describedby={shouldShowError('equipmentType' as EquipmentFormFieldKey) && getFieldError('equipmentType' as EquipmentFormFieldKey) ? "equipmentType-error" : undefined}
                 >
                   <option value="">Select type</option>
                   {EQUIPMENT_TYPE_OPTIONS.map((option) => (
@@ -1072,16 +1011,16 @@ export default function DailyEquipmentInspectionForm() {
                     </option>
                   ))}
                 </select>
-                {shouldShowError('equipmentType' as unknown as keyof typeof extendedFormState) && getFieldError('equipmentType' as unknown as keyof typeof extendedFormState) && (
+                {shouldShowError('equipmentType' as EquipmentFormFieldKey) && getFieldError('equipmentType' as EquipmentFormFieldKey) && (
                   <motion.p 
                     id="equipmentType-error"
                     role="alert"
+                    className="error-message text-xs text-rose-400 mt-1 flex items-center gap-1"
                     initial={{ opacity: 0, y: -4 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="text-xs text-rose-400 mt-1 flex items-center gap-1"
                   >
-                    <AlertTriangle className="w-3 h-3" />
-                    {getFieldError('equipmentType' as unknown as keyof typeof extendedFormState)}
+                    <AlertTriangle className="w-3 h-3" aria-hidden="true" />
+                    {getFieldError('equipmentType' as EquipmentFormFieldKey)}
                   </motion.p>
                 )}
               </div>
@@ -1093,30 +1032,31 @@ export default function DailyEquipmentInspectionForm() {
                 <select
                   id="equipmentNumber"
                   name="equipmentNumber"
+                  data-testid="equipment-number-select"
                   value={form.equipmentNumber}
                   onChange={(e) => {
                     setForm(prev => ({ ...prev, equipmentNumber: e.target.value }));
-                    handleFieldBlur('equipmentNumber' as unknown as keyof typeof extendedFormState);
+                    handleFieldBlur('equipmentNumber' as EquipmentFormFieldKey);
                   }}
-                  onBlur={() => handleFieldBlur('equipmentNumber' as unknown as keyof typeof extendedFormState)}
+                  onBlur={() => handleFieldBlur('equipmentNumber' as EquipmentFormFieldKey)}
                   disabled={!form.equipmentType}
                   aria-label="Equipment number"
                   className={cn(
                     "w-full rounded-xl border bg-white/[0.03] px-2 py-2 text-sm text-white",
                     "focus:outline-none focus:ring-2 transition-all disabled:opacity-40",
-                    shouldShowError('equipmentNumber' as unknown as keyof typeof extendedFormState) && getFieldError('equipmentNumber' as unknown as keyof typeof extendedFormState)
+                    shouldShowError('equipmentNumber' as EquipmentFormFieldKey) && getFieldError('equipmentNumber' as EquipmentFormFieldKey)
                       ? "border-rose-500/50 focus:ring-rose-400/50"
                       : "border-white/10 focus:ring-emerald-400/60"
                   )}
-                  aria-invalid={shouldShowError('equipmentNumber' as unknown as keyof typeof extendedFormState) && !!getFieldError('equipmentNumber' as unknown as keyof typeof extendedFormState)}
-                  aria-describedby={shouldShowError('equipmentNumber' as unknown as keyof typeof extendedFormState) && getFieldError('equipmentNumber' as unknown as keyof typeof extendedFormState) ? "equipmentNumber-error" : undefined}
+                  aria-invalid={shouldShowError('equipmentNumber' as EquipmentFormFieldKey) && !!getFieldError('equipmentNumber' as EquipmentFormFieldKey)}
+                  aria-describedby={shouldShowError('equipmentNumber' as EquipmentFormFieldKey) && getFieldError('equipmentNumber' as EquipmentFormFieldKey) ? "equipmentNumber-error" : undefined}
                 >
                   <option value="">{form.equipmentType ? "Select #" : "Type first"}</option>
                   {availableEquipmentNumbers.map((number) => (
                     <option key={number} value={number}>{number}</option>
                   ))}
                 </select>
-                {shouldShowError('equipmentNumber' as unknown as keyof typeof extendedFormState) && getFieldError('equipmentNumber' as unknown as keyof typeof extendedFormState) && (
+                {shouldShowError('equipmentNumber' as EquipmentFormFieldKey) && getFieldError('equipmentNumber' as EquipmentFormFieldKey) && (
                   <motion.p 
                     id="equipmentNumber-error"
                     role="alert"
@@ -1125,7 +1065,7 @@ export default function DailyEquipmentInspectionForm() {
                     className="text-xs text-rose-400 mt-1 flex items-center gap-1"
                   >
                     <AlertTriangle className="w-3 h-3" />
-                    {getFieldError('equipmentNumber' as unknown as keyof typeof extendedFormState)}
+                    {getFieldError('equipmentNumber' as EquipmentFormFieldKey)}
                   </motion.p>
                 )}
               </div>
@@ -1181,7 +1121,7 @@ export default function DailyEquipmentInspectionForm() {
           {/* Card: General Checklist */}
           <section className={cn(
             "rounded-2xl border bg-gradient-to-br from-[#050b0f] via-[#04080c] to-[#010205] p-4 sm:p-5 space-y-3 shadow-[0_20px_50px_rgba(0,0,0,0.45)]",
-            shouldShowError('generalChecklist' as unknown as keyof typeof extendedFormState) && getFieldError('generalChecklist' as unknown as keyof typeof extendedFormState)
+            shouldShowError('generalChecklist' as EquipmentFormFieldKey) && getFieldError('generalChecklist' as EquipmentFormFieldKey)
               ? "border-rose-500/30"
               : "border-white/10"
           )}>
@@ -1197,7 +1137,7 @@ export default function DailyEquipmentInspectionForm() {
                 <p>{generalPercent}%</p>
               </div>
             </div>
-            {shouldShowError('generalChecklist' as unknown as keyof typeof extendedFormState) && getFieldError('generalChecklist' as unknown as keyof typeof extendedFormState) && (
+            {shouldShowError('generalChecklist' as EquipmentFormFieldKey) && getFieldError('generalChecklist' as EquipmentFormFieldKey) && (
               <motion.div 
                 id="generalChecklist-error"
                 role="alert"
@@ -1207,7 +1147,7 @@ export default function DailyEquipmentInspectionForm() {
               >
                 <p className="text-xs text-rose-400 flex items-center gap-1.5">
                   <AlertTriangle className="w-3.5 h-3.5" />
-                  {getFieldError('generalChecklist' as unknown as keyof typeof extendedFormState)}
+                  {getFieldError('generalChecklist' as EquipmentFormFieldKey)}
                 </p>
               </motion.div>
             )}
@@ -1302,7 +1242,7 @@ export default function DailyEquipmentInspectionForm() {
           {/* Card: Specific Equipment Checklist */}
           <section className={cn(
             "rounded-2xl border bg-gradient-to-br from-[#050b11] via-[#04070b] to-[#010204] p-4 sm:p-5 space-y-3 shadow-[0_20px_50px_rgba(0,0,0,0.45)]",
-            shouldShowError('specificChecklist' as unknown as keyof typeof extendedFormState) && allErrors.specificChecklist
+            shouldShowError('specificChecklist' as EquipmentFormFieldKey) && allErrors.specificChecklist
               ? "border-rose-500/30"
               : "border-white/10"
           )}>
@@ -1318,7 +1258,7 @@ export default function DailyEquipmentInspectionForm() {
                 <p>{specificItems.length === 0 ? "No template" : `${specificPercent}%`}</p>
               </div>
             </div>
-            {shouldShowError('specificChecklist' as unknown as keyof typeof extendedFormState) && allErrors.specificChecklist && (
+            {shouldShowError('specificChecklist' as EquipmentFormFieldKey) && allErrors.specificChecklist && (
               <motion.div 
                 id="specificChecklist-error"
                 role="alert"
@@ -1481,11 +1421,12 @@ export default function DailyEquipmentInspectionForm() {
                 const captured = Boolean(photos[photo.key]);
                 const previewUrl = photoPreviewUrls[photo.key];
                 const isRequired = photo.required;
-                const hasError = isRequired && photo.key === 'hydraulic' && shouldShowError('hydraulicPhoto' as unknown as keyof typeof extendedFormState) && (allErrors as Record<string, string>).hydraulicPhoto;
+                const hasError = isRequired && photo.key === 'hydraulic' && (allErrors as Record<string, string>).hydraulicPhoto;
                 
                 return (
                   <div
                     key={photo.key}
+                    {...(photo.key === 'hydraulic' && { 'data-field-id': 'hydraulicPhoto' })}
                     className={cn(
                       "relative rounded-xl border bg-white/[0.02] overflow-hidden transition",
                       hasError
@@ -1581,6 +1522,48 @@ export default function DailyEquipmentInspectionForm() {
               placeholder="Describe deficiencies, damage, or follow-ups..."
             />
             
+            {/* Phase 2: Optional additional photos (batch upload) */}
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-white/80">Additional photos (optional)</label>
+              <input
+                ref={additionalPhotosInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="sr-only"
+                aria-label="Add extra photos"
+                onChange={(e) => {
+                  const files = e.target.files ? Array.from(e.target.files) : [];
+                  setAdditionalPhotos(prev => [...prev, ...files]);
+                  e.target.value = "";
+                }}
+              />
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => additionalPhotosInputRef.current?.click()}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-xs text-white/90 hover:bg-white/10"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                  Add photos
+                </button>
+                {additionalPhotos.length > 0 && (
+                  <span className="text-xs text-white/60">
+                    {additionalPhotos.length} extra photo{additionalPhotos.length !== 1 ? "s" : ""}
+                  </span>
+                )}
+                {additionalPhotos.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setAdditionalPhotos([])}
+                    className="text-xs text-rose-300 hover:text-rose-200"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-[10px] text-white/60 pt-1">
               <div className="flex items-center gap-1.5">
                 <span className={`h-1.5 w-1.5 rounded-full ${requiredPhotosComplete ? "bg-emerald-300" : "bg-rose-300"}`} />
@@ -1593,10 +1576,8 @@ export default function DailyEquipmentInspectionForm() {
             </div>
             
             <ValidatedSubmitButton
+              type="submit"
               dataTestId="submit-button"
-              onClick={() => {
-                handleSubmit(new Event('submit') as unknown as React.FormEvent);
-              }}
               disabled={submitting}
               loading={submitting}
               errorCount={Object.keys(allErrors).filter(k => (allErrors as Record<string, string>)[k]).length}

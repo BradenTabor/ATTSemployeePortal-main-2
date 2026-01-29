@@ -400,6 +400,7 @@ export default function RequestTimeOff() {
 
           <button
             type="submit"
+            data-testid="rto-submit-button"
             disabled={status === "loading"}
             className="w-full py-2.5 sm:py-3 rounded-2xl sm:rounded-[35px] font-semibold text-sm sm:text-base text-white shadow-md transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 touch-manipulation min-h-[44px]"
             aria-label={status === "loading" ? "Submitting request" : "Submit time-off request"}

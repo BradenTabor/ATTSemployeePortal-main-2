@@ -59,6 +59,7 @@ export type DailyJSA = {
   spans: JsaSpan[];
   notes: string | null;
   employee_signature: string | null;
+  employee_signature_path?: string | null;
   observer_signatures?: ObserverSignature[] | null;
   shared_with_users?: SharedUser[] | null;
   status: "draft" | "completed";
@@ -105,6 +106,7 @@ export interface DailyJsaFormState {
   spans: JsaSpan[];
   notes: string;
   employeeSignature: string;
+  employeeSignaturePath: string;
   observerSignatures: ObserverSignature[];
   sharedWithUsers: SharedUser[];
   status: "draft" | "completed";
@@ -233,6 +235,7 @@ export const createInitialFormState = (): DailyJsaFormState => {
     ),
     notes: "",
     employeeSignature: "",
+    employeeSignaturePath: "",
     observerSignatures: [],
     sharedWithUsers: [],
     status: "draft",
@@ -301,6 +304,7 @@ export function transformRecordToFormState(record: DailyJsaRecord): DailyJsaForm
           ),
     notes: record.notes || "",
     employeeSignature: record.employee_signature || "",
+    employeeSignaturePath: record.employee_signature_path || "",
     observerSignatures: Array.isArray(record.observer_signatures)
       ? record.observer_signatures
       : [],

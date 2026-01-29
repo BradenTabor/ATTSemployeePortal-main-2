@@ -139,6 +139,7 @@ export const MileageInput = ({ value, onChange, truckNumber, previousMileage }: 
             ref={inputRef}
             id="mileage"
             name="mileage"
+            data-testid="mileage-input"
             type="text"
             inputMode="numeric"
             value={displayValue}

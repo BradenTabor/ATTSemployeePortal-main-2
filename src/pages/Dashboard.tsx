@@ -399,7 +399,7 @@ function Dashboard() {
   return (
     <DashboardLayout title="Employee Hub">
       <PullToRefresh onRefresh={handleRefresh} isRefreshing={isRefreshing}>
-        <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 pb-4 pt-3 sm:pt-6">
+        <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 pb-4 pt-3 sm:pt-6" data-testid="dashboard">
           
           {/* ============================================================ */}
           {/* TIER 1: Welcome Header - Compact identity + status */}

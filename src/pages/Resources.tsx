@@ -1,11 +1,10 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { useAuth } from "../contexts/AuthContext";
 import { useCertificationTypes, useMyCertificationRecords } from "../hooks/useCertifications";
-import { CertificationCard } from "../components/certifications";
-import { RefreshCw, ChevronRight, Shield } from "lucide-react";
+import { CertificationCard, ResourceCard } from "../components/certifications";
+import { RefreshCw, Shield } from "lucide-react";
 import { TRAINING_ENTRIES } from "../content/trainingIndex";
 import { SAFETY_ENTRIES } from "../content/safetyIndex";
 import { getDeviceCapabilities } from "../lib/mobilePerf";
@@ -43,7 +42,7 @@ function SectionHeader({
         />
       </motion.div>
       <h2
-        className="text-sm font-semibold tracking-tight text-transparent bg-clip-text sm:text-base md:text-lg"
+        className="text-base font-semibold tracking-tight text-transparent bg-clip-text sm:text-lg"
         style={SECTION_TITLE_STYLE}
       >
         {title}
@@ -127,12 +126,8 @@ export default function Resources() {
     );
   };
 
-  const cardBase =
-    "flex min-h-[44px] items-center justify-between gap-1.5 rounded-lg sm:rounded-xl border border-emerald-500/20 bg-gradient-to-br from-emerald-950/40 to-neutral-900/60 backdrop-blur-sm p-2.5 sm:p-3 text-left shadow-md transition-all sm:gap-3 hover:border-emerald-500/40 hover:bg-gradient-to-br hover:from-emerald-950/50 hover:to-neutral-900/70 hover:shadow-lg hover:shadow-emerald-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400";
-  const cardLogo = "h-8 w-8 object-contain sm:h-10 sm:w-10";
-
   return (
-    <DashboardLayout title="Resources & Documents">
+    <DashboardLayout title="Resources">
       <div className="mx-auto max-w-2xl space-y-4 sm:space-y-6 w-full">
         {/* Power Safe Training CTA - Top of page, visible to all users */}
         <section className="flex justify-center">
@@ -179,24 +174,12 @@ export default function Resources() {
           {visibleTrainingEntries.length > 0 ? (
             <div className="space-y-1.5 sm:space-y-2">
               {visibleTrainingEntries.map((entry) => (
-                <Link
+                <ResourceCard
                   key={entry.id}
                   to={`/resources/doc/training/${entry.slug}`}
-                  className={cardBase}
-                >
-                  <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2">
-                    <div className="flex shrink-0 items-center justify-center">
-                      <img src={attsLogoStamped} alt="ATTS Logo" className={cardLogo} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-medium text-white sm:text-sm">{entry.title}</p>
-                      {entry.description && (
-                        <p className="truncate text-[10px] text-emerald-100/70 sm:text-xs">{entry.description}</p>
-                      )}
-                    </div>
-                  </div>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-emerald-300" aria-hidden />
-                </Link>
+                  title={entry.title}
+                  subtitle={entry.description}
+                />
               ))}
             </div>
           ) : (
@@ -214,24 +197,12 @@ export default function Resources() {
           {SAFETY_ENTRIES.length > 0 ? (
             <div className="space-y-1.5 sm:space-y-2">
               {SAFETY_ENTRIES.map((entry) => (
-                <Link
+                <ResourceCard
                   key={entry.id}
                   to={`/resources/doc/safety/${entry.slug}`}
-                  className={cardBase}
-                >
-                  <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2">
-                    <div className="flex shrink-0 items-center justify-center">
-                      <img src={attsLogoStamped} alt="ATTS Logo" className={cardLogo} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-medium text-white sm:text-sm">{entry.title}</p>
-                      {entry.description && (
-                        <p className="truncate text-[10px] text-emerald-100/70 sm:text-xs">{entry.description}</p>
-                      )}
-                    </div>
-                  </div>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-emerald-300" aria-hidden />
-                </Link>
+                  title={entry.title}
+                  subtitle={entry.description}
+                />
               ))}
             </div>
           ) : (

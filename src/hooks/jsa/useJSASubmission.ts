@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { logger } from '../../lib/logger';
+import { isOnline, addToQueue } from '../../lib/offlineQueue';
 import type { DailyJSA, DailyJsaFormState, JobSelection, SharedUser } from '../../pages/forms/DailyJSAForm';
 
 const JOB_OPTIONS = [
@@ -26,6 +27,8 @@ interface SubmissionResult {
   success: boolean;
   recordId?: string;
   error?: Error;
+  /** True when submission was queued for offline sync (no insert performed). */
+  queued?: boolean;
 }
 
 /**
@@ -118,6 +121,7 @@ export function useJSASubmission() {
       })),
       notes: form.notes || null,
       employee_signature: form.employeeSignature || null,
+      employee_signature_path: form.employeeSignaturePath || null,
       observer_signatures: Array.isArray(form.observerSignatures) 
         ? form.observerSignatures.map(obs => ({
             name: String(obs.name || ''),
@@ -234,6 +238,15 @@ export function useJSASubmission() {
           observer_signatures: payload.observer_signatures || [],
           shared_with_users: payload.shared_with_users || [],
         };
+
+        if (!isOnline()) {
+          await addToQueue('jsa', insertPayload as unknown as Record<string, unknown>, {
+            userId,
+            dateFor: payload.job_date ?? undefined,
+          });
+          logger.info('[JSA] Offline: queued for sync when back online', { job_date: payload.job_date });
+          return { success: true, queued: true };
+        }
 
         logger.debug('[JSA] Inserting new record', {
           user_id: userId,

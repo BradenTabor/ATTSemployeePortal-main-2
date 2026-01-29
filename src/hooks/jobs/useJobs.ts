@@ -37,23 +37,53 @@ export function useJobs(): UseJobsReturn {
       setLoading(true);
       setError(null);
 
-      // Fetch jobs with milestones and crew assignments
-      // NOTE: We can't use nested joins with user_profiles because it's a VIEW
-      // So we fetch separately and join manually
-      // OPTIMIZATION: select specific columns + limit to prevent loading all jobs
-      const { data: jobsData, error: jobsError } = await supabase
-        .from('job_progress_trackers')
-        .select(`
+      const selectWithTitleCompleted = `
+          id, created_at, updated_at, created_by, job_name, job_location, job_description, 
+          job_specs, start_date, end_date, status, notes, tracking_type, circuit, 
+          estimated_total_spans, estimated_total_feet, span_progress_metric, 
+          job_group_id, work_site_id, crew_id,
+          milestones:job_milestones(id, job_id, title, target_date, is_completed, sort_order),
+          crew_assignments:job_crew_assignments(id, job_id, user_id, assigned_at, assigned_by),
+          progress_updates:job_progress_updates(id, job_id, date, spans_completed, total_feet_completed, notes)
+        `;
+      const selectWithNameCompleted = `
           id, created_at, updated_at, created_by, job_name, job_location, job_description, 
           job_specs, start_date, end_date, status, notes, tracking_type, circuit, 
           estimated_total_spans, estimated_total_feet, span_progress_metric, 
           job_group_id, work_site_id, crew_id,
           milestones:job_milestones(id, job_id, name, target_date, completed, sort_order),
           crew_assignments:job_crew_assignments(id, job_id, user_id, assigned_at, assigned_by),
-          progress_updates:job_progress_updates(id, job_id, date, spans_completed, feet_completed, notes)
-        `)
+          progress_updates:job_progress_updates(id, job_id, date, spans_completed, total_feet_completed, notes)
+        `;
+
+      let jobsData: RawJobRow[] | null = null;
+      let jobsError: { message?: string; code?: string } | null = null;
+
+      const result = await supabase
+        .from('job_progress_trackers')
+        .select(selectWithTitleCompleted)
         .order('created_at', { ascending: false })
         .limit(50);
+
+      jobsData = result.data as RawJobRow[] | null;
+      jobsError = result.error;
+
+      // Only retry with legacy columns when the error says title or is_completed is missing.
+      // (Avoid retrying on other column errors, which would then fail with "name does not exist" on DBs that use title/is_completed.)
+      const suggestsLegacySchema = jobsError?.message && (
+        /\.title\s+does not exist|column.*title.*does not exist/i.test(jobsError.message) ||
+        /\.is_completed\s+does not exist|column.*is_completed.*does not exist/i.test(jobsError.message)
+      );
+      if (jobsError && suggestsLegacySchema) {
+        logger.warn('[useJobs] Milestone columns (title/is_completed) not found, retrying with name/completed');
+        const fallback = await supabase
+          .from('job_progress_trackers')
+          .select(selectWithNameCompleted)
+          .order('created_at', { ascending: false })
+          .limit(50);
+        jobsData = fallback.data as RawJobRow[] | null;
+        jobsError = fallback.error;
+      }
 
       if (jobsError) {
         logger.error('Failed to fetch jobs:', jobsError);
@@ -212,6 +242,9 @@ export function useJobs(): UseJobsReturn {
         }
       }
 
+      await fetchJobs();
+      // Retry refetch once after a short delay so the list updates even with replication lag or timing
+      await new Promise((r) => setTimeout(r, 300));
       await fetchJobs();
       return { success: true, jobId };
     } catch (err) {

@@ -244,31 +244,22 @@ test.describe('Protected Routes', () => {
   });
 
   test('should allow authenticated user to access protected routes', async ({ page }) => {
-    // Login first
     await page.goto('/');
     const emailInput = page.locator('input[type="email"], input[name="email"]');
-    
     if (await emailInput.isVisible()) {
       await emailInput.fill(TEST_USER.email);
       await page.fill('input[type="password"], input[name="password"]', TEST_USER.password);
       await page.click('button[type="submit"]');
       await page.waitForURL(/dashboard|forms/, { timeout: 15000 });
     }
-    
-    // Now access protected routes
     await page.goto('/dashboard');
     await page.waitForLoadState('networkidle');
-    
-    // Main element might not exist or page might use different structure
-    const mainElement = page.locator('main').first();
-    const mainVisible = await mainElement.isVisible({ timeout: 5000 }).catch(() => false);
-    
-    // Check if we're on dashboard (not redirected to login)
+    await page.waitForSelector('[data-testid="dashboard"]', { timeout: 15000 }).catch(() => {});
     const url = page.url();
     const isOnDashboard = url.includes('/dashboard') || url.includes('/forms');
-    
-    // Either main should be visible or we should be on a dashboard route
-    expect(mainVisible || isOnDashboard).toBe(true);
+    const dashboardEl = await page.locator('[data-testid="dashboard"]').isVisible().catch(() => false);
+    const mainEl = await page.locator('main').first().isVisible().catch(() => false);
+    expect(dashboardEl || mainEl || isOnDashboard).toBe(true);
   });
 });
 

@@ -41,6 +41,7 @@ import {
   generateFilename,
   type ExportMetadata,
 } from "../../lib/exportUtils";
+import { logReportExported } from "../../lib/safetyAuditLog";
 
 // Import from extracted module
 import {
@@ -69,7 +70,7 @@ const jsaExportColumns = JSA_EXPORT_COLUMNS;
 const statusBadge = STATUS_BADGE;
 
 export default function AdminJSA() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user, role } = useAuth();
   const [allUsers, setAllUsers] = useState<{ id: string; name: string; email: string }[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -328,10 +329,20 @@ export default function AdminJSA() {
           });
           break;
       }
+      await logReportExported(
+        {
+          reportType: "JSA",
+          dateFrom: dateFilter ?? null,
+          dateTo: dateEndFilter ?? null,
+          format: exportFormat,
+          totalRecords: enrichedData.length,
+        },
+        { userId: user?.id, role: role ?? undefined }
+      );
     } finally {
       setIsExporting(false);
     }
-  }, [sortField, sortDirection, statusFilter, dateFilter, dateEndFilter, searchQuery, signatureFilter, userFilter, allUsers]);
+  }, [sortField, sortDirection, statusFilter, dateFilter, dateEndFilter, searchQuery, signatureFilter, userFilter, allUsers, user?.id, role]);
 
   // Keyboard shortcuts
   useEffect(() => {

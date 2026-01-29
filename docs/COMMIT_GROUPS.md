@@ -133,6 +133,7 @@ git add supabase/functions/admin-create-notification/
 git add supabase/functions/check-compliance-9am/
 git add supabase/functions/generate-fixes-summary/
 git add supabase/functions/get-smart-defaults/
+git add supabase/functions/notify-admins-new-signup/
 git add supabase/functions/notifications-worker/
 git add supabase/functions/push-subscribe/
 git commit -m "fix: supabase edge function updates"

@@ -1,11 +1,11 @@
 import { useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { logger } from '../../lib/logger';
+import { compressImage } from '../../lib/imageCompression';
 
 /**
  * Custom hook for DVIR photo upload
- * Handles uploading photos to Supabase storage
- * Extracted to reduce DVIRForm component size
+ * Handles client-side compression (Phase 2) and uploading to Supabase storage
  */
 export function useDVIRPhotoUpload() {
   const uploadPhoto = useCallback(async (file: File, fieldName: string): Promise<string> => {
@@ -14,16 +14,16 @@ export function useDVIRPhotoUpload() {
     } = await supabase.auth.getUser();
     const userId = user?.id || "anonymous";
 
-    const ext = file.name.split(".").pop() || "jpg";
-    // Bucket: dvir-photos
-    // Path:   dvir-photos/<userId>/<timestamp>-fieldName.ext
+    const compressed = await compressImage(file);
+    const ext = compressed.name.split(".").pop() || "jpg";
     const filePath = `dvir-photos/${userId}/${Date.now()}-${fieldName}.${ext}`;
 
     const { error } = await supabase.storage
       .from("dvir-photos")
-      .upload(filePath, file, {
+      .upload(filePath, compressed, {
         cacheControl: "3600",
         upsert: false,
+        contentType: compressed.type || "image/jpeg",
       });
 
     if (error) {

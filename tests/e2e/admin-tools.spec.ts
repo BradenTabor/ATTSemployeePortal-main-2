@@ -76,15 +76,13 @@ test.describe('Admin User Management', () => {
   });
 
   test('should allow editing user role', async ({ page }) => {
-    const editButton = page.locator('[data-testid="edit-user"], button:has-text("Edit")').first();
-    
+    const editButton = page.locator('[data-testid="edit-user"], button:has-text("Edit"), button:has-text("Edit Role")').first();
+    await editButton.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
     if (await editButton.isVisible()) {
       await editButton.click();
-      await page.waitForTimeout(500);
-      
-      // Edit modal/form should appear
-      const editForm = page.locator('[data-testid="edit-user-form"], .edit-modal, dialog');
-      await expect(editForm).toBeVisible();
+      await page.waitForTimeout(800);
+      const editForm = page.locator('[data-testid="edit-user-form"]');
+      await expect(editForm).toBeVisible({ timeout: 5000 });
     }
   });
 });
@@ -247,6 +245,71 @@ test.describe('Admin Telemetry', () => {
     const metrics = page.locator('[data-testid="metrics"], .metrics, text=submissions, text=completed');
     const isVisible = await metrics.first().isVisible().catch(() => false);
     console.log(`Form metrics visible: ${isVisible}`);
+  });
+});
+
+test.describe('Admin Incident Logging Modal', () => {
+  test.setTimeout(60000);
+
+  test.beforeEach(async ({ page }) => {
+    await loginAs(page, 'admin');
+    await page.goto('/admin');
+    await page.waitForLoadState('networkidle');
+  });
+
+  test('should open Incident Logging modal from Safety Incidents section', async ({ page }) => {
+    const logButton = page.getByRole('button', { name: /log new safety incident|log incident|log first incident/i });
+    await logButton.first().waitFor({ state: 'visible', timeout: 15000 });
+    await logButton.first().click();
+    await page.waitForTimeout(800);
+
+    const dialog = page.getByRole('dialog').or(page.locator('[role="dialog"]')).or(
+      page.locator('div:has(h2:has-text("Log Incident"))')
+    );
+    await expect(dialog).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('Log Incident').first()).toBeVisible();
+    await expect(page.getByText(/OSHA 300\/301/i)).toBeVisible();
+  });
+
+  test('should show severity options and required form sections', async ({ page }) => {
+    const logButton = page.getByRole('button', { name: /log new safety incident|log incident|log first incident/i });
+    await logButton.first().waitFor({ state: 'visible', timeout: 15000 });
+    await logButton.first().click();
+    await page.waitForTimeout(800);
+
+    await expect(page.getByText('Log Incident').first()).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('button', { name: 'Near Miss' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'First Aid' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Recordable' })).toBeVisible();
+    await expect(page.getByText(/When & Where|Severity|Description/i).first()).toBeVisible();
+  });
+
+  test('should show Recordable badge when Recordable severity is selected', async ({ page }) => {
+    const logButton = page.getByRole('button', { name: /log new safety incident|log incident|log first incident/i });
+    await logButton.first().waitFor({ state: 'visible', timeout: 15000 });
+    await logButton.first().click();
+    await page.waitForTimeout(1000);
+
+    await expect(page.getByText('Log Incident').first()).toBeVisible({ timeout: 5000 });
+    await page.getByRole('button', { name: 'Recordable' }).click();
+    await page.waitForTimeout(400);
+
+    await expect(page.getByText('Recordable').first()).toBeVisible();
+  });
+
+  test('should show description validation when submitting without description', async ({ page }) => {
+    const logButton = page.getByRole('button', { name: /log new safety incident|log incident|log first incident/i });
+    await logButton.first().waitFor({ state: 'visible', timeout: 15000 });
+    await logButton.first().click();
+    await page.waitForTimeout(1000);
+
+    await expect(page.getByText('Log Incident').first()).toBeVisible({ timeout: 5000 });
+    const dialogPromise = page.waitForEvent('dialog', { timeout: 5000 });
+    const submitBtn = page.getByRole('button', { name: /^Log Incident$/ });
+    await submitBtn.click();
+    const dialog = await dialogPromise;
+    expect(dialog.message().toLowerCase()).toContain('description');
+    await dialog.accept();
   });
 });
 

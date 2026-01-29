@@ -528,7 +528,7 @@ export function TestResults({ result, certName }: TestResultsProps) {
           className={`group w-full sm:w-auto inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:scale-[1.02] ${
             passed 
               ? 'bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-emerald-500/25 hover:shadow-emerald-500/40'
-              : 'bg-gradient-to-r from-gray-600 to-gray-500 hover:from-gray-500 hover:to-gray-400 shadow-gray-500/25 hover:shadow-gray-500/40'
+              : 'bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 shadow-red-500/25 hover:shadow-red-500/40'
           } ${focusRing}`}
         >
           Back to Resources

@@ -125,6 +125,7 @@ function CollapsibleSectionComponent({
             onKeyDown={handleKeyDown}
             aria-expanded={isOpen ? "true" : "false"}
             aria-controls={contentId}
+            aria-label={isOpen ? `Collapse ${title}` : `Expand ${title}`}
             className={cn(
               'flex-1 flex items-center gap-3 text-left',
               'focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#04150f]',

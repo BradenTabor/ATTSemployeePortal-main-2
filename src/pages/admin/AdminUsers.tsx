@@ -1,7 +1,10 @@
 import { useEffect, useState, useCallback, memo, useMemo } from "react";
+import { createPortal } from "react-dom";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, Search, Filter, Mail, Calendar, Shield, Sparkles, X, Clock, Award, Ban, CheckCircle, Trash2 } from "lucide-react";
+import { Users, Search, Filter, Mail, Calendar, Shield, Sparkles, X, Clock, Award, Ban, CheckCircle, Trash2, UserCog } from "lucide-react";
 import DashboardLayout from "../../layouts/DashboardLayout";
+import { FunctionsHttpError } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../contexts/AuthContext";
 import { subscribeToTableChanges } from "../../lib/realtime";
@@ -25,6 +28,7 @@ interface AppUser {
   hire_date: string | null;
   experience_level: 'apprentice' | 'journeyman' | 'expert' | null;
   status?: string;
+  manager_id: string | null;
 }
 
 interface TenureInfo {
@@ -96,6 +100,13 @@ interface MobileUserCardProps {
   onCancelEdit: () => void;
   onRoleChange: (role: string) => void;
   onEditExperience: (user: AppUser) => void;
+  onEditManager: (user: AppUser) => void;
+  managerNameMap: Record<string, string>;
+  authUserId: string | undefined;
+  onUnblock: (user: AppUser) => void;
+  setBlockModalUser: (user: AppUser | null) => void;
+  setDeleteModalUser: (user: AppUser | null) => void;
+  unblockPending: boolean;
 }
 
 const MobileUserCard = ({
@@ -108,8 +119,16 @@ const MobileUserCard = ({
   onCancelEdit,
   onRoleChange,
   onEditExperience,
+  onEditManager,
+  managerNameMap,
+  authUserId,
+  onUnblock,
+  setBlockModalUser,
+  setDeleteModalUser,
+  unblockPending,
 }: MobileUserCardProps) => {
   const tenure = getTenure(user.hire_date);
+  const canAct = user.user_id !== authUserId;
   
   return (
     <motion.article
@@ -141,7 +160,7 @@ const MobileUserCard = ({
         <p className="text-[9px] sm:text-xs uppercase tracking-wider text-[#f4c979]/70">Role</p>
         
         {editingRoleUserId === user.id ? (
-          <div className="space-y-2">
+          <div className="space-y-2" data-testid="edit-user-form">
             {/* Role Dropdown */}
             <select
               value={pendingRole}
@@ -177,11 +196,20 @@ const MobileUserCard = ({
             </div>
           </div>
         ) : (
-          <div className="flex items-center justify-between gap-2">
-            <span className={`inline-flex items-center px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-semibold ${getRoleBadgeClass(user.role)}`}>
-              {user.role.charAt(0).toUpperCase() + user.role.slice(1).replace('_', ' ')}
-            </span>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className={`inline-flex items-center px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-semibold ${getRoleBadgeClass(user.role)}`}>
+                {user.role.charAt(0).toUpperCase() + user.role.slice(1).replace('_', ' ')}
+              </span>
+              {user.status === 'blocked' && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  <Ban className="w-3 h-3" /> Blocked
+                </span>
+              )}
+            </div>
             <button
+              type="button"
+              data-testid="edit-user"
               onClick={() => onEditRole(user.id, user.role)}
               className="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border border-[#f6dcb2]/25 text-[10px] sm:text-xs font-semibold text-[#fdf4db] hover:bg-white/5 active:bg-white/10 transition-colors min-h-[36px] sm:min-h-[40px]"
             >
@@ -189,6 +217,22 @@ const MobileUserCard = ({
             </button>
           </div>
         )}
+      </div>
+
+      {/* Manager Section */}
+      <div className="space-y-1.5 sm:space-y-2">
+        <p className="text-[9px] sm:text-xs uppercase tracking-wider text-[#f4c979]/70">Manager</p>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[10px] text-[#f0e2c7]">
+            {user.manager_id ? (managerNameMap[user.manager_id] ?? "—") : "—"}
+          </span>
+          <button
+            onClick={() => onEditManager(user)}
+            className="px-2.5 py-1.5 rounded-lg border border-[#f6dcb2]/25 text-[10px] font-semibold text-[#fdf4db] hover:bg-white/5 transition-colors"
+          >
+            {user.manager_id ? "Change" : "Set manager"}
+          </button>
+        </div>
       </div>
 
       {/* Experience Section */}
@@ -223,6 +267,37 @@ const MobileUserCard = ({
           </button>
         </div>
       </div>
+
+      {/* Block / Unblock / Delete (not self) */}
+      {canAct && (
+        <div className="space-y-1.5 sm:space-y-2">
+          <p className="text-[9px] sm:text-xs uppercase tracking-wider text-[#f4c979]/70">Actions</p>
+          <div className="flex flex-wrap gap-2">
+            {user.status === 'blocked' ? (
+              <button
+                onClick={() => onUnblock(user)}
+                disabled={unblockPending}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-emerald-500/30 text-[10px] font-semibold text-emerald-300 hover:bg-emerald-500/10 disabled:opacity-50"
+              >
+                <CheckCircle className="w-3 h-3" /> Unblock
+              </button>
+            ) : (
+              <button
+                onClick={() => setBlockModalUser(user)}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-amber-500/30 text-[10px] font-semibold text-amber-300 hover:bg-amber-500/10"
+              >
+                <Ban className="w-3 h-3" /> Block
+              </button>
+            )}
+            <button
+              onClick={() => setDeleteModalUser(user)}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-red-500/30 text-[10px] font-semibold text-red-300 hover:bg-red-500/10"
+            >
+              <Trash2 className="w-3 h-3" /> Delete
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Joined Date */}
       <div className="pt-1.5 sm:pt-2 border-t border-white/5">
@@ -273,30 +348,27 @@ const ExperienceEditModal = ({ user, isOpen, onClose, onSave, saving }: Experien
     );
   };
 
-  if (!isOpen) return null;
-
-  return (
+  const content = (
     <AnimatePresence>
       {isOpen && (
+      <motion.div
+        key="experience-modal"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        onClick={onClose}
+      >
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          onClick={onClose}
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          onClick={(e) => e.stopPropagation()}
+          className="relative w-full max-w-md max-h-[min(90vh,32rem)] overflow-y-auto rounded-2xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] p-6 shadow-2xl"
         >
-          {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-          
-          {/* Modal */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-md rounded-2xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] p-6 shadow-2xl"
-          >
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
@@ -375,11 +447,133 @@ const ExperienceEditModal = ({ user, isOpen, onClose, onSave, saving }: Experien
                 {saving ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
-          </motion.div>
         </motion.div>
+      </motion.div>
       )}
     </AnimatePresence>
   );
+  return typeof document !== 'undefined' ? createPortal(content, document.body) : null;
+};
+
+// Manager picker modal
+interface ManagerEditModalProps {
+  user: AppUser;
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (userId: string, managerId: string | null) => Promise<void>;
+  saving: boolean;
+  pickerUsers: AppUser[];
+  loadingPicker: boolean;
+}
+
+const ManagerEditModal = ({
+  user,
+  isOpen,
+  onClose,
+  onSave,
+  saving,
+  pickerUsers,
+  loadingPicker,
+}: ManagerEditModalProps) => {
+  const [managerId, setManagerId] = useState<string>(user.manager_id ?? '');
+
+  const handleSave = async () => {
+    await onSave(user.id, managerId.trim() || null);
+  };
+
+  // Exclude current user from picker (can't be own manager)
+  const options = pickerUsers.filter((u) => u.id !== user.id);
+
+  const content = (
+    <AnimatePresence>
+      {isOpen && (
+      <motion.div
+        key="manager-modal"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        onClick={onClose}
+      >
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          onClick={(e) => e.stopPropagation()}
+          className="relative w-full max-w-md max-h-[min(90vh,32rem)] overflow-y-auto rounded-2xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] p-6 shadow-2xl"
+        >
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#1a2a1a] border border-[#4caf50]/40 flex items-center justify-center">
+                  <UserCog className="w-5 h-5 text-[#a8e6a8]" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">Assign Manager</h3>
+                  <p className="text-xs text-[#c7b696]">{user.full_name || user.email}</p>
+                </div>
+              </div>
+              <button
+                onClick={onClose}
+                className="p-2 rounded-lg hover:bg-white/5 transition-colors"
+                aria-label="Close manager picker"
+              >
+                <X className="w-5 h-5 text-[#c7b696]" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-[#f4c979]/80 uppercase tracking-wider mb-2">
+                  Manager
+                </label>
+                {loadingPicker ? (
+                  <p className="text-sm text-[#c7b696]">Loading users…</p>
+                ) : (
+                  <select
+                    value={managerId}
+                    onChange={(e) => setManagerId(e.target.value)}
+                    disabled={saving}
+                    className="w-full rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-4 py-3 text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60"
+                  >
+                    <option value="">No manager</option>
+                    {options.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.full_name?.trim() || u.email} {u.role !== 'employee' ? `(${u.role})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <p className="mt-1.5 text-xs text-[#c7b696]">
+                  Used for compliance notifications and reporting
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={onClose}
+                disabled={saving}
+                className="flex-1 px-4 py-3 rounded-xl border border-[#f6dcb2]/25 text-sm font-semibold text-[#fdf4db] hover:bg-white/5 disabled:opacity-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving || loadingPicker}
+                className="flex-1 px-4 py-3 rounded-xl bg-[#f4c979]/20 border border-[#f4c979]/40 text-sm font-semibold text-[#fef3d1] hover:bg-[#f4c979]/30 disabled:opacity-50 transition-colors"
+              >
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+        </motion.div>
+      </motion.div>
+      )}
+    </AnimatePresence>
+  );
+  return typeof document !== 'undefined' ? createPortal(content, document.body) : null;
 };
 
 const BlockUserModal = ({
@@ -397,14 +591,15 @@ const BlockUserModal = ({
 }) => {
   const [reason, setReason] = useState('');
 
-  if (!isOpen) return null;
-
-  return (
+  const content = (
     <AnimatePresence>
+      {isOpen && (
       <motion.div
+        key="block-modal"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
         className="fixed inset-0 z-50 flex items-center justify-center p-4"
         onClick={onClose}
       >
@@ -415,7 +610,7 @@ const BlockUserModal = ({
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
           onClick={(e) => e.stopPropagation()}
-          className="relative w-full max-w-md rounded-2xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] p-6 shadow-2xl"
+          className="relative w-full max-w-md max-h-[min(90vh,32rem)] overflow-y-auto rounded-2xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] p-6 shadow-2xl"
         >
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
@@ -462,9 +657,13 @@ const BlockUserModal = ({
           </div>
         </motion.div>
       </motion.div>
+      )}
     </AnimatePresence>
   );
+  return typeof document !== 'undefined' ? createPortal(content, document.body) : null;
 };
+
+const DELETE_CONFIRM_PHRASE = 'Confirm-user-delete';
 
 const DeleteUserModal = ({
   user,
@@ -480,17 +679,23 @@ const DeleteUserModal = ({
   pending: boolean;
 }) => {
   const [reason, setReason] = useState('');
-  const [confirmEmail, setConfirmEmail] = useState('');
-  const isValid = confirmEmail.trim().toLowerCase() === (user.email || '').toLowerCase() && reason.trim().length > 0;
+  const [confirmPhrase, setConfirmPhrase] = useState('');
+  const isValid = confirmPhrase.trim() === DELETE_CONFIRM_PHRASE && reason.trim().length > 0;
 
-  if (!isOpen) return null;
+  const handleCopyPhrase = () => {
+    void navigator.clipboard.writeText(DELETE_CONFIRM_PHRASE);
+    toast.success('Copied. Paste into the field below.');
+  };
 
-  return (
+  const content = (
     <AnimatePresence>
+      {isOpen && (
       <motion.div
+        key="delete-modal"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
         className="fixed inset-0 z-50 flex items-center justify-center p-4"
         onClick={onClose}
       >
@@ -501,7 +706,7 @@ const DeleteUserModal = ({
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
           onClick={(e) => e.stopPropagation()}
-          className="relative w-full max-w-md rounded-2xl border border-red-500/30 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] p-6 shadow-2xl"
+          className="relative w-full max-w-md max-h-[min(90vh,32rem)] overflow-y-auto rounded-2xl border border-red-500/30 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] p-6 shadow-2xl"
         >
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
@@ -510,7 +715,7 @@ const DeleteUserModal = ({
               </div>
               <div>
                 <h3 className="text-lg font-bold text-white">Permanently Delete User</h3>
-                <p className="text-xs text-[#c7b696]">{user.full_name || user.email}</p>
+                <p className="text-xs text-[#c7b696] mt-0.5">{user.email}</p>
               </div>
             </div>
             <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/5" aria-label="Close">
@@ -533,14 +738,22 @@ const DeleteUserModal = ({
             </div>
             <div>
               <label className="block text-xs font-semibold text-[#f4c979]/80 uppercase tracking-wider mb-2">
-                Type <span className="text-[#c7b696] font-normal">"{user.email}"</span> to confirm
+                Type <span className="text-[#c7b696] font-normal select-all" title="Select to copy">{DELETE_CONFIRM_PHRASE}</span> to confirm
+                <button
+                  type="button"
+                  onClick={handleCopyPhrase}
+                  className="ml-2 px-2 py-0.5 rounded text-[10px] font-medium border border-[#f4c979]/30 text-[#c7b696] hover:bg-white/5 hover:border-[#f4c979]/50"
+                >
+                  Copy
+                </button>
               </label>
               <input
                 type="text"
-                value={confirmEmail}
-                onChange={(e) => setConfirmEmail(e.target.value)}
-                placeholder={user.email}
+                value={confirmPhrase}
+                onChange={(e) => setConfirmPhrase(e.target.value)}
+                placeholder={DELETE_CONFIRM_PHRASE}
                 className="w-full rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-4 py-3 text-sm text-[#fdf4db] placeholder:text-[#8a7a5c] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60"
+                spellCheck={false}
               />
             </div>
           </div>
@@ -562,8 +775,10 @@ const DeleteUserModal = ({
           </div>
         </motion.div>
       </motion.div>
+      )}
     </AnimatePresence>
   );
+  return typeof document !== 'undefined' ? createPortal(content, document.body) : null;
 };
 
 function AdminUsers() {
@@ -587,6 +802,12 @@ function AdminUsers() {
   // Experience editing state
   const [experienceModalUser, setExperienceModalUser] = useState<AppUser | null>(null);
   const [savingExperience, setSavingExperience] = useState(false);
+  // Manager picker state
+  const [managerNameMap, setManagerNameMap] = useState<Record<string, string>>({});
+  const [managerModalUser, setManagerModalUser] = useState<AppUser | null>(null);
+  const [savingManager, setSavingManager] = useState(false);
+  const [pickerUsers, setPickerUsers] = useState<AppUser[]>([]);
+  const [loadingPicker, setLoadingPicker] = useState(false);
   const [blockModalUser, setBlockModalUser] = useState<AppUser | null>(null);
   const [deleteModalUser, setDeleteModalUser] = useState<AppUser | null>(null);
   const [blockPending, setBlockPending] = useState(false);
@@ -595,6 +816,77 @@ function AdminUsers() {
 
   const totalPages =
     totalUsers && totalUsers > 0 ? Math.max(1, Math.ceil(totalUsers / pageSize)) : 1;
+
+  const anyModalOpen = !!(experienceModalUser || managerModalUser || blockModalUser || deleteModalUser);
+
+  // Load all users for manager picker when modal opens
+  useEffect(() => {
+    if (!managerModalUser) {
+      setPickerUsers([]);
+      return;
+    }
+    let cancelled = false;
+    setLoadingPicker(true);
+    supabase
+      .from("user_profiles")
+      .select("id, user_id, email, full_name, role, avatar_url, created_at, hire_date, experience_level, status, manager_id")
+      .order("full_name", { ascending: true, nullsFirst: false })
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        setLoadingPicker(false);
+        if (error) {
+          logger.error("[AdminUsers] Failed to load picker users:", error);
+          toast.error("Failed to load users for manager picker");
+          return;
+        }
+        const rows = (data || []) as Array<{
+          id: string;
+          user_id: string;
+          email: string | null;
+          full_name: string | null;
+          role: string;
+          avatar_url: string | null;
+          created_at: string;
+          hire_date: string | null;
+          experience_level: string | null;
+          status: string | null;
+          manager_id: string | null;
+        }>;
+        setPickerUsers(
+          rows.map((u) => ({
+            id: u.id,
+            user_id: u.user_id,
+            email: u.email || "N/A",
+            full_name: u.full_name,
+            role: u.role,
+            avatar_url: null,
+            created_at: u.created_at,
+            hire_date: u.hire_date,
+            experience_level: u.experience_level as AppUser["experience_level"],
+            status: u.status ?? "active",
+            manager_id: u.manager_id ?? null,
+          }))
+        );
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [managerModalUser]);
+
+  // Lock body and layout scroll when any modal (Experience, Block, Delete) is open
+  useEffect(() => {
+    if (!anyModalOpen) return;
+    const body = document.body;
+    const scrollEl = document.querySelector('[data-scroll-container]') as HTMLElement | null;
+    const prevBody = body.style.overflow;
+    const prevScroll = scrollEl?.style.overflow ?? '';
+    body.style.overflow = 'hidden';
+    if (scrollEl) scrollEl.style.overflow = 'hidden';
+    return () => {
+      body.style.overflow = prevBody;
+      if (scrollEl) scrollEl.style.overflow = prevScroll;
+    };
+  }, [anyModalOpen]);
 
   // Device capabilities for animation decisions
   const caps = useMemo(() => getDeviceCapabilities(), []);
@@ -700,7 +992,7 @@ function AdminUsers() {
 
       let query = supabase
         .from("user_profiles")
-        .select("id, user_id, email, full_name, role, avatar_url, created_at, hire_date, experience_level, status", { count: "exact" })
+        .select("id, user_id, email, full_name, role, avatar_url, created_at, hire_date, experience_level, status, manager_id", { count: "exact" })
         .order("created_at", { ascending: false });
 
       if (debouncedSearchQuery.trim()) {
@@ -731,6 +1023,7 @@ function AdminUsers() {
         hire_date: string | null;
         experience_level: 'apprentice' | 'journeyman' | 'expert' | null;
         status: string | null;
+        manager_id: string | null;
       };
 
       // Helper to convert avatar storage path to public URL
@@ -751,9 +1044,26 @@ function AdminUsers() {
         hire_date: user.hire_date,
         experience_level: user.experience_level,
         status: user.status ?? 'active',
+        manager_id: user.manager_id ?? null,
       }));
 
       setUsers(formattedUsers);
+
+      // Resolve manager display names for current page
+      const managerIds = [...new Set((data || []).map((u: SupabaseUserRow) => u.manager_id).filter(Boolean))] as string[];
+      if (managerIds.length > 0) {
+        const { data: managerProfiles } = await supabase
+          .from("user_profiles")
+          .select("id, full_name, email")
+          .in("id", managerIds);
+        const map: Record<string, string> = {};
+        (managerProfiles || []).forEach((m: { id: string; full_name: string | null; email: string | null }) => {
+          map[m.id] = m.full_name?.trim() || m.email || "Unknown";
+        });
+        setManagerNameMap(map);
+      } else {
+        setManagerNameMap({});
+      }
       if (typeof count === "number") {
         setTotalUsers(count);
       }
@@ -766,12 +1076,46 @@ function AdminUsers() {
     }
   }, [currentPage, pageSize, debouncedSearchQuery, roleFilter]);
 
+  const handleManagerUpdate = useCallback(
+    async (userId: string, managerId: string | null) => {
+      setSavingManager(true);
+      try {
+        const { error } = await supabase
+          .from("app_users")
+          .update({ manager_id: managerId })
+          .eq("id", userId);
+
+        if (error) {
+          logger.error("Failed to update manager:", error);
+          toast.error(error.message || "Failed to update manager");
+          return;
+        }
+
+        toast.success(managerId ? "Manager assigned" : "Manager cleared");
+        setManagerModalUser(null);
+        await fetchUsers();
+      } catch (err) {
+        logger.error("Unexpected error updating manager:", err);
+        toast.error("Unexpected error occurred");
+      } finally {
+        setSavingManager(false);
+      }
+    },
+    [fetchUsers]
+  );
+
   const handleBlock = useCallback(
     async (u: AppUser, reason: string) => {
       setBlockPending(true);
       try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) {
+          toast.error('Session expired. Please sign in again.');
+          return;
+        }
         const { data, error } = await supabase.functions.invoke<{ success?: boolean; error?: string; details?: string }>('block-user', {
           body: { userId: u.user_id, reason: reason.trim() || undefined },
+          headers: { Authorization: `Bearer ${session.access_token}` },
         });
         if (error) throw error;
         if (data?.error) {
@@ -783,7 +1127,17 @@ function AdminUsers() {
         await fetchUsers();
       } catch (err) {
         logger.error('Block user error:', err);
-        toast.error((err as Error)?.message || 'Failed to block user');
+        let message = (err as Error)?.message ?? 'Failed to block user';
+        if (err instanceof FunctionsHttpError && err.context && typeof (err.context as Response).json === 'function') {
+          try {
+            const body = (await (err.context as Response).json()) as { error?: string; details?: string };
+            if (body?.details) message = body.details;
+            else if (body?.error) message = body.error;
+          } catch {
+            /* use default message */
+          }
+        }
+        toast.error(message);
       } finally {
         setBlockPending(false);
       }
@@ -795,8 +1149,14 @@ function AdminUsers() {
     async (u: AppUser) => {
       setUnblockPending(true);
       try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) {
+          toast.error('Session expired. Please sign in again.');
+          return;
+        }
         const { data, error } = await supabase.functions.invoke<{ success?: boolean; error?: string; details?: string }>('unblock-user', {
           body: { userId: u.user_id },
+          headers: { Authorization: `Bearer ${session.access_token}` },
         });
         if (error) throw error;
         if (data?.error) {
@@ -807,7 +1167,17 @@ function AdminUsers() {
         await fetchUsers();
       } catch (err) {
         logger.error('Unblock user error:', err);
-        toast.error((err as Error)?.message || 'Failed to unblock user');
+        let message = (err as Error)?.message ?? 'Failed to unblock user';
+        if (err instanceof FunctionsHttpError && err.context && typeof (err.context as Response).json === 'function') {
+          try {
+            const body = (await (err.context as Response).json()) as { error?: string; details?: string };
+            if (body?.details) message = body.details;
+            else if (body?.error) message = body.error;
+          } catch {
+            /* use default message */
+          }
+        }
+        toast.error(message);
       } finally {
         setUnblockPending(false);
       }
@@ -819,8 +1189,14 @@ function AdminUsers() {
     async (u: AppUser, reason: string) => {
       setDeletePending(true);
       try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) {
+          toast.error('Session expired. Please sign in again.');
+          return;
+        }
         const { data, error } = await supabase.functions.invoke<{ success?: boolean; error?: string; details?: string }>('delete-user', {
           body: { userId: u.user_id, reason: reason.trim() || undefined },
+          headers: { Authorization: `Bearer ${session.access_token}` },
         });
         if (error) throw error;
         if (data?.error) {
@@ -832,7 +1208,17 @@ function AdminUsers() {
         await fetchUsers();
       } catch (err) {
         logger.error('Delete user error:', err);
-        toast.error((err as Error)?.message || 'Failed to delete user');
+        let message = (err as Error)?.message ?? 'Failed to delete user';
+        if (err instanceof FunctionsHttpError && err.context && typeof (err.context as Response).json === 'function') {
+          try {
+            const body = (await (err.context as Response).json()) as { error?: string; details?: string };
+            if (body?.details) message = body.details;
+            else if (body?.error) message = body.error;
+          } catch {
+            /* use default message */
+          }
+        }
+        toast.error(message);
       } finally {
         setDeletePending(false);
       }
@@ -912,7 +1298,7 @@ function AdminUsers() {
               <div className="absolute top-0 left-0 bottom-0 w-[1px] bg-gradient-to-b from-white/20 via-white/5 to-transparent rounded-l-[inherit]" />
 
               <div className="relative px-5 py-4 md:px-7 md:py-5">
-                <div className="flex items-center gap-3 mb-3">
+                <div className="flex items-center gap-3 mb-3 flex-wrap">
                   <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.2 }} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#f4c979]/15 border border-[#f4c979]/30">
                     <Sparkles className="w-3.5 h-3.5 text-[#f4c979]" />
                     <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#f8e5bb]">Admin • Directory</span>
@@ -921,6 +1307,13 @@ function AdminUsers() {
                     <Users className="w-3 h-3 text-[#f4c979]" />
                     <span className="text-[9px] uppercase tracking-wider font-semibold text-[#f8e5bb]/70">{debouncedSearchQuery ? "Filtered" : "Live"} view</span>
                   </motion.div>
+                  <Link
+                    to="/admin/email-recipients"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-[#f4c979]/30 bg-[#f4c979]/10 text-[10px] font-semibold text-[#f8e5bb] hover:bg-[#f4c979]/20 hover:border-[#f4c979]/50 transition-colors"
+                  >
+                    <Mail className="w-3 h-3" />
+                    Email Recipients
+                  </Link>
                 </div>
                 <div className="flex items-center gap-4">
                   <motion.div initial={{ scaleY: 0, opacity: 0 }} animate={{ scaleY: 1, opacity: 1 }} transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }} className="w-1 h-14 md:h-16 rounded-full bg-gradient-to-b from-[#f7e4bd] via-[#f4c979] to-[#d79a32] origin-top flex-shrink-0" style={{ boxShadow: '0 0 20px rgba(244, 201, 121, 0.5), 0 0 40px rgba(244, 201, 121, 0.25)' }} />
@@ -1048,7 +1441,7 @@ function AdminUsers() {
             ) : (
               <>
                 <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full" data-testid="user-list">
                     <thead className="bg-gradient-to-r from-[#2b251b] to-[#1b1812] border-b border-[#f6dcb2]/15 text-[0.65rem] uppercase tracking-[0.3em] text-[#f4c979]/80">
                       <tr>
                         <th className="px-6 py-4 text-left">
@@ -1058,6 +1451,12 @@ function AdminUsers() {
                           </span>
                         </th>
                         <th className="px-6 py-4 text-left">Role</th>
+                        <th className="px-6 py-4 text-left">
+                          <span className="inline-flex items-center gap-2">
+                            <UserCog className="w-4 h-4" />
+                            Manager
+                          </span>
+                        </th>
                         <th className="px-6 py-4 text-left">
                           <span className="inline-flex items-center gap-2">
                             <Award className="w-4 h-4" />
@@ -1077,6 +1476,7 @@ function AdminUsers() {
                       {users.map((user, index) => (
                         <motion.tr
                           key={user.id}
+                          data-testid="user-row"
                           initial={{ opacity: 0, y: 12 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.03 }}
@@ -1118,6 +1518,19 @@ function AdminUsers() {
                             </div>
                           </td>
                           <td className="px-6 py-5">
+                            <div className="flex flex-col gap-1.5">
+                              <span className="text-[#f0e2c7]">
+                                {user.manager_id ? (managerNameMap[user.manager_id] ?? "—") : "—"}
+                              </span>
+                              <button
+                                onClick={() => setManagerModalUser(user)}
+                                className="w-fit px-3 py-1.5 rounded-xl border border-[#f6dcb2]/25 text-xs font-semibold text-[#fdf4db] hover:bg-white/5 transition-colors"
+                              >
+                                {user.manager_id ? "Change" : "Set manager"}
+                              </button>
+                            </div>
+                          </td>
+                          <td className="px-6 py-5">
                             {(() => {
                               const tenure = getTenure(user.hire_date);
                               return (
@@ -1155,7 +1568,7 @@ function AdminUsers() {
                           {/* Actions Column */}
                           <td className="px-6 py-5">
                             {editingRoleUserId === user.id ? (
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2" data-testid="edit-user-form">
                                 {/* Role Dropdown */}
                                 <select
                                   value={pendingRole}
@@ -1196,6 +1609,8 @@ function AdminUsers() {
                             ) : (
                               <div className="flex flex-wrap items-center gap-2">
                                 <button
+                                  type="button"
+                                  data-testid="edit-user"
                                   onClick={() => {
                                     setEditingRoleUserId(user.id);
                                     setPendingRole(user.role);
@@ -1263,6 +1678,13 @@ function AdminUsers() {
                       }}
                       onRoleChange={setPendingRole}
                       onEditExperience={setExperienceModalUser}
+                      onEditManager={setManagerModalUser}
+                      managerNameMap={managerNameMap}
+                      authUserId={authUser?.id}
+                      onUnblock={handleUnblock}
+                      setBlockModalUser={setBlockModalUser}
+                      setDeleteModalUser={setDeleteModalUser}
+                      unblockPending={unblockPending}
                     />
                   ))}
                 </div>
@@ -1315,6 +1737,20 @@ function AdminUsers() {
         />
       )}
 
+      {/* Manager Picker Modal */}
+      {managerModalUser && (
+        <ManagerEditModal
+          key={managerModalUser?.id ?? 'closed'}
+          user={managerModalUser}
+          isOpen={!!managerModalUser}
+          onClose={() => setManagerModalUser(null)}
+          onSave={handleManagerUpdate}
+          saving={savingManager}
+          pickerUsers={pickerUsers}
+          loadingPicker={loadingPicker}
+        />
+      )}
+
       {/* Block User Modal */}
       {blockModalUser && (
         <BlockUserModal
@@ -1329,6 +1765,7 @@ function AdminUsers() {
       {/* Delete User Modal */}
       {deleteModalUser && (
         <DeleteUserModal
+          key={deleteModalUser.id}
           user={deleteModalUser}
           isOpen={!!deleteModalUser}
           onClose={() => setDeleteModalUser(null)}

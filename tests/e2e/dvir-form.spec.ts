@@ -185,6 +185,91 @@ test.describe('DVIR Form', () => {
     });
   });
 
+  test.describe('Odometer validation regression', () => {
+    test('allows same mileage as previous reading (no error, submit not blocked by mileage)', async ({ page }) => {
+      await loginAs(page, 'employee');
+      await page.goto('/dashboard/forms/dvir');
+      await page.waitForSelector('form', { timeout: 10000 });
+      await dismissWhatsNewModal(page);
+      await page.waitForTimeout(500);
+
+      const truckSelect = page.locator('select[name="truckNumber"]');
+      await truckSelect.waitFor({ state: 'visible', timeout: 5000 });
+      await truckSelect.selectOption({ value: VALID_DVIR_DATA.truckNumber });
+      await page.waitForTimeout(800);
+
+      const lastRecordedText = page.getByText(/Last recorded for B132:\s*[\d,]+\s*mi/i);
+      const hasPrevious = await lastRecordedText.isVisible({ timeout: 8000 }).catch(() => false);
+      if (!hasPrevious) {
+        test.skip(true, 'No previous DVIR for B132 in this environment; cannot assert same-mileage behavior.');
+        return;
+      }
+
+      const text = await lastRecordedText.textContent();
+      const match = text?.match(/[\d,]+/);
+      const previousMileageStr = match ? match[0].replace(/,/g, '') : null;
+      if (!previousMileageStr) {
+        test.skip(true, 'Could not parse previous mileage from "Last recorded" text.');
+        return;
+      }
+
+      const mileageInput = page.locator('input#mileage, input[name="mileage"]');
+      await mileageInput.clear();
+      await mileageInput.fill(previousMileageStr);
+      await page.waitForTimeout(600);
+
+      const oldBugMessage = page.getByText(/must be greater than/i);
+      const lowerThanMessage = page.getByText(/Lower than previous reading/i);
+      const mileageErrorVisible =
+        (await oldBugMessage.isVisible().catch(() => false)) ||
+        (await lowerThanMessage.isVisible().catch(() => false));
+      expect(mileageErrorVisible).toBe(false);
+
+      const submitBtn = page.locator(submitButtonLocator);
+      await submitBtn.scrollIntoViewIfNeeded();
+      const submitDisabled = await submitBtn.isDisabled().catch(() => true);
+      expect(submitDisabled).toBe(true);
+    });
+
+    test('rejects mileage below previous and shows "must be at least" message', async ({ page }) => {
+      await loginAs(page, 'employee');
+      await page.goto('/dashboard/forms/dvir');
+      await page.waitForSelector('form', { timeout: 10000 });
+      await dismissWhatsNewModal(page);
+      await page.waitForTimeout(500);
+
+      const truckSelect = page.locator('select[name="truckNumber"]');
+      await truckSelect.waitFor({ state: 'visible', timeout: 5000 });
+      await truckSelect.selectOption({ value: VALID_DVIR_DATA.truckNumber });
+      await page.waitForTimeout(800);
+
+      const lastRecordedText = page.getByText(/Last recorded for B132:\s*[\d,]+\s*mi/i);
+      const hasPrevious = await lastRecordedText.isVisible({ timeout: 8000 }).catch(() => false);
+      if (!hasPrevious) {
+        test.skip(true, 'No previous DVIR for B132; cannot test below-previous message.');
+        return;
+      }
+
+      const text = await lastRecordedText.textContent();
+      const match = text?.match(/[\d,]+/);
+      const previousMileageStr = match ? match[0].replace(/,/g, '') : null;
+      if (!previousMileageStr) {
+        test.skip(true, 'Could not parse previous mileage.');
+        return;
+      }
+      const previousNum = parseInt(previousMileageStr, 10);
+      const belowValue = String(Math.max(0, previousNum - 1));
+
+      const mileageInput = page.locator('input#mileage, input[name="mileage"]');
+      await mileageInput.clear();
+      await mileageInput.fill(belowValue);
+      await page.waitForTimeout(600);
+
+      const atLeastMessage = page.getByText(/must be at least .* mi/i);
+      await expect(atLeastMessage).toBeVisible({ timeout: 3000 });
+    });
+  });
+
   test.describe('Concurrency Tests', () => {
     test('should prevent double submission on rapid clicks', async ({ page }) => {
       await loginAs(page, 'employee');

@@ -121,6 +121,8 @@ interface NonCompliantUser {
   fullName: string | null;
   role: string;
   missingForms: string[];
+  /** Phase 2: app_users.id of this user's manager (null if unset) */
+  managerId: string | null;
 }
 
 function generateEmailContent(
@@ -245,6 +247,53 @@ function generateEmailContent(
   }
 
   const htmlBody = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="font-family:Arial,sans-serif;line-height:1.5;color:#1f2937;max-width:600px;margin:0 auto;padding:20px;"><div style="background:linear-gradient(135deg,#166534 0%,#15803d 100%);color:white;padding:20px;border-radius:8px 8px 0 0;text-align:center;"><h1 style="margin:0;font-size:18px;">ATTS DAILY SAFETY FORM COMPLIANCE REPORT</h1></div><div style="background:#f9fafb;padding:20px;border:1px solid #e5e7eb;border-top:none;"><p style="margin:0 0 8px 0;"><strong>Date:</strong> ${dateLong}</p><p style="margin:0;"><strong>Generated:</strong> ${timestamp}</p></div><div style="background:white;padding:20px;border:1px solid #e5e7eb;border-top:none;"><h2 style="margin:0 0 12px 0;font-size:16px;border-bottom:2px solid #e5e7eb;padding-bottom:8px;">Summary</h2><table style="width:100%;"><tr><td>Total Required:</td><td style="text-align:right;font-weight:bold;">${totalRequired}</td></tr><tr><td style="color:#22c55e;">Compliant:</td><td style="text-align:right;font-weight:bold;color:#22c55e;">${compliantCount}</td></tr><tr><td style="color:#ef4444;">Non-Compliant:</td><td style="text-align:right;font-weight:bold;color:#ef4444;">${nonCompliantUsers.length}</td></tr></table></div><div style="background:white;padding:20px;border:1px solid #e5e7eb;border-top:none;"><h2 style="margin:0 0 12px 0;font-size:16px;border-bottom:2px solid #e5e7eb;padding-bottom:8px;">${nonCompliantUsers.length > 0 ? 'Non-Compliant Employees' : 'Compliance Status'}</h2>${nonCompliantHtml}</div><div style="background:#f9fafb;padding:16px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;font-size:12px;color:#6b7280;"><p style="margin:0;">Thank you for reviewing this compliance report.</p><p style="margin:8px 0 0 0;"><strong>ATTS Safety Compliance System</strong></p></div></body></html>`;
+
+  return { subject, textBody, htmlBody };
+}
+
+// =============================================================================
+// MANAGER-SPECIFIC EMAIL (Phase 2: individual manager notifications)
+// =============================================================================
+
+function generateManagerEmailContent(
+  dateFor: string,
+  managerName: string | null,
+  directReports: NonCompliantUser[]
+): { subject: string; textBody: string; htmlBody: string } {
+  const dateLong = formatDateLong(dateFor);
+  const name = managerName || 'Manager';
+  const subject = directReports.length > 0
+    ? `ATTS Compliance – Your team: ${directReports.length} missing forms (${dateLong})`
+    : `ATTS Compliance – Your team: all clear (${dateLong})`;
+
+  let textBody = `ATTS – Compliance summary for your direct reports\n`;
+  textBody += `==========================================\n\n`;
+  textBody += `Date: ${dateLong}\n\n`;
+  if (directReports.length === 0) {
+    textBody += `All of your direct reports have submitted their required safety forms.\n\n`;
+  } else {
+    textBody += `The following direct reports have not submitted all required forms:\n\n`;
+    for (let i = 0; i < directReports.length; i++) {
+      const u = directReports[i];
+      textBody += `  ${i + 1}. ${u.fullName || 'Unknown'} (${u.role}) – ${u.email}\n`;
+      textBody += `     Missing: ${u.missingForms.join(', ')}\n`;
+    }
+    textBody += `\nPlease follow up with them as needed.\n\n`;
+  }
+  textBody += `---\nATTS Safety Compliance System\n`;
+
+  let listHtml = '';
+  if (directReports.length > 0) {
+    listHtml = '<ul style="margin:0;padding-left:20px;">';
+    for (const u of directReports) {
+      listHtml += `<li style="margin-bottom:6px;"><strong>${u.fullName || 'Unknown'}</strong> (${u.role}) – ${u.email}<br><small style="color:#666;">Missing: ${u.missingForms.join(', ')}</small></li>`;
+    }
+    listHtml += '</ul>';
+  } else {
+    listHtml = '<p style="color:#166534;">All of your direct reports have submitted their required safety forms.</p>';
+  }
+
+  const htmlBody = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="font-family:Arial,sans-serif;line-height:1.5;color:#1f2937;max-width:600px;margin:0 auto;padding:20px;"><div style="background:linear-gradient(135deg,#166534 0%,#15803d 100%);color:white;padding:20px;border-radius:8px 8px 0 0;text-align:center;"><h1 style="margin:0;font-size:18px;">Compliance summary – your team</h1></div><div style="background:#f9fafb;padding:20px;border:1px solid #e5e7eb;border-top:none;"><p style="margin:0;"><strong>Hi ${name},</strong></p><p style="margin:8px 0 0 0;">Date: ${dateLong}</p></div><div style="background:white;padding:20px;border:1px solid #e5e7eb;border-top:none;"><h2 style="margin:0 0 12px 0;font-size:16px;">Your direct reports</h2>${listHtml}</div><div style="background:#f9fafb;padding:16px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;font-size:12px;color:#6b7280;"><p style="margin:0;">ATTS Safety Compliance System</p></div></body></html>`;
 
   return { subject, textBody, htmlBody };
 }
@@ -463,10 +512,10 @@ serve(async (req) => {
     const cutoffUtc = buildCutoffTimestamp(dateFor, DEFAULT_CUTOFF, DEFAULT_TIMEZONE);
     const dayStart = buildCutoffTimestamp(dateFor, '00:00', DEFAULT_TIMEZONE);
 
-    // Fetch required users
+    // Fetch required users (include manager_id for Phase 2 manager emails)
     const { data: requiredUsers, error: usersError } = await supabase
       .from('app_users')
-      .select('user_id, email, full_name, role')
+      .select('id, user_id, email, full_name, role, manager_id')
       .in('role', REQUIRED_ROLES)
       .not('email', 'is', null);
 
@@ -510,6 +559,7 @@ serve(async (req) => {
           fullName: user.full_name,
           role: user.role,
           missingForms,
+          managerId: user.manager_id ?? null,
         });
       }
     }
@@ -542,6 +592,40 @@ serve(async (req) => {
       error_message: emailResult.error ?? null,
     });
     if (logErr) console.error('[Compliance] Failed to write email_send_log:', logErr);
+
+    // Phase 2: Send individual manager emails (direct reports only)
+    const managerIds = [...new Set(nonCompliantUsers.map(u => u.managerId).filter(Boolean))] as string[];
+    let managerEmailsSent = 0;
+    if (managerIds.length > 0) {
+      const { data: managers, error: managersError } = await supabase
+        .from('app_users')
+        .select('id, email, full_name')
+        .in('id', managerIds)
+        .not('email', 'is', null);
+
+      if (!managersError && managers && managers.length > 0) {
+        for (const manager of managers) {
+          const managerEmail = manager.email;
+          if (!managerEmail || !isValidEmail(managerEmail)) continue;
+          const directReports = nonCompliantUsers.filter(u => u.managerId === manager.id);
+          if (directReports.length === 0) continue;
+          const { subject, textBody, htmlBody } = generateManagerEmailContent(
+            dateFor,
+            manager.full_name ?? null,
+            directReports
+          );
+          const mgrResult = await sendGmailEmail([managerEmail], subject, textBody, htmlBody);
+          if (mgrResult.success) managerEmailsSent++;
+          await supabase.from('email_send_log').insert({
+            list_key: 'manager_compliance',
+            recipients: [managerEmail],
+            success: mgrResult.success,
+            error_message: mgrResult.error ?? null,
+          });
+        }
+        console.log('[Compliance] Manager emails sent:', managerEmailsSent, 'of', managers.length);
+      }
+    }
 
     // Send to Make.com webhook
     console.log('[Compliance] Sending to webhook...');
@@ -577,6 +661,7 @@ serve(async (req) => {
         },
         emailSent: emailResult.success,
         emailError: emailResult.error,
+        managerEmailsSent,
         webhookSent: webhookResult.success,
         durationMs: duration,
       }),

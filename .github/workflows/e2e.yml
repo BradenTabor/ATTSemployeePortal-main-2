@@ -9,6 +9,7 @@
 name: E2E
 
 on:
+  workflow_dispatch: {}
   push:
     branches: [main, master]
   pull_request:
@@ -47,6 +48,10 @@ jobs:
       # Chromium only for faster CI; use `npx playwright install --with-deps` for all browsers
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
+
+      # Generate test fixtures for photo upload tests
+      - name: Generate test fixtures
+        run: npm run test:fixtures
 
       # Seed test users if service role key is available
       - name: Seed test users

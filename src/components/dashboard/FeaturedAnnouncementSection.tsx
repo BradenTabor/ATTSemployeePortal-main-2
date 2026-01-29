@@ -412,6 +412,7 @@ function FeaturedAnnouncementSectionComponent() {
                         announcementId={latestAnnouncement.id}
                         author={latestAnnouncement.author}
                         compact
+                        isClaimable={true}
                       />
                     </motion.div>
                   ) : (

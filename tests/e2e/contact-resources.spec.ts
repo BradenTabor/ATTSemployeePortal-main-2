@@ -49,6 +49,7 @@ test.describe('Contact Form', () => {
         // For now, just log - this should be fixed in the actual implementation
       }
     } else {
+      // SKIP: Email input field not found - form structure may vary by environment
       test.skip();
     }
   });

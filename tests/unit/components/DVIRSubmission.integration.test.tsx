@@ -94,6 +94,7 @@ vi.mock('../../../src/hooks/useFormPersistence', () => ({
     lastSaved: null,
     hasUnsavedChanges: false,
     saveDraft: vi.fn(),
+    flushPendingSave: vi.fn(),
     clearDraft: vi.fn(),
     dismissDraft: vi.fn(),
     markAsSaved: vi.fn(),
@@ -155,6 +156,9 @@ describe('DVIR Form Submission Integration', () => {
     ).toBeInTheDocument();
   });
 
+  // SKIP: Photo upload test requires file input mock and storage mock to be properly chained.
+  // The current mock doesn't trigger the storage upload flow correctly in jsdom.
+  // TODO: Fix mock chain for storage.from().upload() (QA-DVIR-001)
   it.skip('should handle photo upload', async () => {
     const user = userEvent.setup();
     renderWithProviders(<DVIRForm />);
@@ -170,6 +174,9 @@ describe('DVIR Form Submission Integration', () => {
     );
   });
 
+  // SKIP: Full submission flow requires complete Supabase mock with chained from().insert().
+  // Current mock returns correctly but form submission validation fails in jsdom.
+  // TODO: Add complete submission mock chain (QA-DVIR-002)
   it.skip('should submit form with valid data', async () => {
     const user = userEvent.setup();
     renderWithProviders(<DVIRForm />);

@@ -25,6 +25,8 @@ import {
   RefreshCw,
   Filter,
   X,
+  Download,
+  FileText,
 } from "lucide-react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useAuth } from "../../contexts/AuthContext";
@@ -37,6 +39,9 @@ import {
   type Period,
   type UnifiedLeaderboardEntry,
 } from "../../hooks/queries/useSafetyAnalytics";
+import { toast } from "../../lib/toast";
+import { exportOsha300Csv } from "../../lib/osha300Export";
+import { exportAnalyticsPdf } from "../../lib/analyticsPdfExport";
 
 // ============================================================================
 // COMPACT COMPONENTS
@@ -447,8 +452,36 @@ function SafetyAnalyticsDashboard() {
   const debouncedSearch = useDebouncedValue(searchQuery, 300);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [showSearch, setShowSearch] = useState(false);
-  
+  const [exporting, setExporting] = useState<'csv' | 'pdf' | null>(null);
+
   const { data, isLoading, isError, refetch } = useSafetyAnalytics(period, 50);
+
+  const handleExportOsha300 = useCallback(async () => {
+    setExporting('csv');
+    try {
+      await exportOsha300Csv();
+      toast.success("OSHA 300 log downloaded");
+    } catch (e) {
+      toast.error("Export failed", (e as Error)?.message ?? "Could not download OSHA 300 log");
+    } finally {
+      setExporting(null);
+    }
+  }, []);
+
+  const handleExportPdf = useCallback(() => {
+    if (!data?.stats || !data?.leaderboard) return;
+    setExporting('pdf');
+    try {
+      exportAnalyticsPdf({
+        stats: data.stats,
+        leaderboard: data.leaderboard,
+        period: period === 'all' ? 'All time' : period.charAt(0).toUpperCase() + period.slice(1),
+        generatedAt: new Date().toLocaleString(),
+      });
+    } finally {
+      setExporting(null);
+    }
+  }, [data?.stats, data?.leaderboard, period]);
   
   // Extract leaderboard to satisfy React Compiler memoization requirements
   const leaderboard = data?.leaderboard;
@@ -495,8 +528,28 @@ function SafetyAnalyticsDashboard() {
                 <p className="text-[10px] text-[#f8e5bb]/40">Form compliance & engagement</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <PeriodSelector value={period} onChange={setPeriod} />
+              <button
+                type="button"
+                onClick={handleExportOsha300}
+                disabled={!!exporting}
+                aria-label="Export OSHA 300 log (CSV)"
+                className="inline-flex items-center gap-1.5 px-2.5 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-xs font-medium text-white/80 disabled:opacity-50 focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+              >
+                <Download className="w-3.5 h-3.5" aria-hidden />
+                <span className="hidden sm:inline">OSHA 300 (CSV)</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleExportPdf}
+                disabled={!!exporting || !data}
+                aria-label="Export analytics report (PDF)"
+                className="inline-flex items-center gap-1.5 px-2.5 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-xs font-medium text-white/80 disabled:opacity-50 focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+              >
+                <FileText className="w-3.5 h-3.5" aria-hidden />
+                <span className="hidden sm:inline">Report (PDF)</span>
+              </button>
               <button
                 type="button"
                 onClick={() => refetch()}

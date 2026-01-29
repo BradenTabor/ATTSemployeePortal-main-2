@@ -12,4 +12,5 @@ export { DateField, TimeField } from './GlassyPickers';
 export { ContactTemplatePicker } from './ContactTemplatePicker';
 export { SavedLocationPicker } from './SavedLocationPicker';
 export { SignatureCanvas } from './SignatureCanvas';
+export { SignaturePad, type SignaturePadProps } from './SignaturePad';
 export { VoiceInputButton, VoiceInputButtonWithLoading } from './VoiceInputButton';

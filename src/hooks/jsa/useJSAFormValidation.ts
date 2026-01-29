@@ -66,7 +66,11 @@ export function useJSAFormValidation(form: DailyJsaFormState) {
     },
     {
       field: 'employeeSignature',
-      validator: (value: unknown) => validators.signature(value),
+      validator: (value: unknown, form?: unknown) => {
+        const state = form as DailyJsaFormState | undefined;
+        if (state?.employeeSignaturePath?.trim()) return null;
+        return validators.signature(value);
+      },
     },
   ], []);
 

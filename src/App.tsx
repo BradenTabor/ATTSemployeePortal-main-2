@@ -24,6 +24,8 @@ import { IOSInstallPrompt } from "./components/pwa";
 import { queryClient } from "./lib/queryClient";
 import { PageWrapper } from "./motion";
 import { UserPresenceTracker } from "./hooks/useUserPresence";
+import { OfflineQueueProvider } from "./contexts/OfflineQueueContext";
+import { OfflineSyncIndicator } from "./components/OfflineSyncIndicator";
 
 // Main pages
 const Home = lazy(() => import("./pages/Home"));
@@ -47,7 +49,7 @@ const Profile = lazy(() => import("./pages/Profile"));
 const Settings = lazy(() => import("./pages/Settings"));
 
 // Admin pages
-const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard.tsx"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminRTO = lazy(() => import("./pages/admin/AdminRTO"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminJSA = lazy(() => import("./pages/admin/AdminJSA"));
@@ -62,6 +64,7 @@ const AdminOperationsHub = lazy(() => import("./pages/admin/AdminOperationsHub")
 const AdminCertifications = lazy(() => import("./pages/admin/AdminCertifications"));
 const AdminGradeTests = lazy(() => import("./pages/admin/AdminGradeTests"));
 const AdminEmailRecipients = lazy(() => import("./pages/admin/AdminEmailRecipients"));
+const AdminComplianceAudit = lazy(() => import("./pages/admin/AdminComplianceAudit"));
 
 // Mechanic pages
 const MechanicDashboard = lazy(() => import("./pages/mechanic/MechanicDashboard"));
@@ -438,48 +441,60 @@ function AnimatedRoutes() {
               }
             />
 
-            {/* General Foreman Dashboard */}
+            {/* General Foreman Dashboard - GF and admin only */}
             <Route
               path="/general-foreman-dashboard"
               element={
                 <PageWrapper>
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={["admin", "general_foreman"]}>
                     <GeneralForemanDashboard />
                   </ProtectedRoute>
                 </PageWrapper>
               }
             />
 
-            {/* Crew Oversight - General Foreman Job Tracker */}
+            {/* Crew Oversight - General Foreman Job Tracker - GF and admin only */}
             <Route
               path="/crew-oversight"
               element={
                 <PageWrapper>
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={["admin", "general_foreman"]}>
                     <CrewOversight />
                   </ProtectedRoute>
                 </PageWrapper>
               }
             />
 
-            {/* General Foreman Safety Compliance */}
+            {/* General Foreman crew-oversight (alias for E2E / gf nav) */}
+            <Route
+              path="/general-foreman/crew-oversight"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute allowedRoles={["admin", "general_foreman"]}>
+                    <CrewOversight />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            {/* General Foreman Safety Compliance - GF and admin only */}
             <Route
               path="/general-foreman/safety-compliance"
               element={
                 <PageWrapper>
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={["admin", "general_foreman"]}>
                     <GeneralForemanSafetyCompliance />
                   </ProtectedRoute>
                 </PageWrapper>
               }
             />
 
-            {/* General Foreman Equipment Logs */}
+            {/* General Foreman Equipment Logs - GF and admin only */}
             <Route
               path="/general-foreman/equipment-logs"
               element={
                 <PageWrapper>
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={["admin", "general_foreman"]}>
                     <GeneralForemanEquipmentLogs />
                   </ProtectedRoute>
                 </PageWrapper>
@@ -662,6 +677,18 @@ function AnimatedRoutes() {
               }
             />
 
+            {/* Compliance Audit - safety_audit_log + osha_compliance_mapping (admin/safety_officer) */}
+            <Route
+              path="/admin/compliance-audit"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute allowedRoles={["admin", "safety_officer"]}>
+                    <AdminComplianceAudit />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
             {/* Legacy route - redirect to Operations Hub */}
             <Route
               path="/admin/work-sites"
@@ -722,11 +749,14 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ToastOverlayProvider>
+        <OfflineQueueProvider>
+        <OfflineSyncIndicator />
         <Router>
           <AnimatedRoutes />
           {/* What's New Onboarding - one-time feature showcase after app updates (needs Router context) */}
           <WhatsNewOnboarding />
         </Router>
+        </OfflineQueueProvider>
         {/* Corner toasts for non-form notifications */}
         <Toaster />
         {/* Deploy version check: poll + visibility → reload when new build is live */}

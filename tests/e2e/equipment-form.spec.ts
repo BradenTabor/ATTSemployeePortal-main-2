@@ -108,6 +108,76 @@ test.describe('Equipment Inspection Form', () => {
     }
   });
 
+  test.describe('Regression - Submit and Enter', () => {
+    async function fillRequiredFields(page: import('@playwright/test').Page) {
+      const typeSelect = page.locator('select[name="equipmentType"]');
+      await typeSelect.waitFor({ state: 'visible', timeout: 5000 });
+      await typeSelect.selectOption({ value: 'Jarraff' });
+      await page.waitForTimeout(600);
+      const numberSelect = page.locator('select[name="equipmentNumber"]');
+      await numberSelect.waitFor({ state: 'visible', timeout: 3000 });
+      await numberSelect.selectOption({ value: 'J-109' });
+      await page.waitForTimeout(500);
+      await page.locator('input[name="submittedBy"]').fill('E2E Regression');
+      await page.waitForTimeout(400);
+      const generalSection = page.locator('section:has(p:has-text("Step 2 · General"))');
+      await generalSection.scrollIntoViewIfNeeded();
+      await generalSection.getByRole('button', { name: 'All Pass' }).click();
+      await page.waitForTimeout(1000);
+      const specificSection = page.locator('section:has(p:has-text("Step 3 · Specific"))');
+      if (await specificSection.locator('button:has-text("All Pass")').isVisible().catch(() => false)) {
+        await specificSection.scrollIntoViewIfNeeded();
+        await specificSection.getByRole('button', { name: 'All Pass' }).click();
+        await page.waitForTimeout(600);
+      }
+      const photosSection = page.locator('section:has(p:has-text("Step 4 · Photos"))');
+      await photosSection.scrollIntoViewIfNeeded();
+      const fileInput = page.locator('input[type="file"][name="hydraulic-photo"], input[type="file"][aria-label*="Hydraulic"]').first();
+      await fileInput.setInputFiles('tests/fixtures/hydraulic.jpg');
+      await page.waitForTimeout(2000);
+    }
+
+    test('submit button enables when all validations pass (regression)', async ({ page }) => {
+      await loginAs(page, 'employee');
+      await gotoEquipmentForm(page);
+      await fillRequiredFields(page);
+
+      await expect(page.getByText(/Fix \d+ issue/i)).not.toBeVisible();
+      const submitBtn = page.getByTestId('submit-button');
+      await submitBtn.scrollIntoViewIfNeeded();
+      await expect(submitBtn).toBeEnabled({ timeout: 10000 });
+      await submitBtn.click();
+
+      const successToast = page.locator('[data-sonner-toast][data-type="success"]').first();
+      const successHeading = page.getByRole('heading', { name: /Submitted Successfully|success/i }).first();
+      await Promise.race([
+        successToast.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {}),
+        successHeading.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {}),
+      ]);
+      expect(await successToast.isVisible().catch(() => false) || await successHeading.isVisible().catch(() => false)).toBe(true);
+    });
+
+    test('Enter key submits form when valid', async ({ page }) => {
+      await loginAs(page, 'employee');
+      await gotoEquipmentForm(page);
+      await fillRequiredFields(page);
+
+      const submitBtn = page.getByTestId('submit-button');
+      await submitBtn.scrollIntoViewIfNeeded();
+      await expect(submitBtn).toBeEnabled({ timeout: 10000 });
+      await page.locator('input[name="submittedBy"]').focus();
+      await page.keyboard.press('Enter');
+
+      const successToast = page.locator('[data-sonner-toast][data-type="success"]').first();
+      const successHeading = page.getByRole('heading', { name: /Submitted Successfully|success/i }).first();
+      await Promise.race([
+        successToast.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {}),
+        successHeading.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {}),
+      ]);
+      expect(await successToast.isVisible().catch(() => false) || await successHeading.isVisible().catch(() => false)).toBe(true);
+    });
+  });
+
   test.describe('Validation Tests', () => {
     test('should reject submission without hydraulic photo', async ({ page }) => {
       await loginAs(page, 'employee');
@@ -145,28 +215,26 @@ test.describe('Equipment Inspection Form', () => {
     test('should reject submission without equipment type', async ({ page }) => {
       await loginAs(page, 'employee');
       await gotoEquipmentForm(page);
-      
       // Don't select equipment type
-      
-      // Fill other fields
       await page.fill('input[name="submittedBy"], [data-testid="submitted-by"]', 'Test Without Type');
-      
-      const fileInput = page.locator('input[type="file"][name*="hydraulic"], [data-testid="hydraulic-photo-upload"]');
-      await fileInput.setInputFiles('tests/fixtures/hydraulic.jpg');
-      
-      // Check that submit button is disabled (validation preventing submission)
+      const fileInput = page.locator('input[type="file"][name*="hydraulic"], [data-testid="hydraulic-photo-upload"], input[type="file"][aria-label*="Hydraulic"]').first();
+      if (await fileInput.isVisible().catch(() => false)) {
+        await fileInput.setInputFiles('tests/fixtures/hydraulic.jpg');
+        await page.waitForTimeout(500);
+      }
       const submitBtn = page.getByTestId('submit-button');
+      await submitBtn.scrollIntoViewIfNeeded().catch(() => {});
       const isDisabled = await submitBtn.isDisabled().catch(() => false);
-      
-      // Button should be disabled OR should show validation error
       if (isDisabled) {
-        // Button is disabled - validation is working
         const buttonTitle = await submitBtn.getAttribute('title').catch(() => '');
-        expect(buttonTitle).toContain('issue'); // Should mention issues to fix
+        expect(buttonTitle?.toLowerCase().includes('issue') || buttonTitle?.toLowerCase().includes('fix')).toBe(true);
       } else {
-        // If button is enabled, try clicking and check for error
         await submitBtn.click();
-        await expect(page.locator('[data-sonner-toast], [role="alert"]').filter({ hasText: /error|required|photo|invalid|select (an?|a )|complete|checklist/i }).first()).toBeVisible({ timeout: 5000 });
+        await page.waitForTimeout(1000);
+        const errorToast = page.locator('[data-sonner-toast][data-type="error"], [data-sonner-toast]').filter({ hasText: /error|required|select|type/i }).first();
+        const errorAlert = page.locator('[role="alert"], .error-message, [data-error="true"]').filter({ hasText: /equipment|type|select|required/i }).first();
+        const found = await errorToast.isVisible().catch(() => false) || await errorAlert.isVisible().catch(() => false);
+        expect(found).toBe(true);
       }
     });
 

@@ -1,4 +1,5 @@
 import { useMemo, useCallback, Suspense, lazy, useState } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { Shield } from "lucide-react";
 import IncidentLoggingModal from "../../components/admin/IncidentLoggingModal";
@@ -174,11 +175,14 @@ export default function SafetyOfficerDashboard() {
         </div>
       </div>
 
-      {/* Incident Logging Modal */}
-      <IncidentLoggingModal
-        isOpen={showIncidentModal}
-        onClose={() => setShowIncidentModal(false)}
-      />
+      {/* Incident Logging Modal - portaled so it sits above layout */}
+      {createPortal(
+        <IncidentLoggingModal
+          isOpen={showIncidentModal}
+          onClose={() => setShowIncidentModal(false)}
+        />,
+        document.body
+      )}
     </DashboardLayout>
   );
 }

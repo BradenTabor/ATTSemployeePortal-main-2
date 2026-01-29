@@ -5,7 +5,8 @@
  * Displays crew list and handles create/edit/delete operations.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users,
@@ -97,15 +98,18 @@ function CrewFormModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center px-4 py-4 bg-black/70 backdrop-blur-sm overflow-y-auto"
+      className="fixed inset-0 z-[9999] flex items-center justify-center px-4 py-4 bg-black/70 backdrop-blur-sm overflow-hidden"
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={isEdit ? 'Edit crew' : 'Create crew'}
     >
       <motion.div
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg rounded-2xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] shadow-2xl overflow-hidden my-auto"
+        className="w-full max-w-lg rounded-2xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] shadow-2xl overflow-y-auto overflow-x-hidden my-auto max-h-[90vh]"
       >
         {/* Header */}
         <div className="px-5 py-4 border-b border-[#f6dcb2]/10 flex items-center justify-between">
@@ -355,6 +359,21 @@ export function CrewManager({ userId }: CrewManagerProps) {
 
   const filteredCrews = showInactive ? crews : crews.filter(c => c.is_active);
 
+  // Lock body and dashboard scroll when crew modal is open
+  useEffect(() => {
+    if (!showModal) return;
+    const body = document.body;
+    const scrollEl = document.querySelector('[data-scroll-container]') as HTMLElement | null;
+    const prevBody = body.style.overflow;
+    const prevScroll = scrollEl?.style.overflow ?? '';
+    body.style.overflow = 'hidden';
+    if (scrollEl) scrollEl.style.overflow = 'hidden';
+    return () => {
+      body.style.overflow = prevBody;
+      if (scrollEl) scrollEl.style.overflow = prevScroll;
+    };
+  }, [showModal]);
+
   // Open edit modal with crew members loaded
   const handleEditCrew = useCallback(async (crew: Crew) => {
     setEditingCrew(crew);
@@ -490,23 +509,26 @@ export function CrewManager({ userId }: CrewManagerProps) {
         </div>
       )}
 
-      {/* Modal */}
-      <AnimatePresence>
-        {showModal && (
-          <CrewFormModal
-            key={editingCrew?.id ?? 'new'}
-            crew={editingCrew}
-            initialMemberIds={initialMemberIds}
-            onSave={handleSave}
-            onClose={() => {
-              setShowModal(false);
-              setEditingCrew(null);
-              setInitialMemberIds([]);
-            }}
-            isLoading={saving || loadingMembers}
-          />
-        )}
-      </AnimatePresence>
+      {/* Modal — portaled to body and scroll locked so overlay is above layout and page doesn't scroll behind */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {showModal && (
+            <CrewFormModal
+              key={editingCrew?.id ?? 'new'}
+              crew={editingCrew}
+              initialMemberIds={initialMemberIds}
+              onSave={handleSave}
+              onClose={() => {
+                setShowModal(false);
+                setEditingCrew(null);
+                setInitialMemberIds([]);
+              }}
+              isLoading={saving || loadingMembers}
+            />
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }

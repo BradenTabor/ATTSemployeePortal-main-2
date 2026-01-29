@@ -12,9 +12,9 @@ import { cn } from '../../lib/utils';
 
 export interface ValidatedSubmitButtonProps {
   /**
-   * Click handler
+   * Click handler. Omit when type="submit" and form onSubmit handles submit.
    */
-  onClick: () => void;
+  onClick?: () => void;
   
   /**
    * Whether button is disabled (from existing form state)
@@ -82,7 +82,7 @@ export function ValidatedSubmitButton({
     >
       <button
         type={type}
-        onClick={onClick}
+        onClick={onClick ?? undefined}
         disabled={isDisabled}
         data-testid={dataTestId}
         className={cn(

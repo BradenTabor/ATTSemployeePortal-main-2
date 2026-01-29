@@ -167,6 +167,13 @@ export const ADMIN_CORE_NAV_CARDS: AdminNavCardConfig[] = [
     variant: "gold",
   },
   {
+    title: "Compliance Audit",
+    description: "Safety audit log, OSHA mapping, compliance reports, and weekly safety audit runs.",
+    icon: <FileText className="w-8 h-8 text-[#f4c979]" />,
+    to: "/admin/compliance-audit",
+    variant: "gold",
+  },
+  {
     title: "Certifications",
     description: "Track certifications, grade tests, and manage access.",
     icon: <Award className="w-8 h-8 text-[#f4c979]" />,

@@ -1,19 +1,26 @@
 /**
  * Form Success Celebration Component
- * 
+ *
  * A premium full-screen success overlay with confetti animation
  * displayed after successful form submission.
- * 
+ *
  * Enhanced Features:
  * - Shows remaining compliance forms as CTAs
  * - Personalized nudge messaging
  * - Quick navigation to next form
- * 
+ *
+ * IMPORTANT – Full-screen overlay behavior (recurring bug fix):
+ * This overlay must (1) be rendered via createPortal(..., document.body) so it is
+ * outside DashboardLayout's scroll container, and (2) lock both document.body and
+ * [data-scroll-container] overflow when visible. Otherwise the user can scroll
+ * the page behind the overlay. See docs/ModalsAndOverlays.md for the full pattern.
+ *
  * @module FormSuccessCelebration
  */
 
 import { useEffect, useState, useMemo } from 'react';
 import type React from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -211,6 +218,23 @@ export function FormSuccessCelebration({
   const confettiColors = useMemo(() => theme.confetti, [theme.confetti]);
   const confettiParticles = useMemo(() => generateParticleData(50, confettiColors), [confettiColors]);
   
+  // Lock body and dashboard scroll container when overlay is visible.
+  // See docs/ModalsAndOverlays.md: overlays inside DashboardLayout must portal to body
+  // and lock [data-scroll-container] so the user cannot scroll the page behind the overlay.
+  useEffect(() => {
+    if (!isVisible) return;
+    const body = document.body;
+    const scrollEl = document.querySelector('[data-scroll-container]') as HTMLElement | null;
+    const prevBody = body.style.overflow;
+    const prevScroll = scrollEl?.style.overflow ?? '';
+    body.style.overflow = 'hidden';
+    if (scrollEl) scrollEl.style.overflow = 'hidden';
+    return () => {
+      body.style.overflow = prevBody;
+      if (scrollEl) scrollEl.style.overflow = prevScroll;
+    };
+  }, [isVisible]);
+
   // Calculate progress
   const completedCount = 3 - remainingForms.length;
   const hasRemaining = remainingForms.length > 0;
@@ -223,17 +247,20 @@ export function FormSuccessCelebration({
     (stats.checklistItemsCount !== undefined && stats.checklistItemsCount > 0)
   );
 
-  return (
+  const content = (
     <AnimatePresence>
       {isVisible && (
         <ConfettiController>
           {(showConfetti) => (
             <motion.div
-              className="fixed inset-0 z-50 flex items-center justify-center"
+              className="fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Form submitted successfully"
             >
               {/* Backdrop */}
               <motion.div
@@ -475,6 +502,8 @@ export function FormSuccessCelebration({
       )}
     </AnimatePresence>
   );
+
+  return typeof document !== 'undefined' ? createPortal(content, document.body) : null;
 }
 
 export default FormSuccessCelebration;

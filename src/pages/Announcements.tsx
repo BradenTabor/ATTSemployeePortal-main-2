@@ -361,11 +361,12 @@ const FeaturedAnnouncementCard = ({ announcement, formatDate, onClick }: Feature
                 Originator
               </p>
             </div>
-            {/* Collect Points Button - Only shows for Safety AI announcements */}
+            {/* Collect Points Button - Only shows for Safety AI announcements; only latest signal is claimable */}
             <CollectPointsButton 
               announcementId={announcement.id}
               author={announcement.author}
               className="hidden sm:flex"
+              isClaimable={true}
             />
             {/* Decorative signal indicator - hidden when rewards button shows */}
             {announcement.author !== "Safety AI" && (
@@ -384,6 +385,7 @@ const FeaturedAnnouncementCard = ({ announcement, formatDate, onClick }: Feature
             <CollectPointsButton 
               announcementId={announcement.id}
               author={announcement.author}
+              isClaimable={true}
             />
           </div>
         </motion.div>
@@ -485,6 +487,7 @@ const AnnouncementCard = forwardRef<HTMLDivElement, AnnouncementCardProps>(
                 announcementId={announcement.id}
                 author={announcement.author}
                 compact
+                isClaimable={false}
               />
             )}
             <span className="flex items-center gap-0.5 text-emerald-300/70 text-xs font-semibold sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">

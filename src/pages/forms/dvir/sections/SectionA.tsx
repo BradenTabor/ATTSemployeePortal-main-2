@@ -47,6 +47,7 @@ export function SectionA({
           <select
             id="truckNumber"
             name="truckNumber"
+            data-testid="truck-number-select"
             value={form.truckNumber}
             onChange={(e) => {
               setForm((prev) => ({ ...prev, truckNumber: e.target.value }));
@@ -220,6 +221,7 @@ export function SectionA({
           <input
             id="driversName"
             name="driversName"
+            data-testid="drivers-name-input"
             value={form.driversName}
             onChange={(e) => {
               setForm((prev) => ({ ...prev, driversName: e.target.value }));

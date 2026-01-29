@@ -114,9 +114,17 @@ export default function DVIRForm() {
     userId: user?.id,
     createInitialState: createInitialDVIRFormState,
     isEditMode: false,
-    debounceMs: 500,
+    debounceMs: 300,
   });
-  
+
+  // Refs for flush-on-unmount so latest state is saved before remount
+  const formRef = useRef(form);
+  const currentStepRef = useRef(currentStep);
+  const completedStepsRef = useRef(completedSteps);
+  formRef.current = form;
+  currentStepRef.current = currentStep;
+  completedStepsRef.current = completedSteps;
+
   // Check for template data from history (takes precedence over draft)
   useEffect(() => {
     const templateDataStr = sessionStorage.getItem('dvir-template');
@@ -143,17 +151,41 @@ export default function DVIRForm() {
     }
   }, []);
 
-  // Show draft recovery modal if draft exists (with small delay to be less intrusive)
+  // Auto-restore drafts saved very recently (same session / remount recovery)
+  const didAutoRestoreRef = useRef(false);
   useEffect(() => {
-    if (hasDraft && draftData) {
-      // Small delay to allow page to render first, making modal less intrusive
-      const timer = setTimeout(() => {
-        setShowDraftModal(true);
-      }, 500);
-      return () => clearTimeout(timer);
+    if (!hasDraft || !draftData) return;
+    const savedAtMs = draftData.savedAt ? new Date(draftData.savedAt).getTime() : 0;
+    const draftAgeMs = savedAtMs ? Date.now() - savedAtMs : Infinity;
+    const AUTO_RESTORE_WINDOW_MS = 60_000;
+    if (draftAgeMs < AUTO_RESTORE_WINDOW_MS) {
+      setForm(draftData.form);
+      setCurrentStep(draftData.currentStep);
+      setCompletedSteps(new Set(draftData.completedSteps));
+      clearDraft();
+      didAutoRestoreRef.current = true;
+      setShowDraftModal(false);
+      formToast.success("Draft restored", "Your recent progress has been restored.");
     }
-  }, [hasDraft, draftData]);
-  
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Run once on mount; hasDraft/draftData/clearDraft are stable from initial hook state.
+  }, []);
+
+  // Show draft recovery modal if draft exists (with small delay); skip if we auto-restored.
+  // Ignore "empty" drafts: step 1, 0 completed, AND form still matches initial (opened and left).
+  // If user filled any fields, form !== initial → keep draft and show modal.
+  useEffect(() => {
+    if (!hasDraft || !draftData || didAutoRestoreRef.current) return;
+    const noSteps = draftData.currentStep === 1 && (draftData.completedSteps?.length ?? 0) === 0;
+    const formMatchesInitial =
+      JSON.stringify(draftData.form) === JSON.stringify(createInitialDVIRFormState());
+    if (noSteps && formMatchesInitial) {
+      clearDraft();
+      return;
+    }
+    const timer = setTimeout(() => setShowDraftModal(true), 500);
+    return () => clearTimeout(timer);
+  }, [hasDraft, draftData, clearDraft]);
+
   // Handle draft restoration
   const handleRestoreDraft = useCallback(() => {
     if (draftData) {
@@ -177,7 +209,16 @@ export default function DVIRForm() {
       saveDraft(form, currentStep, completedSteps);
     }
   }, [form, currentStep, completedSteps, user?.id, saveDraft]);
-  
+
+  // Flush draft on unmount so remounts don't lose last keystrokes
+  useEffect(() => {
+    return () => {
+      if (user?.id) {
+        flushPendingSave(formRef.current, currentStepRef.current, completedStepsRef.current);
+      }
+    };
+  }, [user?.id, flushPendingSave]);
+
   // Warn before closing browser/tab with unsaved changes (beforeunload)
   // Also warn if photos are selected (photos can't be persisted to localStorage)
   // Save draft immediately if there are unsaved changes
@@ -621,32 +662,23 @@ export default function DVIRForm() {
     // Mark submit as attempted to show all errors
     markSubmitAttempted();
 
-    // Validate all fields
-    const isFormValid = validateAll();
+    // Validate all fields; use returned errors for scroll/toast (state may not have updated yet)
+    const { isValid: isFormValid, errors: validationErrors } = validateAll();
     const hasAdditionalErrors = Object.keys(additionalErrors).length > 0;
+    const freshErrors = { ...(validationErrors as Record<string, string>), ...additionalErrors };
 
     if (!isFormValid || hasAdditionalErrors) {
-      // Track validation errors
-      Object.keys(allErrors).forEach(field => {
-        if ((allErrors as Record<string, string>)[field]) {
-          trackFormSubmitError({ 
-            form_type: 'dvir', 
-            error_code: 'VALIDATION_FAILED', 
-            field_name: field 
-          });
+      Object.keys(freshErrors).forEach((field) => {
+        if (freshErrors[field]) {
+          trackFormSubmitError({ form_type: 'dvir', error_code: 'VALIDATION_FAILED', field_name: field });
         }
       });
-
-      // Show validation summary and scroll to first error
-      scrollToFirstError(allErrors, { offset: 120 });
-      
-      // Show error toast with summary
-      const errorCount = Object.keys(allErrors).filter(k => (allErrors as Record<string, string>)[k]).length;
+      scrollToFirstError(freshErrors, { offset: 120 });
+      const errorCount = Object.keys(freshErrors).filter((k) => freshErrors[k]).length;
       formToast.error(
-        "Validation Error",
+        'Validation Error',
         `Please fix ${errorCount} ${errorCount === 1 ? 'issue' : 'issues'} before submitting.`,
       );
-      
       submittingRef.current = false;
       setSubmitting(false);
       return;
@@ -762,7 +794,7 @@ export default function DVIRForm() {
           />
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6" data-testid="dvir-form">
           {/* Validation Summary */}
           {Object.keys(allErrors).filter(k => (allErrors as Record<string, string>)[k]).length > 0 && (
             <ValidationSummary
@@ -1334,9 +1366,7 @@ export default function DVIRForm() {
               <li>• Required oil dipstick photo has been captured.</li>
             </ul>
             <ValidatedSubmitButton
-              onClick={() => {
-                handleSubmit(new Event('submit') as unknown as React.FormEvent);
-              }}
+              type="submit"
               disabled={submitting}
               loading={submitting}
               errorCount={Object.keys(allErrors).filter(k => (allErrors as Record<string, string>)[k]).length}

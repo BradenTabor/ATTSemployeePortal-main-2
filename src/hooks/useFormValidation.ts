@@ -92,8 +92,9 @@ export function useFormValidation<T extends Record<string, unknown>>(
     [form, rules]
   );
 
-  // Validate all fields
-  const validateAll = useCallback((): boolean => {
+  // Validate all fields. Returns { isValid, errors } so callers can use fresh errors
+  // (e.g. for scroll/toast) without relying on state that hasn't updated yet.
+  const validateAll = useCallback((): { isValid: boolean; errors: Partial<Record<keyof T, string>> } => {
     const startTime = performance.now();
     const newErrors: Partial<Record<keyof T, string>> = {};
 
@@ -109,7 +110,6 @@ export function useFormValidation<T extends Record<string, unknown>>(
     const duration = performance.now() - startTime;
     const isValid = Object.keys(newErrors).length === 0;
     
-    // Log validation performance
     if (formType) {
       logger.info('form_validation_complete', {
         form_type: formType,
@@ -121,7 +121,7 @@ export function useFormValidation<T extends Record<string, unknown>>(
       });
     }
     
-    return isValid;
+    return { isValid, errors: newErrors };
   }, [form, rules, formType]);
 
   // Abort controllers for async validation cancellation
@@ -405,8 +405,8 @@ export interface UseFormValidationReturn<T> {
   validating: Set<keyof T>;
   /** Validate a single field (sync) */
   validateField: (field: keyof T) => string | null;
-  /** Validate all fields (sync) */
-  validateAll: () => boolean;
+  /** Validate all fields (sync). Returns { isValid, errors } for use in submit handlers. */
+  validateAll: () => { isValid: boolean; errors: Partial<Record<keyof T, string>> };
   /** Validate a single field (async) */
   validateFieldAsync: (field: keyof T) => Promise<string | null>;
   /** Mark field as touched (user interacted) */

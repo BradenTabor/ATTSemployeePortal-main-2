@@ -30,6 +30,8 @@ import CardListSkeleton from "../../../components/skeletons/CardListSkeleton";
 import { AdvancedPagination } from "../../../components/ui/AdvancedPagination";
 import { DateRangeChips } from "../../../components/ui/QuickFilterChips";
 import { DataExporter, generateFilename, type ExportMetadata } from "../../../lib/exportUtils";
+import { logReportExported } from "../../../lib/safetyAuditLog";
+import { useAuth } from "../../../contexts/AuthContext";
 
 import {
   type DVIRReport,
@@ -106,6 +108,7 @@ export function DVIRTab({
   setDvirReports,
   getDvirPublicUrl,
 }: DVIRTabProps) {
+  const { user, role } = useAuth();
   const prefersReducedMotion = useReducedMotion();
 
   const isStoragePath = useCallback((s: string) => /[/\\]/.test(s) || /\.(png|jpe?g|webp)$/i.test(s), []);
@@ -266,14 +269,23 @@ export function DVIRTab({
           setExportSuccess("DVIR data exported to PDF!");
           break;
       }
-      
+      await logReportExported(
+        {
+          reportType: "DVIR",
+          dateFrom: dvirDateRange?.split("_")[0] ?? null,
+          dateTo: dvirDateRange?.split("_")[1] ?? null,
+          format: exportFormat,
+          totalRecords: filteredDvirReports.length,
+        },
+        { userId: user?.id, role: role ?? undefined }
+      );
       setTimeout(() => setExportSuccess(null), 3000);
     } catch {
       // Export failed silently
     } finally {
       setIsExporting(false);
     }
-  }, [filteredDvirReports, dvirStatus, debouncedDvirSearch, userEmail, setIsExporting, setExportSuccess]);
+  }, [filteredDvirReports, dvirStatus, debouncedDvirSearch, userEmail, setIsExporting, setExportSuccess, user?.id, role, dvirDateRange]);
 
   // Media entries
   const dvirMediaEntries = useMemo(() => {

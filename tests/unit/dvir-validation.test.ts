@@ -18,6 +18,7 @@ import {
   MILEAGE_BOUNDARY_VALUES,
   type DVIRTestData,
 } from '../factories/dvirFactory';
+import { validators } from '../../src/lib/formValidation';
 
 /**
  * DVIR Validation Rules (extracted from DVIRForm.tsx)
@@ -621,5 +622,32 @@ describe('DVIR Factory Functions', () => {
     expect(MILEAGE_BOUNDARY_VALUES.minimum).toBe(1);
     expect(MILEAGE_BOUNDARY_VALUES.negative).toBeLessThan(0);
     expect(MILEAGE_BOUNDARY_VALUES.intMax).toBe(2147483647);
+  });
+});
+
+/**
+ * Regression: Production mileage validator (formValidation.ts)
+ * Ensures the app's validator allows same reading and small daily adjustments.
+ */
+describe('DVIR mileage validation (production validator)', () => {
+  it('accepts odometer reading equal to previous (regression: bug fix)', () => {
+    const result = validators.mileage('12000', 12000);
+    expect(result).toBeNull();
+  });
+
+  it('accepts odometer reading equal to previous when passed as number', () => {
+    const result = validators.mileage(50000, 50000);
+    expect(result).toBeNull();
+  });
+
+  it('accepts odometer reading greater than previous', () => {
+    const result = validators.mileage('12001', 12000);
+    expect(result).toBeNull();
+  });
+
+  it('rejects odometer reading less than previous', () => {
+    const result = validators.mileage('11999', 12000);
+    expect(result).not.toBeNull();
+    expect(result).toMatch(/must be at least 12,000 mi/i);
   });
 });

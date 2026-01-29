@@ -329,16 +329,17 @@ function RequiredUpdatePromptComponent({ required = true, testMode = false }: Re
                   disabled={isUpdating}
                   whileHover={{ scale: isUpdating ? 1 : 1.02 }}
                   whileTap={{ scale: isUpdating ? 1 : 0.98 }}
-                  className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-semibold text-base transition-all shadow-lg shadow-emerald-500/25 disabled:opacity-70 disabled:cursor-not-allowed"
+                  aria-label={isUpdating ? "Updating app..." : "Update app now"}
+                  className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-semibold text-base transition-all shadow-lg shadow-emerald-500/25 disabled:opacity-70 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
                 >
                   {isUpdating ? (
                     <>
-                      <RefreshCw className="w-5 h-5 animate-spin" />
+                      <RefreshCw className="w-5 h-5 animate-spin" aria-hidden />
                       Updating...
                     </>
                   ) : (
                     <>
-                      <Download className="w-5 h-5" />
+                      <Download className="w-5 h-5" aria-hidden />
                       Update Now
                     </>
                   )}
@@ -348,7 +349,8 @@ function RequiredUpdatePromptComponent({ required = true, testMode = false }: Re
                 {!required && (
                   <button
                     onClick={handleDismiss}
-                    className="w-full px-6 py-3 rounded-xl border border-white/10 text-white/60 hover:text-white hover:bg-white/5 text-sm font-medium transition-all"
+                    aria-label="Remind me later"
+                    className="w-full px-6 py-3 rounded-xl border border-white/10 text-white/60 hover:text-white hover:bg-white/5 text-sm font-medium transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
                   >
                     Remind Me Later
                   </button>

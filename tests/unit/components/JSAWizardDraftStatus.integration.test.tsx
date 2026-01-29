@@ -151,7 +151,11 @@ vi.mock('../../../src/lib/errorHandling', () => ({
   getErrorToastTitle: () => 'Error',
 }));
 
-// TODO: Re-enable when JSA form render in jsdom is stable (mocks in place; still times out in CI).
+// SKIP: JSA form render in jsdom times out due to complex multi-step wizard rendering.
+// All mocks are in place but the component's lazy-loaded sub-components cause hangs.
+// Unit tests in jsa-validation.test.ts and jsa-submission.test.ts cover core logic.
+// E2E tests in jsa-form.spec.ts cover full user flows.
+// TODO: Refactor JSA wizard to be more testable in isolation (QA-JSA-001)
 describe.skip('JSA Wizard Draft/Status Flow Integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();

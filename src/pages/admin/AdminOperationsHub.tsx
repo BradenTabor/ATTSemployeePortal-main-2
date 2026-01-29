@@ -6,6 +6,7 @@
  */
 
 import { useState, useMemo, useCallback, useEffect, memo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleMap, Marker } from '@react-google-maps/api';
@@ -431,15 +432,18 @@ function SiteFormModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center px-4 py-4 bg-black/70 backdrop-blur-sm overflow-y-auto"
+      className="fixed inset-0 z-[9999] flex items-center justify-center px-4 py-4 bg-black/70 backdrop-blur-sm overflow-hidden"
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={isEdit ? 'Edit work site' : 'Add work site'}
     >
       <motion.div
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-2xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] shadow-2xl overflow-hidden my-auto"
+        className="w-full max-w-md rounded-2xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] shadow-2xl overflow-y-auto overflow-x-hidden my-auto max-h-[90vh]"
       >
         <div className="px-5 py-4 border-b border-[#f6dcb2]/10 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -665,6 +669,21 @@ function SitesTabContent() {
     return result;
   }, [sites, debouncedSearch, showInactive]);
 
+  // Lock body and dashboard scroll when site modal is open (see FormSuccessCelebration / AdminUsers pattern)
+  useEffect(() => {
+    if (!showModal) return;
+    const body = document.body;
+    const scrollEl = document.querySelector('[data-scroll-container]') as HTMLElement | null;
+    const prevBody = body.style.overflow;
+    const prevScroll = scrollEl?.style.overflow ?? '';
+    body.style.overflow = 'hidden';
+    if (scrollEl) scrollEl.style.overflow = 'hidden';
+    return () => {
+      body.style.overflow = prevBody;
+      if (scrollEl) scrollEl.style.overflow = prevScroll;
+    };
+  }, [showModal]);
+
   const handleSave = async (formData: WorkSiteFormData) => {
     setSaving(true);
     try {
@@ -724,40 +743,40 @@ function SitesTabContent() {
   if (loading) return <TableSkeleton rows={4} />;
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+    <div className="space-y-3 sm:space-y-4">
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+        <div className="relative flex-1 min-w-0">
+          <Search className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search sites..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-[#f4c979]/40"
+            className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl bg-black/40 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-[#f4c979]/40"
           />
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-1.5 sm:gap-2 flex-wrap">
           <button
             type="button"
             onClick={() => setShowInactive(!showInactive)}
             aria-label={showInactive ? "Hide inactive sites" : "Show inactive sites"}
             aria-pressed={showInactive}
-            className={`px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] ${
+            className={`px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg sm:rounded-xl border text-xs sm:text-sm font-medium transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] min-h-[44px] ${
               showInactive ? 'bg-[#f4c979]/15 border-[#f4c979]/30 text-[#f4c979]' : 'border-white/10 text-white/50 hover:text-white/70'
             }`}
           >
             {showInactive ? 'Hide' : 'Show'} Inactive
           </button>
-          <button type="button" onClick={fetchSites} className="p-2.5 rounded-xl border border-white/10 text-white/50 hover:text-white/70 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]" aria-label="Refresh work sites">
+          <button type="button" onClick={fetchSites} className="p-2 sm:p-2.5 rounded-lg sm:rounded-xl border border-white/10 text-white/50 hover:text-white/70 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] min-h-[44px]" aria-label="Refresh work sites">
             <RefreshCw className="w-4 h-4" aria-hidden />
           </button>
           <button
             type="button"
             onClick={() => { setEditingSite(null); setShowModal(true); }}
             aria-label="Add work site"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#332308] font-semibold text-sm hover:scale-[1.02] transition-transform focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+            className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg sm:rounded-xl bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#332308] font-semibold text-xs sm:text-sm hover:scale-[1.02] transition-transform focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] min-h-[44px]"
           >
-            <Plus className="w-4 h-4" aria-hidden />
+            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" aria-hidden />
             Add Site
           </button>
         </div>
@@ -837,16 +856,19 @@ function SitesTabContent() {
         </div>
       )}
 
-      <AnimatePresence>
-        {showModal && (
-          <SiteFormModal
-            site={editingSite}
-            onSave={handleSave}
-            onClose={() => { setShowModal(false); setEditingSite(null); }}
-            isLoading={saving}
-          />
-        )}
-      </AnimatePresence>
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {showModal && (
+            <SiteFormModal
+              site={editingSite}
+              onSave={handleSave}
+              onClose={() => { setShowModal(false); setEditingSite(null); }}
+              isLoading={saving}
+            />
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }
@@ -859,6 +881,8 @@ function JobsTabContent({ userId }: { userId: string }) {
   const {
     jobs,
     loading: jobsLoading,
+    error: jobsError,
+    refetch: refetchJobs,
     createJob,
     updateJob,
     deleteJob,
@@ -886,7 +910,7 @@ function JobsTabContent({ userId }: { userId: string }) {
   const handleCreateJob = useCallback(async (data: JobFormData) => {
     const result = await createJob(data, userId);
     if (result.success) {
-      setShowCreateForm(false);
+      // Don't close modal here — JobCreationForm shows success celebration, then onCancel closes
       toast.success(`Job "${data.job_name}" created`);
     } else {
       toast.error(result.error || 'Failed to create job');
@@ -922,10 +946,44 @@ function JobsTabContent({ userId }: { userId: string }) {
     return result;
   }, [toggleMilestone, userId]);
 
+  // Lock body and dashboard scroll when job creation modal is open
+  useEffect(() => {
+    if (!showCreateForm) return;
+    const body = document.body;
+    const scrollEl = document.querySelector('[data-scroll-container]') as HTMLElement | null;
+    const prevBody = body.style.overflow;
+    const prevScroll = scrollEl?.style.overflow ?? '';
+    body.style.overflow = 'hidden';
+    if (scrollEl) scrollEl.style.overflow = 'hidden';
+    return () => {
+      body.style.overflow = prevBody;
+      if (scrollEl) scrollEl.style.overflow = prevScroll;
+    };
+  }, [showCreateForm]);
+
   return (
     <JobTrackerErrorBoundary>
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         <AnimatePresence>
+          {jobsError && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-semibold text-amber-400 flex-1 min-w-0">{jobsError}</p>
+                <button
+                  type="button"
+                  onClick={() => refetchJobs()}
+                  className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 text-sm font-medium hover:bg-amber-500/30 transition-colors"
+                >
+                  Refresh list
+                </button>
+              </div>
+            </motion.div>
+          )}
           {jobStats.exceeded > 0 && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
@@ -945,13 +1003,13 @@ function JobsTabContent({ userId }: { userId: string }) {
           )}
         </AnimatePresence>
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-[#f4c979]/10 border border-[#f4c979]/30">
-              <Briefcase className="w-5 h-5 text-[#f4c979]" />
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-[#f4c979]/10 border border-[#f4c979]/30 flex-shrink-0">
+              <Briefcase className="w-4 h-4 sm:w-5 sm:h-5 text-[#f4c979]" />
             </div>
-            <div>
-              <h3 className="text-lg font-bold text-white">All Jobs</h3>
+            <div className="min-w-0">
+              <h3 className="text-base sm:text-lg font-bold text-white truncate">All Jobs</h3>
               <p className="text-xs text-white/50">{jobs.length} job{jobs.length !== 1 ? 's' : ''}</p>
             </div>
           </div>
@@ -960,9 +1018,9 @@ function JobsTabContent({ userId }: { userId: string }) {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => setShowCreateForm(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#2e1b02] text-sm font-semibold hover:shadow-[0_0_20px_rgba(244,201,121,0.3)] transition-shadow"
+            className="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg sm:rounded-xl bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#2e1b02] text-xs sm:text-sm font-semibold hover:shadow-[0_0_20px_rgba(244,201,121,0.3)] transition-shadow flex-shrink-0 min-h-[44px]"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             Create Job
           </motion.button>
         </div>
@@ -981,32 +1039,38 @@ function JobsTabContent({ userId }: { userId: string }) {
           userId={userId}
         />
 
-        <AnimatePresence>
-          {showCreateForm && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-              onClick={() => setShowCreateForm(false)}
-            >
+        {typeof document !== 'undefined' && createPortal(
+          <AnimatePresence>
+            {showCreateForm && (
               <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                onClick={(e) => e.stopPropagation()}
-                className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] p-6 shadow-[0_40px_80px_rgba(0,0,0,0.7)]"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[9999] flex items-center justify-center p-2 sm:p-4 bg-black/70 backdrop-blur-sm overflow-hidden"
+                onClick={() => setShowCreateForm(false)}
+                role="dialog"
+                aria-modal="true"
+                aria-label="Create job"
               >
-                <JobCreationForm
-                  crewMembers={crewMembers}
-                  crewLoading={crewLoading}
-                  onSubmit={handleCreateJob}
-                  onCancel={() => setShowCreateForm(false)}
-                />
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] p-4 sm:p-6 shadow-[0_40px_80px_rgba(0,0,0,0.7)]"
+                >
+                  <JobCreationForm
+                    crewMembers={crewMembers}
+                    crewLoading={crewLoading}
+                    onSubmit={handleCreateJob}
+                    onCancel={() => setShowCreateForm(false)}
+                  />
+                </motion.div>
               </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            )}
+          </AnimatePresence>,
+          document.body
+        )}
       </div>
     </JobTrackerErrorBoundary>
   );
@@ -1074,9 +1138,9 @@ function AdminOperationsHub() {
 
   return (
     <DashboardLayout title="Operations Hub">
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pb-4 pt-4 sm:pt-6">
-        {/* Premium Header */}
-        <div className="mb-5 md:mb-6">
+      <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 pb-3 pt-3 sm:pt-6">
+        {/* Premium Header — compressed on mobile for small screens */}
+        <div className="mb-3 sm:mb-5 md:mb-6">
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -1084,7 +1148,7 @@ function AdminOperationsHub() {
             className="relative"
           >
             <div 
-              className="relative overflow-hidden rounded-2xl md:rounded-3xl border border-white/[0.12] shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.1)]"
+              className="relative overflow-hidden rounded-xl sm:rounded-2xl md:rounded-3xl border border-white/[0.12] shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.1)]"
               style={{
                 background: 'linear-gradient(145deg, rgba(244, 201, 121, 0.1) 0%, rgba(28, 28, 31, 0.65) 40%, rgba(15, 13, 9, 0.75) 100%)',
                 backdropFilter: 'blur(24px) saturate(1.6)',
@@ -1095,47 +1159,47 @@ function AdminOperationsHub() {
               <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 25% 0%, rgba(244, 201, 121, 0.2) 0%, transparent 45%)' }} />
               <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-white/5 via-white/25 to-white/5 rounded-t-[inherit]" />
 
-              <div className="relative px-5 py-4 md:px-7 md:py-5">
-                <div className="flex items-center gap-3 mb-3 flex-wrap">
-                  <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.2 }} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#f4c979]/15 border border-[#f4c979]/30">
-                    <Sparkles className="w-3.5 h-3.5 text-[#f4c979]" />
-                    <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#f8e5bb]">Admin Operations</span>
+              <div className="relative px-3 py-3 sm:px-5 sm:py-4 md:px-7 md:py-5">
+                <div className="flex items-center gap-2 mb-2 sm:gap-3 sm:mb-3 flex-wrap">
+                  <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.2 }} className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl bg-[#f4c979]/15 border border-[#f4c979]/30">
+                    <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#f4c979]" />
+                    <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-bold text-[#f8e5bb]">Admin Operations</span>
                   </motion.div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#1c1c1f]/60 border border-[#f4c979]/20 text-[9px] uppercase tracking-wider font-semibold text-[#f8e5bb]/70">
-                      <MapPin className="w-3 h-3 text-[#f4c979]" />
+                  <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                    <span className="flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg bg-[#1c1c1f]/60 border border-[#f4c979]/20 text-[8px] sm:text-[9px] uppercase tracking-wider font-semibold text-[#f8e5bb]/70">
+                      <MapPin className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#f4c979]" />
                       {sitesCount} sites
                     </span>
-                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#1c1c1f]/60 border border-[#f4c979]/20 text-[9px] uppercase tracking-wider font-semibold text-[#f8e5bb]/70">
-                      <Users className="w-3 h-3 text-[#f4c979]" />
+                    <span className="flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg bg-[#1c1c1f]/60 border border-[#f4c979]/20 text-[8px] sm:text-[9px] uppercase tracking-wider font-semibold text-[#f8e5bb]/70">
+                      <Users className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#f4c979]" />
                       {activeCrewsCount} crews
                     </span>
-                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#1c1c1f]/60 border border-[#f4c979]/20 text-[9px] uppercase tracking-wider font-semibold text-[#f8e5bb]/70">
-                      <Briefcase className="w-3 h-3 text-[#f4c979]" />
+                    <span className="flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg bg-[#1c1c1f]/60 border border-[#f4c979]/20 text-[8px] sm:text-[9px] uppercase tracking-wider font-semibold text-[#f8e5bb]/70">
+                      <Briefcase className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#f4c979]" />
                       {activeJobsCount} jobs
                     </span>
                   </div>
                 </div>
-                
-                <div className="flex items-center gap-4">
-                  <motion.div initial={{ scaleY: 0, opacity: 0 }} animate={{ scaleY: 1, opacity: 1 }} transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }} className="w-1 h-12 md:h-14 rounded-full bg-gradient-to-b from-[#f7e4bd] via-[#f4c979] to-[#d79a32] origin-top flex-shrink-0" style={{ boxShadow: '0 0 20px rgba(244, 201, 121, 0.5)' }} />
+
+                <div className="flex items-center gap-2 sm:gap-4">
+                  <motion.div initial={{ scaleY: 0, opacity: 0 }} animate={{ scaleY: 1, opacity: 1 }} transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }} className="w-0.5 sm:w-1 h-8 sm:h-10 md:h-14 rounded-full bg-gradient-to-b from-[#f7e4bd] via-[#f4c979] to-[#d79a32] origin-top flex-shrink-0" style={{ boxShadow: '0 0 20px rgba(244, 201, 121, 0.5)' }} />
                   <div className="flex-1 min-w-0">
                     {enableAnimations ? (
-                      <TextEffect as="h1" preset="blurSlide" per="char" delay={0.15} className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight" segmentWrapperClassName="bg-gradient-to-r from-white via-[#f8e5bb] to-white/90 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(244,201,121,0.35)]">
+                      <TextEffect as="h1" preset="blurSlide" per="char" delay={0.15} className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black tracking-tight" segmentWrapperClassName="bg-gradient-to-r from-white via-[#f8e5bb] to-white/90 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(244,201,121,0.35)]">
                         Operations Hub
                       </TextEffect>
                     ) : (
-                      <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight bg-gradient-to-r from-white via-[#f8e5bb] to-white/90 bg-clip-text text-transparent">
+                      <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black tracking-tight bg-gradient-to-r from-white via-[#f8e5bb] to-white/90 bg-clip-text text-transparent">
                         Operations Hub
                       </h1>
                     )}
-                    <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.7 }} className="mt-1 text-xs sm:text-sm text-[#f8e5bb]/50 font-medium">
+                    <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.7 }} className="mt-0.5 sm:mt-1 text-[11px] sm:text-xs md:text-sm text-[#f8e5bb]/50 font-medium">
                       Manage work sites, crews, and job assignments
                     </motion.p>
                   </div>
                 </div>
 
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.5 }} className="mt-4">
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.5 }} className="mt-3 sm:mt-4">
                   <AdminSegmentedControl tabs={TABS} activeTab={activeTab} onChange={handleTabChange} />
                 </motion.div>
               </div>
@@ -1144,7 +1208,7 @@ function AdminOperationsHub() {
         </div>
 
         {/* Tab Content */}
-        <div className="min-h-[400px]">
+        <div className="min-h-[280px] sm:min-h-[400px]">
           <AnimatePresence mode="wait">
             {activeTab === 'jobs' && (
               <motion.div

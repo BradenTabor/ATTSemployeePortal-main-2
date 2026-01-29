@@ -147,6 +147,9 @@ export function ValidationSummary({
 
   return (
     <motion.div
+      role="alert"
+      aria-live="polite"
+      aria-atomic="true"
       initial={{ opacity: 0, y: -20, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -10, scale: 0.95 }}
@@ -157,6 +160,7 @@ export function ValidationSummary({
         compact ? 'max-w-[180px] sm:max-w-[220px] w-auto' : 'max-w-md w-full',
         className
       )}
+      data-error="true"
     >
       {/* Compact Header - always visible */}
       <div className={cn('flex items-center', compact ? 'gap-1.5 p-1.5 sm:p-2' : 'gap-2 p-3')}>
@@ -260,7 +264,7 @@ export function ValidationSummary({
                         </span>
                       )}
                     </div>
-                    <p className={cn('text-white/60 leading-tight', compact ? 'text-[10px] sm:text-[11px]' : 'text-xs')}>{error}</p>
+                    <p className={cn('error-message text-white/60 leading-tight', compact ? 'text-[10px] sm:text-[11px]' : 'text-xs')}>{error}</p>
                   </div>
                   <ArrowRight className={cn('text-white/30 group-hover:text-rose-300 transition-colors flex-shrink-0 mt-0.5', compact ? 'w-2.5 h-2.5 sm:w-3 sm:h-3' : 'w-3.5 h-3.5')} />
                 </button>

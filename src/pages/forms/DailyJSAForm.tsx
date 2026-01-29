@@ -86,6 +86,8 @@ export default function DailyJSAForm() {
   const submittingRef = useRef(false);
   // Skip fetch when we already applied passed state from create (effect re-runs after clearing state)
   const usedFromCreateForIdRef = useRef<string | null>(null);
+  // Track previous id to only reset when navigating from edit → new (not on initial mount or remount)
+  const prevIdRef = useRef<string | undefined>(id);
   const [persistedStatus, setPersistedStatus] =
     useState<"draft" | "completed">("draft");
 
@@ -225,19 +227,50 @@ export default function DailyJSAForm() {
     userId: user?.id,
     createInitialState: createInitialFormState,
     isEditMode,
-    debounceMs: 500,
+    debounceMs: 300,
   });
 
-  // Show draft recovery modal if draft exists (with small delay to be less intrusive)
+  // Refs for flush-on-unmount (named to avoid collision with existing currentStepRef below)
+  const draftFormRef = useRef(form);
+  const draftStepRef = useRef(currentStep);
+  const draftCompletedStepsRef = useRef(completedSteps);
+  draftFormRef.current = form;
+  draftStepRef.current = currentStep;
+  draftCompletedStepsRef.current = completedSteps;
+
+  // Auto-restore drafts saved very recently (same session / remount recovery)
+  const didAutoRestoreRef = useRef(false);
   useEffect(() => {
-    if (hasDraft && draftData && !isEditMode) {
-      // Small delay to allow page to render first, making modal less intrusive
-      const timer = setTimeout(() => {
-        setShowDraftModal(true);
-      }, 500);
-      return () => clearTimeout(timer);
+    if (!hasDraft || !draftData || isEditMode) return;
+    const savedAtMs = draftData.savedAt ? new Date(draftData.savedAt).getTime() : 0;
+    const draftAgeMs = savedAtMs ? Date.now() - savedAtMs : Infinity;
+    const AUTO_RESTORE_WINDOW_MS = 60_000;
+    if (draftAgeMs < AUTO_RESTORE_WINDOW_MS) {
+      setForm(draftData.form);
+      setCurrentStep(draftData.currentStep);
+      setCompletedSteps(new Set(draftData.completedSteps));
+      clearDraft();
+      didAutoRestoreRef.current = true;
+      setShowDraftModal(false);
+      formToast.success("Draft restored", "Your recent progress has been restored.");
     }
-  }, [hasDraft, draftData, isEditMode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Run once on mount; hasDraft/draftData/clearDraft/isEditMode are stable from initial hook state.
+  }, []);
+
+  // Show draft recovery modal if draft exists; skip if we auto-restored.
+  // Ignore "empty" drafts: step 1, 0 completed, AND form matches initial (opened and left).
+  useEffect(() => {
+    if (!hasDraft || !draftData || isEditMode || didAutoRestoreRef.current) return;
+    const noSteps = draftData.currentStep === 1 && (draftData.completedSteps?.length ?? 0) === 0;
+    const formMatchesInitial =
+      JSON.stringify(draftData.form) === JSON.stringify(createInitialFormState());
+    if (noSteps && formMatchesInitial) {
+      clearDraft();
+      return;
+    }
+    const timer = setTimeout(() => setShowDraftModal(true), 500);
+    return () => clearTimeout(timer);
+  }, [hasDraft, draftData, isEditMode, clearDraft]);
 
   // Handle draft restoration
   const handleRestoreDraft = useCallback(() => {
@@ -262,6 +295,15 @@ export default function DailyJSAForm() {
       saveDraft(form, currentStep, completedSteps);
     }
   }, [form, currentStep, completedSteps, isEditMode, user?.id, saveDraft]);
+
+  // Flush draft on unmount (new form only)
+  useEffect(() => {
+    return () => {
+      if (!isEditMode && user?.id) {
+        flushPendingSave(draftFormRef.current, draftStepRef.current, draftCompletedStepsRef.current);
+      }
+    };
+  }, [isEditMode, user?.id, flushPendingSave]);
 
   // Warn before closing browser/tab with unsaved changes (beforeunload)
   // Also save draft immediately if there are unsaved changes
@@ -455,7 +497,7 @@ export default function DailyJSAForm() {
     const step5 = form.spans.some(s => s.location.trim() || s.hazards.trim());
     
     // Step 6: Signature provided
-    const step6 = Boolean(form.employeeSignature?.trim());
+    const step6 = Boolean(form.employeeSignature?.trim() || form.employeeSignaturePath);
     
     return { step1, step2, step3, step4, step5, step6 };
   }, [form]);
@@ -502,7 +544,7 @@ export default function DailyJSAForm() {
 
     // Step 6: Signature (weight: 15%)
     total += 1;
-    filled += form.employeeSignature.trim() ? 1 : 0;
+    filled += (form.employeeSignature.trim() || form.employeeSignaturePath) ? 1 : 0;
 
     return Math.round((filled / total) * 100);
   }, [form]);
@@ -533,6 +575,7 @@ export default function DailyJSAForm() {
           // Reset status to draft and clear signatures for new form
           parsed.status = "draft";
           parsed.employeeSignature = "";
+          parsed.employeeSignaturePath = "";
           parsed.observerSignatures = [];
           parsed.createdAt = null;
           parsed.updatedAt = null;
@@ -561,15 +604,18 @@ export default function DailyJSAForm() {
 
   // Load record if editing
   useEffect(() => {
+    const prevId = prevIdRef.current;
+    prevIdRef.current = id;
+
     if (!id) {
-      // Only set initial state if we're not duplicating
-      const duplicateDataStr = sessionStorage.getItem('jsa-duplicate');
-      if (!duplicateDataStr) {
+      // Only reset when navigating FROM edit route TO new route (not on initial mount or remount)
+      if (prevId) {
         setForm(createInitialFormState());
         setSpanPage(1);
         setPersistedStatus("draft");
         setCurrentStep(1);
         setCompletedSteps(new Set());
+        sessionStorage.removeItem('jsa-duplicate');
       }
       return;
     }
@@ -836,68 +882,42 @@ export default function DailyJSAForm() {
     if (mode === "complete") {
       markSubmitAttempted();
       
-      // Validate all fields
-      const isFormValid = validateAll();
+      const { isValid: isFormValid, errors: validationErrors } = validateAll();
       const hasAdditionalErrors = Object.keys(additionalErrors).length > 0;
+      const freshErrors = { ...(validationErrors as Record<string, string>), ...additionalErrors };
 
       if (!isFormValid || hasAdditionalErrors) {
-        // Log validation errors for debugging
-        const err = errors as Partial<Record<string, string>>;
-        const validationErrors = Object.keys(err).filter((k) => err[k]);
-        const additionalErrorKeys = Object.keys(additionalErrors).filter(k => additionalErrors[k]);
-        const allErrorKeys = Object.keys(allErrors).filter(k => allErrors[k]);
-        
+        const allErrorKeys = Object.keys(freshErrors).filter((k) => freshErrors[k]);
         logger.error('[JSA] Validation failed on submit', {
           isFormValid,
           hasAdditionalErrors,
-          validationErrors,
-          additionalErrorKeys,
-          allErrorKeys,
-          errors: Object.fromEntries(Object.entries(errors).filter(([, v]) => v)),
-          additionalErrors,
-          allErrors: Object.fromEntries(Object.entries(allErrors).filter(([, v]) => v)),
-        });
-        
-        logger.error('[JSA] Validation failed on submit', {
-          validationErrors,
-          additionalErrorKeys,
           allErrorKeys,
           errorCount: allErrorKeys.length,
         });
         
-        // Track validation errors
-        Object.keys(allErrors).forEach(field => {
-          if (allErrors[field]) {
-            trackFormSubmitError({ 
-              form_type: 'jsa', 
-              error_code: 'VALIDATION_FAILED', 
-              field_name: field 
-            });
+        Object.keys(freshErrors).forEach((field) => {
+          if (freshErrors[field]) {
+            trackFormSubmitError({ form_type: 'jsa', error_code: 'VALIDATION_FAILED', field_name: field });
           }
         });
 
-        // Navigate to step with first error
-        const firstErrorField = Object.keys(allErrors).find(key => allErrors[key]);
+        const firstErrorField = Object.keys(freshErrors).find((key) => freshErrors[key]);
         if (firstErrorField) {
           const errorStep = getStepForField(firstErrorField);
           setCurrentStep(errorStep);
-          // Wait for step transition, then scroll
           setTimeout(() => {
-            scrollToFirstError(allErrors, { offset: 120 });
+            scrollToFirstError(freshErrors, { offset: 120 });
           }, 300);
         }
 
-        // Show error toast with summary
-        const errorCount = Object.keys(allErrors).filter(k => allErrors[k]).length;
-        const errorDetails = allErrorKeys.length > 0 
+        const errorCount = allErrorKeys.length;
+        const errorDetails = allErrorKeys.length > 0
           ? `Errors: ${allErrorKeys.join(', ')}`
           : 'Please check all required fields.';
-        
         formToast.error(
-          "Validation Error",
+          'Validation Error',
           `Please fix ${errorCount} ${errorCount === 1 ? 'issue' : 'issues'} before completing. ${errorDetails}`,
         );
-        
         return;
       }
       
@@ -956,6 +976,17 @@ export default function DailyJSAForm() {
 
       if (!result.success || result.error) {
         throw result.error || new Error("Submission failed");
+      }
+
+      if (result.queued) {
+        clearDraft();
+        markAsSaved();
+        formToast.success(
+          "Queued for when you're back online",
+          "Your JSA will be submitted automatically when you have a connection.",
+          { autoDismiss: 6000 }
+        );
+        return;
       }
 
       // Log form_submitted for baseline metrics (Smart Defaults ROI)
@@ -1105,7 +1136,7 @@ export default function DailyJSAForm() {
       setSaving(false);
       submittingRef.current = false; // QA-002: Reset ref on completion
     }
-  }, [user, form, isEditMode, id, persistedStatus, navigate, suggestions, clearDraft, markAsSaved, saveDraft, currentStep, completedSteps, spanPage, checkAndCelebrate, invalidateCompliance, additionalErrors, allErrors, errors, getStepForField, markSubmitAttempted, validateAll, submitJSA, formStartTime, formTimer, saving]);
+  }, [user, form, isEditMode, id, persistedStatus, navigate, suggestions, clearDraft, markAsSaved, saveDraft, currentStep, completedSteps, spanPage, checkAndCelebrate, invalidateCompliance, additionalErrors, getStepForField, markSubmitAttempted, validateAll, submitJSA, formStartTime, formTimer, saving]);
 
   const handleComplete = useCallback(async () => {
     logger.debug('[JSA] handleComplete called', {
@@ -1232,6 +1263,7 @@ export default function DailyJSAForm() {
           <StepReview
             form={form}
             onInputChange={(key, value) => handleInputChange(key, value)}
+            onSignaturePathChange={(path) => handleInputChange("employeeSignaturePath", path)}
             onAddObserver={handleAddObserver}
             onDeleteObserver={handleDeleteObserver}
             onSharedUsersChange={handleSharedUsersChange}
@@ -1243,7 +1275,6 @@ export default function DailyJSAForm() {
               spans: shouldShowError('spans') ? allErrors.spans : undefined,
             }}
             onFieldBlur={(field) => {
-              // StepReview uses "employeeSignature" which matches DailyJsaFormState
               handleFieldBlur(field as keyof DailyJsaFormState);
             }}
           />

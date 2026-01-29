@@ -196,6 +196,16 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Build preferred_language map for per-user localization (Phase 2)
+    const { data: langRows } = await supabase
+      .from("app_users")
+      .select("user_id, preferred_language")
+      .in("user_id", userIds);
+    const preferredLangByUser = new Map<string, string>();
+    (langRows || []).forEach((r: { user_id: string; preferred_language?: string | null }) => {
+      preferredLangByUser.set(r.user_id, r.preferred_language || "en");
+    });
+
     // ===========================================
     // Step 3: Check preferences and create outbox entries
     // ===========================================
@@ -219,6 +229,12 @@ Deno.serve(async (req: Request) => {
         skipped++;
         continue;
       }
+
+      // Per-user language: use Spanish content when user prefers es and event has title_es/body_es (Phase 2)
+      const lang = preferredLangByUser.get(userId) || "en";
+      const useSpanish = lang === "es" && typedEvent.title_es != null && typedEvent.body_es != null;
+      const title = useSpanish ? typedEvent.title_es : typedEvent.title;
+      const body = useSpanish ? typedEvent.body_es : typedEvent.body;
 
       // Calculate scheduled time (basic implementation - could expand for quiet hours)
       let scheduledFor = new Date();

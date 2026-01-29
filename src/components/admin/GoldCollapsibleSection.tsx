@@ -161,6 +161,7 @@ function GoldCollapsibleSectionComponent({
             onKeyDown={handleKeyDown}
             {...ariaProps}
             aria-controls={contentId}
+            aria-label={isOpen ? `Collapse ${title}` : `Expand ${title}`}
             className={cn(
               'flex-1 flex items-center gap-4 text-left',
               'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c0b09]',

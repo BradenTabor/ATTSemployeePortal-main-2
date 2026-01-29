@@ -2,7 +2,7 @@
  * Form Persistence Hook
  * 
  * Provides localStorage-based draft persistence for forms with:
- * - Auto-save on every change (debounced 500ms)
+ * - Auto-save on every change (debounced 300ms)
  * - Draft recovery on app open
  * - "Last saved" timestamp tracking
  * - Unsaved changes detection
@@ -35,7 +35,7 @@ interface UseFormPersistenceOptions<T> {
   createInitialState: () => T;
   /** Whether we're editing an existing record (don't load draft) */
   isEditMode: boolean;
-  /** Debounce delay in ms (default: 500) */
+  /** Debounce delay in ms (default: 300) */
   debounceMs?: number;
 }
 
@@ -65,7 +65,7 @@ export function useFormPersistence<T>({
   userId,
   createInitialState: _createInitialState,
   isEditMode,
-  debounceMs = 500,
+  debounceMs = 300,
 }: UseFormPersistenceOptions<T>): UseFormPersistenceReturn<T> {
   // _createInitialState is kept for API compatibility but not used
   void _createInitialState;

@@ -53,6 +53,20 @@ interface Employee {
   role: string;
 }
 
+interface JobOption {
+  id: string;
+  circuit: string | null;
+  job_location: string | null;
+  crew_id: string | null;
+  start_date: string | null;
+  end_date: string | null;
+}
+
+interface CrewOption {
+  id: string;
+  name: string;
+}
+
 // ============================================================================
 // CONSTANTS - OSHA COMPLIANT OPTIONS
 // ============================================================================
@@ -133,6 +147,9 @@ const INITIAL_FORM_STATE: IncidentFormData = {
   incident_time: null,
   work_site_id: null,
   work_site_name: null,
+  job_id: null,
+  crew_id: null,
+  supervisor_id: null,
   severity: "near_miss",
   incident_type: "fall",
   injury_illness_type: "injury",
@@ -243,6 +260,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
   // Section visibility state
   const [openSections, setOpenSections] = useState({
     basic: true,
+    traceability: true,
     classification: true,
     narrative: false,
     medical: false,
@@ -253,6 +271,8 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
   
   // Options state
   const [workSites, setWorkSites] = useState<WorkSite[]>([]);
+  const [jobs, setJobs] = useState<JobOption[]>([]);
+  const [crews, setCrews] = useState<CrewOption[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [isLoadingOptions, setIsLoadingOptions] = useState(true);
   const [employeeSearch, setEmployeeSearch] = useState("");
@@ -296,9 +316,20 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
   const fetchOptions = async () => {
     setIsLoadingOptions(true);
     try {
-      const [sitesResult, employeesResult] = await Promise.all([
+      const [sitesResult, jobsResult, crewsResult, employeesResult] = await Promise.all([
         supabase
           .from('work_sites')
+          .select('id, name')
+          .eq('is_active', true)
+          .order('name'),
+        supabase
+          .from('job_progress_trackers')
+          .select('id, circuit, job_location, crew_id, start_date, end_date')
+          .in('status', ['scheduled', 'in_progress', 'completed'])
+          .order('start_date', { ascending: false })
+          .limit(200),
+        supabase
+          .from('crews')
           .select('id, name')
           .eq('is_active', true)
           .order('name'),
@@ -311,6 +342,12 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
 
       if (sitesResult.data) {
         setWorkSites(sitesResult.data);
+      }
+      if (jobsResult.data) {
+        setJobs(jobsResult.data);
+      }
+      if (crewsResult.data) {
+        setCrews(crewsResult.data);
       }
       if (employeesResult.data) {
         const validEmployees = employeesResult.data.filter(
@@ -606,6 +643,83 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                           {workSites.map((site) => (
                             <option key={site.id} value={site.id}>{site.name}</option>
                           ))}
+                        </select>
+                      </div>
+                    </div>
+                  </CollapsibleSection>
+
+                  {/* ========== JOB / CREW / SUPERVISOR (Traceability) ========== */}
+                  <CollapsibleSection
+                    title="Job / Crew / Supervisor"
+                    icon={<Briefcase className="w-3.5 h-3.5" />}
+                    isOpen={openSections.traceability}
+                    onToggle={() => toggleSection('traceability')}
+                  >
+                    <p className="text-[10px] text-white/50 mb-2">
+                      Optional. Links incident to job and crew for insurer/regulator traceability.
+                    </p>
+                    <div className="grid grid-cols-1 gap-2">
+                      <div>
+                        <label className="text-[10px] font-medium text-white/70 mb-1 block">Job</label>
+                        <select
+                          value={formData.job_id || ""}
+                          onChange={(e) => {
+                            const jobId = e.target.value || null;
+                            const job = jobs.find((j) => j.id === jobId);
+                            setFormData((prev) => ({
+                              ...prev,
+                              job_id: jobId,
+                              crew_id: job?.crew_id ?? prev.crew_id,
+                            }));
+                          }}
+                          className="w-full px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-red-500/50"
+                        >
+                          <option value="">None</option>
+                          {jobs.map((job) => (
+                            <option key={job.id} value={job.id}>
+                              {job.circuit || job.job_location || job.id.slice(0, 8)}
+                              {job.start_date ? ` (${job.start_date})` : ""}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-medium text-white/70 mb-1 block">Crew</label>
+                        <select
+                          value={formData.crew_id || ""}
+                          onChange={(e) =>
+                            setFormData((prev) => ({ ...prev, crew_id: e.target.value || null }))
+                          }
+                          className="w-full px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-red-500/50"
+                        >
+                          <option value="">None</option>
+                          {crews.map((crew) => (
+                            <option key={crew.id} value={crew.id}>{crew.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-medium text-white/70 mb-1 block">Supervisor</label>
+                        <select
+                          value={formData.supervisor_id || ""}
+                          onChange={(e) =>
+                            setFormData((prev) => ({ ...prev, supervisor_id: e.target.value || null }))
+                          }
+                          className="w-full px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-red-500/50"
+                        >
+                          <option value="">None</option>
+                          {employees
+                            .filter(
+                              (emp) =>
+                                ["admin", "general_foreman", "foreman", "safety_officer"].includes(
+                                  emp.role
+                                )
+                            )
+                            .map((emp) => (
+                              <option key={emp.user_id} value={emp.user_id}>
+                                {emp.full_name ?? emp.user_id}
+                              </option>
+                            ))}
                         </select>
                       </div>
                     </div>

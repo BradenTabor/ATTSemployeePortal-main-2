@@ -20,6 +20,7 @@ import {
 import { cn } from "../../../lib/utils";
 import type { JsaSpan } from "./StepSpans";
 import { ObserverSignatureCapture } from "../ObserverSignatureCapture";
+import { SignaturePad } from "../SignaturePad";
 import { JsaUserSelector } from "../JsaUserSelector";
 import type { ObserverSignature, SharedUser } from "../../../pages/forms/DailyJSAForm";
 
@@ -60,6 +61,7 @@ interface StepReviewProps {
     spans: JsaSpan[];
     notes: string;
     employeeSignature: string;
+    employeeSignaturePath: string;
     observerSignatures: ObserverSignature[];
     sharedWithUsers: SharedUser[];
     status: "draft" | "completed";
@@ -70,6 +72,7 @@ interface StepReviewProps {
     statusHistory: StatusLogEntry[];
   };
   onInputChange: (key: "notes" | "employeeSignature", value: string) => void;
+  onSignaturePathChange?: (path: string) => void;
   onAddObserver: (observer: ObserverSignature) => void;
   onDeleteObserver: (timestamp: string) => void;
   onSharedUsersChange: (users: SharedUser[]) => void;
@@ -190,6 +193,7 @@ function ChipList({ items }: { items: string[] }) {
 export function StepReview({
   form,
   onInputChange,
+  onSignaturePathChange,
   onAddObserver,
   onDeleteObserver,
   onSharedUsersChange,
@@ -260,7 +264,7 @@ export function StepReview({
     if (weatherLabels.length > 0) completedSections++;
     if (hazardsCount > 0 || trafficSetupCount > 0) completedSections++;
     if (filledSpans.length > 0) completedSections++;
-    if (form.employeeSignature.trim()) completedSections++;
+    if (form.employeeSignature.trim() || form.employeeSignaturePath) completedSections++;
     
     const completionPercent = Math.round((completedSections / 6) * 100);
     
@@ -271,7 +275,7 @@ export function StepReview({
       jobsCount,
       spansCount: filledSpans.length,
       completionPercent,
-      isComplete: completedSections >= 5 && form.employeeSignature.trim(),
+      isComplete: completedSections >= 5 && (form.employeeSignature.trim() || !!form.employeeSignaturePath),
     };
   }, [form, weatherLabels, filledSpans]);
 
@@ -543,11 +547,22 @@ export function StepReview({
           />
         </div>
 
-        {/* Typed Signature */}
-        <div>
-          <label htmlFor="employeeSignature" className="block text-[10px] font-medium text-white/50 uppercase mb-1">
+        {/* Draw signature (image) or type name */}
+        <div className="space-y-3">
+          <label className="block text-[10px] font-medium text-white/50 uppercase mb-1">
             Employee Signature <span className="text-red-400">*</span>
           </label>
+          {onSignaturePathChange && (
+            <SignaturePad
+              value={form.employeeSignaturePath}
+              onChange={onSignaturePathChange}
+              formType="jsa"
+              required={!form.employeeSignature.trim()}
+              error={(!form.employeeSignaturePath && !form.employeeSignature.trim() ? errors?.employeeSignature : undefined)}
+              className="mb-2"
+            />
+          )}
+          <p className="text-[10px] text-white/50">Or type your name below</p>
           <div className="relative">
             <PenLine className={cn(
               "absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors",
@@ -592,10 +607,10 @@ export function StepReview({
               {errors.employeeSignature}
             </motion.p>
           )}
-          {form.employeeSignature.trim() && !errors?.employeeSignature && (
+          {(form.employeeSignature.trim() || form.employeeSignaturePath) && !errors?.employeeSignature && (
             <p className="mt-1 text-[10px] text-emerald-400/70 flex items-center gap-1">
               <CheckCircle2 className="w-3 h-3" />
-              By typing your name, you certify this JSA is accurate
+              {form.employeeSignaturePath ? "Signature on file" : "By typing your name, you certify this JSA is accurate"}
             </p>
           )}
         </div>

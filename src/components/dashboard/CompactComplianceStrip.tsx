@@ -424,6 +424,8 @@ function CompactComplianceStripComponent({ theme = 'emerald', onComplianceChange
   const allComplete = completedCount === formStatuses.length;
   const weekend = isWeekend();
   const timeUntilCutoff = getTimeUntilCutoff();
+  const capsData = useMemo(() => getDeviceCapabilities(), []);
+  const enableAnimations = !capsData.prefersReducedMotion && !capsData.isLowEnd;
 
   // Weekend mode - celebratory card with quick links
   if (weekend) {
@@ -454,12 +456,31 @@ function CompactComplianceStripComponent({ theme = 'emerald', onComplianceChange
       <div className={`px-4 py-3 bg-gradient-to-r ${themeStyles.headerBg} border-b border-white/5`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <motion.div 
-              className={`w-10 h-10 rounded-xl ${themeStyles.accentBg} border ${themeStyles.accentBorder} flex items-center justify-center flex-shrink-0 overflow-hidden`}
-              animate={allComplete ? { scale: [1, 1.1, 1] } : undefined}
-              transition={{ duration: 0.5, delay: 0.3 }}
+            <motion.div
+              className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden bg-transparent"
+              animate={
+                enableAnimations
+                  ? {
+                      rotate: 360,
+                      ...(allComplete && { scale: [1, 1.06, 1] }),
+                    }
+                  : undefined
+              }
+              transition={
+                enableAnimations
+                  ? {
+                      rotate: { duration: 24, repeat: Infinity, ease: 'easeInOut' },
+                      ...(allComplete && { scale: { duration: 1.8, repeat: Infinity, repeatDelay: 0.5 } }),
+                    }
+                  : undefined
+              }
             >
-              <img src={attsLogoStamped} alt="" className="w-6 h-6 object-contain" aria-hidden />
+              <img
+                src={attsLogoStamped}
+                alt=""
+                className="w-12 h-12 sm:w-14 sm:h-14 object-contain brightness-0 invert opacity-95"
+                aria-hidden
+              />
             </motion.div>
             <div>
               <h3 className="text-sm font-bold text-white">Today's Mission</h3>

@@ -21,6 +21,7 @@ import {
   MapPin,
   Copy,
 } from "lucide-react";
+import { supabase } from "../../lib/supabaseClient";
 import type { DailyJsaRecord, ObserverSignature, JsaSpan } from "../../pages/forms/DailyJSAForm";
 
 const PPE_ITEMS = [
@@ -434,7 +435,18 @@ export const JsaDetailModal = memo(function JsaDetailModal({
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className={cardBase}>
                   <h4 className="text-xs uppercase tracking-wider text-white/50 mb-2">Employee</h4>
-                  {jsa.employee_signature?.trim() ? (
+                  {jsa.employee_signature_path ? (
+                    <>
+                      <div className="rounded-lg border border-white/10 bg-black/30 p-2 flex justify-center">
+                        <img
+                          src={supabase.storage.from("signatures").getPublicUrl(jsa.employee_signature_path).data.publicUrl}
+                          alt="Employee signature"
+                          className="max-h-20 object-contain"
+                        />
+                      </div>
+                      <p className="text-[10px] text-white/50 text-center mt-2">Verified</p>
+                    </>
+                  ) : jsa.employee_signature?.trim() ? (
                     <>
                       <div className="rounded-lg border border-white/10 bg-black/30 px-3 py-3">
                         <p

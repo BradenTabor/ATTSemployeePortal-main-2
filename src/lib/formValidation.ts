@@ -75,8 +75,8 @@ export const validators = {
       return "Enter a valid odometer reading";
     }
     
-    if (previousMileage !== null && previousMileage !== undefined && num <= previousMileage) {
-      return `Odometer reading must be greater than ${previousMileage.toLocaleString()} mi`;
+    if (previousMileage !== null && previousMileage !== undefined && num < previousMileage) {
+      return `Odometer reading must be at least ${previousMileage.toLocaleString()} mi`;
     }
     
     return null;

@@ -7,10 +7,12 @@
  * @module DraftRecoveryModal
  */
 
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
-import { FileText, Clock, Trash2, RotateCcw } from 'lucide-react';
+import { Clock, Trash2, RotateCcw } from 'lucide-react';
 import type { DraftData } from '../../hooks/useFormPersistence';
+import attsLogoStamped from '../../assets/ATTS_Logo_stamped.png';
 import { useModalOverlay } from '../../hooks/useModalOverlay';
 
 interface DraftRecoveryModalProps<T> {
@@ -53,6 +55,13 @@ export function DraftRecoveryModal<T>({
 }: DraftRecoveryModalProps<T>) {
   const savedAt = draft?.savedAt ? new Date(draft.savedAt) : null;
   const { modalRef, zIndex } = useModalOverlay({ isOpen, onClose: onDiscard, zIndex: 100 });
+  const [logoEntranceDone, setLogoEntranceDone] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const t = setTimeout(() => setLogoEntranceDone(true), 480);
+    return () => clearTimeout(t);
+  }, [isOpen]);
 
   if (!isOpen || !draft) return null;
 
@@ -93,11 +102,38 @@ export function DraftRecoveryModal<T>({
 
             {/* Content */}
             <div className="relative p-5">
-              {/* Icon */}
-              <div className="flex justify-center mb-4">
-                <div className="w-14 h-14 bg-emerald-500/20 rounded-2xl flex items-center justify-center border border-emerald-500/30">
-                  <FileText className="w-7 h-7 text-emerald-400" />
-                </div>
+              {/* Icon — 3× size, premium in/out motion */}
+              <div className="flex justify-center mb-5">
+                <motion.div
+                  className="w-[128px] h-[128px] rounded-2xl flex items-center justify-center overflow-hidden bg-transparent"
+                  initial={{ scale: 0.6, opacity: 0 }}
+                  animate={
+                    logoEntranceDone
+                      ? { scale: [1, 1.06, 1], opacity: 0.95 }
+                      : { scale: 1, opacity: 0.95 }
+                  }
+                  exit={{ scale: 0.85, opacity: 0 }}
+                  transition={
+                    logoEntranceDone
+                      ? {
+                          scale: { duration: 2.2, repeat: Infinity, repeatDelay: 0.6 },
+                          opacity: { duration: 0 },
+                        }
+                      : {
+                          type: 'spring',
+                          stiffness: 280,
+                          damping: 22,
+                          mass: 0.85,
+                        }
+                  }
+                >
+                  <img
+                    src={attsLogoStamped}
+                    alt=""
+                    className="w-[120px] h-[120px] object-contain brightness-0 invert opacity-95"
+                    aria-hidden
+                  />
+                </motion.div>
               </div>
 
               {/* Title */}
@@ -131,18 +167,20 @@ export function DraftRecoveryModal<T>({
                 {/* Discard */}
                 <button
                   onClick={onDiscard}
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-medium text-white/70 hover:text-white transition-all"
+                  aria-label="Discard draft and start fresh"
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-medium text-white/70 hover:text-white transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-4 h-4" aria-hidden />
                   Start Fresh
                 </button>
 
                 {/* Restore */}
                 <button
                   onClick={onRestore}
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-sm font-semibold text-white transition-all shadow-lg shadow-emerald-900/30"
+                  aria-label="Restore draft"
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-sm font-semibold text-white transition-all shadow-lg shadow-emerald-900/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
                 >
-                  <RotateCcw className="w-4 h-4" />
+                  <RotateCcw className="w-4 h-4" aria-hidden />
                   Restore
                 </button>
               </div>

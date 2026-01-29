@@ -66,6 +66,7 @@ vi.mock('../../../src/hooks/useFormPersistence', () => ({
     lastSaved: null,
     hasUnsavedChanges: false,
     saveDraft: vi.fn(),
+    flushPendingSave: vi.fn(),
     clearDraft: vi.fn(),
     dismissDraft: vi.fn(),
     markAsSaved: vi.fn(),

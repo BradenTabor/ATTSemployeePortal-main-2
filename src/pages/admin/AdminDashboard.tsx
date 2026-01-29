@@ -427,8 +427,8 @@ export default function AdminDashboard() {
         // Send notification to all users (non-blocking)
         const notificationResult = await createNotificationSilent(
           NotificationBuilders.announcement({
-            title: payload.title,
-            message: payload.message,
+            title: payload.title as string,
+            message: payload.message as string,
           })
         );
 
@@ -1166,11 +1166,14 @@ export default function AdminDashboard() {
 
         </div>
 
-        {/* Incident Logging Modal */}
-        <IncidentLoggingModal
-          isOpen={showIncidentModal}
-          onClose={() => setShowIncidentModal(false)}
-        />
+        {/* Incident Logging Modal - portaled so it sits above layout and is clickable */}
+        {createPortal(
+          <IncidentLoggingModal
+            isOpen={showIncidentModal}
+            onClose={() => setShowIncidentModal(false)}
+          />,
+          document.body
+        )}
 
         {/* Contact Request Modal - portaled so it sits above layout */}
         {expandedRequest &&

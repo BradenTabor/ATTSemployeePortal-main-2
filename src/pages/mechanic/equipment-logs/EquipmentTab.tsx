@@ -27,6 +27,8 @@ import CardListSkeleton from "../../../components/skeletons/CardListSkeleton";
 import { AdvancedPagination } from "../../../components/ui/AdvancedPagination";
 import { DateRangeChips } from "../../../components/ui/QuickFilterChips";
 import { DataExporter, generateFilename, type ExportMetadata } from "../../../lib/exportUtils";
+import { logReportExported } from "../../../lib/safetyAuditLog";
+import { useAuth } from "../../../contexts/AuthContext";
 
 import {
   type EquipmentInspection,
@@ -105,6 +107,7 @@ export function EquipmentTab({
   setEquipmentInspections,
   getEquipmentPublicUrl,
 }: EquipmentTabProps) {
+  const { user, role } = useAuth();
   const prefersReducedMotion = useReducedMotion();
   
   // Selection state
@@ -242,14 +245,23 @@ export function EquipmentTab({
           setExportSuccess("Equipment data exported to PDF!");
           break;
       }
-      
+      await logReportExported(
+        {
+          reportType: "Equipment",
+          dateFrom: equipmentDateRange?.split("_")[0] ?? null,
+          dateTo: equipmentDateRange?.split("_")[1] ?? null,
+          format: exportFormat,
+          totalRecords: filteredEquipmentInspections.length,
+        },
+        { userId: user?.id, role: role ?? undefined }
+      );
       setTimeout(() => setExportSuccess(null), 3000);
     } catch {
       // Export failed silently
     } finally {
       setIsExporting(false);
     }
-  }, [filteredEquipmentInspections, equipmentStatus, equipmentType, debouncedEquipmentSearch, userEmail, setIsExporting, setExportSuccess]);
+  }, [filteredEquipmentInspections, equipmentStatus, equipmentType, debouncedEquipmentSearch, userEmail, setIsExporting, setExportSuccess, user?.id, role, equipmentDateRange]);
 
   // Photo entries
   const equipmentPhotoEntries = useMemo(() => {

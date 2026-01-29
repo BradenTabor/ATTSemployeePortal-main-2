@@ -5,23 +5,28 @@
 
 import type { JobProgressTracker, TrackingType } from '../../types/jobs';
 
-/** Raw milestone row from job_milestones (API uses "name", we use "title") */
+/**
+ * Raw milestone row from job_milestones.
+ * Supports both schemas: (title, is_completed) and legacy (name, completed).
+ */
 interface RawMilestone {
   id: string;
   job_id: string;
-  name: string;
+  title?: string;
+  name?: string;
   target_date: string | null;
-  completed: boolean;
+  is_completed?: boolean;
+  completed?: boolean;
   sort_order: number;
 }
 
-/** Raw progress update row from job_progress_updates */
+/** Raw progress update row from job_progress_updates (uses total_feet_completed per schema) */
 interface RawProgressUpdate {
   id: string;
   job_id: string;
   date: string;
   spans_completed: number;
-  feet_completed: number;
+  total_feet_completed: number;
   notes: string | null;
 }
 
@@ -79,11 +84,11 @@ export function transformJobsFromApi(
       .map((m) => ({
         id: m.id,
         job_id: m.job_id,
-        title: m.name,
+        title: m.title ?? m.name ?? '',
         description: null as string | null,
         target_date: m.target_date,
         sort_order: m.sort_order,
-        is_completed: m.completed,
+        is_completed: m.is_completed ?? m.completed ?? false,
         completed_at: null as string | null,
         completed_by: null as string | null,
         created_at: '',
@@ -106,7 +111,7 @@ export function transformJobsFromApi(
         span_length_category: 'general' as const,
         equipment: 'bucket' as const,
         job_title: '',
-        total_feet_completed: update.feet_completed,
+        total_feet_completed: update.total_feet_completed ?? 0,
         notes: update.notes,
       }))
       .sort((a, b) => {

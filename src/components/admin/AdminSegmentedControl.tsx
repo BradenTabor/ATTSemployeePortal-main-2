@@ -245,8 +245,8 @@ function AdminSegmentedControlComponent({
                   : 'flex-initial',
                 // Padding based on size and mode
                 isLarge 
-                  ? (isMobileLayout ? 'px-4 py-2.5' : 'px-5 py-3')
-                  : (isMobileLayout ? 'px-3 py-2' : 'px-4 py-2.5'),
+                  ? (isMobileLayout ? 'px-3 py-2 sm:px-4 sm:py-2.5' : 'px-5 py-3')
+                  : (isMobileLayout ? 'px-2.5 py-1.5 sm:px-3 sm:py-2' : 'px-4 py-2.5'),
                 // Text sizing based on mode
                 isMobileLayout ? 'text-xs' : 'text-sm',
                 'font-semibold',

@@ -132,33 +132,45 @@ export default function PracticalEvaluation() {
         {cats.map((t) => (
           <section key={t.id} className="rounded-xl border border-white/10 bg-white/5 p-4">
             <h3 className="mb-3 text-sm font-semibold text-white">{t.category_name.replace(/_/g, " ")}</h3>
-            <div className="space-y-2">
+            <div className="space-y-2 sm:space-y-2">
               {(checklist[t.category_name] ?? initialChecklist[t.category_name] ?? []).map((it, idx) => (
                 <div
                   key={it.item_id}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-black/20 px-3 py-2"
+                  className="flex flex-col gap-2 rounded-lg border border-white/10 bg-black/20 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:py-2"
                 >
-                  <span className="text-sm text-white">{it.item_name}</span>
-                  <div className="flex items-center gap-2">
-                    <label className="flex items-center gap-1.5 text-xs">
+                  <span className="min-w-0 text-sm text-white sm:flex-1" id={`label-${t.category_name}-${it.item_id}`}>
+                    {it.item_name}
+                  </span>
+                  <fieldset
+                    className="flex shrink-0 items-center gap-4 border-0 p-0 sm:gap-2"
+                    aria-labelledby={`label-${t.category_name}-${it.item_id}`}
+                  >
+                    <legend className="sr-only">
+                      {it.item_name}: Pass or Fail
+                    </legend>
+                    <label className="flex min-h-[44px] min-w-[72px] cursor-pointer items-center justify-center gap-1.5 rounded-md border border-white/10 bg-white/5 px-3 py-2 text-xs transition-colors hover:bg-white/10 has-[:checked]:border-emerald-500/50 has-[:checked]:bg-emerald-500/20 sm:min-h-0 sm:min-w-0 sm:justify-start">
                       <input
                         type="radio"
                         name={`${t.category_name}-${it.item_id}`}
                         checked={it.passed === true}
                         onChange={() => handleToggle(t.category_name, idx, true)}
+                        className="sr-only"
+                        aria-label={`${it.item_name}: Pass`}
                       />
                       Pass
                     </label>
-                    <label className="flex items-center gap-1.5 text-xs">
+                    <label className="flex min-h-[44px] min-w-[72px] cursor-pointer items-center justify-center gap-1.5 rounded-md border border-white/10 bg-white/5 px-3 py-2 text-xs transition-colors hover:bg-white/10 has-[:checked]:border-red-500/50 has-[:checked]:bg-red-500/20 sm:min-h-0 sm:min-w-0 sm:justify-start">
                       <input
                         type="radio"
                         name={`${t.category_name}-${it.item_id}`}
                         checked={it.passed === false}
                         onChange={() => handleToggle(t.category_name, idx, false)}
+                        className="sr-only"
+                        aria-label={`${it.item_name}: Fail`}
                       />
                       Fail
                     </label>
-                  </div>
+                  </fieldset>
                 </div>
               ))}
             </div>
