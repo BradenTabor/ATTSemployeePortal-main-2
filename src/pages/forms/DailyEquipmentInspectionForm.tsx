@@ -30,6 +30,7 @@ import {
   createFormTimer,
 } from "../../lib/telemetry";
 import { parseFormError, getErrorToastTitle } from "../../lib/errorHandling";
+import { isOnline } from "../../lib/offlineQueue";
 import { validators as formValidators } from "../../lib/formValidation";
 import { useEquipmentFormValidation } from "../../hooks/equipment";
 import {
@@ -610,7 +611,18 @@ export default function DailyEquipmentInspectionForm() {
     // All validation passed - proceed with submission
     const submitterName = form.submittedBy.trim();
     const trimmedNumber = form.equipmentNumber.trim();
-    
+
+    // Offline: Equipment requires photo uploads; queue does not persist files yet. Show clear message.
+    if (!isOnline()) {
+      formToast.info(
+        "You're offline",
+        "Equipment inspection requires photos and can't be queued yet. Your draft is saved—submit when you're back online."
+      );
+      submittingRef.current = false;
+      setSubmitting(false);
+      return;
+    }
+
     formToast.submitting("Submitting equipment inspection...");
 
     const uploadedPaths: string[] = [];

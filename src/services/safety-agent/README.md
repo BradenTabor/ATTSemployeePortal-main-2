@@ -131,27 +131,19 @@ In Supabase Dashboard → Project Settings → Edge Functions → Secrets, add:
 
 In Supabase Dashboard → Database → Extensions, enable `pg_cron` and `pg_net`.
 
-Then create a scheduled job:
+The **admin-compliance-9am** job is created by:
 
-```sql
--- Admin Compliance Summary: 9:00 AM Chicago time (Mon-Fri only)
--- 15:00 UTC = 9:00 AM CST, 14:00 UTC = 9:00 AM CDT
-SELECT cron.schedule(
-  'admin-compliance-9am',
-  '0 15 * * 1-5',  -- Mon-Fri at 15:00 UTC (9 AM CST)
-  $$
-  SELECT net.http_post(
-    url := 'https://your-project.supabase.co/functions/v1/admin-compliance-cron',
-    headers := '{"Content-Type": "application/json"}'::jsonb,
-    body := '{}'::jsonb
-  );
-  $$
-);
-```
+1. **Migration:** `supabase/migrations/20260302000004_schedule_admin_compliance_9am.sql` only creates the job if it does not exist (so it never overwrites a working job).
+2. **Deploy script:** Run `scripts/deploy-cron-auth.sh` to deploy all cron jobs with your service role key (script loads `.env` for `SUPABASE_SERVICE_ROLE_KEY` and `SUPABASE_DB_URL`).
 
-**Important:** Replace `your-project` with your actual Supabase project ID.
+**If the 9 AM compliance email stopped after a migration** (job was overwritten with a placeholder):
 
-Note: Adjust the hour for DST (14:00 UTC during CDT, 15:00 UTC during CST).
+- **Option A – Deploy script (recommended):** Add your Database URI to `.env` as `SUPABASE_DB_URL` (Supabase Dashboard → Settings → Database → Connection string → URI), then run `./scripts/deploy-cron-auth.sh` and answer `y`. This reschedules all crons (including admin-compliance-9am) with your real key.
+- **Option B – SQL Editor (no psql):** Open `scripts/restore-admin-compliance-9am.sql`, replace `YOUR_SERVICE_ROLE_KEY` with your service role key (Settings → API → service_role), then run the script in Supabase Dashboard → SQL Editor.
+
+Verify: `SELECT jobname, schedule, active FROM cron.job WHERE jobname = 'admin-compliance-9am';`
+
+Schedule: Mon–Fri 15:00 UTC (9 AM CST). During CDT use 14:00 UTC; adjust the cron expression if needed.
 
 ## Manual Testing
 

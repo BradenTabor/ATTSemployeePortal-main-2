@@ -21,6 +21,8 @@ dist-ssr
 *.sln
 *.sw?
 .env
+# One-off SQL with secrets (delete after running in SQL Editor)
+scripts/restore-admin-compliance-9am-with-key.sql
 
 # --- Performance & Lighthouse artifacts ---
 

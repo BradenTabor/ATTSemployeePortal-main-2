@@ -305,7 +305,7 @@ test.describe('Admin Incident Logging Modal', () => {
 
     await expect(page.getByText('Log Incident').first()).toBeVisible({ timeout: 5000 });
     const dialogPromise = page.waitForEvent('dialog', { timeout: 5000 });
-    const submitBtn = page.getByRole('button', { name: /^Log Incident$/ });
+    const submitBtn = page.getByTestId('incident-logging-submit');
     await submitBtn.click();
     const dialog = await dialogPromise;
     expect(dialog.message().toLowerCase()).toContain('description');

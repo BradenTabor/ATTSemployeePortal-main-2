@@ -5,6 +5,7 @@ import { logger } from '../../lib/logger';
 import { formToast } from '../../lib/formToast';
 import { trackFormSubmitted, trackFormSubmitError } from '../../lib/telemetry';
 import { parseFormError } from '../../lib/errorHandling';
+import { isOnline } from '../../lib/offlineQueue';
 import type { DVIRFormState, ExtraPhotos } from '../../pages/forms/dvir';
 
 interface SubmissionOptions {
@@ -83,6 +84,16 @@ export function useDVIRSubmission() {
 
       const userId = user.id;
       const userEmail = user.email ?? null;
+
+      // 2.5) Offline: DVIR requires photo uploads; queue does not persist files yet. Show clear message.
+      if (!isOnline()) {
+        logger.info('[DVIR] Offline: cannot submit (photos require network). Draft remains saved.');
+        formToast.info(
+          "You're offline",
+          "DVIR requires photos and can't be queued yet. Your draft is saved—submit when you're back online."
+        );
+        return { success: false };
+      }
 
       // 3) Upload required oil dipstick photo
       logger.debug("Uploading oil dipstick photo...");

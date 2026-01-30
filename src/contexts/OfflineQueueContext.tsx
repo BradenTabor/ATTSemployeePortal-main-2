@@ -1,8 +1,12 @@
 /**
  * Offline Queue Context
  *
- * Provides a submitter that replays queued form submissions when back online
- * (JSA insert only for now; DVIR/Equipment require photos and are skipped with a log).
+ * Provides a submitter that replays queued form submissions when back online.
+ * - JSA: full insert (no photos required).
+ * - DVIR/Equipment: not replayed yet—queue does not persist photo blobs; forms
+ *   show a clear "You're offline" message and do not enqueue (see useDVIRSubmission
+ *   and DailyEquipmentInspectionForm). When file persistence is added, wire enqueue
+ *   + submitter insert here.
  * Also provides an optional conflict check so we discard queued items if the user
  * already submitted the same form+date online.
  */
@@ -32,7 +36,7 @@ function buildSubmitter(): (
     }
     if (formType === "dvir" || formType === "equipment") {
       logger.warn(
-        "[OfflineQueue] DVIR/Equipment require photos; discarding queued item. Submit when online."
+        "[OfflineQueue] DVIR/Equipment require photos; queue does not persist files yet. Submit when online."
       );
       return;
     }

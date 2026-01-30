@@ -5,6 +5,7 @@
 #
 # This script deploys all scheduled cron jobs with proper authentication:
 #   - safety-announcement-7am (Mon-Fri 7 AM CST)
+#   - admin-compliance-9am (Mon-Fri 9 AM CST) - daily compliance summary email
 #   - admin-safety-forecast (Mon-Fri 6:30 AM CST) - writes to risk_score_history
 #   - auto-tune-risk-algorithm (Sunday 2 AM UTC) - weekly tuning
 #   - check-algorithm-performance (Daily 3 AM UTC) - rollback checker
@@ -26,6 +27,13 @@
 # =============================================================================
 
 set -e
+
+# Load .env if present (SUPABASE_SERVICE_ROLE_KEY, SUPABASE_DB_URL)
+if [ -f .env ]; then
+  set -a
+  source .env
+  set +a
+fi
 
 echo "🔐 Deploying cron jobs with service role authentication..."
 echo ""
@@ -122,7 +130,32 @@ SELECT cron.schedule(
 );
 
 -- =============================================================================
--- 2. Admin Safety Forecast (6:30 AM CST Mon-Fri) - writes to risk_score_history
+-- 2. Admin Compliance Summary (9 AM CST Mon-Fri) - daily compliance email
+-- =============================================================================
+DO \$\$
+BEGIN
+  PERFORM cron.unschedule('admin-compliance-9am');
+EXCEPTION WHEN others THEN
+  RAISE NOTICE 'admin-compliance-9am did not exist';
+END \$\$;
+
+SELECT cron.schedule(
+  'admin-compliance-9am',
+  '0 15 * * 1-5',
+  \$cron\$
+  SELECT net.http_post(
+    url := 'https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/admin-compliance-cron',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer $SUPABASE_SERVICE_ROLE_KEY'
+    ),
+    body := '{}'::jsonb
+  );
+  \$cron\$
+);
+
+-- =============================================================================
+-- 3. Admin Safety Forecast (6:30 AM CST Mon-Fri) - writes to risk_score_history
 -- =============================================================================
 DO \$\$
 BEGIN
@@ -147,7 +180,7 @@ SELECT cron.schedule(
 );
 
 -- =============================================================================
--- 3. Auto-Tune Risk Algorithm (Sunday 2 AM UTC)
+-- 4. Auto-Tune Risk Algorithm (Sunday 2 AM UTC)
 -- =============================================================================
 DO \$\$
 BEGIN
@@ -172,7 +205,7 @@ SELECT cron.schedule(
 );
 
 -- =============================================================================
--- 4. Check Algorithm Performance (Daily 3 AM UTC)
+-- 5. Check Algorithm Performance (Daily 3 AM UTC)
 -- =============================================================================
 DO \$\$
 BEGIN
@@ -203,6 +236,7 @@ SELECT jobname, schedule, active
 FROM cron.job 
 WHERE jobname IN (
   'safety-announcement-7am',
+  'admin-compliance-9am',
   'admin-safety-forecast',
   'auto-tune-risk-algorithm',
   'check-algorithm-performance'
@@ -216,6 +250,7 @@ if [ $? -eq 0 ]; then
   echo ""
   echo "📋 Jobs scheduled:"
   echo "   • safety-announcement-7am     - Mon-Fri 7:00 AM CST (13:00 UTC)"
+  echo "   • admin-compliance-9am       - Mon-Fri 9:00 AM CST (15:00 UTC)"
   echo "   • admin-safety-forecast       - Mon-Fri 6:30 AM CST (12:30 UTC)"
   echo "   • auto-tune-risk-algorithm    - Sunday 2:00 AM UTC"
   echo "   • check-algorithm-performance - Daily 3:00 AM UTC"

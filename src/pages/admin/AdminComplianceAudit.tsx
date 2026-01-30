@@ -404,7 +404,7 @@ export default function AdminComplianceAudit() {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-gradient-to-b from-gray-950 via-gray-900 to-gray-950 text-white px-3 py-4 sm:px-4 sm:py-6 pb-20 sm:pb-24 w-full min-w-0">
+      <div className="min-h-screen rounded-[25px] bg-gradient-to-b from-gray-950 via-gray-900 to-gray-950 text-white px-3 py-4 sm:px-4 sm:py-6 pb-20 sm:pb-24 w-full min-w-0">
         <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6 w-full min-w-0">
           {/* Header - compressed on mobile */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">

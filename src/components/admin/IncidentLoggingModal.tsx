@@ -1183,6 +1183,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                     </button>
                     <button
                       type="submit"
+                      data-testid="incident-logging-submit"
                       disabled={logIncidentMutation.isPending || !formData.description.trim()}
                       className={cn(
                         "px-6 py-2 rounded-lg text-sm font-medium transition-all",

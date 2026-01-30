@@ -106,6 +106,7 @@ test.describe('Request Time Off Form', () => {
       await page.goto('/dashboard/forms/request-time-off');
       
       await page.waitForSelector('form');
+      await page.waitForTimeout(500);
       
       // Fill all required fields
       await page.fill('input[name="fullName"], [data-testid="full-name"]', 'E2E Test Employee');
@@ -119,35 +120,37 @@ test.describe('Request Time Off Form', () => {
       await page.fill('input[name="startDate"], [data-testid="start-date"]', startDate.toISOString().split('T')[0]);
       await page.fill('input[name="endDate"], [data-testid="end-date"]', endDate.toISOString().split('T')[0]);
       
-      // Fill time fields if present
-      const startTimeInput = page.locator('input[name="startTime"], [data-testid="start-time"]');
-      if (await startTimeInput.isVisible()) {
+      // Fill time fields - these are REQUIRED and use custom TimeField component
+      // The TimeField component uses label-based accessibility, not name attributes
+      const startTimeInput = page.getByLabel(/Start Time/i);
+      if (await startTimeInput.isVisible().catch(() => false)) {
         await startTimeInput.fill('08:00');
+        await page.waitForTimeout(200);
       }
       
-      const endTimeInput = page.locator('input[name="endTime"], [data-testid="end-time"]');
-      if (await endTimeInput.isVisible()) {
+      const endTimeInput = page.getByLabel(/End Time/i);
+      if (await endTimeInput.isVisible().catch(() => false)) {
         await endTimeInput.fill('17:00');
+        await page.waitForTimeout(200);
       }
       
-      // Select reason
-      const reasonSelect = page.locator('select[name="reason"], [data-testid="reason"]');
-      if (await reasonSelect.isVisible()) {
-        await reasonSelect.selectOption('vacation');
-      } else {
-        const reasonInput = page.locator('input[name="reason"]');
-        if (await reasonInput.isVisible()) {
-          await reasonInput.fill('vacation');
-        }
+      // Fill reason - uses a textbox with placeholder, not a select element
+      const reasonInput = page.getByPlaceholder(/Why you need time off/i).or(page.getByLabel(/Reason/i));
+      if (await reasonInput.isVisible().catch(() => false)) {
+        await reasonInput.fill('vacation');
+        await page.waitForTimeout(200);
       }
       
       // Add optional notes
-      const notesInput = page.locator('textarea[name="notes"], [data-testid="notes"]');
-      if (await notesInput.isVisible()) {
+      const notesInput = page.locator('textarea[name="notes"], [data-testid="notes"]').or(page.getByPlaceholder(/Extra details/i));
+      if (await notesInput.isVisible().catch(() => false)) {
         await notesInput.fill('E2E Test - Family vacation');
       }
       
-      await page.click('button[type="submit"]');
+      // Submit using data-testid for reliability
+      const submitBtn = page.locator('[data-testid="rto-submit-button"]').or(page.locator('button[type="submit"]'));
+      await submitBtn.scrollIntoViewIfNeeded();
+      await submitBtn.click();
       await page.waitForTimeout(3000);
 
       const heading = page.getByRole('heading', { name: /Request Submitted|submitted|success/i }).first();
