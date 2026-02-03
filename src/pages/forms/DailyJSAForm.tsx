@@ -1263,7 +1263,6 @@ export default function DailyJSAForm() {
           <StepReview
             form={form}
             onInputChange={(key, value) => handleInputChange(key, value)}
-            onSignaturePathChange={(path) => handleInputChange("employeeSignaturePath", path)}
             onAddObserver={handleAddObserver}
             onDeleteObserver={handleDeleteObserver}
             onSharedUsersChange={handleSharedUsersChange}

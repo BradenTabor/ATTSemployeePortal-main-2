@@ -20,7 +20,6 @@ import {
 import { cn } from "../../../lib/utils";
 import type { JsaSpan } from "./StepSpans";
 import { ObserverSignatureCapture } from "../ObserverSignatureCapture";
-import { SignaturePad } from "../SignaturePad";
 import { JsaUserSelector } from "../JsaUserSelector";
 import type { ObserverSignature, SharedUser } from "../../../pages/forms/DailyJSAForm";
 
@@ -72,7 +71,6 @@ interface StepReviewProps {
     statusHistory: StatusLogEntry[];
   };
   onInputChange: (key: "notes" | "employeeSignature", value: string) => void;
-  onSignaturePathChange?: (path: string) => void;
   onAddObserver: (observer: ObserverSignature) => void;
   onDeleteObserver: (timestamp: string) => void;
   onSharedUsersChange: (users: SharedUser[]) => void;
@@ -193,7 +191,6 @@ function ChipList({ items }: { items: string[] }) {
 export function StepReview({
   form,
   onInputChange,
-  onSignaturePathChange,
   onAddObserver,
   onDeleteObserver,
   onSharedUsersChange,
@@ -547,22 +544,12 @@ export function StepReview({
           />
         </div>
 
-        {/* Draw signature (image) or type name */}
+        {/* Type your name signature */}
         <div className="space-y-3">
           <label className="block text-[10px] font-medium text-white/50 uppercase mb-1">
             Employee Signature <span className="text-red-400">*</span>
           </label>
-          {onSignaturePathChange && (
-            <SignaturePad
-              value={form.employeeSignaturePath}
-              onChange={onSignaturePathChange}
-              formType="jsa"
-              required={!form.employeeSignature.trim()}
-              error={(!form.employeeSignaturePath && !form.employeeSignature.trim() ? errors?.employeeSignature : undefined)}
-              className="mb-2"
-            />
-          )}
-          <p className="text-[10px] text-white/50">Or type your name below</p>
+          <p className="text-[10px] text-white/50">Type your name below</p>
           <div className="relative">
             <PenLine className={cn(
               "absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors",
