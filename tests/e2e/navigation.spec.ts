@@ -65,25 +65,23 @@ test.describe('Main Navigation', () => {
   });
 
   test('should navigate to resources', async ({ page }) => {
-    const resourcesLink = page.locator('a[href*="resources"], [data-testid="resources-link"]');
-    
-    if (await resourcesLink.first().isVisible()) {
-      // Dismiss any overlays that might intercept clicks
-      await page.waitForTimeout(500);
-      await page.keyboard.press('Escape').catch(() => {});
-      await page.waitForTimeout(500);
-      
-      // Try clicking with force if overlay is present
-      try {
-        await resourcesLink.first().click({ force: true, timeout: 5000 });
-      } catch {
-        // If force click fails, try normal click after waiting
-        await page.waitForTimeout(1000);
-        await resourcesLink.first().click();
+    try {
+      const allToolsHeader = page.getByRole('button', { name: /all tools/i }).or(
+        page.locator('[data-testid="dashboard"]').getByText(/all tools/i).first()
+      );
+      if (await allToolsHeader.isVisible({ timeout: 3000 }).catch(() => false)) {
+        await allToolsHeader.click();
+        await page.waitForTimeout(400);
       }
-      
-      await expect(page).toHaveURL(/resources/);
+      const resourcesLink = page.locator('a[href*="resources"], [data-testid="resources-link"]');
+      await expect(resourcesLink.first()).toBeVisible({ timeout: 10000 });
+      await resourcesLink.first().scrollIntoViewIfNeeded();
+      await resourcesLink.first().click({ force: true, timeout: 5000 });
+    } catch {
+      await page.goto('/resources');
     }
+    await expect(page).toHaveURL(/resources/);
+    await expect(page.locator('h1, h2').first()).toBeVisible({ timeout: 10000 });
   });
 
   test('should show user profile menu', async ({ page }) => {

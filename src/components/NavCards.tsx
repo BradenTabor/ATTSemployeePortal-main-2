@@ -1,21 +1,7 @@
 import { useAuth } from "../contexts/AuthContext";
-import {
-  FileText,
-  Megaphone,
-  Phone,
-  Shield,
-  FileSearch,
-  Wrench,
-  Briefcase,
-  HardHat,
-  Users,
-  History,
-  UserCircle,
-  Settings,
-} from "lucide-react";
 import BrandedNavCard from "./BrandedNavCard";
 import { motion } from "framer-motion";
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import { getDeviceCapabilities } from "../lib/mobilePerf";
 import { usePinnedFavorites } from "./dashboard";
 
@@ -24,57 +10,65 @@ const userPages = [
     id: "jobs",
     label: "My Jobs",
     path: "/assigned-jobs",
-    icon: Briefcase,
-    description: "View and track your assigned work"
+    icon: <img src="/assets/my-jobs.png" alt="" className="w-full h-full object-contain" />,
+    description: "View and track your assigned work",
+    iconAsImage: true,
   },
   {
     id: "forms",
     label: "Company Forms",
     path: "/forms",
-    icon: FileText,
-    description: "Access and submit required ATTS forms"
+    icon: <img src="/assets/company-forms.png" alt="" className="w-full h-full object-contain" />,
+    description: "Access and submit required ATTS forms",
+    iconAsImage: true,
   },
   {
     id: "history",
     label: "Forms History",
     path: "/forms-history",
-    icon: History,
-    description: "View your past form submissions"
+    icon: <img src="/assets/forms-history.png" alt="" className="w-full h-full object-contain" />,
+    description: "View your past form submissions",
+    iconAsImage: true,
   },
   {
     id: "announcements",
     label: "Announcements",
     path: "/announcements",
-    icon: Megaphone,
-    description: "Latest company news and updates"
+    icon: <img src="/assets/announcements.png" alt="" className="w-full h-full object-contain" />,
+    description: "Latest company news and updates",
+    iconAsImage: true,
   },
   {
     id: "resources",
     label: "Resources",
     path: "/resources",
-    icon: FileSearch,
-    description: "Training materials and documents"
+    icon: <img src="/assets/resources.png" alt="" className="w-full h-full object-contain" />,
+    description: "Training materials and documents",
+    iconAsImage: true,
   },
   {
     id: "contact",
     label: "Contact",
     path: "/contact",
-    icon: Phone,
-    description: "Reach out to management and HR"
+    icon: <img src="/assets/contact.png" alt="" className="w-full h-full object-contain" />,
+    description: "Reach out to management and HR",
+    iconAsImage: true,
   },
   {
     id: "profile",
     label: "My Profile",
     path: "/profile",
-    icon: UserCircle,
-    description: "View credentials and settings"
+    icon: <img src="/assets/my-profile.png" alt="" className="w-full h-full object-contain" />,
+    description: "View credentials and settings",
+    iconAsImage: true,
   },
   {
     id: "settings",
     label: "Settings",
     path: "/settings",
-    icon: Settings,
-    description: "Manage saved data and preferences"
+    icon: <img src="/assets/settings.png" alt="" className="w-full h-full object-contain" />,
+    description: "Manage saved data and preferences",
+    iconAsImage: true,
   },
 ];
 
@@ -125,56 +119,62 @@ export default function NavCards() {
       to: page.path,
       variant: "emerald" as const,
       show: true,
+      iconAsImage: 'iconAsImage' in page ? page.iconAsImage : false,
     })),
     {
       key: "/mechanic-dashboard",
       itemId: "mechanic",
       title: "Mechanic Panel",
       description: "Review DVIR queues and shop work",
-      icon: Wrench,
+      icon: <img src="/assets/mechanic-panel.png" alt="" className="w-full h-full object-contain" />,
       to: "/mechanic-dashboard",
       variant: "ember" as const,
       show: hasMechanicAccess,
+      iconAsImage: true,
     },
     {
       key: "/general-foreman-dashboard",
       itemId: "general-foreman",
       title: "General Foreman Panel",
       description: "Oversee crews and safety compliance",
-      icon: HardHat,
+      icon: <img src="/assets/general-foreman-panel.png" alt="" className="w-full h-full object-contain" />,
       to: "/general-foreman-dashboard",
       variant: "purple" as const,
       show: role === "general_foreman" || isAdmin,
+      iconAsImage: true,
     },
     {
       key: "/safety-officer-dashboard",
       itemId: "safety-officer",
       title: "Safety Officer Panel",
       description: "Manage incidents and compliance",
-      icon: Shield,
+      icon: <img src="/assets/safety-officer-panel.png" alt="" className="w-full h-full object-contain" />,
       to: "/safety-officer-dashboard",
       variant: "redwhite" as const,
       show: role === "safety_officer" || isAdmin,
+      iconAsImage: true,
     },
     {
       key: "/foreman-dashboard",
       itemId: "foreman",
       title: "Foreman Panel",
       description: "Manage crew and daily reports",
-      icon: Users,
+      icon: <img src="/assets/foreman-panel.png" alt="" className="w-full h-full object-contain" />,
       to: "/foreman-dashboard",
       variant: "bluewhite" as const,
       show: role === "foreman" || isAdmin,
+      iconAsImage: true,
     },
     {
       key: "/admin",
       itemId: "admin",
       title: "Admin Panel",
       description: "Manage users and approvals",
-      icon: Shield,
+      icon: <img src="/assets/admin-panel.png" alt="" className="w-full h-full object-contain" />,
       to: "/admin",
       variant: "gold" as const,
       show: isAdmin,
+      iconAsImage: true,
     },
   ].filter(card => card.show);
 
@@ -185,24 +185,22 @@ export default function NavCards() {
       initial="hidden"
       animate="visible"
     >
-      {allCards.map((card) => {
-        const Icon = card.icon;
-        return (
+      {allCards.map((card) => (
           <motion.div key={card.key} variants={itemVariants}>
             <BrandedNavCard
               title={card.title}
               description={card.description}
-              icon={<Icon />}
+              icon={typeof card.icon === 'function' ? (() => { const Icon = card.icon as React.ComponentType; return <Icon />; })() : card.icon}
               to={card.to}
               variant={card.variant}
+              iconAsImage={card.iconAsImage}
               itemId={card.itemId}
               isPinned={isPinned(card.itemId)}
               canPinMore={canPinMore}
               onTogglePin={togglePin}
             />
           </motion.div>
-        );
-      })}
+        ))}
     </motion.div>
   );
 }

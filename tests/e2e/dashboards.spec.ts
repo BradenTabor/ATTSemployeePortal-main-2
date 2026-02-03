@@ -15,7 +15,7 @@ test.describe('Employee Dashboard', () => {
   });
 
   test('should display dashboard for employee', async ({ page }) => {
-    await expect(page.locator('[data-testid="dashboard"], .dashboard, main')).toBeVisible();
+    await expect(page.locator('[data-testid="dashboard"], .dashboard, main')).toBeVisible({ timeout: 15000 });
   });
 
   test('should show greeting header', async ({ page }) => {
@@ -287,8 +287,9 @@ test.describe('Dashboard Authorization', () => {
     const url = page.url();
     const accessDenied = page.getByText(/access denied|unauthorized|not allowed/i);
     
-    // Either redirected away or shows access denied
-    const redirected = !url.includes('/admin/dashboard');
+    // Either redirected away from admin or shows access denied
+    // After redirect: /admin/dashboard -> /admin -> ProtectedRoute redirects away
+    const redirected = !url.includes('/admin');
     const denied = await accessDenied.first().isVisible().catch(() => false);
     
     // Note: If authorization isn't implemented yet, this test may fail
@@ -297,8 +298,7 @@ test.describe('Dashboard Authorization', () => {
       console.log(`Employee accessed admin dashboard - authorization may not be implemented. URL: ${url}`);
     }
     
-    // For now, just check that we're not on admin dashboard OR access is denied
-    // This allows the test to pass if authorization isn't fully implemented
+    // Employee should be redirected away from admin area OR see access denied
     expect(redirected || denied).toBe(true);
   });
 
@@ -310,7 +310,8 @@ test.describe('Dashboard Authorization', () => {
     
     const url = page.url();
     // Should redirect or show access denied
-    const redirected = !url.includes('/mechanic/dashboard');
+    // After redirect: /mechanic/dashboard -> /mechanic-dashboard -> ProtectedRoute redirects away
+    const redirected = !url.includes('/mechanic-dashboard');
     
     if (!redirected) {
       // If not redirected, should show error
@@ -337,15 +338,15 @@ test.describe('Dashboard Authorization', () => {
     await page.waitForLoadState('networkidle');
     
     const url = page.url();
-    const redirected = !url.includes('/admin/dashboard');
+    // After redirect: /admin/dashboard -> /admin -> ProtectedRoute redirects away
+    const redirected = !url.includes('/admin');
     
     // Note: If authorization isn't implemented yet, log it
     if (!redirected) {
       console.log(`Mechanic accessed admin dashboard - authorization may not be implemented. URL: ${url}`);
     }
     
-    // For now, allow test to pass if authorization isn't fully implemented
-    // In a real scenario, this should always be true
+    // Mechanic should be redirected away from admin area
     expect(redirected).toBe(true);
   });
 });

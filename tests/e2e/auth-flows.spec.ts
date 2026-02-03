@@ -205,6 +205,9 @@ test.describe('Password Reset', () => {
   });
 
   test('should send reset email for valid address', async ({ page }) => {
+    // Skip this test if Supabase test environment is not configured
+    test.skip(!process.env.SUPABASE_TEST_ENV, 'Requires Supabase test environment');
+    
     await page.goto('/reset-password');
     
     const emailInput = page.locator('input[type="email"], input[name="email"]');

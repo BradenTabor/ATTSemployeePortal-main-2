@@ -113,29 +113,15 @@ test.describe('Equipment Inspection Form', () => {
         await page.waitForTimeout(2000);
         const submitBtn = page.getByTestId('submit-button');
         await submitBtn.scrollIntoViewIfNeeded();
-        
-        // Wait for button to be enabled, but check why it might be disabled
-        const isEnabled = await submitBtn.isEnabled({ timeout: 20000 }).catch(async () => {
-          // If button is still disabled, check the reason
-          const buttonTitle = await submitBtn.getAttribute('title').catch(() => '');
-          const buttonAriaLabel = await submitBtn.getAttribute('aria-label').catch(() => '');
-          console.log(`Submit button disabled. Title: ${buttonTitle}, Aria-label: ${buttonAriaLabel}`);
-          return false;
-        });
-        
-        if (!isEnabled) {
-          // Button is still disabled - there may be validation issues
-          const buttonTitle = await submitBtn.getAttribute('title').catch(() => '');
-          throw new Error(`Submit button is disabled: ${buttonTitle}`);
-        }
-        
+        await expect(submitBtn).toBeEnabled({ timeout: 20000 });
         await submitBtn.click();
         
-        await page.waitForTimeout(5000);
-
-        // Check for success indicators (matching pattern from working DVIR tests)
         const successToast = page.locator('[data-sonner-toast][data-type="success"]').first();
         const successHeading = page.getByRole('heading', { name: /Submitted Successfully|success/i }).first();
+        await Promise.race([
+          successToast.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {}),
+          successHeading.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {}),
+        ]);
         const submittingButton = page.getByRole('button', { name: /Submitting/i }).first();
         
         const toastVisible = await successToast.isVisible().catch(() => false);

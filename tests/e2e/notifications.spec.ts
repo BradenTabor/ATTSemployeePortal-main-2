@@ -220,7 +220,7 @@ test.describe('Admin Manual Notifications', () => {
   });
 
   test('should show notification management in admin', async ({ page }) => {
-    await page.goto('/admin/dashboard');
+    await page.goto('/admin');
     await page.waitForLoadState('networkidle');
     
     const notifySection = page.locator('[data-testid="notification-management"], text=notification, text=notify');
@@ -229,7 +229,7 @@ test.describe('Admin Manual Notifications', () => {
   });
 
   test('should allow sending manual notification', async ({ page }) => {
-    await page.goto('/admin/dashboard');
+    await page.goto('/admin');
     await page.waitForLoadState('networkidle');
     
     const sendButton = page.locator('button:has-text("Send Notification"), button:has-text("Notify"), [data-testid="send-notification"]');
@@ -259,7 +259,7 @@ test.describe('Admin Manual Notifications', () => {
   });
 
   test('should allow targeting notification to specific users', async ({ page }) => {
-    await page.goto('/admin/dashboard');
+    await page.goto('/admin');
     await page.waitForLoadState('networkidle');
     
     const sendButton = page.locator('button:has-text("Send Notification"), [data-testid="send-notification"]').first();
@@ -276,7 +276,7 @@ test.describe('Admin Manual Notifications', () => {
   });
 
   test('should allow targeting notification by role', async ({ page }) => {
-    await page.goto('/admin/dashboard');
+    await page.goto('/admin');
     await page.waitForLoadState('networkidle');
     
     const sendButton = page.locator('button:has-text("Send Notification")').first();
@@ -293,7 +293,7 @@ test.describe('Admin Manual Notifications', () => {
   });
 
   test('notification test button works', async ({ page }) => {
-    await page.goto('/admin/dashboard');
+    await page.goto('/admin');
     await page.waitForLoadState('networkidle');
     
     const testButton = page.locator('button:has-text("Test"), [data-testid="test-notification"]');

@@ -1,4 +1,4 @@
-import { defineConfig, type Plugin } from 'vite';
+import { defineConfig, loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
@@ -8,6 +8,23 @@ import { readFileSync, writeFileSync } from 'fs';
 const packageJson = JSON.parse(readFileSync('./package.json', 'utf-8'));
 const appVersion = packageJson.version;
 const buildTime = new Date().toISOString();
+
+/** Inject Supabase preconnect/dns-prefetch using project URL (VITE_SUPABASE_URL) so the browser connects to the actual API origin. */
+function supabasePreconnectPlugin(supabaseUrl: string): Plugin {
+  const origin = supabaseUrl.trim().replace(/\/$/, '');
+  return {
+    name: 'html-supabase-preconnect',
+    transformIndexHtml(html) {
+      const placeholder = /(\s*<!-- Supabase preconnect: injected at build from VITE_SUPABASE_URL[^]*?-->)/s;
+      if (!origin || !placeholder.test(html)) return html;
+      const links =
+        `\n    <!-- Supabase preconnect (project origin from VITE_SUPABASE_URL) -->
+    <link rel="preconnect" href="${origin}" crossorigin />
+    <link rel="dns-prefetch" href="${origin}" />`;
+      return html.replace(placeholder, links);
+    },
+  };
+}
 
 /** Generate version.json for deploy version checking (instant forced update). */
 function generateVersionFile(): Plugin {
@@ -29,7 +46,11 @@ function generateVersionFile(): Plugin {
 }
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+  const supabaseUrl = env.VITE_SUPABASE_URL ?? '';
+
+  return {
   // Inject app version as a global constant (same buildTime as version.json)
   define: {
     __APP_VERSION__: JSON.stringify(appVersion),
@@ -37,6 +58,7 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
+    supabasePreconnectPlugin(supabaseUrl),
     generateVersionFile(),
     VitePWA({
       strategies: 'injectManifest',
@@ -147,4 +169,5 @@ export default defineConfig(({ mode }) => ({
     globals: true,
     include: ['src/**/*.test.{ts,tsx}', 'tests/**/*.test.{ts,tsx}'],
   },
-}));
+};
+});

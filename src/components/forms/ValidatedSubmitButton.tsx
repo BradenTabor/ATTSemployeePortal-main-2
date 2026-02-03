@@ -69,10 +69,17 @@ export function ValidatedSubmitButton({
   const hasErrors = errorCount > 0;
   const isDisabled = disabled || loading || hasErrors;
 
-  // Tooltip content
+  // Tooltip and aria-label content
   const tooltipContent = hasErrors
     ? `Fix ${errorCount} ${errorCount === 1 ? 'issue' : 'issues'} before submitting`
-    : undefined;
+    : loading
+    ? 'Submitting...'
+    : label;
+  const ariaLabel = hasErrors
+    ? tooltipContent
+    : loading
+    ? `${label} — Submitting...`
+    : label;
 
   return (
     <div 
@@ -98,7 +105,8 @@ export function ValidatedSubmitButton({
           'disabled:opacity-60 disabled:cursor-not-allowed',
           className
         )}
-        aria-label={tooltipContent}
+        aria-label={ariaLabel}
+        aria-busy={loading}
         title={tooltipContent}
       >
         {/* Loading spinner */}

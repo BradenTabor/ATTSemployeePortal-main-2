@@ -99,12 +99,11 @@ test.describe('DVIR Form', () => {
       await expect(submitBtn).toBeEnabled({ timeout: 15000 });
       await submitBtn.click();
 
-      await page.waitForTimeout(5000);
-
-      // Check for success indicators (matching pattern from passing concurrency test)
+      // Wait for success indicator (replaces arbitrary waitForTimeout)
       const successToast = page.locator('[data-sonner-toast][data-type="success"]').first();
       const successHeading = page.getByRole('heading', { name: /Submitted Successfully/i }).first();
       const submittingButton = page.getByRole('button', { name: /Submitting/i }).first();
+      await expect(successToast.or(successHeading).or(submittingButton)).toBeVisible({ timeout: 15000 });
       
       const toastVisible = await successToast.isVisible().catch(() => false);
       const headingVisible = await successHeading.isVisible().catch(() => false);
@@ -338,7 +337,9 @@ test.describe('DVIR Form', () => {
       
       await Promise.all(clickPromises);
 
-      await page.waitForTimeout(5000);
+      // Wait for success indicator instead of fixed timeout
+      const successIndicator = page.locator('[data-sonner-toast], [role="alert"]').filter({ hasText: /success|submitted/i }).first();
+      await successIndicator.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
       
       // Check for success indicators
       const successToast = page.locator('[data-sonner-toast][data-type="success"]').first();

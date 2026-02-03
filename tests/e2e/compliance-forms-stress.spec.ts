@@ -495,29 +495,27 @@ async function fillAndSubmitRTO(page: Page, data: RTORunData): Promise<void> {
   // Fill end date
   await page.fill('input[name="endDate"], [data-testid="end-date"]', data.endDate);
 
-  // Fill times if provided
+  // Fill times - TimeField uses label-based accessibility
   if (data.startTime) {
-    // TimeField uses label-based accessibility, not name attribute
     const startTimeInput = page.getByLabel(/Start Time/i);
-    if (await startTimeInput.isVisible().catch(() => false)) {
-      await startTimeInput.fill(data.startTime);
-      await page.waitForTimeout(200);
-    }
+    await startTimeInput.waitFor({ state: 'visible', timeout: 5000 });
+    await startTimeInput.click();
+    await startTimeInput.fill(data.startTime);
+    await page.waitForTimeout(300);
   }
   if (data.endTime) {
     const endTimeInput = page.getByLabel(/End Time/i);
-    if (await endTimeInput.isVisible().catch(() => false)) {
-      await endTimeInput.fill(data.endTime);
-      await page.waitForTimeout(200);
-    }
+    await endTimeInput.waitFor({ state: 'visible', timeout: 5000 });
+    await endTimeInput.click();
+    await endTimeInput.fill(data.endTime);
+    await page.waitForTimeout(300);
   }
 
-  // Fill reason - it's a textbox with placeholder "Why you need time off"
-  const reasonInput = page.getByPlaceholder(/Why you need time off/i).or(page.getByLabel(/Reason/i));
-  if (await reasonInput.isVisible().catch(() => false)) {
-    await reasonInput.fill(data.reason || 'Personal time off');
-    await page.waitForTimeout(200);
-  }
+  // Fill reason - uses placeholder-based selector
+  const reasonInput = page.getByPlaceholder(/Why you need time off/i);
+  await reasonInput.waitFor({ state: 'visible', timeout: 5000 });
+  await reasonInput.fill(data.reason || 'Personal time off');
+  await page.waitForTimeout(300);
 
   // Fill notes if provided
   if (data.notes) {
@@ -527,48 +525,23 @@ async function fillAndSubmitRTO(page: Page, data: RTORunData): Promise<void> {
     }
   }
 
-  // Submit - try multiple approaches to ensure form submission works
-  const submitBtn = page.locator('[data-testid="rto-submit-button"]');
+  // Wait for submit button to be enabled
+  const submitBtn = page.locator('[data-testid="rto-submit-button"]').or(page.locator('button[type="submit"]'));
   await submitBtn.scrollIntoViewIfNeeded();
-  
-  // First check if button is disabled
-  const isDisabled = await submitBtn.isDisabled().catch(() => false);
-  if (isDisabled) {
-    // Form has validation errors - check what's missing
-    throw new Error('RTO submit button is disabled - form has validation errors');
-  }
-  
-  // Try triggering form submission directly via requestSubmit (bypasses HTML5 validation)
-  await page.evaluate(() => {
-    const form = document.querySelector('form');
-    if (form) {
-      // Create and dispatch submit event
-      const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
-      form.dispatchEvent(submitEvent);
-    }
-  });
-  
-  await page.waitForTimeout(1000);
-  
-  // If form is still visible, also try clicking the button
-  const formStillVisible = await page.locator('form').first().isVisible().catch(() => false);
-  if (formStillVisible) {
-    await submitBtn.click({ force: true }).catch(() => {});
-  }
-  
+  await expect(submitBtn).toBeEnabled({ timeout: 15000 });
+
+  await submitBtn.click();
   await page.waitForTimeout(5000);
 
-  // Assert success (matching pattern from working tests)
+  // Assert success
   const successToast = page.locator('[data-sonner-toast][data-type="success"]').first();
-  const successHeading = page.getByRole('heading', { name: /Request Submitted|submitted|success/i }).first();
-  const submittingButton = page.getByRole('button', { name: /Submitting/i }).first();
+  const successText = page.getByText(/submitted|success|pending approval/i).first();
   const urlChanged = !page.url().includes('/request-time-off');
-  
-  const toastVisible = await successToast.isVisible().catch(() => false);
-  const headingVisible = await successHeading.isVisible().catch(() => false);
-  const stillSubmitting = await submittingButton.isVisible().catch(() => false);
 
-  expect(toastVisible || headingVisible || stillSubmitting || urlChanged).toBe(true);
+  const toastVisible = await successToast.isVisible().catch(() => false);
+  const textVisible = await successText.isVisible().catch(() => false);
+
+  expect(toastVisible || textVisible || urlChanged).toBe(true);
 }
 
 // ============================================================================

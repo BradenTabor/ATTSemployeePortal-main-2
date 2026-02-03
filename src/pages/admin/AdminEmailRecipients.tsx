@@ -8,7 +8,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "../../lib/toast";
 import { logger } from "../../lib/logger";
 
-type ListKey = "compliance_summary" | "safety_forecast";
+type ListKey = "compliance_summary" | "safety_forecast" | "weekly_safety_audit";
 
 const LISTS: { key: ListKey; label: string; description: string }[] = [
   {
@@ -20,6 +20,11 @@ const LISTS: { key: ListKey; label: string; description: string }[] = [
     key: "safety_forecast",
     label: "Safety Forecast",
     description: "Daily 6:30 AM safety forecast email recipients",
+  },
+  {
+    key: "weekly_safety_audit",
+    label: "Weekly Safety Audit",
+    description: "Weekly safety audit report email recipients",
   },
 ];
 
@@ -259,31 +264,68 @@ function AdminEmailRecipients() {
   }
 
   const current = LISTS.find((l) => l.key === listKey)!;
+  const tabPanelId = "email-recipients-tabpanel";
+  const tabId = (key: ListKey) => `email-recipients-tab-${key}`;
 
   return (
     <DashboardLayout title="Email Recipients">
       {/* pb-20: clear space above fixed ReturnButton/FAB on small screens */}
       <div className="w-full max-w-4xl mx-auto px-3 sm:px-6 pb-20 sm:pb-8 pt-2 sm:pt-6">
+        {/* Page header: match Admin Users / dashboard card feel */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="relative rounded-2xl sm:rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] overflow-hidden mb-4 sm:mb-6 shadow-[0_25px_50px_rgba(0,0,0,0.55)]"
+        >
+          <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 25% 0%, rgba(244, 201, 121, 0.2) 0%, transparent 45%)" }} />
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-white/5 via-white/25 to-white/5 rounded-t-[inherit]" />
+          <div className="relative px-4 py-3 sm:px-6 sm:py-4">
+            <div className="flex items-center gap-3 mb-2 flex-wrap">
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#f4c979]/15 border border-[#f4c979]/30">
+                <Mail className="w-3.5 h-3.5 text-[#f4c979]" />
+                <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#f8e5bb]">Admin • Email lists</span>
+              </span>
+            </div>
+            <h1 className="text-lg sm:text-xl md:text-2xl font-black tracking-tight bg-gradient-to-r from-white via-[#f8e5bb] to-white/90 bg-clip-text text-transparent">
+              Email Recipients
+            </h1>
+            <p className="mt-1 text-xs sm:text-sm text-[#c7b696] font-medium max-w-xl">
+              Manage compliance and safety forecast email lists. Add or remove addresses, bulk import, and send test emails.
+            </p>
+          </div>
+        </motion.div>
+
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] p-3 sm:p-6 shadow-xl"
+          transition={{ duration: 0.3, delay: 0.05 }}
+          className="rounded-2xl sm:rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] p-3 sm:p-6 shadow-[0_25px_50px_rgba(0,0,0,0.55)]"
         >
           <h2 className="text-base sm:text-lg font-bold text-white mb-0.5">Automated email lists</h2>
           <p className="text-xs sm:text-sm text-[#c7b696] mb-4">
-            Manage who receives compliance and safety forecast emails. Use <strong>Send Test</strong> to verify.
+            Choose a list below, then add addresses or use <strong>Send Test</strong> to verify delivery.
           </p>
 
-          {/* Tabs: stack on small screens to avoid crowding */}
-          <div className="flex flex-col sm:flex-row gap-2 mb-4">
+          {/* Tabs: accessible tablist */}
+          <div
+            role="tablist"
+            aria-label="Email list type"
+            className="flex flex-col sm:flex-row gap-2 mb-4"
+          >
             {LISTS.map((l) => (
               <button
                 key={l.key}
+                id={tabId(l.key)}
+                role="tab"
+                aria-selected={listKey === l.key}
+                aria-controls={tabPanelId}
+                tabIndex={listKey === l.key ? 0 : -1}
                 onClick={() => setListKey(l.key)}
-                className={`px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-colors flex-1 sm:flex-initial ${
+                className={`px-3 py-2 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-semibold transition-all flex-1 sm:flex-initial ${
                   listKey === l.key
-                    ? "bg-[#f4c979]/20 border border-[#f4c979]/40 text-[#fef3d1]"
-                    : "border border-[#f6dcb2]/25 text-[#c7b696] hover:bg-white/5"
+                    ? "bg-[#f4c979]/20 border border-[#f4c979]/40 text-[#fef3d1] shadow-[0_0_20px_rgba(244,201,121,0.15)]"
+                    : "border border-[#f6dcb2]/25 text-[#c7b696] hover:bg-white/5 hover:border-[#f6dcb2]/40"
                 }`}
               >
                 {l.label}
@@ -291,9 +333,15 @@ function AdminEmailRecipients() {
             ))}
           </div>
 
-          <div className="mb-3">
-            <p className="text-xs sm:text-sm text-[#c7b696] leading-snug">{current.description}</p>
-          </div>
+          <div
+            id={tabPanelId}
+            role="tabpanel"
+            aria-labelledby={tabId(listKey)}
+            className="outline-none"
+          >
+            <div className="mb-3">
+              <p className="text-xs sm:text-sm text-[#c7b696] leading-snug">{current.description}</p>
+            </div>
 
           {/* Add row: input flex-1 min-w-0 so Add button never truncates */}
           <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 mb-4">
@@ -379,13 +427,17 @@ function AdminEmailRecipients() {
             {loading ? (
               <p className="text-xs sm:text-sm text-[#c7b696]">Loading…</p>
             ) : recipients.length === 0 ? (
-              <p className="text-xs sm:text-sm text-[#c7b696]">No recipients yet. Add one above or bulk import.</p>
+              <div className="flex flex-col items-center justify-center py-8 px-4 rounded-xl sm:rounded-2xl border border-[#f6dcb2]/15 bg-[#050402]/30 text-center">
+                <Mail className="w-10 h-10 text-[#f4c979]/40 mb-3 flex-shrink-0" aria-hidden />
+                <p className="text-sm text-[#c7b696] font-medium">No recipients yet</p>
+                <p className="text-xs text-[#8a7a5c] mt-1 max-w-xs">Add an address above or use Bulk import to add multiple at once.</p>
+              </div>
             ) : (
-              <ul className="space-y-1.5 sm:space-y-2">
+              <ul className="space-y-1.5 sm:space-y-2" role="list">
                 {recipients.map((r) => (
                   <li
                     key={r.email}
-                    className="flex items-center gap-2 min-w-0 py-2 px-3 rounded-xl bg-[#050402]/50 border border-[#f6dcb2]/10"
+                    className="flex items-center gap-2 min-w-0 py-2 px-3 sm:px-4 rounded-xl sm:rounded-2xl bg-[#050402]/50 border border-[#f6dcb2]/25 backdrop-blur-sm transition-colors hover:border-[#f6dcb2]/35 hover:bg-[#0a0806]/60"
                   >
                     <span className="flex items-center gap-2 min-w-0 flex-1 text-sm text-[#fdf4db]">
                       <Mail className="w-4 h-4 flex-shrink-0 text-[#c7b696]" />
@@ -394,7 +446,7 @@ function AdminEmailRecipients() {
                     <button
                       onClick={() => handleRemove(r.email)}
                       disabled={removePending === r.email || recipients.length <= 1}
-                      className="flex-shrink-0 p-2 rounded-lg text-[#c7b696] hover:bg-red-500/10 hover:text-red-300 disabled:opacity-40"
+                      className="flex-shrink-0 p-2 rounded-lg text-[#c7b696] hover:bg-red-500/10 hover:text-red-300 disabled:opacity-40 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50"
                       aria-label={`Remove ${r.email}`}
                     >
                       {removePending === r.email ? (
@@ -473,6 +525,7 @@ function AdminEmailRecipients() {
                 )}
               </motion.div>
             )}
+          </div>
           </div>
         </motion.div>
       </div>

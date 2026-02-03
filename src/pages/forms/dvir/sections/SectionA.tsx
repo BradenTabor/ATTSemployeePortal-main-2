@@ -106,7 +106,20 @@ export function SectionA({
             onChange={(val) => setForm((prev) => ({ ...prev, mileage: val }))}
             truckNumber={form.truckNumber}
             previousMileage={previousMileage}
+            onBlur={() => handleFieldBlur('mileage' as keyof DVIRFormState)}
           />
+          {shouldShowError('mileage' as keyof DVIRFormState) && getFieldError('mileage' as keyof DVIRFormState) && (
+            <motion.p
+              id="mileage-error"
+              role="alert"
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-xs text-rose-400 mt-1 flex items-center gap-1"
+            >
+              <AlertTriangle className="w-3 h-3" />
+              {getFieldError('mileage' as keyof DVIRFormState)}
+            </motion.p>
+          )}
         </div>
       </div>
       

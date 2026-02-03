@@ -16,26 +16,14 @@
  * - Clear visual feedback for pinned status
  */
 
-import { memo, useState, useCallback, useMemo } from 'react';
+import { memo, useState, useCallback, useMemo, isValidElement } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Pin,
   PinOff,
   Star,
-  FileText,
-  Megaphone,
-  Phone,
-  FileSearch,
-  Briefcase,
-  History,
-  UserCircle,
-  Wrench,
-  HardHat,
-  Shield,
   ChevronRight,
-  Settings,
-  Users,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getDeviceCapabilities } from '../../lib/mobilePerf';
@@ -157,26 +145,27 @@ interface NavItem {
   id: string;
   label: string;
   path: string;
-  icon: typeof FileText;
+  icon: React.ReactNode;
   description?: string;
   roles?: string[];
+  iconAsImage?: boolean;
 }
 
-// All available nav items
+// All available nav items - use same PNG icons as main NavCards
 const allNavItems: NavItem[] = [
-  { id: 'jobs', label: 'My Jobs', path: '/assigned-jobs', icon: Briefcase, description: 'View assigned work' },
-  { id: 'forms', label: 'Company Forms', path: '/forms', icon: FileText, description: 'Submit required forms' },
-  { id: 'history', label: 'Forms History', path: '/forms-history', icon: History, description: 'Past submissions' },
-  { id: 'announcements', label: 'Announcements', path: '/announcements', icon: Megaphone, description: 'Company updates' },
-  { id: 'resources', label: 'Resources', path: '/resources', icon: FileSearch, description: 'Training materials' },
-  { id: 'contact', label: 'Contact', path: '/contact', icon: Phone, description: 'Reach management' },
-  { id: 'profile', label: 'My Profile', path: '/profile', icon: UserCircle, description: 'Account settings' },
-  { id: 'settings', label: 'Settings', path: '/settings', icon: Settings, description: 'Saved data & preferences' },
-  { id: 'mechanic', label: 'Mechanic', path: '/mechanic-dashboard', icon: Wrench, description: 'DVIR queue', roles: ['mechanic', 'admin'] },
-  { id: 'foreman', label: 'Foreman', path: '/foreman-dashboard', icon: Users, description: 'Crew management', roles: ['foreman', 'admin'] },
-  { id: 'general-foreman', label: 'General Foreman', path: '/general-foreman-dashboard', icon: HardHat, description: 'Crew oversight', roles: ['general_foreman', 'admin'] },
-  { id: 'safety-officer', label: 'Safety Officer', path: '/safety-officer-dashboard', icon: Shield, description: 'Safety compliance', roles: ['safety_officer', 'admin'] },
-  { id: 'admin', label: 'Admin', path: '/admin', icon: Shield, description: 'System admin', roles: ['admin'] },
+  { id: 'jobs', label: 'My Jobs', path: '/assigned-jobs', icon: <img src="/assets/my-jobs.png" alt="" className="w-full h-full object-contain" />, description: 'View assigned work', iconAsImage: true },
+  { id: 'forms', label: 'Company Forms', path: '/forms', icon: <img src="/assets/company-forms.png" alt="" className="w-full h-full object-contain" />, description: 'Submit required forms', iconAsImage: true },
+  { id: 'history', label: 'Forms History', path: '/forms-history', icon: <img src="/assets/forms-history.png" alt="" className="w-full h-full object-contain" />, description: 'Past submissions', iconAsImage: true },
+  { id: 'announcements', label: 'Announcements', path: '/announcements', icon: <img src="/assets/announcements.png" alt="" className="w-full h-full object-contain" />, description: 'Company updates', iconAsImage: true },
+  { id: 'resources', label: 'Resources', path: '/resources', icon: <img src="/assets/resources.png" alt="" className="w-full h-full object-contain" />, description: 'Training materials', iconAsImage: true },
+  { id: 'contact', label: 'Contact', path: '/contact', icon: <img src="/assets/contact.png" alt="" className="w-full h-full object-contain" />, description: 'Reach management', iconAsImage: true },
+  { id: 'profile', label: 'My Profile', path: '/profile', icon: <img src="/assets/my-profile.png" alt="" className="w-full h-full object-contain" />, description: 'Account settings', iconAsImage: true },
+  { id: 'settings', label: 'Settings', path: '/settings', icon: <img src="/assets/settings.png" alt="" className="w-full h-full object-contain" />, description: 'Saved data & preferences', iconAsImage: true },
+  { id: 'mechanic', label: 'Mechanic', path: '/mechanic-dashboard', icon: <img src="/assets/mechanic-panel.png" alt="" className="w-full h-full object-contain" />, description: 'DVIR queue', roles: ['mechanic', 'admin'], iconAsImage: true },
+  { id: 'foreman', label: 'Foreman', path: '/foreman-dashboard', icon: <img src="/assets/foreman-panel.png" alt="" className="w-full h-full object-contain" />, description: 'Crew management', roles: ['foreman', 'admin'], iconAsImage: true },
+  { id: 'general-foreman', label: 'General Foreman', path: '/general-foreman-dashboard', icon: <img src="/assets/general-foreman-panel.png" alt="" className="w-full h-full object-contain" />, description: 'Crew oversight', roles: ['general_foreman', 'admin'], iconAsImage: true },
+  { id: 'safety-officer', label: 'Safety Officer', path: '/safety-officer-dashboard', icon: <img src="/assets/safety-officer-panel.png" alt="" className="w-full h-full object-contain" />, description: 'Safety compliance', roles: ['safety_officer', 'admin'], iconAsImage: true },
+  { id: 'admin', label: 'Admin', path: '/admin', icon: <img src="/assets/admin-panel.png" alt="" className="w-full h-full object-contain" />, description: 'System admin', roles: ['admin'], iconAsImage: true },
 ];
 
 // ============================================================================
@@ -192,7 +181,7 @@ interface PinnedItemProps {
 const PinnedItem = memo(function PinnedItem({ item, onUnpin, themeStyles }: PinnedItemProps) {
   const caps = useMemo(() => getDeviceCapabilities(), []);
   const [showUnpin, setShowUnpin] = useState(false);
-  const Icon = item.icon;
+  const iconAsImage = item.iconAsImage && isValidElement(item.icon);
   
   // Long press detection for mobile
   const [pressTimer, setPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
@@ -250,21 +239,31 @@ const PinnedItem = memo(function PinnedItem({ item, onUnpin, themeStyles }: Pinn
           boxShadow: themeStyles.cardBoxShadow,
         }}
       >
-        {/* Icon container with glow */}
+        {/* Icon container - PNG overlay for custom icons, gradient for fallback */}
         <div className={`
           relative w-9 h-9 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl 
-          bg-gradient-to-br ${themeStyles.iconBg}
-          border ${themeStyles.iconBorder}
           flex items-center justify-center 
-          ${themeStyles.iconHoverBg}
-          ${themeStyles.iconHoverBorder}
           transition-all duration-200 
           flex-shrink-0
-          shadow-inner
+          overflow-visible
+          ${iconAsImage ? 'bg-transparent' : `
+            bg-gradient-to-br ${themeStyles.iconBg}
+            border ${themeStyles.iconBorder}
+            ${themeStyles.iconHoverBg}
+            ${themeStyles.iconHoverBorder}
+            shadow-inner
+          `}
         `}>
-          <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${themeStyles.iconColor} ${themeStyles.iconHoverColor} transition-colors`} />
-          {/* Inner glow */}
-          <div className={`absolute inset-0 rounded-lg sm:rounded-xl bg-gradient-to-t from-transparent via-transparent ${themeStyles.iconInnerGlow} pointer-events-none`} />
+          {iconAsImage ? (
+            <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-[56px] h-[68px] sm:w-[64px] sm:h-[78px] flex items-center justify-center [&>img]:w-full [&>img]:h-full [&>img]:object-contain [&>img]:drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]">
+              {item.icon}
+            </div>
+          ) : (
+            <>
+              {isValidElement(item.icon) ? item.icon : null}
+              <div className={`absolute inset-0 rounded-lg sm:rounded-xl bg-gradient-to-t from-transparent via-transparent ${themeStyles.iconInnerGlow} pointer-events-none`} />
+            </>
+          )}
         </div>
         
         <div className="flex-1 min-w-0">
@@ -344,8 +343,8 @@ interface SuggestedPinItemProps {
 }
 
 const SuggestedPinItem = memo(function SuggestedPinItem({ item, onPin, themeStyles }: SuggestedPinItemProps) {
-  const Icon = item.icon;
-  
+  const iconAsImage = item.iconAsImage && isValidElement(item.icon);
+
   return (
     <motion.button
       initial={{ opacity: 0, scale: 0.9 }}
@@ -369,8 +368,14 @@ const SuggestedPinItem = memo(function SuggestedPinItem({ item, onPin, themeStyl
         min-w-[140px]
       `}
     >
-      <div className={`w-7 h-7 rounded-lg ${themeStyles.suggestionIconBg} border ${themeStyles.suggestionIconBorder} flex items-center justify-center flex-shrink-0 ${themeStyles.suggestionIconHoverBg} transition-colors`}>
-        <Icon className={`w-3.5 h-3.5 ${themeStyles.suggestionIconColor}`} />
+      <div className={`w-7 h-7 rounded-lg ${themeStyles.suggestionIconBg} border ${themeStyles.suggestionIconBorder} flex items-center justify-center flex-shrink-0 overflow-hidden ${themeStyles.suggestionIconHoverBg} transition-colors`}>
+        {iconAsImage ? (
+          <div className="w-full h-full flex items-center justify-center [&>img]:w-full [&>img]:h-full [&>img]:object-contain">
+            {item.icon}
+          </div>
+        ) : (
+          isValidElement(item.icon) ? item.icon : null
+        )}
       </div>
       <span className="text-xs font-medium text-white/80 group-hover:text-white truncate">{item.label}</span>
       <div className="ml-auto flex items-center gap-1 opacity-50 group-hover:opacity-100 transition-opacity">

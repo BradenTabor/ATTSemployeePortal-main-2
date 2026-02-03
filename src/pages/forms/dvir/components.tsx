@@ -59,9 +59,11 @@ interface MileageInputProps {
   onChange: (value: string) => void;
   truckNumber?: string;
   previousMileage?: number | null;
+  /** Called on blur for form-level validation (e.g. handleFieldBlur('mileage')) */
+  onBlur?: () => void;
 }
 
-export const MileageInput = ({ value, onChange, truckNumber, previousMileage }: MileageInputProps) => {
+export const MileageInput = ({ value, onChange, truckNumber, previousMileage, onBlur }: MileageInputProps) => {
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   
@@ -145,7 +147,10 @@ export const MileageInput = ({ value, onChange, truckNumber, previousMileage }: 
             value={displayValue}
             onChange={handleChange}
             onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
+            onBlur={() => {
+              setIsFocused(false);
+              onBlur?.();
+            }}
             placeholder="123,456"
             className={cn(
               "flex-1 bg-transparent px-4 py-3 text-lg font-mono text-white tracking-wider",

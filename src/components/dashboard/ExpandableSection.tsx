@@ -48,8 +48,8 @@ const themeConfig: Record<ExpandableSectionTheme, ThemeConfig> = {
     glowColors: ['#10b981', '#059669', '#34d399', '#047857'],
     cardBg: 'bg-gradient-to-br from-[#04150f]/95 via-[#041812]/90 to-[#03120c]/95',
     borderColor: 'border-emerald-500/30',
-    shadow: 'shadow-[0_0_40px_-12px_rgba(16,185,129,0.25)] shadow-emerald-500/10',
-    shadowMobile: 'shadow-lg shadow-emerald-500/10',
+    shadow: 'shadow-[0px_0px_0px_0px_rgba(0,0,0,0),0px_0px_0px_0px_rgba(0,0,0,0),0px_10px_15px_-3px_rgba(0,0,0,0.3),0px_8px_6px_-4px_rgba(0,0,0,0.6)]',
+    shadowMobile: 'shadow-[0px_0px_0px_0px_rgba(0,0,0,0),0px_0px_0px_0px_rgba(0,0,0,0),0px_10px_15px_-3px_rgba(0,0,0,0.3),0px_4px_6px_-4px_rgba(0,0,0,0.6)]',
     innerGlowAccent: 'bg-gradient-to-b from-emerald-500/5 via-transparent to-transparent',
     headerBg: 'radial-gradient(circle at 50% 50%, rgba(16, 66, 42, 1) 0%, rgba(0, 0, 0, 1) 100%)',
     focusRing: 'focus-visible:ring-emerald-400/50 focus-visible:ring-offset-[#04150f]',
@@ -129,6 +129,8 @@ interface ExpandableSectionProps {
   ariaLabel?: string;
   /** Color theme - defaults to emerald */
   theme?: ExpandableSectionTheme;
+  /** When true, icon container has no background/border/shadow (image-only overlay) */
+  transparentIconContainer?: boolean;
 }
 
 /**
@@ -153,6 +155,7 @@ function ExpandableSectionComponent({
   headerAction,
   ariaLabel,
   theme = 'emerald',
+  transparentIconContainer = false,
 }: ExpandableSectionProps) {
   // Get theme styles
   const themeStyles = themeConfig[theme];
@@ -344,27 +347,25 @@ function ExpandableSectionComponent({
                   'min-h-[44px]'
                 )}
               >
-                {/* Icon/Avatar container with premium styling */}
+                {/* Icon/Avatar container with premium styling (or transparent for image-only) */}
                 {enhancedIcon && (
                   <div
                     className={cn(
                       'flex-shrink-0 w-16 h-20 md:w-18 md:h-22 rounded-2xl',
-                      themeStyles.iconContainerBg,
-                      'border',
-                      themeStyles.iconContainerBorder,
-                      'flex items-center justify-center',
-                      // Simplified shadow on mobile
-                      caps.isMobile ? themeStyles.iconContainerShadowMobile : themeStyles.iconContainerShadow,
-                      'ring-1 ring-inset',
-                      themeStyles.iconContainerRing,
-                      'overflow-visible relative',
+                      'flex items-center justify-center overflow-visible relative',
                       // Scale on hover (desktop only, respects reduced motion)
                       shouldAnimate && !caps.isMobile && 'transition-transform duration-200',
-                      isHovered && shouldAnimate && !caps.isMobile && 'scale-[1.03]'
+                      isHovered && shouldAnimate && !caps.isMobile && 'scale-[1.03]',
+                      !transparentIconContainer && themeStyles.iconContainerBg,
+                      !transparentIconContainer && 'border',
+                      !transparentIconContainer && themeStyles.iconContainerBorder,
+                      !transparentIconContainer && (caps.isMobile ? themeStyles.iconContainerShadowMobile : themeStyles.iconContainerShadow),
+                      !transparentIconContainer && 'ring-1 ring-inset',
+                      !transparentIconContainer && themeStyles.iconContainerRing
                     )}
                   >
-                    {/* Inner glow effect - intensifies on hover */}
-                    {showEffects && (
+                    {/* Inner glow effect - only when not transparent */}
+                    {showEffects && !transparentIconContainer && (
                       <div 
                         className={cn(
                           'absolute inset-0 rounded-2xl bg-gradient-to-t pointer-events-none transition-opacity duration-300',
@@ -443,7 +444,12 @@ function ExpandableSectionComponent({
                   {/* Divider line */}
                   <div className={cn('mx-4 md:mx-6 h-px bg-gradient-to-r', themeStyles.dividerGradient)} />
                   
-                  <div className="px-4 pb-4 md:px-6 md:pb-6 pt-4">
+                  <div
+                    className="px-4 pb-4 md:px-6 md:pb-6 pt-4"
+                    style={{
+                      boxShadow: '0px 0px 0px 0px rgba(0, 0, 0, 0), 0px 0px 0px 0px rgba(0, 0, 0, 0), 0px 10px 15px -3px rgba(0, 0, 0, 0.3), 0px 4px 6px 1px rgba(0, 0, 0, 0.6)',
+                    }}
+                  >
                     {children}
                   </div>
                 </div>

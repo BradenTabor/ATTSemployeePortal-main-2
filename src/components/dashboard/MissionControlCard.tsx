@@ -290,7 +290,8 @@ const CompactFormItem = memo(function CompactFormItem({ form, index, urgencyLeve
       ) : (
         <Link
           to={form.formPath}
-          className="text-[9px] font-bold text-amber-400 hover:text-amber-300 transition-colors"
+          title={form.label}
+          className="text-[9px] font-bold text-amber-400 hover:text-amber-300 transition-colors shadow-[0px_12px_0px_0px_rgba(0,0,0,0),0px_0px_0px_0px_rgba(0,0,0,0),0px_10px_15px_-3px_rgba(0,0,0,0.3),0px_4px_6px_-4px_rgba(0,0,0,0.6)]"
         >
           Submit →
         </Link>
@@ -878,7 +879,7 @@ function MissionControlCardComponent({ onComplianceChange }: MissionControlCardP
       className="relative overflow-hidden rounded-2xl border border-emerald-400/20"
       style={{
         background: 'linear-gradient(145deg, rgba(4, 30, 21, 0.98) 0%, rgba(2, 15, 10, 1) 100%)',
-        boxShadow: '0 4px 20px rgba(16, 185, 129, 0.15)',
+        boxShadow: '0px 0px 0px 0px rgba(0, 0, 0, 0), 0px 0px 0px 0px rgba(0, 0, 0, 0), 0px 10px 15px -3px rgba(0, 0, 0, 0.3), 0px 4px 6px -4px rgba(0, 0, 0, 0.6)',
       }}
     >
       {/* Top shine */}

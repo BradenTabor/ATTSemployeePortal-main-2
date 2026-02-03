@@ -14,7 +14,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Medal, Star, ChevronDown, ChevronUp, Award, Flame } from "lucide-react";
+import { Trophy, Medal, Star, ChevronDown, ChevronUp, Flame } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useSafetyAnalytics, type Period } from "../../hooks/queries/useSafetyAnalytics";
 import { cn } from "../../lib/utils";
@@ -147,10 +147,10 @@ export default function SafetyPointsLeaderboard({
           <div className="flex items-center gap-2">
             <div className={cn(
               compact ? "w-7 h-7" : "w-8 h-8",
-              "rounded-lg bg-gradient-to-br flex items-center justify-center border",
+              "rounded-lg bg-gradient-to-br flex items-center justify-center border overflow-hidden",
               t.headerIcon
             )}>
-              <Award className={cn(compact ? "w-3.5 h-3.5" : "w-4 h-4", t.headerIconColor)} />
+              <img src="/assets/safety-leaderboard.png" alt="" className="w-full h-full object-contain" />
             </div>
             <div>
               <h3 className={cn(compact ? "text-xs" : "text-sm", "font-semibold text-white/90")}>Safety Leaderboard</h3>

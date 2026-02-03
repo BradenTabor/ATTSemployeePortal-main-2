@@ -120,14 +120,18 @@ function CollectPointsButtonComponent({
     return (
       <div
         className={cn(
-          "flex items-center gap-2 px-4 py-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5",
+          "flex items-center gap-2 px-4 py-2 rounded-xl border-0",
           compact && "px-3 py-1.5 gap-1.5",
           className
         )}
         title={claimWindowMessage ?? undefined}
+        style={{
+          background: 'conic-gradient(from 240.8deg at 50% 50%, rgba(197, 60, 2, 0.7) 0%, rgba(255, 255, 255, 0) 100%)',
+          boxShadow: '0px 0px 0px 0px rgba(0, 0, 0, 0), 0px 0px 0px 0px rgba(0, 0, 0, 0), 0px 4px 6px -4px rgba(0, 0, 0, 0.6)',
+        }}
       >
-        <Clock className={cn("w-4 h-4 text-emerald-400/60", compact && "w-3.5 h-3.5")} />
-        <span className={cn("text-xs text-emerald-300/70", compact && "text-[10px]")}>
+        <Clock className={cn("w-4 h-4 text-white/60", compact && "w-3.5 h-3.5")} />
+        <span className={cn("text-xs text-white/70", compact && "text-[10px]")}>
           {claimWindowMessage}
           {countdownText && (
             <span className="ml-1 font-medium">

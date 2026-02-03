@@ -149,11 +149,10 @@ test.describe('Offline Behavior', () => {
     await page.goto('/dashboard/forms/dvir');
     await page.waitForSelector('form');
     
-    // Fill in some data - truckNumber is a select, not input
-    const truckSelect = page.locator('select[name="truckNumber"], [data-testid="truck-number"]').first();
-    const truckInput = page.locator('input[name="truckNumber"], [data-testid="truck-number"]').first();
+    // Fill in some data - truckNumber is a select on DVIR form
+    const truckSelect = page.locator('select[name="truckNumber"]').first();
+    const truckInput = page.locator('input[name="truckNumber"]').first();
     
-    // Handle truckNumber as either select or input
     if (await truckSelect.isVisible().catch(() => false)) {
       await truckSelect.selectOption({ index: 1 });
     } else if (await truckInput.isVisible().catch(() => false)) {
@@ -166,9 +165,12 @@ test.describe('Offline Behavior', () => {
     await context.setOffline(true);
     await page.waitForTimeout(1000);
     
-    // Verify data is still present
-    const truckNumber = await page.inputValue('input[name="truckNumber"], [data-testid="truck-number"]');
-    expect(truckNumber).toBe('OFFLINE-TEST-001');
+    // Verify data is still present - truckNumber is a select; use appropriate locator
+    const truckField = page.locator('select[name="truckNumber"], input[name="truckNumber"]').first();
+    const truckValue = await truckField.inputValue();
+    expect(truckValue).toBeTruthy();
+    const driverName = await page.locator('input[name="driversName"], #driversName').first().inputValue();
+    expect(driverName).toBe('Offline Test Driver');
     
     // Go back online
     await context.setOffline(false);
@@ -192,13 +194,59 @@ test.describe('Offline Behavior', () => {
     
     await page.fill('input[name="driversName"], [data-testid="drivers-name"]', 'Queue Test');
     await page.fill('input[name="mileage"], [data-testid="mileage"]', '60000');
+    await page.waitForTimeout(400);
     
-    // Go offline
+    // Fill required DVIR fields to enable submit button
+    // Upload oil dipstick photo
+    const oilDipstickInput = page.locator('input[type="file"][name="oilDipstick"], input[type="file"][aria-label*="oil"], [data-testid="oil-dipstick"]').first();
+    if (await oilDipstickInput.isVisible().catch(() => false)) {
+      await oilDipstickInput.setInputFiles('tests/fixtures/oil-dipstick.jpg').catch(() => {});
+      await page.waitForTimeout(600);
+    }
+    
+    // Complete Vehicle/Trailer checklist
+    const vehicleSection = page.locator('section:has(h2:has-text("Vehicle / Trailer"))');
+    if (await vehicleSection.isVisible().catch(() => false)) {
+      await vehicleSection.scrollIntoViewIfNeeded();
+      const allPassBtn = vehicleSection.getByRole('button', { name: 'All Pass' });
+      if (await allPassBtn.isVisible().catch(() => false)) {
+        await allPassBtn.click();
+        await page.waitForTimeout(500);
+      }
+    }
+    
+    // Complete Aerial section if visible
+    const aerialSection = page.locator('section:has(h2:has-text("Aerial Lift"))');
+    if (await aerialSection.isVisible().catch(() => false)) {
+      const aerialAllPass = aerialSection.getByRole('button', { name: 'All Pass' });
+      if (await aerialAllPass.isVisible().catch(() => false)) {
+        await aerialAllPass.click();
+        await page.waitForTimeout(500);
+      }
+    }
+    
+    // Fill signatures
+    const driverSig = page.locator('#finalDriverSignature, input[name="finalDriverSignature"]').first();
+    if (await driverSig.isVisible().catch(() => false)) {
+      await driverSig.fill('Queue Test');
+    }
+    const foremanSig = page.locator('#generalForemanSignature, input[name="generalForemanSignature"]').first();
+    if (await foremanSig.isVisible().catch(() => false)) {
+      await foremanSig.fill('Test Foreman');
+    }
+    await page.waitForTimeout(600);
+    
+    // Use the DVIR submit button
+    const submitButton = page.locator('[data-testid="dvir-submit-button"]');
+    await submitButton.scrollIntoViewIfNeeded();
+    await expect(submitButton).toBeEnabled({ timeout: 15000 });
+    
+    // Go offline before clicking submit
     await context.setOffline(true);
     await page.waitForTimeout(500);
     
     // Try to submit
-    await page.click('button[type="submit"]');
+    await submitButton.click().catch(() => {});
     
     // Should show queued/offline message or error
     await page.waitForTimeout(2000);
@@ -210,7 +258,7 @@ test.describe('Offline Behavior', () => {
     const errorVisible = await errorMessage.isVisible().catch(() => false);
     
     // Should show some indication of offline submission handling
-    console.log(`Queued message: ${queuedVisible}, Error message: ${errorVisible}`);
+    expect(queuedVisible || errorVisible).toBe(true);
     
     // Go back online
     await context.setOffline(false);

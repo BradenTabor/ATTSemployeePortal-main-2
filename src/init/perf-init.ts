@@ -13,6 +13,9 @@ import { lazyLoadImages, runWhenIdle } from '../utils/performance';
 // Store cleanup functions for teardown
 let cleanupFunctions: (() => void)[] = [];
 
+/** Debounce delay for MutationObserver (batch DOM changes, avoid work on every mutation). */
+const LAZY_IMAGE_DEBOUNCE_MS = 300;
+
 /**
  * Initialize all performance optimizations
  */
@@ -35,34 +38,42 @@ function initializePerformanceOptimizations(): void {
 
   cleanupFunctions.push(cleanupLazyLoad);
 
-  // Set up MutationObserver to handle dynamically added images
+  // Set up MutationObserver with debounce so we don't run on every DOM mutation (PERF-4)
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  let pendingHasNewImages = false;
+
   const observer = new MutationObserver((mutations) => {
-    let hasNewImages = false;
-    
-    mutations.forEach((mutation) => {
-      mutation.addedNodes.forEach((node) => {
+    for (const mutation of mutations) {
+      for (const node of mutation.addedNodes) {
         if (node instanceof HTMLElement) {
           if (node.tagName === 'IMG' && node.hasAttribute('data-src')) {
-            hasNewImages = true;
-          } else if (node.querySelectorAll) {
-            const images = node.querySelectorAll('img[data-src]');
-            if (images.length > 0) {
-              hasNewImages = true;
-            }
+            pendingHasNewImages = true;
+            break;
+          }
+          if ('querySelectorAll' in node && (node as Element).querySelectorAll('img[data-src]').length > 0) {
+            pendingHasNewImages = true;
+            break;
           }
         }
-      });
-    });
-
-    // Re-initialize lazy loading if new images were added
-    if (hasNewImages) {
-      runWhenIdle(() => {
-        lazyLoadImages({
-          rootMargin: '200px',
-          threshold: 0.01,
-        });
-      });
+      }
+      if (pendingHasNewImages) break;
     }
+
+    if (!pendingHasNewImages) return;
+
+    if (debounceTimer != null) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      debounceTimer = null;
+      if (pendingHasNewImages) {
+        pendingHasNewImages = false;
+        runWhenIdle(() => {
+          lazyLoadImages({
+            rootMargin: '200px',
+            threshold: 0.01,
+          });
+        });
+      }
+    }, LAZY_IMAGE_DEBOUNCE_MS);
   });
 
   observer.observe(document.body, {
@@ -70,7 +81,10 @@ function initializePerformanceOptimizations(): void {
     subtree: true,
   });
 
-  cleanupFunctions.push(() => observer.disconnect());
+  cleanupFunctions.push(() => {
+    observer.disconnect();
+    if (debounceTimer != null) clearTimeout(debounceTimer);
+  });
 
   // Log performance initialization in development
   if (import.meta.env.DEV) {

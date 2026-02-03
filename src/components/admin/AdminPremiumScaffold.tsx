@@ -35,6 +35,8 @@ export type AdminNavCardConfig = {
   variant?: "emerald" | "gold" | "ember" | "purple" | "redwhite" | "bluewhite";
   /** Mark as coming soon - disables link and shows badge */
   comingSoon?: boolean;
+  /** When true, icon is an image (no background, larger size) */
+  iconAsImage?: boolean;
 };
 
 type AdminTheme = "gold" | "ember" | "emerald" | "purple" | "redwhite" | "bluewhite";
@@ -350,6 +352,7 @@ export default function AdminPremiumScaffold({
                 icon={card.icon}
                 to={card.to}
                 variant={card.variant ?? themeStyles.navVariant}
+                iconAsImage={card.iconAsImage}
               />
             ))}
           </div>

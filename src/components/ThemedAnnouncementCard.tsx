@@ -284,8 +284,16 @@ function ThemedAnnouncementCardComponent({ theme = 'emerald' }: ThemedAnnounceme
         {/* Shine effect on hover */}
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.03] to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
 
+        {/* Announcement card overlay - in front of background, behind text, shifted down and scaled larger */}
+        <img
+          src="/assets/announcement-card-overlay.png"
+          alt=""
+          aria-hidden
+          className="absolute -top-40 left-0 right-0 bottom-0 w-full h-full object-cover object-center object-top pointer-events-none opacity-90 scale-[1.8]"
+        />
+
         {/* Content container */}
-        <div className="relative p-4 sm:p-6">
+        <div className="relative p-4 sm:p-6 z-10">
           {/* Header row with badge */}
           <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3">
             <motion.div 

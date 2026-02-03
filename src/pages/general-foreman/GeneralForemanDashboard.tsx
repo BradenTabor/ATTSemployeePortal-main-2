@@ -120,12 +120,70 @@ export default function GeneralForemanDashboard() {
             </Suspense>
           </ScrollReveal>
 
-          {/* Common Features Section */}
+          {/* Common Features Section - single composition: job-site + foreman as one scene */}
           <ScrollReveal variant="fadeUp" delay={0.05}>
             <div className="space-y-3">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-[#e9d5ff]/70 font-medium px-1">
-                Common Features
-              </p>
+              {/* Unified composition: viewport-scaled so it grows on larger screens (clamp + vw) */}
+              <div
+                className="relative overflow-hidden rounded-2xl max-w-5xl mx-auto bg-gradient-to-b from-[#1a0f24]/80 to-[#0f0814]/90"
+                style={{ minHeight: 'clamp(220px, 28vw, 420px)' }}
+              >
+                {/* Job-site: scales with viewport */}
+                <div
+                  className="absolute inset-x-0 bottom-0 top-0 flex items-end justify-center overflow-hidden pointer-events-none z-0"
+                  aria-hidden
+                >
+                  <img
+                    src="/assets/job-site.png"
+                    alt=""
+                    width={600}
+                    height={400}
+                    decoding="async"
+                    fetchPriority="low"
+                    className="w-full h-[95%] object-contain object-bottom object-center select-none opacity-90"
+                    style={{
+                      imageRendering: 'auto',
+                      WebkitBackfaceVisibility: 'hidden',
+                      backfaceVisibility: 'hidden',
+                      transform: 'translateZ(0)',
+                      minHeight: 'clamp(200px, 24vw, 380px)',
+                      maxHeight: 'clamp(280px, 32vw, 520px)',
+                    }}
+                  />
+                </div>
+                {/* General foreman: height scales with viewport so he grows on large screens */}
+                <div
+                  className="absolute right-0 bottom-0 left-0 flex items-end justify-end pointer-events-none z-10 pr-0"
+                  aria-hidden
+                >
+                  <img
+                    src="/assets/general-foreman-specialist.png"
+                    alt=""
+                    width={312}
+                    height={384}
+                    decoding="async"
+                    fetchPriority="low"
+                    className="w-auto object-contain object-bottom object-right select-none drop-shadow-[0_4px_20px_rgba(0,0,0,0.5)]"
+                    style={{
+                      imageRendering: 'auto',
+                      WebkitBackfaceVisibility: 'hidden',
+                      backfaceVisibility: 'hidden',
+                      transform: 'translateZ(0)',
+                      height: 'clamp(140px, 18vw, 260px)',
+                      background: 'radial-gradient(circle at 50% 50%, rgba(13, 12, 12, 1) 0%, rgba(136, 136, 136, 0) 70%, rgba(255, 255, 255, 0) 100%)',
+                      border: 'none',
+                      borderRadius: '30px',
+                    }}
+                  />
+                </div>
+                {/* COMMON FEATURES label - top-right */}
+                <p
+                  className="absolute right-0 top-0 z-20 px-3 py-2.5 uppercase tracking-[0.2em] text-[#e9d5ff]/90 font-medium drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)]"
+                  style={{ fontSize: 'clamp(0.625rem, 1.2vw, 0.75rem)' }}
+                >
+                  Common Features
+                </p>
+              </div>
               <motion.div 
                 className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5 sm:gap-3"
                 variants={shouldReduceMotion ? undefined : containerVariants}
@@ -140,6 +198,7 @@ export default function GeneralForemanDashboard() {
                       icon={card.icon}
                       to={card.to}
                       variant="purple"
+                      iconAsImage={card.iconAsImage}
                     />
                   </motion.div>
                 ))}
@@ -167,6 +226,7 @@ export default function GeneralForemanDashboard() {
                       icon={card.icon}
                       to={card.to}
                       variant="purple"
+                      iconAsImage={card.iconAsImage}
                     />
                   </motion.div>
                 ))}

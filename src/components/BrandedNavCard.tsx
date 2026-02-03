@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { cn } from "../lib/utils";
-import { ReactNode, useMemo, useState, useCallback, useRef } from "react";
+import React, { ReactNode, useMemo, useState, useCallback, useRef, isValidElement } from "react";
 import { getDeviceCapabilities } from "../lib/mobilePerf";
 import { ChevronRight, Pin, PinOff, Star } from "lucide-react";
 
@@ -25,6 +25,8 @@ interface BrandedNavCardProps {
   canPinMore?: boolean;
   /** Callback when user pins/unpins this item */
   onTogglePin?: (itemId: string) => void;
+  /** When true, icon is an image (no background, larger size) */
+  iconAsImage?: boolean;
 }
 
 // Premium gradient styles with enhanced icon treatment
@@ -182,6 +184,7 @@ export default function BrandedNavCard({
   isPinned = false,
   canPinMore = true,
   onTogglePin,
+  iconAsImage = false,
 }: BrandedNavCardProps) {
   const selected = VARIANT_STYLES[variant] ?? VARIANT_STYLES.emerald;
   const [isHovered, setIsHovered] = useState(false);
@@ -267,7 +270,8 @@ export default function BrandedNavCard({
         {/* Outer wrapper with gradient border - RESTORED ORIGINAL STYLING */}
         <div
           className={cn(
-            "relative w-full p-[2px] overflow-hidden shadow-lg transition-all duration-300 ease-out",
+            "relative w-full p-[2px] shadow-lg transition-all duration-300 ease-out",
+            iconAsImage ? "overflow-visible" : "overflow-hidden",
             compact ? "rounded-xl" : "rounded-2xl",
             selected.outer,
             !comingSoon && selected.outerHover,
@@ -309,10 +313,22 @@ export default function BrandedNavCard({
             )}
             style={selected.innerStyle}
           >
+            {/* Admin badge overlay (gold) - far right, behind content */}
+            {variant === "gold" && (
+              <img
+                src="/assets/admin-badge.png"
+                alt=""
+                aria-hidden
+                className="absolute -right-6 top-1/2 -translate-y-1/2 h-20 sm:h-24 md:h-[96px] w-auto object-contain object-right pointer-events-none rounded-[inherit] z-0 opacity-90"
+              />
+            )}
             {/* Premium Icon Container */}
             {icon && (
               <motion.div
-                className="flex-shrink-0 relative"
+                className={cn(
+                  "flex-shrink-0 relative z-10",
+                  iconAsImage && "overflow-visible"
+                )}
                 animate={isHovered && canHover ? { 
                   y: -3,
                   scale: 1.1,
@@ -322,46 +338,60 @@ export default function BrandedNavCard({
                 }}
                 transition={{ type: "spring", stiffness: 400, damping: 20 }}
               >
-                {/* Outer glow ring */}
-                <div className={cn(
-                  "absolute -inset-0.5 rounded-lg bg-gradient-to-br opacity-60 blur-[2px] transition-opacity duration-300",
-                  "group-hover:opacity-100",
-                  selected.iconBorderGradient
-                )} />
+                {!iconAsImage && (
+                  <>
+                    {/* Outer glow ring */}
+                    <div className={cn(
+                      "absolute -inset-0.5 rounded-lg bg-gradient-to-br opacity-60 blur-[2px] transition-opacity duration-300",
+                      "group-hover:opacity-100",
+                      selected.iconBorderGradient
+                    )} />
+                  </>
+                )}
                 
-                {/* Icon container with gradient background */}
+                {/* Icon container - when iconAsImage: no background/box; otherwise gradient + glow */}
                 <div
                   className={cn(
-                    "relative flex items-center justify-center rounded-lg transition-all duration-300 bg-gradient-to-br",
-                    compact ? "w-7 h-7 sm:w-8 sm:h-8 rounded-lg" : "w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-lg sm:rounded-xl",
-                    selected.iconGradient,
-                    selected.iconGlow,
-                    selected.iconGlowHover
+                    "relative flex items-center justify-center transition-all duration-300",
+                    iconAsImage
+                      ? "bg-transparent overflow-visible border-0 shadow-none ring-0 rounded-none w-0 min-w-0 h-0 min-h-0"
+                      : cn(
+                          "rounded-lg bg-gradient-to-br",
+                          selected.iconGradient,
+                          selected.iconGlow,
+                          selected.iconGlowHover
+                        ),
+                    !iconAsImage && (compact ? "w-7 h-7 sm:w-8 sm:h-8 rounded-lg" : "w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-lg sm:rounded-xl")
                   )}
                 >
-                  {/* Inner border highlight */}
-                  <div className={cn(
-                    "absolute inset-[1px] bg-gradient-to-br opacity-50",
-                    compact ? "rounded-[6px]" : "rounded-[8px] sm:rounded-[10px]",
-                    selected.iconGradient
-                  )} />
+                  {!iconAsImage && (
+                    /* Inner border highlight */
+                    <div className={cn(
+                      "absolute inset-[1px] bg-gradient-to-br opacity-50",
+                      compact ? "rounded-[6px]" : "rounded-[8px] sm:rounded-[10px]",
+                      selected.iconGradient
+                    )} />
+                  )}
                   
-                  {/* Icon */}
+                  {/* Icon - image overlay uses explicit-size wrapper so the PNG actually renders at full size */}
                   <div className={cn(
                     "relative z-10 transition-colors duration-300",
-                    compact ? "w-3.5 h-3.5 sm:w-4 sm:h-4" : "w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6",
+                    iconAsImage 
+                      ? "absolute -left-2 top-1/2 -translate-y-1/2 w-[64px] h-[78px] sm:w-[72px] sm:h-[88px] md:w-[80px] md:h-[98px] flex items-center justify-center [&>img]:w-full [&>img]:h-full [&>img]:object-contain [&>img]:drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
+                      : compact ? "w-3.5 h-3.5 sm:w-4 sm:h-4" : "w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6",
                     "[&>svg]:w-full [&>svg]:h-full [&>svg]:drop-shadow-[0_0_3px_currentColor]",
-                    selected.iconColor,
-                    selected.iconColorHover
+                    !iconAsImage && "[&>img]:w-full [&>img]:h-full [&>img]:object-contain",
+                    !iconAsImage && selected.iconColor,
+                    !iconAsImage && selected.iconColorHover
                   )}>
-                    {icon}
+                    {isValidElement(icon) ? icon : typeof icon === 'function' ? React.createElement(icon as React.ComponentType) : null}
                   </div>
                 </div>
               </motion.div>
             )}
             
-            {/* Text content */}
-            <div className="flex-1 min-w-0">
+            {/* Text content - add left padding when iconAsImage so text doesn't overlap PNG */}
+            <div className={cn("flex-1 min-w-0 relative z-10", iconAsImage && "pl-[60px] sm:pl-[68px] md:pl-[76px]")}>
               <h3
                 className={cn(
                   "font-semibold tracking-wide truncate",
@@ -384,7 +414,7 @@ export default function BrandedNavCard({
             {/* Arrow indicator */}
             <motion.div
               className={cn(
-                "flex-shrink-0 transition-all duration-300",
+                "flex-shrink-0 relative z-10 transition-all duration-300",
                 isMobile ? selected.arrow : cn(
                   "opacity-30 group-hover:opacity-100",
                   selected.iconColor,

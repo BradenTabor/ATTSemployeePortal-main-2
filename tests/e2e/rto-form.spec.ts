@@ -150,6 +150,7 @@ test.describe('Request Time Off Form', () => {
       // Submit using data-testid for reliability
       const submitBtn = page.locator('[data-testid="rto-submit-button"]').or(page.locator('button[type="submit"]'));
       await submitBtn.scrollIntoViewIfNeeded();
+      await expect(submitBtn).toBeEnabled({ timeout: 10000 });
       await submitBtn.click();
       await page.waitForTimeout(3000);
 

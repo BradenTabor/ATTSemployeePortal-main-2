@@ -76,14 +76,17 @@ test.describe('Admin User Management', () => {
   });
 
   test('should allow editing user role', async ({ page }) => {
-    const editButton = page.locator('[data-testid="edit-user"], button:has-text("Edit"), button:has-text("Edit Role")').first();
-    await editButton.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
-    if (await editButton.isVisible()) {
-      await editButton.click();
-      await page.waitForTimeout(800);
-      const editForm = page.locator('[data-testid="edit-user-form"]');
-      await expect(editForm).toBeVisible({ timeout: 5000 });
-    }
+    const editButton = page.locator('[data-testid="edit-user"], button:has-text("Edit")').first();
+
+    await editButton.waitFor({ state: 'visible', timeout: 10000 });
+    await editButton.click();
+    await page.waitForTimeout(1000);
+
+    // Check for edit UI - could be modal, form, or dropdown
+    const editForm = page.locator('[data-testid="edit-user-form"], [role="dialog"], select[name="role"], form');
+    const formVisible = await editForm.first().isVisible({ timeout: 5000 }).catch(() => false);
+
+    expect(formVisible).toBe(true);
   });
 });
 
@@ -253,13 +256,29 @@ test.describe('Admin Incident Logging Modal', () => {
 
   test.beforeEach(async ({ page }) => {
     await loginAs(page, 'admin');
-    await page.goto('/admin');
-    await page.waitForLoadState('networkidle');
+    await page.goto('/admin', { waitUntil: 'networkidle' });
+
+    // Clear persisted tab so Control Panel is shown; no reload (reload can slow suite and cause re-auth)
+    await page.evaluate(() => {
+      localStorage.removeItem('atts:admin:dashboard:activeTab');
+    });
+
+    // If Control Panel tab is not active, click it (label is "Control Panel" or "Control" on mobile)
+    const controlTab = page.getByRole('tab', { name: /control panel|control/i });
+    const isVisible = await controlTab.isVisible({ timeout: 3000 }).catch(() => false);
+    if (isVisible) {
+      await controlTab.click();
+      await page.waitForTimeout(500);
+    }
+
+    // Wait for Safety Incidents section so the Log button is in DOM
+    await page.waitForSelector('text=Safety Incidents', { timeout: 10000 });
   });
 
   test('should open Incident Logging modal from Safety Incidents section', async ({ page }) => {
     const logButton = page.getByRole('button', { name: /log new safety incident|log incident|log first incident/i });
-    await logButton.first().waitFor({ state: 'visible', timeout: 15000 });
+    await logButton.first().scrollIntoViewIfNeeded();
+    await expect(logButton.first()).toBeVisible({ timeout: 15000 });
     await logButton.first().click();
     await page.waitForTimeout(800);
 
@@ -273,7 +292,8 @@ test.describe('Admin Incident Logging Modal', () => {
 
   test('should show severity options and required form sections', async ({ page }) => {
     const logButton = page.getByRole('button', { name: /log new safety incident|log incident|log first incident/i });
-    await logButton.first().waitFor({ state: 'visible', timeout: 15000 });
+    await logButton.first().scrollIntoViewIfNeeded();
+    await expect(logButton.first()).toBeVisible({ timeout: 15000 });
     await logButton.first().click();
     await page.waitForTimeout(800);
 
@@ -286,7 +306,8 @@ test.describe('Admin Incident Logging Modal', () => {
 
   test('should show Recordable badge when Recordable severity is selected', async ({ page }) => {
     const logButton = page.getByRole('button', { name: /log new safety incident|log incident|log first incident/i });
-    await logButton.first().waitFor({ state: 'visible', timeout: 15000 });
+    await logButton.first().scrollIntoViewIfNeeded();
+    await expect(logButton.first()).toBeVisible({ timeout: 15000 });
     await logButton.first().click();
     await page.waitForTimeout(1000);
 
@@ -299,7 +320,8 @@ test.describe('Admin Incident Logging Modal', () => {
 
   test('should show description validation when submitting without description', async ({ page }) => {
     const logButton = page.getByRole('button', { name: /log new safety incident|log incident|log first incident/i });
-    await logButton.first().waitFor({ state: 'visible', timeout: 15000 });
+    await logButton.first().scrollIntoViewIfNeeded();
+    await expect(logButton.first()).toBeVisible({ timeout: 15000 });
     await logButton.first().click();
     await page.waitForTimeout(1000);
 

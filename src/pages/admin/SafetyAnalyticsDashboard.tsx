@@ -468,16 +468,18 @@ function SafetyAnalyticsDashboard() {
     }
   }, []);
 
-  const handleExportPdf = useCallback(() => {
+  const handleExportPdf = useCallback(async () => {
     if (!data?.stats || !data?.leaderboard) return;
     setExporting('pdf');
     try {
-      exportAnalyticsPdf({
+      await exportAnalyticsPdf({
         stats: data.stats,
         leaderboard: data.leaderboard,
         period: period === 'all' ? 'All time' : period.charAt(0).toUpperCase() + period.slice(1),
         generatedAt: new Date().toLocaleString(),
       });
+    } catch (e) {
+      toast.error('Export failed', (e as Error)?.message ?? 'Could not generate PDF');
     } finally {
       setExporting(null);
     }

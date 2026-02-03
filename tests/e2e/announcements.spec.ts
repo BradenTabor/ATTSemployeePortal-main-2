@@ -150,7 +150,7 @@ test.describe('Admin Announcement Management', () => {
   });
 
   test('should allow admin to send manual notification', async ({ page }) => {
-    await page.goto('/admin/dashboard');
+    await page.goto('/admin');
     await page.waitForLoadState('networkidle');
     
     // Look for manual notification button

@@ -61,7 +61,13 @@ export function ShimmerEffect({
   }, []);
 
   return (
-    <div ref={containerRef} className={cn('relative group', className)}>
+    <div
+      ref={containerRef}
+      className={cn('relative group', className)}
+      style={{
+        boxShadow: '0px 0px 0px 0px rgba(0, 0, 0, 0), 0px 0px 0px 0px rgba(0, 0, 0, 0), 0px 10px 15px -3px rgba(0, 0, 0, 0.3), 0px 4px 6px -4px rgba(0, 0, 0, 0.6)',
+      }}
+    >
       {/* Border shimmer effect - only animates on hover */}
       {borderShimmer && (
         <div

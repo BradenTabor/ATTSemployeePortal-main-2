@@ -161,6 +161,7 @@ export default function SafetyOfficerDashboard() {
                       icon={card.icon}
                       to={card.to}
                       variant="redwhite"
+                      iconAsImage={card.iconAsImage}
                     />
                   </motion.div>
                 ))}

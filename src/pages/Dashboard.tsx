@@ -5,7 +5,6 @@ import { ScrollReveal } from '../motion';
 import {
   RefreshCw,
   AlertTriangle,
-  Briefcase,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useUserAssignedJobs } from '../hooks/jobs';
@@ -23,12 +22,10 @@ import type { JobProgressTracker } from '../types/jobs';
 
 // Dashboard components
 import {
-  DashboardAvatar,
   ExpandableSection,
   WelcomeHeader,
   CompactComplianceStrip,
   DashboardGrid,
-  DashboardCard,
   StackedLayout,
   FloatingActionButton,
   PinnedFavorites,
@@ -152,6 +149,8 @@ interface AssignedJobsSectionProps {
   loading: boolean;
   error: string | null;
   onRefetch: () => void;
+  /** When true, only render body (grid + show more) for use inside ExpandableSection */
+  hideHeader?: boolean;
 }
 
 type JobDisplayItem = 
@@ -163,6 +162,7 @@ const AssignedJobsSection = memo(function AssignedJobsSection({
   loading,
   error,
   onRefetch,
+  hideHeader = false,
 }: AssignedJobsSectionProps) {
   // Group jobs by job_group_id for stacked display
   const displayItems = useMemo(() => {
@@ -208,6 +208,45 @@ const AssignedJobsSection = memo(function AssignedJobsSection({
     return <EnhancedEmptyJobsState />;
   }
 
+  /* Body only: grid + show more (for ExpandableSection) */
+  if (hideHeader) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        className="space-y-2.5"
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {displayItems.slice(0, 4).map((item, index) => (
+            <motion.div
+              key={item.type === 'group' ? `group-${item.groupId}` : item.job.id}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.03, duration: 0.25 }}
+            >
+              {item.type === 'group' ? (
+                <NavigableStackedJobCard jobs={item.jobs} />
+              ) : (
+                <NavigableJobCard job={item.job} />
+              )}
+            </motion.div>
+          ))}
+        </div>
+        {displayItems.length > 4 && (
+          <a
+            href="/assigned-jobs"
+            className="flex items-center justify-center gap-2 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/15 hover:border-emerald-500/30 transition-all"
+          >
+            <span className="text-xs font-medium text-emerald-400">
+              +{displayItems.length - 4} more job{displayItems.length - 4 !== 1 ? 's' : ''}
+            </span>
+          </a>
+        )}
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -218,8 +257,22 @@ const AssignedJobsSection = memo(function AssignedJobsSection({
       {/* Compact Header */}
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 border border-emerald-400/30 flex items-center justify-center">
-            <Briefcase className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
+          <div className="relative w-full h-full flex items-center justify-center overflow-visible min-w-[80px] min-h-[96px] md:min-w-[96px] md:min-h-[112px] flex-shrink-0">
+            <img
+              src="/assets/jobs-specialist.png"
+              alt=""
+              width={312}
+              height={384}
+              decoding="async"
+              fetchPriority="high"
+              className="h-20 w-auto md:h-24 object-contain object-center select-none pointer-events-none"
+              style={{
+                imageRendering: 'auto',
+                WebkitBackfaceVisibility: 'hidden',
+                backfaceVisibility: 'hidden',
+                transform: 'translateZ(0)',
+              }}
+            />
           </div>
           <div>
             <h3 className="text-xs sm:text-sm font-bold text-white">Active Jobs</h3>
@@ -448,18 +501,70 @@ function Dashboard() {
                 primaryWider={hasActiveJobs}
                 primary={
                   <StackedLayout gap="sm">
-                    {/* Active Jobs Section */}
-                    <DashboardCard variant="elevated">
-                      <div className="p-3 sm:p-4">
+                    {/* Active Jobs Section - Collapsible like Foreman dashboard */}
+                    <ExpandableSection
+                      id="dashboard-active-jobs"
+                      title="Active Jobs"
+                      subtitle={
+                        jobsLoading
+                          ? 'Loading...'
+                          : jobsError
+                            ? 'Error'
+                            : assignedJobs.length === 0
+                              ? 'No assignments'
+                              : `${assignedJobs.length} assignment${assignedJobs.length !== 1 ? 's' : ''}`
+                      }
+                      transparentIconContainer
+                      icon={
+                        <div className="relative w-full h-full flex items-center justify-center overflow-visible min-w-[100px] min-h-[120px] md:min-w-[120px] md:min-h-[140px]">
+                          <img
+                            src="/assets/jobs-specialist.png"
+                            alt=""
+                            width={312}
+                            height={384}
+                            decoding="async"
+                            fetchPriority="high"
+                            className="h-[120px] w-auto md:h-[140px] object-contain object-center select-none pointer-events-none"
+                            style={{
+                              imageRendering: 'auto',
+                              WebkitBackfaceVisibility: 'hidden',
+                              backfaceVisibility: 'hidden',
+                              transform: 'translateZ(0)',
+                            }}
+                          />
+                        </div>
+                      }
+                      storageKey="dashboard_active_jobs_expanded"
+                      defaultOpen={true}
+                      theme="emerald"
+                      ariaLabel="Active Jobs section. Expand to view assigned jobs."
+                      headerAction={
+                        <a
+                          href="/assigned-jobs"
+                          className="text-[10px] sm:text-xs font-medium text-emerald-400/70 hover:text-emerald-300 transition-colors"
+                        >
+                          View all →
+                        </a>
+                      }
+                    >
+                      {jobsLoading && <JobsSectionSkeleton />}
+                      {!jobsLoading && jobsError && (
+                        <ErrorState message={jobsError} onRetry={refetchJobs} />
+                      )}
+                      {!jobsLoading && !jobsError && assignedJobs.length === 0 && (
+                        <EnhancedEmptyJobsState />
+                      )}
+                      {!jobsLoading && !jobsError && assignedJobs.length > 0 && (
                         <AssignedJobsSection
+                          hideHeader
                           jobs={assignedJobs}
-                          loading={jobsLoading}
-                          error={jobsError}
+                          loading={false}
+                          error={null}
                           onRefetch={refetchJobs}
                         />
-                      </div>
-                    </DashboardCard>
-                    
+                      )}
+                    </ExpandableSection>
+
                     {/* Pinned Favorites - Below jobs on mobile, visible always */}
                     <div className="block md:hidden">
                       <PinnedFavorites showTitle={false} />
@@ -496,12 +601,31 @@ function Dashboard() {
           {/* ============================================================ */}
           {/* TIER 4: All Tools (Expandable) - Full width */}
           {/* ============================================================ */}
-          <ScrollReveal variant="fadeUp" delay={0.12}>
+          <ScrollReveal variant="fadeUp" delay={0.12} className="shadow-[0px_4px_12px_0px_rgba(0,0,0,0.15)]">
             <ExpandableSection
               id="dashboard-all-tools"
               title="All Tools"
               subtitle="Forms, resources & more"
-              icon={<DashboardAvatar variant="tools" className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10" />}
+              transparentIconContainer
+              icon={
+                <div className="relative w-full h-full flex items-center justify-center overflow-visible min-w-[130px] min-h-[156px] md:min-w-[156px] md:min-h-[192px]">
+                  <img
+                    src="/assets/all-tools.png"
+                    alt=""
+                    width={312}
+                    height={384}
+                    decoding="async"
+                    fetchPriority="high"
+                    className="h-[156px] w-auto md:h-[192px] object-contain object-center select-none pointer-events-none"
+                    style={{
+                      imageRendering: 'auto',
+                      WebkitBackfaceVisibility: 'hidden',
+                      backfaceVisibility: 'hidden',
+                      transform: 'translateY(-16px) translateZ(0)',
+                    }}
+                  />
+                </div>
+              }
               storageKey={PERSISTENCE_KEYS.ALL_TOOLS}
               defaultOpen={false}
               ariaLabel="All Tools section. Expand to browse forms and resources. Tap and hold any item to pin it to your Quick Access shortcuts above."

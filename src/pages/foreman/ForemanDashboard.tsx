@@ -1,6 +1,6 @@
 import { useMemo, useCallback, Suspense, lazy, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, Briefcase, AlertTriangle, RefreshCw } from "lucide-react";
+import { Users, AlertTriangle, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { FOREMAN_NAV_CARDS, getCommonNavCards } from "../../components/admin/adminNavConfig";
@@ -13,12 +13,10 @@ import { ScrollReveal } from "../../motion";
 import { getDeviceCapabilities } from "../../lib/mobilePerf";
 import { logger } from "../../lib/logger";
 import {
-  DashboardAvatar,
   ExpandableSection,
   WelcomeHeader,
   CompactComplianceStrip,
   DashboardGrid,
-  DashboardCard,
   StackedLayout,
   FloatingActionButton,
   PinnedFavorites,
@@ -121,31 +119,8 @@ const NavigableJobCard = function NavigableJobCard({ job }: NavigableJobCardProp
 // ASSIGNED JOBS SECTION (Blue themed)
 // ============================================================================
 
-interface AssignedJobsSectionProps {
-  jobs: JobProgressTracker[];
-  loading: boolean;
-  error: string | null;
-  onRefetch: () => void;
-}
-
-const AssignedJobsSection = function AssignedJobsSection({
-  jobs,
-  loading,
-  error,
-  onRefetch,
-}: AssignedJobsSectionProps) {
-  if (loading) {
-    return <JobsSectionSkeleton />;
-  }
-
-  if (error) {
-    return <ErrorState message={error} onRetry={onRefetch} />;
-  }
-
-  if (jobs.length === 0) {
-    return <EnhancedEmptyJobsState />;
-  }
-
+/** Body only: job grid + show more. Used when section is collapsible. Jobs specialist is only in section header icon. */
+function ActiveJobsSectionBody({ jobs }: { jobs: JobProgressTracker[] }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -153,29 +128,6 @@ const AssignedJobsSection = function AssignedJobsSection({
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
       className="space-y-2.5"
     >
-      {/* Compact Header - Blue themed */}
-      <div className="flex items-center justify-between px-1">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-400/30 flex items-center justify-center">
-            <Briefcase className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-400" />
-          </div>
-          <div>
-            <h3 className="text-xs sm:text-sm font-bold text-white">Active Jobs</h3>
-            <p className="text-[9px] sm:text-[10px] text-blue-400/60">
-              {jobs.length} assignment{jobs.length !== 1 ? 's' : ''}
-            </p>
-          </div>
-        </div>
-        
-        {/* View all link */}
-        <a 
-          href="/assigned-jobs"
-          className="text-[10px] sm:text-xs font-medium text-blue-400/70 hover:text-blue-300 transition-colors"
-        >
-          View all →
-        </a>
-      </div>
-
       {/* Compact Jobs Grid/List */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {jobs.slice(0, 4).map((job, index) => (
@@ -189,10 +141,10 @@ const AssignedJobsSection = function AssignedJobsSection({
           </motion.div>
         ))}
       </div>
-      
+
       {/* Show more indicator if more than 4 jobs */}
       {jobs.length > 4 && (
-        <a 
+        <a
           href="/assigned-jobs"
           className="flex items-center justify-center gap-2 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15 hover:border-blue-500/30 transition-all"
         >
@@ -203,7 +155,7 @@ const AssignedJobsSection = function AssignedJobsSection({
       )}
     </motion.div>
   );
-};
+}
 
 // ============================================================================
 // MAIN COMPONENT
@@ -358,18 +310,64 @@ export default function ForemanDashboard() {
                 primaryWider={hasActiveJobs}
                 primary={
                   <StackedLayout gap="sm">
-                    {/* Active Jobs Section */}
-                    <DashboardCard variant="elevated" theme="blue">
-                      <div className="p-3 sm:p-4">
-                        <AssignedJobsSection
-                          jobs={assignedJobs}
-                          loading={jobsLoading}
-                          error={jobsError}
-                          onRefetch={refetchJobs}
-                        />
-                      </div>
-                    </DashboardCard>
-                    
+                    {/* Active Jobs Section - Collapsible like Foreman Tools / All Tools */}
+                    <ExpandableSection
+                      id="foreman-active-jobs"
+                      title="Active Jobs"
+                      subtitle={
+                        jobsLoading
+                          ? 'Loading...'
+                          : jobsError
+                            ? 'Error'
+                            : assignedJobs.length === 0
+                              ? 'No assignments'
+                              : `${assignedJobs.length} assignment${assignedJobs.length !== 1 ? 's' : ''}`
+                      }
+                      transparentIconContainer
+                      icon={
+                        <div className="relative w-full h-full flex items-center justify-center overflow-visible min-w-[100px] min-h-[120px] md:min-w-[120px] md:min-h-[140px]">
+                          <img
+                            src="/assets/jobs-specialist.png"
+                            alt=""
+                            width={312}
+                            height={384}
+                            decoding="async"
+                            fetchPriority="high"
+                            className="h-[120px] w-auto md:h-[140px] object-contain object-center select-none pointer-events-none [mix-blend-mode:screen]"
+                            style={{
+                              imageRendering: 'auto',
+                              WebkitBackfaceVisibility: 'hidden',
+                              backfaceVisibility: 'hidden',
+                              transform: 'translateZ(0)',
+                            }}
+                          />
+                        </div>
+                      }
+                      storageKey="foreman_active_jobs_expanded"
+                      defaultOpen={true}
+                      theme="blue"
+                      ariaLabel="Active Jobs section. Expand to view assigned jobs."
+                      headerAction={
+                        <a
+                          href="/assigned-jobs"
+                          className="text-[10px] sm:text-xs font-medium text-blue-400/70 hover:text-blue-300 transition-colors"
+                        >
+                          View all →
+                        </a>
+                      }
+                    >
+                      {jobsLoading && <JobsSectionSkeleton />}
+                      {!jobsLoading && jobsError && (
+                        <ErrorState message={jobsError} onRetry={refetchJobs} />
+                      )}
+                      {!jobsLoading && !jobsError && assignedJobs.length === 0 && (
+                        <EnhancedEmptyJobsState />
+                      )}
+                      {!jobsLoading && !jobsError && assignedJobs.length > 0 && (
+                        <ActiveJobsSectionBody jobs={assignedJobs} />
+                      )}
+                    </ExpandableSection>
+
                     {/* Pinned Favorites - Below jobs on mobile */}
                     <div className="block md:hidden">
                       <PinnedFavorites showTitle={false} theme="blue" />
@@ -412,7 +410,26 @@ export default function ForemanDashboard() {
                 id="foreman-tools"
                 title="Foreman Tools"
                 subtitle="Crew management & reports"
-                icon={<DashboardAvatar variant="jobs" className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10" />}
+                transparentIconContainer
+                icon={
+                  <div className="relative w-full h-full flex items-center justify-center overflow-visible min-w-[130px] min-h-[156px] md:min-w-[156px] md:min-h-[192px]">
+                    <img
+                      src="/assets/foreman-creative.png"
+                      alt=""
+                      width={312}
+                      height={384}
+                      decoding="async"
+                      fetchPriority="high"
+                      className="h-[156px] w-auto md:h-[192px] object-contain object-center select-none pointer-events-none [mix-blend-mode:screen]"
+                      style={{
+                        imageRendering: 'auto',
+                        WebkitBackfaceVisibility: 'hidden',
+                        backfaceVisibility: 'hidden',
+                        transform: 'translateZ(0)',
+                      }}
+                    />
+                  </div>
+                }
                 storageKey={PERSISTENCE_KEYS.ALL_TOOLS}
                 defaultOpen={true}
                 ariaLabel="Foreman tools section. Expand to access crew management and reporting tools."
@@ -449,7 +466,26 @@ export default function ForemanDashboard() {
               id="foreman-all-tools"
               title="All Tools"
               subtitle="Forms, resources & more"
-              icon={<DashboardAvatar variant="tools" className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10" />}
+              transparentIconContainer
+              icon={
+                <div className="relative w-full h-full flex items-center justify-center overflow-visible min-w-[130px] min-h-[156px] md:min-w-[156px] md:min-h-[192px]">
+                  <img
+                    src="/assets/all-tools.png"
+                    alt=""
+                    width={312}
+                    height={384}
+                    decoding="async"
+                    fetchPriority="high"
+                    className="h-[156px] w-auto md:h-[192px] object-contain object-center select-none pointer-events-none"
+                    style={{
+                      imageRendering: 'auto',
+                      WebkitBackfaceVisibility: 'hidden',
+                      backfaceVisibility: 'hidden',
+                      transform: 'translateY(-16px) translateZ(0)',
+                    }}
+                  />
+                </div>
+              }
               storageKey="foreman_all_tools_expanded"
               defaultOpen={false}
               ariaLabel="All Tools section. Expand to browse forms and resources."
@@ -487,6 +523,7 @@ export default function ForemanDashboard() {
                           icon={card.icon}
                           to={card.to}
                           variant="bluewhite"
+                          iconAsImage={card.iconAsImage}
                         />
                       </motion.div>
                     ))}

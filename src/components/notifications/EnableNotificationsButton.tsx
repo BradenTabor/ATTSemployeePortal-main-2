@@ -203,18 +203,36 @@ function EnableNotificationsButtonComponent({
       <motion.button
         onClick={requestPermission}
         disabled={loading}
+        aria-label={compact ? 'Enable' : 'Enable Notifications'}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
-        className={`flex items-center gap-2 px-4 py-3 rounded-xl border transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${currentVariant.unsubscribed}`}
+        className={`relative flex items-center justify-center gap-2 px-4 py-4 min-h-[56px] rounded-xl border transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden ${currentVariant.unsubscribed}`}
+        style={{
+          background: 'linear-gradient(90deg, rgba(52, 211, 153, 0) 0%, rgba(16, 185, 129, 0) 6%)',
+          boxShadow: '0px 0px 0px 0px rgba(0, 0, 0, 0), 0px 0px 0px 0px rgba(0, 0, 0, 0), 0px 10px 15px -3px rgba(0, 0, 0, 0.3), 0px 4px 6px -4px rgba(0, 0, 0, 0.6)',
+        }}
       >
         {loading ? (
-          <Loader2 className="w-5 h-5 animate-spin" />
+          <Loader2 className="w-5 h-5 animate-spin relative z-10" />
         ) : (
-          <Bell className="w-5 h-5" />
+          <Bell className="w-5 h-5 relative z-10 opacity-0" aria-hidden />
         )}
-        <span className="font-semibold">
+        <span className={`font-semibold relative z-10 ${!loading ? 'opacity-0' : ''}`}>
           {loading ? 'Enabling...' : compact ? 'Enable' : 'Enable Notifications'}
         </span>
+        {/* Decorative overlay - sized to fit inside button so bell is fully contained */}
+        {!loading && (
+          <img
+            src="/assets/enable-notifications-overlay.png"
+            alt=""
+            aria-hidden
+            className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none rounded-xl"
+            style={{
+              transform: 'scale(1.15)',
+              transformOrigin: 'center center',
+            }}
+          />
+        )}
       </motion.button>
       
       {error && (

@@ -454,18 +454,25 @@ export default function SafetyIncidentsList({ onLogIncident, className }: Safety
 
   return (
     <>
-      <div className={cn("rounded-xl sm:rounded-2xl border border-red-500/20 bg-gradient-to-br from-[#140a0a] via-[#0a0505] to-[#020205] p-3 sm:p-4", className)}>
-        {/* Compact Header */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center border border-red-500/30">
-              <AlertTriangle className="w-4 h-4 text-red-400" />
-            </div>
-            <div>
-              <h3 className="text-sm sm:text-base font-semibold text-white">Safety Incidents</h3>
-              <p className="text-[10px] text-white/50">{stats.total} logged</p>
-            </div>
+      <div className={cn("rounded-xl sm:rounded-2xl border border-red-500/20 bg-gradient-to-br from-[#140a0a] via-[#0a0505] to-[#020205] p-2.5 sm:p-3 overflow-visible", className)}>
+        {/* Row 1: Icon + Title at top */}
+        <div className="flex items-center gap-2 mb-2 overflow-visible">
+          <div className="relative w-6 h-6 flex items-center justify-center flex-shrink-0 overflow-visible">
+            <img 
+              src="/assets/safety-incidents.png" 
+              alt="" 
+              className="absolute left-0 top-1/2 -translate-y-1/2 object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]" 
+              style={{ width: 52, height: 64, minWidth: 52, minHeight: 64 }}
+            />
           </div>
+          <div className="min-w-0 flex-1 ml-6">
+            <h3 className="text-xs sm:text-sm font-semibold text-white truncate">Safety Incidents</h3>
+            <p className="text-[9px] text-white/50">{stats.total} logged</p>
+          </div>
+        </div>
+
+        {/* Row 2: Export + Log buttons */}
+        <div className="flex items-center gap-1.5 mb-2">
           <button
             type="button"
             onClick={async () => {
@@ -484,24 +491,24 @@ export default function SafetyIncidentsList({ onLogIncident, className }: Safety
             }}
             disabled={osha300PreviewLoading}
             aria-label="Preview and export OSHA 300 log (CSV)"
-            className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-[10px] font-medium text-white/70 disabled:opacity-50 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-400/50"
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10 text-[9px] font-medium text-white/70 disabled:opacity-50 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-400/50"
           >
-            <Download className="w-3 h-3" aria-hidden />
+            <Download className="w-2.5 h-2.5" aria-hidden />
             OSHA 300
           </button>
           <button
             type="button"
             onClick={onLogIncident}
             aria-label="Log new safety incident"
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-300 text-xs font-medium transition-colors"
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-300 text-[9px] font-medium transition-colors"
           >
-            Log <span className="hidden sm:inline">Incident</span>
+            Log Incident
           </button>
         </div>
 
-        {/* Compact Stats Row - 5 columns on desktop, wrappable on mobile */}
+        {/* Row 3: Filter pills */}
         {stats.total > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-3">
+          <div className="flex flex-wrap gap-1 mb-2">
             {Object.entries(SEVERITY_CONFIG).map(([key, config]) => {
               const count = stats.bySeverity[key] || 0;
               return (
@@ -509,7 +516,7 @@ export default function SafetyIncidentsList({ onLogIncident, className }: Safety
                   key={key}
                   onClick={() => handleFilterChange(filterSeverity === key ? "all" : key)}
                   className={cn(
-                    "px-2 py-1 rounded text-[10px] font-medium border transition-all",
+                    "px-1.5 py-0.5 rounded text-[9px] font-medium border transition-all",
                     filterSeverity === key
                       ? cn(config.bgClass, config.borderClass, config.textClass)
                       : count > 0
@@ -527,22 +534,22 @@ export default function SafetyIncidentsList({ onLogIncident, className }: Safety
 
         {/* Compact Incidents List */}
         {filteredIncidents.length === 0 ? (
-          <div className="text-center py-6">
-            <AlertTriangle className="w-6 h-6 text-white/20 mx-auto mb-1.5" />
-            <p className="text-xs text-white/40">
+          <div className="text-center py-4">
+            <AlertTriangle className="w-5 h-5 text-white/20 mx-auto mb-1" />
+            <p className="text-[10px] text-white/40">
               {stats.total === 0 ? "No incidents logged" : "No matches"}
             </p>
             {stats.total === 0 && (
               <button
                 onClick={onLogIncident}
-                className="mt-2 text-[10px] text-red-400 hover:text-red-300 transition-colors"
+                className="mt-1.5 text-[9px] text-red-400 hover:text-red-300 transition-colors"
               >
                 Log first incident
               </button>
             )}
           </div>
         ) : (
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             {paginatedIncidents.map((incident) => {
               const severityConfig = SEVERITY_CONFIG[incident.severity];
               return (
@@ -551,25 +558,25 @@ export default function SafetyIncidentsList({ onLogIncident, className }: Safety
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   onClick={() => setSelectedIncident(incident)}
-                  className="w-full flex items-center justify-between p-2 rounded-lg border bg-white/5 border-white/10 hover:bg-white/10 text-left transition-colors"
+                  className="w-full flex items-center justify-between p-1.5 rounded-md border bg-white/5 border-white/10 hover:bg-white/10 text-left transition-colors"
                 >
                   <div className="flex items-center gap-2 min-w-0 flex-1">
                     <div className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", severityConfig.dotClass)} />
-                    <span className={cn("text-[10px] font-medium flex-shrink-0", severityConfig.textClass)}>
+                    <span className={cn("text-[9px] font-medium flex-shrink-0", severityConfig.textClass)}>
                       {severityConfig.label}
                     </span>
-                    <p className="text-[10px] text-white/50 truncate">
+                    <p className="text-[9px] text-white/50 truncate">
                       {incident.description}
                     </p>
                   </div>
-                  <ChevronRight className="w-3 h-3 text-white/30 flex-shrink-0 ml-1" />
+                  <ChevronRight className="w-2.5 h-2.5 text-white/30 flex-shrink-0 ml-1" />
                 </motion.button>
               );
             })}
 
             {/* Pagination Controls */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between pt-2 border-t border-white/10">
+              <div className="flex items-center justify-between pt-1.5 border-t border-white/10">
                 <button
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   disabled={currentPage === 1}

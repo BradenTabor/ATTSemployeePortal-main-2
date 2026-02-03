@@ -1,10 +1,10 @@
 /**
  * Safety Analytics PDF export (Phase 2).
  * Generates a one-page PDF report with stats and leaderboard using jspdf.
+ * Uses dynamic import so jspdf (~150KB) and jspdf-autotable (~50KB) are not
+ * in the Safety Analytics page chunk—loaded only when user clicks Export PDF.
  */
 
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import type { SafetyAnalyticsStats, UnifiedLeaderboardEntry } from '../hooks/queries/useSafetyAnalytics';
 
 export interface AnalyticsPdfOptions {
@@ -14,7 +14,11 @@ export interface AnalyticsPdfOptions {
   generatedAt: string;
 }
 
-export function exportAnalyticsPdf(options: AnalyticsPdfOptions): void {
+export async function exportAnalyticsPdf(options: AnalyticsPdfOptions): Promise<void> {
+  const [{ jsPDF }, { default: autoTable }] = await Promise.all([
+    import('jspdf'),
+    import('jspdf-autotable'),
+  ]);
   const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
   const { stats, leaderboard, period, generatedAt } = options;
   let y = 24;
@@ -72,7 +76,7 @@ export function exportAnalyticsPdf(options: AnalyticsPdfOptions): void {
     margin: { left: 40 },
   });
 
-  const docWithTable = doc as jsPDF & { lastAutoTable?: { finalY: number } };
+  const docWithTable = doc as InstanceType<typeof jsPDF> & { lastAutoTable?: { finalY: number } };
   const finalY = docWithTable.lastAutoTable?.finalY ?? y;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);

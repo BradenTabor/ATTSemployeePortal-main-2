@@ -7,7 +7,7 @@ import {
 } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { AnimatePresence } from "framer-motion";
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SessionOverlay from "./components/SessionOverlay";
 import LoadingScreen from "./components/LoadingScreen";
@@ -32,7 +32,7 @@ const Home = lazy(() => import("./pages/Home"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const AssignedJobs = lazy(() => import("./pages/AssignedJobs"));
-const Forms = lazy(() => import("./pages/forms/Forms"));
+const Forms = lazy(() => import("./pages/forms").then((m) => ({ default: m.Forms })));
 // Lazy-load devtools to reduce bundle size in production
 const ReactQueryDevtools = lazy(() =>
   import("@tanstack/react-query-devtools").then(mod => ({
@@ -394,6 +394,12 @@ function AnimatedRoutes() {
               }
             />
 
+            {/* E2E compatibility: tests use /mechanic/dashboard */}
+            <Route
+              path="/mechanic/dashboard"
+              element={<Navigate to="/mechanic-dashboard" replace />}
+            />
+
             {/* Mechanic DVIR Center (combined DVIR queue + updates) */}
             <Route
               path="/mechanic-dvir-center"
@@ -547,6 +553,12 @@ function AnimatedRoutes() {
                   </ProtectedRoute>
                 </PageWrapper>
               }
+            />
+
+            {/* E2E compatibility: tests use /admin/dashboard */}
+            <Route
+              path="/admin/dashboard"
+              element={<Navigate to="/admin" replace />}
             />
 
             <Route
@@ -745,7 +757,24 @@ function AnimatedRoutes() {
   );
 }
 
+/** Preload critical route chunks after first paint (PERF-6) so navigation feels instant. */
+function usePreloadCriticalChunks() {
+  useEffect(() => {
+    const preload = () => {
+      void import("./pages/Dashboard");
+      void import("./pages/Home");
+    };
+    if (typeof requestIdleCallback !== "undefined") {
+      const id = requestIdleCallback(preload, { timeout: 2500 });
+      return () => cancelIdleCallback(id);
+    }
+    const id = setTimeout(preload, 2000);
+    return () => clearTimeout(id);
+  }, []);
+}
+
 export default function App() {
+  usePreloadCriticalChunks();
   return (
     <QueryClientProvider client={queryClient}>
       <ToastOverlayProvider>

@@ -1,11 +1,14 @@
 // @ts-nocheck
 /**
  * Supabase Edge Function: Admin Compliance Summary
- * 
+ *
  * Runs at 9:00 AM CST Monday-Friday to:
- * 1. Check who hasn't submitted DVIR, Equipment, and JSA forms
- * 2. Send email directly via Gmail SMTP to admin recipients
- * 3. Send data to Make.com webhook for Google Sheets logging
+ * 1. Determine compliant users (DVIR + Equipment + JSA) and JSA sharing (shared_with_users)
+ * 2. Send admin email: compliant employees list + JSA sharing + ATTS logo (no summary or non-compliant list)
+ * 3. Send manager emails (unchanged: direct reports who are non-compliant)
+ * 4. Send payload to Make.com webhook (includes compliantUsers, jsaSharing; nonCompliantUsers kept, deprecated for email display)
+ *
+ * Degradation: JSA query failure → email sent with compliant list only + note; never append "✓ All Compliant" if any fetch failed.
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
@@ -50,9 +53,31 @@ function isValidEmail(email: string): boolean {
 // Make.com webhook
 const MAKE_WEBHOOK_URL = Deno.env.get('MAKE_WEBHOOK_URL') || 'https://hook.us2.make.com/hdty3eds1lpldxt2ne4amq1dgdohmvpc';
 
+// ATTS logo (publicly accessible URL; if unset, header is text-only)
+const ATTS_LOGO_URL = Deno.env.get('ATTS_LOGO_URL') || '';
+
 // =============================================================================
 // HELPER FUNCTIONS
 // =============================================================================
+
+function escapeHtml(s: string): string {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/** Format "shared with" list: "X" | "X and Y" | "X, Y, and Z". Uses full_name with email fallback. */
+function formatSharedWithList(users: Array<{ full_name?: string; email?: string }>): string {
+  const names = users
+    .map((u) => (u.full_name || u.email || 'Unknown').trim())
+    .filter(Boolean);
+  if (names.length === 0) return '';
+  if (names.length === 1) return names[0];
+  if (names.length === 2) return `${names[0]} and ${names[1]}`;
+  return names.slice(0, -1).join(', ') + ', and ' + names[names.length - 1];
+}
 
 function getTodayInTimezone(timezone: string): string {
   const now = new Date();
@@ -125,11 +150,48 @@ interface NonCompliantUser {
   managerId: string | null;
 }
 
+interface CompliantUser {
+  userId: string;
+  email: string;
+  fullName: string | null;
+  role: string;
+}
+
+/** User with at least one form completed; shows which of DVIR, Equipment, JSA they completed. */
+interface FormCompletionUser {
+  userId: string;
+  email: string;
+  fullName: string | null;
+  role: string;
+  hasDvir: boolean;
+  hasEquipment: boolean;
+  hasJsa: boolean;
+}
+
+interface JsaSharingEntry {
+  submitterName: string;
+  sharedWith: Array<{ full_name?: string; email?: string }>;
+}
+
+/** Format one user's form status: "DVIR ✓, Equipment ✗, JSA ✓" */
+function formatFormStatus(u: FormCompletionUser): string {
+  const d = u.hasDvir ? '✓' : '✗';
+  const e = u.hasEquipment ? '✓' : '✗';
+  const j = u.hasJsa ? '✓' : '✗';
+  return `DVIR ${d}, Equipment ${e}, JSA ${j}`;
+}
+
+/**
+ * Generate admin compliance email: form completion (all users with at least one form + which forms) + JSA sharing + logo.
+ * When jsaDataUnavailable is true, JSA sharing section shows a note instead of data.
+ * Subject gets "✓ All Compliant" only when allRequiredCompliant is true and !jsaDataUnavailable (no fetch errors).
+ */
 function generateEmailContent(
   dateFor: string,
-  totalRequired: number,
-  compliantCount: number,
-  nonCompliantUsers: NonCompliantUser[]
+  formCompletionList: FormCompletionUser[],
+  jsaSharing: JsaSharingEntry[],
+  logoUrl: string,
+  options: { allRequiredCompliant: boolean; jsaDataUnavailable?: boolean }
 ): { subject: string; textBody: string; htmlBody: string } {
   const dateLong = formatDateLong(dateFor);
   const timestamp = new Date().toLocaleString('en-US', {
@@ -144,109 +206,85 @@ function generateEmailContent(
     timeZoneName: 'short',
   });
 
-  const subject = nonCompliantUsers.length > 0
-    ? `ATTS Compliance Report - ${dateLong} - ${nonCompliantUsers.length} Missing`
-    : `ATTS Compliance Report - ${dateLong} - All Clear`;
+  const suffix = options.allRequiredCompliant && !options.jsaDataUnavailable ? ' ✓ All Compliant' : '';
+  const subject = `ATTS Daily Safety Form Compliance Report – ${dateLong}${suffix}`;
 
-  // Text body - simple format
+  // ---- Text body ----
   let textBody = `ATTS DAILY SAFETY FORM COMPLIANCE REPORT\n`;
   textBody += `==========================================\n\n`;
   textBody += `Date: ${dateLong}\n`;
   textBody += `Report Generated: ${timestamp}\n\n`;
-  textBody += `SUMMARY\n`;
-  textBody += `-------\n`;
-  textBody += `Total Required Employees: ${totalRequired}\n`;
-  textBody += `Compliant: ${compliantCount}\n`;
-  textBody += `Non-Compliant: ${nonCompliantUsers.length}\n\n`;
 
-  if (nonCompliantUsers.length > 0) {
-    textBody += `NON-COMPLIANT EMPLOYEES\n`;
-    textBody += `-----------------------\n\n`;
-
-    const missingAll = nonCompliantUsers.filter(u => u.missingForms.length === 3);
-    const missingTwo = nonCompliantUsers.filter(u => u.missingForms.length === 2);
-    const missingOne = nonCompliantUsers.filter(u => u.missingForms.length === 1);
-
-    let num = 1;
-
-    if (missingAll.length > 0) {
-      textBody += `MISSING ALL FORMS (DVIR, Equipment Inspection, Daily JSA):\n`;
-      for (const user of missingAll) {
-        textBody += `  ${num}. ${user.fullName || 'Unknown'} (${user.role}) - ${user.email}\n`;
-        num++;
-      }
-      textBody += `\n`;
-    }
-
-    if (missingTwo.length > 0) {
-      textBody += `MISSING TWO FORMS:\n`;
-      for (const user of missingTwo) {
-        textBody += `  ${num}. ${user.fullName || 'Unknown'} (${user.role}) - ${user.email}\n`;
-        textBody += `      Missing: ${user.missingForms.join(', ')}\n`;
-        num++;
-      }
-      textBody += `\n`;
-    }
-
-    if (missingOne.length > 0) {
-      textBody += `MISSING ONE FORM:\n`;
-      for (const user of missingOne) {
-        textBody += `  ${num}. ${user.fullName || 'Unknown'} (${user.role}) - ${user.email}\n`;
-        textBody += `      Missing: ${user.missingForms[0]}\n`;
-        num++;
-      }
-      textBody += `\n`;
-    }
+  textBody += `FORM COMPLETION\n`;
+  textBody += `---------------\n`;
+  if (formCompletionList.length === 0) {
+    textBody += `No employees submitted any forms for this date.\n\n`;
   } else {
-    textBody += `ALL CLEAR!\n`;
-    textBody += `All employees have submitted their required safety forms.\n\n`;
+    for (const u of formCompletionList) {
+      textBody += `• ${u.fullName || 'Unknown'} (${u.role}) – ${u.email} – ${formatFormStatus(u)}\n`;
+    }
+    textBody += `\n`;
+  }
+
+  textBody += `JSA SHARING\n`;
+  textBody += `-----------\n`;
+  if (options.jsaDataUnavailable) {
+    textBody += `JSA sharing data was unavailable for this report.\n\n`;
+  } else if (jsaSharing.length === 0) {
+    textBody += `No JSA forms were shared with other users for this date.\n\n`;
+  } else {
+    for (const entry of jsaSharing) {
+      const list = formatSharedWithList(entry.sharedWith);
+      if (list) {
+        textBody += `• ${entry.submitterName} completed their Daily JSA and shared it with ${list}.\n`;
+      }
+    }
+    textBody += `\n`;
   }
 
   textBody += `---\n`;
-  textBody += `Thank you for reviewing this compliance report.\n`;
-  textBody += `Please follow up with the listed employees as needed.\n\n`;
+  textBody += `Thank you for reviewing this compliance report.\n\n`;
   textBody += `ATTS Safety Compliance System\n`;
 
-  // HTML body - clean and simple
-  let nonCompliantHtml = '';
-  if (nonCompliantUsers.length > 0) {
-    const missingAll = nonCompliantUsers.filter(u => u.missingForms.length === 3);
-    const missingTwo = nonCompliantUsers.filter(u => u.missingForms.length === 2);
-    const missingOne = nonCompliantUsers.filter(u => u.missingForms.length === 1);
+  // ---- HTML body ----
+  const logoHtml = logoUrl
+    ? `<img src="${escapeHtml(logoUrl)}" alt="ATTS Logo" style="max-width: 200px; height: auto; display: block;" />`
+    : '';
 
-    let num = 1;
-
-    if (missingAll.length > 0) {
-      nonCompliantHtml += `<h3 style="color:#dc2626;margin:16px 0 8px 0;font-size:14px;">MISSING ALL FORMS (DVIR, Equipment, JSA):</h3><ul style="margin:0;padding-left:20px;">`;
-      for (const user of missingAll) {
-        nonCompliantHtml += `<li style="margin-bottom:4px;"><strong>${num}. ${user.fullName || 'Unknown'}</strong> (${user.role}) - ${user.email}</li>`;
-        num++;
-      }
-      nonCompliantHtml += `</ul>`;
-    }
-
-    if (missingTwo.length > 0) {
-      nonCompliantHtml += `<h3 style="color:#f59e0b;margin:16px 0 8px 0;font-size:14px;">MISSING TWO FORMS:</h3><ul style="margin:0;padding-left:20px;">`;
-      for (const user of missingTwo) {
-        nonCompliantHtml += `<li style="margin-bottom:4px;"><strong>${num}. ${user.fullName || 'Unknown'}</strong> (${user.role}) - ${user.email}<br><small style="color:#666;">Missing: ${user.missingForms.join(', ')}</small></li>`;
-        num++;
-      }
-      nonCompliantHtml += `</ul>`;
-    }
-
-    if (missingOne.length > 0) {
-      nonCompliantHtml += `<h3 style="color:#eab308;margin:16px 0 8px 0;font-size:14px;">MISSING ONE FORM:</h3><ul style="margin:0;padding-left:20px;">`;
-      for (const user of missingOne) {
-        nonCompliantHtml += `<li style="margin-bottom:4px;"><strong>${num}. ${user.fullName || 'Unknown'}</strong> (${user.role}) - ${user.email}<br><small style="color:#666;">Missing: ${user.missingForms[0]}</small></li>`;
-        num++;
-      }
-      nonCompliantHtml += `</ul>`;
-    }
+  let formCompletionHtml = '';
+  if (formCompletionList.length === 0) {
+    formCompletionHtml = `<p style="color:#6b7280;">No employees submitted any forms for this date.</p>`;
   } else {
-    nonCompliantHtml = `<div style="background:#dcfce7;padding:16px;border-radius:8px;text-align:center;"><h3 style="color:#166534;margin:0;">ALL CLEAR</h3><p style="margin:8px 0 0 0;color:#166534;">All employees have submitted their required safety forms!</p></div>`;
+    formCompletionHtml = `<ul style="margin:0;padding-left:20px;">`;
+    for (const u of formCompletionList) {
+      const status = formatFormStatus(u);
+      formCompletionHtml += `<li style="margin-bottom:4px;"><strong>${escapeHtml(u.fullName || 'Unknown')}</strong> (${escapeHtml(u.role)}) – <a href="mailto:${escapeHtml(u.email)}">${escapeHtml(u.email)}</a> – ${escapeHtml(status)}</li>`;
+    }
+    formCompletionHtml += `</ul>`;
   }
 
-  const htmlBody = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="font-family:Arial,sans-serif;line-height:1.5;color:#1f2937;max-width:600px;margin:0 auto;padding:20px;"><div style="background:linear-gradient(135deg,#166534 0%,#15803d 100%);color:white;padding:20px;border-radius:8px 8px 0 0;text-align:center;"><h1 style="margin:0;font-size:18px;">ATTS DAILY SAFETY FORM COMPLIANCE REPORT</h1></div><div style="background:#f9fafb;padding:20px;border:1px solid #e5e7eb;border-top:none;"><p style="margin:0 0 8px 0;"><strong>Date:</strong> ${dateLong}</p><p style="margin:0;"><strong>Generated:</strong> ${timestamp}</p></div><div style="background:white;padding:20px;border:1px solid #e5e7eb;border-top:none;"><h2 style="margin:0 0 12px 0;font-size:16px;border-bottom:2px solid #e5e7eb;padding-bottom:8px;">Summary</h2><table style="width:100%;"><tr><td>Total Required:</td><td style="text-align:right;font-weight:bold;">${totalRequired}</td></tr><tr><td style="color:#22c55e;">Compliant:</td><td style="text-align:right;font-weight:bold;color:#22c55e;">${compliantCount}</td></tr><tr><td style="color:#ef4444;">Non-Compliant:</td><td style="text-align:right;font-weight:bold;color:#ef4444;">${nonCompliantUsers.length}</td></tr></table></div><div style="background:white;padding:20px;border:1px solid #e5e7eb;border-top:none;"><h2 style="margin:0 0 12px 0;font-size:16px;border-bottom:2px solid #e5e7eb;padding-bottom:8px;">${nonCompliantUsers.length > 0 ? 'Non-Compliant Employees' : 'Compliance Status'}</h2>${nonCompliantHtml}</div><div style="background:#f9fafb;padding:16px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;font-size:12px;color:#6b7280;"><p style="margin:0;">Thank you for reviewing this compliance report.</p><p style="margin:8px 0 0 0;"><strong>ATTS Safety Compliance System</strong></p></div></body></html>`;
+  let jsaHtml = '';
+  if (options.jsaDataUnavailable) {
+    jsaHtml = `<p style="color:#6b7280;">JSA sharing data was unavailable for this report.</p>`;
+  } else if (jsaSharing.length === 0) {
+    jsaHtml = `<p style="color:#6b7280;">No JSA forms were shared with other users for this date.</p>`;
+  } else {
+    jsaHtml = `<ul style="margin:0;padding-left:20px;">`;
+    for (const entry of jsaSharing) {
+      const list = formatSharedWithList(entry.sharedWith);
+      if (list) {
+        jsaHtml += `<li style="margin-bottom:4px;"><strong>${escapeHtml(entry.submitterName)}</strong> completed their Daily JSA and shared it with ${escapeHtml(list)}.</li>`;
+      }
+    }
+    jsaHtml += `</ul>`;
+  }
+
+  const htmlBody = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="font-family:Arial,sans-serif;line-height:1.5;color:#1f2937;max-width:600px;margin:0 auto;padding:20px;">
+<div style="background:linear-gradient(135deg,#166534 0%,#15803d 100%);color:white;padding:20px;border-radius:8px 8px 0 0;text-align:center;">${logoHtml}<h1 style="margin:0;font-size:18px;">ATTS DAILY SAFETY FORM COMPLIANCE REPORT</h1></div>
+<div style="background:#f9fafb;padding:20px;border:1px solid #e5e7eb;border-top:none;"><p style="margin:0 0 8px 0;"><strong>Date:</strong> ${escapeHtml(dateLong)}</p><p style="margin:0;"><strong>Generated:</strong> ${escapeHtml(timestamp)}</p></div>
+<div style="background:white;padding:20px;border:1px solid #e5e7eb;border-top:none;"><h2 style="margin:0 0 12px 0;font-size:16px;border-bottom:2px solid #e5e7eb;padding-bottom:8px;">Form Completion</h2>${formCompletionHtml}</div>
+<div style="background:white;padding:20px;border:1px solid #e5e7eb;border-top:none;"><h2 style="margin:0 0 12px 0;font-size:16px;border-bottom:2px solid #e5e7eb;padding-bottom:8px;">JSA Sharing</h2>${jsaHtml}</div>
+<div style="background:#f9fafb;padding:16px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;font-size:12px;color:#6b7280;"><p style="margin:0;">Thank you for reviewing this compliance report.</p><p style="margin:8px 0 0 0;"><strong>ATTS Safety Compliance System</strong></p></div></body></html>`;
 
   return { subject, textBody, htmlBody };
 }
@@ -523,36 +561,52 @@ serve(async (req) => {
 
     console.log('[Compliance] Found', requiredUsers?.length || 0, 'required users');
 
-    // Fetch submissions in parallel
+    // Fetch submissions in parallel (JSA includes shared_with_users for sharing section)
     const [dvirResult, equipmentResult, jsaResult] = await Promise.all([
       supabase.from('dvir_reports').select('user_id').eq('report_date', dateFor).lt('created_at', cutoffUtc.toISOString()).not('user_id', 'is', null),
       supabase.from('daily_equipment_inspections').select('user_id').eq('inspection_date', dateFor).lt('created_at', cutoffUtc.toISOString()).not('user_id', 'is', null),
-      supabase.from('daily_jsa').select('user_id').gte('created_at', dayStart.toISOString()).lt('created_at', cutoffUtc.toISOString()).not('user_id', 'is', null),
+      supabase.from('daily_jsa').select('user_id, shared_with_users').gte('created_at', dayStart.toISOString()).lt('created_at', cutoffUtc.toISOString()).not('user_id', 'is', null),
     ]);
 
-    const dvirSubmitters = new Set((dvirResult.data || []).map(d => d.user_id));
-    const equipmentSubmitters = new Set((equipmentResult.data || []).map(d => d.user_id));
-    const jsaSubmitters = new Set((jsaResult.data || []).map(d => d.user_id));
+    const dvirSubmitters = new Set((dvirResult.data || []).map((d: { user_id: string }) => d.user_id));
+    const equipmentSubmitters = new Set((equipmentResult.data || []).map((d: { user_id: string }) => d.user_id));
+    const jsaRows = jsaResult.data || [];
+    const jsaSubmitters = new Set(jsaRows.map((d: { user_id: string }) => d.user_id));
+
+    // Level 2 degradation: if JSA query failed, we still send email but without JSA sharing data
+    const jsaDataUnavailable = !!jsaResult.error;
+    if (jsaResult.error) {
+      console.warn('[Compliance] JSA query failed (degraded mode):', jsaResult.error.message);
+    }
 
     console.log('[Compliance] Submissions - DVIR:', dvirSubmitters.size, 'Equipment:', equipmentSubmitters.size, 'JSA:', jsaSubmitters.size);
 
-    // Compute non-compliant users
+    const totalRequired = requiredUsers?.length || 0;
+    const formCompletionList: FormCompletionUser[] = [];
     const nonCompliantUsers: NonCompliantUser[] = [];
-    let compliantCount = 0;
 
-    for (const user of (requiredUsers || [])) {
+    for (const user of requiredUsers || []) {
       const hasDvir = dvirSubmitters.has(user.user_id);
       const hasEquipment = equipmentSubmitters.has(user.user_id);
       const hasJsa = jsaSubmitters.has(user.user_id);
 
-      if (hasDvir && hasEquipment && hasJsa) {
-        compliantCount++;
-      } else {
+      if (hasDvir || hasEquipment || hasJsa) {
+        formCompletionList.push({
+          userId: user.user_id,
+          email: user.email,
+          fullName: user.full_name,
+          role: user.role,
+          hasDvir,
+          hasEquipment,
+          hasJsa,
+        });
+      }
+
+      if (!(hasDvir && hasEquipment && hasJsa)) {
         const missingForms: string[] = [];
         if (!hasDvir) missingForms.push('DVIR');
         if (!hasEquipment) missingForms.push('Equipment Inspection');
         if (!hasJsa) missingForms.push('Daily JSA');
-
         nonCompliantUsers.push({
           userId: user.user_id,
           email: user.email,
@@ -564,17 +618,60 @@ serve(async (req) => {
       }
     }
 
-    // Sort by severity
+    // Sort form completion: most forms first (3, 2, 1), then by full name
+    const completedCount = (u: FormCompletionUser) => (u.hasDvir ? 1 : 0) + (u.hasEquipment ? 1 : 0) + (u.hasJsa ? 1 : 0);
+    formCompletionList.sort((a, b) => {
+      const ca = completedCount(a);
+      const cb = completedCount(b);
+      if (cb !== ca) return cb - ca;
+      const na = (a.fullName || '').trim().toLowerCase();
+      const nb = (b.fullName || '').trim().toLowerCase();
+      if (!na && !nb) return 0;
+      if (!na) return 1;
+      if (!nb) return -1;
+      return na.localeCompare(nb);
+    });
     nonCompliantUsers.sort((a, b) => b.missingForms.length - a.missingForms.length);
 
-    console.log('[Compliance] Compliant:', compliantCount, 'Non-compliant:', nonCompliantUsers.length);
+    const compliantUsers: CompliantUser[] = formCompletionList
+      .filter((u) => u.hasDvir && u.hasEquipment && u.hasJsa)
+      .map((u) => ({ userId: u.userId, email: u.email, fullName: u.fullName, role: u.role }));
 
-    // Generate email content
+    // Build JSA sharing list (only rows with non-empty shared_with_users; validate array)
+    const jsaSharing: JsaSharingEntry[] = [];
+    try {
+      for (const row of jsaRows) {
+        const shared = row.shared_with_users;
+        if (!Array.isArray(shared) || shared.length === 0) continue;
+        const submitter = (requiredUsers || []).find((u) => u.user_id === row.user_id);
+        const submitterName = submitter?.full_name || 'Unknown';
+        if (!submitter && row.user_id) {
+          console.warn('[Compliance] JSA submitter not in requiredUsers:', row.user_id);
+        }
+        jsaSharing.push({
+          submitterName,
+          sharedWith: shared.map((u: { full_name?: string; email?: string }) => ({
+            full_name: u?.full_name,
+            email: u?.email,
+          })),
+        });
+      }
+      jsaSharing.sort((a, b) => a.submitterName.localeCompare(b.submitterName));
+    } catch (err) {
+      console.warn('[Compliance] Error building jsaSharing:', err);
+    }
+
+    console.log('[Compliance] Form completion entries:', formCompletionList.length, 'Non-compliant:', nonCompliantUsers.length, 'JSA sharing entries:', jsaSharing.length);
+
+    const allRequiredCompliant = totalRequired > 0 && compliantUsers.length === totalRequired && !jsaDataUnavailable;
+
+    // Generate email content (form completion list + JSA sharing + logo)
     const { subject, textBody, htmlBody } = generateEmailContent(
       dateFor,
-      requiredUsers?.length || 0,
-      compliantCount,
-      nonCompliantUsers
+      formCompletionList,
+      jsaSharing,
+      ATTS_LOGO_URL,
+      { allRequiredCompliant, jsaDataUnavailable }
     );
 
     // Fetch recipients from DB (fallback to defaults)
@@ -627,7 +724,7 @@ serve(async (req) => {
       }
     }
 
-    // Send to Make.com webhook
+    // Send to Make.com webhook (nonCompliantUsers kept for backward compatibility; deprecated for email display)
     console.log('[Compliance] Sending to webhook...');
     const webhookPayload = {
       type: 'admin_compliance_summary',
@@ -636,10 +733,14 @@ serve(async (req) => {
       emailBody: textBody,
       recipients,
       summary: {
-        totalRequired: requiredUsers?.length || 0,
-        totalCompliant: compliantCount,
+        totalRequired: totalRequired,
+        totalCompliant: compliantUsers.length,
         totalNonCompliant: nonCompliantUsers.length,
       },
+      formCompletionList,
+      compliantUsers,
+      jsaSharing,
+      /** @deprecated Email no longer displays non-compliant list; payload kept for Make.com/Sheets flows */
       nonCompliantUsers,
       emailSent: emailResult.success,
       timestamp: new Date().toISOString(),
@@ -655,8 +756,8 @@ serve(async (req) => {
         status: 'success',
         dateFor,
         summary: {
-          totalRequired: requiredUsers?.length || 0,
-          totalCompliant: compliantCount,
+          totalRequired: totalRequired,
+          totalCompliant: compliantUsers.length,
           totalNonCompliant: nonCompliantUsers.length,
         },
         emailSent: emailResult.success,
