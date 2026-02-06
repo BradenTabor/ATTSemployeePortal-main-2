@@ -8,6 +8,15 @@ export type AdminJsaRow = DailyJsaRecord & {
   user_email?: string | null;
   user_name?: string | null;
   user_role?: string | null;
+  /** From daily_jsa select for export (Slice 1) */
+  jsa_type?: string | null;
+  tree_felling_data?: unknown;
+  /** Composite for PDF export only (formatter-built) */
+  conditions_ppe_summary?: string;
+  /** Composite for PDF export only (formatter-built) */
+  site_hazards_traffic_summary?: string;
+  /** Short spans summary for PDF (formatter-built) */
+  spans_summary?: string;
 };
 
 export type UserProfileMeta = {

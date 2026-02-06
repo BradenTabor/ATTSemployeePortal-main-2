@@ -21,6 +21,7 @@ import {
   X,
   ChevronDown,
   ChevronUp,
+  Package,
 } from "lucide-react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { supabase } from "../../lib/supabaseClient";
@@ -30,10 +31,13 @@ import AdminSegmentedControl, { type SegmentTab } from "../../components/admin/A
 import {
   DataExporter,
   generateFilename,
+  formatDateForExport,
+  formatValue,
   type ExportMetadata,
   type ExportColumn,
 } from "../../lib/exportUtils";
 import { logReportExported } from "../../lib/safetyAuditLog";
+import ComplianceDataExportPanel from "../../components/admin/ComplianceDataExportPanel";
 
 const PAGE_SIZE = 50;
 
@@ -116,13 +120,13 @@ function getDefaultDateRange(): { from: string; to: string } {
 }
 
 const COMPLIANCE_SUMMARY_COLUMNS: ExportColumn<ComplianceSummaryRow>[] = [
-  { header: "Date", key: "date" },
-  { header: "DVIR Count", key: "dvir_count" },
-  { header: "DVIR Users", key: "dvir_users" },
-  { header: "Equipment Count", key: "equipment_count" },
-  { header: "Equipment Users", key: "equipment_users" },
-  { header: "JSA Count", key: "jsa_count" },
-  { header: "JSA Users", key: "jsa_users" },
+  { header: "Date", key: "date", format: (v) => formatDateForExport(v as string), width: 14 },
+  { header: "DVIR Count", key: "dvir_count", format: (v) => String(v ?? 0), width: 12 },
+  { header: "DVIR Users", key: "dvir_users", format: (v) => String(v ?? 0), width: 12 },
+  { header: "Equip Count", key: "equipment_count", format: (v) => String(v ?? 0), width: 12 },
+  { header: "Equip Users", key: "equipment_users", format: (v) => String(v ?? 0), width: 12 },
+  { header: "JSA Count", key: "jsa_count", format: (v) => String(v ?? 0), width: 12 },
+  { header: "JSA Users", key: "jsa_users", format: (v) => String(v ?? 0), width: 12 },
 ];
 
 // Incident Log (OSHA 300/301) — row shape from get_incident_log_osha_300_301 RPC
@@ -189,41 +193,41 @@ function useWeeklySafetyReports(enabled: boolean) {
 }
 
 const INCIDENT_LOG_COLUMNS: ExportColumn<IncidentLogRow>[] = [
-  { header: "Case #", key: "case_number" },
-  { header: "Incident Date", key: "incident_date" },
-  { header: "Incident Time", key: "incident_time" },
-  { header: "Employee Name", key: "employee_name" },
-  { header: "Job Title", key: "employee_job_title" },
-  { header: "Where Occurred", key: "work_site_name" },
-  { header: "Description", key: "description" },
-  { header: "What Doing Before", key: "what_doing_before" },
-  { header: "Object/Substance Harmed", key: "object_substance_harmed" },
-  { header: "Body Parts", key: "body_parts_affected" },
-  { header: "Injury/Illness Type", key: "injury_illness_type" },
-  { header: "Severity", key: "severity" },
-  { header: "Days Away", key: "days_away_from_work" },
-  { header: "Days Restricted", key: "days_restricted_duty" },
-  { header: "ER Treatment", key: "emergency_room_treatment" },
-  { header: "Hospitalized", key: "hospitalized_overnight" },
-  { header: "Physician", key: "physician_name" },
-  { header: "Treatment Facility", key: "treatment_facility" },
-  { header: "Time Began Work", key: "time_began_work" },
-  { header: "Hire Date", key: "employee_hire_date" },
-  { header: "OSHA Reportable", key: "osha_reportable" },
-  { header: "OSHA Reported", key: "osha_reported" },
-  { header: "OSHA Report Date", key: "osha_report_date" },
-  { header: "Job", key: "job_name" },
-  { header: "Crew", key: "crew_name" },
-  { header: "Supervisor", key: "supervisor_name" },
-  { header: "Corrective Actions", key: "corrective_actions_taken" },
-  { header: "Corrective At", key: "corrective_actions_at" },
-  { header: "Reported At", key: "reported_at" },
+  { header: "Case #", key: "case_number", format: (v) => formatValue(v), width: 12 },
+  { header: "Incident Date", key: "incident_date", format: (v) => formatDateForExport(v as string), width: 14 },
+  { header: "Incident Time", key: "incident_time", format: (v) => formatValue(v), width: 12 },
+  { header: "Employee", key: "employee_name", format: (v) => formatValue(v), width: 18 },
+  { header: "Job Title", key: "employee_job_title", format: (v) => formatValue(v), width: 16 },
+  { header: "Where", key: "work_site_name", format: (v) => formatValue(v), width: 20 },
+  { header: "Description", key: "description", format: (v) => formatValue(v), width: 32 },
+  { header: "What Doing Before", key: "what_doing_before", format: (v) => formatValue(v), width: 24 },
+  { header: "Object/Substance", key: "object_substance_harmed", format: (v) => formatValue(v), width: 18 },
+  { header: "Body Parts", key: "body_parts_affected", format: (v) => formatValue(v), width: 14 },
+  { header: "Injury Type", key: "injury_illness_type", format: (v) => formatValue(v), width: 16 },
+  { header: "Severity", key: "severity", format: (v) => formatValue(v), width: 10 },
+  { header: "Days Away", key: "days_away_from_work", format: (v) => (v != null ? String(v) : "—"), width: 12 },
+  { header: "Days Restricted", key: "days_restricted_duty", format: (v) => (v != null ? String(v) : "—"), width: 14 },
+  { header: "ER", key: "emergency_room_treatment", format: (v) => formatValue(v), width: 8 },
+  { header: "Hospitalized", key: "hospitalized_overnight", format: (v) => formatValue(v), width: 12 },
+  { header: "Physician", key: "physician_name", format: (v) => formatValue(v), width: 18 },
+  { header: "Treatment Facility", key: "treatment_facility", format: (v) => formatValue(v), width: 20 },
+  { header: "Time Began Work", key: "time_began_work", format: (v) => formatValue(v), width: 14 },
+  { header: "Hire Date", key: "employee_hire_date", format: (v) => formatDateForExport(v as string), width: 12 },
+  { header: "OSHA Reportable", key: "osha_reportable", format: (v) => formatValue(v), width: 12 },
+  { header: "OSHA Reported", key: "osha_reported", format: (v) => formatValue(v), width: 12 },
+  { header: "OSHA Report Date", key: "osha_report_date", format: (v) => formatValue(v), width: 14 },
+  { header: "Job", key: "job_name", format: (v) => formatValue(v), width: 14 },
+  { header: "Crew", key: "crew_name", format: (v) => formatValue(v), width: 14 },
+  { header: "Supervisor", key: "supervisor_name", format: (v) => formatValue(v), width: 16 },
+  { header: "Corrective Actions", key: "corrective_actions_taken", format: (v) => formatValue(v), width: 28 },
+  { header: "Corrective At", key: "corrective_actions_at", format: (v) => formatValue(v), width: 16 },
+  { header: "Reported At", key: "reported_at", format: (v) => formatDateForExport(v as string, true), width: 20 },
 ];
 
 export default function AdminComplianceAudit() {
   const { user, role } = useAuth();
   const defaultRange = getDefaultDateRange();
-  const [tab, setTab] = useState<"audit" | "mapping" | "reports" | "weekly">("audit");
+  const [tab, setTab] = useState<"audit" | "mapping" | "reports" | "weekly" | "export">("audit");
   const [auditPage, setAuditPage] = useState(1);
   const [reportDateFrom, setReportDateFrom] = useState(defaultRange.from);
   const [reportDateTo, setReportDateTo] = useState(defaultRange.to);
@@ -400,6 +404,7 @@ export default function AdminComplianceAudit() {
     { id: "mapping", label: "OSHA Mapping", shortLabel: "OSHA", icon: <BookOpen className="w-4 h-4" /> },
     { id: "reports", label: "Reports", shortLabel: "Reports", icon: <FileText className="w-4 h-4" /> },
     { id: "weekly", label: "Weekly Reports", shortLabel: "Weekly", icon: <Calendar className="w-4 h-4" /> },
+    { id: "export", label: "Data Export", shortLabel: "Export", icon: <Package className="w-4 h-4" /> },
   ], []);
 
   return (
@@ -425,7 +430,7 @@ export default function AdminComplianceAudit() {
           <AdminSegmentedControl
             tabs={tabs}
             activeTab={tab}
-            onChange={(tabId) => setTab(tabId as "audit" | "mapping" | "reports" | "weekly")}
+            onChange={(tabId) => setTab(tabId as "audit" | "mapping" | "reports" | "weekly" | "export")}
           />
 
           <AnimatePresence mode="wait">
@@ -1228,6 +1233,29 @@ export default function AdminComplianceAudit() {
                     </div>
                   </>
                 )}
+              </motion.div>
+            )}
+
+            {tab === "export" && (
+              <motion.div
+                key="export"
+                id="panel-export"
+                role="tabpanel"
+                aria-labelledby="tab-export"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
+                className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/[0.02] overflow-hidden"
+              >
+                <div className="p-3 sm:p-4 border-b border-white/10">
+                  <span className="text-xs sm:text-sm text-white/70">
+                    Review and export each compliance dataset. Load with a date range, then export as CSV or PDF.
+                  </span>
+                </div>
+                <div className="p-3 sm:p-4 sm:p-6">
+                  <ComplianceDataExportPanel />
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

@@ -1,1 +1,100 @@
-[]
+[
+  {
+    "name": "minScore",
+    "expected": 0.8,
+    "actual": 0.72,
+    "values": [
+      0.72
+    ],
+    "operator": ">=",
+    "passed": false,
+    "auditProperty": "performance",
+    "auditId": "categories",
+    "level": "warn",
+    "url": "http://127.0.0.1:4173/"
+  },
+  {
+    "name": "minScore",
+    "expected": 0.8,
+    "actual": 0.72,
+    "values": [
+      0.72
+    ],
+    "operator": ">=",
+    "passed": false,
+    "auditProperty": "performance",
+    "auditId": "categories",
+    "level": "warn",
+    "url": "http://127.0.0.1:4173/dashboard"
+  },
+  {
+    "name": "minScore",
+    "expected": 0.8,
+    "actual": 0.72,
+    "values": [
+      0.72
+    ],
+    "operator": ">=",
+    "passed": false,
+    "auditProperty": "performance",
+    "auditId": "categories",
+    "level": "warn",
+    "url": "http://127.0.0.1:4173/announcements"
+  },
+  {
+    "name": "minScore",
+    "expected": 0.8,
+    "actual": 0.72,
+    "values": [
+      0.72
+    ],
+    "operator": ">=",
+    "passed": false,
+    "auditProperty": "performance",
+    "auditId": "categories",
+    "level": "warn",
+    "url": "http://127.0.0.1:4173/admin/users"
+  },
+  {
+    "name": "minScore",
+    "expected": 0.8,
+    "actual": 0.72,
+    "values": [
+      0.72
+    ],
+    "operator": ">=",
+    "passed": false,
+    "auditProperty": "performance",
+    "auditId": "categories",
+    "level": "warn",
+    "url": "http://127.0.0.1:4173/admin/rto"
+  },
+  {
+    "name": "minScore",
+    "expected": 0.8,
+    "actual": 0.72,
+    "values": [
+      0.72
+    ],
+    "operator": ">=",
+    "passed": false,
+    "auditProperty": "performance",
+    "auditId": "categories",
+    "level": "warn",
+    "url": "http://127.0.0.1:4173/mechanic-dvir-center"
+  },
+  {
+    "name": "minScore",
+    "expected": 0.8,
+    "actual": 0.72,
+    "values": [
+      0.72
+    ],
+    "operator": ">=",
+    "passed": false,
+    "auditProperty": "performance",
+    "auditId": "categories",
+    "level": "warn",
+    "url": "http://127.0.0.1:4173/forms-history/dvir"
+  }
+]

@@ -45,6 +45,20 @@ export interface DVIRReport {
   /** Cost tracking fields from migration 20260114000000 */
   mechanic_cost: number | null;
   mechanic_parts_used: MechanicPart[] | null;
+  /** Full form export (Slice 2) — optional for backward compatibility */
+  report_date?: string | null;
+  truck_gvwr?: string | null;
+  trailer_chipper_gvwr?: string | null;
+  medical_card_required?: string | null;
+  drivers_license_number?: string | null;
+  drivers_license_class?: string | null;
+  drivers_license_exp?: string | null;
+  drivers_license_required?: string | null;
+  has_medical_card?: string | null;
+  medical_card_exp?: string | null;
+  copy_of_registration?: string | null;
+  copy_of_insurance?: string | null;
+  aerial_notes?: string | null;
 }
 
 export interface EquipmentInspection {
@@ -67,6 +81,8 @@ export interface EquipmentInspection {
   /** Cost tracking fields from migration 20260114000000 */
   mechanic_cost: number | null;
   mechanic_parts_used: MechanicPart[] | null;
+  /** Slice 3 — optional for backward compatibility */
+  additional_photo_paths?: string[] | null;
 }
 
 // =============================================================================

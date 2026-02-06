@@ -1,5 +1,6 @@
 import { forwardRef, InputHTMLAttributes } from 'react';
 import { cn } from '../../lib/utils';
+import { MOBILE_SAFE_INPUT } from '../../lib/styles';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: boolean;
@@ -20,6 +21,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       <input
         ref={ref}
         className={cn(
+          MOBILE_SAFE_INPUT,
           'w-full bg-[#050402]/80 border rounded-2xl px-4 py-3 text-white',
           // Improved placeholder contrast for accessibility (WCAG)
           'placeholder:text-white/50',

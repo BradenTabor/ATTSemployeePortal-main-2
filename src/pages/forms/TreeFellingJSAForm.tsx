@@ -215,7 +215,7 @@ export default function TreeFellingJSAForm() {
                 value={jobDate}
                 onChange={(e) => setJobDate(e.target.value)}
                 disabled={isLoading}
-                className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm text-white disabled:opacity-60"
+                className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-base sm:text-sm text-white disabled:opacity-60"
               />
             </div>
             <div>
@@ -225,7 +225,7 @@ export default function TreeFellingJSAForm() {
                 value={workLocation}
                 onChange={(e) => setWorkLocation(e.target.value)}
                 placeholder="Work site"
-                className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm text-white placeholder-gray-500"
+                className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-base sm:text-sm text-white placeholder-gray-500"
               />
             </div>
             <div>
@@ -235,7 +235,7 @@ export default function TreeFellingJSAForm() {
                 value={gfContact}
                 onChange={(e) => setGfContact(e.target.value)}
                 placeholder="General foreman"
-                className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm text-white placeholder-gray-500"
+                className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-base sm:text-sm text-white placeholder-gray-500"
               />
             </div>
             <div>
@@ -245,7 +245,7 @@ export default function TreeFellingJSAForm() {
                 value={ocContact}
                 onChange={(e) => setOcContact(e.target.value)}
                 placeholder="Operations contact"
-                className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm text-white placeholder-gray-500"
+                className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-base sm:text-sm text-white placeholder-gray-500"
               />
             </div>
           </div>
@@ -261,7 +261,7 @@ export default function TreeFellingJSAForm() {
                 value={treeData.tree_risk_assessment?.height_risk ?? ""}
                 onChange={(e) => updateTree("tree_risk_assessment", "height_risk", e.target.value)}
                 placeholder="e.g. high / medium / low"
-                className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm text-white placeholder-gray-500"
+                className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-base sm:text-sm text-white placeholder-gray-500"
               />
             </div>
             <div>
@@ -271,7 +271,7 @@ export default function TreeFellingJSAForm() {
                 value={treeData.tree_risk_assessment?.dbh_risk ?? ""}
                 onChange={(e) => updateTree("tree_risk_assessment", "dbh_risk", e.target.value)}
                 placeholder="Diameter at breast height"
-                className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm text-white placeholder-gray-500"
+                className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-base sm:text-sm text-white placeholder-gray-500"
               />
             </div>
           </div>
@@ -290,7 +290,7 @@ export default function TreeFellingJSAForm() {
                     type="text"
                     value={treeData.environmental_factors?.[k] ?? ""}
                     onChange={(e) => updateTree("environmental_factors", k, e.target.value)}
-                    className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm text-white"
+                    className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-base sm:text-sm text-white"
                   />
                 </div>
               )
@@ -319,7 +319,7 @@ export default function TreeFellingJSAForm() {
                   type="text"
                   value={treeData.operational_factors?.[k] ?? ""}
                   onChange={(e) => updateTree("operational_factors", k, e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm text-white"
+                  className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-base sm:text-sm text-white"
                 />
               </div>
             ))}
@@ -334,7 +334,7 @@ export default function TreeFellingJSAForm() {
               setTreeData((p) => ({ ...p, hazards_present: e.target.value }))
             }
             rows={2}
-            className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm text-white"
+            className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-base sm:text-sm text-white"
           />
           <label className="block text-sm font-semibold text-white">Mitigation</label>
           <textarea
@@ -343,7 +343,7 @@ export default function TreeFellingJSAForm() {
               setTreeData((p) => ({ ...p, mitigation: e.target.value }))
             }
             rows={2}
-            className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm text-white"
+            className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-base sm:text-sm text-white"
           />
         </section>
 
@@ -371,7 +371,7 @@ export default function TreeFellingJSAForm() {
                   )
                 }
                 placeholder="Name"
-                className="flex-1 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm text-white placeholder-gray-500"
+                className="flex-1 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-base sm:text-sm text-white placeholder-gray-500"
               />
               <input
                 type="text"
@@ -382,7 +382,7 @@ export default function TreeFellingJSAForm() {
                   )
                 }
                 placeholder="Initials / signature"
-                className="w-28 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm text-white placeholder-gray-500"
+                className="w-28 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-base sm:text-sm text-white placeholder-gray-500"
               />
             </div>
           ))}

@@ -57,3 +57,6 @@ supabase/.temp/
 test-results/
 tests/e2e-report/
 tests/e2e-report/data/
+
+# Export baseline data from local testing
+tests/PERFORMANCE_BASELINES.local.md

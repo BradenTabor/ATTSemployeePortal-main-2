@@ -41,6 +41,33 @@ export interface ExportColumn<T> {
   format?: (value: unknown, row: T) => string;
   /** Column width for Excel (in characters) */
   width?: number;
+  /** If true, include in PDF summary view (reduced column set); default true */
+  includeInPdf?: boolean;
+}
+
+/**
+ * Export format — used by getExportColumns() to select column set (e.g. reduced for PDF).
+ */
+export type ExportFormat = 'csv' | 'excel' | 'pdf';
+
+/**
+ * Mechanic part for export formatting (aligns with equipment-logs MechanicPart).
+ */
+export interface MechanicPartExport {
+  part_name: string;
+  quantity: number;
+  part_number?: string;
+  cost?: number;
+}
+
+/**
+ * JSA span row for export (aligns with JsaSpan from jsa-steps: location, hazards, mitigation, initials).
+ */
+export interface JsaSpanForExport {
+  location?: string;
+  hazards?: string;
+  mitigation?: string;
+  initials?: string;
 }
 
 /**
@@ -172,6 +199,115 @@ export function formatPartsList(
 }
 
 /**
+ * Format mechanic parts for export (e.g. "PartName x2; OtherPart x1").
+ * Used by DVIR/Equipment export columns. Returns "N/A" when empty.
+ */
+export function formatMechanicPartsUsed(
+  parts: MechanicPartExport[] | null | undefined
+): string {
+  if (!parts || parts.length === 0) return 'N/A';
+  return parts
+    .map(p => `${p.part_name} x${p.quantity}`)
+    .join('; ');
+}
+
+/**
+ * Format JSA spans as a single summary string (e.g. "1: loc | hazards | mitigation | init; 2: …").
+ * Used by JSA export for summary column. Handles null/undefined and empty array.
+ */
+export function formatSpansSummary(
+  spans: JsaSpanForExport[] | null | undefined
+): string {
+  if (!spans || spans.length === 0) return '';
+  return spans
+    .map((s, i) => {
+      const n = i + 1;
+      const loc = (s.location ?? '').trim();
+      const haz = (s.hazards ?? '').trim();
+      const mit = (s.mitigation ?? '').trim();
+      const init = (s.initials ?? '').trim();
+      return `${n}: ${loc || '—'} | ${haz || '—'} | ${mit || '—'} | ${init || '—'}`;
+    })
+    .join('; ');
+}
+
+/**
+ * Checklist item for formatChecklistFull (id + label).
+ */
+export interface ChecklistItemForExport {
+  id: string;
+  label: string;
+}
+
+/**
+ * Format a full checklist as a single string (e.g. "Air Compressor: P; Batteries: F; …").
+ * Used for PDF summary column or single-text export. Values are P, F, N/A, or blank.
+ */
+export function formatChecklistFull(
+  checklist: Record<string, string> | null | undefined,
+  items: ChecklistItemForExport[]
+): string {
+  if (!items.length) return '';
+  const parts: string[] = [];
+  for (const item of items) {
+    const value = (checklist && checklist[item.id]) ? String(checklist[item.id]).trim() : '';
+    const v = value === '' ? '—' : value;
+    parts.push(`${item.label}: ${v}`);
+  }
+  return parts.join('; ');
+}
+
+/**
+ * Format photo/signature path as "Yes" or "No" for export.
+ */
+export function formatPhotoPresent(path: string | null | undefined): string {
+  return path && String(path).trim() !== '' ? 'Yes' : 'No';
+}
+
+/**
+ * PPE item for export (required + condition).
+ */
+export interface PpeItemForExport {
+  required?: boolean;
+  condition?: string;
+}
+
+/**
+ * Format JSA PPE record as summary string (e.g. "Hard hats: Required, Good; Safety glasses: Not Required").
+ * Items with required=true get "Required, <condition>"; otherwise "Not Required".
+ */
+export function formatPPESummary(
+  ppe: Record<string, PpeItemForExport> | null | undefined,
+  items: { key: string; label: string }[]
+): string {
+  if (!items.length) return '';
+  const parts: string[] = [];
+  for (const item of items) {
+    const state = ppe && ppe[item.key];
+    const required = state?.required ?? false;
+    const condition = (state?.condition ?? '').trim();
+    const value = required
+      ? (condition ? `Required, ${condition}` : 'Required')
+      : 'Not Required';
+    parts.push(`${item.label}: ${value}`);
+  }
+  return parts.join('; ');
+}
+
+/**
+ * Format a map of checked keys (e.g. hazards_present) as comma-separated labels.
+ * Uses items to get labels for keys that are true in the map.
+ */
+export function formatCheckedLabels(
+  map: Record<string, boolean> | null | undefined,
+  items: { key: string; label: string }[]
+): string {
+  if (!map || !items.length) return '';
+  const labels = items.filter(item => map[item.key]).map(item => item.label);
+  return labels.length > 0 ? labels.join(', ') : 'None';
+}
+
+/**
  * Format an array of strings for export
  * @param items - Array of strings
  * @param fallback - Fallback text if empty
@@ -288,9 +424,26 @@ Total Records: ${metadata.totalRecords}
 // =============================================================================
 
 /**
+ * Return columns to use for the given format. For PDF, returns only columns with includeInPdf !== false
+ * (reduces horizontal overflow). For CSV and Excel, returns all columns.
+ */
+export function getExportColumns<T>(
+  allColumns: ExportColumn<T>[],
+  format: ExportFormat
+): ExportColumn<T>[] {
+  if (format === 'pdf') {
+    return allColumns.filter(col => col.includeInPdf !== false);
+  }
+  return allColumns;
+}
+
+/**
  * Main data exporter class
  */
 export class DataExporter<T = Record<string, unknown>> {
+  /** Guard: prevents duplicate export in the same tab when user double-clicks or retries. */
+  private exportInProgress = false;
+
   /**
    * Transform data using column definitions
    */
@@ -330,8 +483,14 @@ export class DataExporter<T = Record<string, unknown>> {
    * Export to CSV with UTF-8 BOM for Excel compatibility
    */
   exportCSV(options: ExportOptions<T>): void {
-    const { data, columns, filename, metadata } = options;
-    const transformed = this.transformData(data, columns);
+    if (this.exportInProgress) {
+      console.warn('[DataExporter] Export already in progress; skipping duplicate request.');
+      return;
+    }
+    this.exportInProgress = true;
+    try {
+      const { data, columns, filename, metadata } = options;
+      const transformed = this.transformData(data, columns);
     
     // Generate CSV content using PapaParse
     const csv = Papa.unparse(transformed, {
@@ -354,6 +513,9 @@ export class DataExporter<T = Record<string, unknown>> {
     });
     
     this.downloadBlob(blob, filename.endsWith('.csv') ? filename : `${filename}.csv`);
+    } finally {
+      this.exportInProgress = false;
+    }
   }
   
   /**
@@ -361,52 +523,51 @@ export class DataExporter<T = Record<string, unknown>> {
    * Uses dynamic import to avoid bundling xlsx (~200KB) in main bundle
    */
   async exportExcel(options: ExportOptions<T>): Promise<void> {
-    const { data, columns, filename, metadata } = options;
-    const transformed = this.transformData(data, columns);
-    
-    // Dynamically import xlsx for code splitting
-    const XLSX: XLSXModule = await import('xlsx');
-    
-    // Create workbook
-    const wb = XLSX.utils.book_new();
-    
-    // Add metadata sheet if provided
-    if (metadata) {
-      const infoData = [
-        ['Export Information', ''],
-        ['', ''],
-        ['Report Type', metadata.reportType],
-        ['Generated', format(metadata.generatedAt, 'MMMM dd, yyyy \'at\' h:mm a')],
-        ['Exported By', metadata.exportedBy],
-        ['Total Records', metadata.totalRecords.toString()],
-        ['', ''],
-        ['Filters Applied', ''],
-        ...Object.entries(metadata.filters)
-          .filter(([, v]) => v && v !== 'all' && v !== 'All')
-          .map(([k, v]) => [k, String(v)]),
-      ];
-      const infoSheet = XLSX.utils.aoa_to_sheet(infoData);
-      
-      // Set column widths for info sheet
-      infoSheet['!cols'] = [{ wch: 20 }, { wch: 50 }];
-      
-      XLSX.utils.book_append_sheet(wb, infoSheet, 'Export Info');
+    if (this.exportInProgress) {
+      console.warn('[DataExporter] Export already in progress; skipping duplicate request.');
+      return;
     }
+    this.exportInProgress = true;
+    try {
+      const { data, columns, filename, metadata } = options;
+      const transformed = this.transformData(data, columns);
     
-    // Add data sheet
-    const dataSheet = XLSX.utils.json_to_sheet(transformed);
-    
-    // Set column widths
-    const colWidths = columns.map(col => ({
-      wch: col.width || Math.max(col.header.length, 15),
-    }));
-    dataSheet['!cols'] = colWidths;
-    
-    XLSX.utils.book_append_sheet(wb, dataSheet, 'Data');
-    
-    // Write file
-    const excelFilename = filename.endsWith('.xlsx') ? filename : `${filename}.xlsx`;
-    XLSX.writeFile(wb, excelFilename);
+      // Dynamically import xlsx for code splitting
+      const XLSX: XLSXModule = await import('xlsx');
+      // Create workbook
+      const wb = XLSX.utils.book_new();
+      // Add metadata sheet if provided
+      if (metadata) {
+        const infoData = [
+          ['Export Information', ''],
+          ['', ''],
+          ['Report Type', metadata.reportType],
+          ['Generated', format(metadata.generatedAt, 'MMMM dd, yyyy \'at\' h:mm a')],
+          ['Exported By', metadata.exportedBy],
+          ['Total Records', metadata.totalRecords.toString()],
+          ['', ''],
+          ['Filters Applied', ''],
+          ...Object.entries(metadata.filters)
+            .filter(([, v]) => v && v !== 'all' && v !== 'All')
+            .map(([k, v]) => [k, String(v)]),
+        ];
+        const infoSheet = XLSX.utils.aoa_to_sheet(infoData);
+        infoSheet['!cols'] = [{ wch: 20 }, { wch: 50 }];
+        XLSX.utils.book_append_sheet(wb, infoSheet, 'Export Info');
+      }
+      // Add data sheet
+      const dataSheet = XLSX.utils.json_to_sheet(transformed);
+      const colWidths = columns.map(col => ({
+        wch: col.width || Math.max(col.header.length, 15),
+      }));
+      dataSheet['!cols'] = colWidths;
+      XLSX.utils.book_append_sheet(wb, dataSheet, 'Data');
+      // Write file
+      const excelFilename = filename.endsWith('.xlsx') ? filename : `${filename}.xlsx`;
+      XLSX.writeFile(wb, excelFilename);
+    } finally {
+      this.exportInProgress = false;
+    }
   }
   
   /**
@@ -414,122 +575,113 @@ export class DataExporter<T = Record<string, unknown>> {
    * Uses dynamic import to avoid bundling jspdf (~150KB) and jspdf-autotable (~50KB) in main bundle
    */
   async exportPDF(options: PDFExportOptions<T>): Promise<void> {
-    const {
-      data,
-      columns,
-      filename,
-      metadata,
-      companyName = 'ATTS Fleet Management',
-      subtitle,
-      orientation = 'landscape',
-    } = options;
-    
-    const transformed = this.transformData(data, columns);
-    
-    // Dynamically import jspdf and jspdf-autotable for code splitting
-    const [jsPDFModule, autoTableModule]: [JsPDFModule, AutoTableModule] = await Promise.all([
-      import('jspdf'),
-      import('jspdf-autotable'),
-    ]);
-    const jsPDF = jsPDFModule.default;
-    const autoTable = autoTableModule.default;
-    
-    // Create PDF
-    const doc = new jsPDF({
-      orientation,
-      unit: 'mm',
-      format: 'a4',
-    });
-    
-    const pageWidth = doc.internal.pageSize.getWidth();
-    let yPos = 15;
-    
-    // Company header
-    doc.setFontSize(18);
-    doc.setFont('helvetica', 'bold');
-    doc.text(companyName, pageWidth / 2, yPos, { align: 'center' });
-    yPos += 8;
-    
-    // Report title
-    if (metadata) {
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'normal');
-      doc.text(metadata.reportType, pageWidth / 2, yPos, { align: 'center' });
-      yPos += 6;
+    if (this.exportInProgress) {
+      console.warn('[DataExporter] Export already in progress; skipping duplicate request.');
+      return;
     }
-    
-    // Subtitle
-    if (subtitle) {
-      doc.setFontSize(10);
-      doc.setTextColor(100);
-      doc.text(subtitle, pageWidth / 2, yPos, { align: 'center' });
-      doc.setTextColor(0);
-      yPos += 5;
-    }
-    
-    // Metadata info
-    if (metadata) {
-      doc.setFontSize(9);
-      doc.setTextColor(80);
-      const metaText = `Generated: ${format(metadata.generatedAt, 'MMM dd, yyyy h:mm a')} | Records: ${metadata.totalRecords}`;
-      doc.text(metaText, pageWidth / 2, yPos, { align: 'center' });
-      doc.setTextColor(0);
-      yPos += 10;
-    }
-    
-    // Table headers and body
-    const headers = columns.map(col => col.header);
-    const body = transformed.map(row => headers.map(h => row[h] || ''));
-    
-    // Placeholder for total page count - will be replaced after all pages render
-    const totalPagesPlaceholder = '{total_pages}';
-    
-    // Auto-table
-    autoTable(doc, {
-      head: [headers],
-      body,
-      startY: yPos,
-      styles: {
-        fontSize: 8,
-        cellPadding: 2,
-      },
-      headStyles: {
-        fillColor: [41, 128, 185],
-        textColor: 255,
-        fontStyle: 'bold',
-      },
-      alternateRowStyles: {
-        fillColor: [245, 245, 245],
-      },
-      margin: { left: 10, right: 10 },
-      didDrawPage: (pageData) => {
-        // Footer with page numbers using placeholder for total
-        doc.setFontSize(8);
-        doc.setTextColor(150);
-        doc.text(
-          `Page ${pageData.pageNumber} of ${totalPagesPlaceholder}`,
-          pageWidth / 2,
-          doc.internal.pageSize.getHeight() - 10,
-          { align: 'center' }
-        );
-        
-        // Export date in footer
-        if (metadata) {
-          doc.text(
-            `Exported by: ${metadata.exportedBy}`,
-            10,
-            doc.internal.pageSize.getHeight() - 10
-          );
+    this.exportInProgress = true;
+    try {
+      const {
+        data,
+        columns,
+        filename,
+        metadata,
+        companyName = 'ATTS Fleet Management',
+        subtitle,
+        orientation = 'landscape',
+      } = options;
+      const transformed = this.transformData(data, columns);
+      // Dynamically import jspdf and jspdf-autotable for code splitting
+      const [jsPDFModule, autoTableModule]: [JsPDFModule, AutoTableModule] = await Promise.all([
+        import('jspdf'),
+        import('jspdf-autotable'),
+      ]);
+      const jsPDF = jsPDFModule.default;
+      const autoTable = autoTableModule.default;
+      const doc = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      let yPos = 15;
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.text(companyName, pageWidth / 2, yPos, { align: 'center' });
+      yPos += 8;
+      if (metadata) {
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'normal');
+        doc.text(metadata.reportType, pageWidth / 2, yPos, { align: 'center' });
+        yPos += 6;
+      }
+      if (subtitle) {
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text(subtitle, pageWidth / 2, yPos, { align: 'center' });
+        doc.setTextColor(0);
+        yPos += 5;
+      }
+      if (metadata) {
+        doc.setFontSize(9);
+        doc.setTextColor(80);
+        const metaText = `Generated: ${format(metadata.generatedAt, 'MMM dd, yyyy h:mm a')} | Records: ${metadata.totalRecords}`;
+        doc.text(metaText, pageWidth / 2, yPos, { align: 'center' });
+        doc.setTextColor(0);
+        yPos += 10;
+      }
+      const headers = columns.map(col => col.header);
+      const body = transformed.map(row => headers.map(h => row[h] || ''));
+      const totalPagesPlaceholder = '{total_pages}';
+      const marginMm = 10;
+      const tableWidth = pageWidth - 2 * marginMm;
+      const colCount = headers.length;
+      const minColWidthMm = 20;
+      const columnStyles: Record<number, { cellWidth: number }> = {};
+      if (colCount > 0) {
+        const defaultW = 12;
+        const totalW = columns.reduce((sum, col) => sum + (col.width ?? defaultW), 0);
+        const rawWidths = columns.map((col) => {
+          const w = col.width ?? defaultW;
+          const proportional = (w / totalW) * tableWidth;
+          return Math.max(proportional, minColWidthMm);
+        });
+        const sumRaw = rawWidths.reduce((a, b) => a + b, 0);
+        const scale = sumRaw > tableWidth ? tableWidth / sumRaw : 1;
+        for (let i = 0; i < colCount; i++) {
+          columnStyles[i] = { cellWidth: rawWidths[i] * scale };
         }
-      },
-    });
-    
-    // Replace placeholder with actual total page count after all pages are rendered
-    doc.putTotalPages(totalPagesPlaceholder);
-    
-    // Save
-    const pdfFilename = filename.endsWith('.pdf') ? filename : `${filename}.pdf`;
-    doc.save(pdfFilename);
+      }
+      autoTable(doc, {
+        head: [headers],
+        body,
+        startY: yPos,
+        columnStyles,
+        styles: { fontSize: 8, cellPadding: 3, overflow: 'linebreak' },
+        headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold', overflow: 'linebreak' },
+        alternateRowStyles: { fillColor: [245, 245, 245] },
+        margin: { left: marginMm, right: marginMm },
+        didDrawPage: (pageData) => {
+          doc.setFontSize(8);
+          doc.setTextColor(150);
+          doc.text(
+            `Page ${pageData.pageNumber} of ${totalPagesPlaceholder}`,
+            pageWidth / 2,
+            doc.internal.pageSize.getHeight() - 10,
+            { align: 'center' }
+          );
+          if (metadata) {
+            doc.text(
+              `Exported by: ${metadata.exportedBy}`,
+              10,
+              doc.internal.pageSize.getHeight() - 10
+            );
+          }
+        },
+      });
+      doc.putTotalPages(totalPagesPlaceholder);
+      // Save
+      const pdfFilename = filename.endsWith('.pdf') ? filename : `${filename}.pdf`;
+      doc.save(pdfFilename);
+    } finally {
+      this.exportInProgress = false;
+    }
   }
 }
 

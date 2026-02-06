@@ -74,7 +74,7 @@ export default function GreetingHeader() {
                 if (e.key === "Escape") handleCancel();
               }}
               autoFocus
-              className="px-3 py-2 text-sm rounded-md bg-neutral-800 text-white border border-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="px-3 py-2 text-base rounded-md bg-neutral-800 text-white border border-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
             />
             <div className="flex gap-2">
               <button

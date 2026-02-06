@@ -53,7 +53,7 @@ import {
   detailTransition,
   detailTransitionReduced,
 } from "../../../lib/animationVariants";
-import { dvirExportColumns } from "./exportColumns";
+import { dvirExportColumns, DVIR_PDF_EXPORT_COLUMNS } from "./exportColumns";
 
 interface DVIRTabProps {
   dvirReports: DVIRReport[];
@@ -259,7 +259,7 @@ export function DVIRTab({
         case "pdf":
           exporter.exportPDF({
             data: filteredDvirReports,
-            columns: dvirExportColumns,
+            columns: DVIR_PDF_EXPORT_COLUMNS,
             filename: filename.replace(".csv", ".pdf"),
             metadata,
             companyName: "All Terrain Tree Service",

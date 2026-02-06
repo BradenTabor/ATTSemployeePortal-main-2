@@ -110,6 +110,25 @@ This document maps regulatory requirements to test coverage for DVIR, JSA, and E
 
 ---
 
+## 3.5 OSHA Recordkeeping (29 CFR 1904)
+
+*Source: OSHA Recordkeeping Guide; app mapping in `osha_compliance_mapping` (migration `20260304000000_expand_osha_compliance_mapping.sql`). See `docs/OSHA-Recordkeeping-Guide-Mapping.md`.*
+
+| Requirement | Regulation | App Implementation | Test Coverage | Test File |
+|-------------|------------|--------------------|---------------|-----------|
+| Form 300 (Log) | 1904.29 | safety_incidents; get_incident_log_osha_300_301; exportOsha300Csv | Export and RPC | admin-tools.spec.ts (OSHA 300/301) |
+| Form 301 (Incident Report) fields | 1904.29 | safety_incidents (what_doing_before, object_substance_harmed, incident_time, physician_name, treatment_facility, etc.) | Incident logging | admin flows |
+| Recording criteria (recordable) | 1904.4, 1904.7 | safety_incidents severity, days_away, days_restricted; validate_recordable_incidents trigger | Trigger/validation | DB triggers |
+| 5-year retention | 1904.33 | data_retention_policies (1825 days) | Retention policy | Migrations |
+| Report fatality 8hr / hosp 24hr | 1904.39 | osha_reportable, osha_reported, osha_report_date; severity, hospitalized_overnight | Manual report process | — |
+| Employee access to records | 1904.35 | RLS; get_incident_log; provide copy next business day (policy) | RLS tests | rls-policies.test.ts |
+| Privacy concern cases | 1904.12 | Not yet implemented (no privacy_case flag) | — | Gap |
+| New case (180-day) | 1904.6 | Not yet implemented | — | Gap |
+| Post 300A / electronic ITA | 1904.32, 1904.41 | No automated 300A or ITA export | — | Gap |
+| OSHA mapping row count (expanded) | 20260304000000 | Admin Compliance Audit → OSHA Mapping tab | ≥29 rows (≥31 after expand migration) | admin-tools.spec.ts |
+
+---
+
 ## 4. Data Security & Privacy Compliance
 
 ### 4.1 Row Level Security (RLS) Verification
@@ -255,9 +274,10 @@ This compliance traceability matrix documents the test coverage for safety-criti
 
 - DOT FMCSA 49 CFR 396 (DVIR requirements)
 - OSHA 29 CFR 1926 (Safety program requirements)
+- OSHA 29 CFR 1904 (Recordkeeping; see §3.5 and `docs/OSHA-Recordkeeping-Guide-Mapping.md`)
 - WCAG 2.1 Level AA (Accessibility requirements)
 
 Test evidence and results are documented in `TEST_REPORT.md`.
 
-**Last Updated:** 2026-01-16
-**Version:** 1.0.0
+**Last Updated:** 2026-02-04 (added §3.5 OSHA Recordkeeping 29 CFR 1904)
+**Version:** 1.1.0

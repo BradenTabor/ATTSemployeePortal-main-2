@@ -112,7 +112,11 @@ export default function MechanicEquipmentLogs() {
           tire_photo_path, coolant_photo_path, damage_photo_path,
           detail_clean_truck_photo_path, final_driver_signature,
           general_foreman_signature, mechanic_signature, driver_approval_signature,
-          mechanic_cost, mechanic_parts_used
+          mechanic_cost, mechanic_parts_used,
+          report_date, truck_gvwr, trailer_chipper_gvwr, medical_card_required,
+          drivers_license_number, drivers_license_class, drivers_license_exp,
+          drivers_license_required, has_medical_card, medical_card_exp,
+          copy_of_registration, copy_of_insurance, aerial_notes
         `, { count: "exact" })
         .order("created_at", { ascending: false });
 
@@ -166,7 +170,7 @@ export default function MechanicEquipmentLogs() {
           inspection_date, template, notes, general_checklist, specific_checklist,
           overview_photo_path, damage_photo_path, attachments_photo_path,
           hydraulic_photo_path, mechanic_fixes, last_mechanic_updated_at,
-          mechanic_cost, mechanic_parts_used
+          mechanic_cost, mechanic_parts_used, additional_photo_paths
         `, { count: "exact" })
         .order("created_at", { ascending: false });
 

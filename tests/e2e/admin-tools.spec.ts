@@ -335,6 +335,32 @@ test.describe('Admin Incident Logging Modal', () => {
   });
 });
 
+test.describe('Admin Compliance Audit', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAs(page, 'admin');
+    await page.goto('/admin/compliance-audit', { waitUntil: 'networkidle' });
+  });
+
+  test('should show Compliance Audit page', async ({ page }) => {
+    await expect(page.getByRole('heading', { name: /Compliance Audit/i })).toBeVisible({ timeout: 10000 });
+  });
+
+  test('should show OSHA mapping table with regulation requirements (31 after expand migration)', async ({ page }) => {
+    const oshaTab = page.getByRole('tab', { name: /OSHA mapping|OSHA/i });
+    await expect(oshaTab).toBeVisible({ timeout: 5000 });
+    await oshaTab.click();
+    await page.waitForTimeout(500);
+
+    const table = page.locator('table').filter({ has: page.locator('th:has-text("Regulation")') });
+    await expect(table).toBeVisible({ timeout: 10000 });
+    const rows = table.locator('tbody tr');
+    await expect(rows.first()).toBeVisible({ timeout: 5000 });
+    const count = await rows.count();
+    // Baseline seed + create migration: ~29; after 20260304000000_expand_osha_compliance_mapping: 31
+    expect(count).toBeGreaterThanOrEqual(29);
+  });
+});
+
 test.describe('Admin Authorization', () => {
   test('non-admin cannot access admin pages', async ({ page }) => {
     await loginAs(page, 'employee');

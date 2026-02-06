@@ -63,7 +63,7 @@ export function LocationInputField({
               placeholder={placeholder}
               required={required}
               className={cn(
-                "w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2.5 text-sm text-white",
+                "w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2.5 text-base sm:text-sm text-white",
                 "placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-1",
                 "focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500/30 transition-all",
                 "pl-9"

@@ -540,7 +540,7 @@ export function StepReview({
             value={form.notes}
             onChange={(e) => onInputChange("notes", e.target.value)}
             placeholder="Additional observations..."
-            className="w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 resize-none"
+            className="w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-base text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 resize-none"
           />
         </div>
 

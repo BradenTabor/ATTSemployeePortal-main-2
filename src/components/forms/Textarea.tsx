@@ -1,5 +1,6 @@
 import { forwardRef, TextareaHTMLAttributes } from 'react';
 import { cn } from '../../lib/utils';
+import { MOBILE_SAFE_TEXTAREA } from '../../lib/styles';
 
 interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   error?: boolean;
@@ -19,6 +20,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
       <textarea
         ref={ref}
         className={cn(
+          MOBILE_SAFE_TEXTAREA,
           'w-full bg-[#050402]/80 border rounded-2xl px-4 py-3 text-white resize-none',
           // Improved placeholder contrast for accessibility (WCAG)
           'placeholder:text-white/50',

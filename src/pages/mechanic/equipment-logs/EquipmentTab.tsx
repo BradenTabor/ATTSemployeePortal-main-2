@@ -48,7 +48,7 @@ import {
   detailTransition,
   detailTransitionReduced,
 } from "../../../lib/animationVariants";
-import { equipmentExportColumns } from "./exportColumns";
+import { equipmentExportColumns, EQUIPMENT_PDF_EXPORT_COLUMNS } from "./exportColumns";
 
 interface EquipmentTabProps {
   equipmentInspections: EquipmentInspection[];
@@ -235,7 +235,7 @@ export function EquipmentTab({
         case "pdf":
           exporter.exportPDF({
             data: filteredEquipmentInspections,
-            columns: equipmentExportColumns,
+            columns: EQUIPMENT_PDF_EXPORT_COLUMNS,
             filename: filename.replace(".csv", ".pdf"),
             metadata,
             companyName: "All Terrain Tree Service",

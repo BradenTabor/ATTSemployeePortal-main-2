@@ -6,6 +6,7 @@ import { VideoBackground } from "../components/VideoBackground";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../contexts/AuthContext";
 import logo from "../assets/ATTS_Logo-removebg-preview.png";
+import logo2x from "../assets/ATTS_Logo-removebg-preview@2x.png";
 import { logger } from "../lib/logger";
 import { getRoleDashboard } from "../lib/navigation";
 
@@ -184,13 +185,10 @@ export default function Home() {
         >
           <img
             src={logo}
+            srcSet={`${logo} 1x, ${logo2x} 2x`}
             alt="ATTS Logo"
-            // @ts-expect-error fetchpriority is a valid HTML attribute but not in React types yet
-            fetchpriority="high"
+            fetchPriority="high"
             className="h-64 sm:h-80 md:h-96 lg:h-[28rem] xl:h-[32rem] w-auto mx-auto opacity-95 drop-shadow-[0_0_60px_rgba(16,185,129,0.5)]"
-            style={{
-              imageRendering: 'crisp-edges'
-            }}
           />
         </motion.div>
 

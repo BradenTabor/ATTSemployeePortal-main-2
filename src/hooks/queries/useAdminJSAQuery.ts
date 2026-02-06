@@ -120,7 +120,14 @@ async function fetchAdminJSARecords(params: AdminJSAQueryParams): Promise<AdminJ
       doc_contact,
       gf_contact,
       safety_contact,
-      weather_hazards
+      weather_hazards,
+      ppe,
+      employee_signature_path,
+      status_changed_at,
+      completed_at,
+      status_history,
+      jsa_type,
+      tree_felling_data
     `, { count: "exact" })
     .order(sortField === "user_name" ? "user_id" : sortField, { ascending: sortDirection === "asc" })
     .range(from, to);

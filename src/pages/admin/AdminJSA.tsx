@@ -53,6 +53,7 @@ import {
   STATUS_FILTERS,
   STATUS_BADGE,
   JSA_EXPORT_COLUMNS,
+  JSA_PDF_EXPORT_COLUMNS,
   formatDate,
   formatDateTime,
   StatCard,
@@ -178,21 +179,22 @@ export default function AdminJSA() {
     fetchStats();
   }, [isAdmin]);
 
-  // Fetch all users for the filter dropdown
+  // Fetch all users for the filter dropdown and export "Submitted By" resolution.
+  // Use user_id (auth uid) so lookup matches daily_jsa.user_id; list key remains id for dropdown value.
   useEffect(() => {
     if (!isAdmin) return;
     const fetchUsers = async () => {
       const { data } = await supabase
         .from("user_profiles")
-        .select("id, email, full_name")
+        .select("user_id, id, email, full_name")
         .order("full_name", { ascending: true });
 
       if (data) {
         setAllUsers(
-          data.map((u) => ({
-            id: u.id,
-            name: u.full_name || u.email || u.id,
-            email: u.email || "",
+          (data as { user_id: string; id: string; email: string | null; full_name: string | null }[]).map((u) => ({
+            id: u.user_id ?? u.id,
+            name: u.full_name || u.email || u.user_id || "Unknown",
+            email: u.email ?? "",
           }))
         );
       }
@@ -317,14 +319,14 @@ export default function AdminJSA() {
           });
           break;
         case "pdf":
-          // Must await async export methods to ensure loading state and error handling work correctly
+          // Use dedicated PDF column set: fewer columns, short headers, truncated text for readability
           await exporter.exportPDF({
             data: enrichedData,
-            columns: jsaExportColumns,
+            columns: JSA_PDF_EXPORT_COLUMNS,
             filename: filename.replace(".csv", ".pdf"),
             metadata,
             companyName: "All Terrain Tree Service",
-            subtitle: `Status: ${statusFilter === "all" ? "All" : statusFilter === "completed" ? "Completed" : "Draft"}`,
+            subtitle: `Status: ${statusFilter === "all" ? "All" : statusFilter === "completed" ? "Completed" : "Draft"} — For full data export to CSV or Excel.`,
             orientation: "landscape",
           });
           break;
