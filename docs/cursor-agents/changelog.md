@@ -6,6 +6,12 @@ Entries: BACKLOG-ID | Date | Summary | Files | Verification | Scores | Rollback
 
 ## Entries
 
+[BL-038] | 2026-02-16 | queryPersister restoreClient: if client.timestamp older than PERSISTER_MAX_AGE_MS, return undefined and delete from IDB; add unit test for maxAge.
+Files: src/lib/queryPersister.ts, tests/unit/offline/queryPersister.test.ts
+Verification: TypeScript PASS, queryPersister tests 15/15 PASS. Tier 2.
+Scores: Correctness — BL-038 resolved (no stale restore).
+Rollback: git revert c1e8685 --no-edit
+
 [BL-039] | 2026-02-16 | OfflineModeBanner: handleSync catch sets syncError state; show role=alert inline message (AlertTriangle + text) on failure; clear on next Sync click.
 Files: src/components/OfflineModeBanner.tsx
 Verification: TypeScript PASS, Lint PASS. Tier 2.

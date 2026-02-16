@@ -36,6 +36,7 @@ Categories: UX | WF | ARCH | PERF | QA | SEC | CROSS
 | BL-029 | QA | MEDIUM | JsaWizard.tsx onComplete handler silently swallows errors | COMPLETE |
 | BL-030 | QA | MEDIUM | StepJobInfo.tsx error handling swallows exceptions without user feedback | COMPLETE |
 | BL-039 | WF | MEDIUM | OfflineModeBanner.tsx handleSync has no error feedback on failure | COMPLETE |
+| BL-038 | QA | MEDIUM | queryPersister.ts restoreClient() doesn't check maxAge — may restore stale data | COMPLETE |
 
 ---
 
@@ -55,7 +56,6 @@ Categories: UX | WF | ARCH | PERF | QA | SEC | CROSS
 | BL-035 | ARCH | MEDIUM | useJSASubmission.ts / useJSAFormValidation.ts: Unsafe type assertions weaken type safety | OPEN | — | 2 | 1 |
 | BL-036 | PERF | MEDIUM | OfflineQueueContext / useJSAPhotoUpload: Sequential photo uploads — should parallelize | OPEN | — | 2 | 2 |
 | BL-037 | PERF | MEDIUM | offlinePhotoStore.ts: No size validation before storing — can exhaust quota silently | OPEN | — | 1 | 2 |
-| BL-038 | QA | MEDIUM | queryPersister.ts restoreClient() doesn't check maxAge — may restore stale data | OPEN | — | 1 | 2 |
 | BL-040 | QA | MEDIUM | offlineQueue.ts: JSON deep clone fails on non-serializable data (Date, undefined, etc.) | OPEN | — | 1 | 2 |
 | BL-041 | QA | MEDIUM | useAdminJSAQuery / GF: Batch profile errors return empty array — partial failures silent | OPEN | — | 2 | 2 |
 | BL-042 | QA | MEDIUM | Dashboard.tsx NavigableJobCard uses JSON.stringify for comparison — expensive and fragile | OPEN | — | 1 | 1 |

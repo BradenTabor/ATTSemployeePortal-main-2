@@ -10,7 +10,7 @@ Scores re-established from full REAUDIT on 2026-02-15. All scores 0–100.
 |--------|-------|-------|----------|
 | UX Clarity | 85 | 84→85 | BL-023 resolved (JsaDetailModal photo lightbox focus trap, ESC, arrows). Remaining: role="alert" (BL-051); no conflict feedback (BL-043). Positives: loading states; aria-labels; StepJobInfo photo input a11y; ComplianceDataExportPanel error alert; JsaDetailModal lightbox a11y; empty states; focus-visible; StepReview + OfflineQueuePanel confirm dialogs. |
 | Workflow Efficiency | 80 | 79→80 | BL-039 resolved (OfflineModeBanner sync error feedback). Remaining: orphaned photo cleanup (BL-028); no conflict user notification (BL-043). Positives: full offline queue; draft recovery; JSA wizard; history pagination; Recently Synced survives refresh; banner sync error shown. |
-| Correctness/Determinism | 77 | — | BL-030 resolved (StepJobInfo thumbnail + catch logging). Remaining: 3 form components >1400 lines (BL-014,016,017); partial failure (BL-041); JSON deep clone (BL-040); query persister (BL-038); auth check (BL-045). Positives: TypeScript strict; Zod; unit + e2e; route-level error boundary; export date validation; offline integrity checks; JsaWizard + StepJobInfo error feedback. |
+| Correctness/Determinism | 78 | 77→78 | BL-038 resolved (queryPersister maxAge on restore). Remaining: 3 form components >1400 lines (BL-014,016,017); partial failure (BL-041); JSON deep clone (BL-040); auth check (BL-045). Positives: TypeScript strict; Zod; unit + e2e; route-level error boundary; export date validation; offline integrity checks; query persister maxAge; JsaWizard + StepJobInfo error feedback. |
 
 ---
 
@@ -53,4 +53,4 @@ Scores re-established from full REAUDIT on 2026-02-15. All scores 0–100.
 
 ---
 
-Last Updated: 2026-02-16 (BL-039)
+Last Updated: 2026-02-16 (BL-038)
