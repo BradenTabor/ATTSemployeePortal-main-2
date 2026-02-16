@@ -85,10 +85,20 @@ function ExportSection<T>({
   const [expanded, setExpanded] = useState(false);
 
   const handleLoad = useCallback(async () => {
-    setLoading(true);
     setError(null);
+    const fromTrim = from.trim();
+    const toTrim = to.trim();
+    if (!fromTrim || !toTrim) {
+      setError("Please select both From and To dates.");
+      return;
+    }
+    if (fromTrim > toTrim) {
+      setError("From date must be on or before To date.");
+      return;
+    }
+    setLoading(true);
     try {
-      const rows = await config.fetchData(from, to);
+      const rows = await config.fetchData(fromTrim, toTrim);
       setData(rows);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load");
