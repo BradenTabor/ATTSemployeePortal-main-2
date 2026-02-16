@@ -14,7 +14,7 @@
  * @module offlineQueue
  */
 
-import { openDB, type IDBPDatabase } from 'idb';
+import { openDB, deleteDB, type IDBPDatabase } from 'idb';
 import { logger } from './logger';
 
 // ---------------------------------------------------------------------------
@@ -91,6 +91,25 @@ function getDB(): Promise<IDBPDatabase> {
         // v2: photoIds field added to schema (no store migration needed —
         // existing entries without photoIds default to [] in code)
       },
+    }).catch(async (err: unknown) => {
+      if (err && typeof err === 'object' && (err as { name?: string }).name === 'VersionError') {
+        logger.warn('[offlineQueue] VersionError — deleting and recreating DB');
+        try {
+          await deleteDB(DB_NAME);
+          return await openDB(DB_NAME, DB_VERSION, {
+            upgrade(db) {
+              if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+              }
+            },
+          });
+        } catch (recoveryErr) {
+          dbPromise = null;
+          throw recoveryErr;
+        }
+      }
+      dbPromise = null;
+      throw err;
     });
   }
   return dbPromise;

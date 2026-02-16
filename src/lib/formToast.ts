@@ -32,8 +32,8 @@ let overlayContext: {
   updateState: (config: Partial<ShowToastConfig>) => void;
 } | null = null;
 
-// Queue for managing rapid successive calls
-const pendingOperation: Promise<void> | null = null;
+// Queue for managing rapid successive calls (serialize show/updateState)
+let pendingOperation: Promise<void> | null = null;
 
 /**
  * Register the overlay context (called by ToastOverlayProvider)
@@ -67,25 +67,24 @@ export const formToast = {
    * Show a loading state while form is submitting
    * @param message - Loading message to display
    */
-  submitting: async (message: string = 'Submitting...') => {
-    await waitForPending();
-    
-    // Dismiss any existing corner toasts to prevent confusion
-    sonnerToast.dismiss();
-    
-    if (!overlayContext) {
-      // Fallback to Sonner if overlay not available
-      logger.warn('[formToast] Overlay context not available, falling back to Sonner');
-      sonnerToast.loading(message);
-      return;
-    }
-
-    overlayContext.show({
-      type: 'loading',
-      title: 'Submitting',
-      message,
-      lockBackground: true,
-    });
+  submitting: (message: string = 'Submitting...') => {
+    const op = (async () => {
+      await waitForPending();
+      sonnerToast.dismiss();
+      if (!overlayContext) {
+        logger.warn('[formToast] Overlay context not available, falling back to Sonner');
+        sonnerToast.loading(message);
+        return;
+      }
+      overlayContext.show({
+        type: 'loading',
+        title: 'Submitting',
+        message,
+        lockBackground: true,
+      });
+    })();
+    pendingOperation = op.catch(() => {});
+    return op;
   },
 
   /**
@@ -94,38 +93,34 @@ export const formToast = {
    * @param message - Success description
    * @param options - Additional options
    */
-  success: async (
+  success: (
     title: string,
     message: string,
     options?: FormToastOptions
   ) => {
-    await waitForPending();
-    
-    // Dismiss any existing corner toasts
-    sonnerToast.dismiss();
-    
-    if (!overlayContext) {
-      // Fallback to Sonner
-      logger.warn('[formToast] Overlay context not available, falling back to Sonner');
-      sonnerToast.success(title, { description: message });
-      return;
-    }
-
-    // If currently showing loading, transition to success
-    overlayContext.updateState({
-      type: 'success',
-      title,
-      message,
-      details: options?.details,
-      lockBackground: options?.lockBackground ?? false,
-      autoDismiss: options?.autoDismiss,
-      actions: options?.actions,
-    });
-
-    // Haptic feedback for native feel
-    if (typeof window !== 'undefined' && window.navigator?.vibrate) {
-      window.navigator.vibrate([10, 5, 15]); // Success pattern
-    }
+    const op = (async () => {
+      await waitForPending();
+      sonnerToast.dismiss();
+      if (!overlayContext) {
+        logger.warn('[formToast] Overlay context not available, falling back to Sonner');
+        sonnerToast.success(title, { description: message });
+        return;
+      }
+      overlayContext.updateState({
+        type: 'success',
+        title,
+        message,
+        details: options?.details,
+        lockBackground: options?.lockBackground ?? false,
+        autoDismiss: options?.autoDismiss,
+        actions: options?.actions,
+      });
+      if (typeof window !== 'undefined' && window.navigator?.vibrate) {
+        window.navigator.vibrate([10, 5, 15]);
+      }
+    })();
+    pendingOperation = op.catch(() => {});
+    return op;
   },
 
   /**
@@ -134,39 +129,35 @@ export const formToast = {
    * @param message - Error description
    * @param options - Additional options including retry callback
    */
-  error: async (
+  error: (
     title: string,
     message: string,
     options?: FormToastOptions
   ) => {
-    await waitForPending();
-    
-    // Dismiss any existing corner toasts
-    sonnerToast.dismiss();
-    
-    if (!overlayContext) {
-      // Fallback to Sonner
-      logger.warn('[formToast] Overlay context not available, falling back to Sonner');
-      sonnerToast.error(title, { description: message });
-      return;
-    }
-
-    // Errors should NOT auto-dismiss by default
-    overlayContext.updateState({
-      type: 'error',
-      title,
-      message,
-      details: options?.details,
-      lockBackground: options?.lockBackground ?? false,
-      autoDismiss: options?.autoDismiss ?? false, // Manual dismiss only
-      onRetry: options?.onRetry,
-      actions: options?.actions,
-    });
-
-    // Haptic feedback for error
-    if (typeof window !== 'undefined' && window.navigator?.vibrate) {
-      window.navigator.vibrate([50, 30, 50]); // Error pattern
-    }
+    const op = (async () => {
+      await waitForPending();
+      sonnerToast.dismiss();
+      if (!overlayContext) {
+        logger.warn('[formToast] Overlay context not available, falling back to Sonner');
+        sonnerToast.error(title, { description: message });
+        return;
+      }
+      overlayContext.updateState({
+        type: 'error',
+        title,
+        message,
+        details: options?.details,
+        lockBackground: options?.lockBackground ?? false,
+        autoDismiss: options?.autoDismiss ?? false,
+        onRetry: options?.onRetry,
+        actions: options?.actions,
+      });
+      if (typeof window !== 'undefined' && window.navigator?.vibrate) {
+        window.navigator.vibrate([50, 30, 50]);
+      }
+    })();
+    pendingOperation = op.catch(() => {});
+    return op;
   },
 
   /**
@@ -175,32 +166,31 @@ export const formToast = {
    * @param message - Info description
    * @param options - Additional options
    */
-  info: async (
+  info: (
     title: string,
     message: string,
     options?: FormToastOptions
   ) => {
-    await waitForPending();
-    
-    // Dismiss any existing corner toasts
-    sonnerToast.dismiss();
-    
-    if (!overlayContext) {
-      // Fallback to Sonner
-      logger.warn('[formToast] Overlay context not available, falling back to Sonner');
-      sonnerToast.info(title, { description: message });
-      return;
-    }
-
-    overlayContext.show({
-      type: 'info',
-      title,
-      message,
-      details: options?.details,
-      lockBackground: options?.lockBackground ?? false,
-      autoDismiss: options?.autoDismiss,
-      actions: options?.actions,
-    });
+    const op = (async () => {
+      await waitForPending();
+      sonnerToast.dismiss();
+      if (!overlayContext) {
+        logger.warn('[formToast] Overlay context not available, falling back to Sonner');
+        sonnerToast.info(title, { description: message });
+        return;
+      }
+      overlayContext.show({
+        type: 'info',
+        title,
+        message,
+        details: options?.details,
+        lockBackground: options?.lockBackground ?? false,
+        autoDismiss: options?.autoDismiss,
+        actions: options?.actions,
+      });
+    })();
+    pendingOperation = op.catch(() => {});
+    return op;
   },
 
   /**

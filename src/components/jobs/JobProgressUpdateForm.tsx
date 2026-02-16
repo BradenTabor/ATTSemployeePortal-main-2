@@ -111,7 +111,7 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
       return;
     }
 
-    formToast.submitting('Saving progress update...');
+    await formToast.submitting('Saving progress update...');
 
     const payload = {
       job_id: job.id,

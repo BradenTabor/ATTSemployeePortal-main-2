@@ -617,7 +617,7 @@ export default function DailyEquipmentInspectionForm() {
     // Offline: compress photos, store blobs in IndexedDB, queue for sync
     if (!isOnline()) {
       try {
-        formToast.submitting("Saving offline...");
+        await formToast.submitting("Saving offline...");
 
         const tempQueueId = `atts-q-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
         const photoEntries: Array<{
@@ -714,7 +714,7 @@ export default function DailyEquipmentInspectionForm() {
       return;
     }
 
-    formToast.submitting("Submitting equipment inspection...");
+    await formToast.submitting("Submitting equipment inspection...");
 
     const uploadedPaths: string[] = [];
     const photoPathMap: Partial<Record<PhotoTypes, string>> = {};

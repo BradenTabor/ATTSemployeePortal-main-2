@@ -8,7 +8,7 @@
  * @module syncConflicts
  */
 
-import { openDB, type IDBPDatabase } from 'idb';
+import { openDB, deleteDB, type IDBPDatabase } from 'idb';
 import { logger } from './logger';
 import type { FormType } from './offlineQueue';
 
@@ -51,6 +51,26 @@ function getDB(): Promise<IDBPDatabase> {
           store.createIndex('byExpiresAt', 'expiresAt');
         }
       },
+    }).catch(async (err: unknown) => {
+      if (err && typeof err === 'object' && (err as { name?: string }).name === 'VersionError') {
+        logger.warn('[syncConflicts] VersionError — deleting and recreating DB');
+        try {
+          await deleteDB(DB_NAME);
+          return await openDB(DB_NAME, DB_VERSION, {
+            upgrade(db) {
+              if (!db.objectStoreNames.contains(STORE_NAME)) {
+                const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                store.createIndex('byExpiresAt', 'expiresAt');
+              }
+            },
+          });
+        } catch (recoveryErr) {
+          dbPromise = null;
+          throw recoveryErr;
+        }
+      }
+      dbPromise = null;
+      throw err;
     });
   }
   return dbPromise;

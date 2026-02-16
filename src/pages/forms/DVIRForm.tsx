@@ -686,7 +686,7 @@ export default function DVIRForm() {
     }
 
     // All validation passed - proceed with submission
-    formToast.submitting("Submitting DVIR report...");
+    await formToast.submitting("Submitting DVIR report...");
 
     const formStartTime = Date.now();
 

@@ -142,7 +142,7 @@ export default function RequestTimeOff() {
     }
     submittingRef.current = true; // Set ref immediately (atomic)
     setStatus("loading");
-    formToast.submitting("Submitting your time-off request...");
+    await formToast.submitting("Submitting your time-off request...");
 
     const result = await submitRTO(
       {

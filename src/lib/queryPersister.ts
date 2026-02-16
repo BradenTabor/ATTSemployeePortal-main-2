@@ -14,7 +14,7 @@
  * @module queryPersister
  */
 
-import { openDB, type IDBPDatabase } from 'idb';
+import { openDB, deleteDB, type IDBPDatabase } from 'idb';
 import type { PersistedClient, Persister } from '@tanstack/react-query-persist-client';
 import { logger } from './logger';
 import { isOfflineCapable } from './offlineCapability';
@@ -56,6 +56,25 @@ function getDB(): Promise<IDBPDatabase> {
           db.createObjectStore(STORE_NAME);
         }
       },
+    }).catch(async (err: unknown) => {
+      if (err && typeof err === 'object' && (err as { name?: string }).name === 'VersionError') {
+        logger.warn('[queryPersister] VersionError — deleting and recreating DB');
+        try {
+          await deleteDB(DB_NAME);
+          return await openDB(DB_NAME, DB_VERSION, {
+            upgrade(db) {
+              if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME);
+              }
+            },
+          });
+        } catch (recoveryErr) {
+          dbPromise = null;
+          throw recoveryErr;
+        }
+      }
+      dbPromise = null;
+      throw err;
     });
   }
   return dbPromise;

@@ -1008,10 +1008,10 @@ export default function DailyJSAForm() {
     // Show loading overlay for all saves
     // Note: setSaving(true) already called at start of function for immediate button disable
     if (targetStatus === "draft") {
-      formToast.submitting("Saving your draft...");
+      await formToast.submitting("Saving your draft...");
     } else {
       // Show loading toast for completion
-      formToast.submitting(isEditMode ? "Updating JSA..." : "Submitting JSA...");
+      await formToast.submitting(isEditMode ? "Updating JSA..." : "Submitting JSA...");
     }
 
     const nowIso = new Date().toISOString();

@@ -265,7 +265,7 @@ function JobCreationFormComponent({
     setError(null);
     
     // Show loading toast
-    formToast.submitting(isEditing ? 'Saving changes...' : 'Creating job...');
+    await formToast.submitting(isEditing ? 'Saving changes...' : 'Creating job...');
 
     const result = await onSubmit(formData);
 
