@@ -75,6 +75,19 @@ const TEXT_MAX_RETRIES = 5;
 const PHOTO_RETRY_DELAYS_MS = [30_000, 120_000, 300_000]; // 30s, 120s, 300s
 const PHOTO_MAX_RETRIES = 3;
 
+/**
+ * Deep-clone a payload for IndexedDB storage. Handles Date (→ ISO string),
+ * omits undefined and functions, so non-JSON-serializable values don't throw.
+ */
+function safePayloadClone(payload: Record<string, unknown>): Record<string, unknown> {
+  const replacer = (_key: string, value: unknown): unknown => {
+    if (value instanceof Date) return value.toISOString();
+    if (typeof value === 'function') return undefined;
+    return value;
+  };
+  return JSON.parse(JSON.stringify(payload, replacer)) as Record<string, unknown>;
+}
+
 // ---------------------------------------------------------------------------
 // Database access
 // ---------------------------------------------------------------------------
@@ -196,7 +209,7 @@ export async function addToQueue(
   const item: QueuedSubmission = {
     id,
     formType,
-    payload: JSON.parse(JSON.stringify(payload)),
+    payload: safePayloadClone(payload),
     photoIds: options?.photoIds ?? [],
     userId: options?.userId,
     dateFor: options?.dateFor,

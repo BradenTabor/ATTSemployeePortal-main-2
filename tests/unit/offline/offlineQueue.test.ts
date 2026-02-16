@@ -98,6 +98,21 @@ describe('offlineQueue', () => {
       expect(item!.userId).toBe('user-123');
       expect(item!.dateFor).toBe('2026-02-12');
     });
+
+    it('accepts payload with Date and undefined (safe serialization)', async () => {
+      const date = new Date('2026-01-15T12:00:00.000Z');
+      const payload: Record<string, unknown> = {
+        dateField: date,
+        optional: undefined,
+        num: 1,
+      };
+      const id = await addToQueue('jsa', payload);
+      const item = await getQueueItem(id);
+      expect(item).toBeDefined();
+      expect(item!.payload).toHaveProperty('dateField', '2026-01-15T12:00:00.000Z');
+      expect(item!.payload).not.toHaveProperty('optional');
+      expect(item!.payload).toHaveProperty('num', 1);
+    });
   });
 
   describe('getQueueLength', () => {
