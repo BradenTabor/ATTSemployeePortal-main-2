@@ -6,6 +6,12 @@ Entries: BACKLOG-ID | Date | Summary | Files | Verification | Scores | Rollback
 
 ## Entries
 
+[BL-026] | 2026-02-16 | ComplianceDataExportPanel ExportSection: validate date range before fetch (both dates required, From <= To); set error and return without calling fetchData when invalid.
+Files: src/components/admin/ComplianceDataExportPanel.tsx
+Verification: TypeScript PASS, Lint PASS. Tier 2.
+Scores: Correctness — BL-026 resolved (date validation).
+Rollback: git revert a913b10 --no-edit
+
 [BL-023] | 2026-02-16 | JsaDetailModal photo lightbox: focus trap (Tab), ESC to close, Arrow Left/Right to cycle photos; role=dialog, restore focus on close.
 Files: src/components/history/JsaDetailModal.tsx
 Verification: TypeScript PASS, Lint PASS. Tier 2.

@@ -10,7 +10,7 @@ Scores re-established from full REAUDIT on 2026-02-15. All scores 0–100.
 |--------|-------|-------|----------|
 | UX Clarity | 85 | 84→85 | BL-023 resolved (JsaDetailModal photo lightbox focus trap, ESC, arrows). Remaining: role="alert" (BL-051); no conflict feedback (BL-043). Positives: loading states; aria-labels; StepJobInfo photo input a11y; ComplianceDataExportPanel error alert; JsaDetailModal lightbox a11y; empty states; focus-visible; StepReview + OfflineQueuePanel confirm dialogs. |
 | Workflow Efficiency | 79 | 77→79 | BL-020 resolved (sync history persisted to localStorage). Remaining: orphaned photo cleanup (BL-028); no sync error feedback (BL-039); no conflict user notification (BL-043). Positives: full offline queue; draft recovery; JSA wizard; history pagination; Recently Synced survives refresh. |
-| Correctness/Determinism | 75 | 74→75 | BL-022 resolved (OfflineQueuePanel sync partial failure handling + hook toast for single failure). Remaining: 3 form components >1400 lines (BL-014,016,017); silent error swallowing (BL-029,030); partial failure (BL-041); JSON deep clone (BL-040); query persister (BL-038); auth check (BL-045). Positives: TypeScript strict; Zod; unit + e2e; route-level error boundary. |
+| Correctness/Determinism | 76 | 75→76 | BL-026 resolved (ComplianceDataExportPanel date range validation before fetch). Remaining: 3 form components >1400 lines (BL-014,016,017); silent error swallowing (BL-029,030); partial failure (BL-041); JSON deep clone (BL-040); query persister (BL-038); auth check (BL-045). Positives: TypeScript strict; Zod; unit + e2e; route-level error boundary; export date validation. |
 
 ---
 
@@ -53,4 +53,4 @@ Scores re-established from full REAUDIT on 2026-02-15. All scores 0–100.
 
 ---
 
-Last Updated: 2026-02-16 (BL-023)
+Last Updated: 2026-02-16 (BL-026)

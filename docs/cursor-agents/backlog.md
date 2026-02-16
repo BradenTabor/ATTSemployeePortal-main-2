@@ -31,6 +31,7 @@ Categories: UX | WF | ARCH | PERF | QA | SEC | CROSS
 | BL-024 | UX | HIGH | StepJobInfo.tsx file input missing aria-label — inaccessible to screen readers | COMPLETE |
 | BL-025 | UX | HIGH | ComplianceDataExportPanel.tsx error display lacks role="alert" | COMPLETE |
 | BL-023 | UX | HIGH | JsaDetailModal.tsx lightbox lacks focus trap and keyboard nav (ESC, arrows) | COMPLETE |
+| BL-026 | QA | HIGH | ComplianceDataExportPanel.tsx handleLoad doesn't validate date range before fetch | COMPLETE |
 
 ---
 
@@ -42,7 +43,6 @@ Categories: UX | WF | ARCH | PERF | QA | SEC | CROSS
 | BL-016 | ARCH | HIGH | DailyJSAForm.tsx is 1676 lines — extract sub-components/hooks | OPEN | — | 5+ | 3 |
 | BL-017 | ARCH | HIGH | DVIRForm.tsx is 1412 lines — extract sub-components/hooks | OPEN | — | 5+ | 3 |
 | BL-018 | ARCH | HIGH | GeneralForemanSafetyCompliance.tsx duplicates AdminJSA patterns (1098 lines) — share components | OPEN | — | 4 | 3 |
-| BL-026 | QA | HIGH | ComplianceDataExportPanel.tsx handleLoad doesn't validate date range before fetch | OPEN | — | 1 | 2 |
 | BL-027 | QA | HIGH | OfflineQueueContext.tsx integrity check only validates one photo field per form type | OPEN | — | 1 | 2 |
 | BL-028 | CROSS | MEDIUM | Orphaned photos not cleaned up on queue item delete/conflict (offlineQueue + syncConflicts + OfflineQueueContext). Source: [PERF, WF, QA] | OPEN | — | 3 | 2 |
 | BL-029 | QA | MEDIUM | JsaWizard.tsx onComplete handler silently swallows errors | OPEN | — | 1 | 2 |
