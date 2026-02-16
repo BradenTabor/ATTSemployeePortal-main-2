@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   AlertTriangle,
@@ -299,6 +299,8 @@ export function StepReview({
 }: StepReviewProps) {
   const [statusToast, setStatusToast] = useState<string | null>(null);
   const [showUserSelector, setShowUserSelector] = useState(false);
+  const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
+  const completeConfirmCancelRef = useRef<HTMLButtonElement>(null);
 
   const jobLabels = form.jobsPerformed.map(
     (key) => JOB_LABELS[key] || key
@@ -320,24 +322,33 @@ export function StepReview({
     if (nextStatus === form.status) return;
 
     if (nextStatus === "completed") {
-      const confirmed = window.confirm(
-        "Mark this JSA as completed?"
-      );
-      if (!confirmed) {
-        setStatusToast("Status unchanged.");
-        setTimeout(() => setStatusToast(null), 3000);
-        return;
-      }
+      setShowCompleteConfirm(true);
+      return;
     }
 
     onStatusChange(nextStatus);
-    setStatusToast(
-      nextStatus === "completed"
-        ? "Completed. Save to finalize."
-        : "Draft. You can continue editing."
-    );
+    setStatusToast("Draft. You can continue editing.");
     setTimeout(() => setStatusToast(null), 3000);
   };
+
+  const handleCompleteConfirm = () => {
+    setShowCompleteConfirm(false);
+    onStatusChange("completed");
+    setStatusToast("Completed. Save to finalize.");
+    setTimeout(() => setStatusToast(null), 3000);
+  };
+
+  const handleCompleteCancel = () => {
+    setShowCompleteConfirm(false);
+    setStatusToast("Status unchanged.");
+    setTimeout(() => setStatusToast(null), 3000);
+  };
+
+  useEffect(() => {
+    if (showCompleteConfirm && completeConfirmCancelRef.current) {
+      completeConfirmCancelRef.current.focus();
+    }
+  }, [showCompleteConfirm]);
 
   const filledSpans = form.spans.filter(
     (s) => s.location.trim() || s.hazards.trim()
@@ -375,6 +386,62 @@ export function StepReview({
 
   return (
     <div className="space-y-4">
+      {/* Accessible confirm dialog: Mark JSA as completed (replaces window.confirm) */}
+      <AnimatePresence>
+        {showCompleteConfirm && (
+          <motion.div
+            role="alertdialog"
+            aria-labelledby="step-review-complete-title"
+            aria-describedby="step-review-complete-desc"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+            onClick={(e) => e.target === e.currentTarget && handleCompleteCancel()}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                e.preventDefault();
+                handleCompleteCancel();
+              }
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.15 }}
+              className="bg-gray-900 border border-white/15 rounded-xl shadow-2xl max-w-sm w-full p-4 space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <p id="step-review-complete-title" className="text-sm font-semibold text-white">
+                Mark as completed?
+              </p>
+              <p id="step-review-complete-desc" className="text-sm text-white/80">
+                Mark this JSA as completed? You can still save to finalize.
+              </p>
+              <div className="flex gap-2 justify-end">
+                <button
+                  ref={completeConfirmCancelRef}
+                  type="button"
+                  onClick={handleCompleteCancel}
+                  className="px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:bg-white/10 border border-white/10 focus:outline-none focus:ring-2 focus:ring-white/40 focus:ring-offset-2 focus:ring-offset-gray-900"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCompleteConfirm}
+                  className="px-3 py-2 rounded-lg text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-gray-900"
+                >
+                  Mark completed
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Completion Summary Card */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
