@@ -6,6 +6,12 @@ Entries: BACKLOG-ID | Date | Summary | Files | Verification | Scores | Rollback
 
 ## Entries
 
+[BL-043] | 2026-02-16 | OfflineQueueContext: show toast when conflict detected and item archived (title "Submission conflict", description with reason + "moved to Offline queue → Conflicts").
+Files: src/contexts/OfflineQueueContext.tsx
+Verification: TypeScript PASS, Lint PASS. Tier 2.
+Scores: UX Clarity / Workflow — BL-043 resolved (conflict feedback).
+Rollback: git revert 42cdf64 --no-edit
+
 [BL-042] | 2026-02-16 | Dashboard NavigableJobCard: memo compare by primitive values (id, status, progress_updates length, completed milestones count) instead of JSON.stringify.
 Files: src/pages/Dashboard.tsx
 Verification: TypeScript PASS, Lint PASS. Tier 1.

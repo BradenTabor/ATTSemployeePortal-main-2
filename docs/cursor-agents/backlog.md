@@ -38,6 +38,7 @@ Categories: UX | WF | ARCH | PERF | QA | SEC | CROSS
 | BL-039 | WF | MEDIUM | OfflineModeBanner.tsx handleSync has no error feedback on failure | COMPLETE |
 | BL-038 | QA | MEDIUM | queryPersister.ts restoreClient() doesn't check maxAge — may restore stale data | COMPLETE |
 | BL-042 | QA | MEDIUM | Dashboard.tsx NavigableJobCard uses JSON.stringify for comparison — expensive and fragile | COMPLETE |
+| BL-043 | UX | MEDIUM | OfflineQueueContext.tsx: No user feedback on conflict detection — silently archived | COMPLETE |
 
 ---
 
@@ -59,7 +60,6 @@ Categories: UX | WF | ARCH | PERF | QA | SEC | CROSS
 | BL-037 | PERF | MEDIUM | offlinePhotoStore.ts: No size validation before storing — can exhaust quota silently | OPEN | — | 1 | 2 |
 | BL-040 | QA | MEDIUM | offlineQueue.ts: JSON deep clone fails on non-serializable data (Date, undefined, etc.) | OPEN | — | 1 | 2 |
 | BL-041 | QA | MEDIUM | useAdminJSAQuery / GF: Batch profile errors return empty array — partial failures silent | OPEN | — | 2 | 2 |
-| BL-043 | UX | MEDIUM | OfflineQueueContext.tsx: No user feedback on conflict detection — silently archived | OPEN | — | 1 | 2 |
 | BL-044 | UX | MEDIUM | StepReview.tsx: Shared users list lacks keyboard navigation | OPEN | — | 1 | 2 |
 | BL-045 | SEC | MEDIUM | DailyJSAForm.tsx auth check inconsistent with DVIR — doesn't verify session | OPEN | — | 1 | 2 |
 | BL-046 | SEC | MEDIUM | sw.ts: Push notification payload not validated — malicious payloads possible | OPEN | — | 1 | 2 |
