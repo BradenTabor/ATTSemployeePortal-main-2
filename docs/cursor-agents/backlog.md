@@ -41,6 +41,7 @@ Categories: UX | WF | ARCH | PERF | QA | SEC | CROSS
 | BL-043 | UX | MEDIUM | OfflineQueueContext.tsx: No user feedback on conflict detection — silently archived | COMPLETE |
 | BL-040 | QA | MEDIUM | offlineQueue.ts: JSON deep clone fails on non-serializable data (Date, undefined, etc.) | COMPLETE |
 | BL-044 | UX | MEDIUM | StepReview.tsx: Shared users list lacks keyboard navigation | COMPLETE |
+| BL-048 | QA | MEDIUM | Announcements.tsx: Side effect in render (search reset) — should be in useEffect | COMPLETE |
 
 ---
 
@@ -64,7 +65,6 @@ Categories: UX | WF | ARCH | PERF | QA | SEC | CROSS
 | BL-045 | SEC | MEDIUM | DailyJSAForm.tsx auth check inconsistent with DVIR — doesn't verify session | OPEN | — | 1 | 2 |
 | BL-046 | SEC | MEDIUM | sw.ts: Push notification payload not validated — malicious payloads possible | OPEN | — | 1 | 2 |
 | BL-047 | PERF | MEDIUM | DVIRForm.tsx: Previous mileage fetch on every truck number change — no debounce | OPEN | — | 1 | 2 |
-| BL-048 | QA | MEDIUM | Announcements.tsx: Side effect in render (search reset) — should be in useEffect | OPEN | — | 1 | 1 |
 | BL-049 | PERF | MEDIUM | App.tsx AnimatePresence wrapping all routes — performance impact | OPEN | — | 1 | 2 |
 | BL-050 | QA | MEDIUM | useStorageQuota.ts: No error handling for storage API failures | OPEN | — | 1 | 1 |
 | BL-051 | UX | LOW | JsaWizard.tsx validation error display lacks role="alert" container | OPEN | — | 1 | 1 |

@@ -6,6 +6,12 @@ Entries: BACKLOG-ID | Date | Summary | Files | Verification | Scores | Rollback
 
 ## Entries
 
+[BL-048] | 2026-02-16 | Announcements: reset currentPage to 1 when searchTerm changes via useEffect; remove setState-during-render (prevSearchTerm) pattern.
+Files: src/pages/Announcements.tsx
+Verification: TypeScript PASS, Lint PASS. Tier 1.
+Scores: Correctness — BL-048 resolved (no side effect in render).
+Rollback: git revert 94063ce --no-edit
+
 [BL-044] | 2026-02-16 | StepReview: shared users list role=list/listitem, tabIndex=0 per row, ArrowUp/ArrowDown keyboard nav, focus-visible ring.
 Files: src/components/forms/jsa-steps/StepReview.tsx
 Verification: TypeScript PASS, Lint PASS. Tier 2.
