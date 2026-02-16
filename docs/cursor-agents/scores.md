@@ -8,7 +8,7 @@ Scores re-established from full REAUDIT on 2026-02-15. All scores 0–100.
 
 | Metric | Score | Delta | Evidence |
 |--------|-------|-------|----------|
-| UX Clarity | 82 | 80→82 | BL-021 resolved (OfflineQueuePanel discard confirmation). Remaining: lightbox focus trap (BL-023); file input aria-label (BL-024); role="alert" (BL-025, BL-051); no conflict feedback (BL-043). Positives: loading states; aria-labels; empty states; focus-visible; StepReview + OfflineQueuePanel confirm dialogs. |
+| UX Clarity | 83 | 82→83 | BL-024 resolved (StepJobInfo file input aria-label). Remaining: lightbox focus trap (BL-023); role="alert" (BL-025, BL-051); no conflict feedback (BL-043). Positives: loading states; aria-labels; StepJobInfo photo input a11y; empty states; focus-visible; StepReview + OfflineQueuePanel confirm dialogs. |
 | Workflow Efficiency | 79 | 77→79 | BL-020 resolved (sync history persisted to localStorage). Remaining: orphaned photo cleanup (BL-028); no sync error feedback (BL-039); no conflict user notification (BL-043). Positives: full offline queue; draft recovery; JSA wizard; history pagination; Recently Synced survives refresh. |
 | Correctness/Determinism | 75 | 74→75 | BL-022 resolved (OfflineQueuePanel sync partial failure handling + hook toast for single failure). Remaining: 3 form components >1400 lines (BL-014,016,017); silent error swallowing (BL-029,030); partial failure (BL-041); JSON deep clone (BL-040); query persister (BL-038); auth check (BL-045). Positives: TypeScript strict; Zod; unit + e2e; route-level error boundary. |
 
@@ -22,8 +22,8 @@ Scores re-established from full REAUDIT on 2026-02-15. All scores 0–100.
 | B) Layout Architecture | 82 | Consistent shells; large component sizes reduce maintainability |
 | C) Interaction States | 80 | Loading/disabled/focus-visible present; StepReview confirm dialog consistent (BL-013 fixed) |
 | D) Feedback Quality | 72 | Silent error swallowing; no conflict notification; sync errors silent |
-| E) Form UX | 80 | Labels/validation present; photo input missing aria-label; no upload progress |
-| F) Accessibility | 75 | Missing focus trap in lightbox; file input a11y gap; missing role="alert" |
+| E) Form UX | 82 | Labels/validation present; StepJobInfo photo input aria-label (BL-024); no upload progress |
+| F) Accessibility | 77 | Missing focus trap in lightbox (BL-023); StepJobInfo file input a11y fixed (BL-024); missing role="alert" |
 | G) Responsive/Mobile | 85 | Good mobile layouts; offline indicators present |
 | H) Microcopy | 82 | Clear empty state copy; some error messages too generic |
 
@@ -53,4 +53,4 @@ Scores re-established from full REAUDIT on 2026-02-15. All scores 0–100.
 
 ---
 
-Last Updated: 2026-02-16 (BL-013)
+Last Updated: 2026-02-16 (BL-024)

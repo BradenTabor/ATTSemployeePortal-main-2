@@ -6,6 +6,12 @@ Entries: BACKLOG-ID | Date | Summary | Files | Verification | Scores | Rollback
 
 ## Entries
 
+[BL-024] | 2026-02-16 | StepJobInfo.tsx: add aria-label to photo file input for screen readers.
+Files: src/components/forms/jsa-steps/StepJobInfo.tsx
+Verification: TypeScript PASS, Lint PASS. Tier 1.
+Scores: UX — BL-024 resolved (file input a11y).
+Rollback: git revert 4b357e0 --no-edit
+
 [BL-022] | 2026-02-16 | OfflineQueuePanel handleSyncAll: capture sync result, show inline partial-failure/success (role=alert/status); hook shows toast for single-item failure and includes discarded in summary.
 Files: src/components/OfflineQueuePanel.tsx, src/hooks/useOfflineQueue.ts
 Verification: TypeScript PASS, Lint PASS, Unit tests PASS (1 pre-existing DVIR timeout).
