@@ -390,6 +390,7 @@ export function PaperJsaUpload({ photoPaths, onPathsChange, required }: PaperJsa
                     onChange={handleFileSelect}
                     className="hidden"
                     disabled={uploading || !online}
+                    aria-label="Add photos for JSA (take photo or choose file)"
                   />
                   <p className="text-[10px] text-white/30 text-center">
                     Photos are compressed for upload. Retain originals if uncompressed copies are needed.
