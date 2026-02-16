@@ -6,6 +6,12 @@ Entries: BACKLOG-ID | Date | Summary | Files | Verification | Scores | Rollback
 
 ## Entries
 
+[BL-042] | 2026-02-16 | Dashboard NavigableJobCard: memo compare by primitive values (id, status, progress_updates length, completed milestones count) instead of JSON.stringify.
+Files: src/pages/Dashboard.tsx
+Verification: TypeScript PASS, Lint PASS. Tier 1.
+Scores: Correctness/Performance — BL-042 resolved.
+Rollback: git revert ae80071 --no-edit
+
 [BL-038] | 2026-02-16 | queryPersister restoreClient: if client.timestamp older than PERSISTER_MAX_AGE_MS, return undefined and delete from IDB; add unit test for maxAge.
 Files: src/lib/queryPersister.ts, tests/unit/offline/queryPersister.test.ts
 Verification: TypeScript PASS, queryPersister tests 15/15 PASS. Tier 2.
