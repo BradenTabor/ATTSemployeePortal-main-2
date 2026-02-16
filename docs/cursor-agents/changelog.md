@@ -6,7 +6,41 @@ Entries: BACKLOG-ID | Date | Summary | Files | Verification | Scores | Rollback
 
 ## Entries
 
-(No entries yet.)
+[BL-022] | 2026-02-16 | OfflineQueuePanel handleSyncAll: capture sync result, show inline partial-failure/success (role=alert/status); hook shows toast for single-item failure and includes discarded in summary.
+Files: src/components/OfflineQueuePanel.tsx, src/hooks/useOfflineQueue.ts
+Verification: TypeScript PASS, Lint PASS, Unit tests PASS (1 pre-existing DVIR timeout).
+Scores: Correctness — BL-022 resolved (partial failure handling).
+Rollback: git revert 4c51d61 --no-edit
+
+[BL-021] | 2026-02-16 | Add confirmation dialog before discarding queue items in OfflineQueuePanel (role=alertdialog, focus, Escape).
+Files: src/components/OfflineQueuePanel.tsx
+Verification: Lint PASS, Unit tests PASS (OfflineQueuePanel 12).
+Scores: UX 80→82 (BL-021 resolved).
+Rollback: git revert 5072a1f --no-edit
+
+[BL-020] | 2026-02-16 | Persist sync history to localStorage (rehydrate on load, subscribe to persist on change) so Recently Synced survives refresh.
+Files: src/lib/syncHistory.ts
+Verification: Lint PASS, Unit tests PASS (syncHistory 19, RecentlySynced 5).
+Scores: Workflow 77→79 (BL-020 resolved).
+Rollback: git revert 0069752 --no-edit
+
+[BL-019] | 2026-02-16 | Remove online/offline/visibilitychange listeners in stopNetworkMonitor() to fix memory leak; store handler refs for add/remove.
+Files: src/lib/networkStatus.ts
+Verification: Lint PASS, Unit tests PASS (networkStatus 13/13).
+Scores: Performance signal — memory leak resolved.
+Rollback: git revert 0cfd46d --no-edit
+
+[BL-015] | 2026-02-16 | Wrap Suspense/Routes in AppErrorBoundary so lazy-load and render failures show Try Again instead of crashing app.
+Files: src/App.tsx
+Verification: TypeScript PASS, Lint PASS, Unit tests PASS (564 passed).
+Scores: Correctness 72→74 (BL-015 resolved).
+Rollback: git revert 03e2f45 --no-edit
+
+[BL-013] | 2026-02-16 | Replace window.confirm with accessible confirm dialog in StepReview (role=alertdialog, focus, Escape).
+Files: src/components/forms/jsa-steps/StepReview.tsx
+Verification: TypeScript PASS, Lint PASS, Unit tests PASS (564 passed).
+Scores: UX 78→80 (BL-013 resolved).
+Rollback: git revert 81f7e3d --no-edit
 
 [BL-003] | 2026-01-29 | Add unit test for HistoryEmptyState (title, description, icon). IntersectionObserver mock in vitest.setup.ts for BlurFade/useInView.
 Files: tests/unit/components/HistoryEmptyState.test.tsx, vitest.setup.ts

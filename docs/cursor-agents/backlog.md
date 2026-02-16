@@ -22,6 +22,12 @@ Categories: UX | WF | ARCH | PERF | QA | SEC | CROSS
 | BL-010 | QA | LOW | Add unit test for HistoryPageShell | COMPLETE |
 | BL-011 | QA | LOW | Add unit test for ValidatedSubmitButton | COMPLETE |
 | BL-012 | QA | LOW | Add unit test for PaginationControls | COMPLETE |
+| BL-013 | UX | CRITICAL | StepReview.tsx uses `window.confirm()` — blocks UI, poor a11y, inconsistent design | COMPLETE |
+| BL-015 | QA | HIGH | App.tsx: No error boundary wrapping Suspense/Routes — lazy load failures crash app | COMPLETE |
+| BL-019 | PERF | HIGH | networkStatus.ts: Event listeners never removed in stopNetworkMonitor() — memory leak | COMPLETE |
+| BL-020 | WF | HIGH | syncHistory.ts: In-memory Zustand store loses data on refresh — Recently Synced UI broken | COMPLETE |
+| BL-021 | UX | HIGH | OfflineQueuePanel.tsx handleDiscard deletes queued items without confirmation — data loss risk | COMPLETE |
+| BL-022 | QA | HIGH | OfflineQueuePanel.tsx handleSyncAll has no partial failure handling | COMPLETE |
 
 ---
 
@@ -29,16 +35,10 @@ Categories: UX | WF | ARCH | PERF | QA | SEC | CROSS
 
 | ID | Cat | Sev | Summary | Status | Deps | Blast | Tier |
 |----|-----|-----|---------|--------|------|-------|------|
-| BL-013 | UX | CRITICAL | StepReview.tsx uses `window.confirm()` — blocks UI, poor a11y, inconsistent design | OPEN | — | 2 | 2 |
 | BL-014 | ARCH | CRITICAL | DailyEquipmentInspectionForm.tsx is 1723 lines — extract sub-components/hooks | OPEN | — | 5+ | 3 |
-| BL-015 | QA | HIGH | App.tsx: No error boundary wrapping Suspense/Routes — lazy load failures crash app | OPEN | — | 1 | 3 |
 | BL-016 | ARCH | HIGH | DailyJSAForm.tsx is 1676 lines — extract sub-components/hooks | OPEN | — | 5+ | 3 |
 | BL-017 | ARCH | HIGH | DVIRForm.tsx is 1412 lines — extract sub-components/hooks | OPEN | — | 5+ | 3 |
 | BL-018 | ARCH | HIGH | GeneralForemanSafetyCompliance.tsx duplicates AdminJSA patterns (1098 lines) — share components | OPEN | — | 4 | 3 |
-| BL-019 | PERF | HIGH | networkStatus.ts: Event listeners never removed in stopNetworkMonitor() — memory leak | OPEN | — | 1 | 1 |
-| BL-020 | WF | HIGH | syncHistory.ts: In-memory Zustand store loses data on refresh — Recently Synced UI broken | OPEN | — | 2 | 2 |
-| BL-021 | UX | HIGH | OfflineQueuePanel.tsx handleDiscard deletes queued items without confirmation — data loss risk | OPEN | — | 1 | 2 |
-| BL-022 | QA | HIGH | OfflineQueuePanel.tsx handleSyncAll has no partial failure handling | OPEN | — | 1 | 2 |
 | BL-023 | UX | HIGH | JsaDetailModal.tsx lightbox lacks focus trap and keyboard nav (ESC, arrows) | OPEN | — | 1 | 2 |
 | BL-024 | UX | HIGH | StepJobInfo.tsx file input missing aria-label — inaccessible to screen readers | OPEN | — | 1 | 1 |
 | BL-025 | UX | HIGH | ComplianceDataExportPanel.tsx error display lacks role="alert" | OPEN | — | 1 | 1 |

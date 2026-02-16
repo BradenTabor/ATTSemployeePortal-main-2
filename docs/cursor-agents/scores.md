@@ -8,9 +8,9 @@ Scores re-established from full REAUDIT on 2026-02-15. All scores 0–100.
 
 | Metric | Score | Delta | Evidence |
 |--------|-------|-------|----------|
-| UX Clarity | 78 | 88→78 | window.confirm() in StepReview (BL-013); lightbox missing focus trap (BL-023); file input missing aria-label (BL-024); error displays missing role="alert" (BL-025, BL-051); no discard confirmation (BL-021); no conflict feedback (BL-043). Positives: loading states in 52+ files; aria-labels on expandable sections; empty states; focus-visible widespread. |
-| Workflow Efficiency | 77 | 85→77 | syncHistory in-memory only — lost on refresh (BL-020); orphaned photo cleanup missing (BL-028); no sync error feedback (BL-039); no conflict user notification (BL-043). Positives: full offline queue system built; draft recovery; JSA wizard with progress; history pagination. |
-| Correctness/Determinism | 72 | 90→72 | No error boundary around Suspense/Routes (BL-015); 3 form components >1400 lines (BL-014,016,017); silent error swallowing in JsaWizard/StepJobInfo (BL-029,030); partial failure handling missing (BL-022,041); JSON deep clone fragile (BL-040); query persister restores stale data (BL-038); auth check inconsistency (BL-045). Positives: TypeScript strict; Zod validation; unit + e2e suites. |
+| UX Clarity | 82 | 80→82 | BL-021 resolved (OfflineQueuePanel discard confirmation). Remaining: lightbox focus trap (BL-023); file input aria-label (BL-024); role="alert" (BL-025, BL-051); no conflict feedback (BL-043). Positives: loading states; aria-labels; empty states; focus-visible; StepReview + OfflineQueuePanel confirm dialogs. |
+| Workflow Efficiency | 79 | 77→79 | BL-020 resolved (sync history persisted to localStorage). Remaining: orphaned photo cleanup (BL-028); no sync error feedback (BL-039); no conflict user notification (BL-043). Positives: full offline queue; draft recovery; JSA wizard; history pagination; Recently Synced survives refresh. |
+| Correctness/Determinism | 75 | 74→75 | BL-022 resolved (OfflineQueuePanel sync partial failure handling + hook toast for single failure). Remaining: 3 form components >1400 lines (BL-014,016,017); silent error swallowing (BL-029,030); partial failure (BL-041); JSON deep clone (BL-040); query persister (BL-038); auth check (BL-045). Positives: TypeScript strict; Zod; unit + e2e; route-level error boundary. |
 
 ---
 
@@ -20,7 +20,7 @@ Scores re-established from full REAUDIT on 2026-02-15. All scores 0–100.
 |----------|-------|-------|
 | A) Visual Hierarchy | 85 | Primary/secondary CTAs consistent; good typography scale |
 | B) Layout Architecture | 82 | Consistent shells; large component sizes reduce maintainability |
-| C) Interaction States | 78 | Loading/disabled/focus-visible present; window.confirm breaks pattern |
+| C) Interaction States | 80 | Loading/disabled/focus-visible present; StepReview confirm dialog consistent (BL-013 fixed) |
 | D) Feedback Quality | 72 | Silent error swallowing; no conflict notification; sync errors silent |
 | E) Form UX | 80 | Labels/validation present; photo input missing aria-label; no upload progress |
 | F) Accessibility | 75 | Missing focus trap in lightbox; file input a11y gap; missing role="alert" |
@@ -33,7 +33,7 @@ Scores re-established from full REAUDIT on 2026-02-15. All scores 0–100.
 
 | Signal | Status |
 |--------|--------|
-| Memory leaks | networkStatus event listeners not cleaned up (BL-019) |
+| Memory leaks | Resolved — stopNetworkMonitor() removes listeners (BL-019) |
 | Bundle splitting | Good — manual chunks in vite config |
 | Photo uploads | Sequential, not parallelized (BL-036) |
 | Storage management | No quota check before writes (BL-037) |
@@ -53,4 +53,4 @@ Scores re-established from full REAUDIT on 2026-02-15. All scores 0–100.
 
 ---
 
-Last Updated: 2026-02-15 (REAUDIT)
+Last Updated: 2026-02-16 (BL-013)
