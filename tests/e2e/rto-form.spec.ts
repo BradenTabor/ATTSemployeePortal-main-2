@@ -8,6 +8,7 @@ import { test, expect } from '@playwright/test';
 import { loginAs } from './helpers/auth';
 
 test.describe('Request Time Off Form', () => {
+  test.setTimeout(60000);
   test.describe('Form Access', () => {
     test('should allow employee to access RTO form', async ({ page }) => {
       await loginAs(page, 'employee');
@@ -110,37 +111,43 @@ test.describe('Request Time Off Form', () => {
       
       // Fill all required fields
       await page.fill('input[name="fullName"], [data-testid="full-name"]', 'E2E Test Employee');
-      
+
+      // Phone number is required (HTML required attribute)
+      const phoneInput = page.locator('input[name="phoneNumber"], input[type="tel"]').first();
+      if (await phoneInput.isVisible().catch(() => false)) {
+        await phoneInput.fill('5551234567');
+        await page.waitForTimeout(200);
+      }
+
       // Set dates (2 weeks from now)
       const startDate = new Date();
       startDate.setDate(startDate.getDate() + 14);
       const endDate = new Date(startDate);
       endDate.setDate(endDate.getDate() + 2);
-      
+
       await page.fill('input[name="startDate"], [data-testid="start-date"]', startDate.toISOString().split('T')[0]);
       await page.fill('input[name="endDate"], [data-testid="end-date"]', endDate.toISOString().split('T')[0]);
-      
+
       // Fill time fields - these are REQUIRED and use custom TimeField component
-      // The TimeField component uses label-based accessibility, not name attributes
       const startTimeInput = page.getByLabel(/Start Time/i);
       if (await startTimeInput.isVisible().catch(() => false)) {
         await startTimeInput.fill('08:00');
         await page.waitForTimeout(200);
       }
-      
+
       const endTimeInput = page.getByLabel(/End Time/i);
       if (await endTimeInput.isVisible().catch(() => false)) {
         await endTimeInput.fill('17:00');
         await page.waitForTimeout(200);
       }
-      
+
       // Fill reason - uses a textbox with placeholder, not a select element
       const reasonInput = page.getByPlaceholder(/Why you need time off/i).or(page.getByLabel(/Reason/i));
       if (await reasonInput.isVisible().catch(() => false)) {
         await reasonInput.fill('vacation');
         await page.waitForTimeout(200);
       }
-      
+
       // Add optional notes
       const notesInput = page.locator('textarea[name="notes"], [data-testid="notes"]').or(page.getByPlaceholder(/Extra details/i));
       if (await notesInput.isVisible().catch(() => false)) {
@@ -159,7 +166,8 @@ test.describe('Request Time Off Form', () => {
       const successAlert = page.getByRole('alert').filter({ hasText: /success|submitted|request|pending approval/i }).first();
       const successToast = page.locator('[data-sonner-toast][data-type="success"]').first();
       const toastSuccess = page.locator('.toast-success').first();
-      const successText = page.getByText(/submitted|success|received|pending approval/i).first();
+      const successText = page.getByText(/submitted|success|received|pending approval|Submitted Successfully|Great work/i).first();
+      const celebrationText = page.getByText(/Your time-off request has been submitted/i).first();
       const errorAlert = page.getByRole('alert').filter({ hasText: /failed|error/i }).first();
       await Promise.race([
         heading.waitFor({ state: 'visible', timeout: 20000 }).catch(() => {}),
@@ -168,6 +176,7 @@ test.describe('Request Time Off Form', () => {
         successToast.waitFor({ state: 'visible', timeout: 20000 }).catch(() => {}),
         toastSuccess.waitFor({ state: 'visible', timeout: 20000 }).catch(() => {}),
         successText.waitFor({ state: 'visible', timeout: 20000 }).catch(() => {}),
+        celebrationText.waitFor({ state: 'visible', timeout: 20000 }).catch(() => {}),
         errorAlert.waitFor({ state: 'visible', timeout: 20000 }).catch(() => {}),
       ]);
       const headingVisible = await heading.isVisible().catch(() => false);
@@ -176,13 +185,14 @@ test.describe('Request Time Off Form', () => {
       const toastVisible = await successToast.isVisible().catch(() => false);
       const classVisible = await toastSuccess.isVisible().catch(() => false);
       const textVisible = await successText.isVisible().catch(() => false);
+      const celebrationVisible = await celebrationText.isVisible().catch(() => false);
       const errorVisible = await errorAlert.isVisible().catch(() => false);
       const formGone = !(await page.locator('form').first().isVisible().catch(() => true));
       const urlChanged = !page.url().includes('/request-time-off');
-      if (!(headingVisible || buttonVisible || alertVisible || toastVisible || classVisible || textVisible || errorVisible || formGone || urlChanged)) {
+      if (!(headingVisible || buttonVisible || alertVisible || toastVisible || classVisible || textVisible || celebrationVisible || errorVisible || formGone || urlChanged)) {
         console.log('RTO submit - no indicator found. formGone:', formGone, 'urlChanged:', urlChanged);
       }
-      expect(headingVisible || buttonVisible || alertVisible || toastVisible || classVisible || textVisible || errorVisible || formGone || urlChanged).toBe(true);
+      expect(headingVisible || buttonVisible || alertVisible || toastVisible || classVisible || textVisible || celebrationVisible || errorVisible || formGone || urlChanged).toBe(true);
     });
 
     test('should calculate total duration correctly', async ({ page }) => {
@@ -234,7 +244,8 @@ test.describe('Request Time Off Form', () => {
         const historyLink = page.locator('a[href*="history"]').or(page.getByRole('button', { name: /history/i }));
         if (await historyLink.isVisible()) {
           await historyLink.click();
-          await page.waitForLoadState('networkidle');
+          await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
         }
       }
     });
@@ -246,7 +257,8 @@ test.describe('Admin RTO Management', () => {
     await loginAs(page, 'admin');
     await page.goto('/admin/rto');
     
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     // Should see RTO management interface
     const rtoList = page.locator('[data-testid="rto-list"], table, .rto-requests');
@@ -257,7 +269,8 @@ test.describe('Admin RTO Management', () => {
     await loginAs(page, 'admin');
     await page.goto('/admin/rto');
     
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     // Find a pending request
     const pendingRequest = page.locator('[data-status="pending"], tr:has-text("pending")').first();
@@ -279,7 +292,8 @@ test.describe('Admin RTO Management', () => {
     await loginAs(page, 'admin');
     await page.goto('/admin/rto');
     
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     // Find a pending request
     const pendingRequest = page.locator('[data-status="pending"], tr:has-text("pending")').first();

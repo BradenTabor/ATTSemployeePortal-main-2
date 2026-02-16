@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Camera, ChevronLeft, FileText } from "lucide-react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
@@ -11,6 +12,7 @@ import { SmartDefaultsPanel } from "../../components/forms/SmartDefaultsPanel";
 import { FormSuccessCelebration } from "../../components/forms/FormSuccessCelebration";
 import { DraftRecoveryModal } from "../../components/forms/DraftRecoveryModal";
 import { ValidationSummary } from "../../components/forms/ValidationSummary";
+import { OfflineFormIndicator } from "../../components/OfflineFormIndicator";
 import { useComplianceToast, type RemainingForm } from "../../hooks/useComplianceToast";
 import { useInvalidateCompliance } from "../../hooks/queries/useComplianceQuery";
 import {
@@ -35,12 +37,24 @@ import {
   StepSiteHazards,
   StepSpans,
   StepReview,
+  PaperJsaUpload,
   type JsaSpan,
 } from "../../components/forms/jsa-steps";
+import { DateField } from "../../components/forms/GlassyPickers";
+import { SavedLocationPicker } from "../../components/forms/SavedLocationPicker";
+import { cn } from "../../lib/utils";
 import {
   createBlankSpan,
   createInitialFormState,
   transformRecordToFormState,
+  createInitialPpeState,
+  createBooleanMap,
+  WEATHER_CONDITIONS,
+  WEATHER_MODIFIERS,
+  HAZARD_ITEMS,
+  TRAFFIC_HAZARDS,
+  TRAFFIC_SETUP,
+  DEFAULT_SPANS,
   MAX_SPANS,
   type ConditionState,
   type DailyJsaRecord,
@@ -342,6 +356,7 @@ export default function DailyJSAForm() {
       // Step 1: Job Info
       jobDate: 1,
       workLocation: 1,
+      jsaPhotoPaths: 1,
       ocContact: 1,
       docContact: 1,
       gfContact: 1,
@@ -501,6 +516,65 @@ export default function DailyJSAForm() {
     
     return { step1, step2, step3, step4, step5, step6 };
   }, [form]);
+
+  // Paper vs digital mode switch: has user entered data that would be cleared?
+  const hasNonSharedData = useMemo(() => {
+    if (form.submissionType === "paper") return false;
+    const hasPpe = Object.values(form.ppe).some((p) => p.required);
+    const hasWeather =
+      Object.values(form.weatherConditions).some(Boolean) ||
+      Object.values(form.weatherModifiers).some(Boolean);
+    const hasHazards =
+      Object.values(form.hazardsPresent).some(Boolean) ||
+      Object.values(form.trafficHazards).some(Boolean) ||
+      Object.values(form.trafficSetup).some(Boolean);
+    const hasSpans = form.spans.some((s) => s.location.trim() || s.hazards.trim());
+    return (
+      form.jobsPerformed.length > 0 ||
+      form.jobsOther.trim() !== "" ||
+      hasPpe ||
+      hasWeather ||
+      hasHazards ||
+      hasSpans ||
+      form.observerSignatures.length > 0
+    );
+  }, [form]);
+
+  const [showModeConfirm, setShowModeConfirm] = useState<"paper" | "digital" | null>(null);
+
+  const applySwitchToPaper = useCallback(() => {
+    setForm((prev) => ({
+      ...prev,
+      submissionType: "paper",
+      jobsPerformed: [],
+      jobsOther: "",
+      ppe: createInitialPpeState(),
+      weatherConditions: createBooleanMap(WEATHER_CONDITIONS),
+      weatherModifiers: createBooleanMap(WEATHER_MODIFIERS),
+      hazardsPresent: createBooleanMap(HAZARD_ITEMS),
+      trafficHazards: createBooleanMap(TRAFFIC_HAZARDS),
+      trafficSetup: createBooleanMap(TRAFFIC_SETUP),
+      spans: Array.from({ length: DEFAULT_SPANS }, (_, idx) => createBlankSpan(idx + 1)),
+      observerSignatures: [],
+    }));
+    setCurrentStep(1);
+    setShowModeConfirm(null);
+  }, []);
+
+  const applySwitchToDigital = useCallback(() => {
+    setForm((prev) => ({ ...prev, submissionType: "digital" }));
+    setShowModeConfirm(null);
+  }, []);
+
+  const handleSwitchToPaper = useCallback(() => {
+    if (hasNonSharedData) setShowModeConfirm("paper");
+    else applySwitchToPaper();
+  }, [hasNonSharedData, applySwitchToPaper]);
+
+  const handleSwitchToDigital = useCallback(() => {
+    if (hasNonSharedData) setShowModeConfirm("digital");
+    else applySwitchToDigital();
+  }, [hasNonSharedData, applySwitchToDigital]);
 
   // Calculate form completion progress (0-100)
   const formProgress = useMemo(() => {
@@ -975,6 +1049,12 @@ export default function DailyJSAForm() {
       });
 
       if (!result.success || result.error) {
+        // If photos were rolled back (deleted from storage) after a failed insert,
+        // clear the form's jsaPhotoPaths so the user doesn't retry with stale paths
+        // that point to non-existent storage objects.
+        if (result.photosRolledBack) {
+          setForm((prev) => ({ ...prev, jsaPhotoPaths: [] }));
+        }
         throw result.error || new Error("Submission failed");
       }
 
@@ -1218,6 +1298,8 @@ export default function DailyJSAForm() {
                 // All field names match, so this is type-safe
                 handleFieldBlur(field as keyof DailyJsaFormState);
               }}
+              jsaPhotoPaths={form.jsaPhotoPaths}
+              onJsaPhotoPathsChange={form.submissionType === "paper" ? (paths) => handleInputChange("jsaPhotoPaths", paths) : undefined}
             />
           </>
         );
@@ -1298,6 +1380,9 @@ export default function DailyJSAForm() {
             "linear-gradient(180deg, rgba(3,18,12,1) 0%, rgba(0,8,4,1) 50%, rgba(0,0,0,1) 100%)",
         }}
       >
+        {/* Offline form indicator */}
+        <OfflineFormIndicator offlineCapable={true} className="mx-3 mt-2" />
+
         {/* Validation Summary - Step-aware (positioned top-right, compact, non-obstructive, below all header elements) */}
         {Object.keys(allErrors).filter(k => allErrors[k]).length > 0 && (
           <div className="fixed top-16 right-2 sm:absolute sm:top-[140px] sm:right-3 z-50 pointer-events-none max-w-[calc(100vw-1rem)] sm:max-w-none">
@@ -1322,26 +1407,241 @@ export default function DailyJSAForm() {
           </div>
         )}
 
-        {/* Wizard - takes full height */}
-        <JsaWizard
-          currentStep={currentStep}
-          setCurrentStep={handleSetCurrentStep}
-          completedSteps={completedSteps}
-          onSave={handleSave}
-          onComplete={handleComplete}
-          onBack={handleBack}
-          saving={saving}
-          isValid={isFormValid}
-          isEditMode={isEditMode}
-          status={form.status}
-          progress={formProgress}
-          lastSaved={lastSaved}
-          hasUnsavedChanges={hasUnsavedChanges}
-          stepCompletionStatus={stepCompletionStatus}
-          validationErrors={allErrors}
-        >
-          {renderStep()}
-        </JsaWizard>
+        {/* Mode switch confirmation */}
+        {showModeConfirm !== null && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+            <div className="bg-gray-900 border border-white/15 rounded-xl shadow-2xl max-w-sm w-full p-4 space-y-4">
+              <p className="text-sm text-white/90">
+                {showModeConfirm === "paper"
+                  ? "Switching to Paper mode will clear your Safety/PPE, Conditions, Hazards, and Span data. Continue?"
+                  : "Switching to Digital will clear your Safety/PPE, Conditions, Hazards, and Span data. Continue?"}
+              </p>
+              <div className="flex gap-2 justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowModeConfirm(null)}
+                  className="px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:bg-white/10 border border-white/10"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    showModeConfirm === "paper" ? applySwitchToPaper() : applySwitchToDigital()
+                  }
+                  className="px-3 py-2 rounded-lg text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500"
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Paper JSA: single-page layout */}
+        {form.submissionType === "paper" ? (
+          <div className="relative flex flex-col h-full overflow-hidden" data-testid="jsa-paper-view">
+            <div
+              className="flex-shrink-0 border-b border-emerald-500/20 flex items-center justify-between px-3 py-2 sm:px-5 sm:py-2.5"
+              style={{
+                background:
+                  "linear-gradient(180deg, rgba(5,30,18,0.98) 0%, rgba(0,15,8,0.95) 100%)",
+              }}
+            >
+              <button
+                type="button"
+                onClick={handleBack}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg bg-white/5 border border-white/10 text-white/80 hover:text-white hover:bg-white/10"
+              >
+                <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="text-xs sm:text-sm font-medium">Back</span>
+              </button>
+              <h1 className="text-xs sm:text-sm font-bold text-white truncate">Paper JSA Upload</h1>
+              {!isEditMode && (
+                <button
+                  type="button"
+                  onClick={handleSwitchToDigital}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25 text-xs font-semibold"
+                  aria-label="Switch to full digital JSA form"
+                >
+                  <FileText className="w-3.5 h-3.5" aria-hidden />
+                  Digital JSA
+                </button>
+              )}
+              {isEditMode && <div className="w-20" />}
+            </div>
+            <div className="relative z-0 flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+              <div className="max-w-2xl mx-auto px-3 py-3 sm:px-6 sm:py-5 pb-24 space-y-4">
+                <DateField
+                  label="Job Date"
+                  value={form.jobDate || ""}
+                  onValueChange={(value) => handleInputChange("jobDate", value)}
+                  helperText="Crew on site"
+                  required
+                />
+                <div>
+                  <p className="text-xs sm:text-sm font-medium text-white/50 uppercase tracking-wider mb-2">
+                    Location
+                  </p>
+                  <SavedLocationPicker
+                    currentValues={{
+                      workLocation: form.workLocation,
+                      nearestHospital: "",
+                      nearestClinic: "",
+                      circuitNumber: form.circuitNumber,
+                    }}
+                    onApply={(values) => {
+                      handleInputChange("workLocation", values.workLocation);
+                      handleInputChange("circuitNumber", values.circuitNumber);
+                    }}
+                  />
+                  <label className="flex items-center gap-1 text-xs sm:text-sm font-medium text-white/70 mb-0.5 sm:mb-1 uppercase tracking-wide mt-2">
+                    Work Location <span className="text-emerald-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={form.workLocation}
+                    onChange={(e) => handleInputChange("workLocation", e.target.value)}
+                    onBlur={() => handleFieldBlur("workLocation")}
+                    placeholder="Street, city, project"
+                    className={cn(
+                      "w-full rounded-lg border bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2",
+                      allErrors.workLocation
+                        ? "border-rose-500/50 focus:ring-rose-500/50"
+                        : "border-white/10 focus:ring-emerald-500/50"
+                    )}
+                    aria-invalid={!!allErrors.workLocation}
+                  />
+                  {allErrors.workLocation && (
+                    <p className="mt-1 text-xs text-rose-400" role="alert">
+                      {allErrors.workLocation}
+                    </p>
+                  )}
+                </div>
+                <PaperJsaUpload
+                  photoPaths={form.jsaPhotoPaths}
+                  onPathsChange={(paths) => handleInputChange("jsaPhotoPaths", paths)}
+                  required
+                />
+                {allErrors.jsaPhotoPaths && (
+                  <p className="text-xs text-rose-400" role="alert">
+                    {allErrors.jsaPhotoPaths}
+                  </p>
+                )}
+                <div>
+                  <label className="block text-[10px] font-medium text-white/50 uppercase mb-1">
+                    Employee signature <span className="text-emerald-400">*</span>
+                  </label>
+                  <input
+                    id="paper-employeeSignature"
+                    type="text"
+                    value={form.employeeSignature}
+                    onChange={(e) => handleInputChange("employeeSignature", e.target.value)}
+                    onBlur={() => handleFieldBlur("employeeSignature")}
+                    placeholder="Type your full name"
+                    className={cn(
+                      "w-full rounded-lg border bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2",
+                      allErrors.employeeSignature
+                        ? "border-rose-500/50 focus:ring-rose-500/50"
+                        : "border-white/10 focus:ring-emerald-500/50"
+                    )}
+                    aria-invalid={!!allErrors.employeeSignature}
+                  />
+                  {allErrors.employeeSignature && (
+                    <p className="mt-1 text-xs text-rose-400" role="alert">
+                      {allErrors.employeeSignature}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-[10px] font-medium text-white/50 uppercase mb-1">
+                    Notes (optional)
+                  </label>
+                  <textarea
+                    value={form.notes}
+                    onChange={(e) => handleInputChange("notes", e.target.value)}
+                    placeholder="e.g. Crew: Smith, Jones"
+                    rows={2}
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                  />
+                </div>
+              </div>
+            </div>
+            <div
+              className="relative z-10 flex-shrink-0 border-t border-white/10 py-3 px-4 flex flex-col items-center gap-2"
+              style={{
+                background:
+                  "linear-gradient(0deg, rgba(0,10,5,0.98) 0%, rgba(0,20,10,0.95) 100%)",
+              }}
+            >
+              <button
+                type="button"
+                disabled={!isFormValid || saving}
+                onClick={() => handleSave("complete")}
+                data-testid="paper-jsa-save"
+                className={cn(
+                  "w-full max-w-xs rounded-xl px-4 py-2.5 text-sm font-semibold transition-all",
+                  isFormValid && !saving
+                    ? "bg-emerald-600 text-white hover:bg-emerald-500"
+                    : "opacity-60 cursor-not-allowed bg-white/10 text-white/60"
+                )}
+              >
+                {saving ? "Saving..." : "Save"}
+              </button>
+              {!isFormValid && (
+                <p className="text-[10px] text-amber-300 text-center">
+                  {allErrors.jsaPhotoPaths
+                    ? "Add at least one photo to save"
+                    : "Complete required fields to save"}
+                </p>
+              )}
+            </div>
+          </div>
+        ) : (
+          <JsaWizard
+            currentStep={currentStep}
+            setCurrentStep={handleSetCurrentStep}
+            completedSteps={completedSteps}
+            onSave={handleSave}
+            onComplete={handleComplete}
+            onBack={handleBack}
+            saving={saving}
+            isValid={isFormValid}
+            isEditMode={isEditMode}
+            status={form.status}
+            progress={formProgress}
+            lastSaved={lastSaved}
+            hasUnsavedChanges={hasUnsavedChanges}
+            stepCompletionStatus={stepCompletionStatus}
+            validationErrors={allErrors}
+            headerRight={
+              !isEditMode &&
+              (form.submissionType === "digital" ? (
+                <button
+                  type="button"
+                  onClick={handleSwitchToPaper}
+                  className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg border border-amber-500/40 bg-amber-500/15 text-amber-200 hover:bg-amber-500/25 hover:border-amber-400/50 hover:text-amber-100 text-xs sm:text-sm font-semibold whitespace-nowrap transition-colors shadow-[0_0_12px_rgba(245,158,11,0.15)]"
+                  aria-label="Switch to upload a photo of a paper JSA form instead"
+                >
+                  <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" aria-hidden />
+                  Upload Paper JSA
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleSwitchToDigital}
+                  className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg border border-emerald-500/40 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25 hover:border-emerald-400/50 hover:text-emerald-100 text-xs sm:text-sm font-semibold whitespace-nowrap transition-colors"
+                  aria-label="Switch to full digital JSA form"
+                >
+                  <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" aria-hidden />
+                  Digital JSA
+                </button>
+              ))
+            }
+          >
+            {renderStep()}
+          </JsaWizard>
+        )}
 
         {/* Draft Recovery Modal */}
         <DraftRecoveryModal

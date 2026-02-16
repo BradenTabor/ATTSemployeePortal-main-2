@@ -5,23 +5,21 @@ import {
   useLocation,
   Navigate,
 } from "react-router-dom";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { AnimatePresence } from "framer-motion";
-import { Suspense, lazy, useEffect } from "react";
+import { Suspense, lazy, useEffect, useMemo } from "react";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SessionOverlay from "./components/SessionOverlay";
 import LoadingScreen from "./components/LoadingScreen";
 import { useAuth } from "./contexts/AuthContext";
 import { Toaster } from "./components/ui/Toaster";
 import { ToastOverlayProvider } from "./components/ui/ToastOverlay";
-import { 
-  RequiredUpdatePrompt, 
-  PushNotificationPrompt,
-  WhatsNewOnboarding,
-} from "./components/notifications";
-import { DeployVersionChecker } from "./components/DeployVersionChecker";
-import { IOSInstallPrompt } from "./components/pwa";
+// Lazy-loaded to keep main-index bundle under size limit
+const AppNotificationShell = lazy(() => import("./components/AppNotificationShell"));
+const DeployVersionChecker = lazy(() => import("./components/DeployVersionChecker").then((m) => ({ default: m.DeployVersionChecker })));
+const IOSInstallPrompt = lazy(() => import("./components/pwa").then((m) => ({ default: m.IOSInstallPrompt })));
 import { queryClient } from "./lib/queryClient";
+import { createIDBPersister, shouldDehydrateQuery, PERSISTER_MAX_AGE_MS } from "./lib/queryPersister";
 import { PageWrapper } from "./motion";
 import { UserPresenceTracker } from "./hooks/useUserPresence";
 import { OfflineQueueProvider } from "./contexts/OfflineQueueContext";
@@ -775,27 +773,39 @@ function usePreloadCriticalChunks() {
 
 export default function App() {
   usePreloadCriticalChunks();
+
+  // Memoize persister + options so they don't change on re-render
+  const persistOptions = useMemo(() => ({
+    persister: createIDBPersister(),
+    maxAge: PERSISTER_MAX_AGE_MS,
+    dehydrateOptions: {
+      shouldDehydrateQuery,
+    },
+  }), []);
+
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={persistOptions}
+    >
       <ToastOverlayProvider>
         <OfflineQueueProvider>
         <OfflineSyncIndicator />
         <Router>
           <AnimatedRoutes />
-          {/* What's New Onboarding - one-time feature showcase after app updates (needs Router context) */}
-          <WhatsNewOnboarding />
+          {/* Notifications/onboarding (lazy-loaded for bundle size) — needs Router context */}
+          <Suspense fallback={null}>
+            <AppNotificationShell />
+          </Suspense>
         </Router>
         </OfflineQueueProvider>
         {/* Corner toasts for non-form notifications */}
         <Toaster />
-        {/* Deploy version check: poll + visibility → reload when new build is live */}
-        <DeployVersionChecker />
-        {/* Required Update Prompt - full-screen mandatory update when new version deployed */}
-        <RequiredUpdatePrompt required={true} />
-        {/* Push Notification Opt-in Prompt - shows for unsubscribed users */}
-        <PushNotificationPrompt />
-        {/* iOS Install Prompt - shows installation instructions for iOS Safari users */}
-        <IOSInstallPrompt />
+        {/* Deploy version check + prompts (lazy-loaded for bundle size) */}
+        <Suspense fallback={null}>
+          <DeployVersionChecker />
+          <IOSInstallPrompt />
+        </Suspense>
         {/* DevTools - only renders in development, lazy-loaded to reduce bundle */}
         {import.meta.env.DEV && (
           <Suspense fallback={null}>
@@ -807,6 +817,6 @@ export default function App() {
           </Suspense>
         )}
       </ToastOverlayProvider>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
 }

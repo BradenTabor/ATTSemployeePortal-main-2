@@ -346,16 +346,17 @@ async function fillAndSubmitEquipment(page: Page, data: EquipmentRunData): Promi
 
   // Select equipment type (use label instead of value for reliable selection)
   const typeSelect = page.getByTestId('equipment-type-select');
-  await typeSelect.waitFor({ state: 'visible', timeout: 5000 });
+  await typeSelect.waitFor({ state: 'visible', timeout: 8000 });
   await typeSelect.selectOption({ label: data.equipmentType });
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(600); // Wait for template auto-select and re-render
   
   // Verify type was selected
-  await expect(typeSelect).toHaveValue(data.equipmentType, { timeout: 3000 });
+  await expect(typeSelect).toHaveValue(data.equipmentType, { timeout: 5000 });
   
-  // Select equipment number
+  // Select equipment number (wait for options to populate based on type)
   const numberSelect = page.locator('select[name="equipmentNumber"]');
-  await numberSelect.waitFor({ state: 'visible', timeout: 3000 });
+  await numberSelect.waitFor({ state: 'visible', timeout: 5000 });
+  await page.waitForTimeout(300); // Wait for options to populate
   await numberSelect.selectOption({ value: data.equipmentNumber });
   await expect(numberSelect).toHaveValue(data.equipmentNumber);
   await page.waitForTimeout(400);
@@ -391,11 +392,13 @@ async function fillAndSubmitEquipment(page: Page, data: EquipmentRunData): Promi
   }
   await page.waitForTimeout(1000);
 
-  // Complete Specific checklist if present
+  // Complete Specific checklist if present (may take a moment to render after type selection)
   const specificSection = page.locator('section:has(p:has-text("Step 3 · Specific"))');
-  if (await specificSection.locator('button:has-text("All Pass")').isVisible().catch(() => false)) {
+  const specificAllPass = specificSection.locator('button:has-text("All Pass")');
+  // Wait longer for specific checklist to render (template auto-select triggers re-render)
+  if (await specificAllPass.isVisible({ timeout: 5000 }).catch(() => false)) {
     await specificSection.scrollIntoViewIfNeeded();
-    await specificSection.getByRole('button', { name: 'All Pass' }).click();
+    await specificAllPass.click();
     await page.waitForTimeout(600);
   }
 
@@ -533,15 +536,17 @@ async function fillAndSubmitRTO(page: Page, data: RTORunData): Promise<void> {
   await submitBtn.click();
   await page.waitForTimeout(5000);
 
-  // Assert success
+  // Assert success: RTO form shows a celebration modal or redirects on success
   const successToast = page.locator('[data-sonner-toast][data-type="success"]').first();
-  const successText = page.getByText(/submitted|success|pending approval/i).first();
+  const successText = page.getByText(/submitted|success|pending approval|has been submitted|time-off request/i).first();
+  const celebrationHeading = page.getByText(/Submitted Successfully/i).first();
   const urlChanged = !page.url().includes('/request-time-off');
 
   const toastVisible = await successToast.isVisible().catch(() => false);
   const textVisible = await successText.isVisible().catch(() => false);
+  const celebrationVisible = await celebrationHeading.isVisible().catch(() => false);
 
-  expect(toastVisible || textVisible || urlChanged).toBe(true);
+  expect(toastVisible || textVisible || celebrationVisible || urlChanged).toBe(true);
 }
 
 // ============================================================================
@@ -549,7 +554,7 @@ async function fillAndSubmitRTO(page: Page, data: RTORunData): Promise<void> {
 // ============================================================================
 
 test.describe('Compliance Forms Stress Tests - 5 Dry Runs Each', () => {
-  test.setTimeout(90000); // 90 seconds per test for complex forms
+  test.setTimeout(120000); // 120 seconds per test for complex forms (auth + form load + interactions)
 
   // --------------------------------------------------------------------------
   // DVIR STRESS TESTS

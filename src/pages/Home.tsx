@@ -1,10 +1,11 @@
 import { useState, FormEvent, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lock, ArrowRight } from "lucide-react";
+import { Lock, ArrowRight, WifiOff } from "lucide-react";
 import { VideoBackground } from "../components/VideoBackground";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../contexts/AuthContext";
+import { useNetworkStore } from "../lib/networkStatus";
 import logo from "../assets/ATTS_Logo-removebg-preview.png";
 import logo2x from "../assets/ATTS_Logo-removebg-preview@2x.png";
 import { logger } from "../lib/logger";
@@ -56,6 +57,7 @@ export default function Home() {
 
   const isSignup = mode === "signup";
   const currentHero = heroCopy[mode];
+  const isDeviceOnline = useNetworkStore((s) => s.isOnline);
 
   // Redirect to appropriate dashboard based on user role
   useEffect(() => {
@@ -251,6 +253,14 @@ export default function Home() {
                     ))}
                   </div>
                 </div>
+
+                {/* Offline notice — only shown when user has no cached session */}
+                {!isDeviceOnline && !session && (
+                  <div className="mb-4 flex items-center gap-2 rounded-xl bg-amber-500/10 border border-amber-500/20 px-4 py-3 text-sm text-amber-200">
+                    <WifiOff className="w-4 h-4 shrink-0 text-amber-400" />
+                    <span>You're offline. Sign in requires an internet connection.</span>
+                  </div>
+                )}
 
                 <AnimatePresence mode="wait">
                   <motion.form

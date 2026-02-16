@@ -11,7 +11,8 @@ test.describe('Crew Oversight', () => {
   test.beforeEach(async ({ page }) => {
     await loginAs(page, 'general_foreman');
     await page.goto('/general-foreman/crew-oversight');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
   });
 
   test('should display crew oversight page', async ({ page }) => {
@@ -75,7 +76,8 @@ test.describe('Safety Compliance', () => {
   test.beforeEach(async ({ page }) => {
     await loginAs(page, 'general_foreman');
     await page.goto('/general-foreman/safety-compliance');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
   });
 
   test('should display safety compliance page', async ({ page }) => {
@@ -120,7 +122,8 @@ test.describe('Crew Status Analytics', () => {
   test.beforeEach(async ({ page }) => {
     await loginAs(page, 'general_foreman');
     await page.goto('/general-foreman/crew-analytics');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
   });
 
   test('should display analytics page', async ({ page }) => {
@@ -148,7 +151,8 @@ test.describe('GF Equipment Logs', () => {
   test.beforeEach(async ({ page }) => {
     await loginAs(page, 'general_foreman');
     await page.goto('/general-foreman/equipment-logs');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
   });
 
   test('should display equipment logs', async ({ page }) => {
@@ -204,7 +208,8 @@ test.describe('GF Authorization', () => {
     
     for (const gfPage of gfPages) {
       await page.goto(gfPage);
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
       
       const url = page.url();
       // Should redirect away
@@ -225,7 +230,8 @@ test.describe('GF Authorization', () => {
     await loginAs(page, 'foreman');
     
     await page.goto('/general-foreman/crew-oversight');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     const url = page.url();
     // Might redirect or show limited view depending on permissions
@@ -236,7 +242,8 @@ test.describe('GF Authorization', () => {
     await loginAs(page, 'admin');
     
     await page.goto('/general-foreman/safety-compliance');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     // Admin should have access
     await expect(page.locator('main')).toBeVisible();

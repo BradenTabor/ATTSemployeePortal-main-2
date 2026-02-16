@@ -1,2 +1,2 @@
-export { useJSAFormValidation } from './useJSAFormValidation';
+export { useJSAFormValidation, getValidationRules } from './useJSAFormValidation';
 export { useJSASubmission } from './useJSASubmission';

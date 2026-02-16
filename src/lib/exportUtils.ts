@@ -265,6 +265,30 @@ export function formatPhotoPresent(path: string | null | undefined): string {
 }
 
 /**
+ * Format JSA photo count for PDF exports.
+ * Returns "3 attached" / "None".
+ */
+export function formatJsaPhotoCount(paths: string[] | null | undefined): string {
+  if (!paths || !Array.isArray(paths) || paths.length === 0) return 'None';
+  return `${paths.length} attached`;
+}
+
+/**
+ * Format JSA photo paths as comma-separated signed URLs for CSV/Excel exports.
+ * Takes pre-generated URL map (use batch createSignedUrls before calling).
+ */
+export function formatJsaPhotoUrls(
+  paths: string[] | null | undefined,
+  urlMap: Map<string, string>,
+): string {
+  if (!paths || !Array.isArray(paths) || paths.length === 0) return '';
+  return paths
+    .map((p) => urlMap.get(p) || '')
+    .filter(Boolean)
+    .join(', ');
+}
+
+/**
  * PPE item for export (required + condition).
  */
 export interface PpeItemForExport {

@@ -91,7 +91,8 @@ test.describe('Login Flow', () => {
       
       // Refresh page
       await page.reload();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
       
       // Should still be logged in
       await expect(page).toHaveURL(/dashboard|forms/);
@@ -156,7 +157,8 @@ test.describe('Logout Flow', () => {
     
     // Try to access protected page
     await page.goto('/dashboard');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     // Should be redirected to login
     const url = page.url();
@@ -182,7 +184,8 @@ test.describe('Password Reset', () => {
     
     if (await forgotLink.isVisible()) {
       await forgotLink.click();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
       
       // Should show reset form
       const resetForm = page.locator('form, [data-testid="reset-form"]');
@@ -224,6 +227,8 @@ test.describe('Password Reset', () => {
 });
 
 test.describe('Protected Routes', () => {
+  test.setTimeout(60000);
+
   test('should redirect unauthenticated user to login', async ({ page }) => {
     // Try to access protected routes without auth
     const protectedRoutes = [
@@ -234,9 +239,9 @@ test.describe('Protected Routes', () => {
     ];
     
     for (const route of protectedRoutes) {
-      await page.goto(route);
-      await page.waitForLoadState('networkidle');
-      
+      await page.goto(route, { waitUntil: 'domcontentloaded' });
+      await page.waitForTimeout(2000);
+
       const url = page.url();
       // Should either redirect to login or show login form
       const isProtected = url.includes('login') || url === page.url().split('/')[0] + '/';
@@ -256,7 +261,8 @@ test.describe('Protected Routes', () => {
       await page.waitForURL(/dashboard|forms/, { timeout: 15000 });
     }
     await page.goto('/dashboard');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     await page.waitForSelector('[data-testid="dashboard"]', { timeout: 15000 }).catch(() => {});
     const url = page.url();
     const isOnDashboard = url.includes('/dashboard') || url.includes('/forms');
@@ -267,6 +273,8 @@ test.describe('Protected Routes', () => {
 });
 
 test.describe('Session Management', () => {
+  test.setTimeout(60000);
+
   test('should handle expired session gracefully', async ({ page }) => {
     // This test would require mocking token expiration
     // For now, we verify the app handles auth state changes
@@ -287,7 +295,8 @@ test.describe('Session Management', () => {
     
     // Refresh page
     await page.reload();
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     // Should redirect to login
     const loginForm = page.locator('input[type="password"]');
@@ -311,8 +320,8 @@ test.describe('Session Management', () => {
     
     // Open second tab
     const page2 = await context.newPage();
-    await page2.goto('/dashboard');
-    await page2.waitForLoadState('networkidle');
+    await page2.goto('/dashboard', { waitUntil: 'domcontentloaded' });
+    await page2.waitForTimeout(2000);
     
     // Logout in first tab
     const userMenu = page.locator('[data-testid="user-menu"], [data-testid="profile-button"]');
@@ -327,8 +336,9 @@ test.describe('Session Management', () => {
     
     // Check second tab
     await page2.reload();
-    await page2.waitForLoadState('networkidle');
-    
+    await page2.waitForLoadState('domcontentloaded');
+    await page2.waitForTimeout(2000);
+
     // Second tab should also be logged out
     const loginVisible = await page2.locator('input[type="password"]').isVisible().catch(() => false);
     console.log(`Second tab logged out: ${loginVisible}`);

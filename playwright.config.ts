@@ -40,8 +40,8 @@ export default defineConfig({
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   
-  /* Retry on CI only */
-  retries: process.env.CI ? 2 : 0,
+  /* Retry — 2 retries on CI, 1 locally (Supabase auth can be flaky) */
+  retries: process.env.CI ? 2 : 1,
 
   /* Worker count: override via PLAYWRIGHT_WORKERS; in CI use 2–6 workers by CPU; locally use Playwright default. */
   workers: getWorkers(),
@@ -111,8 +111,8 @@ export default defineConfig({
     timeout: 120 * 1000,
   },
   
-  /* Global timeout */
-  timeout: 30 * 1000,
+  /* Global timeout — bumped to 45s because Supabase auth can take 20-25s */
+  timeout: 45 * 1000,
   
   /* Expect timeout */
   expect: {

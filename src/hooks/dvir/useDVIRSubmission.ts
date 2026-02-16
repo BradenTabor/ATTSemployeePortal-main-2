@@ -5,7 +5,9 @@ import { logger } from '../../lib/logger';
 import { formToast } from '../../lib/formToast';
 import { trackFormSubmitted, trackFormSubmitError } from '../../lib/telemetry';
 import { parseFormError } from '../../lib/errorHandling';
-import { isOnline } from '../../lib/offlineQueue';
+import { isOnline, addToQueue } from '../../lib/offlineQueue';
+import { storePhotosForQueue } from '../../lib/offlinePhotoStore';
+import { compressImage } from '../../lib/imageCompression';
 import type { DVIRFormState, ExtraPhotos } from '../../pages/forms/dvir';
 
 interface SubmissionOptions {
@@ -85,14 +87,142 @@ export function useDVIRSubmission() {
       const userId = user.id;
       const userEmail = user.email ?? null;
 
-      // 2.5) Offline: DVIR requires photo uploads; queue does not persist files yet. Show clear message.
+      // 2.5) Offline: compress photos, store blobs in IndexedDB, queue for sync
       if (!isOnline()) {
-        logger.info('[DVIR] Offline: cannot submit (photos require network). Draft remains saved.');
-        formToast.info(
-          "You're offline",
-          "DVIR requires photos and can't be queued yet. Your draft is saved—submit when you're back online."
-        );
-        return { success: false };
+        logger.info('[DVIR] Offline: compressing and queuing with photos');
+
+        try {
+          const tempQueueId = `atts-q-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+          const photoEntries: Array<{
+            fieldName: string;
+            blob: Blob;
+            fileName: string;
+            contentType: string;
+            compressed: boolean;
+          }> = [];
+
+          // Compress and collect all photos
+          if (oilDipstickPhoto) {
+            const compressed = await compressImage(oilDipstickPhoto);
+            photoEntries.push({
+              fieldName: 'oil_dipstick',
+              blob: compressed as Blob,
+              fileName: oilDipstickPhoto.name,
+              contentType: compressed.type || 'image/jpeg',
+              compressed: true,
+            });
+          }
+          if (extraPhotos.tire) {
+            const compressed = await compressImage(extraPhotos.tire);
+            photoEntries.push({
+              fieldName: 'tire',
+              blob: compressed as Blob,
+              fileName: extraPhotos.tire.name,
+              contentType: compressed.type || 'image/jpeg',
+              compressed: true,
+            });
+          }
+          if (extraPhotos.coolant) {
+            const compressed = await compressImage(extraPhotos.coolant);
+            photoEntries.push({
+              fieldName: 'coolant',
+              blob: compressed as Blob,
+              fileName: extraPhotos.coolant.name,
+              contentType: compressed.type || 'image/jpeg',
+              compressed: true,
+            });
+          }
+          if (extraPhotos.damage) {
+            const compressed = await compressImage(extraPhotos.damage);
+            photoEntries.push({
+              fieldName: 'damage',
+              blob: compressed as Blob,
+              fileName: extraPhotos.damage.name,
+              contentType: compressed.type || 'image/jpeg',
+              compressed: true,
+            });
+          }
+          if (extraPhotos.mileage) {
+            const compressed = await compressImage(extraPhotos.mileage);
+            photoEntries.push({
+              fieldName: 'detail-clean_truck',
+              blob: compressed as Blob,
+              fileName: extraPhotos.mileage.name,
+              contentType: compressed.type || 'image/jpeg',
+              compressed: true,
+            });
+          }
+
+          // Store all photos in offline photo store
+          const photoIds = await storePhotosForQueue(tempQueueId, 'dvir', photoEntries);
+
+          // Build payload with placeholder photo paths
+          const offlinePayload: Record<string, unknown> = {
+            __offlineQueueId: tempQueueId,
+            user_id: userId,
+            user_email: userEmail,
+            created_at: new Date().toISOString(),
+            truck_number: form.truckNumber,
+            mileage: Number(form.mileage),
+            chipper_number: form.chipperNumber || null,
+            trailer_number: form.trailerNumber || null,
+            truck_gvwr: form.truckGvwr || null,
+            trailer_chipper_gvwr: form.trailerChipperGvwr || null,
+            medical_card_required: form.medicalCardRequired || null,
+            drivers_name: form.driversName,
+            drivers_license_number: form.driversLicenseNumber || null,
+            drivers_license_class: form.driversLicenseClass || null,
+            drivers_license_exp: form.driversLicenseExp || null,
+            drivers_license_required: form.driversLicenseRequired || null,
+            has_medical_card: form.hasMedicalCard || null,
+            medical_card_exp: form.medicalCardExp || null,
+            copy_of_registration: form.copyOfRegistration || null,
+            copy_of_insurance: form.copyOfInsurance || null,
+            vehicle_trailer_checklist: form.vehicleTrailerChecklist,
+            notes: form.notes || null,
+            aerial_checklist: form.aerialChecklist,
+            aerial_notes: form.aerialNotes || null,
+            final_driver_signature: form.finalDriverSignature?.trim() || null,
+            general_foreman_signature: form.generalForemanSignature?.trim() || null,
+            mechanic_truck_number: form.mechTruckNumber || null,
+            mechanic_date: form.mechanicDate || null,
+            deficiency_corrected: form.deficiencyCorrected || null,
+            mechanic_remarks: form.mechanicRemarks || null,
+            mechanic_signature: form.mechanicSignature?.trim() || null,
+            driver_approval_signature: form.driverApprovalSignature?.trim() || null,
+            // Photo paths are placeholders — replaced during sync
+            oil_dipstick_path: `offline://${tempQueueId}/oil_dipstick`,
+            tire_photo_path: extraPhotos.tire ? `offline://${tempQueueId}/tire` : null,
+            coolant_photo_path: extraPhotos.coolant ? `offline://${tempQueueId}/coolant` : null,
+            damage_photo_path: extraPhotos.damage ? `offline://${tempQueueId}/damage` : null,
+            detail_clean_truck_photo_path: extraPhotos.mileage ? `offline://${tempQueueId}/detail-clean_truck` : null,
+          };
+
+          await addToQueue('dvir', offlinePayload, {
+            userId,
+            dateFor: new Date().toISOString().split('T')[0],
+            photoIds,
+          });
+
+          logger.info('[DVIR] Offline: queued with photos', {
+            photoCount: photoIds.length,
+            totalSizeKB: Math.round(photoEntries.reduce((sum, p) => sum + p.blob.size, 0) / 1024),
+          });
+
+          formToast.success(
+            "DVIR Saved Offline",
+            "Your DVIR will sync automatically when you're back online."
+          );
+          onSuccess();
+          return { success: true };
+        } catch (offlineErr) {
+          logger.error('[DVIR] Offline queue failed:', offlineErr);
+          formToast.error(
+            "Offline Save Failed",
+            "Could not save DVIR offline. Please try again."
+          );
+          return { success: false };
+        }
       }
 
       // 3) Upload required oil dipstick photo

@@ -6,6 +6,7 @@ import {
   formatDateForExport,
   formatSpansSummary,
   formatPhotoPresent,
+  formatJsaPhotoCount,
   formatPPESummary,
   formatCheckedLabels,
   type ExportColumn,
@@ -83,6 +84,12 @@ export const STATUS_FILTERS = [
   { label: "All", value: "all" },
   { label: "Draft", value: "draft" },
   { label: "Completed", value: "completed" },
+];
+
+export const TYPE_FILTERS = [
+  { label: "All", value: "all" },
+  { label: "Digital", value: "digital" },
+  { label: "Paper", value: "paper" },
 ];
 
 // =============================================================================
@@ -194,6 +201,7 @@ export const JSA_EXPORT_COLUMNS: ExportColumn<AdminJsaRow>[] = [
   { header: "Submitted By", key: "user_name", format: (v) => (v as string) || "Unknown", width: 20 },
   { header: "Submitter Email", key: "user_email", format: (v) => (v as string) || "N/A", width: 28, includeInPdf: false },
   { header: "Status", key: "status", format: (v) => ((v as string) === "completed" ? "Completed" : (v as string) === "draft" ? "Draft" : (v as string) || "N/A"), width: 12 },
+  { header: "Type", key: "submission_type", format: (v) => (v === "paper" ? "Paper" : (v === "digital" ? "Digital" : (v as string) || "Digital")), width: 10 },
   { header: "JSA Type", key: "jsa_type", format: (v) => (v as string) || "N/A", width: 14 },
   // Contacts (all in PDF for quick reference)
   { header: "OC Contact", key: "oc_contact", format: (v) => (v as string) || "N/A", width: 20 },
@@ -221,6 +229,17 @@ export const JSA_EXPORT_COLUMNS: ExportColumn<AdminJsaRow>[] = [
   { header: "Shared With", key: "shared_with_users", format: (v) => formatSharedWith(v), width: 40, includeInPdf: false },
   // Other
   { header: "Notes", key: "notes", format: (v) => (v as string) || "N/A", width: 40, includeInPdf: false },
+  // Paper JSA Photos — CSV/Excel: placeholder (URLs populated at export time); PDF: count
+  { header: "Paper JSA Photos", key: "jsa_photo_paths", format: (v) => {
+    const paths = v as string[] | null;
+    if (!paths || paths.length === 0) return "None";
+    return `${paths.length} photo(s) — see CSV export for links`;
+  }, width: 35, includeInPdf: false },
+  { header: "Documentation Note", key: "jsa_photo_paths", format: (v) => {
+    const paths = v as string[] | null;
+    if (!paths || paths.length === 0) return "";
+    return "Paper JSA form images retained digitally to support workplace safety documentation practices. Photo links expire 7 days after export.";
+  }, width: 60, includeInPdf: false },
   { header: "Created", key: "created_at", format: (v) => formatDateForExport(v as string, true), width: 22 },
   { header: "Updated", key: "updated_at", format: (v) => formatDateForExport(v as string, true), width: 22 },
   { header: "Status Changed At", key: "status_changed_at", format: (v) => formatDateForExport(v as string, true), width: 22, includeInPdf: false },
@@ -237,10 +256,12 @@ export const JSA_PDF_EXPORT_COLUMNS: ExportColumn<AdminJsaRow>[] = [
   { header: "Location", key: "work_location", format: (v) => (v as string) || "N/A", width: 36 },
   { header: "By", key: "user_name", format: (v) => (v as string) || "Unknown", width: 14 },
   { header: "Status", key: "status", format: (v) => ((v as string) === "completed" ? "Done" : (v as string) === "draft" ? "Draft" : (v as string) || "—"), width: 10 },
+  { header: "Type", key: "submission_type", format: (v) => (v === "paper" ? "Paper" : (v === "digital" ? "Digital" : "Digital")), width: 10 },
   { header: "Conditions & PPE", key: "conditions_ppe_summary", format: formatConditionsPpeSummaryFull, width: 42 },
   { header: "Hazards & Traffic", key: "site_hazards_traffic_summary", format: formatSiteHazardsTrafficSummaryFull, width: 38 },
   { header: "Emp. Sig.", key: "employee_signature", format: (v) => (v as string)?.trim() || "Not signed", width: 24 },
   { header: "Obs. Sig.", key: "observer_signatures", format: (v) => formatObserverSignatures(v), width: 32 },
   { header: "Signed", key: "employee_signature_path", format: (v) => formatPhotoPresent(v as string | null), width: 10 },
+  { header: "Photos", key: "jsa_photo_paths", format: (v) => formatJsaPhotoCount(v as string[] | null), width: 12 },
   { header: "Created", key: "created_at", format: (v) => formatDateForExport(v as string, true), width: 20 },
 ];

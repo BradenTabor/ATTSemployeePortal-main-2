@@ -1,7 +1,5 @@
-import { useEffect, useState, useCallback, useMemo, forwardRef, useRef } from "react";
+import { useEffect, useState, useMemo, forwardRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { supabase } from "../lib/supabaseClient";
-import { subscribeToTableChanges } from "../lib/realtime";
 import { PaginationControls } from "../components/PaginationControls";
 import {
   RefreshCcw,
@@ -12,6 +10,7 @@ import {
   Signal,
   Calendar,
   Expand,
+  WifiOff,
 } from "lucide-react";
 import DashboardLayout from "../layouts/DashboardLayout";
 import { ExpandableSection } from "../components/dashboard/ExpandableSection";
@@ -22,17 +21,10 @@ import { getDeviceCapabilities } from "../lib/mobilePerf";
 import { CollectPointsButton } from "../components/CollectPointsButton";
 import { AnnouncementDetailModal } from "../components/AnnouncementDetailModal";
 import { useAnnouncementTracking } from "../hooks/useAnnouncementTracking";
+import { useAnnouncements, type Announcement } from "../hooks/useAnnouncements";
+import { useNetworkStore } from "../lib/networkStatus";
 import { formToast } from "../lib/formToast";
 import { logger } from "../lib/logger";
-
-interface Announcement {
-  id: string;
-  title: string;
-  message: string;
-  author: string | null;
-  date: string;
-  created_at: string;
-}
 
 // ============================================
 // DESIGN TOKENS
@@ -558,20 +550,38 @@ const SearchBar = ({ value, onChange, onClear, visibleCount, totalCount }: Searc
 );
 
 export default function Announcements() {
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [totalCount, setTotalCount] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [newAnnouncementIndicator, setNewAnnouncementIndicator] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
-  
-  // Track previous count for new announcement detection
-  const prevCountRef = useRef(0);
+  const isOnline = useNetworkStore((s) => s.isOnline);
 
-  // Pagination State - server-side
+  // Pagination State - client-side
   const pageSize = 8;
   const [currentPage, setCurrentPage] = useState(1);
+
+  // React Query hook — handles fetching, caching, realtime, and offline persistence
+  const {
+    announcements,
+    totalCount,
+    fetchedAt,
+    loading,
+    isOfflineData,
+    hasNewAnnouncement,
+    refresh: refreshQuery,
+  } = useAnnouncements({
+    limit: 1 + pageSize * Math.max(currentPage, 1),
+    enableRealtime: isOnline,
+  });
+
+  // Show new announcement indicator
+  useEffect(() => {
+    if (hasNewAnnouncement) {
+      const showTimer = setTimeout(() => setNewAnnouncementIndicator(true), 0);
+      const hideTimer = setTimeout(() => setNewAnnouncementIndicator(false), 5000);
+      return () => { clearTimeout(showTimer); clearTimeout(hideTimer); };
+    }
+  }, [hasNewAnnouncement]);
 
   // For search, we need client-side filtering of loaded data
   const filteredAnnouncements = useMemo(() => {
@@ -601,103 +611,24 @@ export default function Announcements() {
     return restAnnouncements.slice(0, pageSize);
   }, [restAnnouncements, currentPage, pageSize, searchTerm]);
 
-  // Fetch with server-side pagination - optimized to avoid recreation
-  const fetchAnnouncements = useCallback(async (showSpinner: boolean = true, page: number = 1) => {
-    if (showSpinner) setLoading(true);
-
-    try {
-      // Calculate range for server-side pagination
-      // We need 1 (featured) + pageSize * pages to support pagination
-      // But for initial load, just get what we need for current view
-      const limit = 1 + pageSize * Math.max(page, 1);
-      
-      // First, get total count (cached query)
-      const { count, error: countError } = await supabase
-        .from("announcements")
-        .select("id", { count: "exact", head: true });
-      
-      if (countError) {
-        logger.error("Error fetching count:", countError);
-      } else {
-        const newCount = count || 0;
-        // Check for new announcements
-        if (prevCountRef.current > 0 && newCount > prevCountRef.current) {
-          setNewAnnouncementIndicator(true);
-          setTimeout(() => setNewAnnouncementIndicator(false), 5000);
-        }
-        prevCountRef.current = newCount;
-        setTotalCount(newCount);
-      }
-
-      // Then fetch only needed records
-      const { data, error } = await supabase
-        .from("announcements")
-        .select("id, title, message, author, date, created_at")
-        .order("created_at", { ascending: false })
-        .limit(limit);
-
-      if (error) {
-        logger.error("Error fetching announcements:", error);
-      } else {
-        setAnnouncements((data || []) as Announcement[]);
-      }
-    } catch (err) {
-      logger.error("Error loading announcements:", err);
-      formToast.error("Load Failed", "Failed to load announcements. Pull to refresh or try again later.");
-    } finally {
-      if (showSpinner) setLoading(false);
-    }
-  }, [pageSize]);
-
   const handleManualRefresh = async () => {
+    if (!isOnline) {
+      formToast.info("You're Offline", "Showing cached announcements. Refresh when you're back online.");
+      return;
+    }
     setRefreshing(true);
     try {
       await fetch(
         "https://hook.us2.make.com/dlb3kmbn4615q14lcw6dhheif7602ph2",
         { method: "POST" }
       );
-      await fetchAnnouncements(false, currentPage);
+      refreshQuery();
     } catch (err) {
       logger.error("Error refreshing announcements:", err);
       formToast.error("Refresh Failed", "Failed to refresh announcements. Please try again.");
     }
     setRefreshing(false);
   };
-
-  // Initial load + realtime subscription
-  useEffect(() => {
-    let cancelled = false;
-
-    const load = async () => {
-      if (cancelled) return;
-      await fetchAnnouncements(true, currentPage);
-    };
-
-    load();
-
-    const unsubscribe = subscribeToTableChanges({
-      channelName: "announcements-realtime",
-      table: "announcements",
-      onInsert: () => {
-        if (!cancelled) {
-          setNewAnnouncementIndicator(true);
-          fetchAnnouncements(false, currentPage);
-          setTimeout(() => setNewAnnouncementIndicator(false), 5000);
-        }
-      },
-      onUpdate: () => {
-        if (!cancelled) fetchAnnouncements(false, currentPage);
-      },
-      onDelete: () => {
-        if (!cancelled) fetchAnnouncements(false, currentPage);
-      },
-    });
-
-    return () => {
-      cancelled = true;
-      unsubscribe();
-    };
-  }, [fetchAnnouncements, currentPage]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -724,9 +655,11 @@ export default function Announcements() {
   };
 
   // Reset to page 1 when search changes
-  useEffect(() => {
+  const [prevSearchTerm, setPrevSearchTerm] = useState(searchTerm);
+  if (prevSearchTerm !== searchTerm) {
+    setPrevSearchTerm(searchTerm);
     setCurrentPage(1);
-  }, [searchTerm]);
+  }
 
   // Parse latest date for compact display
   const latestDateInfo = useMemo(() => {
@@ -772,6 +705,18 @@ export default function Announcements() {
             )}
           </div>
         </header>
+
+        {/* Offline data indicator */}
+        {isOfflineData && (
+          <div className="mb-4 flex items-center gap-2 rounded-xl bg-amber-500/10 border border-amber-500/20 px-4 py-3 text-sm text-amber-200">
+            <WifiOff className="w-4 h-4 shrink-0 text-amber-400" />
+            <span>
+              Showing cached announcements
+              {fetchedAt ? ` from ${new Date(fetchedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}` : ''}.
+              Search and realtime updates are paused.
+            </span>
+          </div>
+        )}
 
         <div className="w-full space-y-4 md:space-y-6">
           {/* Content sections */}

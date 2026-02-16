@@ -56,10 +56,11 @@ export async function loginAs(page: Page, role: TestRole): Promise<void> {
   await page.click('button[type="submit"]');
   await page.waitForLoadState('domcontentloaded');
 
-  // Wait for redirect to any dashboard (allow 20s for Supabase + AuthContext)
+  // Wait for redirect to any dashboard (allow 25s for Supabase + AuthContext;
+  // WebKit/Mobile Safari can be noticeably slower than Chromium for auth)
   const dashboardRegex = /\/(dashboard|admin|forms|mechanic-dashboard|general-foreman-dashboard|safety-officer-dashboard|foreman-dashboard)(\/|$)/;
   try {
-    await expect(page).toHaveURL(dashboardRegex, { timeout: 20000 });
+    await expect(page).toHaveURL(dashboardRegex, { timeout: 25000 });
     await dismissOnboardingIfPresent(page);
   } catch {
     const stillOnLogin = await page.locator('#auth-email, input[type="email"]').isVisible().catch(() => false);

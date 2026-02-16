@@ -60,9 +60,11 @@ export type DailyJSA = {
   notes: string | null;
   employee_signature: string | null;
   employee_signature_path?: string | null;
+  jsa_photo_paths?: string[] | null;
   observer_signatures?: ObserverSignature[] | null;
   shared_with_users?: SharedUser[] | null;
   status: "draft" | "completed";
+  submission_type?: "digital" | "paper" | null;
   status_changed_at?: string | null;
   completed_at?: string | null;
   status_history?: StatusLogEntry[];
@@ -107,9 +109,11 @@ export interface DailyJsaFormState {
   notes: string;
   employeeSignature: string;
   employeeSignaturePath: string;
+  jsaPhotoPaths: string[];
   observerSignatures: ObserverSignature[];
   sharedWithUsers: SharedUser[];
   status: "draft" | "completed";
+  submissionType: "digital" | "paper";
   createdAt: string | null;
   updatedAt: string | null;
   statusChangedAt: string | null;
@@ -236,9 +240,11 @@ export const createInitialFormState = (): DailyJsaFormState => {
     notes: "",
     employeeSignature: "",
     employeeSignaturePath: "",
+    jsaPhotoPaths: [],
     observerSignatures: [],
     sharedWithUsers: [],
     status: "draft",
+    submissionType: "digital",
     createdAt: null,
     updatedAt: null,
     statusChangedAt: null,
@@ -305,6 +311,7 @@ export function transformRecordToFormState(record: DailyJsaRecord): DailyJsaForm
     notes: record.notes || "",
     employeeSignature: record.employee_signature || "",
     employeeSignaturePath: record.employee_signature_path || "",
+    jsaPhotoPaths: Array.isArray(record.jsa_photo_paths) ? record.jsa_photo_paths : [],
     observerSignatures: Array.isArray(record.observer_signatures)
       ? record.observer_signatures
       : [],
@@ -312,6 +319,7 @@ export function transformRecordToFormState(record: DailyJsaRecord): DailyJsaForm
       ? record.shared_with_users
       : [],
     status: (record.status as "draft" | "completed") || "draft",
+    submissionType: (record.submission_type as "digital" | "paper") || "digital",
     createdAt: record.created_at || null,
     updatedAt: record.updated_at || null,
     statusChangedAt: record.status_changed_at || null,

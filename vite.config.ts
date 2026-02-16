@@ -105,6 +105,8 @@ export default defineConfig(({ mode }) => {
           'vendor-supabase': ['@supabase/supabase-js'],
           // Data fetching
           'vendor-query': ['@tanstack/react-query'],
+          // Query persistence (IndexedDB) — keep out of main-index for bundle limit
+          'vendor-query-persist': ['@tanstack/react-query-persist-client', 'idb'],
           // Form handling
           'vendor-forms': ['react-hook-form', '@hookform/resolvers', 'zod'],
           // Utilities

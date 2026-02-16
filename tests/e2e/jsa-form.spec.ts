@@ -267,7 +267,8 @@ test.describe('JSA Form', () => {
       await page.goBack();
       
       // Form might reset or maintain state - document behavior
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     });
 
     test('should handle page refresh', async ({ page }) => {
@@ -389,10 +390,15 @@ test.describe('JSA Form', () => {
 
 test.describe('JSA Form - Mobile Viewport', () => {
   test.use({ viewport: { width: 375, height: 667 } });
+  test.setTimeout(60000);
 
   test('should work on mobile viewport', async ({ page }) => {
     await loginAs(page, 'employee');
-    await gotoJsaForm(page);
+    await page.goto('/forms/jsa');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(2000);
+    await dismissOnboardingIfPresent(page);
+    await page.waitForSelector('[data-testid="jsa-wizard"]', { timeout: 15000 });
     
     // Wait for any overlays/notifications to disappear
     await page.waitForTimeout(1000);
@@ -416,11 +422,12 @@ test.describe('JSA Form - Mobile Viewport', () => {
     });
     await page.waitForTimeout(300);
     
-    const backButton = page.getByTestId('jsa-back');
-    await backButton.click({ force: true }).catch(async () => {
+    // Use jsa-prev (step navigation) not jsa-back (dashboard back button)
+    const prevButton = page.getByTestId('jsa-prev');
+    await prevButton.click({ force: true }).catch(async () => {
       // If force click fails, wait a bit more and try normal click
       await page.waitForTimeout(1000);
-      await backButton.click();
+      await prevButton.click();
     });
     await page.waitForTimeout(300);
     

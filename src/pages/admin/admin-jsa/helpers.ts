@@ -41,6 +41,7 @@ export type PersistedAdminJSAState = {
   pageSize?: number;
   searchQuery?: string;
   statusFilter?: "all" | "draft" | "completed";
+  typeFilter?: "all" | "digital" | "paper";
   dateFilter?: string;
   dateEndFilter?: string;
   signatureFilter?: string;

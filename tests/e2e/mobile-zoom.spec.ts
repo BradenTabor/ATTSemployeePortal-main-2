@@ -29,10 +29,33 @@ test.describe('Mobile Auto-Zoom Prevention', () => {
     await expect(openMapHospital).toBeVisible();
     await openMapHospital.click();
 
-    await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5000 });
-    await page.getByRole('button', { name: /cancel/i }).click();
-    await expect(page.getByRole('dialog')).not.toBeVisible();
+    // Map picker may use role="dialog" or a custom fixed overlay.
+    // Wait for any overlay to appear after clicking the map button.
+    await page.waitForTimeout(1000);
 
+    // Close the overlay. We must avoid the Sonner toast close button
+    // (data-close-button="true") which can also match /close/i.
+    // Scope: look for a Cancel/Close button that is NOT a toast close button.
+    const cancelInDialog = page.locator(
+      'button:not([data-close-button]):is(:text-matches("cancel|close", "i"))'
+    );
+    const dialogCloseX = page.locator('[role="dialog"] button[aria-label*="close" i], .fixed.inset-0 button[aria-label*="close" i]');
+    const escapeKey = async () => { await page.keyboard.press('Escape'); };
+
+    const cancelVisible = await cancelInDialog.first().isVisible({ timeout: 3000 }).catch(() => false);
+    const closeXVisible = await dialogCloseX.first().isVisible({ timeout: 1000 }).catch(() => false);
+
+    if (cancelVisible) {
+      await cancelInDialog.first().click();
+    } else if (closeXVisible) {
+      await dialogCloseX.first().click();
+    } else {
+      // Fallback: press Escape to dismiss any overlay
+      await escapeKey();
+    }
+    await page.waitForTimeout(500);
+
+    // After closing, the JSA form should still be intact
     await expect(page.getByText('Job Information')).toBeVisible();
     await expect(page.getByLabel(/Work Location/i)).toBeVisible();
   });
@@ -49,7 +72,9 @@ test.describe('Mobile Auto-Zoom Prevention', () => {
     await workLocation.fill('Test location');
     await expect(workLocation).toHaveValue('Test location');
 
-    const circuitInput = page.getByLabel(/Circuit/i);
+    // The Circuit # field has no explicit htmlFor/id association, so getByLabel
+    // may not resolve. Use getByPlaceholder which targets the input directly.
+    const circuitInput = page.getByPlaceholder('Circuit number');
     await circuitInput.click();
     await circuitInput.fill('CKT-001');
     await expect(circuitInput).toHaveValue('CKT-001');

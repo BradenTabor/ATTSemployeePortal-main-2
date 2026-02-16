@@ -8,6 +8,7 @@ export interface AdminJSAQueryParams {
   page: number;
   pageSize: number;
   statusFilter: 'all' | 'draft' | 'completed';
+  typeFilter?: 'all' | 'digital' | 'paper';
   dateFilter?: string;
   dateEndFilter?: string;
   searchQuery?: string;
@@ -77,6 +78,7 @@ async function fetchAdminJSARecords(params: AdminJSAQueryParams): Promise<AdminJ
     page,
     pageSize,
     statusFilter,
+    typeFilter,
     dateFilter,
     dateEndFilter,
     searchQuery,
@@ -127,13 +129,19 @@ async function fetchAdminJSARecords(params: AdminJSAQueryParams): Promise<AdminJ
       completed_at,
       status_history,
       jsa_type,
-      tree_felling_data
+      tree_felling_data,
+      jsa_photo_paths,
+      submission_type
     `, { count: "exact" })
     .order(sortField === "user_name" ? "user_id" : sortField, { ascending: sortDirection === "asc" })
     .range(from, to);
 
   if (statusFilter !== "all") {
     query = query.eq("status", statusFilter);
+  }
+
+  if (typeFilter && typeFilter !== "all") {
+    query = query.eq("submission_type", typeFilter);
   }
 
   if (dateFilter) {

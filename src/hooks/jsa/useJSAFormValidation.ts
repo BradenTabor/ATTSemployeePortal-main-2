@@ -3,55 +3,70 @@ import { useFormValidation, type ValidationRule } from '../useFormValidation';
 import { validators } from '../../lib/formValidation';
 import type { DailyJsaFormState } from '../../pages/forms/DailyJSAForm';
 
+function jobDateValidator(value: unknown): string | null {
+  return validators.required(value) || (typeof value === 'string' && value?.trim() ? null : "Job date is required");
+}
+
+function workLocationValidator(value: unknown): string | null {
+  return validators.required(value) || (typeof value === 'string' && value?.trim() ? null : "Work location is required");
+}
+
+function employeeSignatureValidator(value: unknown, form?: unknown): string | null {
+  const state = form as DailyJsaFormState | undefined;
+  if (state?.employeeSignaturePath?.trim()) return null;
+  return validators.signature(value);
+}
+
 /**
- * Custom hook for JSA form validation
- * Handles all validation rules and manages validation state
- * Extracted to reduce DailyJSAForm component size
+ * Returns validation rules for the given submission type.
+ * Paper mode: date, location, at least one photo, signature.
+ * Digital mode: full form rules including contacts, jobs, spans.
  */
-export function useJSAFormValidation(form: DailyJsaFormState) {
-  // Validation rules for JSA form
-  const validationRules = useMemo<ValidationRule<DailyJsaFormState>[]>(() => [
-    {
-      field: 'jobDate',
-      validator: (value: unknown) => validators.required(value) || (typeof value === 'string' && value?.trim() ? null : "Job date is required"),
-    },
-    {
-      field: 'workLocation',
-      validator: (value: unknown) => validators.required(value) || (typeof value === 'string' && value?.trim() ? null : "Work location is required"),
-    },
+export function getValidationRules(submissionType: 'digital' | 'paper'): ValidationRule<DailyJsaFormState>[] {
+  const shared: ValidationRule<DailyJsaFormState>[] = [
+    { field: 'jobDate', validator: jobDateValidator },
+    { field: 'workLocation', validator: workLocationValidator },
+    { field: 'employeeSignature', validator: employeeSignatureValidator },
+  ];
+
+  if (submissionType === 'paper') {
+    return [
+      ...shared,
+      {
+        field: 'jsaPhotoPaths',
+        validator: (value: unknown) =>
+          Array.isArray(value) && value.length > 0 ? null : 'At least one photo is required',
+      },
+    ];
+  }
+
+  return [
+    ...shared,
     {
       field: 'ocContact',
       validator: (value: unknown) => {
-        if (!value || !String(value).trim()) {
-          return "OC Name & Telephone is required";
-        }
+        if (!value || !String(value).trim()) return "OC Name & Telephone is required";
         return validators.phone(value);
       },
     },
     {
       field: 'docContact',
       validator: (value: unknown) => {
-        if (!value || !String(value).trim()) {
-          return "DOC Telephone is required";
-        }
+        if (!value || !String(value).trim()) return "DOC Telephone is required";
         return validators.phone(value);
       },
     },
     {
       field: 'gfContact',
       validator: (value: unknown) => {
-        if (!value || !String(value).trim()) {
-          return "GF & Telephone is required";
-        }
+        if (!value || !String(value).trim()) return "GF & Telephone is required";
         return validators.phone(value);
       },
     },
     {
       field: 'safetyContact',
       validator: (value: unknown) => {
-        if (!value || !String(value).trim()) {
-          return "Safety & Telephone is required";
-        }
+        if (!value || !String(value).trim()) return "Safety & Telephone is required";
         return validators.phone(value);
       },
     },
@@ -64,17 +79,19 @@ export function useJSAFormValidation(form: DailyJsaFormState) {
         return null;
       },
     },
-    {
-      field: 'employeeSignature',
-      validator: (value: unknown, form?: unknown) => {
-        const state = form as DailyJsaFormState | undefined;
-        if (state?.employeeSignaturePath?.trim()) return null;
-        return validators.signature(value);
-      },
-    },
-  ], []);
+  ];
+}
 
-  // Form validation hook - use FormValidationState type for constraint compatibility
+/**
+ * Custom hook for JSA form validation.
+ * Rules branch on form.submissionType (paper vs digital).
+ */
+export function useJSAFormValidation(form: DailyJsaFormState) {
+  const validationRules = useMemo<ValidationRule<DailyJsaFormState>[]>(
+    () => getValidationRules(form.submissionType),
+    [form.submissionType]
+  );
+
   type FormValidationState = DailyJsaFormState & Record<string, unknown>;
   const {
     errors,
@@ -88,37 +105,25 @@ export function useJSAFormValidation(form: DailyJsaFormState) {
     showErrorsAfterSubmitAttempt: false,
   });
 
-  // Additional validation for complex fields
+  // Additional validation: spans (digital only)
   const additionalErrors = useMemo(() => {
     const errs: Record<string, string> = {};
-    
-    // Spans validation (at least one span with location or hazards)
+    if (form.submissionType === 'paper') return errs;
     const hasValidSpan = form.spans.some(s => s.location.trim() || s.hazards.trim());
     if (!hasValidSpan && form.spans.length > 0) {
       errs.spans = "At least one span must have location or hazards filled";
     }
-    
     return errs;
-  }, [form.spans]);
+  }, [form.submissionType, form.spans]);
 
-  // Combined errors (filter out undefined values)
   const allErrors = useMemo(() => {
     const combined: Record<string, string> = {};
-    
-    // Add validation errors (filter out undefined)
     Object.entries(errors).forEach(([key, value]) => {
-      if (value && typeof value === 'string') {
-        combined[key] = value;
-      }
+      if (value && typeof value === 'string') combined[key] = value;
     });
-    
-    // Add additional errors (filter out undefined)
     Object.entries(additionalErrors).forEach(([key, value]) => {
-      if (value && typeof value === 'string') {
-        combined[key] = value;
-      }
+      if (value && typeof value === 'string') combined[key] = value;
     });
-    
     return combined;
   }, [errors, additionalErrors]);
 

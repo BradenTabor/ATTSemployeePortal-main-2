@@ -39,9 +39,11 @@ import { getDeviceCapabilities } from "../../lib/mobilePerf";
 import {
   DataExporter,
   generateFilename,
+  formatJsaPhotoUrls,
   type ExportMetadata,
 } from "../../lib/exportUtils";
 import { logReportExported } from "../../lib/safetyAuditLog";
+import { SIGNED_URL_EXPIRY } from "../../hooks/jsa/useJSAPhotoUpload";
 
 // Import from extracted module
 import {
@@ -52,6 +54,7 @@ import {
   DEFAULT_PAGE_SIZE,
   STATUS_FILTERS,
   STATUS_BADGE,
+  TYPE_FILTERS,
   JSA_EXPORT_COLUMNS,
   JSA_PDF_EXPORT_COLUMNS,
   formatDate,
@@ -77,6 +80,7 @@ export default function AdminJSA() {
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "draft" | "completed">("all");
+  const [typeFilter, setTypeFilter] = useState<"all" | "digital" | "paper">("all");
   const [dateFilter, setDateFilter] = useState("");
   const [dateEndFilter, setDateEndFilter] = useState("");
   const [signatureFilter, setSignatureFilter] = useState("");
@@ -106,6 +110,7 @@ export default function AdminJSA() {
       page,
       pageSize,
       statusFilter,
+      typeFilter: typeFilter || undefined,
       dateFilter: dateFilter || undefined,
       dateEndFilter: dateEndFilter || undefined,
       searchQuery: searchQuery || undefined,
@@ -130,6 +135,7 @@ export default function AdminJSA() {
     if (typeof saved.pageSize === "number") setPageSize(saved.pageSize);
     if (typeof saved.searchQuery === "string") setSearchQuery(saved.searchQuery);
     if (saved.statusFilter) setStatusFilter(saved.statusFilter);
+    if (saved.typeFilter) setTypeFilter(saved.typeFilter);
     if (typeof saved.dateFilter === "string") setDateFilter(saved.dateFilter);
     if (typeof saved.dateEndFilter === "string") setDateEndFilter(saved.dateEndFilter);
     if (typeof saved.signatureFilter === "string") setSignatureFilter(saved.signatureFilter);
@@ -224,6 +230,7 @@ export default function AdminJSA() {
       pageSize,
       searchQuery,
       statusFilter,
+      typeFilter,
       dateFilter,
       dateEndFilter,
       signatureFilter,
@@ -232,7 +239,7 @@ export default function AdminJSA() {
       sortDirection,
       showFilters,
     });
-  }, [page, pageSize, searchQuery, statusFilter, dateFilter, dateEndFilter, signatureFilter, userFilter, sortField, sortDirection, showFilters]);
+  }, [page, pageSize, searchQuery, statusFilter, typeFilter, dateFilter, dateEndFilter, signatureFilter, userFilter, sortField, sortDirection, showFilters]);
 
   // Handle sort
   const handleSort = (field: SortField) => {
@@ -262,6 +269,7 @@ export default function AdminJSA() {
       let query = supabase.from("daily_jsa").select("*").order(dbSortField, { ascending: sortDirection === "asc" });
 
       if (statusFilter !== "all") query = query.eq("status", statusFilter);
+      if (typeFilter && typeFilter !== "all") query = query.eq("submission_type", typeFilter);
       if (dateFilter) query = query.gte("job_date", dateFilter);
       if (dateEndFilter) query = query.lte("job_date", dateEndFilter);
       if (searchQuery.trim()) {
@@ -285,12 +293,45 @@ export default function AdminJSA() {
       });
 
       const exporter = new DataExporter<AdminJsaRow>();
+
+      // Batch-generate signed URLs for JSA photos (CSV/Excel only — PDF uses count)
+      const photoUrlMap = new Map<string, string>();
+      if (exportFormat !== "pdf") {
+        const allPhotoPaths = enrichedData.flatMap(
+          (r) => (Array.isArray(r.jsa_photo_paths) ? r.jsa_photo_paths : [])
+        );
+        if (allPhotoPaths.length > 0) {
+          const { data: signedData } = await supabase.storage
+            .from("jsa-photos")
+            .createSignedUrls(allPhotoPaths, SIGNED_URL_EXPIRY.export);
+          if (signedData) {
+            signedData.forEach((item) => {
+              if (item.signedUrl && item.path) photoUrlMap.set(item.path, item.signedUrl);
+            });
+          }
+        }
+      }
+
+      // Build CSV/Excel columns with signed URLs injected into the photo column formatter.
+      // Target by header name ("Paper JSA Photos") — not just key — because the
+      // "Documentation Note" column shares the same key and must keep its own format.
+      const exportColumns = jsaExportColumns.map((col) => {
+        if (col.key === "jsa_photo_paths" && col.header === "Paper JSA Photos" && exportFormat !== "pdf") {
+          return {
+            ...col,
+            format: (v: unknown) => formatJsaPhotoUrls(v as string[] | null, photoUrlMap),
+          };
+        }
+        return col;
+      });
+
       const metadata: ExportMetadata = {
         reportType: "Daily JSA Records Export",
         generatedAt: new Date(),
         exportedBy: "Admin Portal",
         filters: {
           "Status": statusFilter === "all" ? "All" : statusFilter === "completed" ? "Completed" : "Draft",
+          "Type": typeFilter === "all" ? "All" : typeFilter === "paper" ? "Paper" : "Digital",
           "Date Range": dateFilter || dateEndFilter ? `${dateFilter || "Start"} to ${dateEndFilter || "End"}` : "All Time",
           "Search": searchQuery.trim() || "None",
         },
@@ -304,7 +345,7 @@ export default function AdminJSA() {
         case "csv":
           exporter.exportCSV({
             data: enrichedData,
-            columns: jsaExportColumns,
+            columns: exportColumns,
             filename,
             metadata,
           });
@@ -313,7 +354,7 @@ export default function AdminJSA() {
           // Must await async export methods to ensure loading state and error handling work correctly
           await exporter.exportExcel({
             data: enrichedData,
-            columns: jsaExportColumns,
+            columns: exportColumns,
             filename: filename.replace(".csv", ".xlsx"),
             metadata,
           });
@@ -344,7 +385,7 @@ export default function AdminJSA() {
     } finally {
       setIsExporting(false);
     }
-  }, [sortField, sortDirection, statusFilter, dateFilter, dateEndFilter, searchQuery, signatureFilter, userFilter, allUsers, user?.id, role]);
+  }, [sortField, sortDirection, statusFilter, dateFilter, dateEndFilter, searchQuery, signatureFilter, userFilter, allUsers, user?.id, role, typeFilter]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -392,7 +433,7 @@ export default function AdminJSA() {
   }
 
   // Check if any filters are active
-  const hasActiveFilters = searchQuery.trim() || dateFilter || dateEndFilter || signatureFilter.trim() || userFilter;
+  const hasActiveFilters = searchQuery.trim() || dateFilter || dateEndFilter || signatureFilter.trim() || userFilter || typeFilter !== "all";
 
   const clearAllFilters = () => {
     setSearchQuery("");
@@ -400,6 +441,7 @@ export default function AdminJSA() {
     setDateEndFilter("");
     setSignatureFilter("");
     setUserFilter("");
+    setTypeFilter("all");
     setStatusFilter("all");
   };
 
@@ -714,6 +756,25 @@ export default function AdminJSA() {
                       <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#b59d72] absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                     </div>
 
+                    {/* Type Filter (Digital / Paper) */}
+                    <div className="relative">
+                      <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#b59d72] absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                      <select
+                        value={typeFilter}
+                        onChange={(e) => setTypeFilter(e.target.value as "all" | "digital" | "paper")}
+                        aria-label="Filter by submission type"
+                        title="Filter by type"
+                        className="w-full rounded-xl sm:rounded-2xl bg-[#050402]/70 border border-[#f4c979]/25 pl-8 sm:pl-10 pr-8 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 appearance-none cursor-pointer min-h-[40px] sm:min-h-[44px]"
+                      >
+                        {TYPE_FILTERS.map((f) => (
+                          <option key={f.value} value={f.value}>
+                            {f.label}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#b59d72] absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
+
                     {/* Date Filters - Side by side on mobile */}
                     <div className="grid grid-cols-2 gap-2 sm:contents">
                       {/* Date Start Filter */}
@@ -860,18 +921,25 @@ export default function AdminJSA() {
                                 </span>
                               </td>
                               <td className="px-4 py-3">
-                                <span
-                                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                                    statusBadge[record.status || "draft"] || statusBadge.draft
-                                  }`}
-                                >
-                                  {record.status === "completed" ? (
-                                    <CheckCircle2 className="w-3 h-3" />
-                                  ) : (
-                                    <FileEdit className="w-3 h-3" />
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  <span
+                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                                      statusBadge[record.status || "draft"] || statusBadge.draft
+                                    }`}
+                                  >
+                                    {record.status === "completed" ? (
+                                      <CheckCircle2 className="w-3 h-3" />
+                                    ) : (
+                                      <FileEdit className="w-3 h-3" />
+                                    )}
+                                    {record.status || "draft"}
+                                  </span>
+                                  {record.submission_type === "paper" && (
+                                    <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                      Paper
+                                    </span>
                                   )}
-                                  {record.status || "draft"}
-                                </span>
+                                </div>
                               </td>
                               <td className="px-4 py-3 text-xs text-[#c7b696]">
                                 {formatDateTime(record.updated_at || record.created_at)}

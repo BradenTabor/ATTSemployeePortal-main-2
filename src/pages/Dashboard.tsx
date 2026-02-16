@@ -38,6 +38,8 @@ import {
 } from '../components/dashboard';
 import { CompactJobCard, StackedJobCard } from '../components/jobs';
 import { EnableNotificationsButton } from '../components/notifications';
+import { OfflineModeBanner } from '../components/OfflineModeBanner';
+import { RecentlySynced } from '../components/RecentlySynced';
 
 // Lazy-loaded components for code splitting
 const NavCards = lazy(() => import('../components/NavCards'));
@@ -453,7 +455,13 @@ function Dashboard() {
     <DashboardLayout title="Employee Hub">
       <PullToRefresh onRefresh={handleRefresh} isRefreshing={isRefreshing}>
         <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 pb-4 pt-3 sm:pt-6" data-testid="dashboard">
-          
+
+          {/* Offline Mode Banner - shows when offline or submissions queued */}
+          <OfflineModeBanner />
+
+          {/* Recently Synced Confirmations - shows after offline submissions sync */}
+          <RecentlySynced />
+
           {/* ============================================================ */}
           {/* TIER 1: Welcome Header - Compact identity + status */}
           {/* ============================================================ */}

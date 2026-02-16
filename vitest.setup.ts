@@ -1,4 +1,38 @@
 import '@testing-library/jest-dom/vitest';
+import 'fake-indexeddb/auto';
+
+// ---------------------------------------------------------------------------
+// IndexedDB cleanup between tests — fake-indexeddb may not support
+// indexedDB.databases(), so we hardcode the known DB names from our modules.
+// ---------------------------------------------------------------------------
+const KNOWN_IDB_NAMES = [
+  'atts-offline-queue',
+  'atts-offline-photos',
+  'atts-sync-conflicts',
+  'atts-query-cache',
+  '__atts_idb_probe__',
+];
+
+afterEach(() => {
+  for (const name of KNOWN_IDB_NAMES) {
+    indexedDB.deleteDatabase(name);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// navigator.storage mock for offlinePhotoStore / useStorageQuota
+// ---------------------------------------------------------------------------
+if (typeof navigator !== 'undefined' && !navigator.storage) {
+  Object.defineProperty(navigator, 'storage', {
+    value: {
+      estimate: async () => ({ usage: 0, quota: 1024 * 1024 * 500 }), // 500 MB
+      persist: async () => true,
+      persisted: async () => true,
+    },
+    writable: true,
+    configurable: true,
+  });
+}
 
 // IntersectionObserver mock for framer-motion useInView (BlurFade, etc.) in jsdom
 class MockIntersectionObserver implements IntersectionObserver {

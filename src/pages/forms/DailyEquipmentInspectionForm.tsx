@@ -30,7 +30,10 @@ import {
   createFormTimer,
 } from "../../lib/telemetry";
 import { parseFormError, getErrorToastTitle } from "../../lib/errorHandling";
-import { isOnline } from "../../lib/offlineQueue";
+import { isOnline, addToQueue } from "../../lib/offlineQueue";
+import { storePhotosForQueue } from "../../lib/offlinePhotoStore";
+import { compressImage } from "../../lib/imageCompression";
+import { OfflineFormIndicator } from "../../components/OfflineFormIndicator";
 import { validators as formValidators } from "../../lib/formValidation";
 import { useEquipmentFormValidation } from "../../hooks/equipment";
 import {
@@ -46,7 +49,6 @@ import {
   EQUIPMENT_NUMBERS_BY_TYPE,
   EQUIPMENT_TYPE_OPTIONS,
 } from "./equipmentConstants";
-import { compressImage } from "../../lib/imageCompression";
 import { ValidationSummary } from "../../components/forms/ValidationSummary";
 import { ValidatedSubmitButton } from "../../components/forms/ValidatedSubmitButton";
 import { scrollToFirstError } from "../../lib/scrollToError";
@@ -612,14 +614,103 @@ export default function DailyEquipmentInspectionForm() {
     const submitterName = form.submittedBy.trim();
     const trimmedNumber = form.equipmentNumber.trim();
 
-    // Offline: Equipment requires photo uploads; queue does not persist files yet. Show clear message.
+    // Offline: compress photos, store blobs in IndexedDB, queue for sync
     if (!isOnline()) {
-      formToast.info(
-        "You're offline",
-        "Equipment inspection requires photos and can't be queued yet. Your draft is saved—submit when you're back online."
-      );
-      submittingRef.current = false;
-      setSubmitting(false);
+      try {
+        formToast.submitting("Saving offline...");
+
+        const tempQueueId = `atts-q-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+        const photoEntries: Array<{
+          fieldName: string;
+          blob: Blob;
+          fileName: string;
+          contentType: string;
+          compressed: boolean;
+        }> = [];
+
+        // Compress and collect all standard photos
+        for (const key of PHOTO_KEYS_ORDER) {
+          const file = photos[key];
+          if (!file) continue;
+          const compressed = await compressImage(file);
+          photoEntries.push({
+            fieldName: key,
+            blob: compressed as Blob,
+            fileName: file.name,
+            contentType: compressed.type || 'image/jpeg',
+            compressed: true,
+          });
+        }
+
+        // Compress additional photos
+        for (let i = 0; i < additionalPhotos.length; i++) {
+          const file = additionalPhotos[i];
+          const compressed = await compressImage(file);
+          photoEntries.push({
+            fieldName: `additional_${i}`,
+            blob: compressed as Blob,
+            fileName: file.name,
+            contentType: compressed.type || 'image/jpeg',
+            compressed: true,
+          });
+        }
+
+        const photoIds = await storePhotosForQueue(tempQueueId, 'equipment', photoEntries);
+
+        const offlinePayload: Record<string, unknown> = {
+          __offlineQueueId: tempQueueId,
+          user_id: user.id,
+          submitted_by: submitterName,
+          equipment_type: form.equipmentType,
+          equipment_number: trimmedNumber,
+          inspection_date: form.inspectionDate,
+          template: form.template || null,
+          notes: form.notes.trim() ? form.notes.trim() : null,
+          general_checklist: form.generalChecklist,
+          specific_checklist: form.specificChecklist,
+          // Photo paths are placeholders — replaced during sync
+          overview_photo_path: photos.overview ? `offline://${tempQueueId}/overview` : null,
+          damage_photo_path: photos.damage ? `offline://${tempQueueId}/damage` : null,
+          attachments_photo_path: photos.attachments ? `offline://${tempQueueId}/attachments` : null,
+          hydraulic_photo_path: photos.hydraulic ? `offline://${tempQueueId}/hydraulic` : null,
+          additional_photo_paths: additionalPhotos.length > 0
+            ? additionalPhotos.map((_, i) => `offline://${tempQueueId}/additional_${i}`)
+            : null,
+        };
+
+        await addToQueue('equipment', offlinePayload, {
+          userId: user.id,
+          dateFor: form.inspectionDate,
+          photoIds,
+        });
+
+        formToast.dismiss();
+        formToast.success(
+          "Inspection Saved Offline",
+          "Your equipment inspection will sync automatically when you're back online."
+        );
+
+        // Clear draft and reset form
+        clearDraft();
+        setForm({
+          ...createInitialEquipmentFormState(),
+          submittedBy: defaultSubmitterName,
+        });
+        setPhotos({});
+        setAdditionalPhotos([]);
+        setCurrentStep(1);
+        setCompletedSteps(new Set());
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } catch {
+        formToast.dismiss();
+        formToast.error(
+          "Offline Save Failed",
+          "Could not save inspection offline. Please try again."
+        );
+      } finally {
+        submittingRef.current = false;
+        setSubmitting(false);
+      }
       return;
     }
 
@@ -861,6 +952,8 @@ export default function DailyEquipmentInspectionForm() {
   return (
     <DashboardLayout title="Daily Equipment Inspection">
       <div className="max-w-5xl mx-auto px-3 sm:px-4 pb-10 space-y-4 sm:space-y-5">
+        {/* Offline indicator */}
+        <OfflineFormIndicator offlineCapable={true} />
         <section className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#0a2218] via-[#031510] to-[#010407] p-4 sm:p-5 shadow-[0_25px_80px_rgba(0,0,0,0.55)]">
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute -top-24 -right-6 h-48 w-48 bg-emerald-500/15 blur-[100px]" />

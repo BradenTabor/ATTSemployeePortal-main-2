@@ -243,6 +243,7 @@ interface JsaRow {
   created_at: string;
   updated_at: string | null;
   notes: string | null;
+  jsa_photo_paths: string[] | null;
 }
 
 const JSA_COLUMNS: ExportColumn<JsaRow>[] = [
@@ -252,6 +253,11 @@ const JSA_COLUMNS: ExportColumn<JsaRow>[] = [
   { header: "Status", key: "status", format: (v) => formatValue(v), width: 12 },
   { header: "Created", key: "created_at", format: (v) => formatDateForExport(v as string, true), width: 22 },
   { header: "Notes", key: "notes", format: (v) => formatValue(v), width: 30 },
+  { header: "Paper JSA Photos", key: "jsa_photo_paths", format: (v) => {
+    const paths = v as string[] | null;
+    if (!paths || paths.length === 0) return "None";
+    return `${paths.length} attached`;
+  }, width: 18 },
 ];
 
 interface RtoRow {
@@ -471,7 +477,7 @@ export default function ComplianceDataExportPanel() {
       fetchData: async (fromDate, toDate) => {
         const { data, error } = await supabase
           .from("daily_jsa")
-          .select("id, job_date, work_location, status, user_id, created_at, updated_at, notes")
+          .select("id, job_date, work_location, status, user_id, created_at, updated_at, notes, jsa_photo_paths")
           .gte("job_date", fromDate)
           .lte("job_date", toDate)
           .order("job_date", { ascending: false })

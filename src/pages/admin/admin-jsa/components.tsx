@@ -168,14 +168,21 @@ export function MobileJsaCard({
           <p className="text-sm sm:text-base font-semibold text-white truncate">{record.work_location || "Untitled location"}</p>
           <p className="text-[10px] sm:text-xs text-[#c7b696] truncate">{record.circuit_number || "Circuit pending"}</p>
         </div>
-        <span
-          className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-[0.65rem] font-semibold flex-shrink-0 ${
-            STATUS_BADGE[record.status || "draft"] || STATUS_BADGE.draft
-          }`}
-        >
-          {record.status === "completed" ? <CheckCircle2 className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> : <FileEdit className="w-2.5 h-2.5 sm:w-3 sm:h-3" />}
-          <span className="hidden xs:inline">{record.status || "draft"}</span>
-        </span>
+        <div className="flex flex-wrap items-center gap-1 flex-shrink-0">
+          <span
+            className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-[0.65rem] font-semibold ${
+              STATUS_BADGE[record.status || "draft"] || STATUS_BADGE.draft
+            }`}
+          >
+            {record.status === "completed" ? <CheckCircle2 className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> : <FileEdit className="w-2.5 h-2.5 sm:w-3 sm:h-3" />}
+            <span className="hidden xs:inline">{record.status || "draft"}</span>
+          </span>
+          {record.submission_type === "paper" && (
+            <span className="inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              Paper
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="text-[10px] sm:text-xs text-[#c7b696] space-y-1 sm:space-y-1.5">
@@ -309,6 +316,7 @@ export function SelectedJsaDetail({
             <DetailRow label="Job Date" value={formatDate(record.job_date)} />
             <DetailRow label="Call Times" value={`${record.call_in_time || "—"} → ${record.call_out_time || "—"}`} />
             <DetailRow label="Status" value={record.status} />
+            <DetailRow label="Type" value={record.submission_type === "paper" ? "Paper" : "Digital"} />
             <DetailRow label="Updated" value={formatDateTime(record.updated_at)} />
             <DetailRow label="Driver Signature" value={record.employee_signature?.trim() || "—"} />
           </div>
@@ -375,6 +383,8 @@ export function SelectedJsaDetail({
           </div>
         </DetailCard>
 
+        {record.submission_type !== "paper" && (
+        <>
         <DetailCard title="Jobs & Weather" icon={<Thermometer className="w-4 h-4" />}>
           <ChipSection title="Jobs Performed" chips={jobs.map((job) => job.label ?? job.key)} emptyText="No jobs selected." />
           <ChipSection title="Conditions" chips={weatherConditions} />
@@ -422,6 +432,8 @@ export function SelectedJsaDetail({
             </div>
           )}
         </DetailCard>
+        </>
+        )}
 
         <DetailCard title="Notes & Signature" icon={<AlignLeft className="w-4 h-4" />} className={isFullscreen ? "md:col-span-2" : ""}>
           <p className="text-xs text-[#f0e2c7]">

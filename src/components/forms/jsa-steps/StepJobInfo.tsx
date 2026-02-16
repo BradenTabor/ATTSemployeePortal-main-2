@@ -1,11 +1,14 @@
-import type { ComponentType } from "react";
-import { MapPin, Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
+import { type ComponentType, useState, useRef, useCallback, useEffect } from "react";
+import { MapPin, Loader2, CheckCircle2, AlertTriangle, Camera, X, ChevronDown, ChevronUp, ImageIcon, WifiOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "../../../lib/utils";
 import { DateField, TimeField } from "../GlassyPickers";
 import { LocationInputField } from "../LocationInputField";
 import { ContactTemplatePicker } from "../ContactTemplatePicker";
 import { SavedLocationPicker } from "../SavedLocationPicker";
+import { useJSAPhotoUpload, MAX_JSA_PHOTOS } from "../../../hooks/jsa/useJSAPhotoUpload";
+import { formToast } from "../../../lib/formToast";
+import { isOnline } from "../../../lib/offlineQueue";
 
 type JobInfoFields = {
   jobDate: string;
@@ -28,6 +31,10 @@ interface StepJobInfoProps {
   isLoading?: boolean;
   errors?: Partial<Record<keyof JobInfoFields, string | undefined>>;
   onFieldBlur?: (field: keyof JobInfoFields) => void;
+  /** Current JSA photo storage paths. */
+  jsaPhotoPaths?: string[];
+  /** Callback when photo paths change (add or remove). */
+  onJsaPhotoPathsChange?: (paths: string[]) => void;
 }
 
 // Animated checkmark for completed fields
@@ -155,9 +162,309 @@ function InputField({
   );
 }
 
-export function StepJobInfo({ form, onInputChange, isLoading, errors, onFieldBlur }: StepJobInfoProps) {
+// ---------------------------------------------------------------------------
+// Paper JSA Photo Upload Section
+// ---------------------------------------------------------------------------
+
+interface PhotoThumbnailProps {
+  path: string;
+  onRemove: () => void;
+  isRemoving: boolean;
+  /** Resolves storage path to a display URL (signed). Used so we can share hook and handle errors. */
+  getSignedUrl: (path: string) => Promise<string | null>;
+}
+
+function PhotoThumbnail({ path, onRemove, isRemoving, getSignedUrl }: PhotoThumbnailProps) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    getSignedUrl(path)
+      .then((signedUrl) => {
+        if (!cancelled) {
+          setLoadError(false);
+          if (signedUrl) setUrl(signedUrl);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setLoadError(true);
+      });
+    return () => { cancelled = true; };
+  }, [path, getSignedUrl]);
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.8 }}
+      className="relative group rounded-lg overflow-hidden border border-white/10 bg-black/40 w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0"
+    >
+      {url && !loadError ? (
+        <img
+          src={url}
+          alt="Paper JSA page"
+          className="w-full h-full object-cover"
+          onError={() => setLoadError(true)}
+        />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center">
+          {loadError ? (
+            <ImageIcon className="w-6 h-6 text-white/40" aria-hidden />
+          ) : (
+            <Loader2 className="w-4 h-4 text-white/30 animate-spin" />
+          )}
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={onRemove}
+        disabled={isRemoving}
+        className="absolute top-1 right-1 p-0.5 rounded-full bg-black/70 text-white/80 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity hover:bg-rose-600 hover:text-white"
+        aria-label="Remove photo"
+      >
+        {isRemoving ? (
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        ) : (
+          <X className="w-3.5 h-3.5" />
+        )}
+      </button>
+    </motion.div>
+  );
+}
+
+export interface PaperJsaUploadProps {
+  photoPaths: string[];
+  onPathsChange: (paths: string[]) => void;
+  /** When true, show "Required" and keep section expanded by default when empty */
+  required?: boolean;
+}
+
+export function PaperJsaUpload({ photoPaths, onPathsChange, required }: PaperJsaUploadProps) {
+  const [isOpen, setIsOpen] = useState(photoPaths.length > 0 || required === true);
+  const [uploading, setUploading] = useState(false);
+  const [removingPath, setRemovingPath] = useState<string | null>(null);
+  const [failedFiles, setFailedFiles] = useState<Array<{ name: string; error: string }>>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { uploadMultiple, deletePhoto, getSignedUrl } = useJSAPhotoUpload();
+
+  const online = isOnline();
+  const remainingSlots = MAX_JSA_PHOTOS - photoPaths.length;
+
+  const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    // Reset the input so the same file can be selected again if needed
+    if (fileInputRef.current) fileInputRef.current.value = "";
+
+    setUploading(true);
+    setFailedFiles([]);
+
+    try {
+      const result = await uploadMultiple(files, photoPaths);
+
+      if (result.successful.length > 0) {
+        const newPaths = [...photoPaths, ...result.successful];
+        onPathsChange(newPaths);
+        formToast.success(
+          "Photo Uploaded",
+          result.successful.length === 1
+            ? "Paper JSA photo saved. It will be included when this JSA is exported."
+            : `${result.successful.length} paper JSA photos saved. They will be included when this JSA is exported.`
+        );
+      }
+
+      if (result.failed.length > 0) {
+        setFailedFiles(
+          result.failed.map((f) => ({
+            name: f.file.name,
+            error: f.error.message,
+          }))
+        );
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Photo upload failed. Please try again.";
+      formToast.error("Upload Failed", message);
+    } finally {
+      setUploading(false);
+    }
+  }, [photoPaths, onPathsChange, uploadMultiple]);
+
+  const handleRemove = useCallback(async (path: string) => {
+    setRemovingPath(path);
+    try {
+      await deletePhoto(path);
+      onPathsChange(photoPaths.filter((p) => p !== path));
+    } catch {
+      formToast.error("Remove Failed", "Failed to remove photo. Please try again.");
+    } finally {
+      setRemovingPath(null);
+    }
+  }, [photoPaths, onPathsChange, deletePhoto]);
+
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.03] overflow-hidden">
+      {/* Header / toggle */}
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between px-3 py-2.5 sm:px-4 sm:py-3 text-left hover:bg-white/[0.02] transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <Camera className="w-4 h-4 text-emerald-400" />
+          <span className="text-xs sm:text-sm font-medium text-white/80">
+            Attach Paper JSA Form
+          </span>
+          <span className={cn(
+            "text-[10px] sm:text-xs italic",
+            required ? "text-amber-300" : "text-white/40"
+          )}>
+            {required ? "Required" : "Optional"}
+          </span>
+          {photoPaths.length > 0 && (
+            <span className="text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-medium">
+              {photoPaths.length}/{MAX_JSA_PHOTOS}
+            </span>
+          )}
+        </div>
+        {isOpen ? (
+          <ChevronUp className="w-4 h-4 text-white/40" />
+        ) : (
+          <ChevronDown className="w-4 h-4 text-white/40" />
+        )}
+      </button>
+
+      {/* Collapsible content */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="px-3 pb-3 sm:px-4 sm:pb-4 space-y-3">
+              {/* Offline guard */}
+              {!online && (
+                <div className="flex items-center gap-2 text-amber-200 text-[10px] sm:text-xs p-2 rounded-lg border border-amber-500/30 bg-amber-500/10">
+                  <WifiOff className="w-3.5 h-3.5 flex-shrink-0" />
+                  Photo upload requires an internet connection. You can add photos after reconnecting.
+                </div>
+              )}
+
+              {/* Upload button */}
+              {online && remainingSlots > 0 && (
+                <div className="space-y-1.5">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className={cn(
+                      "w-full flex items-center justify-center gap-2 rounded-lg border-2 border-dashed px-4 py-4 sm:py-5 transition-all text-sm",
+                      uploading
+                        ? "border-white/10 text-white/30 cursor-wait"
+                        : "border-white/15 text-white/60 hover:border-emerald-500/40 hover:text-emerald-300 hover:bg-emerald-500/5 cursor-pointer"
+                    )}
+                  >
+                    {uploading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <ImageIcon className="w-4 h-4" />
+                        Take Photo or Choose File
+                      </>
+                    )}
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    multiple
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    disabled={uploading || !online}
+                  />
+                  <p className="text-[10px] text-white/30 text-center">
+                    Photos are compressed for upload. Retain originals if uncompressed copies are needed.
+                  </p>
+                </div>
+              )}
+
+              {/* Max reached message */}
+              {remainingSlots <= 0 && (
+                <p className="text-[10px] sm:text-xs text-white/40 text-center py-2">
+                  Maximum {MAX_JSA_PHOTOS} photos reached.
+                </p>
+              )}
+
+              {/* Failed uploads */}
+              <AnimatePresence>
+                {failedFiles.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="space-y-1"
+                  >
+                    {failedFiles.map((f, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center gap-2 text-[10px] sm:text-xs text-rose-300 p-2 rounded-lg border border-rose-500/20 bg-rose-500/5"
+                      >
+                        <AlertTriangle className="w-3 h-3 flex-shrink-0" />
+                        <span className="truncate">{f.name}: {f.error}</span>
+                      </div>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Photo thumbnails */}
+              {photoPaths.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  <AnimatePresence mode="popLayout">
+                    {photoPaths.map((path) => (
+                      <PhotoThumbnail
+                        key={path}
+                        path={path}
+                        onRemove={() => handleRemove(path)}
+                        isRemoving={removingPath === path}
+                        getSignedUrl={getSignedUrl}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main StepJobInfo component
+// ---------------------------------------------------------------------------
+
+export function StepJobInfo({ form, onInputChange, isLoading, errors, onFieldBlur, jsaPhotoPaths, onJsaPhotoPathsChange }: StepJobInfoProps) {
   return (
     <div className="space-y-3 sm:space-y-4">
+      {/* Paper JSA Photo Upload */}
+      {onJsaPhotoPathsChange && (
+        <PaperJsaUpload
+          photoPaths={jsaPhotoPaths || []}
+          onPathsChange={onJsaPhotoPathsChange}
+        />
+      )}
+
       {isLoading && (
         <div className="flex items-center gap-2 text-amber-200 text-[10px] sm:text-xs p-2 sm:p-3 rounded-lg border border-amber-500/30 bg-amber-500/10">
           <Loader2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 animate-spin" />

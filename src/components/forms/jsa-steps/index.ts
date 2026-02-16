@@ -1,4 +1,4 @@
-export { StepJobInfo } from "./StepJobInfo";
+export { StepJobInfo, PaperJsaUpload } from "./StepJobInfo";
 export { StepSafetyPpe } from "./StepSafetyPpe";
 export { StepConditions } from "./StepConditions";
 export { StepSiteHazards } from "./StepSiteHazards";

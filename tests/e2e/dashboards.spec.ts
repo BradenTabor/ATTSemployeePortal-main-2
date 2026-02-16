@@ -8,14 +8,16 @@ import { test, expect } from '@playwright/test';
 import { loginAs } from './helpers/auth';
 
 test.describe('Employee Dashboard', () => {
+  test.setTimeout(60000);
   test.beforeEach(async ({ page }) => {
     await loginAs(page, 'employee');
     await page.goto('/dashboard');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
   });
 
   test('should display dashboard for employee', async ({ page }) => {
-    await expect(page.locator('[data-testid="dashboard"], .dashboard, main')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('[data-testid="dashboard"], .dashboard, main').first()).toBeVisible({ timeout: 15000 });
   });
 
   test('should show greeting header', async ({ page }) => {
@@ -79,13 +81,15 @@ test.describe('Employee Dashboard', () => {
 });
 
 test.describe('Foreman Dashboard', () => {
+  test.setTimeout(60000);
   test.beforeEach(async ({ page }) => {
     await loginAs(page, 'foreman');
   });
 
   test('should access foreman dashboard', async ({ page }) => {
     await page.goto('/foreman/dashboard');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     const dashboard = page.locator('[data-testid="foreman-dashboard"]').first();
     const main = page.locator('main').first();
@@ -104,7 +108,8 @@ test.describe('Foreman Dashboard', () => {
 
   test('should show daily reports access', async ({ page }) => {
     await page.goto('/foreman/dashboard');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     const reportsLink = page.locator('a[href*="reports"], [data-testid="daily-reports"]');
     const isVisible = await reportsLink.first().isVisible().catch(() => false);
@@ -113,7 +118,8 @@ test.describe('Foreman Dashboard', () => {
 
   test('should access foreman daily reports', async ({ page }) => {
     await page.goto('/foreman/daily-reports');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     // Should load without error
     await expect(page.locator('main, [data-testid="daily-reports"]')).toBeVisible();
@@ -121,13 +127,15 @@ test.describe('Foreman Dashboard', () => {
 });
 
 test.describe('General Foreman Dashboard', () => {
+  test.setTimeout(60000);
   test.beforeEach(async ({ page }) => {
     await loginAs(page, 'general_foreman');
   });
 
   test('should access GF dashboard', async ({ page }) => {
     await page.goto('/general-foreman/dashboard');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     const dashboard = page.locator('[data-testid="gf-dashboard"]').first();
     const main = page.locator('main').first();
@@ -146,7 +154,8 @@ test.describe('General Foreman Dashboard', () => {
 
   test('should show crew oversight access', async ({ page }) => {
     await page.goto('/general-foreman/dashboard');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     const crewLink = page.locator('a[href*="crew"], [data-testid="crew-oversight"]');
     const isVisible = await crewLink.first().isVisible().catch(() => false);
@@ -155,7 +164,8 @@ test.describe('General Foreman Dashboard', () => {
 
   test('should access crew oversight', async ({ page }) => {
     await page.goto('/general-foreman/crew-oversight');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     const main = page.locator('main').first();
     const mainVisible = await main.isVisible({ timeout: 5000 }).catch(() => false);
@@ -169,7 +179,8 @@ test.describe('General Foreman Dashboard', () => {
 
   test('should access safety compliance', async ({ page }) => {
     await page.goto('/general-foreman/safety-compliance');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     // Check for main element or that we're on the correct route
     const mainVisible = await page.locator('main').first().isVisible({ timeout: 5000 }).catch(() => false);
@@ -179,7 +190,8 @@ test.describe('General Foreman Dashboard', () => {
 
   test('should access equipment logs', async ({ page }) => {
     await page.goto('/general-foreman/equipment-logs');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     // Check for main element or that we're on the correct route
     const mainVisible = await page.locator('main').first().isVisible({ timeout: 5000 }).catch(() => false);
@@ -189,13 +201,15 @@ test.describe('General Foreman Dashboard', () => {
 });
 
 test.describe('Mechanic Dashboard', () => {
+  test.setTimeout(60000);
   test.beforeEach(async ({ page }) => {
     await loginAs(page, 'mechanic');
   });
 
   test('should access mechanic dashboard', async ({ page }) => {
     await page.goto('/mechanic/dashboard');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     const dashboard = page.locator('[data-testid="mechanic-dashboard"]').first();
     const main = page.locator('main').first();
@@ -214,7 +228,8 @@ test.describe('Mechanic Dashboard', () => {
 
   test('should show DVIR center access', async ({ page }) => {
     await page.goto('/mechanic/dashboard');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     const dvirLink = page.locator('a[href*="dvir"], [data-testid="dvir-center"]');
     const isVisible = await dvirLink.first().isVisible().catch(() => false);
@@ -223,7 +238,8 @@ test.describe('Mechanic Dashboard', () => {
 
   test('should access DVIR center', async ({ page }) => {
     await page.goto('/mechanic/dvir-center');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     const main = page.locator('main').first();
     const mainVisible = await main.isVisible({ timeout: 5000 }).catch(() => false);
@@ -237,7 +253,8 @@ test.describe('Mechanic Dashboard', () => {
 
   test('should access equipment center', async ({ page }) => {
     await page.goto('/mechanic/equipment-center');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     const main = page.locator('main').first();
     const mainVisible = await main.isVisible({ timeout: 5000 }).catch(() => false);
@@ -251,18 +268,21 @@ test.describe('Mechanic Dashboard', () => {
 
   test('should access parts and repairs log', async ({ page }) => {
     await page.goto('/mechanic/parts-repairs');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     await expect(page.locator('main')).toBeVisible();
   });
 });
 
 test.describe('Safety Officer Dashboard', () => {
+  test.setTimeout(60000);
   test('should access safety officer dashboard', async ({ page }) => {
     // Safety officer might use employee credentials or specific role
     await loginAs(page, 'employee'); // Adjust if specific role exists
     await page.goto('/safety-officer/dashboard');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     // May redirect based on role
     const mainContent = page.locator('main').first();
@@ -277,12 +297,14 @@ test.describe('Safety Officer Dashboard', () => {
 });
 
 test.describe('Dashboard Authorization', () => {
+  test.setTimeout(120000);
   test('employee cannot access admin dashboard', async ({ page }) => {
     await loginAs(page, 'employee');
     await page.goto('/admin/dashboard');
     
     // Should either redirect or show access denied
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     const url = page.url();
     const accessDenied = page.getByText(/access denied|unauthorized|not allowed/i);
@@ -306,7 +328,8 @@ test.describe('Dashboard Authorization', () => {
     await loginAs(page, 'employee');
     await page.goto('/mechanic/dashboard');
     
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     const url = page.url();
     // Should redirect or show access denied
@@ -335,7 +358,8 @@ test.describe('Dashboard Authorization', () => {
     await loginAs(page, 'mechanic');
     await page.goto('/admin/dashboard');
     
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     const url = page.url();
     // After redirect: /admin/dashboard -> /admin -> ProtectedRoute redirects away
@@ -352,12 +376,14 @@ test.describe('Dashboard Authorization', () => {
 });
 
 test.describe('Dashboard - Mobile Responsiveness', () => {
+  test.setTimeout(60000);
   test.use({ viewport: { width: 375, height: 667 } });
 
   test('employee dashboard works on mobile', async ({ page }) => {
     await loginAs(page, 'employee');
     await page.goto('/dashboard');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     // Dashboard should be usable
     await expect(page.locator('main')).toBeVisible();

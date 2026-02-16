@@ -29,10 +29,11 @@ interface AuthContextType {
   refreshAvatar: () => Promise<void>;
 }
 
-// Session storage keys for profile caching
+// Profile caching — localStorage with 24h TTL for offline durability.
+// (Previously sessionStorage with 5min TTL, which was lost on tab close.)
 const PROFILE_CACHE_KEY = 'atts_user_profile';
 const PROFILE_CACHE_EXPIRY_KEY = 'atts_user_profile_expiry';
-const PROFILE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes TTL
+const PROFILE_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours (was 5 min)
 
 interface CachedProfile {
   userId: string;
@@ -41,19 +42,19 @@ interface CachedProfile {
   avatarUrl: string | null;
 }
 
-// Helper functions for profile caching
+// Helper functions for profile caching (localStorage for offline durability)
 function getCachedProfile(userId: string): CachedProfile | null {
   try {
-    const expiryStr = sessionStorage.getItem(PROFILE_CACHE_EXPIRY_KEY);
-    const cachedStr = sessionStorage.getItem(PROFILE_CACHE_KEY);
+    const expiryStr = localStorage.getItem(PROFILE_CACHE_EXPIRY_KEY);
+    const cachedStr = localStorage.getItem(PROFILE_CACHE_KEY);
     
     if (!expiryStr || !cachedStr) return null;
     
     const expiry = parseInt(expiryStr, 10);
     if (Date.now() > expiry) {
       // Cache expired
-      sessionStorage.removeItem(PROFILE_CACHE_KEY);
-      sessionStorage.removeItem(PROFILE_CACHE_EXPIRY_KEY);
+      localStorage.removeItem(PROFILE_CACHE_KEY);
+      localStorage.removeItem(PROFILE_CACHE_EXPIRY_KEY);
       return null;
     }
     
@@ -70,8 +71,8 @@ function getCachedProfile(userId: string): CachedProfile | null {
 function setCachedProfile(userId: string, role: UserRole, fullName: string | null, avatarUrl: string | null): void {
   try {
     const profile: CachedProfile = { userId, role, fullName, avatarUrl };
-    sessionStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(profile));
-    sessionStorage.setItem(PROFILE_CACHE_EXPIRY_KEY, String(Date.now() + PROFILE_CACHE_TTL));
+    localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(profile));
+    localStorage.setItem(PROFILE_CACHE_EXPIRY_KEY, String(Date.now() + PROFILE_CACHE_TTL));
   } catch {
     // Ignore storage errors
   }
@@ -79,8 +80,8 @@ function setCachedProfile(userId: string, role: UserRole, fullName: string | nul
 
 function clearCachedProfile(): void {
   try {
-    sessionStorage.removeItem(PROFILE_CACHE_KEY);
-    sessionStorage.removeItem(PROFILE_CACHE_EXPIRY_KEY);
+    localStorage.removeItem(PROFILE_CACHE_KEY);
+    localStorage.removeItem(PROFILE_CACHE_EXPIRY_KEY);
   } catch {
     // Ignore storage errors
   }

@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { useModalOverlay } from "../../hooks/useModalOverlay";
@@ -20,9 +20,12 @@ import {
   Activity,
   MapPin,
   Copy,
+  ImageIcon,
+  Loader2,
 } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import type { DailyJsaRecord, ObserverSignature, JsaSpan } from "../../pages/forms/DailyJSAForm";
+import { SIGNED_URL_EXPIRY } from "../../hooks/jsa/useJSAPhotoUpload";
 
 const PPE_ITEMS = [
   { key: "hard_hats", label: "Hard hats" },
@@ -72,6 +75,107 @@ function formatDateTime(iso: string | null | undefined) {
 
 const cardBase =
   "rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm shadow-[inset_0_2px_12px_rgba(0,0,0,0.3)]";
+
+/** Paper JSA photo thumbnails section for the detail modal. */
+function JsaPhotoSection({ paths }: { paths: string[] }) {
+  const [urlState, setUrlState] = useState<{
+    pathsKey: string;
+    urls: Map<string, string>;
+  } | null>(null);
+  const [expandedUrl, setExpandedUrl] = useState<string | null>(null);
+
+  const pathsKey = paths.join(",");
+
+  useEffect(() => {
+    let cancelled = false;
+    supabase.storage
+      .from("jsa-photos")
+      .createSignedUrls(paths, SIGNED_URL_EXPIRY.display)
+      .then(({ data }) => {
+        if (cancelled) return;
+        const map = new Map<string, string>();
+        data?.forEach((item) => {
+          if (item.signedUrl && item.path) map.set(item.path, item.signedUrl);
+        });
+        setUrlState({ pathsKey, urls: map });
+      })
+      .catch(() => { if (!cancelled) setUrlState({ pathsKey, urls: new Map() }); });
+    return () => { cancelled = true; };
+  }, [pathsKey, paths]);
+
+  const loading = !urlState || urlState.pathsKey !== pathsKey;
+  const urls = urlState?.urls ?? new Map<string, string>();
+
+  return (
+    <>
+      <div className={cardBase}>
+        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/10">
+          <ImageIcon className="w-4 h-4 text-emerald-300" />
+          <h3 className="text-xs uppercase tracking-wider text-white/70 font-semibold">
+            Paper JSA Photos
+          </h3>
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-medium">
+            {paths.length}
+          </span>
+        </div>
+        {loading ? (
+          <div className="flex items-center gap-2 text-sm text-white/40">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Loading photos...
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {paths.map((path) => {
+              const url = urls.get(path);
+              return (
+                <button
+                  key={path}
+                  type="button"
+                  onClick={() => url && setExpandedUrl(url)}
+                  className="rounded-lg overflow-hidden border border-white/10 bg-black/40 w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 hover:border-emerald-500/30 transition-colors cursor-pointer"
+                >
+                  {url ? (
+                    <img src={url} alt="Paper JSA page" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <ImageIcon className="w-5 h-5 text-white/20" />
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+        <p className="text-[10px] text-white/30 mt-2">
+          Paper JSA form images retained digitally to support workplace safety documentation practices.
+        </p>
+      </div>
+
+      {/* Full-size lightbox overlay */}
+      {expandedUrl && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+          onClick={() => setExpandedUrl(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setExpandedUrl(null)}
+            className="absolute top-4 right-4 p-2 rounded-full bg-black/60 text-white/80 hover:text-white"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          <img
+            src={expandedUrl}
+            alt="Paper JSA page (full size)"
+            className="max-w-full max-h-full object-contain rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+    </>
+  );
+}
 
 export interface JsaDetailModalProps {
   jsa: DailyJsaRecord;
@@ -158,6 +262,11 @@ export const JsaDetailModal = memo(function JsaDetailModal({
                 {status === "draft" ? <Edit3 className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                 {status === "draft" ? "Draft" : "Completed"}
               </span>
+              {jsa.submission_type === "paper" && (
+                <span className="inline-flex items-center rounded-lg border border-amber-400/60 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-200">
+                  Paper JSA
+                </span>
+              )}
               <button
                 type="button"
                 onClick={() => onEdit(jsa)}
@@ -255,7 +364,9 @@ export const JsaDetailModal = memo(function JsaDetailModal({
               )}
             </div>
 
-            {/* Jobs & PPE */}
+            {/* Jobs & PPE, Weather, Hazards, Spans — hide for paper JSAs to avoid empty sections */}
+            {jsa.submission_type !== "paper" && (
+            <>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className={cardBase}>
                 <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/10">
@@ -413,6 +524,13 @@ export const JsaDetailModal = memo(function JsaDetailModal({
                   ))}
                 </div>
               </div>
+            )}
+            </>
+            )}
+
+            {/* Paper JSA Photos */}
+            {jsa.jsa_photo_paths && Array.isArray(jsa.jsa_photo_paths) && jsa.jsa_photo_paths.length > 0 && (
+              <JsaPhotoSection paths={jsa.jsa_photo_paths} />
             )}
 
             {/* Notes */}

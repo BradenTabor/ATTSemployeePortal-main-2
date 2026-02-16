@@ -8,9 +8,13 @@ export type AdminJsaRow = DailyJsaRecord & {
   user_email?: string | null;
   user_name?: string | null;
   user_role?: string | null;
+  /** digital | paper — how the JSA was submitted */
+  submission_type?: "digital" | "paper" | null;
   /** From daily_jsa select for export (Slice 1) */
   jsa_type?: string | null;
   tree_felling_data?: unknown;
+  /** Paper JSA photo storage paths */
+  jsa_photo_paths?: string[] | null;
   /** Composite for PDF export only (formatter-built) */
   conditions_ppe_summary?: string;
   /** Composite for PDF export only (formatter-built) */

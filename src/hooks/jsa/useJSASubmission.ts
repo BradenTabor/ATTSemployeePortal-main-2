@@ -2,7 +2,9 @@ import { useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { logger } from '../../lib/logger';
 import { isOnline, addToQueue } from '../../lib/offlineQueue';
+import { storePhotosForQueue } from '../../lib/offlinePhotoStore';
 import type { DailyJSA, DailyJsaFormState, JobSelection, SharedUser } from '../../pages/forms/DailyJSAForm';
+import { useJSAPhotoUpload } from './useJSAPhotoUpload';
 
 const JOB_OPTIONS = [
   { key: "jarraff", label: "Jarraff Trimmer" },
@@ -21,6 +23,8 @@ interface SubmissionOptions {
   persistedStatus: "draft" | "completed";
   userId: string;
   previousSharedUsers: SharedUser[];
+  /** Pending photo File objects not yet uploaded (for offline queuing). */
+  pendingPhotoFiles?: File[];
 }
 
 interface SubmissionResult {
@@ -29,6 +33,9 @@ interface SubmissionResult {
   error?: Error;
   /** True when submission was queued for offline sync (no insert performed). */
   queued?: boolean;
+  /** True when uploaded JSA photos were deleted from storage after a failed insert.
+   *  The caller should clear its `jsaPhotoPaths` state so the user re-uploads on retry. */
+  photosRolledBack?: boolean;
 }
 
 /**
@@ -37,6 +44,8 @@ interface SubmissionResult {
  * Extracted to reduce DailyJSAForm component size
  */
 export function useJSASubmission() {
+  const { rollbackUploads } = useJSAPhotoUpload();
+
   const submitJSA = useCallback(async (
     mode: "draft" | "complete",
     options: SubmissionOptions
@@ -122,6 +131,9 @@ export function useJSASubmission() {
       notes: form.notes || null,
       employee_signature: form.employeeSignature || null,
       employee_signature_path: form.employeeSignaturePath || null,
+      jsa_photo_paths: Array.isArray(form.jsaPhotoPaths) && form.jsaPhotoPaths.length > 0
+        ? form.jsaPhotoPaths
+        : [],
       observer_signatures: Array.isArray(form.observerSignatures) 
         ? form.observerSignatures.map(obs => ({
             name: String(obs.name || ''),
@@ -141,6 +153,7 @@ export function useJSASubmission() {
           }))
         : [],
       status: targetStatus,
+      submission_type: form.submissionType ?? "digital",
       updated_at: nowIso,
       status_changed_at: statusChangedAt,
       completed_at: completedAt,
@@ -240,11 +253,48 @@ export function useJSASubmission() {
         };
 
         if (!isOnline()) {
+          // Generate a queue ID first so we can link photos to it
+          const tempQueueId = `atts-q-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+          // Store pending photo files in offline photo store (if any)
+          let photoIds: string[] = [];
+          const pendingFiles = options.pendingPhotoFiles ?? [];
+          if (pendingFiles.length > 0) {
+            const { compressImage } = await import('../../lib/imageCompression');
+            const photoEntries = [];
+            for (let i = 0; i < pendingFiles.length; i++) {
+              const file = pendingFiles[i];
+              const compressed = await compressImage(file, {
+                maxSizeMB: 2,
+                maxWidthOrHeight: 2048,
+                initialQuality: 0.85,
+                useWebWorker: true,
+              });
+              photoEntries.push({
+                fieldName: `jsa_page_${i + 1}`,
+                blob: compressed as Blob,
+                fileName: file.name,
+                contentType: compressed.type || 'image/jpeg',
+                compressed: true,
+              });
+            }
+            photoIds = await storePhotosForQueue(tempQueueId, 'jsa', photoEntries);
+            // Clear photo paths from payload (they'll be set during sync)
+            (insertPayload as Record<string, unknown>).jsa_photo_paths = [];
+          }
+
+          // Embed the queue ID in the payload so the submitter can find photos
+          (insertPayload as Record<string, unknown>).__offlineQueueId = tempQueueId;
+
           await addToQueue('jsa', insertPayload as unknown as Record<string, unknown>, {
             userId,
             dateFor: payload.job_date ?? undefined,
+            photoIds,
           });
-          logger.info('[JSA] Offline: queued for sync when back online', { job_date: payload.job_date });
+          logger.info('[JSA] Offline: queued for sync when back online', {
+            job_date: payload.job_date,
+            photoCount: photoIds.length,
+          });
           return { success: true, queued: true };
         }
 
@@ -263,11 +313,31 @@ export function useJSASubmission() {
           logger.error('[JSA] Insert failed', {
             error: insertError,
           });
+
+          // Rollback uploaded JSA photos on failed submission to prevent orphans.
+          // Signal the rollback via `photosRolledBack` so the caller can clear its
+          // jsaPhotoPaths state — otherwise the form retains stale paths pointing to
+          // deleted storage objects, causing broken images if the user retries.
+          let photosRolledBack = false;
+          if (form.jsaPhotoPaths && form.jsaPhotoPaths.length > 0) {
+            logger.info('[JSA] Rolling back uploaded photos after failed insert', {
+              photo_count: form.jsaPhotoPaths.length,
+            });
+            try {
+              await rollbackUploads(form.jsaPhotoPaths);
+              photosRolledBack = true;
+            } catch (rollbackErr) {
+              logger.error('[JSA] Photo rollback also failed — photos may be orphaned', { rollbackErr });
+              // photosRolledBack stays false; caller should NOT clear paths since
+              // the photos still exist in storage and can be referenced on retry.
+            }
+          }
+
           const msg =
             insertError && typeof insertError === 'object' && 'message' in insertError
               ? String((insertError as { message?: string }).message)
               : 'JSA insert failed';
-          throw new Error(msg || 'JSA insert failed');
+          return { success: false, error: new Error(msg || 'JSA insert failed'), photosRolledBack };
         }
 
         return { success: true, recordId: data?.id };
@@ -284,7 +354,7 @@ export function useJSASubmission() {
       }
       return { success: false, error: err };
     }
-  }, []);
+  }, [rollbackUploads]);
 
   return { submitJSA };
 }

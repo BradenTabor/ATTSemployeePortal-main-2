@@ -8,6 +8,7 @@ import {
 } from "react";
 import { motion } from "framer-motion";
 import DashboardLayout from "../../layouts/DashboardLayout";
+import { OfflineFormIndicator } from "../../components/OfflineFormIndicator";
 import { AlertTriangle } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import { logger, redactUserId } from "../../lib/logger"; 
@@ -762,6 +763,9 @@ export default function DVIRForm() {
       />
       
       <div className="max-w-4xl mx-auto pt-6 sm:pt-8">
+        {/* Offline indicator */}
+        <OfflineFormIndicator offlineCapable={true} className="mb-4" />
+
         {/* Info banner */}
         <motion.div 
           initial={{ opacity: 0, y: 10 }}

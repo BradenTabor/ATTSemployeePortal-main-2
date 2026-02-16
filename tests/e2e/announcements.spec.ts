@@ -14,7 +14,8 @@ test.describe('Announcements Display', () => {
 
   test('should display announcements page', async ({ page }) => {
     await page.goto('/announcements');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     // Use specific selector to avoid strict mode violation (both main and data-testid exist)
     const announcementsDiv = page.locator('[data-testid="announcements"]');
@@ -29,7 +30,8 @@ test.describe('Announcements Display', () => {
 
   test('should show announcement list', async ({ page }) => {
     await page.goto('/announcements');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     const announcementList = page.locator('[data-testid="announcement-list"], .announcements, article');
     await expect(announcementList.first()).toBeVisible({ timeout: 10000 });
@@ -37,7 +39,8 @@ test.describe('Announcements Display', () => {
 
   test('should display announcement title', async ({ page }) => {
     await page.goto('/announcements');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     const title = page.locator('[data-testid="announcement-title"], h2, h3');
     const isVisible = await title.first().isVisible().catch(() => false);
@@ -46,7 +49,8 @@ test.describe('Announcements Display', () => {
 
   test('should display announcement date', async ({ page }) => {
     await page.goto('/announcements');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     const date = page.locator('[data-testid="announcement-date"], time, text=ago, text=2026');
     const isVisible = await date.first().isVisible().catch(() => false);
@@ -55,7 +59,8 @@ test.describe('Announcements Display', () => {
 
   test('should allow viewing announcement details', async ({ page }) => {
     await page.goto('/announcements');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     const announcement = page.locator('[data-testid="announcement-item"], article').first();
     
@@ -75,7 +80,8 @@ test.describe('Announcements Display', () => {
 
   test('should show safety announcements', async ({ page }) => {
     await page.goto('/announcements');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     const safetyAnnouncement = page.locator('[data-type="safety"], text=safety');
     const isVisible = await safetyAnnouncement.first().isVisible().catch(() => false);
@@ -87,7 +93,8 @@ test.describe('Announcements on Dashboard', () => {
   test.beforeEach(async ({ page }) => {
     await loginAs(page, 'employee');
     await page.goto('/dashboard');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
   });
 
   test('should show recent announcements on dashboard', async ({ page }) => {
@@ -114,7 +121,8 @@ test.describe('Admin Announcement Management', () => {
 
   test('should allow admin to create announcement', async ({ page }) => {
     await page.goto('/announcements');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     const createButton = page.locator('button:has-text("Create"), button:has-text("New"), [data-testid="create-announcement"]');
     
@@ -130,7 +138,8 @@ test.describe('Admin Announcement Management', () => {
 
   test('should validate announcement fields', async ({ page }) => {
     await page.goto('/announcements');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     const createButton = page.locator('button:has-text("Create"), button:has-text("New"), [data-testid="create-announcement"]');
     
@@ -151,7 +160,8 @@ test.describe('Admin Announcement Management', () => {
 
   test('should allow admin to send manual notification', async ({ page }) => {
     await page.goto('/admin');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     // Look for manual notification button
     const notifyButton = page.locator('button:has-text("Notify"), button:has-text("Send"), [data-testid="manual-notification"]');
@@ -172,7 +182,8 @@ test.describe('Announcement Rewards', () => {
   test('should track announcement reading for rewards', async ({ page }) => {
     await loginAs(page, 'employee');
     await page.goto('/announcements');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     const announcement = page.locator('[data-testid="announcement-item"], article').first();
     
@@ -195,7 +206,8 @@ test.describe('Announcements - Mobile', () => {
   test('should display announcements on mobile', async ({ page }) => {
     await loginAs(page, 'employee');
     await page.goto('/announcements');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
     
     // Use specific selector to avoid strict mode violation (both main and data-testid exist)
     const announcementsDiv = page.locator('[data-testid="announcements"]');

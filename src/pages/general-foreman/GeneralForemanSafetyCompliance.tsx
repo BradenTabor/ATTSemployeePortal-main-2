@@ -177,7 +177,9 @@ export default function GeneralForemanSafetyCompliance() {
           doc_contact,
           gf_contact,
           safety_contact,
-          weather_hazards
+          weather_hazards,
+          jsa_photo_paths,
+          submission_type
         `, { count: "exact" })
         .order("updated_at", { ascending: false })
         .range(from, to);
@@ -587,13 +589,20 @@ export default function GeneralForemanSafetyCompliance() {
                               </div>
                             </td>
                             <td className="px-6 py-4">
-                              <span
-                                className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${
-                                  statusBadge[record.status || "draft"] || statusBadge.draft
-                                }`}
-                              >
-                                {record.status || "draft"}
-                              </span>
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span
+                                  className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${
+                                    statusBadge[record.status || "draft"] || statusBadge.draft
+                                  }`}
+                                >
+                                  {record.status || "draft"}
+                                </span>
+                                {record.submission_type === "paper" && (
+                                  <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                    Paper
+                                  </span>
+                                )}
+                              </div>
                             </td>
                             <td className="px-6 py-4 text-xs text-[#a78bfa]">
                               {formatDateTime(record.updated_at || record.created_at)}
@@ -819,6 +828,7 @@ function SelectedJsaDetail({
             <DetailRow label="Job Date" value={formatDate(record.job_date)} />
             <DetailRow label="Call Times" value={`${record.call_in_time || "—"} → ${record.call_out_time || "—"}`} />
             <DetailRow label="Status" value={record.status} />
+            <DetailRow label="Type" value={record.submission_type === "paper" ? "Paper" : "Digital"} />
             <DetailRow label="Updated" value={formatDateTime(record.updated_at)} />
             <DetailRow label="Driver Signature" value={record.employee_signature?.trim() || "—"} />
           </div>
@@ -976,13 +986,20 @@ function MobileJsaCard({
             {record.circuit_number || "Circuit pending"}
           </p>
         </div>
-        <span
-          className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[0.65rem] font-semibold ${
-            statusBadge[record.status || "draft"] || statusBadge.draft
-          }`}
-        >
-          {record.status || "draft"}
-        </span>
+        <div className="flex flex-wrap items-center gap-1">
+          <span
+            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[0.65rem] font-semibold ${
+              statusBadge[record.status || "draft"] || statusBadge.draft
+            }`}
+          >
+            {record.status || "draft"}
+          </span>
+          {record.submission_type === "paper" && (
+            <span className="inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              Paper
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="text-xs text-[#a78bfa] space-y-1.5">

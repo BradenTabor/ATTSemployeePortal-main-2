@@ -48,6 +48,8 @@ interface JsaWizardProps {
   };
   /** Validation errors to show specific field issues */
   validationErrors?: Record<string, string | undefined>;
+  /** Optional content for the top bar right side (e.g. mode switch link) */
+  headerRight?: ReactNode;
 }
 
 export function JsaWizard({
@@ -68,6 +70,7 @@ export function JsaWizard({
   hasUnsavedChanges = false,
   stepCompletionStatus,
   validationErrors = {},
+  headerRight,
 }: JsaWizardProps) {
   const [direction, setDirection] = useState(0);
   const [showSaveOptions, setShowSaveOptions] = useState(false);
@@ -234,6 +237,11 @@ export function JsaWizard({
               )}
             </div>
           </div>
+          {headerRight != null && (
+            <div className="flex-shrink-0 flex items-center">
+              {headerRight}
+            </div>
+          )}
         </div>
 
         {/* Mobile Progress Bar */}
@@ -327,7 +335,14 @@ export function JsaWizard({
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        <div className="max-w-2xl mx-auto px-3 py-3 sm:px-6 sm:py-5 pb-20">
+        <div
+          className="max-w-2xl mx-auto px-3 py-3 sm:px-6 sm:py-5 pb-20"
+          style={{
+            backgroundColor: 'rgba(192, 168, 135, 1)',
+            background: 'radial-gradient(circle at 50% 50%, rgba(87, 76, 61, 1) 17%, rgba(80, 67, 47, 1) 35%, rgba(68, 58, 44, 1) 56%, rgba(44, 37, 28, 1) 74%, rgba(18, 18, 18, 1) 100%)',
+            boxShadow: 'inset 0px 4px 45px 25px rgba(0, 0, 0, 0.65)',
+          }}
+        >
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
               key={currentStep}
