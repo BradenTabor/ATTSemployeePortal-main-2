@@ -135,18 +135,27 @@ async function submitDVIR(
   const { data, error } = await supabase
     .from("dvir_reports")
     .insert([insertPayload])
-    .select("id, oil_dipstick_path")
+    .select("id, oil_dipstick_path, tire_photo_path, coolant_photo_path, damage_photo_path, detail_clean_truck_photo_path")
     .single();
 
   if (error) throw new Error(error.message);
 
-  // Integrity check: confirm the record exists with the expected photo path
-  if (data && pathMap.has('oil_dipstick')) {
-    if (data.oil_dipstick_path !== pathMap.get('oil_dipstick')) {
-      logger.warn('[OfflineQueue] DVIR integrity mismatch: oil_dipstick_path differs', {
-        expected: pathMap.get('oil_dipstick'),
-        actual: data.oil_dipstick_path,
-      });
+  const dvirPhotoFields: Array<{ key: string; col: keyof NonNullable<typeof data> }> = [
+    { key: 'oil_dipstick', col: 'oil_dipstick_path' },
+    { key: 'tire', col: 'tire_photo_path' },
+    { key: 'coolant', col: 'coolant_photo_path' },
+    { key: 'damage', col: 'damage_photo_path' },
+    { key: 'detail-clean_truck', col: 'detail_clean_truck_photo_path' },
+  ];
+  if (data) {
+    for (const { key, col } of dvirPhotoFields) {
+      if (pathMap.has(key)) {
+        const expected = pathMap.get(key);
+        const actual = data[col];
+        if (actual !== expected) {
+          logger.warn('[OfflineQueue] DVIR integrity mismatch', { field: col, expected, actual });
+        }
+      }
     }
   }
 
@@ -183,15 +192,36 @@ async function submitEquipment(
   const { data, error } = await supabase
     .from("daily_equipment_inspections")
     .insert([payload])
-    .select("id, hydraulic_photo_path")
+    .select("id, overview_photo_path, damage_photo_path, attachments_photo_path, hydraulic_photo_path, additional_photo_paths")
     .single();
 
   if (error) throw new Error(error.message);
 
-  // Integrity check
-  if (data && pathMap.has('hydraulic')) {
-    if (data.hydraulic_photo_path !== pathMap.get('hydraulic')) {
-      logger.warn('[OfflineQueue] Equipment integrity mismatch: hydraulic_photo_path differs');
+  const equipmentPhotoFields: Array<{ key: string; col: keyof NonNullable<typeof data> }> = [
+    { key: 'overview', col: 'overview_photo_path' },
+    { key: 'damage', col: 'damage_photo_path' },
+    { key: 'attachments', col: 'attachments_photo_path' },
+    { key: 'hydraulic', col: 'hydraulic_photo_path' },
+  ];
+  if (data) {
+    for (const { key, col } of equipmentPhotoFields) {
+      if (pathMap.has(key)) {
+        const expected = pathMap.get(key);
+        const actual = data[col];
+        if (actual !== expected) {
+          logger.warn('[OfflineQueue] Equipment integrity mismatch', { field: col, expected, actual });
+        }
+      }
+    }
+    if (additionalPaths.length > 0 && Array.isArray(data.additional_photo_paths)) {
+      const expectedSet = new Set(additionalPaths);
+      const actualSet = new Set(data.additional_photo_paths);
+      if (expectedSet.size !== actualSet.size || additionalPaths.some((p) => !actualSet.has(p))) {
+        logger.warn('[OfflineQueue] Equipment integrity mismatch: additional_photo_paths differs', {
+          expected: additionalPaths.length,
+          actual: data.additional_photo_paths.length,
+        });
+      }
     }
   }
 
