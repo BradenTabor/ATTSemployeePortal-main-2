@@ -10,7 +10,7 @@ Scores re-established from full REAUDIT on 2026-02-15. All scores 0–100.
 |--------|-------|-------|----------|
 | UX Clarity | 86 | 85→86 | BL-043 resolved (conflict toast when item archived). Remaining: role="alert" (BL-051). Positives: loading states; aria-labels; StepJobInfo photo input a11y; ComplianceDataExportPanel error alert; JsaDetailModal lightbox a11y; empty states; focus-visible; StepReview + OfflineQueuePanel confirm dialogs; conflict feedback. |
 | Workflow Efficiency | 81 | 80→81 | BL-043 resolved (conflict toast). Remaining: orphaned photo cleanup (BL-028). Positives: full offline queue; draft recovery; JSA wizard; history pagination; Recently Synced survives refresh; banner sync error shown; conflict feedback. |
-| Correctness/Determinism | 78 | — | BL-042 resolved (Dashboard memo compare by value). Remaining: 3 form components >1400 lines (BL-014,016,017); partial failure (BL-041); JSON deep clone (BL-040); auth check (BL-045). Positives: TypeScript strict; Zod; unit + e2e; route-level error boundary; export date validation; offline integrity checks; query persister maxAge; NavigableJobCard stable compare; JsaWizard + StepJobInfo error feedback. |
+| Correctness/Determinism | 79 | 78→79 | BL-040 resolved (offlineQueue safe payload clone). Remaining: 3 form components >1400 lines (BL-014,016,017); partial failure (BL-041); auth check (BL-045). Positives: TypeScript strict; Zod; unit + e2e; route-level error boundary; export date validation; offline integrity checks; query persister maxAge; NavigableJobCard stable compare; JsaWizard + StepJobInfo error feedback; safe queue payload serialization. |
 
 ---
 
@@ -53,4 +53,4 @@ Scores re-established from full REAUDIT on 2026-02-15. All scores 0–100.
 
 ---
 
-Last Updated: 2026-02-16 (BL-043)
+Last Updated: 2026-02-16 (BL-040)

@@ -6,6 +6,12 @@ Entries: BACKLOG-ID | Date | Summary | Files | Verification | Scores | Rollback
 
 ## Entries
 
+[BL-040] | 2026-02-16 | offlineQueue addToQueue: safePayloadClone (Date→ISO string, omit undefined/functions) so non-JSON-serializable payloads do not throw; unit test for Date/undefined.
+Files: src/lib/offlineQueue.ts, tests/unit/offline/offlineQueue.test.ts
+Verification: TypeScript PASS, offlineQueue tests 36/36 PASS. Tier 2.
+Scores: Correctness — BL-040 resolved (safe clone).
+Rollback: git revert 27e22cf --no-edit
+
 [BL-043] | 2026-02-16 | OfflineQueueContext: show toast when conflict detected and item archived (title "Submission conflict", description with reason + "moved to Offline queue → Conflicts").
 Files: src/contexts/OfflineQueueContext.tsx
 Verification: TypeScript PASS, Lint PASS. Tier 2.
