@@ -655,11 +655,9 @@ export default function Announcements() {
   };
 
   // Reset to page 1 when search changes
-  const [prevSearchTerm, setPrevSearchTerm] = useState(searchTerm);
-  if (prevSearchTerm !== searchTerm) {
-    setPrevSearchTerm(searchTerm);
+  useEffect(() => {
     setCurrentPage(1);
-  }
+  }, [searchTerm]);
 
   // Parse latest date for compact display
   const latestDateInfo = useMemo(() => {
