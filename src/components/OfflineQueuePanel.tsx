@@ -211,14 +211,26 @@ export function OfflineQueuePanel({ open, onClose }: OfflineQueuePanelProps) {
     setConflicts([]);
   }, []);
 
+  const [lastSyncResult, setLastSyncResult] = useState<{
+    processed: number;
+    failed: number;
+    discarded: number;
+  } | null>(null);
+
   const handleSyncAll = useCallback(async () => {
+    setLastSyncResult(null);
     setSyncing(true);
     try {
-      await processQueueNow();
+      const result = await processQueueNow();
+      setLastSyncResult(result);
     } finally {
       setSyncing(false);
     }
   }, [processQueueNow]);
+
+  useEffect(() => {
+    if (!open) setLastSyncResult(null);
+  }, [open]);
 
   const isSyncing = syncing || syncProgress !== null;
 
@@ -277,11 +289,44 @@ export function OfflineQueuePanel({ open, onClose }: OfflineQueuePanelProps) {
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {activeTab === 'queue' ? (
-                pendingItems.length === 0 ? (
-                  <div className="text-center py-12 text-white/40 text-sm">
-                    No pending submissions
-                  </div>
-                ) : (
+                <>
+                  {lastSyncResult && (lastSyncResult.failed > 0 || lastSyncResult.discarded > 0) && (
+                    <div
+                      role="alert"
+                      className="flex items-start gap-2 p-3 rounded-xl bg-amber-900/20 border border-amber-500/30 text-amber-200 text-sm"
+                    >
+                      <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <div>
+                        {lastSyncResult.processed > 0 && (
+                          <span>{lastSyncResult.processed} synced. </span>
+                        )}
+                        {lastSyncResult.failed > 0 && (
+                          <span>
+                            {lastSyncResult.failed} failed — use Retry on failed items below.
+                          </span>
+                        )}
+                        {lastSyncResult.discarded > 0 && (
+                          <span>
+                            {lastSyncResult.discarded} discarded (conflicts).
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {lastSyncResult && lastSyncResult.processed > 0 && lastSyncResult.failed === 0 && lastSyncResult.discarded === 0 && (
+                    <div
+                      role="status"
+                      className="flex items-center gap-2 p-3 rounded-xl bg-emerald-900/20 border border-emerald-500/30 text-emerald-200 text-sm"
+                    >
+                      <RefreshCw className="w-4 h-4 shrink-0" />
+                      All {lastSyncResult.processed} submission{lastSyncResult.processed !== 1 ? 's' : ''} synced.
+                    </div>
+                  )}
+                  {pendingItems.length === 0 ? (
+                    <div className="text-center py-12 text-white/40 text-sm">
+                      No pending submissions
+                    </div>
+                  ) : (
                   pendingItems.map((item) => (
                     <QueueItem
                       key={item.id}
@@ -290,7 +335,8 @@ export function OfflineQueuePanel({ open, onClose }: OfflineQueuePanelProps) {
                       onRetry={retryManual}
                     />
                   ))
-                )
+                  )}
+                </>
               ) : (
                 conflicts.length === 0 ? (
                   <div className="text-center py-12 text-white/40 text-sm">

@@ -106,12 +106,12 @@ function showCycleSummaryToast(
     );
   } else if (processed > 0 && failed > 0) {
     // Mixed results
+    const desc = discarded > 0
+      ? `${failed} will retry. ${discarded} discarded (conflicts). Check the queue for details.`
+      : `${failed} submission${failed !== 1 ? 's' : ''} will retry automatically. Check the queue for details.`;
     sonnerToast.warning(
-      `${processed} synced, ${failed} failed`,
-      {
-        description: `${failed} submission${failed !== 1 ? 's' : ''} will retry automatically. Check the queue for details.`,
-        duration: 6000,
-      },
+      `${processed} synced, ${failed} failed${discarded > 0 ? `, ${discarded} discarded` : ''}`,
+      { description: desc, duration: 6000 },
     );
   } else if (failed > 0 && processed === 0) {
     // All failed
@@ -232,10 +232,9 @@ export function useOfflineQueue(options: UseOfflineQueueOptions): UseOfflineQueu
     if (result.processed > 0) {
       useNetworkStore.getState().recordSync();
       useSyncHistory.getState().addCycleSummary(result);
-
-      if (result.processed + result.failed > 1) {
-        showCycleSummaryToast(result.processed, result.failed, result.discarded);
-      }
+    }
+    if (result.processed + result.failed >= 1) {
+      showCycleSummaryToast(result.processed, result.failed, result.discarded);
     }
 
     await refreshPending();
