@@ -73,6 +73,7 @@ export function JsaWizard({
   headerRight,
 }: JsaWizardProps) {
   const [direction, setDirection] = useState(0);
+  const [completeError, setCompleteError] = useState<string | null>(null);
   const [showSaveOptions, setShowSaveOptions] = useState(false);
   const saveButtonRef = useRef<HTMLButtonElement>(null);
   const saveMenuRef = useRef<HTMLDivElement>(null);
@@ -86,6 +87,10 @@ export function JsaWizard({
   const isFirstStep = currentStep === 1;
   const isLastStep = currentStep === totalSteps;
   const currentStepData = JSA_STEPS[currentStep - 1];
+
+  useEffect(() => {
+    if (!isLastStep) setCompleteError(null);
+  }, [currentStep, isLastStep]);
 
   // Close save menu when clicking outside
   useEffect(() => {
@@ -530,42 +535,45 @@ export function JsaWizard({
 
           {/* Next / Complete */}
           {isLastStep ? (
-            <button
-              type="button"
-              data-testid="jsa-complete"
-              onClick={async (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                // Prevent multiple clicks while saving
-                if (saving) {
-                  // Silently ignore - button is already disabled, this is defensive
-                  return;
-                }
-                
-                // Always call onComplete - it will re-validate and show errors if needed
-                // This ensures users get feedback even if validation state is stale
-                try {
-                  await onComplete();
-                } catch {
-                  // Error handling is done in onComplete implementation
-                  // Silently catch - errors are handled in onComplete
-                }
-              }}
-              disabled={saving || !isValid}
-              className={cn(
-                "inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all touch-manipulation min-w-[80px]",
-                saving || !isValid
-                  ? "opacity-40 cursor-not-allowed bg-amber-700/30 text-white/50"
-                  : "bg-gradient-to-r from-amber-600 to-amber-700 text-white hover:from-amber-500 hover:to-amber-600"
+            <>
+              <button
+                type="button"
+                data-testid="jsa-complete"
+                onClick={async (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+
+                  if (saving) return;
+                  setCompleteError(null);
+
+                  try {
+                    await onComplete();
+                  } catch (err) {
+                    const message = err instanceof Error ? err.message : "Submission failed. Please try again.";
+                    setCompleteError(message);
+                    console.error("[JsaWizard] onComplete error", err);
+                  }
+                }}
+                disabled={saving || !isValid}
+                className={cn(
+                  "inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all touch-manipulation min-w-[80px]",
+                  saving || !isValid
+                    ? "opacity-40 cursor-not-allowed bg-amber-700/30 text-white/50"
+                    : "bg-gradient-to-r from-amber-600 to-amber-700 text-white hover:from-amber-500 hover:to-amber-600"
+                )}
+                aria-label={saving ? "Submitting..." : !isValid ? "Please fix validation errors" : "Submit JSA form"}
+                title={saving ? "Submitting..." : !isValid ? "Please fix the issues above" : "Submit JSA form"}
+              >
+                {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+                {!saving && <Check className="w-4 h-4" />}
+                <span className="hidden sm:inline">{saving ? "Submitting..." : "Done"}</span>
+              </button>
+              {completeError && (
+                <p role="alert" className="text-sm text-red-400 mt-2">
+                  {completeError}
+                </p>
               )}
-              aria-label={saving ? "Submitting..." : !isValid ? "Please fix validation errors" : "Submit JSA form"}
-              title={saving ? "Submitting..." : !isValid ? "Please fix the issues above" : "Submit JSA form"}
-            >
-              {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-              {!saving && <Check className="w-4 h-4" />}
-              <span className="hidden sm:inline">{saving ? "Submitting..." : "Done"}</span>
-            </button>
+            </>
           ) : (
             <button
               type="button"
