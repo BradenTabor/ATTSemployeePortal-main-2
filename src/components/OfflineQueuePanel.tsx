@@ -9,7 +9,7 @@
  * - "Sync all" button
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -171,6 +171,8 @@ export function OfflineQueuePanel({ open, onClose }: OfflineQueuePanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>('queue');
   const [conflicts, setConflicts] = useState<SyncConflict[]>([]);
   const [syncing, setSyncing] = useState(false);
+  const [discardConfirmId, setDiscardConfirmId] = useState<string | null>(null);
+  const discardCancelRef = useRef<HTMLButtonElement>(null);
 
   // Load conflicts when tab is active
   useEffect(() => {
@@ -180,10 +182,24 @@ export function OfflineQueuePanel({ open, onClose }: OfflineQueuePanelProps) {
   }, [open, activeTab]);
 
   const handleDiscard = useCallback(async (id: string) => {
-    // Also clean up any associated photos
     await deletePhotosForQueue(id);
     await removeFromQueue(id);
   }, [removeFromQueue]);
+
+  const requestDiscard = useCallback((id: string) => setDiscardConfirmId(id), []);
+  const confirmDiscard = useCallback(async () => {
+    if (discardConfirmId) {
+      await handleDiscard(discardConfirmId);
+      setDiscardConfirmId(null);
+    }
+  }, [discardConfirmId, handleDiscard]);
+  const cancelDiscard = useCallback(() => setDiscardConfirmId(null), []);
+
+  useEffect(() => {
+    if (discardConfirmId && discardCancelRef.current) {
+      discardCancelRef.current.focus();
+    }
+  }, [discardConfirmId]);
 
   const handleDeleteConflict = useCallback(async (id: string) => {
     await deleteConflict(id);
@@ -270,7 +286,7 @@ export function OfflineQueuePanel({ open, onClose }: OfflineQueuePanelProps) {
                     <QueueItem
                       key={item.id}
                       item={item}
-                      onDiscard={handleDiscard}
+                      onDiscard={requestDiscard}
                       onRetry={retryManual}
                     />
                   ))
@@ -356,6 +372,62 @@ export function OfflineQueuePanel({ open, onClose }: OfflineQueuePanelProps) {
               )}
             </div>
           </motion.div>
+
+          {/* Discard confirmation dialog (BL-021: avoid data loss without confirmation) */}
+          <AnimatePresence>
+            {discardConfirmId && (
+              <motion.div
+                role="alertdialog"
+                aria-labelledby="offline-discard-title"
+                aria-describedby="offline-discard-desc"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="fixed inset-0 z-[62] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+                onClick={(e) => e.target === e.currentTarget && cancelDiscard()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    e.preventDefault();
+                    cancelDiscard();
+                  }
+                }}
+              >
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.15 }}
+                  className="bg-[#0a0f0d] border border-white/15 rounded-xl shadow-2xl max-w-sm w-full p-4 space-y-4"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <p id="offline-discard-title" className="text-sm font-semibold text-white">
+                    Discard submission?
+                  </p>
+                  <p id="offline-discard-desc" className="text-sm text-white/80">
+                    This will remove the item from the queue and delete any stored photos. This cannot be undone.
+                  </p>
+                  <div className="flex gap-2 justify-end">
+                    <button
+                      ref={discardCancelRef}
+                      type="button"
+                      onClick={cancelDiscard}
+                      className="px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:bg-white/10 border border-white/10 focus:outline-none focus:ring-2 focus:ring-white/40 focus:ring-offset-2 focus:ring-offset-[#0a0f0d]"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void confirmDiscard()}
+                      className="px-3 py-2 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 focus:ring-offset-[#0a0f0d]"
+                    >
+                      Discard
+                    </button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </>
       )}
     </AnimatePresence>
