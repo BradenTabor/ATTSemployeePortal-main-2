@@ -33,6 +33,7 @@ Categories: UX | WF | ARCH | PERF | QA | SEC | CROSS
 | BL-023 | UX | HIGH | JsaDetailModal.tsx lightbox lacks focus trap and keyboard nav (ESC, arrows) | COMPLETE |
 | BL-026 | QA | HIGH | ComplianceDataExportPanel.tsx handleLoad doesn't validate date range before fetch | COMPLETE |
 | BL-027 | QA | HIGH | OfflineQueueContext.tsx integrity check only validates one photo field per form type | COMPLETE |
+| BL-029 | QA | MEDIUM | JsaWizard.tsx onComplete handler silently swallows errors | COMPLETE |
 
 ---
 
@@ -45,7 +46,6 @@ Categories: UX | WF | ARCH | PERF | QA | SEC | CROSS
 | BL-017 | ARCH | HIGH | DVIRForm.tsx is 1412 lines — extract sub-components/hooks | OPEN | — | 5+ | 3 |
 | BL-018 | ARCH | HIGH | GeneralForemanSafetyCompliance.tsx duplicates AdminJSA patterns (1098 lines) — share components | OPEN | — | 4 | 3 |
 | BL-028 | CROSS | MEDIUM | Orphaned photos not cleaned up on queue item delete/conflict (offlineQueue + syncConflicts + OfflineQueueContext). Source: [PERF, WF, QA] | OPEN | — | 3 | 2 |
-| BL-029 | QA | MEDIUM | JsaWizard.tsx onComplete handler silently swallows errors | OPEN | — | 1 | 2 |
 | BL-030 | QA | MEDIUM | StepJobInfo.tsx error handling swallows exceptions without user feedback | OPEN | — | 1 | 2 |
 | BL-031 | SEC | MEDIUM | Home.tsx: No rate limiting on sign-in/sign-up attempts | OPEN | — | 2 | 2 |
 | BL-032 | SEC | MEDIUM | AuthContext.tsx: Profile cache (24h TTL) not invalidated on role change — stale permissions | OPEN | — | 2 | 2 |

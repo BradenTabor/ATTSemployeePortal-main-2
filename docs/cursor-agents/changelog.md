@@ -6,6 +6,12 @@ Entries: BACKLOG-ID | Date | Summary | Files | Verification | Scores | Rollback
 
 ## Entries
 
+[BL-029] | 2026-02-16 | JsaWizard: onComplete errors no longer swallowed — set completeError state, show role=alert message below Complete button, log to console; clear error on retry or when leaving last step.
+Files: src/components/forms/JsaWizard.tsx
+Verification: TypeScript PASS, Lint PASS. Tier 2.
+Scores: Correctness/Feedback — BL-029 resolved.
+Rollback: git revert e1145c1 --no-edit
+
 [BL-027] | 2026-02-16 | OfflineQueueContext: extend post-insert integrity check to all photo path fields — DVIR (oil_dipstick, tire, coolant, damage, detail_clean_truck), Equipment (overview, damage, attachments, hydraulic, additional_photo_paths).
 Files: src/contexts/OfflineQueueContext.tsx
 Verification: TypeScript PASS, Lint PASS. Tier 2.
