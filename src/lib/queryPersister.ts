@@ -109,6 +109,14 @@ export function createIDBPersister(): Persister {
       try {
         const db = await getDB();
         const client = await db.get(STORE_NAME, CACHE_KEY) as PersistedClient | undefined;
+        if (!client) return undefined;
+
+        const timestamp = client.timestamp ?? 0;
+        if (Date.now() - timestamp > PERSISTER_MAX_AGE_MS) {
+          logger.info('[queryPersister] Restore skipped — persisted data older than maxAge');
+          await db.delete(STORE_NAME, CACHE_KEY);
+          return undefined;
+        }
         return client;
       } catch (err) {
         logger.warn('[queryPersister] Failed to restore client:', err);

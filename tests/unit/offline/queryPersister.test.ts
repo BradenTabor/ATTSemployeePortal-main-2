@@ -149,6 +149,17 @@ describe('queryPersister', () => {
       const result = await persister.restoreClient();
       expect(result).toBeUndefined();
     });
+
+    it('restoreClient returns undefined when persisted data exceeds maxAge', async () => {
+      const staleClient = {
+        timestamp: Date.now() - PERSISTER_MAX_AGE_MS - 1,
+        buster: 'test',
+        clientState: { queries: [], mutations: [] },
+      };
+      await persister.persistClient(staleClient as unknown as Parameters<typeof persister.persistClient>[0]);
+      const result = await persister.restoreClient();
+      expect(result).toBeUndefined();
+    });
   });
 
   describe('createIDBPersister — not capable', () => {
