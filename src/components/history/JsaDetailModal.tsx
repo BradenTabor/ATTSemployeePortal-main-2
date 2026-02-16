@@ -1,4 +1,4 @@
-import { memo, useState, useEffect } from "react";
+import { memo, useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { useModalOverlay } from "../../hooks/useModalOverlay";
@@ -83,6 +83,8 @@ function JsaPhotoSection({ paths }: { paths: string[] }) {
     urls: Map<string, string>;
   } | null>(null);
   const [expandedUrl, setExpandedUrl] = useState<string | null>(null);
+  const lightboxCloseRef = useRef<HTMLButtonElement>(null);
+  const lightboxPrevActive = useRef<HTMLElement | null>(null);
 
   const pathsKey = paths.join(",");
 
@@ -105,6 +107,50 @@ function JsaPhotoSection({ paths }: { paths: string[] }) {
 
   const loading = !urlState || urlState.pathsKey !== pathsKey;
   const urls = urlState?.urls ?? new Map<string, string>();
+
+  const closeLightbox = useCallback(() => {
+    lightboxPrevActive.current?.focus?.();
+    lightboxPrevActive.current = null;
+    setExpandedUrl(null);
+  }, []);
+
+  const openLightbox = useCallback((url: string) => {
+    lightboxPrevActive.current = document.activeElement as HTMLElement | null;
+    setExpandedUrl(url);
+  }, []);
+
+  useEffect(() => {
+    if (!expandedUrl) return;
+    lightboxCloseRef.current?.focus();
+  }, [expandedUrl]);
+
+  useEffect(() => {
+    if (!expandedUrl || paths.length === 0) return;
+    const urlsMap = urlState?.urls ?? new Map<string, string>();
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeLightbox();
+        return;
+      }
+      if (paths.length <= 1) return;
+      const currentPath = Array.from(urlsMap.entries()).find(([, u]) => u === expandedUrl)?.[0];
+      if (!currentPath) return;
+      const idx = paths.indexOf(currentPath);
+      if (idx === -1) return;
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        const prevIdx = (idx - 1 + paths.length) % paths.length;
+        setExpandedUrl(urlsMap.get(paths[prevIdx]) ?? null);
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        const nextIdx = (idx + 1) % paths.length;
+        setExpandedUrl(urlsMap.get(paths[nextIdx]) ?? null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [expandedUrl, paths, urlState?.urls, closeLightbox]);
 
   return (
     <>
@@ -131,7 +177,7 @@ function JsaPhotoSection({ paths }: { paths: string[] }) {
                 <button
                   key={path}
                   type="button"
-                  onClick={() => url && setExpandedUrl(url)}
+                  onClick={() => url && openLightbox(url)}
                   className="rounded-lg overflow-hidden border border-white/10 bg-black/40 w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 hover:border-emerald-500/30 transition-colors cursor-pointer"
                 >
                   {url ? (
@@ -151,24 +197,45 @@ function JsaPhotoSection({ paths }: { paths: string[] }) {
         </p>
       </div>
 
-      {/* Full-size lightbox overlay */}
+      {/* Full-size lightbox overlay: focus trap, ESC, arrow nav (BL-023) */}
       {expandedUrl && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Paper JSA photo (full size)"
           className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-          onClick={() => setExpandedUrl(null)}
+          onClick={(e) => e.target === e.currentTarget && closeLightbox()}
+          onKeyDown={(e) => {
+            if (e.key !== "Tab") return;
+            const focusable = e.currentTarget.querySelectorAll<HTMLElement>(
+              'button, [href], input, [tabindex]:not([tabindex="-1"])'
+            );
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (focusable.length <= 1) return;
+            if (e.shiftKey && document.activeElement === first) {
+              e.preventDefault();
+              last?.focus();
+            } else if (!e.shiftKey && document.activeElement === last) {
+              e.preventDefault();
+              first?.focus();
+            }
+          }}
         >
           <button
+            ref={lightboxCloseRef}
             type="button"
-            onClick={() => setExpandedUrl(null)}
-            className="absolute top-4 right-4 p-2 rounded-full bg-black/60 text-white/80 hover:text-white"
-            aria-label="Close"
+            onClick={closeLightbox}
+            className="absolute top-4 right-4 p-2 rounded-full bg-black/60 text-white/80 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/60"
+            aria-label="Close photo"
           >
             <X className="w-5 h-5" />
           </button>
           <img
             src={expandedUrl}
             alt="Paper JSA page (full size)"
-            className="max-w-full max-h-full object-contain rounded-lg"
+            tabIndex={0}
+            className="max-w-full max-h-full object-contain rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
             onClick={(e) => e.stopPropagation()}
           />
         </div>
