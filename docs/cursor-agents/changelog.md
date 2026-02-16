@@ -6,6 +6,12 @@ Entries: BACKLOG-ID | Date | Summary | Files | Verification | Scores | Rollback
 
 ## Entries
 
+[BL-039] | 2026-02-16 | OfflineModeBanner: handleSync catch sets syncError state; show role=alert inline message (AlertTriangle + text) on failure; clear on next Sync click.
+Files: src/components/OfflineModeBanner.tsx
+Verification: TypeScript PASS, Lint PASS. Tier 2.
+Scores: Workflow — BL-039 resolved (sync error feedback).
+Rollback: git revert 7289516 --no-edit
+
 [BL-030] | 2026-02-16 | StepJobInfo: PhotoThumbnail load failure shows "Load failed" + AlertTriangle; all catch paths (thumbnail load, upload, remove) log to console for debugging.
 Files: src/components/forms/jsa-steps/StepJobInfo.tsx
 Verification: TypeScript PASS, Lint PASS. Tier 2.
