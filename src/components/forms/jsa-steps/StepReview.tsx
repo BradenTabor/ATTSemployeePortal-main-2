@@ -301,6 +301,7 @@ export function StepReview({
   const [showUserSelector, setShowUserSelector] = useState(false);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
   const completeConfirmCancelRef = useRef<HTMLButtonElement>(null);
+  const sharedUserListRef = useRef<(HTMLDivElement | null)[]>([]);
 
   const jobLabels = form.jobsPerformed.map(
     (key) => JOB_LABELS[key] || key
@@ -663,11 +664,31 @@ export function StepReview({
             {form.sharedWithUsers.length === 0 ? (
               <span className="text-gray-500">None selected</span>
             ) : (
-              <div className="space-y-2">
-                {form.sharedWithUsers.map((sharedUser) => (
+              <div
+                role="list"
+                aria-label="Shared users"
+                className="space-y-2"
+              >
+                {form.sharedWithUsers.map((sharedUser, index) => (
                   <div
                     key={sharedUser.id}
-                    className="flex items-center justify-between p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20"
+                    role="listitem"
+                    tabIndex={0}
+                    ref={(el) => {
+                      if (!sharedUserListRef.current) sharedUserListRef.current = [];
+                      sharedUserListRef.current[index] = el;
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "ArrowDown" && index < form.sharedWithUsers.length - 1) {
+                        e.preventDefault();
+                        sharedUserListRef.current?.[index + 1]?.focus();
+                      }
+                      if (e.key === "ArrowUp" && index > 0) {
+                        e.preventDefault();
+                        sharedUserListRef.current?.[index - 1]?.focus();
+                      }
+                    }}
+                    className="flex items-center justify-between p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
                   >
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-white truncate">
