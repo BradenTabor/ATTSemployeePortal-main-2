@@ -6,6 +6,12 @@ Entries: BACKLOG-ID | Date | Summary | Files | Verification | Scores | Rollback
 
 ## Entries
 
+[BL-044] | 2026-02-16 | StepReview: shared users list role=list/listitem, tabIndex=0 per row, ArrowUp/ArrowDown keyboard nav, focus-visible ring.
+Files: src/components/forms/jsa-steps/StepReview.tsx
+Verification: TypeScript PASS, Lint PASS. Tier 2.
+Scores: UX/A11y — BL-044 resolved (keyboard nav).
+Rollback: git revert d339549 --no-edit
+
 [BL-040] | 2026-02-16 | offlineQueue addToQueue: safePayloadClone (Date→ISO string, omit undefined/functions) so non-JSON-serializable payloads do not throw; unit test for Date/undefined.
 Files: src/lib/offlineQueue.ts, tests/unit/offline/offlineQueue.test.ts
 Verification: TypeScript PASS, offlineQueue tests 36/36 PASS. Tier 2.
