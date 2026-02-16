@@ -11,6 +11,7 @@ import { Suspense, lazy, useEffect, useMemo } from "react";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SessionOverlay from "./components/SessionOverlay";
 import LoadingScreen from "./components/LoadingScreen";
+import { AppErrorBoundary } from "./components/layout/ErrorBoundary";
 import { useAuth } from "./contexts/AuthContext";
 import { Toaster } from "./components/ui/Toaster";
 import { ToastOverlayProvider } from "./components/ui/ToastOverlay";
@@ -111,10 +112,11 @@ function AnimatedRoutes() {
       {/* Session Restoring Overlay */}
       <SessionOverlay isLoading={loading} />
 
-      {/* Main App Content */}
+      {/* Main App Content — error boundary catches lazy-load and render failures so app shell stays usable */}
       <AnimatePresence mode="popLayout">
-        <Suspense fallback={<LoadingScreen />}>
-          <Routes location={location} key={location.pathname}>
+        <AppErrorBoundary>
+          <Suspense fallback={<LoadingScreen />}>
+            <Routes location={location} key={location.pathname}>
             {/* Public Home Page */}
             <Route
               path="/"
@@ -749,7 +751,8 @@ function AnimatedRoutes() {
               }
             />
           </Routes>
-        </Suspense>
+          </Suspense>
+        </AppErrorBoundary>
       </AnimatePresence>
     </>
   );
