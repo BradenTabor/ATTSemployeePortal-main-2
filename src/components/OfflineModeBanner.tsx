@@ -19,6 +19,7 @@ import {
   Clock,
   List,
   CheckCircle2,
+  AlertTriangle,
 } from 'lucide-react';
 import { useOfflineQueueContext } from '../hooks/useOfflineQueueContext';
 import { useNetworkStore } from '../lib/networkStatus';
@@ -43,6 +44,7 @@ export function OfflineModeBanner() {
   const { isOnline, queueLength, syncProgress, processQueueNow } = useOfflineQueueContext();
   const lastSyncAt = useNetworkStore((s) => s.lastSyncAt);
   const [syncing, setSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
 
@@ -120,9 +122,13 @@ export function OfflineModeBanner() {
 
   const handleSync = async () => {
     if (!isOnline || queueLength === 0) return;
+    setSyncError(null);
     setSyncing(true);
     try {
       await processQueueNow();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Sync failed. Try again or open the queue for details.';
+      setSyncError(message);
     } finally {
       setSyncing(false);
     }
@@ -215,6 +221,13 @@ export function OfflineModeBanner() {
           )}
         </div>
       </div>
+
+      {syncError && (
+        <div role="alert" className="flex items-start gap-2 mt-2 p-2 rounded-lg bg-red-900/20 border border-red-500/30 text-red-200 text-xs">
+          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+          <span>{syncError}</span>
+        </div>
+      )}
 
       {/* Last sync timestamp */}
       {lastSyncAt && (
