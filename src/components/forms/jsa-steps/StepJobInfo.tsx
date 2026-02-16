@@ -187,8 +187,11 @@ function PhotoThumbnail({ path, onRemove, isRemoving, getSignedUrl }: PhotoThumb
           if (signedUrl) setUrl(signedUrl);
         }
       })
-      .catch(() => {
-        if (!cancelled) setLoadError(true);
+      .catch((err) => {
+        if (!cancelled) {
+          setLoadError(true);
+          console.error("[StepJobInfo] Photo thumbnail load failed", path, err);
+        }
       });
     return () => { cancelled = true; };
   }, [path, getSignedUrl]);
@@ -209,9 +212,12 @@ function PhotoThumbnail({ path, onRemove, isRemoving, getSignedUrl }: PhotoThumb
           onError={() => setLoadError(true)}
         />
       ) : (
-        <div className="w-full h-full flex items-center justify-center">
+        <div className="w-full h-full flex flex-col items-center justify-center gap-0.5 p-1">
           {loadError ? (
-            <ImageIcon className="w-6 h-6 text-white/40" aria-hidden />
+            <>
+              <AlertTriangle className="w-5 h-5 text-amber-400/80 shrink-0" aria-hidden />
+              <span className="text-[10px] text-white/50 text-center leading-tight">Load failed</span>
+            </>
           ) : (
             <Loader2 className="w-4 h-4 text-white/30 animate-spin" />
           )}
@@ -285,6 +291,7 @@ export function PaperJsaUpload({ photoPaths, onPathsChange, required }: PaperJsa
         );
       }
     } catch (err) {
+      console.error("[StepJobInfo] Photo upload failed", err);
       const message = err instanceof Error ? err.message : "Photo upload failed. Please try again.";
       formToast.error("Upload Failed", message);
     } finally {
@@ -297,7 +304,8 @@ export function PaperJsaUpload({ photoPaths, onPathsChange, required }: PaperJsa
     try {
       await deletePhoto(path);
       onPathsChange(photoPaths.filter((p) => p !== path));
-    } catch {
+    } catch (err) {
+      console.error("[StepJobInfo] Remove photo failed", path, err);
       formToast.error("Remove Failed", "Failed to remove photo. Please try again.");
     } finally {
       setRemovingPath(null);
