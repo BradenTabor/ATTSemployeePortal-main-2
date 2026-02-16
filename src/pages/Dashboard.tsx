@@ -106,13 +106,14 @@ const NavigableJobCard = memo(
     );
   },
   (prevProps, nextProps) => {
+    const prev = prevProps.job;
+    const next = nextProps.job;
     return (
-      prevProps.job.id === nextProps.job.id &&
-      prevProps.job.status === nextProps.job.status &&
-      JSON.stringify(prevProps.job.progress_updates?.length) === 
-        JSON.stringify(nextProps.job.progress_updates?.length) &&
-      JSON.stringify(prevProps.job.milestones?.filter(m => m.is_completed).length) ===
-        JSON.stringify(nextProps.job.milestones?.filter(m => m.is_completed).length)
+      prev.id === next.id &&
+      prev.status === next.status &&
+      (prev.progress_updates?.length ?? 0) === (next.progress_updates?.length ?? 0) &&
+      (prev.milestones?.filter((m) => m.is_completed).length ?? 0) ===
+        (next.milestones?.filter((m) => m.is_completed).length ?? 0)
     );
   }
 );
