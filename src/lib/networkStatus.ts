@@ -78,6 +78,11 @@ let pingTimer: ReturnType<typeof setTimeout> | null = null;
 let currentOfflineInterval = OFFLINE_BASE_INTERVAL_MS;
 let monitorStarted = false;
 
+/** Stored so stopNetworkMonitor() can remove listeners (avoids memory leak). */
+let handleOnlineRef: (() => void) | null = null;
+let handleOfflineRef: (() => void) | null = null;
+let handleVisibilityChangeRef: (() => void) | null = null;
+
 async function heartbeat(): Promise<boolean> {
   try {
     const controller = new AbortController();
@@ -155,55 +160,61 @@ export function startNetworkMonitor(): void {
 
   if (typeof window === 'undefined') return;
 
-  const handleOnline = () => {
-    currentOfflineInterval = OFFLINE_BASE_INTERVAL_MS;
-    useNetworkStore.setState({
-      isOnline: true,
-      isReliablyOnline: true, // optimistic — next heartbeat confirms
-      lastOnlineAt: Date.now(),
-      failedPings: 0,
-    });
-    logger.info('[networkStatus] Browser online event');
-    scheduleNextPing();
-  };
-
-  const handleOffline = () => {
-    useNetworkStore.setState({
-      isOnline: false,
-      isReliablyOnline: false,
-    });
-    logger.info('[networkStatus] Browser offline event');
-    scheduleNextPing();
-  };
-
-  const handleVisibilityChange = () => {
-    if (document.visibilityState === 'visible') {
-      // Coming back to foreground — resume pinging
+  if (!handleOnlineRef) {
+    handleOnlineRef = () => {
+      currentOfflineInterval = OFFLINE_BASE_INTERVAL_MS;
+      useNetworkStore.setState({
+        isOnline: true,
+        isReliablyOnline: true, // optimistic — next heartbeat confirms
+        lastOnlineAt: Date.now(),
+        failedPings: 0,
+      });
+      logger.info('[networkStatus] Browser online event');
       scheduleNextPing();
-    } else {
-      // Going to background — stop pinging
-      if (pingTimer) {
-        clearTimeout(pingTimer);
-        pingTimer = null;
+    };
+    handleOfflineRef = () => {
+      useNetworkStore.setState({
+        isOnline: false,
+        isReliablyOnline: false,
+      });
+      logger.info('[networkStatus] Browser offline event');
+      scheduleNextPing();
+    };
+    handleVisibilityChangeRef = () => {
+      if (document.visibilityState === 'visible') {
+        scheduleNextPing();
+      } else {
+        if (pingTimer) {
+          clearTimeout(pingTimer);
+          pingTimer = null;
+        }
       }
-    }
-  };
+    };
+  }
 
-  window.addEventListener('online', handleOnline);
-  window.addEventListener('offline', handleOffline);
-  document.addEventListener('visibilitychange', handleVisibilityChange);
+  window.addEventListener('online', handleOnlineRef);
+  window.addEventListener('offline', handleOfflineRef!);
+  document.addEventListener('visibilitychange', handleVisibilityChangeRef!);
 
-  // Initial heartbeat
   scheduleNextPing();
 }
 
 /**
  * Stop the network monitor (for testing/cleanup).
+ * Removes event listeners to avoid memory leaks when remounting or in tests.
  */
 export function stopNetworkMonitor(): void {
   if (pingTimer) {
     clearTimeout(pingTimer);
     pingTimer = null;
+  }
+  const hOn = handleOnlineRef;
+  const hOff = handleOfflineRef;
+  const hVis = handleVisibilityChangeRef;
+  if (typeof window !== 'undefined' && hOn && hOff && hVis) {
+    window.removeEventListener('online', hOn);
+    window.removeEventListener('offline', hOff!);
+    document.removeEventListener('visibilitychange', hVis!);
   }
   monitorStarted = false;
 }
