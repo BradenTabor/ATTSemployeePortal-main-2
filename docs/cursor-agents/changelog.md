@@ -6,6 +6,12 @@ Entries: BACKLOG-ID | Date | Summary | Files | Verification | Scores | Rollback
 
 ## Entries
 
+[BL-030] | 2026-02-16 | StepJobInfo: PhotoThumbnail load failure shows "Load failed" + AlertTriangle; all catch paths (thumbnail load, upload, remove) log to console for debugging.
+Files: src/components/forms/jsa-steps/StepJobInfo.tsx
+Verification: TypeScript PASS, Lint PASS. Tier 2.
+Scores: Feedback — BL-030 resolved.
+Rollback: git revert 8ad917f --no-edit
+
 [BL-029] | 2026-02-16 | JsaWizard: onComplete errors no longer swallowed — set completeError state, show role=alert message below Complete button, log to console; clear error on retry or when leaving last step.
 Files: src/components/forms/JsaWizard.tsx
 Verification: TypeScript PASS, Lint PASS. Tier 2.
