@@ -194,7 +194,7 @@ function ExportSection<T>({
                   Load
                 </button>
               </div>
-              {error && <p className="text-xs text-red-400">{error}</p>}
+              {error && <p role="alert" className="text-xs text-red-400">{error}</p>}
               {data !== null && (
                 <>
                   <p className="text-xs text-white/60">
