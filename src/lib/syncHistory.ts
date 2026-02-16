@@ -62,6 +62,37 @@ const ITEM_TTL_MS = 60 * 60 * 1000;
 /** Max items to keep in history (prevent memory bloat). */
 const MAX_HISTORY_ITEMS = 50;
 
+const STORAGE_KEY = 'atts-sync-history';
+
+/** Persist items + lastCycleSummary to localStorage so Recently Synced survives refresh (BL-020). */
+function persistToStorage(payload: { items: SyncedItem[]; lastCycleSummary: SyncCycleSummary | null }): void {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  } catch {
+    // Quota or privacy; ignore
+  }
+}
+
+/** Load and rehydrate from localStorage; prune expired and trim to max. */
+function loadFromStorage(): Pick<SyncHistoryState, 'items' | 'lastCycleSummary' | 'unacknowledgedCount'> | null {
+  if (typeof window === 'undefined' || !window.localStorage) return null;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw) as { items?: SyncedItem[]; lastCycleSummary?: SyncCycleSummary | null };
+    const now = Date.now();
+    const items = (data.items ?? [])
+      .filter((i) => i && now - (i.syncedAt ?? 0) < ITEM_TTL_MS)
+      .slice(0, MAX_HISTORY_ITEMS);
+    const lastCycleSummary = data.lastCycleSummary ?? null;
+    const unacknowledgedCount = items.filter((i) => !i.acknowledged).length;
+    return { items, lastCycleSummary, unacknowledgedCount };
+  } catch {
+    return null;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Store
 // ---------------------------------------------------------------------------
@@ -96,10 +127,14 @@ interface SyncHistoryState {
   clear: () => void;
 }
 
-export const useSyncHistory = create<SyncHistoryState>()((set) => ({
-  items: [],
-  lastCycleSummary: null,
+const initialState = loadFromStorage() ?? {
+  items: [] as SyncedItem[],
+  lastCycleSummary: null as SyncCycleSummary | null,
   unacknowledgedCount: 0,
+};
+
+export const useSyncHistory = create<SyncHistoryState>()((set) => ({
+  ...initialState,
 
   addSyncedItem: (item) => {
     set((state) => {
@@ -157,6 +192,11 @@ export const useSyncHistory = create<SyncHistoryState>()((set) => ({
 
   clear: () => set({ items: [], lastCycleSummary: null, unacknowledgedCount: 0 }),
 }));
+
+// Persist to localStorage on every state change so Recently Synced survives refresh (BL-020)
+useSyncHistory.subscribe((state) => {
+  persistToStorage({ items: state.items, lastCycleSummary: state.lastCycleSummary });
+});
 
 // ---------------------------------------------------------------------------
 // Convenience selectors
