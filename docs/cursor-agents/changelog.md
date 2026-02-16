@@ -6,6 +6,12 @@ Entries: BACKLOG-ID | Date | Summary | Files | Verification | Scores | Rollback
 
 ## Entries
 
+[BL-023] | 2026-02-16 | JsaDetailModal photo lightbox: focus trap (Tab), ESC to close, Arrow Left/Right to cycle photos; role=dialog, restore focus on close.
+Files: src/components/history/JsaDetailModal.tsx
+Verification: TypeScript PASS, Lint PASS. Tier 2.
+Scores: UX — BL-023 resolved (lightbox a11y).
+Rollback: git revert 70193ab --no-edit
+
 [BL-025] | 2026-02-16 | ComplianceDataExportPanel.tsx: add role="alert" to error display for screen reader announcement.
 Files: src/components/admin/ComplianceDataExportPanel.tsx
 Verification: TypeScript PASS, Lint PASS. Tier 1.
