@@ -6,6 +6,12 @@ Entries: BACKLOG-ID | Date | Summary | Files | Verification | Scores | Rollback
 
 ## Entries
 
+[BL-027] | 2026-02-16 | OfflineQueueContext: extend post-insert integrity check to all photo path fields — DVIR (oil_dipstick, tire, coolant, damage, detail_clean_truck), Equipment (overview, damage, attachments, hydraulic, additional_photo_paths).
+Files: src/contexts/OfflineQueueContext.tsx
+Verification: TypeScript PASS, Lint PASS. Tier 2.
+Scores: Correctness — BL-027 resolved (integrity check coverage).
+Rollback: git revert b4007c6 --no-edit
+
 [BL-026] | 2026-02-16 | ComplianceDataExportPanel ExportSection: validate date range before fetch (both dates required, From <= To); set error and return without calling fetchData when invalid.
 Files: src/components/admin/ComplianceDataExportPanel.tsx
 Verification: TypeScript PASS, Lint PASS. Tier 2.
