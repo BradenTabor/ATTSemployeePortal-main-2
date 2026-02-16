@@ -6,6 +6,12 @@ Entries: BACKLOG-ID | Date | Summary | Files | Verification | Scores | Rollback
 
 ## Entries
 
+[BL-025] | 2026-02-16 | ComplianceDataExportPanel.tsx: add role="alert" to error display for screen reader announcement.
+Files: src/components/admin/ComplianceDataExportPanel.tsx
+Verification: TypeScript PASS, Lint PASS. Tier 1.
+Scores: UX — BL-025 resolved (error role=alert).
+Rollback: git revert 087d140 --no-edit
+
 [BL-024] | 2026-02-16 | StepJobInfo.tsx: add aria-label to photo file input for screen readers.
 Files: src/components/forms/jsa-steps/StepJobInfo.tsx
 Verification: TypeScript PASS, Lint PASS. Tier 1.
