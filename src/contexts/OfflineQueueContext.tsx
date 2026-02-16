@@ -24,6 +24,7 @@ import {
   deletePhotosForQueue,
   type OfflinePhoto,
 } from "../lib/offlinePhotoStore";
+import { toast } from "sonner";
 import { archiveConflict } from "../lib/syncConflicts";
 import { logger } from "../lib/logger";
 import { OfflineQueueContext } from "./offlineQueueContextValue";
@@ -335,6 +336,11 @@ export function OfflineQueueProvider({ children }: { children: ReactNode }) {
     const reason = item.formType === 'dvir'
       ? `A DVIR for ${item.dateFor || 'this date'} already exists`
       : `An equipment inspection for ${item.dateFor || 'this date'} already exists`;
+
+    toast.warning('Submission conflict', {
+      description: `${reason}. It was moved to Offline queue → Conflicts.`,
+      duration: 6000,
+    });
 
     archiveConflict(
       item.id,
