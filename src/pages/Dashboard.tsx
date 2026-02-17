@@ -282,7 +282,7 @@ const AssignedJobsSection = memo(function AssignedJobsSection({
           </div>
           <div>
             <h3 className="text-xs sm:text-sm font-bold text-white">Active Jobs</h3>
-            <p className="text-xs sm:text-[10px] text-emerald-400/60">
+            <p className="text-xs text-emerald-400/60">
               {jobs.length} assignment{jobs.length !== 1 ? 's' : ''}
             </p>
           </div>

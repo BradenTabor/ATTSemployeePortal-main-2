@@ -654,11 +654,6 @@ export default function Announcements() {
     });
   };
 
-  // Reset to page 1 when search changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm]);
-
   // Parse latest date for compact display
   const latestDateInfo = useMemo(() => {
     if (!latestAnnouncement) return { date: "—", time: "" };
@@ -721,7 +716,7 @@ export default function Announcements() {
           {loading ? (
             <AnnouncementsSkeleton />
           ) : visibleAnnouncements === 0 ? (
-            <EmptyState searchTerm={searchTerm} onClearFilter={() => setSearchTerm("")} />
+            <EmptyState searchTerm={searchTerm} onClearFilter={() => { setSearchTerm(""); setCurrentPage(1); }} />
           ) : (
             <>
               {/* Featured Announcement - Direct display like Dashboard */}
@@ -748,8 +743,14 @@ export default function Announcements() {
                     <div className="space-y-3">
                       <SearchBar
                         value={searchTerm}
-                        onChange={setSearchTerm}
-                        onClear={() => setSearchTerm("")}
+                        onChange={(value) => {
+                          setSearchTerm(value);
+                          setCurrentPage(1);
+                        }}
+                        onClear={() => {
+                          setSearchTerm("");
+                          setCurrentPage(1);
+                        }}
                         visibleCount={searchTerm ? filteredAnnouncements.length : announcements.length}
                         totalCount={totalCount}
                       />

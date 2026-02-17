@@ -88,10 +88,6 @@ export function JsaWizard({
   const isLastStep = currentStep === totalSteps;
   const currentStepData = JSA_STEPS[currentStep - 1];
 
-  useEffect(() => {
-    if (!isLastStep) setCompleteError(null);
-  }, [currentStep, isLastStep]);
-
   // Close save menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -121,6 +117,7 @@ export function JsaWizard({
     (step: number) => {
       if (step < 1 || step > totalSteps) return;
       if (step === currentStep) return; // no-op avoids redundant URL/history updates
+      if (step !== totalSteps) setCompleteError(null);
       setDirection(step > currentStep ? 1 : -1);
       setCurrentStep(step);
     },
@@ -535,7 +532,7 @@ export function JsaWizard({
 
           {/* Next / Complete */}
           {isLastStep ? (
-            <>
+            <div className="flex flex-col items-end gap-0">
               <button
                 type="button"
                 data-testid="jsa-complete"
@@ -569,11 +566,11 @@ export function JsaWizard({
                 <span className="hidden sm:inline">{saving ? "Submitting..." : "Done"}</span>
               </button>
               {completeError && (
-                <p role="alert" className="text-sm text-red-400 mt-2">
+                <p role="alert" className="text-sm text-red-400 mt-2 text-right">
                   {completeError}
                 </p>
               )}
-            </>
+            </div>
           ) : (
             <button
               type="button"

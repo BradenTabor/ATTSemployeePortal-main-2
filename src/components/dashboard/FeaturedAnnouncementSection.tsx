@@ -170,7 +170,7 @@ function FeaturedAnnouncementSectionComponent() {
             </div>
             <div>
               <h3 className="text-xs sm:text-sm font-bold text-white">Latest Update</h3>
-              <p className="text-xs sm:text-[10px] text-emerald-400/50 font-medium">
+              <p className="text-xs text-emerald-400/50 font-medium">
                 Stay informed
               </p>
             </div>
