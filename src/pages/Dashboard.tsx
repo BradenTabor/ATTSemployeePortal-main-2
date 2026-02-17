@@ -18,6 +18,7 @@ import {
 } from '../lib/mobilePerf';
 import { logger } from '../lib/logger';
 import { getRoleDashboard } from '../lib/navigation';
+import { trackDashboardAction } from '../lib/telemetry';
 import type { JobProgressTracker } from '../types/jobs';
 
 // Dashboard components
@@ -95,6 +96,7 @@ const NavigableJobCard = memo(
         to={`/assigned-jobs?job=${job.id}`}
         className={`block cursor-pointer ${FOCUS_RING}`}
         aria-label={`View job ${job.job_name || job.id}`}
+        onClick={() => trackDashboardAction({ action: 'job_card_click', job_id: job.id })}
       >
         <motion.div
           whileHover={{ scale: 1.01 }}
@@ -394,6 +396,11 @@ function Dashboard() {
   // Show one-time discovery toast for Profile/Settings pages
   useProfileDiscoveryToast({ delay: 4000, duration: 10000 });
 
+  // Dashboard success metrics: track view on mount
+  useEffect(() => {
+    trackDashboardAction({ action: 'view' });
+  }, []);
+
   // Fetch user's assigned jobs
   const {
     assignedJobs,
@@ -424,6 +431,7 @@ function Dashboard() {
   // Pull to refresh handler
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
+    trackDashboardAction({ action: 'pull_refresh' });
     try {
       await refetchJobs();
       // Small delay for visual feedback

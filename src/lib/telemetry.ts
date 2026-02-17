@@ -48,7 +48,8 @@ export type TelemetryEventName =
   | 'form_duplicate_overridden'
   | 'avatar_uploaded'
   | 'avatar_removed'
-  | 'avatar_upload_failed';
+  | 'avatar_upload_failed'
+  | 'dashboard_action';
 
 /**
  * Form types (constrained to match database CHECK constraint)
@@ -99,6 +100,25 @@ export interface DuplicateEventProps {
   form_type: FormType;
   entity_id: string;
   date_for?: string;
+  [key: string]: unknown;
+}
+
+/**
+ * Actions for dashboard_action event (dashboard success metrics).
+ * See docs/dashboard-contract.md.
+ */
+export type DashboardActionType =
+  | 'view'
+  | 'section_expand'
+  | 'form_link_click'
+  | 'job_card_click'
+  | 'pull_refresh'
+  | 'view_all_jobs';
+
+export interface DashboardActionProps {
+  action: DashboardActionType;
+  section_id?: string;  // e.g. 'dashboard-active-jobs', 'dashboard-all-tools'
+  job_id?: string;     // for job_card_click
   [key: string]: unknown;
 }
 
@@ -402,6 +422,14 @@ export function trackDuplicateOverridden(props: Omit<DuplicateEventProps, 'date_
   track('form_duplicate_overridden', props);
 }
 
+/**
+ * Track dashboard engagement (visits, section expands, link clicks, pull-refresh).
+ * Use for dashboard success metrics. See docs/dashboard-contract.md.
+ */
+export function trackDashboardAction(props: DashboardActionProps): void {
+  track('dashboard_action', props);
+}
+
 // ============================================================================
 // PAGE UNLOAD HANDLER
 // ============================================================================
@@ -512,6 +540,7 @@ export default {
   trackDuplicateDetected,
   trackDuplicatePrevented,
   trackDuplicateOverridden,
+  trackDashboardAction,
   initSession,
   getSessionId,
   clearSession,
