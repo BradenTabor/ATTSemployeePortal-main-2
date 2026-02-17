@@ -240,7 +240,7 @@ const AssignedJobsSection = memo(function AssignedJobsSection({
         {displayItems.length > 4 && (
           <a
             href="/assigned-jobs"
-            className="flex items-center justify-center gap-2 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/15 hover:border-emerald-500/30 transition-all"
+            className={`flex items-center justify-center gap-2 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/15 hover:border-emerald-500/30 transition-all ${FOCUS_RING}`}
           >
             <span className="text-xs font-medium text-emerald-400">
               +{displayItems.length - 4} more job{displayItems.length - 4 !== 1 ? 's' : ''}
@@ -289,7 +289,7 @@ const AssignedJobsSection = memo(function AssignedJobsSection({
         {/* View all link */}
         <a 
           href="/assigned-jobs"
-          className="text-xs font-medium text-emerald-400/70 hover:text-emerald-300 transition-colors"
+          className={`text-xs font-medium text-emerald-400/70 hover:text-emerald-300 transition-colors rounded ${FOCUS_RING}`}
         >
           View all →
         </a>
@@ -317,7 +317,7 @@ const AssignedJobsSection = memo(function AssignedJobsSection({
       {displayItems.length > 4 && (
         <a 
           href="/assigned-jobs"
-          className="flex items-center justify-center gap-2 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/15 hover:border-emerald-500/30 transition-all"
+          className={`flex items-center justify-center gap-2 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/15 hover:border-emerald-500/30 transition-all ${FOCUS_RING}`}
         >
           <span className="text-xs font-medium text-emerald-400">
             +{displayItems.length - 4} more job{displayItems.length - 4 !== 1 ? 's' : ''}
@@ -551,7 +551,7 @@ function Dashboard() {
                       headerAction={
                         <a
                           href="/assigned-jobs"
-                          className="text-xs font-medium text-emerald-400/70 hover:text-emerald-300 transition-colors"
+                          className={`text-xs font-medium text-emerald-400/70 hover:text-emerald-300 transition-colors rounded ${FOCUS_RING}`}
                         >
                           View all →
                         </a>

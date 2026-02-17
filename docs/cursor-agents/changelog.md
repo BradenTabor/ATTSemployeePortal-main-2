@@ -188,3 +188,4 @@ Rollback: git checkout -- tests/unit/components/PaginationControls.test.tsx
 BL-001 | 2026-02-16 | JobCreationForm duplicate submit guard | 1 file | PASS | — | (commit pending)
 BL-002 | 2026-02-16 | Dashboard job cards keyboard-accessible (Link + focus ring + aria-label) | 1 file | PASS | —
 BL-003 | 2026-02-16 | Dashboard mobile text min 12px (Dashboard, CompactComplianceStrip, FeaturedAnnouncement) | 3 files | PASS | —
+BL-004 | 2026-02-16 | Dashboard View all and +N more focus-visible ring | 2 files | PASS | —

@@ -181,7 +181,7 @@ function FeaturedAnnouncementSectionComponent() {
             onClick={handleViewAll}
             whileHover={enableAnimations ? { x: 2 } : undefined}
             whileTap={{ scale: 0.97 }}
-            className="flex items-center gap-1 text-xs font-medium text-emerald-400/70 hover:text-emerald-300 transition-colors group"
+            className="flex items-center gap-1 text-xs font-medium text-emerald-400/70 hover:text-emerald-300 transition-colors group focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] rounded"
           >
             <span>View all</span>
             <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
