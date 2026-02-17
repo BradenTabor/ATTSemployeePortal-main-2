@@ -233,7 +233,8 @@ export function useOfflineQueue(options: UseOfflineQueueOptions): UseOfflineQueu
       useNetworkStore.getState().recordSync();
       useSyncHistory.getState().addCycleSummary(result);
     }
-    if (result.processed + result.failed >= 1) {
+    // Summary toast only when >1 item; single-item sync already gets per-item toast (see buildProcessOptions.onItemSynced)
+    if (result.processed + result.failed > 1) {
       showCycleSummaryToast(result.processed, result.failed, result.discarded);
     }
 
