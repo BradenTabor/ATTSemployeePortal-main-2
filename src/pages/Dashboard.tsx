@@ -280,7 +280,7 @@ const AssignedJobsSection = memo(function AssignedJobsSection({
           </div>
           <div>
             <h3 className="text-xs sm:text-sm font-bold text-white">Active Jobs</h3>
-            <p className="text-[9px] sm:text-[10px] text-emerald-400/60">
+            <p className="text-xs sm:text-[10px] text-emerald-400/60">
               {jobs.length} assignment{jobs.length !== 1 ? 's' : ''}
             </p>
           </div>
@@ -289,7 +289,7 @@ const AssignedJobsSection = memo(function AssignedJobsSection({
         {/* View all link */}
         <a 
           href="/assigned-jobs"
-          className="text-[10px] sm:text-xs font-medium text-emerald-400/70 hover:text-emerald-300 transition-colors"
+          className="text-xs font-medium text-emerald-400/70 hover:text-emerald-300 transition-colors"
         >
           View all →
         </a>
@@ -551,7 +551,7 @@ function Dashboard() {
                       headerAction={
                         <a
                           href="/assigned-jobs"
-                          className="text-[10px] sm:text-xs font-medium text-emerald-400/70 hover:text-emerald-300 transition-colors"
+                          className="text-xs font-medium text-emerald-400/70 hover:text-emerald-300 transition-colors"
                         >
                           View all →
                         </a>

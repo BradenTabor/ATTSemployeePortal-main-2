@@ -170,7 +170,7 @@ function FeaturedAnnouncementSectionComponent() {
             </div>
             <div>
               <h3 className="text-xs sm:text-sm font-bold text-white">Latest Update</h3>
-              <p className="text-[9px] sm:text-[10px] text-emerald-400/50 font-medium">
+              <p className="text-xs sm:text-[10px] text-emerald-400/50 font-medium">
                 Stay informed
               </p>
             </div>
@@ -181,7 +181,7 @@ function FeaturedAnnouncementSectionComponent() {
             onClick={handleViewAll}
             whileHover={enableAnimations ? { x: 2 } : undefined}
             whileTap={{ scale: 0.97 }}
-            className="flex items-center gap-1 text-[10px] sm:text-xs font-medium text-emerald-400/70 hover:text-emerald-300 transition-colors group"
+            className="flex items-center gap-1 text-xs font-medium text-emerald-400/70 hover:text-emerald-300 transition-colors group"
           >
             <span>View all</span>
             <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />

@@ -162,7 +162,7 @@ const ComplianceItem = memo(function ComplianceItem({ form, index, themeStyles }
           className="flex items-center gap-1"
         >
           <CheckCircle2 className={`w-4 h-4 ${themeStyles.checkColor}`} />
-          <span className="text-[10px] font-semibold text-emerald-400 uppercase tracking-wider">Done</span>
+          <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Done</span>
         </motion.div>
       ) : (
         <motion.div
@@ -178,7 +178,7 @@ const ComplianceItem = memo(function ComplianceItem({ form, index, themeStyles }
               group
             `}
           >
-            <span className="text-[10px] font-semibold text-amber-400 uppercase tracking-wider">Submit</span>
+            <span className="text-xs font-semibold text-amber-400 uppercase tracking-wider">Submit</span>
             <ChevronRight className="w-3 h-3 text-amber-400 group-hover:translate-x-0.5 transition-transform" />
           </Link>
         </motion.div>
