@@ -1,4 +1,4 @@
-import { memo, useState, useCallback, useEffect } from 'react';
+import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
   Briefcase,
@@ -111,6 +111,7 @@ function JobCreationFormComponent({
   });
 
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
@@ -258,36 +259,39 @@ function JobCreationFormComponent({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validate()) return;
 
+    // QA-003: Prevent duplicate submissions — atomic ref guard (same pattern as DVIRForm, DailyJSAForm)
+    if (submittingRef.current || submitting) {
+      logger.warn('[JobCreationForm] Submit already in progress, ignoring duplicate submit');
+      return;
+    }
+    submittingRef.current = true;
     setSubmitting(true);
     setError(null);
-    
-    // Show loading toast
-    await formToast.submitting(isEditing ? 'Saving changes...' : 'Creating job...');
 
-    const result = await onSubmit(formData);
+    try {
+      await formToast.submitting(isEditing ? 'Saving changes...' : 'Creating job...');
 
-    if (!result.success) {
-      setError(result.error || 'An error occurred');
-      formToast.error(
-        isEditing ? 'Update Failed' : 'Creation Failed',
-        result.error || 'An error occurred. Please try again.',
-        { onRetry: () => handleSubmit(e) }
-      );
-    } else {
-      // Dismiss loading toast before showing celebration
-      formToast.dismiss();
-      
-      // Store job name for celebration message
-      setCreatedJobName(formData.job_name);
-      
-      // Show success celebration
-      setShowCelebration(true);
+      const result = await onSubmit(formData);
+
+      if (!result.success) {
+        setError(result.error || 'An error occurred');
+        formToast.error(
+          isEditing ? 'Update Failed' : 'Creation Failed',
+          result.error || 'An error occurred. Please try again.',
+          { onRetry: () => handleSubmit(e) }
+        );
+      } else {
+        formToast.dismiss();
+        setCreatedJobName(formData.job_name);
+        setShowCelebration(true);
+      }
+    } finally {
+      submittingRef.current = false;
+      setSubmitting(false);
     }
-
-    setSubmitting(false);
   };
   
   // Handle celebration continue

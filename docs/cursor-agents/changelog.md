@@ -185,3 +185,4 @@ Files: tests/unit/components/PaginationControls.test.tsx
 Verification: Unit tests PASS (346 passed).
 Scores: 90 → 90 (no regression).
 Rollback: git checkout -- tests/unit/components/PaginationControls.test.tsx
+BL-001 | 2026-02-16 | JobCreationForm duplicate submit guard | 1 file | PASS | — | (commit pending)
