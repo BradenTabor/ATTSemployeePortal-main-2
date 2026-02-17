@@ -1,6 +1,6 @@
 import { useCallback, memo, useMemo, Suspense, lazy, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate, Navigate, Link } from 'react-router-dom';
 import { ScrollReveal } from '../motion';
 import {
   RefreshCw,
@@ -86,23 +86,24 @@ interface NavigableJobCardProps {
   job: JobProgressTracker;
 }
 
+const FOCUS_RING = 'focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] rounded-xl';
+
 const NavigableJobCard = memo(
   function NavigableJobCard({ job }: NavigableJobCardProps) {
-    const navigate = useNavigate();
-
-    const handleClick = useCallback(() => {
-      navigate(`/assigned-jobs?job=${job.id}`);
-    }, [navigate, job.id]);
-
     return (
-      <motion.div
-        whileHover={{ scale: 1.01 }}
-        whileTap={{ scale: 0.99 }}
-        onClick={handleClick}
-        className="cursor-pointer"
+      <Link
+        to={`/assigned-jobs?job=${job.id}`}
+        className={`block cursor-pointer ${FOCUS_RING}`}
+        aria-label={`View job ${job.job_name || job.id}`}
       >
-        <CompactJobCard job={job} />
-      </motion.div>
+        <motion.div
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.99 }}
+          className="rounded-xl"
+        >
+          <CompactJobCard job={job} />
+        </motion.div>
+      </Link>
     );
   },
   (prevProps, nextProps) => {
