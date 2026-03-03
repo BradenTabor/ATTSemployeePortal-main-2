@@ -13,6 +13,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { sendGmailEmail } from '../_shared/gmail.ts';
 
 // =============================================================================
 // CORS HEADERS
@@ -376,128 +377,6 @@ async function getEmailRecipients(
 }
 
 // =============================================================================
-// EMAIL SENDING - Using Gmail SMTP directly via raw socket
-// =============================================================================
-
-function base64Encode(str: string): string {
-  return btoa(unescape(encodeURIComponent(str)));
-}
-
-async function sendGmailEmail(
-  recipients: string[],
-  subject: string,
-  textBody: string,
-  htmlBody: string
-): Promise<{ success: boolean; error?: string }> {
-  if (!GMAIL_APP_PASSWORD) {
-    console.error('[Email] GMAIL_APP_PASSWORD not configured');
-    return { success: false, error: 'GMAIL_APP_PASSWORD not configured' };
-  }
-  if (recipients.length === 0) {
-    return { success: false, error: 'No recipients' };
-  }
-
-  try {
-    const boundary = `boundary_${Date.now()}`;
-    const toList = recipients.join(', ');
-    
-    // Build the raw email
-    const rawEmail = [
-      `From: ATTS Safety Compliance <${GMAIL_USER}>`,
-      `To: ${toList}`,
-      `Subject: ${subject}`,
-      `MIME-Version: 1.0`,
-      `Content-Type: multipart/alternative; boundary="${boundary}"`,
-      ``,
-      `--${boundary}`,
-      `Content-Type: text/plain; charset="UTF-8"`,
-      ``,
-      textBody,
-      ``,
-      `--${boundary}`,
-      `Content-Type: text/html; charset="UTF-8"`,
-      ``,
-      htmlBody,
-      ``,
-      `--${boundary}--`,
-    ].join('\r\n');
-
-    // Connect to Gmail SMTP
-    const conn = await Deno.connectTls({
-      hostname: 'smtp.gmail.com',
-      port: 465,
-    });
-
-    const encoder = new TextEncoder();
-    const decoder = new TextDecoder();
-
-    // Helper to send command and read response
-    async function sendCommand(cmd: string): Promise<string> {
-      await conn.write(encoder.encode(cmd + '\r\n'));
-      const buf = new Uint8Array(1024);
-      const n = await conn.read(buf);
-      return decoder.decode(buf.subarray(0, n || 0));
-    }
-
-    // Helper to read initial response
-    async function readResponse(): Promise<string> {
-      const buf = new Uint8Array(1024);
-      const n = await conn.read(buf);
-      return decoder.decode(buf.subarray(0, n || 0));
-    }
-
-    // SMTP conversation
-    let response = await readResponse();
-    console.log('[SMTP] Initial:', response.trim());
-
-    response = await sendCommand('EHLO localhost');
-    console.log('[SMTP] EHLO:', response.substring(0, 50));
-
-    response = await sendCommand('AUTH LOGIN');
-    console.log('[SMTP] AUTH:', response.trim());
-
-    response = await sendCommand(base64Encode(GMAIL_USER));
-    console.log('[SMTP] User:', response.trim());
-
-    const cleanPassword = GMAIL_APP_PASSWORD.replace(/\s/g, '');
-    response = await sendCommand(base64Encode(cleanPassword));
-    console.log('[SMTP] Pass:', response.substring(0, 20));
-
-    if (!response.includes('235')) {
-      conn.close();
-      return { success: false, error: 'Authentication failed: ' + response };
-    }
-
-    response = await sendCommand(`MAIL FROM:<${GMAIL_USER}>`);
-    console.log('[SMTP] FROM:', response.trim());
-
-    for (const recipient of recipients) {
-      response = await sendCommand(`RCPT TO:<${recipient}>`);
-      console.log('[SMTP] RCPT:', response.trim());
-    }
-
-    response = await sendCommand('DATA');
-    console.log('[SMTP] DATA:', response.trim());
-
-    await conn.write(encoder.encode(rawEmail + '\r\n.\r\n'));
-    response = await readResponse();
-    console.log('[SMTP] Sent:', response.trim());
-
-    response = await sendCommand('QUIT');
-    console.log('[SMTP] QUIT:', response.trim());
-
-    conn.close();
-
-    console.log('[Email] Successfully sent to', recipients.length, 'recipients');
-    return { success: true };
-  } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[Email] Failed to send:', errorMsg);
-    return { success: false, error: errorMsg };
-  }
-}
-
-// =============================================================================
 // WEBHOOK SENDING
 // =============================================================================
 
@@ -677,9 +556,13 @@ serve(async (req) => {
     // Fetch recipients from DB (fallback to defaults)
     const recipients = await getEmailRecipients(supabase, 'compliance_summary', FALLBACK_RECIPIENTS);
 
-    // Send email via Gmail
+    // Send email via Gmail (shared helper)
     console.log('[Compliance] Sending email via Gmail...');
-    const emailResult = await sendGmailEmail(recipients, subject, textBody, htmlBody);
+    const emailResult = await sendGmailEmail(recipients, subject, textBody, htmlBody, {
+      gmailUser: GMAIL_USER,
+      gmailAppPassword: GMAIL_APP_PASSWORD,
+      fromLabel: 'ATTS Safety Compliance',
+    });
 
     // Log send attempt
     const { error: logErr } = await supabase.from('email_send_log').insert({
@@ -711,7 +594,11 @@ serve(async (req) => {
             manager.full_name ?? null,
             directReports
           );
-          const mgrResult = await sendGmailEmail([managerEmail], subject, textBody, htmlBody);
+          const mgrResult = await sendGmailEmail([managerEmail], subject, textBody, htmlBody, {
+            gmailUser: GMAIL_USER,
+            gmailAppPassword: GMAIL_APP_PASSWORD,
+            fromLabel: 'ATTS Safety Compliance',
+          });
           if (mgrResult.success) managerEmailsSent++;
           await supabase.from('email_send_log').insert({
             list_key: 'manager_compliance',

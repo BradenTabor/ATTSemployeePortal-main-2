@@ -20,6 +20,8 @@ export type ChecklistValue = "" | "P" | "F" | "N/A";
 export interface ChecklistItem {
   id: string;
   label: string;
+  /** 49 CFR 396.13(b)(3): safety-critical defects require correction or documented waiver. */
+  safety_critical?: boolean;
 }
 
 /** Consolidated form state for persistence (excludes files/signatures which can't be serialized) */
@@ -49,6 +51,8 @@ export interface DVIRFormState {
   // Mechanic section
   mechTruckNumber: string;
   deficiencyCorrected: string;
+  /** 49 CFR 396.13(b)(3): per-defect corrected vs need not be corrected. */
+  defectCorrections: Record<string, "corrected" | "need_not_be_corrected">;
   mechanicRemarks: string;
   mechanicDate: string;
   isMechanicOpen: boolean;
@@ -86,6 +90,7 @@ export const createInitialDVIRFormState = (): DVIRFormState => ({
   aerialNotes: "",
   mechTruckNumber: "",
   deficiencyCorrected: "",
+  defectCorrections: {},
   mechanicRemarks: "",
   mechanicDate: "",
   isMechanicOpen: false,
@@ -150,9 +155,9 @@ export const VEHICLE_TRAILER_ITEMS: ChecklistItem[] = [
   { id: "air_compressor", label: "Air Compressor" },
   { id: "air_line", label: "Air Line" },
   { id: "batteries", label: "Batteries" },
-  { id: "service_brakes", label: "Service Brakes" },
-  { id: "brake_connections", label: "Brake Connections" },
-  { id: "parking_brakes", label: "Parking Brakes" },
+  { id: "service_brakes", label: "Service Brakes", safety_critical: true },
+  { id: "brake_connections", label: "Brake Connections", safety_critical: true },
+  { id: "parking_brakes", label: "Parking Brakes", safety_critical: true },
   { id: "clutch", label: "Clutch" },
   { id: "AC/heater", label: "AC/Heater" },
   { id: "defroster", label: "Defroster" },
@@ -179,16 +184,16 @@ export const VEHICLE_TRAILER_ITEMS: ChecklistItem[] = [
   { id: "rear_end", label: "Rear End" },
   { id: "springs", label: "Springs" },
   { id: "starter", label: "Starter" },
-  { id: "steering", label: "Steering" },
-  { id: "tires", label: "Tires" },
+  { id: "steering", label: "Steering", safety_critical: true },
+  { id: "tires", label: "Tires", safety_critical: true },
   { id: "wheels", label: "Wheels" },
   { id: "windows", label: "Windows" },
   { id: "windshield_wipers", label: "Windshield Wipers" },
   { id: "reflectors", label: "Reflectors" },
-  { id: "trailer_tires", label: "Trailer Tires" },
+  { id: "trailer_tires", label: "Trailer Tires", safety_critical: true },
   { id: "trailer_wheels", label: "Trailer Wheels" },
-  { id: "trailer_brakes", label: "Trailer Brakes" },
-  { id: "trailer_brake_connections", label: "Trailer Brake Connections" },
+  { id: "trailer_brakes", label: "Trailer Brakes", safety_critical: true },
+  { id: "trailer_brake_connections", label: "Trailer Brake Connections", safety_critical: true },
   { id: "trailer_doors", label: "Trailer Doors" },
   { id: "trailer_springs", label: "Trailer Springs" },
   { id: "trailer_lights_all", label: "Trailer Lights (All)" },
@@ -198,6 +203,9 @@ export const VEHICLE_TRAILER_ITEMS: ChecklistItem[] = [
   { id: "axles", label: "Axles" },
   { id: "trailer_floor", label: "Trailer Floor" },
 ];
+
+/** Item IDs that are safety-critical (49 CFR 396.13). Dispatch warning when these are Fail and not corrected. */
+export const SAFETY_CRITICAL_ITEM_IDS = VEHICLE_TRAILER_ITEMS.filter((i) => i.safety_critical).map((i) => i.id);
 
 /** Aerial lift checklist (bottom section of PDF) */
 export const AERIAL_LIFT_ITEMS: ChecklistItem[] = [

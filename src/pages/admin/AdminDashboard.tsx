@@ -22,7 +22,6 @@ import { subscribeToTableChanges } from "../../lib/realtime";
 import { logger } from "../../lib/logger";
 import { NotificationBuilders, createNotificationSilent } from "../../lib/pushNotifications";
 import { DateField } from "../../components/forms/GlassyPickers";
-import SafetyPointsLeaderboard from "../../components/admin/SafetyPointsLeaderboard";
 import {
   useAnnouncementsQuery,
   useUpdateAnnouncement,
@@ -524,15 +523,6 @@ export default function AdminDashboard() {
             />
           </motion.div>
         ))}
-      </motion.div>
-      
-      {/* Safety Points Leaderboard - Gamified Compliance */}
-      <motion.div
-        variants={itemVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        <SafetyPointsLeaderboard />
       </motion.div>
       
       {/* Safety Incidents Section */}

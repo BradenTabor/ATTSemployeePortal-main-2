@@ -53,6 +53,12 @@ interface SafetyAuditLogRow {
   created_at: string;
 }
 
+/** Audit log row with resolved actor display (name/email) for UI */
+interface SafetyAuditLogRowWithActor extends SafetyAuditLogRow {
+  actor_name: string | null;
+  actor_email: string | null;
+}
+
 interface OshaMappingRow {
   id: string;
   osha_regulation: string;
@@ -74,7 +80,30 @@ function useSafetyAuditLog(page: number) {
         .order("occurred_at", { ascending: false })
         .range(from, to);
       if (error) throw new Error(error.message);
-      return { rows: data as SafetyAuditLogRow[], total: count ?? 0 };
+      const rows = (data ?? []) as SafetyAuditLogRow[];
+      const userIds = [...new Set(rows.map((r) => r.user_id).filter(Boolean))] as string[];
+      const userMap: Record<string, { full_name: string | null; email: string | null }> = {};
+      if (userIds.length > 0) {
+        const { data: users } = await supabase
+          .from("app_users")
+          .select("user_id, full_name, email")
+          .in("user_id", userIds);
+        for (const u of users ?? []) {
+          userMap[u.user_id] = {
+            full_name: u.full_name ?? null,
+            email: u.email ?? null,
+          };
+        }
+      }
+      const rowsWithActor: SafetyAuditLogRowWithActor[] = rows.map((r) => {
+        const info = r.user_id ? userMap[r.user_id] : undefined;
+        return {
+          ...r,
+          actor_name: info?.full_name ?? null,
+          actor_email: info?.email ?? null,
+        };
+      });
+      return { rows: rowsWithActor, total: count ?? 0 };
     },
     staleTime: 1000 * 60,
   });
@@ -97,6 +126,12 @@ function useOshaComplianceMapping() {
 
 function formatEventType(eventType: string): string {
   return eventType.replace(/_/g, " ");
+}
+
+function formatAuditActor(row: SafetyAuditLogRowWithActor): string {
+  if (row.actor_name) return row.actor_name;
+  if (row.actor_email) return row.actor_email;
+  return "—";
 }
 
 interface ComplianceSummaryRow {
@@ -224,10 +259,18 @@ const INCIDENT_LOG_COLUMNS: ExportColumn<IncidentLogRow>[] = [
   { header: "Reported At", key: "reported_at", format: (v) => formatDateForExport(v as string, true), width: 20 },
 ];
 
-export default function AdminComplianceAudit() {
+export type ComplianceAuditTabId = "audit" | "mapping" | "reports" | "weekly" | "export";
+
+export interface ComplianceAuditContentProps {
+  tab: ComplianceAuditTabId;
+  setTab: (tab: ComplianceAuditTabId) => void;
+  /** When provided, used instead of AdminSegmentedControl (e.g. underline tabs in hub). */
+  renderTabs?: (tab: ComplianceAuditTabId, setTab: (t: ComplianceAuditTabId) => void) => React.ReactNode;
+}
+
+export function ComplianceAuditContent({ tab, setTab, renderTabs }: ComplianceAuditContentProps) {
   const { user, role } = useAuth();
   const defaultRange = getDefaultDateRange();
-  const [tab, setTab] = useState<"audit" | "mapping" | "reports" | "weekly" | "export">("audit");
   const [auditPage, setAuditPage] = useState(1);
   const [reportDateFrom, setReportDateFrom] = useState(defaultRange.from);
   const [reportDateTo, setReportDateTo] = useState(defaultRange.to);
@@ -398,40 +441,44 @@ export default function AdminComplianceAudit() {
     ? Math.max(1, Math.ceil(auditQuery.data.total / PAGE_SIZE))
     : 1;
 
-  // Tab configuration for AdminSegmentedControl
-  const tabs: SegmentTab[] = useMemo(() => [
-    { id: "audit", label: "Audit Log", shortLabel: "Audit", icon: <Database className="w-4 h-4" /> },
-    { id: "mapping", label: "OSHA Mapping", shortLabel: "OSHA", icon: <BookOpen className="w-4 h-4" /> },
-    { id: "reports", label: "Reports", shortLabel: "Reports", icon: <FileText className="w-4 h-4" /> },
-    { id: "weekly", label: "Weekly Reports", shortLabel: "Weekly", icon: <Calendar className="w-4 h-4" /> },
-    { id: "export", label: "Data Export", shortLabel: "Export", icon: <Package className="w-4 h-4" /> },
-  ], []);
+  const tabs: SegmentTab[] = useMemo(
+    () => [
+      { id: "audit", label: "Audit Log", shortLabel: "Audit", icon: <Database className="w-4 h-4" /> },
+      { id: "mapping", label: "OSHA Mapping", shortLabel: "OSHA", icon: <BookOpen className="w-4 h-4" /> },
+      { id: "reports", label: "Reports", shortLabel: "Reports", icon: <FileText className="w-4 h-4" /> },
+      { id: "weekly", label: "Weekly Reports", shortLabel: "Weekly", icon: <Calendar className="w-4 h-4" /> },
+      { id: "export", label: "Data Export", shortLabel: "Export", icon: <Package className="w-4 h-4" /> },
+    ],
+    []
+  );
 
   return (
-    <DashboardLayout>
-      <div className="min-h-screen rounded-[25px] bg-gradient-to-b from-gray-950 via-gray-900 to-gray-950 text-white px-3 py-4 sm:px-4 sm:py-6 pb-20 sm:pb-24 w-full min-w-0">
-        <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6 w-full min-w-0">
-          {/* Header - compressed on mobile */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-amber-500/10 border border-amber-500/20">
-                <Shield className="w-6 h-6 sm:w-8 sm:h-8 text-amber-400" aria-hidden />
-              </div>
-              <div>
-                <h1 className="text-lg sm:text-xl font-semibold text-white">Compliance Audit</h1>
-                <p className="text-xs sm:text-sm text-white/60">
-                  Safety audit log and OSHA regulation mapping (read-only)
-                </p>
-              </div>
-            </div>
+    <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6 w-full min-w-0">
+      {/* Header - compressed on mobile */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-amber-500/10 border border-amber-500/20">
+            <Shield className="w-6 h-6 sm:w-8 sm:h-8 text-amber-400" aria-hidden />
           </div>
+          <div>
+            <h2 className="text-lg sm:text-xl font-semibold text-white">Compliance Audit</h2>
+            <p className="text-xs sm:text-sm text-white/60">
+              Safety audit log and OSHA regulation mapping (read-only)
+            </p>
+          </div>
+        </div>
+      </div>
 
-          {/* Tabs - uses AdminSegmentedControl for mobile-friendly wrap */}
-          <AdminSegmentedControl
-            tabs={tabs}
-            activeTab={tab}
-            onChange={(tabId) => setTab(tabId as "audit" | "mapping" | "reports" | "weekly" | "export")}
-          />
+      {/* Tabs: custom (e.g. underline) or AdminSegmentedControl */}
+      {renderTabs ? (
+        renderTabs(tab, setTab)
+      ) : (
+        <AdminSegmentedControl
+          tabs={tabs}
+          activeTab={tab}
+          onChange={(tabId) => setTab(tabId as ComplianceAuditTabId)}
+        />
+      )}
 
           <AnimatePresence mode="wait">
             {tab === "audit" && (
@@ -494,6 +541,12 @@ export default function AdminComplianceAudit() {
                             </span>
                           </div>
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm">
+                            <span className="text-white/50 shrink-0">User</span>
+                            <span className="text-white/80" title={row.actor_email ?? undefined}>
+                              {formatAuditActor(row)}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm">
                             <span className="text-white/50 shrink-0">Event</span>
                             <span className="text-amber-300/90 font-medium">
                               {formatEventType(row.event_type)}
@@ -527,6 +580,7 @@ export default function AdminComplianceAudit() {
                         <thead>
                           <tr className="border-b border-white/10 text-white/60">
                             <th className="p-2 sm:p-3 font-medium whitespace-nowrap">When</th>
+                            <th className="p-2 sm:p-3 font-medium whitespace-nowrap">User</th>
                             <th className="p-2 sm:p-3 font-medium whitespace-nowrap">Event</th>
                             <th className="p-2 sm:p-3 font-medium whitespace-nowrap">Table</th>
                             <th className="p-2 sm:p-3 font-medium whitespace-nowrap">Record ID</th>
@@ -541,6 +595,9 @@ export default function AdminComplianceAudit() {
                             >
                               <td className="p-2 sm:p-3 text-white/80 whitespace-nowrap">
                                 {new Date(row.occurred_at).toLocaleString()}
+                              </td>
+                              <td className="p-2 sm:p-3 text-white/80 max-w-[140px] truncate" title={row.actor_email ?? undefined}>
+                                {formatAuditActor(row)}
                               </td>
                               <td className="p-2 sm:p-3 text-amber-300/90 font-medium whitespace-nowrap">
                                 {formatEventType(row.event_type)}
@@ -1259,7 +1316,16 @@ export default function AdminComplianceAudit() {
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
+    </div>
+  );
+}
+
+export default function AdminComplianceAudit() {
+  const [tab, setTab] = useState<ComplianceAuditTabId>("audit");
+  return (
+    <DashboardLayout>
+      <div className="min-h-screen rounded-[25px] bg-gradient-to-b from-gray-950 via-gray-900 to-gray-950 text-white px-3 py-4 sm:px-4 sm:py-6 pb-20 sm:pb-24 w-full min-w-0">
+        <ComplianceAuditContent tab={tab} setTab={setTab} />
       </div>
     </DashboardLayout>
   );

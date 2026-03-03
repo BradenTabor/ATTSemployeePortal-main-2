@@ -2,7 +2,7 @@
 /**
  * Supabase Edge Function: Generate Daily Safety Announcement
  * 
- * Scheduled to run at 7:00 AM CST Monday-Friday.
+ * Scheduled to run at 6:00 AM CST Monday-Friday (matches reward claim window 6–8 AM).
  * 
  * Fetches JSA, DVIR, and Equipment data from Supabase and generates
  * a safety announcement using OpenAI. Saves to the main announcements table
@@ -23,7 +23,7 @@
  * supabase secrets set INTERNAL_SECRET=your-internal-secret
  * 
  * ## Schedule (pg_cron)
- * 0 13 * * 1-5 -- 7 AM CST (13:00 UTC) Mon-Fri
+ * 0 12 * * 1-5 -- 6 AM CST (12:00 UTC) Mon-Fri
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';

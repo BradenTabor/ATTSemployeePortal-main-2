@@ -114,9 +114,84 @@ export const queryKeys = {
   // Safety Incidents (for risk calibration)
   safetyIncidents: {
     all: ['safetyIncidents'] as const,
-    list: (dateRange: { start: string; end: string }) => 
+    list: (dateRange: { start: string; end: string }) =>
       ['safetyIncidents', 'list', dateRange] as const,
     detail: (incidentId: string) => ['safetyIncidents', 'detail', incidentId] as const,
+  },
+
+  // Rapid Reporting (OSHA 8/24hr countdown)
+  rapidReporting: ['rapidReporting'] as const,
+
+  // Corrective Actions (CAPA)
+  correctiveActions: {
+    all: ['correctiveActions'] as const,
+    byIncident: (incidentId: string) => ['correctiveActions', 'incident', incidentId] as const,
+    open: ['correctiveActions', 'open'] as const,
+  },
+
+  // Certifications
+  certifications: {
+    all: ['certifications'] as const,
+    list: (userId?: string) => ['certifications', 'list', userId] as const,
+    detail: (certId: string) => ['certifications', 'detail', certId] as const,
+    tests: (certId: string) => ['certifications', 'tests', certId] as const,
+    reportsPassRate: (since: string) => ['certifications', 'reports', 'pass-rate', since] as const,
+    reportsTimeToGrade: () => ['certifications', 'reports', 'time-to-grade'] as const,
+    reportsCompliance: () => ['certifications', 'reports', 'compliance'] as const,
+    auditLog: (limit?: number) => ['certifications', 'audit-log', limit ?? 50] as const,
+  },
+
+  // Near-Miss Reports
+  nearMiss: {
+    all: ['nearMiss'] as const,
+    list: (filters?: { category?: string; dateFrom?: string; dateTo?: string }) =>
+      ['nearMiss', 'list', filters] as const,
+    detail: (reportId: string) => ['nearMiss', 'detail', reportId] as const,
+  },
+
+  // Resources / Study Guides
+  resources: {
+    all: ['resources'] as const,
+    list: (category?: string) => ['resources', 'list', category] as const,
+    detail: (resourceId: string) => ['resources', 'detail', resourceId] as const,
+  },
+
+  // Worker Qualifications (OSHA 1910.269(r) electrical levels)
+  workerQualifications: {
+    all: ['worker-qualifications'] as const,
+    list: (filterLevel?: string) => ['worker-qualifications', 'all', filterLevel] as const,
+    crew: (userIds: string[]) => ['worker-qualifications', 'crew', userIds] as const,
+    history: (userId: string) => ['worker-qualifications', 'history', userId] as const,
+  },
+
+  // Safety Briefing (daily mandatory for field roles)
+  safetyBriefing: {
+    all: ['safety-briefing'] as const,
+    status: (userId: string, date: string) =>
+      ['safety-briefing', 'status', userId, date] as const,
+    personalizedContent: (userId: string) =>
+      ['safety-briefing', 'personalized', userId] as const,
+  },
+
+  // Briefing Compliance (admin dashboard)
+  briefingCompliance: {
+    summary: (startDate: string, endDate: string) =>
+      ['briefingCompliance', 'summary', startDate, endDate] as const,
+  },
+
+  // Safety Rewards (monthly raffle)
+  safetyRewards: {
+    reward: (year: number, month: number) =>
+      ['safety-rewards', 'reward', year, month] as const,
+    drawing: (year: number, month: number) =>
+      ['safety-rewards', 'drawing', year, month] as const,
+    userEntries: (userId: string, year: number, month: number) =>
+      ['safety-rewards', 'user-entries', userId, year, month] as const,
+    totalEntries: (year: number, month: number) =>
+      ['safety-rewards', 'total-entries', year, month] as const,
+    allRewards: ['safety-rewards', 'all'] as const,
+    pastWinners: (limit: number) =>
+      ['safety-rewards', 'past-winners', limit] as const,
   },
 };
 

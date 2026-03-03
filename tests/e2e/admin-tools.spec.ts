@@ -100,7 +100,7 @@ test.describe('Admin JSA Management', () => {
 
   test.beforeEach(async ({ page }) => {
     await loginAs(page, 'admin');
-    await page.goto('/admin/jsa', { waitUntil: 'domcontentloaded' });
+    await page.goto('/admin/requests-oversight?section=jsa', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(2000);
   });
 
@@ -145,7 +145,7 @@ test.describe('Admin RTO Management', () => {
 
   test.beforeEach(async ({ page }) => {
     await loginAs(page, 'admin');
-    await page.goto('/admin/rto', { waitUntil: 'domcontentloaded' });
+    await page.goto('/admin/requests-oversight?section=rto', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(2000);
   });
 
@@ -233,7 +233,7 @@ test.describe('Admin Parts/Fixes Overview', () => {
 
   test.beforeEach(async ({ page }) => {
     await loginAs(page, 'admin');
-    await page.goto('/admin/parts-fixes', { waitUntil: 'domcontentloaded' });
+    await page.goto('/admin/requests-oversight?section=parts-fixes', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(2000);
   });
 
@@ -370,16 +370,16 @@ test.describe('Admin Incident Logging Modal', () => {
   });
 });
 
-test.describe('Admin Compliance Audit', () => {
+test.describe('Admin Compliance Audit (Safety & Compliance Hub)', () => {
   test.setTimeout(60000);
 
   test.beforeEach(async ({ page }) => {
     await loginAs(page, 'admin');
-    await page.goto('/admin/compliance-audit', { waitUntil: 'domcontentloaded' });
+    await page.goto('/admin/safety-compliance?section=compliance-audit', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(2000);
   });
 
-  test('should show Compliance Audit page', async ({ page }) => {
+  test('should show Compliance Audit section', async ({ page }) => {
     await expect(page.getByRole('heading', { name: /Compliance Audit/i })).toBeVisible({ timeout: 10000 });
   });
 
@@ -408,6 +408,7 @@ test.describe('Admin Authorization', () => {
     const adminPages = [
       '/admin',
       '/admin/users',
+      '/admin/requests-oversight',
       '/admin/jsa',
       '/admin/rto',
       '/admin/rewards',

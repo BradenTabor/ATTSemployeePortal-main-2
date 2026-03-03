@@ -5,14 +5,14 @@ import { BlurFade } from "../ui/blur-fade";
 import { cn } from "../../lib/utils";
 
 export interface HistoryErrorStateProps {
-  /** User-friendly error message */
   message: string;
-  /** Optional extra class for the container */
+  onRetry?: () => void;
   className?: string;
 }
 
 export const HistoryErrorState = memo(function HistoryErrorState({
   message,
+  onRetry,
   className,
 }: HistoryErrorStateProps) {
   const prefersReducedMotion = useReducedMotion();
@@ -28,12 +28,23 @@ export const HistoryErrorState = memo(function HistoryErrorState({
             : { duration: 0.25, ease: [0.4, 0, 0.2, 1] }
         }
         className={cn(
-          "rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-4 sm:px-5 sm:py-4 text-sm text-red-100 flex items-center gap-3",
+          "rounded-xl border border-red-500/20 bg-red-500/[0.06] px-4 py-4 sm:px-5 flex items-center gap-3",
           className
         )}
       >
-        <AlertCircle className="w-5 h-5 flex-shrink-0 text-red-300" aria-hidden />
-        <p>{message}</p>
+        <div className="p-1.5 rounded-lg bg-red-500/10 flex-shrink-0">
+          <AlertCircle className="w-4 h-4 text-red-300" aria-hidden />
+        </div>
+        <p className="text-sm text-red-200 flex-1">{message}</p>
+        {onRetry && (
+          <button
+            type="button"
+            onClick={onRetry}
+            className="text-xs font-medium text-red-300 hover:text-red-200 px-3 py-1.5 rounded-lg hover:bg-red-500/10 transition-colors flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/40"
+          >
+            Retry
+          </button>
+        )}
       </motion.div>
     </BlurFade>
   );

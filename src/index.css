@@ -63,6 +63,70 @@
   100% { background-position: 200% 0; }
 }
 
+@keyframes emergency-pulse-glow {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
+}
+
+/* LoadingScreen (Suspense fallback) — pure CSS animations */
+@keyframes loadingBreath {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.25); opacity: 0.8; }
+}
+
+@keyframes loadingCardIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes loadingRingSpin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes loadingLogoPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+@keyframes loadingTextPulse {
+  0%, 100% { opacity: 0.9; }
+  50% { opacity: 1; }
+}
+
+@keyframes loadingProgress {
+  0%   { width: 0%; }
+  60%  { width: 70%; }
+  80%  { width: 85%; }
+  100% { width: 95%; }
+}
+
+@keyframes loadingShimmer {
+  0%   { background-position: 0% 0%; }
+  100% { background-position: 200% 0%; }
+}
+
+@keyframes loadingCenterDot {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.3); opacity: 1; }
+}
+
+@keyframes loadingOrbit {
+  0%   { offset-distance: 0%; opacity: 0.4; transform: scale(0.8); }
+  50%  { opacity: 1; transform: scale(1.2); }
+  100% { offset-distance: 100%; opacity: 0.4; transform: scale(0.8); }
+}
+
+@keyframes loadingParticle {
+  0%   { opacity: 0; transform: scale(0) translateY(0); }
+  50%  { opacity: 0.6; transform: scale(1) translateY(-15px); }
+  100% { opacity: 0; transform: scale(0) translateY(-40px); }
+}
+
+@keyframes loadingFadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 0.4; transform: translateY(0); }
+}
+
 @layer base {
   /* Global font family and smooth scrolling */
   html {
@@ -173,6 +237,20 @@
     backface-visibility: hidden;
   }
 
+  .emergency-glow-pulse {
+    position: relative;
+  }
+  .emergency-glow-pulse::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: 0 0 30px 8px rgba(239, 68, 68, 0.2);
+    opacity: 0;
+    animation: emergency-pulse-glow 1.8s ease-out 0.4s 1;
+    pointer-events: none;
+  }
+
   /* Reduce motion - respect user preferences */
   @media (prefers-reduced-motion: reduce) {
     .motion-safe\:animate-none,
@@ -184,6 +262,25 @@
     .gradient-animated {
       animation: none !important;
       transition: none !important;
+    }
+    .emergency-glow-pulse::after {
+      animation: none !important;
+      opacity: 0 !important;
+    }
+    /* Disable LoadingScreen animations */
+    [style*="loadingBreath"],
+    [style*="loadingCardIn"],
+    [style*="loadingRingSpin"],
+    [style*="loadingLogoPulse"],
+    [style*="loadingTextPulse"],
+    [style*="loadingProgress"],
+    [style*="loadingShimmer"],
+    [style*="loadingCenterDot"],
+    [style*="loadingOrbit"],
+    [style*="loadingParticle"],
+    [style*="loadingFadeUp"] {
+      animation: none !important;
+      opacity: 1 !important;
     }
   }
 

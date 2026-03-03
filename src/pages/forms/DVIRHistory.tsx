@@ -15,13 +15,14 @@ import {
   DvirDetailModal,
 } from "../../components/history";
 import { BlurFade } from "../../components/ui/blur-fade";
+import { glass } from "../../lib/glass";
 import {
   AlertTriangle,
   CheckCircle2,
   Clock,
-  CalendarClock,
   Fuel,
   MapPin,
+  Truck,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -389,14 +390,13 @@ export default function DVIRHistory() {
       <div className="w-full max-w-6xl mx-auto space-y-6">
         <HistoryPageShell
           subtitle="Fleet compliance"
-          title="Daily Vehicle Inspection History"
-          description="Review every DVIR you have submitted, track unresolved deficiencies, and surface photos or signatures instantly when field teams ask for proof."
-          badgeLabel="Auto-synced"
+          title="Vehicle Inspection History"
+          description="Review your DVIR submissions, track deficiencies, and access inspection photos and signatures."
           searchValue={searchTerm}
           onSearchChange={setSearchTerm}
-          searchPlaceholder="Search truck number, driver name, or keywords…"
-          filterHint="Search by truck, driver, or notes. Pagination syncs with Supabase."
+          searchPlaceholder="Search by truck number, driver, or notes…"
           variant="emerald"
+          totalCount={totalReports}
         />
 
         {loading ? (
@@ -416,12 +416,7 @@ export default function DVIRHistory() {
           />
         ) : (
           <>
-            <motion.div
-              layout
-              initial={false}
-              animate={{ opacity: 1 }}
-              className="grid grid-cols-1 lg:grid-cols-2 gap-4"
-            >
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {filteredReports.map((report, index) => {
                 const { allFails } = getFailedItems(report);
                 const status = getStatus(report);
@@ -436,69 +431,79 @@ export default function DVIRHistory() {
                     <motion.button
                       type="button"
                       onClick={() => handleReportClick(report)}
-                      whileHover={prefersReducedMotion ? undefined : { scale: 1.01 }}
-                      whileTap={prefersReducedMotion ? undefined : { scale: 0.99 }}
-                      transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-                      className="group w-full text-left rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.08] to-transparent backdrop-blur-xl p-4 sm:p-5 hover:border-emerald-400/40 hover:shadow-lg hover:shadow-emerald-500/10 focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] outline-none transition-all duration-300"
+                      whileHover={prefersReducedMotion ? undefined : { scale: 1.005 }}
+                      whileTap={prefersReducedMotion ? undefined : { scale: 0.995 }}
+                      transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
+                      className={`group w-full text-left ${glass.card} p-4 sm:p-5 hover:border-emerald-400/30 focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-950 outline-none transition-all duration-200 h-full flex flex-col`}
                       aria-label={`View DVIR: Truck ${report.truck_number || "N/A"}${report.trailer_number ? `, Trailer ${report.trailer_number}` : ""}`}
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-xs uppercase tracking-wider text-white/40">Truck</p>
-                          <p className="text-xl font-semibold text-white">
-                            {report.truck_number || "N/A"}
-                          </p>
+                      {/* Top row: truck + status */}
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex-shrink-0">
+                            <Truck className="w-4 h-4 text-emerald-300" aria-hidden />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-base sm:text-lg font-semibold text-white truncate">
+                              Truck {report.truck_number || "N/A"}
+                            </p>
+                            <p className="text-xs text-white/40 font-mono">
+                              {formatDistanceToNow(new Date(report.created_at), { addSuffix: true })}
+                            </p>
+                          </div>
                         </div>
                         <span
-                          className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium flex-shrink-0 ${
+                          className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold flex-shrink-0 ${
                             status === "failed"
-                              ? "border-red-400/60 bg-red-500/10 text-red-100"
-                              : "border-emerald-400/60 bg-emerald-500/10 text-emerald-100"
+                              ? "border-red-500/40 bg-red-500/15 text-red-200"
+                              : "border-emerald-500/40 bg-emerald-500/15 text-emerald-200"
                           }`}
                         >
                           {status === "failed" ? (
                             <>
-                              <AlertTriangle className="w-3 h-3" />
-                              {allFails.length} Fails
+                              <AlertTriangle className="w-3 h-3" aria-hidden />
+                              {allFails.length} Fail{allFails.length !== 1 ? "s" : ""}
                             </>
                           ) : (
                             <>
-                              <CheckCircle2 className="w-3 h-3" />
-                              Cleared
+                              <CheckCircle2 className="w-3 h-3" aria-hidden />
+                              Passed
                             </>
                           )}
                         </span>
                       </div>
-                      <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-white/70">
+
+                      {/* Metadata chips */}
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-white/60 flex-1">
                         <span className="inline-flex items-center gap-1">
-                          <CalendarClock className="w-4 h-4 text-emerald-300" />
-                          {formatDistanceToNow(new Date(report.created_at), { addSuffix: true })}
-                        </span>
-                        <span className="inline-flex items-center gap-1">
-                          <Fuel className="w-4 h-4 text-emerald-300" />
-                          Mileage {report.mileage?.toLocaleString() ?? "N/A"}
+                          <Fuel className="w-3.5 h-3.5 text-white/30" aria-hidden />
+                          {report.mileage?.toLocaleString() ?? "—"} mi
                         </span>
                         {report.trailer_number && (
                           <span className="inline-flex items-center gap-1">
-                            <MapPin className="w-4 h-4 text-emerald-300" />
+                            <MapPin className="w-3.5 h-3.5 text-white/30" aria-hidden />
                             Trailer {report.trailer_number}
                           </span>
                         )}
                         {mechanicFlag && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-yellow-400/60 bg-yellow-500/10 px-2 py-0.5 text-[11px] text-yellow-100">
-                            <Clock className="w-3 h-3" />
+                          <span className="inline-flex items-center gap-1 rounded-full border border-yellow-500/30 bg-yellow-500/10 px-2 py-0.5 text-yellow-200">
+                            <Clock className="w-3 h-3" aria-hidden />
                             Mechanic update
                           </span>
                         )}
                       </div>
+
+                      {/* Notes preview */}
                       {report.notes && (
-                        <p className="mt-3 text-sm text-white/60 line-clamp-2">"{report.notes}"</p>
+                        <p className="mt-3 pt-3 border-t border-white/[0.06] text-xs text-white/50 line-clamp-2 italic">
+                          {report.notes}
+                        </p>
                       )}
                     </motion.button>
                   </BlurFade>
                 );
               })}
-            </motion.div>
+            </div>
 
             <HistoryPagination
               currentPage={currentPage}

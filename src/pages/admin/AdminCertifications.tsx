@@ -1,4 +1,5 @@
 import { useMemo, useState, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import {
@@ -274,7 +275,7 @@ function SectionHeader({
         <img
           src={attsLogoStamped}
           alt="ATTS Logo"
-          className="h-11 w-11 object-contain xs:h-12 xs:w-12 sm:h-16 sm:w-16"
+          className="h-11 w-11 object-contain xs:h-12 xs:w-12 sm:h-16 sm:w-16 brightness-0 invert opacity-95"
         />
       </motion.div>
       <h2
@@ -612,15 +613,23 @@ export default function AdminCertifications() {
               {expiring!.slice(0, 15).map((r, i) => (
                 <li
                   key={`${r.user_id}-${r.certification_type_id}-${i}`}
-                  className="flex min-h-[44px] items-center justify-between gap-2 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm"
+                  className="flex min-h-[44px] flex-col justify-center gap-0.5 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm"
                 >
-                  <span className="text-white">
-                    {r.full_name ?? "Unknown"} · {r.certification_name}
-                  </span>
-                  {r.expires_at && (
-                    <span className="text-xs text-amber-400">
-                      {new Date(r.expires_at).toLocaleDateString()}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-white">
+                      {r.full_name ?? "Unknown"} · {r.certification_name}
                     </span>
+                    {r.expires_at && (
+                      <span className="text-xs text-amber-400">
+                        {new Date(r.expires_at).toLocaleDateString()}
+                      </span>
+                    )}
+                  </div>
+                  {r.reviewed_by != null && r.reviewed_by_name != null && r.reviewed_at && (
+                    <p className="text-xs text-gray-500">
+                      Graded by {r.reviewed_by_name} on{" "}
+                      {new Date(r.reviewed_at).toLocaleDateString()}
+                    </p>
                   )}
                 </li>
               ))}
@@ -702,23 +711,25 @@ export default function AdminCertifications() {
         </section>
       </div>
 
-      {manageCert && (
-        <ManageAccessModal
-          cert={manageCert}
-          grantsForCert={grantsByCert.get(manageCert.id) ?? []}
-          allUsers={usersForModal}
-          userSearch={userSearch}
-          onUserSearchChange={setUserSearch}
-          onGrant={handleGrant}
-          onRevoke={handleRevoke}
-          onClose={() => setManageCert(null)}
-          grantPending={grantAccess.isPending}
-          revokePending={revokeAccess.isPending}
-          allowAllUsers={types?.find((t) => t.id === manageCert.id)?.allow_all_users === true}
-          onSetAllowAllUsers={handleSetAllowAllUsers}
-          setAllowAllPending={setAllowAllUsers.isPending}
-        />
-      )}
+      {manageCert &&
+        createPortal(
+          <ManageAccessModal
+            cert={manageCert}
+            grantsForCert={grantsByCert.get(manageCert.id) ?? []}
+            allUsers={usersForModal}
+            userSearch={userSearch}
+            onUserSearchChange={setUserSearch}
+            onGrant={handleGrant}
+            onRevoke={handleRevoke}
+            onClose={() => setManageCert(null)}
+            grantPending={grantAccess.isPending}
+            revokePending={revokeAccess.isPending}
+            allowAllUsers={types?.find((t) => t.id === manageCert.id)?.allow_all_users === true}
+            onSetAllowAllUsers={handleSetAllowAllUsers}
+            setAllowAllPending={setAllowAllUsers.isPending}
+          />,
+          document.body
+        )}
     </DashboardLayout>
   );
 }

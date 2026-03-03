@@ -1,0 +1,16 @@
+{
+  "plugins": {
+    "amplitude-analysis": {
+      "enabled": true
+    },
+    "context7-plugin": {
+      "enabled": true
+    },
+    "supabase": {
+      "enabled": true
+    },
+    "continual-learning": {
+      "enabled": true
+    }
+  }
+}

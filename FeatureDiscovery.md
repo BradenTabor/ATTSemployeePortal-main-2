@@ -105,7 +105,7 @@
 | # | Feature | Route(s) | Files | Working? | Tests | Issues/Gaps |
 |---|---------|----------|-------|----------|-------|-------------|
 | 30 | RTO Form | `/dashboard/forms/request-time-off` | `src/pages/forms/RequestTimeOff.tsx` | ✅ | E2E + Unit | — |
-| 31 | Admin RTO | `/admin/rto` | `src/pages/admin/AdminRTO.tsx` | ✅ | E2E (limited) | Limited coverage |
+| 31 | Admin RTO | `/admin/requests-oversight?section=rto` | `src/pages/admin/AdminRTO.tsx`, RequestsOversightHub | ✅ | E2E (limited) | Limited coverage |
 
 ### 1.8 Notifications
 
@@ -122,11 +122,11 @@
 |---|---------|----------|-------|----------|-------|-------------|
 | 36 | User Management | `/admin/users` | `src/pages/admin/AdminUsers.tsx` | ✅ | E2E | No unit tests |
 | 37 | Telemetry | `/admin/telemetry` | `src/pages/admin/AdminTelemetry.tsx` | ✅ | None | No tests |
-| 38 | JSA Oversight | `/admin/jsa` | `src/pages/admin/AdminJSA.tsx` | ✅ | E2E (limited) | Limited coverage |
+| 38 | JSA Oversight | `/admin/requests-oversight?section=jsa` | `src/pages/admin/AdminJSA.tsx`, RequestsOversightHub | ✅ | E2E (limited) | Limited coverage |
 | 39 | Job Progress | `/admin/job-progress` | `src/pages/admin/AdminJobProgress.tsx` | ✅ | None | No tests |
 | 40 | Safety Rewards | `/admin/rewards` | `src/pages/admin/AdminRewards.tsx` | ✅ | None | No tests |
 | 41 | Safety Analytics | `/admin/safety-analytics` | `src/pages/admin/SafetyAnalyticsDashboard.tsx` | ✅ | None | No tests |
-| 42 | Parts & Fixes | `/admin/parts-fixes` | `src/pages/admin/AdminPartsFixesOverview.tsx` | ✅ | None | No tests |
+| 42 | Parts & Fixes | `/admin/requests-oversight?section=parts-fixes` | `src/pages/admin/AdminPartsFixesOverview.tsx`, RequestsOversightHub | ✅ | E2E (admin-tools) | Via hub |
 | 43 | User Activity | `/admin/activity` | `src/pages/admin/AdminUserActivity.tsx` | ✅ | None | No tests |
 | 44 | Risk Calibration | `/admin/risk-calibration` | `src/pages/admin/RiskCalibrationDashboard.tsx` | ✅ | None | No tests |
 | 45 | Compliance View | `/admin/compliance-audit` | `src/pages/admin/AdminComplianceAudit.tsx` | ✅ | None | No tests |

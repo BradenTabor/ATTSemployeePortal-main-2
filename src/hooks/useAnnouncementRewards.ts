@@ -77,11 +77,11 @@ export function useHasClaimedReward(announcementId: string | undefined) {
 }
 
 const REWARD_CLAIM_WINDOW_ERROR =
-  'Safety rewards can only be claimed between 7 AM and 9 AM Central.';
+  'Safety rewards can only be claimed between 6 AM and 8 AM Central.';
 
 /**
- * Reactive hook for the safety reward claim window (7–9 AM Central).
- * Updates on an interval so the UI can enable/disable the claim button at 7 AM / 9 AM.
+ * Reactive hook for the safety reward claim window (6–8 AM Central).
+ * Updates on an interval so the UI can enable/disable the claim button at 6 AM / 8 AM.
  */
 export function useRewardClaimWindow() {
   const [now, setNow] = useState(() => new Date());
@@ -99,7 +99,7 @@ export function useRewardClaimWindow() {
 }
 
 /**
- * Claim a reward for an announcement (allowed only 7–9 AM Central).
+ * Claim a reward for an announcement (allowed only 6–8 AM Central).
  */
 export function useClaimReward() {
   const queryClient = useQueryClient();
@@ -130,7 +130,7 @@ export function useClaimReward() {
           throw new Error('You have already claimed this reward');
         }
         // Map RLS/trigger denial (e.g. outside claim window) to user-friendly message
-        if (error.code === '42501' || error.message?.includes('7 AM and 9 AM')) {
+        if (error.code === '42501' || error.message?.includes('6 AM and 8 AM')) {
           throw new Error(REWARD_CLAIM_WINDOW_ERROR);
         }
         logger.error('Failed to claim reward:', error);

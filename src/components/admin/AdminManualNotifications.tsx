@@ -69,6 +69,7 @@ const CATEGORY_ICONS: Record<NotificationCategory, React.ReactNode> = {
   rto_decision: <Clock className="w-4 h-4" />,
   admin_notice: <AlertCircle className="w-4 h-4" />,
   certification_expiry: <Award className="w-4 h-4" />,
+  certification_expiry_digest: <Award className="w-4 h-4" />,
 };
 
 // Severity color mapping

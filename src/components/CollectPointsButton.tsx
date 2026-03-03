@@ -115,7 +115,7 @@ function CollectPointsButtonComponent({
     );
   }
   
-  // Unclaimed but outside claim window (7–9 AM Central) — show disabled state and countdown
+  // Unclaimed but outside claim window (6–8 AM Central) — show disabled state and countdown
   if (!hasClaimed && !isWithinClaimWindow) {
     return (
       <div
@@ -143,7 +143,7 @@ function CollectPointsButtonComponent({
     );
   }
 
-  // Unclaimed state - interactive button (within 7–9 AM window)
+  // Unclaimed state - interactive button (within 6–8 AM window)
   return (
     <div className={cn("relative", className)}>
       {enableHeavyAnimations && (

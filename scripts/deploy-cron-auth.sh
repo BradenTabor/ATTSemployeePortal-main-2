@@ -4,11 +4,13 @@
 # =============================================================================
 #
 # This script deploys all scheduled cron jobs with proper authentication:
-#   - safety-announcement-7am (Mon-Fri 7 AM CST)
+#   - safety-announcement-7am (Mon-Fri 6 AM CST)
 #   - admin-compliance-9am (Mon-Fri 9 AM CST) - daily compliance summary email
 #   - admin-safety-forecast (Mon-Fri 6:30 AM CST) - writes to risk_score_history
 #   - auto-tune-risk-algorithm (Sunday 2 AM UTC) - weekly tuning
 #   - check-algorithm-performance (Daily 3 AM UTC) - rollback checker
+#   - safety-briefing-reminder-sms (Mon-Fri 13:00 UTC = 7 AM CST) - Tier 0 employee reminder
+#   - safety-briefing-escalation-sms (Mon-Fri 16:00 UTC = 10 AM CST) - SMS escalation for overdue briefing
 #
 # It avoids committing the service role key to the repository.
 #
@@ -29,10 +31,14 @@
 set -e
 
 # Load .env if present (SUPABASE_SERVICE_ROLE_KEY, SUPABASE_DB_URL)
+# Parse line-by-line to avoid source .env failing on special characters in values
 if [ -f .env ]; then
-  set -a
-  source .env
-  set +a
+  while IFS= read -r line; do
+    case "$line" in
+      SUPABASE_SERVICE_ROLE_KEY=*) export SUPABASE_SERVICE_ROLE_KEY="${line#SUPABASE_SERVICE_ROLE_KEY=}" ;;
+      SUPABASE_DB_URL=*)         export SUPABASE_DB_URL="${line#SUPABASE_DB_URL=}" ;;
+    esac
+  done < <(grep -E '^(SUPABASE_SERVICE_ROLE_KEY|SUPABASE_DB_URL)=' .env 2>/dev/null || true)
 fi
 
 echo "🔐 Deploying cron jobs with service role authentication..."
@@ -63,19 +69,12 @@ if [[ ! "$SUPABASE_SERVICE_ROLE_KEY" =~ ^eyJ ]]; then
   fi
 fi
 
-# Get database URL
-if [ -z "$SUPABASE_DB_URL" ]; then
-  # Try to get from supabase CLI
-  if command -v supabase &> /dev/null; then
-    echo "📡 Getting database URL from Supabase CLI..."
-    SUPABASE_DB_URL=$(supabase db url 2>/dev/null || echo "")
-  fi
-fi
-
+# Get database URL (required for psql to update cron jobs)
 if [ -z "$SUPABASE_DB_URL" ]; then
   echo ""
-  echo "SUPABASE_DB_URL not set. You can find it in:"
-  echo "  Supabase Dashboard → Settings → Database → Connection string → URI"
+  echo "SUPABASE_DB_URL not set. Add it to .env or enter now."
+  echo "  Supabase Dashboard → Project Settings → Database → Connection string → URI"
+  echo "  (Use the 'Session mode' or 'Transaction' URI, e.g. postgresql://postgres.[ref]:[PASSWORD]@aws-0-[region].pooler.supabase.com:6543/postgres)"
   echo ""
   read -sp "Enter your database URL: " SUPABASE_DB_URL
   echo ""
@@ -105,7 +104,7 @@ echo "🔄 Updating cron jobs..."
 # Execute SQL to update all cron jobs
 psql "$SUPABASE_DB_URL" <<SQL
 -- =============================================================================
--- 1. Safety Announcement (7 AM CST Mon-Fri)
+-- 1. Safety Announcement (6 AM CST Mon-Fri) – matches reward claim window 6–8 AM
 -- =============================================================================
 DO \$\$
 BEGIN
@@ -116,7 +115,7 @@ END \$\$;
 
 SELECT cron.schedule(
   'safety-announcement-7am',
-  '0 13 * * 1-5',
+  '0 12 * * 1-5',
   \$cron\$
   SELECT net.http_post(
     url := 'https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/generate-safety-announcement',
@@ -230,6 +229,56 @@ SELECT cron.schedule(
 );
 
 -- =============================================================================
+-- 6. Safety Briefing Reminder SMS - Tier 0 (Mon-Fri 13:00 UTC = 7 AM CST / 8 AM CDT)
+-- =============================================================================
+DO \$\$
+BEGIN
+  PERFORM cron.unschedule('safety-briefing-reminder-sms');
+EXCEPTION WHEN others THEN
+  RAISE NOTICE 'safety-briefing-reminder-sms did not exist';
+END \$\$;
+
+SELECT cron.schedule(
+  'safety-briefing-reminder-sms',
+  '0 13 * * 1-5',
+  \$cron\$
+  SELECT net.http_post(
+    url := 'https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/safety-briefing-reminder-sms',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer $SUPABASE_SERVICE_ROLE_KEY'
+    ),
+    body := '{}'::jsonb
+  );
+  \$cron\$
+);
+
+-- =============================================================================
+-- 7. Safety Briefing Escalation SMS (Mon-Fri 16:00 UTC = 10 AM CST / 11 AM CDT)
+-- =============================================================================
+DO \$\$
+BEGIN
+  PERFORM cron.unschedule('safety-briefing-escalation-sms');
+EXCEPTION WHEN others THEN
+  RAISE NOTICE 'safety-briefing-escalation-sms did not exist';
+END \$\$;
+
+SELECT cron.schedule(
+  'safety-briefing-escalation-sms',
+  '0 16 * * 1-5',
+  \$cron\$
+  SELECT net.http_post(
+    url := 'https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/safety-briefing-escalation-sms',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer $SUPABASE_SERVICE_ROLE_KEY'
+    ),
+    body := '{}'::jsonb
+  );
+  \$cron\$
+);
+
+-- =============================================================================
 -- Verify all jobs
 -- =============================================================================
 SELECT jobname, schedule, active 
@@ -239,7 +288,9 @@ WHERE jobname IN (
   'admin-compliance-9am',
   'admin-safety-forecast',
   'auto-tune-risk-algorithm',
-  'check-algorithm-performance'
+  'check-algorithm-performance',
+  'safety-briefing-reminder-sms',
+  'safety-briefing-escalation-sms'
 )
 ORDER BY jobname;
 SQL
@@ -249,11 +300,13 @@ if [ $? -eq 0 ]; then
   echo "✅ All cron jobs deployed successfully!"
   echo ""
   echo "📋 Jobs scheduled:"
-  echo "   • safety-announcement-7am     - Mon-Fri 7:00 AM CST (13:00 UTC)"
+  echo "   • safety-announcement-7am     - Mon-Fri 6:00 AM CST (12:00 UTC)"
   echo "   • admin-compliance-9am       - Mon-Fri 9:00 AM CST (15:00 UTC)"
   echo "   • admin-safety-forecast       - Mon-Fri 6:30 AM CST (12:30 UTC)"
   echo "   • auto-tune-risk-algorithm    - Sunday 2:00 AM UTC"
   echo "   • check-algorithm-performance - Daily 3:00 AM UTC"
+  echo "   • safety-briefing-reminder-sms     - Mon-Fri 7:00 AM CST (13:00 UTC)"
+  echo "   • safety-briefing-escalation-sms   - Mon-Fri 10:00 AM CST (16:00 UTC)"
   echo ""
   echo "📊 To verify execution history:"
   echo "   SELECT * FROM public.cron_job_runs ORDER BY start_time DESC LIMIT 10;"

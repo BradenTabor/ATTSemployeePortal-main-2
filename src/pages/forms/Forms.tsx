@@ -1,5 +1,7 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { supabase } from "../../lib/supabaseClient";
+import { SAFETY_CRITICAL_ITEM_IDS } from "./dvir/types";
 import { AnimatePresence, motion } from "framer-motion";
 import type { Variants } from "framer-motion";
 import {
@@ -82,6 +84,16 @@ const formsCatalog: FormDefinition[] = [
     tag: "Compliance",
   },
   {
+    id: "dvir-post-trip",
+    title: "Post-Trip Inspection",
+    description: "End-of-day vehicle inspection (same checklist as DVIR).",
+    icon: ClipboardList,
+    category: "Daily Operations",
+    type: "internal",
+    to: "/dashboard/forms/dvir?inspection_type=post_trip",
+    tag: "Compliance",
+  },
+  {
     id: "equipment-inspection",
     title: "Daily Equipment Inspection",
     description: "Document checks for bucket trucks, chippers, and field equipment.",
@@ -130,6 +142,16 @@ const formsCatalog: FormDefinition[] = [
     type: "external",
     url: "https://docs.google.com/forms/d/e/1FAIpQLSe2GHpif_3F5NvekttjiAMR37Y9HvWchbnDDlj5VAoH1EqlzQ/viewform",
     tag: "Procurement",
+  },
+  {
+    id: "near-miss-report",
+    title: "Near-Miss Report",
+    description: "Report a near-miss incident to help prevent future injuries.",
+    icon: AlertCircle,
+    category: "Daily Operations",
+    type: "internal",
+    to: "/dashboard/forms/near-miss",
+    tag: "Safety",
   },
   {
     id: "mechanic-work-order",
@@ -463,13 +485,45 @@ const EmptyState = ({ query }: EmptyStateProps) => (
   </motion.div>
 );
 
+/** Today's date in America/Chicago YYYY-MM-DD for DVIR queries. */
+function getTodayChicago(): string {
+  const now = new Date();
+  const chicago = new Date(now.toLocaleString("en-US", { timeZone: "America/Chicago" }));
+  return chicago.toISOString().slice(0, 10);
+}
+
 export default function Forms() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<CategoryFilterOption>("All");
   const [jsaPickerOpen, setJsaPickerOpen] = useState(false);
-  
+  const [openCriticalTrucks, setOpenCriticalTrucks] = useState<string[]>([]);
+
   // Get compliance status to show indicators on required forms
   const { compliance } = useComplianceQuery();
+
+  // Today's DVIRs with open safety-critical defects (Fail, not corrected) — show dispatch warning
+  useEffect(() => {
+    const today = getTodayChicago();
+    const start = `${today}T00:00:00.000Z`;
+    const end = `${today}T23:59:59.999Z`;
+    supabase
+      .from("dvir_reports")
+      .select("truck_number, vehicle_trailer_checklist")
+      .gte("created_at", start)
+      .lt("created_at", end)
+      .then(({ data, error }) => {
+        if (error) return;
+        const trucks: string[] = [];
+        for (const row of data ?? []) {
+          const checklist = (row.vehicle_trailer_checklist as Record<string, string>) ?? {};
+          const hasOpenCritical = SAFETY_CRITICAL_ITEM_IDS.some((id) => checklist[id] === "F");
+          if (hasOpenCritical && row.truck_number) {
+            trucks.push(String(row.truck_number));
+          }
+        }
+        setOpenCriticalTrucks([...new Set(trucks)]);
+      });
+  }, []);
 
   const filteredForms = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -506,6 +560,14 @@ export default function Forms() {
   return (
     <DashboardLayout title="Company Forms">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pb-4 pt-4 sm:pt-6">
+        {openCriticalTrucks.length > 0 && (
+          <div className="mb-4 rounded-xl border border-red-500/50 bg-red-500/15 px-4 py-3 flex items-center gap-2" role="alert">
+            <AlertCircle className="w-5 h-5 flex-shrink-0 text-red-400" aria-hidden />
+            <p className="text-sm font-medium text-red-200">
+              Vehicle {openCriticalTrucks.join(", ")} {openCriticalTrucks.length === 1 ? "has" : "have"} open safety-critical defects. Do not operate until resolved.
+            </p>
+          </div>
+        )}
         {/* Premium Glass Header - Emerald Theme */}
         <div className="mb-5 md:mb-6">
           <motion.div

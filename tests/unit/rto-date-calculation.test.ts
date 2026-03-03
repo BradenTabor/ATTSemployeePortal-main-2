@@ -26,25 +26,16 @@ function calculateTotalDuration(
     return "";
   }
 
-  // Parse dates
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+  // Parse dates using split-and-construct to avoid UTC midnight off-by-one
+  const [sy, sm, sd] = startDate.split("-").map(Number);
+  const [ey, em, ed] = endDate.split("-").map(Number);
 
-  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+  if ([sy, sm, sd, ey, em, ed].some((v) => isNaN(v))) {
     return "";
   }
 
-  // Normalize to midnight so we can safely count whole days
-  const startDay = new Date(
-    start.getFullYear(),
-    start.getMonth(),
-    start.getDate()
-  );
-  const endDay = new Date(
-    end.getFullYear(),
-    end.getMonth(),
-    end.getDate()
-  );
+  const startDay = new Date(sy, sm - 1, sd);
+  const endDay = new Date(ey, em - 1, ed);
 
   const oneDayMs = 24 * 60 * 60 * 1000;
   let diffDays =
@@ -317,6 +308,27 @@ describe('RequestTimeOff Date Calculation', () => {
       );
       expect(result).toContain('1 day');
       expect(result).toContain('4h 30m');
+    });
+  });
+
+  describe('Timezone boundary safety', () => {
+    it('Feb 19 should produce a 1-day result, not roll back to Feb 18', () => {
+      const result = calculateTotalDuration(
+        '2026-02-19',
+        '2026-02-19',
+        '09:00',
+        '17:00'
+      );
+      expect(result).toContain('1 day');
+      expect(result).toContain('8h 0m');
+    });
+
+    it('date strings should not be affected by local timezone offset', () => {
+      const [y, m, d] = '2026-02-19'.split('-').map(Number);
+      const date = new Date(y, m - 1, d);
+      expect(date.getDate()).toBe(19);
+      expect(date.getMonth()).toBe(1); // February = 1
+      expect(date.getFullYear()).toBe(2026);
     });
   });
 });

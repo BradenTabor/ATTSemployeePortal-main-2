@@ -184,6 +184,32 @@ Deno.serve(async (req: Request) => {
         break;
       }
 
+      case "roles": {
+        // Comma-separated role names; resolve each and merge to unique set (dedupe users with multiple roles).
+        if (!typedEvent.target_ref) {
+          console.warn("[notifications-dispatch] target_type=roles but no target_ref provided");
+          break;
+        }
+        const roles = (typedEvent.target_ref as string).split(",").map((r) => r.trim()).filter(Boolean);
+        const allIds = new Set<string>();
+        for (const role of roles) {
+          const { data, error } = await supabase
+            .from("app_users")
+            .select("user_id")
+            .eq("role", role);
+          if (error) {
+            console.error(`[notifications-dispatch] Failed to fetch users for role '${role}':`, error);
+            continue;
+          }
+          (data || []).forEach((u: { user_id: string }) => {
+            if (u.user_id) allIds.add(u.user_id);
+          });
+        }
+        userIds = [...allIds];
+        console.log(`[notifications-dispatch] Targeting roles '${typedEvent.target_ref}': ${userIds.length} unique users`);
+        break;
+      }
+
       default:
         console.warn(`[notifications-dispatch] Unknown target_type: ${typedEvent.target_type}`);
     }

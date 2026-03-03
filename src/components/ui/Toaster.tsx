@@ -1,124 +1,52 @@
 import { Toaster as SonnerToaster } from 'sonner';
 
 /**
- * PremiumToaster - Ultra luxurious toast notifications for ATTS Portal
- * 
- * Features:
- * - Premium glass-morphism with emerald accents
- * - Multi-layer glow system
- * - Animated entrance with spring physics
- * - Custom icons per toast type
- * - Rich visual hierarchy
+ * ATTS Toaster — Centered top toast notifications.
+ * High visibility (top-center), solid surfaces, polished entrance animation.
  */
 export function Toaster() {
-
   return (
     <>
-      {/* Inject premium toast styles */}
       <style>{`
-        /* ============================================ */
-        /* ATTS Premium Toast Styling System           */
-        /* ============================================ */
-        
-        /* Toast container positioning */
-        [data-sonner-toaster] {
-          --width: 380px;
-          --gap: 14px;
+        /* Container — top-center, centered horizontally */
+        [data-sonner-toaster][data-x-position="center"] {
+          --width: 400px;
+          --gap: 12px;
+          left: 50% !important;
+          right: auto !important;
+          transform: translateX(-50%) !important;
+          top: 20px !important;
+          bottom: auto !important;
           z-index: 999999 !important;
         }
-        
-        /* Base toast styling */
+
+        /* Base: message-style card, more prominent */
         [data-sonner-toast] {
-          --normal-bg: linear-gradient(
-            145deg,
-            rgba(4, 35, 22, 0.98) 0%,
-            rgba(2, 22, 14, 0.99) 50%,
-            rgba(1, 12, 8, 1) 100%
-          ) !important;
-          --normal-border: rgba(16, 185, 129, 0.35) !important;
-          --normal-text: #f0fdf4 !important;
-          
-          --success-bg: linear-gradient(
-            145deg,
-            rgba(4, 45, 28, 0.98) 0%,
-            rgba(2, 28, 18, 0.99) 50%,
-            rgba(1, 15, 10, 1) 100%
-          ) !important;
-          --success-border: rgba(52, 211, 153, 0.5) !important;
-          --success-text: #d1fae5 !important;
-          
-          --error-bg: linear-gradient(
-            145deg,
-            rgba(45, 10, 10, 0.98) 0%,
-            rgba(28, 5, 5, 0.99) 50%,
-            rgba(15, 2, 2, 1) 100%
-          ) !important;
-          --error-border: rgba(248, 113, 113, 0.5) !important;
-          --error-text: #fecaca !important;
-          
-          --warning-bg: linear-gradient(
-            145deg,
-            rgba(45, 35, 8, 0.98) 0%,
-            rgba(28, 22, 4, 0.99) 50%,
-            rgba(18, 14, 2, 1) 100%
-          ) !important;
-          --warning-border: rgba(251, 191, 36, 0.5) !important;
-          --warning-text: #fef3c7 !important;
-          
-          --info-bg: linear-gradient(
-            145deg,
-            rgba(8, 30, 45, 0.98) 0%,
-            rgba(4, 18, 28, 0.99) 50%,
-            rgba(2, 10, 15, 1) 100%
-          ) !important;
-          --info-border: rgba(96, 165, 250, 0.5) !important;
-          --info-text: #dbeafe !important;
-          
-          font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+          font-family: inherit !important;
           padding: 0 !important;
-          border-radius: 20px !important;
-          overflow: visible !important;
-          box-shadow: none !important;
+          border-radius: 14px !important;
+          overflow: hidden !important;
+          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+          box-shadow:
+            0 4px 6px -1px rgba(0, 0, 0, 0.4),
+            0 10px 32px -8px rgba(0, 0, 0, 0.5),
+            inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
         }
-        
-        /* Toast inner wrapper for multi-layer effect */
+
         [data-sonner-toast] > * {
           position: relative;
           z-index: 1;
         }
-        
-        /* ============================================ */
-        /* SUCCESS Toast                               */
-        /* ============================================ */
+
+        /* Success — solid green-950 + top highlight */
         [data-sonner-toast][data-type="success"] {
-          background: var(--success-bg) !important;
-          border: 1.5px solid var(--success-border) !important;
-          box-shadow: 
-            0 0 0 1px rgba(16, 185, 129, 0.1),
-            0 4px 20px -4px rgba(16, 185, 129, 0.35),
-            0 8px 40px -8px rgba(0, 0, 0, 0.6),
-            inset 0 1px 0 rgba(255, 255, 255, 0.06),
-            inset 0 -1px 0 rgba(0, 0, 0, 0.1) !important;
+          background: #052e16 !important;
+          border-color: rgba(34, 197, 94, 0.3) !important;
+          box-shadow:
+            0 1px 3px rgba(0, 0, 0, 0.5),
+            0 4px 16px rgba(20, 83, 45, 0.25),
+            inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
         }
-        
-        [data-sonner-toast][data-type="success"]::before {
-          content: '';
-          position: absolute;
-          inset: -2px;
-          border-radius: 22px;
-          background: linear-gradient(
-            135deg,
-            rgba(52, 211, 153, 0.4) 0%,
-            transparent 40%,
-            transparent 60%,
-            rgba(16, 185, 129, 0.3) 100%
-          );
-          opacity: 0.6;
-          z-index: -1;
-          filter: blur(8px);
-          animation: successGlow 3s ease-in-out infinite;
-        }
-        
         [data-sonner-toast][data-type="success"]::after {
           content: '';
           position: absolute;
@@ -126,54 +54,19 @@ export function Toaster() {
           left: 0;
           right: 0;
           height: 1px;
-          background: linear-gradient(
-            90deg,
-            transparent 0%,
-            rgba(52, 211, 153, 0.8) 20%,
-            rgba(110, 231, 183, 0.9) 50%,
-            rgba(52, 211, 153, 0.8) 80%,
-            transparent 100%
-          );
-          border-radius: 20px 20px 0 0;
+          background: linear-gradient(90deg, transparent, rgba(74, 222, 128, 0.5), transparent);
+          pointer-events: none;
         }
-        
-        @keyframes successGlow {
-          0%, 100% { opacity: 0.4; transform: scale(1); }
-          50% { opacity: 0.7; transform: scale(1.02); }
-        }
-        
-        /* ============================================ */
-        /* ERROR Toast                                 */
-        /* ============================================ */
+
+        /* Error — solid red-950 */
         [data-sonner-toast][data-type="error"] {
-          background: var(--error-bg) !important;
-          border: 1.5px solid var(--error-border) !important;
-          box-shadow: 
-            0 0 0 1px rgba(239, 68, 68, 0.1),
-            0 4px 20px -4px rgba(239, 68, 68, 0.35),
-            0 8px 40px -8px rgba(0, 0, 0, 0.6),
-            inset 0 1px 0 rgba(255, 255, 255, 0.06),
-            inset 0 -1px 0 rgba(0, 0, 0, 0.1) !important;
+          background: #450a0a !important;
+          border-color: rgba(248, 113, 113, 0.3) !important;
+          box-shadow:
+            0 1px 3px rgba(0, 0, 0, 0.5),
+            0 4px 16px rgba(127, 29, 29, 0.25),
+            inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
         }
-        
-        [data-sonner-toast][data-type="error"]::before {
-          content: '';
-          position: absolute;
-          inset: -2px;
-          border-radius: 22px;
-          background: linear-gradient(
-            135deg,
-            rgba(248, 113, 113, 0.4) 0%,
-            transparent 40%,
-            transparent 60%,
-            rgba(239, 68, 68, 0.3) 100%
-          );
-          opacity: 0.5;
-          z-index: -1;
-          filter: blur(8px);
-          animation: errorPulse 2s ease-in-out infinite;
-        }
-        
         [data-sonner-toast][data-type="error"]::after {
           content: '';
           position: absolute;
@@ -181,53 +74,19 @@ export function Toaster() {
           left: 0;
           right: 0;
           height: 1px;
-          background: linear-gradient(
-            90deg,
-            transparent 0%,
-            rgba(248, 113, 113, 0.8) 20%,
-            rgba(252, 165, 165, 0.9) 50%,
-            rgba(248, 113, 113, 0.8) 80%,
-            transparent 100%
-          );
-          border-radius: 20px 20px 0 0;
+          background: linear-gradient(90deg, transparent, rgba(248, 113, 113, 0.4), transparent);
+          pointer-events: none;
         }
-        
-        @keyframes errorPulse {
-          0%, 100% { opacity: 0.4; }
-          50% { opacity: 0.65; }
-        }
-        
-        /* ============================================ */
-        /* WARNING Toast                               */
-        /* ============================================ */
+
+        /* Warning */
         [data-sonner-toast][data-type="warning"] {
-          background: var(--warning-bg) !important;
-          border: 1.5px solid var(--warning-border) !important;
-          box-shadow: 
-            0 0 0 1px rgba(251, 191, 36, 0.1),
-            0 4px 20px -4px rgba(251, 191, 36, 0.3),
-            0 8px 40px -8px rgba(0, 0, 0, 0.6),
-            inset 0 1px 0 rgba(255, 255, 255, 0.06),
-            inset 0 -1px 0 rgba(0, 0, 0, 0.1) !important;
+          background: #422006 !important;
+          border-color: rgba(251, 191, 36, 0.3) !important;
+          box-shadow:
+            0 1px 3px rgba(0, 0, 0, 0.5),
+            0 4px 16px rgba(120, 53, 15, 0.25),
+            inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
         }
-        
-        [data-sonner-toast][data-type="warning"]::before {
-          content: '';
-          position: absolute;
-          inset: -2px;
-          border-radius: 22px;
-          background: linear-gradient(
-            135deg,
-            rgba(251, 191, 36, 0.35) 0%,
-            transparent 40%,
-            transparent 60%,
-            rgba(245, 158, 11, 0.3) 100%
-          );
-          opacity: 0.5;
-          z-index: -1;
-          filter: blur(8px);
-        }
-        
         [data-sonner-toast][data-type="warning"]::after {
           content: '';
           position: absolute;
@@ -235,48 +94,19 @@ export function Toaster() {
           left: 0;
           right: 0;
           height: 1px;
-          background: linear-gradient(
-            90deg,
-            transparent 0%,
-            rgba(251, 191, 36, 0.8) 20%,
-            rgba(253, 224, 71, 0.9) 50%,
-            rgba(251, 191, 36, 0.8) 80%,
-            transparent 100%
-          );
-          border-radius: 20px 20px 0 0;
+          background: linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.4), transparent);
+          pointer-events: none;
         }
-        
-        /* ============================================ */
-        /* INFO Toast                                  */
-        /* ============================================ */
+
+        /* Info */
         [data-sonner-toast][data-type="info"] {
-          background: var(--info-bg) !important;
-          border: 1.5px solid var(--info-border) !important;
-          box-shadow: 
-            0 0 0 1px rgba(59, 130, 246, 0.1),
-            0 4px 20px -4px rgba(59, 130, 246, 0.3),
-            0 8px 40px -8px rgba(0, 0, 0, 0.6),
-            inset 0 1px 0 rgba(255, 255, 255, 0.06),
-            inset 0 -1px 0 rgba(0, 0, 0, 0.1) !important;
+          background: #0c4a6e !important;
+          border-color: rgba(96, 165, 250, 0.3) !important;
+          box-shadow:
+            0 1px 3px rgba(0, 0, 0, 0.5),
+            0 4px 16px rgba(12, 74, 110, 0.25),
+            inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
         }
-        
-        [data-sonner-toast][data-type="info"]::before {
-          content: '';
-          position: absolute;
-          inset: -2px;
-          border-radius: 22px;
-          background: linear-gradient(
-            135deg,
-            rgba(96, 165, 250, 0.35) 0%,
-            transparent 40%,
-            transparent 60%,
-            rgba(59, 130, 246, 0.3) 100%
-          );
-          opacity: 0.5;
-          z-index: -1;
-          filter: blur(8px);
-        }
-        
         [data-sonner-toast][data-type="info"]::after {
           content: '';
           position: absolute;
@@ -284,66 +114,17 @@ export function Toaster() {
           left: 0;
           right: 0;
           height: 1px;
-          background: linear-gradient(
-            90deg,
-            transparent 0%,
-            rgba(96, 165, 250, 0.8) 20%,
-            rgba(147, 197, 253, 0.9) 50%,
-            rgba(96, 165, 250, 0.8) 80%,
-            transparent 100%
-          );
-          border-radius: 20px 20px 0 0;
+          background: linear-gradient(90deg, transparent, rgba(96, 165, 250, 0.4), transparent);
+          pointer-events: none;
         }
-        
-        /* ============================================ */
-        /* LOADING Toast                               */
-        /* ============================================ */
-        [data-sonner-toast][data-type="loading"] {
-          background: var(--normal-bg) !important;
-          border: 1.5px solid var(--normal-border) !important;
-          box-shadow: 
-            0 0 0 1px rgba(16, 185, 129, 0.1),
-            0 4px 20px -4px rgba(16, 185, 129, 0.25),
-            0 8px 40px -8px rgba(0, 0, 0, 0.6),
-            inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
-        }
-        
-        [data-sonner-toast][data-type="loading"]::after {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 1px;
-          background: linear-gradient(
-            90deg,
-            transparent 0%,
-            rgba(16, 185, 129, 0.6) 50%,
-            transparent 100%
-          );
-          border-radius: 20px 20px 0 0;
-          animation: loadingShine 1.5s ease-in-out infinite;
-        }
-        
-        @keyframes loadingShine {
-          0% { opacity: 0.3; transform: translateX(-100%); }
-          50% { opacity: 1; }
-          100% { opacity: 0.3; transform: translateX(100%); }
-        }
-        
-        /* ============================================ */
-        /* DEFAULT Toast                               */
-        /* ============================================ */
+
+        /* Loading / default — gray-900 */
+        [data-sonner-toast][data-type="loading"],
         [data-sonner-toast]:not([data-type]) {
-          background: var(--normal-bg) !important;
-          border: 1.5px solid var(--normal-border) !important;
-          box-shadow: 
-            0 0 0 1px rgba(16, 185, 129, 0.1),
-            0 4px 20px -4px rgba(16, 185, 129, 0.3),
-            0 8px 40px -8px rgba(0, 0, 0, 0.6),
-            inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+          background: #111827 !important;
+          border-color: rgba(255, 255, 255, 0.08) !important;
         }
-        
+        [data-sonner-toast][data-type="loading"]::after,
         [data-sonner-toast]:not([data-type])::after {
           content: '';
           position: absolute;
@@ -351,354 +132,221 @@ export function Toaster() {
           left: 0;
           right: 0;
           height: 1px;
-          background: linear-gradient(
-            90deg,
-            transparent 0%,
-            rgba(16, 185, 129, 0.7) 20%,
-            rgba(52, 211, 153, 0.9) 50%,
-            rgba(16, 185, 129, 0.7) 80%,
-            transparent 100%
-          );
-          border-radius: 20px 20px 0 0;
+          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+          pointer-events: none;
         }
-        
-        /* ============================================ */
-        /* Content Styling                             */
-        /* ============================================ */
+
+        /* Content — roomier for “message” feel */
         [data-sonner-toast] [data-content] {
-          padding: 16px 18px !important;
+          padding: 14px 18px 14px 18px !important;
           display: flex !important;
-          align-items: flex-start !important;
+          align-items: center !important;
           gap: 14px !important;
+          min-height: 52px !important;
         }
-        
-        /* Icon container */
+
         [data-sonner-toast] [data-icon] {
           flex-shrink: 0 !important;
-          width: 24px !important;
-          height: 24px !important;
+          width: 20px !important;
+          height: 20px !important;
           display: flex !important;
           align-items: center !important;
           justify-content: center !important;
         }
-        
         [data-sonner-toast] [data-icon] svg {
-          width: 20px !important;
-          height: 20px !important;
+          width: 18px !important;
+          height: 18px !important;
         }
-        
-        /* Success icon styling */
-        [data-sonner-toast][data-type="success"] [data-icon] svg {
-          color: #34d399 !important;
-          filter: drop-shadow(0 0 8px rgba(52, 211, 153, 0.5));
-        }
-        
-        /* Error icon styling */
-        [data-sonner-toast][data-type="error"] [data-icon] svg {
-          color: #f87171 !important;
-          filter: drop-shadow(0 0 8px rgba(248, 113, 113, 0.5));
-        }
-        
-        /* Warning icon styling */
-        [data-sonner-toast][data-type="warning"] [data-icon] svg {
-          color: #fbbf24 !important;
-          filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.5));
-        }
-        
-        /* Info icon styling */
-        [data-sonner-toast][data-type="info"] [data-icon] svg {
-          color: #60a5fa !important;
-          filter: drop-shadow(0 0 8px rgba(96, 165, 250, 0.5));
-        }
-        
-        /* Loading spinner */
-        [data-sonner-toast][data-type="loading"] [data-icon] svg {
-          color: #10b981 !important;
-          filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.4));
-        }
-        
-        /* Title styling */
+
+        [data-sonner-toast][data-type="success"] [data-icon] svg { color: #4ade80 !important; }
+        [data-sonner-toast][data-type="error"] [data-icon] svg { color: #f87171 !important; }
+        [data-sonner-toast][data-type="warning"] [data-icon] svg { color: #fbbf24 !important; }
+        [data-sonner-toast][data-type="info"] [data-icon] svg { color: #60a5fa !important; }
+        [data-sonner-toast][data-type="loading"] [data-icon] svg { color: #34d399 !important; }
+        [data-sonner-toast]:not([data-type]) [data-icon] svg { color: rgba(255,255,255,0.7) !important; }
+
+        /* Title — slightly larger for readability */
         [data-sonner-toast] [data-title] {
-          font-size: 14px !important;
+          font-size: 15px !important;
           font-weight: 600 !important;
-          letter-spacing: -0.01em !important;
-          line-height: 1.4 !important;
-          margin-bottom: 2px !important;
+          line-height: 1.35 !important;
+          color: rgba(255, 255, 255, 0.95) !important;
         }
-        
-        [data-sonner-toast][data-type="success"] [data-title] {
-          color: #d1fae5 !important;
-          text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-        }
-        
-        [data-sonner-toast][data-type="error"] [data-title] {
-          color: #fecaca !important;
-          text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-        }
-        
-        [data-sonner-toast][data-type="warning"] [data-title] {
-          color: #fef3c7 !important;
-          text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-        }
-        
-        [data-sonner-toast][data-type="info"] [data-title] {
-          color: #dbeafe !important;
-          text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-        }
-        
-        [data-sonner-toast]:not([data-type]) [data-title],
-        [data-sonner-toast][data-type="loading"] [data-title] {
-          color: #ecfdf5 !important;
-          text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-        }
-        
-        /* Description styling */
+        [data-sonner-toast][data-type="success"] [data-title] { color: #bbf7d0 !important; }
+        [data-sonner-toast][data-type="error"] [data-title] { color: #fecaca !important; }
+        [data-sonner-toast][data-type="warning"] [data-title] { color: #fef3c7 !important; }
+        [data-sonner-toast][data-type="info"] [data-title] { color: #bfdbfe !important; }
+
+        /* Description */
         [data-sonner-toast] [data-description] {
-          font-size: 12.5px !important;
+          font-size: 12px !important;
           font-weight: 400 !important;
-          line-height: 1.45 !important;
-          opacity: 0.75 !important;
+          line-height: 1.4 !important;
+          color: rgba(255, 255, 255, 0.65) !important;
+          margin-top: 2px !important;
         }
-        
-        [data-sonner-toast][data-type="success"] [data-description] {
-          color: #a7f3d0 !important;
-        }
-        
-        [data-sonner-toast][data-type="error"] [data-description] {
-          color: #fca5a5 !important;
-        }
-        
-        [data-sonner-toast][data-type="warning"] [data-description] {
-          color: #fde68a !important;
-        }
-        
-        [data-sonner-toast][data-type="info"] [data-description] {
-          color: #93c5fd !important;
-        }
-        
-        [data-sonner-toast]:not([data-type]) [data-description],
-        [data-sonner-toast][data-type="loading"] [data-description] {
-          color: #6ee7b7 !important;
-        }
-        
-        /* ============================================ */
-        /* Close Button                                */
-        /* ============================================ */
+
+        /* Close — always visible, 44px touch target */
         [data-sonner-toast] [data-close-button] {
           position: absolute !important;
-          top: 8px !important;
-          right: 8px !important;
-          width: 24px !important;
-          height: 24px !important;
-          border-radius: 8px !important;
-          background: rgba(255, 255, 255, 0.05) !important;
-          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+          top: 0 !important;
+          right: 0 !important;
+          width: 44px !important;
+          height: 44px !important;
+          min-width: 44px !important;
+          min-height: 44px !important;
+          border-radius: 0 12px 12px 0 !important;
+          background: transparent !important;
+          border: none !important;
+          border-left: 1px solid rgba(255, 255, 255, 0.06) !important;
           color: rgba(255, 255, 255, 0.5) !important;
           display: flex !important;
           align-items: center !important;
           justify-content: center !important;
           cursor: pointer !important;
-          transition: all 0.2s ease !important;
-          opacity: 0 !important;
-        }
-        
-        [data-sonner-toast]:hover [data-close-button] {
+          transition: color 0.15s ease, background 0.15s ease !important;
           opacity: 1 !important;
         }
-        
         [data-sonner-toast] [data-close-button]:hover {
-          background: rgba(255, 255, 255, 0.1) !important;
-          border-color: rgba(255, 255, 255, 0.2) !important;
-          color: rgba(255, 255, 255, 0.8) !important;
+          background: rgba(255, 255, 255, 0.06) !important;
+          color: rgba(255, 255, 255, 0.9) !important;
         }
-        
+        [data-sonner-toast] [data-close-button]:focus-visible {
+          outline: 2px solid rgba(52, 211, 153, 0.5) !important;
+          outline-offset: -2px !important;
+        }
         [data-sonner-toast] [data-close-button] svg {
-          width: 14px !important;
-          height: 14px !important;
+          width: 16px !important;
+          height: 16px !important;
         }
-        
-        /* ============================================ */
-        /* Action Buttons                              */
-        /* ============================================ */
+
+        /* Content area leaves room for close button */
+        [data-sonner-toast] [data-content] {
+          padding-right: 48px !important;
+        }
+
+        /* Action / Cancel buttons */
         [data-sonner-toast] [data-button] {
           font-size: 12px !important;
           font-weight: 600 !important;
-          padding: 8px 14px !important;
-          border-radius: 10px !important;
-          cursor: pointer !important;
-          transition: all 0.2s ease !important;
-          text-transform: uppercase !important;
-          letter-spacing: 0.05em !important;
+          padding: 8px 12px !important;
+          border-radius: 8px !important;
+          transition: background 0.15s ease, border-color 0.15s ease !important;
         }
-        
         [data-sonner-toast] button[data-button="true"] {
-          background: linear-gradient(135deg, rgba(16, 185, 129, 0.3) 0%, rgba(5, 150, 105, 0.4) 100%) !important;
-          border: 1px solid rgba(52, 211, 153, 0.4) !important;
-          color: #a7f3d0 !important;
-          box-shadow: 0 2px 8px -2px rgba(16, 185, 129, 0.3) !important;
+          background: rgba(34, 197, 94, 0.2) !important;
+          border: 1px solid rgba(74, 222, 128, 0.35) !important;
+          color: #86efac !important;
         }
-        
         [data-sonner-toast] button[data-button="true"]:hover {
-          background: linear-gradient(135deg, rgba(16, 185, 129, 0.45) 0%, rgba(5, 150, 105, 0.55) 100%) !important;
-          border-color: rgba(52, 211, 153, 0.6) !important;
-          color: #d1fae5 !important;
-          transform: translateY(-1px) !important;
-          box-shadow: 0 4px 12px -2px rgba(16, 185, 129, 0.4) !important;
+          background: rgba(34, 197, 94, 0.3) !important;
+          border-color: rgba(74, 222, 128, 0.5) !important;
+          color: #bbf7d0 !important;
         }
-        
         [data-sonner-toast] button[data-cancel] {
-          background: rgba(255, 255, 255, 0.05) !important;
-          border: 1px solid rgba(255, 255, 255, 0.15) !important;
-          color: rgba(255, 255, 255, 0.7) !important;
+          background: rgba(255, 255, 255, 0.06) !important;
+          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+          color: rgba(255, 255, 255, 0.8) !important;
         }
-        
         [data-sonner-toast] button[data-cancel]:hover {
           background: rgba(255, 255, 255, 0.1) !important;
-          border-color: rgba(255, 255, 255, 0.25) !important;
-          color: rgba(255, 255, 255, 0.9) !important;
+          border-color: rgba(255, 255, 255, 0.15) !important;
         }
-        
-        /* ============================================ */
-        /* Progress Bar                                */
-        /* ============================================ */
+
+        /* Progress bar */
         [data-sonner-toast] [data-progress] {
           position: absolute !important;
           bottom: 0 !important;
           left: 0 !important;
           right: 0 !important;
-          height: 3px !important;
-          border-radius: 0 0 20px 20px !important;
+          height: 2px !important;
+          border-radius: 0 0 12px 12px !important;
           overflow: hidden !important;
+          background: rgba(255, 255, 255, 0.06) !important;
         }
-        
-        [data-sonner-toast][data-type="success"] [data-progress] {
-          background: rgba(16, 185, 129, 0.15) !important;
-        }
-        
         [data-sonner-toast][data-type="success"] [data-progress]::after {
           content: '';
           position: absolute;
           inset: 0;
-          background: linear-gradient(90deg, #10b981, #34d399) !important;
+          background: #22c55e !important;
           transform-origin: left;
         }
-        
-        [data-sonner-toast][data-type="error"] [data-progress] {
-          background: rgba(239, 68, 68, 0.15) !important;
-        }
-        
         [data-sonner-toast][data-type="error"] [data-progress]::after {
           content: '';
           position: absolute;
           inset: 0;
-          background: linear-gradient(90deg, #ef4444, #f87171) !important;
+          background: #f87171 !important;
           transform-origin: left;
         }
-        
-        /* ============================================ */
-        /* Entrance Animation Override                 */
-        /* ============================================ */
+
+        /* Entrance — centered drop + scale (top-center) */
         [data-sonner-toast][data-mounted="true"] {
-          animation: toastSlideIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+          animation: toastCenterIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
         }
-        
         [data-sonner-toast][data-removed="true"] {
-          animation: toastSlideOut 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+          animation: toastCenterOut 0.22s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
         }
-        
-        @keyframes toastSlideIn {
-          0% {
+        @keyframes toastCenterIn {
+          from {
             opacity: 0;
-            transform: translateX(100%) scale(0.9);
+            transform: translateY(-20px) scale(0.94);
           }
-          100% {
+          to {
             opacity: 1;
-            transform: translateX(0) scale(1);
+            transform: translateY(0) scale(1);
           }
         }
-        
-        @keyframes toastSlideOut {
-          0% {
+        @keyframes toastCenterOut {
+          from {
             opacity: 1;
-            transform: translateX(0) scale(1);
+            transform: translateY(0) scale(1);
           }
-          100% {
+          to {
             opacity: 0;
-            transform: translateX(100%) scale(0.9);
+            transform: translateY(-12px) scale(0.98);
           }
         }
-        
-        /* ============================================ */
-        /* Mobile Responsive                           */
-        /* ============================================ */
+
+        /* Mobile — keep top-center, full width with margin */
         @media (max-width: 640px) {
-          [data-sonner-toaster] {
-            --width: calc(100vw - 32px) !important;
-            left: 16px !important;
-            right: 16px !important;
-            bottom: 16px !important;
+          [data-sonner-toaster][data-x-position="center"] {
+            --width: calc(100vw - 24px) !important;
+            left: 50% !important;
+            right: auto !important;
+            transform: translateX(-50%) !important;
+            top: 12px !important;
           }
-          
           [data-sonner-toast] {
-            border-radius: 16px !important;
+            border-radius: 12px !important;
           }
-          
           [data-sonner-toast] [data-content] {
-            padding: 14px 16px !important;
+            padding: 12px 44px 12px 14px !important;
+            min-height: 48px !important;
           }
-          
-          [data-sonner-toast] [data-title] {
-            font-size: 13px !important;
-          }
-          
-          [data-sonner-toast] [data-description] {
-            font-size: 12px !important;
-          }
-          
-          [data-sonner-toast]::before,
-          [data-sonner-toast]::after {
-            border-radius: 18px !important;
-          }
-          
-          [data-sonner-toast]::after {
-            border-radius: 16px 16px 0 0 !important;
+          [data-sonner-toast] [data-close-button] {
+            border-radius: 0 12px 12px 0 !important;
           }
         }
-        
-        /* ============================================ */
-        /* Reduced Motion                              */
-        /* ============================================ */
+
+        /* Reduced motion */
         @media (prefers-reduced-motion: reduce) {
-          [data-sonner-toast]::before {
-            animation: none !important;
-          }
-          
-          [data-sonner-toast][data-type="loading"]::after {
-            animation: none !important;
-            opacity: 0.6 !important;
-            transform: none !important;
-          }
-          
           [data-sonner-toast][data-mounted="true"] {
             animation: none !important;
             opacity: 1 !important;
             transform: none !important;
           }
-          
           [data-sonner-toast][data-removed="true"] {
-            animation: toastFadeOut 0.2s ease forwards !important;
+            animation: toastFadeOut 0.15s ease forwards !important;
           }
-          
           @keyframes toastFadeOut {
             to { opacity: 0; }
           }
         }
       `}</style>
-      
       <SonnerToaster
         position="bottom-right"
-        offset={20}
-        gap={12}
+        offset={16}
+        gap={10}
         visibleToasts={4}
         closeButton
         duration={4500}

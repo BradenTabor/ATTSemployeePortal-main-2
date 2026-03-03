@@ -176,7 +176,7 @@ export default function Home() {
   const labelStyles = "text-[11px] font-medium uppercase tracking-[0.2em] text-white/40";
 
   return (
-    <VideoBackground videoSrc="https://res.cloudinary.com/ddqvn1gi5/video/upload/v1761347534/20251024_1735_New_Video_simple_compose_01k8c5rppves9tja80dm88cqsx_lqoodw.mp4">
+    <VideoBackground videoSrc="/videos/4k.mp4">
       <div className="flex flex-col items-center justify-center min-h-screen text-center px-4 py-8">
         {/* Logo and Title */}
         <motion.div

@@ -1,5 +1,9 @@
 import { AlertTriangle, Zap, Car } from "lucide-react";
 import { cn } from "../../../lib/utils";
+import { ElectricalHazardSection, type CrewMember } from "../ElectricalHazardSection";
+import type { ElectricalHazardData } from "../../../types/electricalHazard";
+
+const ELECTRICAL_HAZARD_KEYS = ['lines_energized', 'secondary_voltage', 'open_wire_secondary'];
 
 const HAZARD_ITEMS = [
   { key: "lines_energized", label: "Lines energized?" },
@@ -39,11 +43,14 @@ interface StepSiteHazardsProps {
     hazardsPresent: Record<string, boolean>;
     trafficHazards: Record<string, boolean>;
     trafficSetup: Record<string, boolean>;
+    electricalHazardData?: ElectricalHazardData | null;
   };
   onBooleanGroupChange: (
     group: "hazardsPresent" | "trafficHazards" | "trafficSetup",
     key: string
   ) => void;
+  onElectricalHazardChange?: (data: ElectricalHazardData | null) => void;
+  crewMembers?: CrewMember[];
 }
 
 interface ToggleGroupProps {
@@ -81,7 +88,12 @@ function ToggleGroup({ items, state, onToggle, cols = 2 }: ToggleGroupProps) {
 export function StepSiteHazards({
   form,
   onBooleanGroupChange,
+  onElectricalHazardChange,
+  crewMembers = [],
 }: StepSiteHazardsProps) {
+  const hasElectricalHazard = ELECTRICAL_HAZARD_KEYS.some((k) => form.hazardsPresent[k]);
+  const canShowElectricalSection = hasElectricalHazard && onElectricalHazardChange != null;
+
   return (
     <div className="space-y-5">
       {/* Electrical Hazards */}
@@ -99,6 +111,14 @@ export function StepSiteHazards({
           cols={3}
         />
       </div>
+
+      {canShowElectricalSection && (
+        <ElectricalHazardSection
+          value={form.electricalHazardData ?? null}
+          onChange={onElectricalHazardChange}
+          crewMembers={crewMembers}
+        />
+      )}
 
       {/* Traffic Hazards */}
       <div className="space-y-3">

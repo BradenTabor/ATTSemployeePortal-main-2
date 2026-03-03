@@ -1,0 +1,841 @@
+{
+  "version": 1,
+  "transcripts": {
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/7112f6a7-2232-4c07-9c68-1fb9fff2a17d.txt": {
+      "mtimeMs": 1769656949345,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/b9b8bc49-3248-43b4-849a-4b79dd313bc7.txt": {
+      "mtimeMs": 1770193999749,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/6946c0d0-d39f-4457-9b24-f2ca312c1dcf.txt": {
+      "mtimeMs": 1769651664419,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/19b6a05f-e203-41fe-8e0c-ce328e105693.txt": {
+      "mtimeMs": 1769309905671,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/44d4be70-eb27-4730-b38e-ceb140bd82af.txt": {
+      "mtimeMs": 1769394757982,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/d002390f-d32d-4f72-bbc1-a3660711d4b9.txt": {
+      "mtimeMs": 1769212589440,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/4d43c073-4c52-4f62-ac05-35c1284e6559.txt": {
+      "mtimeMs": 1771297663757,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/1c836290-a310-4d95-8828-ee45f31c01af.txt": {
+      "mtimeMs": 1769385669455,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/138ed0f8-2007-465d-a7ce-0f305d504844.txt": {
+      "mtimeMs": 1771296126572,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/0c5f9220-c6cf-4623-b10e-854bc608ecf9.txt": {
+      "mtimeMs": 1768952891643,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/d08c32b3-9c12-498e-9a55-ae898563a8f5.txt": {
+      "mtimeMs": 1769699769634,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/2e473c46-dc79-4dbf-a27c-c5605f5b4db8.txt": {
+      "mtimeMs": 1769647174626,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/2f3d75e5-7413-4861-a525-4c4c779118ec.txt": {
+      "mtimeMs": 1769225507459,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/00ada7e5-32e0-4d1e-ac0b-48bb68c5b257.txt": {
+      "mtimeMs": 1769745971684,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/f672d447-3f95-4cdb-8565-42c6e4828b53.txt": {
+      "mtimeMs": 1769460457668,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/455c8dfd-191c-450f-83cb-bf9b4288cde8.txt": {
+      "mtimeMs": 1769652675960,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/8d4f5c88-33d5-4d77-a335-7d0428e09d7a.txt": {
+      "mtimeMs": 1771275624365,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/2278c4ac-f0cc-444e-9d25-76d86aa1deeb.txt": {
+      "mtimeMs": 1769661617965,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/e1a46a2c-af1d-423f-8ffe-e6c0744a21f6.txt": {
+      "mtimeMs": 1771304123891,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/63fd1a92-8ab3-4a40-9f62-e01f58755772.txt": {
+      "mtimeMs": 1769455495234,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/4c60ade7-9fd8-4664-91bf-cd3a994461cb.txt": {
+      "mtimeMs": 1769646746710,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/d540f2b8-4793-46de-a5f6-ec7ef93a9097.txt": {
+      "mtimeMs": 1769215292534,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/5bcd4361-e63e-4109-9859-25022db4ea27.txt": {
+      "mtimeMs": 1771293886948,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/f09e1faa-02f4-4492-b03f-96d03b6c3e4d.txt": {
+      "mtimeMs": 1769393812927,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/50d5b45a-7ca4-42ee-a452-4b4cf5c19cb7.txt": {
+      "mtimeMs": 1769218346050,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/b31903b1-c735-49c4-828a-ad12f6de37a1.txt": {
+      "mtimeMs": 1769748549802,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/c4fae264-6212-4847-bbb7-028392a35f8c.txt": {
+      "mtimeMs": 1769459020415,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/469c85a5-b55c-499e-a5d3-ef9a4e876514.txt": {
+      "mtimeMs": 1769386072292,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/1732b6e6-d984-4739-959a-cce082dcea38.txt": {
+      "mtimeMs": 1769652331916,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/72043b7a-77e5-4a08-a954-c9a75c263ad8.txt": {
+      "mtimeMs": 1769829031933,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/dc173c09-ea9e-4105-9f21-88990e9259eb.txt": {
+      "mtimeMs": 1771222631443,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/4835550a-7ee3-4406-b355-e80fded1ab77.txt": {
+      "mtimeMs": 1769226507636,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/e998f480-ff6b-47e9-be0a-d8a1a1986074.txt": {
+      "mtimeMs": 1769917713345,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/a4a0a047-0227-43cd-9ac2-42b2aae12383.txt": {
+      "mtimeMs": 1769297926649,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/7a908ff6-5368-4145-a5cf-c0de23d3abee.txt": {
+      "mtimeMs": 1771212571440,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/6782ce1e-9f8e-4c5f-9ddc-ca791d432e6e.txt": {
+      "mtimeMs": 1769458671723,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/29c03f23-28c3-40b2-9e10-0f7a91bff1e2.txt": {
+      "mtimeMs": 1769283378815,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/8df31771-e0cc-4414-9cc0-e69493705d58.txt": {
+      "mtimeMs": 1768958642373,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/7e438665-63bb-4dc1-9647-b9c3aecaae63.txt": {
+      "mtimeMs": 1769232802686,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/e5d50d08-879e-4a3b-800a-2e31eaebe067.txt": {
+      "mtimeMs": 1769633935319,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/91cd2d86-0792-4011-a4dd-ad00cc02c9d9.txt": {
+      "mtimeMs": 1769614400476,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/ff7c634a-7c54-421f-b020-944e65a335f6.txt": {
+      "mtimeMs": 1769394994197,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/15c9f5fa-7868-4a78-89a1-19ba99f9b5f4.txt": {
+      "mtimeMs": 1769742029582,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/d2a66332-af30-4530-9b18-f56dce5d6814.txt": {
+      "mtimeMs": 1769829469067,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/fe10eda9-0e11-4820-84db-0ddf6e34ead7.txt": {
+      "mtimeMs": 1769233265509,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/100c299e-aa4a-458d-878d-71ba1eead25f.txt": {
+      "mtimeMs": 1769562154569,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/6d19d879-7dd5-4571-8aaf-d682677814d7.txt": {
+      "mtimeMs": 1769461661070,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/54fc990c-cdac-4f55-99a4-24665e5842ee.txt": {
+      "mtimeMs": 1771295763853,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/9575a29a-f8e4-47c7-b439-a00992f91b35.txt": {
+      "mtimeMs": 1769213354579,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/226f94bf-1094-40a9-86e6-15d1de0c0510.txt": {
+      "mtimeMs": 1769488178211,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/313e0088-f503-4291-af37-378507fcd9db.txt": {
+      "mtimeMs": 1769646250882,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/5c0fe3be-0f35-4add-9974-d6a060a6af69.txt": {
+      "mtimeMs": 1770868399199,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/379d415d-375a-4f43-89fe-92b6ce95a6b6.txt": {
+      "mtimeMs": 1769664348543,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/34b2c09d-22f1-4882-9aa4-25d35e8568de.txt": {
+      "mtimeMs": 1771292555504,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/75bb9317-251b-4bd3-8fb4-035399cc46f9.txt": {
+      "mtimeMs": 1771274450552,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/d7201013-5b22-4d77-bff0-0ef858026a27.txt": {
+      "mtimeMs": 1770351313216,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/7492d273-33e7-4b6c-b313-0f4419b043cc.txt": {
+      "mtimeMs": 1769750137095,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/cae5fbf2-e5c8-4ace-8833-2bd2549c1dc0.txt": {
+      "mtimeMs": 1769388039172,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/bf0eac53-bd14-49ff-9099-0d225ecdbd44.txt": {
+      "mtimeMs": 1768949899310,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/917f2a39-6353-4235-a10c-8da82c475fef.txt": {
+      "mtimeMs": 1771214262243,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/5131b86e-c3dc-42b2-a347-9dda63752d26.txt": {
+      "mtimeMs": 1769273774302,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/c145ec31-0876-4dbd-ad3e-8cc5ee38c8ce.txt": {
+      "mtimeMs": 1769279569260,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/68ce99b5-7d9d-4259-baf4-d25f782abdac.txt": {
+      "mtimeMs": 1768960086184,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/dd2c91a4-a64a-4de7-8ad8-ebd3711b2909.txt": {
+      "mtimeMs": 1771296852950,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/a52f9107-4cb3-4ebc-882a-6f7ed3c74027.txt": {
+      "mtimeMs": 1769379317375,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/7403ea7a-3b98-4709-bae1-7548720e1ca0.txt": {
+      "mtimeMs": 1771294801512,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/4650816d-f093-4caf-8aca-8f06d61af091.txt": {
+      "mtimeMs": 1771175947312,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/90f3f8f3-1a3f-4e84-9a8b-0114b34c5ccc.txt": {
+      "mtimeMs": 1771300890593,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/387ff250-06b2-468c-95b2-163827fc9dd7.txt": {
+      "mtimeMs": 1769289441421,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/9781e52f-bd87-4e53-8ca7-9b0f91377d65.txt": {
+      "mtimeMs": 1769753492098,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/3dc5c8f3-b207-4599-b722-241f2290255e.txt": {
+      "mtimeMs": 1769663601943,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/fed75bf7-b018-421d-8380-c65767a2ea61.txt": {
+      "mtimeMs": 1769213205817,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/91392860-068d-4d90-9d23-703ec87ea5da.txt": {
+      "mtimeMs": 1769659786595,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/0a981c2f-bd26-406e-bf86-8bcc4ee7bc3e.txt": {
+      "mtimeMs": 1770349249752,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/785f6399-d58a-4eb3-9f52-f25cebbc9bdb.txt": {
+      "mtimeMs": 1769381671023,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/0a51cea1-4ce2-4995-a2bb-47653c5606b4.txt": {
+      "mtimeMs": 1769305000349,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/19a245af-7447-4dcc-b282-a73a9030ea8e.txt": {
+      "mtimeMs": 1771296234124,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/f05dd01a-8f4f-4bae-8c9c-13130ea7ab8d.txt": {
+      "mtimeMs": 1771293527932,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/c968f1cc-e387-4f91-b8ea-168aef8bb312.txt": {
+      "mtimeMs": 1770130234434,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/d5c10871-d089-4ec9-a23a-f577674951d8.txt": {
+      "mtimeMs": 1769219117491,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/ffcf8e6d-997c-4d3f-89e2-b7b156c34d62.txt": {
+      "mtimeMs": 1769657717481,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/268a66ba-4184-417f-8466-fd6d8f5621b7.txt": {
+      "mtimeMs": 1769221934975,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/49cabfa6-b7f4-4d5c-8fb3-4b8143cce2e9.txt": {
+      "mtimeMs": 1771009673597,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/2817e335-6a6e-4f1d-8515-67c3b8a8a25e.txt": {
+      "mtimeMs": 1768966812979,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/f763003a-9510-44c0-b139-0596f8303485.txt": {
+      "mtimeMs": 1769697618028,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/b2e29017-d18c-4947-9d2e-9e337c0fdf68.txt": {
+      "mtimeMs": 1769391685885,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/dea0e052-4114-4086-a8d3-8320ad824d85.txt": {
+      "mtimeMs": 1770863743343,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/cb1aa9ee-6ba7-4005-86b2-49ec07491467.txt": {
+      "mtimeMs": 1771211858630,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/0b3a113b-9265-4eed-b3fd-4963f41393d4.txt": {
+      "mtimeMs": 1769218078389,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/2e9922a3-6df9-4025-a2d7-b7fb028031b9.txt": {
+      "mtimeMs": 1769395171482,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/084521b3-25a1-48d9-af34-bd4c63267523.txt": {
+      "mtimeMs": 1769392778840,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/30b0cbb3-b430-44f4-a6cc-37df1bd8ba6a.txt": {
+      "mtimeMs": 1770097277334,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/baa1a1f9-3673-4941-8c7b-a1b7887cc00a.txt": {
+      "mtimeMs": 1769385545228,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/52152698-b5b2-4cab-aec8-1ba05bafa367.txt": {
+      "mtimeMs": 1769641633468,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/795c7c27-635a-489c-974a-4469a26cb429.txt": {
+      "mtimeMs": 1769640326548,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/862ebf63-9f13-4288-a618-ecd36c0e8857.txt": {
+      "mtimeMs": 1771213058285,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/60a8a5a9-e3b4-4606-8663-e4d9ece4616e.txt": {
+      "mtimeMs": 1769745096081,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/67e22b57-818a-4ca7-892d-21f94d479320.txt": {
+      "mtimeMs": 1769625570059,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/20ebbf67-7446-4469-b3ed-96e2202066ec.txt": {
+      "mtimeMs": 1769657431398,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/a27eede8-8bda-4172-90f2-2bc732fbd990.txt": {
+      "mtimeMs": 1769701448362,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/d89b22c7-5f58-4e13-8a58-d0ec3a31b803.txt": {
+      "mtimeMs": 1769656678989,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/10408cb0-ea48-4934-a710-4bb563462d9d.txt": {
+      "mtimeMs": 1768969982285,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/535cbde0-6dea-4eec-bb7b-725cc2136a17.txt": {
+      "mtimeMs": 1769487935146,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/b9f1602c-7d26-4c09-9032-c79a44418650.txt": {
+      "mtimeMs": 1769309402422,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/49c2c931-429c-4566-82bc-5e43d10852ce.txt": {
+      "mtimeMs": 1770090849797,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/04c1f0f1-e3ec-4640-b808-0d6252948044.txt": {
+      "mtimeMs": 1769457912779,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/a7733011-2ad2-488e-af59-a406dd3f3f62.txt": {
+      "mtimeMs": 1771215022395,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/f05af516-3693-4844-a932-e91be553f8ae.txt": {
+      "mtimeMs": 1769218580301,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/5e80d34e-c74b-4ea5-9ecc-30aa9a053d07.txt": {
+      "mtimeMs": 1769394761497,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/254d4dd5-300f-4adc-82e5-743221cc8baf.txt": {
+      "mtimeMs": 1769274232156,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/8e922f4c-8f90-422b-a257-cef4dee5beaf.txt": {
+      "mtimeMs": 1769305259847,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/d1179e95-0519-41ee-ada0-0043ba0ec6e6.txt": {
+      "mtimeMs": 1769633236581,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/a22a8eb1-f8c1-410e-9eab-5f273ace2759.txt": {
+      "mtimeMs": 1771379002548,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/a80f0f06-cf15-47bf-ac92-1cb491e508ed.txt": {
+      "mtimeMs": 1769630317298,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/b64990ee-fd47-42bf-8450-1896022370e5.txt": {
+      "mtimeMs": 1769219162989,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/e0fe3520-2841-4305-9963-cbb52bc9a106.txt": {
+      "mtimeMs": 1771017225951,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/ecaa3799-f216-453c-b6b1-ad523f2ebc06.txt": {
+      "mtimeMs": 1771289403452,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/8c40be60-f023-4953-952a-1162905a385f.txt": {
+      "mtimeMs": 1771173512244,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/502d4a7e-4e27-443b-82e3-65485005e6c7.txt": {
+      "mtimeMs": 1769487571267,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/b2416af3-54e9-4d6d-83fe-eeaa3af2ad2c.txt": {
+      "mtimeMs": 1769232856283,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/f6717b34-cc05-4d53-a501-c61fdc68457f.txt": {
+      "mtimeMs": 1769379830658,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/b91932d3-6777-428c-aa62-d537c7e41e7b.txt": {
+      "mtimeMs": 1771212236024,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/faadcfe5-3a03-40c3-b13f-9bde02cb6a60.txt": {
+      "mtimeMs": 1769275919221,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/da0d4d28-5300-4a2a-b757-d7729c17b36a.txt": {
+      "mtimeMs": 1769394057130,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/d4d5641a-1ea0-42f8-af51-6ba864ba3362.txt": {
+      "mtimeMs": 1769658314869,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/9027fb48-7fb8-4e3c-862a-b9af0eca252f.txt": {
+      "mtimeMs": 1769382468401,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/07e8c7d5-ac8e-455c-b1d6-a2b6ce512e14.txt": {
+      "mtimeMs": 1768966941700,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/b351c29d-2fe6-4f8f-9ecc-101bd748109e.txt": {
+      "mtimeMs": 1769654212710,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/d0448ad4-b664-445e-be89-0e5d4a6e6ec3.txt": {
+      "mtimeMs": 1769228373528,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/89f1e73d-2aa5-4ea4-b66a-bf2c48fc51ae.txt": {
+      "mtimeMs": 1769235121142,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/09f0fe63-227f-4b2e-ae31-31e69ca99544.txt": {
+      "mtimeMs": 1769373014437,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/48986ae5-1d85-4d76-ba98-6346814f4b8b.txt": {
+      "mtimeMs": 1771200948009,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/fbcf5b7e-0d6b-438a-a344-654b08fccb2b.txt": {
+      "mtimeMs": 1769386184005,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/a2b5ff32-7157-4e93-9cde-92e727bd9d16.txt": {
+      "mtimeMs": 1769663582004,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/041e1d1c-efd2-484f-829c-2b0762cae74c.txt": {
+      "mtimeMs": 1769220497519,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/7a136d99-a37b-4a33-822d-647931ff721d.txt": {
+      "mtimeMs": 1770095576226,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/1743dbe0-b581-4cd6-b924-42b8f2788930.txt": {
+      "mtimeMs": 1769398202012,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/6106bda0-5de9-4da6-b559-fadeedf38a72.txt": {
+      "mtimeMs": 1769656480600,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/1623fd1d-3e1c-4dc6-920f-e88769cb0899.txt": {
+      "mtimeMs": 1769280295247,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/714b3bf9-edc3-41c3-8bbb-03477db0729c.txt": {
+      "mtimeMs": 1769745753750,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/63306fb0-b17d-4665-823c-a0681b49ee7f.txt": {
+      "mtimeMs": 1769308291330,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/3f90d827-8323-43a8-ae2e-3230995120fe.txt": {
+      "mtimeMs": 1769629378033,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/d8ec1189-6fd2-4805-b7b8-4158e6a2f0c1.txt": {
+      "mtimeMs": 1769754729445,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/c5838733-e01a-4eb7-be20-50cb2d34f80d.txt": {
+      "mtimeMs": 1771296528939,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/59eaf55b-ba8f-488c-bf9f-f4516b698a1b.txt": {
+      "mtimeMs": 1769224146916,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/d196d9b8-ce8a-4419-8f10-4f542e28f24e.txt": {
+      "mtimeMs": 1769215860818,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/5f755f4c-f742-4734-bc2c-76b057991f52.txt": {
+      "mtimeMs": 1769227675026,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/31e4e590-a220-431d-aac6-a1f8db7d23dd.txt": {
+      "mtimeMs": 1769381011055,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/40d23496-6307-4044-92f3-c0fa2eaf991e.txt": {
+      "mtimeMs": 1771223688740,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/b05e1dd5-4d67-42e4-a3dc-8c10dfcec5a7.txt": {
+      "mtimeMs": 1768970560804,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/2c723866-112f-4aca-a16c-647df16d7a9e.txt": {
+      "mtimeMs": 1770350279045,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/09501ea2-bdf0-47f7-92a9-4365949ec7c9.txt": {
+      "mtimeMs": 1769278325025,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/54861081-c072-477f-b7ed-7665ed0facdc.txt": {
+      "mtimeMs": 1769295378510,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/63e7385a-d092-4b36-b894-591055fae5a8.txt": {
+      "mtimeMs": 1769562643455,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/436576bc-bbe6-4e85-a029-780f05c68ef3.txt": {
+      "mtimeMs": 1769655926400,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/b1b385a8-5b04-4983-a32d-0824bba9f48b.txt": {
+      "mtimeMs": 1769623878434,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/ac66193b-a676-4459-a2a7-d368b9478e87.txt": {
+      "mtimeMs": 1769457773054,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/8017e4eb-fe99-4962-bb4c-1ea59b5ddd6a.txt": {
+      "mtimeMs": 1769230465371,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/780dc94f-7887-4de2-a1c1-0aa960959272.txt": {
+      "mtimeMs": 1770093726389,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/bd117480-85ab-4227-8388-c609643ad34d.txt": {
+      "mtimeMs": 1771212766604,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/e149ea1c-a8ba-4adc-964f-0cd2d8c109e6.txt": {
+      "mtimeMs": 1769658604788,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/96a6e034-c3c5-4572-b5dd-4a862f169dd4.txt": {
+      "mtimeMs": 1771018135899,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/9dca6171-4945-4729-9a4f-35fc078d3956.txt": {
+      "mtimeMs": 1769564318412,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/19cd6edd-b94b-46d9-a4fc-2b55783eb2dc.txt": {
+      "mtimeMs": 1769455956912,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/5e0b64cc-9f62-4a78-82f8-d0c3ee7b2729.txt": {
+      "mtimeMs": 1770958001605,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/c158d3f6-7690-4384-81c6-8a330f431eda.txt": {
+      "mtimeMs": 1769623608406,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/36ed9148-9f62-49be-82ad-33560ac2b176.txt": {
+      "mtimeMs": 1770349959235,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/d7d6d7c8-a51f-48fb-ac33-7b677fa6e575.txt": {
+      "mtimeMs": 1769460732850,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/b1bdabab-77c3-46e4-90c4-186f85412dbf.txt": {
+      "mtimeMs": 1769633505992,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/bf2b6578-0098-4145-895b-71aeb6e111f1.txt": {
+      "mtimeMs": 1769700099620,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/39c99cbf-741a-4523-928a-7953e57e587c.txt": {
+      "mtimeMs": 1770100374097,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/ea521fbb-fa9d-4b77-afba-30d9efe19dc4.txt": {
+      "mtimeMs": 1769214944593,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/ab6af861-50eb-4014-869e-e441f669cac0.txt": {
+      "mtimeMs": 1769378126286,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/dc24f2ca-9f2b-4cfb-872d-e82bb1ce2a0c.txt": {
+      "mtimeMs": 1768961649347,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/a19db90e-b420-47b3-9cc8-243bf2dedd07.txt": {
+      "mtimeMs": 1771292091033,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/77cdf3dd-1557-4cbd-8095-264a2a98ac4b.txt": {
+      "mtimeMs": 1769647193381,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/c0322503-bbfc-4de9-b1f2-0109250f9683.txt": {
+      "mtimeMs": 1768966538326,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/3eea7e06-8ad6-475e-9118-e5cb72397c7e.txt": {
+      "mtimeMs": 1769829534393,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/59fb19c3-6858-45ed-a53e-00d3b1d123d7.txt": {
+      "mtimeMs": 1769700225956,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/4b3b5106-956e-46cd-9d4c-bb94e5d09d75.txt": {
+      "mtimeMs": 1770342372950,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/5feaa771-92ee-4943-887e-9408fe66a6ce.txt": {
+      "mtimeMs": 1771296127438,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/e203a581-5d5b-4cae-bde0-1dcba7b4f72e.txt": {
+      "mtimeMs": 1771224773431,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/8e7c7f46-ccc8-4d85-8d76-1149770e7dba.txt": {
+      "mtimeMs": 1769624639081,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/88e4c05f-ec54-4bb3-8822-9ea42e2c8161.txt": {
+      "mtimeMs": 1769277162785,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/ccd3278c-40a5-4189-b8b6-3b068e77dd93.txt": {
+      "mtimeMs": 1771188491122,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/46b6a91d-34e7-4ef0-8647-2d4d950319f0.txt": {
+      "mtimeMs": 1768946853509,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/661b418d-d7b6-48c1-96ad-3da9ba5e900f.txt": {
+      "mtimeMs": 1769217716303,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/d49fd0ac-8815-4fe5-8db1-333a9f619159.txt": {
+      "mtimeMs": 1769309179800,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/9dfc831e-d8e0-49f7-bbdf-3741abf598fa.txt": {
+      "mtimeMs": 1769394055016,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/6cd66809-5c1c-43bd-b886-eb34b381a1f2.txt": {
+      "mtimeMs": 1769699197405,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/9abf6139-55fc-4394-933a-754068d4dff7.txt": {
+      "mtimeMs": 1769658509790,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/cfb68d1d-e7b0-48af-b49b-621f4456c34d.txt": {
+      "mtimeMs": 1769693785818,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/dd5f9e8a-4d32-4c88-af94-773e5582299b.txt": {
+      "mtimeMs": 1769491754853,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/894b5d63-d664-417d-9f7e-99d4b2075bcc.txt": {
+      "mtimeMs": 1769227359441,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/46d07033-ab45-427f-bd65-d6c6a836b074.txt": {
+      "mtimeMs": 1771210727848,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/517f1c4e-3314-473b-a365-6a9152801763.txt": {
+      "mtimeMs": 1770348544948,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/672c0639-e403-47c2-9924-a00d01b2a0be.txt": {
+      "mtimeMs": 1769653330118,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/7004896a-1b65-4217-a6a4-e23ee1523f22.txt": {
+      "mtimeMs": 1770866851654,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/ee408589-8343-4ee1-8ae4-db4d61be0d26.txt": {
+      "mtimeMs": 1769573967596,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/a574a2c7-dc62-44da-9aa5-45737e810e89.txt": {
+      "mtimeMs": 1769281008063,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/6bd5bf5b-47ac-4938-b1d0-f735fe2306b9.txt": {
+      "mtimeMs": 1769697872821,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/88fe34b2-85fb-4067-8aa1-3f959233e9c1.txt": {
+      "mtimeMs": 1769459747059,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/3ac3aae2-eb2e-430b-92f2-2acb6c607601.txt": {
+      "mtimeMs": 1769275208966,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/422432aa-ddd3-4fb1-b386-becb9f6f8d40.txt": {
+      "mtimeMs": 1769281738881,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/a4d2006b-6f45-41a5-9d3a-44b3f237cc65.txt": {
+      "mtimeMs": 1768958208574,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/664a753a-5a16-4b4c-871a-03a2f058bbb0.txt": {
+      "mtimeMs": 1769292211273,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/42803715-d294-4ec2-85b0-8d7ee33dc2b0.txt": {
+      "mtimeMs": 1769279986380,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/906cdd6d-5d02-49bb-81b7-2b6a677e233a.txt": {
+      "mtimeMs": 1771221819457,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    },
+    "/Users/taborsmac/.cursor/projects/Users-taborsmac-Downloads-ATTSemployeePortal-main-2/agent-transcripts/43a848d1-f309-4def-b8b8-b0d17bae52c7.txt": {
+      "mtimeMs": 1768962974653,
+      "lastProcessedAt": "2026-02-19T23:45:56.000Z"
+    }
+  }
+}

@@ -14,9 +14,9 @@ const TIMEZONE = 'America/Chicago';
 const CUTOFF_HOUR = 9; // 9:00 AM
 const CUTOFF_MINUTE = 0;
 
-// Safety reward claim window: 7:00–9:00 AM Central (same day as announcement publish + compliance cutoff)
-export const REWARD_CLAIM_START_HOUR = 7;
-export const REWARD_CLAIM_END_HOUR = 9;
+// Safety reward claim window: 6:00–8:00 AM Central (same day as announcement publish + compliance cutoff)
+export const REWARD_CLAIM_START_HOUR = 6;
+export const REWARD_CLAIM_END_HOUR = 8;
 
 /**
  * Get today's date string in YYYY-MM-DD format (Chicago timezone)
@@ -139,8 +139,8 @@ export function isSubmissionAllowed(now: Date = new Date()): boolean {
 }
 
 /**
- * Check if current time is within the safety reward claim window (7:00–9:00 AM Central).
- * Inclusive of 7:00 AM, exclusive of 9:00 AM (8:59 allowed).
+ * Check if current time is within the safety reward claim window (6:00–8:00 AM Central).
+ * Inclusive of 6:00 AM, exclusive of 8:00 AM (7:59 allowed).
  */
 export function isWithinRewardClaimWindow(now: Date = new Date()): boolean {
   const chicagoNow = toZonedTime(now, TIMEZONE);
@@ -163,13 +163,13 @@ export function getRewardClaimWindowMessage(now: Date = new Date()): string | nu
   const totalMinutes = hour * 60 + minute;
   const startMinutes = REWARD_CLAIM_START_HOUR * 60;
   if (totalMinutes < startMinutes) {
-    return 'Claim opens at 7 AM Central';
+    return 'Claim opens at 6 AM Central';
   }
-  return 'Claim window closed (7–9 AM Central)';
+  return 'Claim window closed (6–8 AM Central)';
 }
 
 /**
- * Time until the reward claim window opens (7 AM Central). Returns null when already at or past 7 AM.
+ * Time until the reward claim window opens (6 AM Central). Returns null when already at or past 6 AM.
  */
 export function getTimeUntilClaimWindowOpens(
   now: Date = new Date()

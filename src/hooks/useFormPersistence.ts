@@ -28,7 +28,7 @@ interface DraftData<T> {
 
 interface UseFormPersistenceOptions<T> {
   /** Form type identifier (e.g., 'jsa', 'dvir') */
-  formType: 'jsa' | 'dvir' | 'equipment';
+  formType: 'jsa' | 'dvir' | 'equipment' | 'near_miss' | 'tree_felling_jsa';
   /** Current user ID for multi-user support */
   userId: string | undefined;
   /** Initial form state factory */
@@ -217,24 +217,9 @@ export function useFormPersistence<T>({
     setLastSaved(new Date());
   }, []);
 
-  // Save draft immediately on beforeunload if there are unsaved changes
-  // This ensures draft is saved even if debounced save hasn't completed
+  // Cleanup pending debounce timer on unmount
   useEffect(() => {
-    const handleBeforeUnload = () => {
-      // Flush any pending debounced save
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-        saveTimeoutRef.current = null;
-      }
-      
-      // If there are unsaved changes, save immediately (synchronously)
-      // Note: We can't access form/step state here, so this is a safety net
-      // The actual save should be triggered by the form component's beforeunload handler
-    };
-    
-    window.addEventListener('beforeunload', handleBeforeUnload);
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }

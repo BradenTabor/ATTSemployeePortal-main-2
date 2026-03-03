@@ -21,7 +21,7 @@ interface DraftRecoveryModalProps<T> {
   /** The draft data */
   draft: DraftData<T> | null;
   /** Form type for display */
-  formType: 'jsa' | 'dvir' | 'equipment';
+  formType: 'jsa' | 'dvir' | 'equipment' | 'near_miss' | 'tree_felling_jsa';
   /** Callback when user chooses to restore */
   onRestore: () => void;
   /** Callback when user chooses to discard */
@@ -32,6 +32,8 @@ const FORM_LABELS = {
   jsa: 'Job Safety Analysis',
   dvir: 'Vehicle Inspection',
   equipment: 'Equipment Inspection',
+  near_miss: 'Near-Miss Report',
+  tree_felling_jsa: 'Tree Felling JSA',
 };
 
 function formatTimeAgo(date: Date): string {

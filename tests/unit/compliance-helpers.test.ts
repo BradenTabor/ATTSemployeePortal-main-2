@@ -51,11 +51,12 @@ const FRIDAY_5PM = createChicagoDate(2026, 1, 23, 17, 0);    // Friday 5:00 PM
 const SATURDAY_NOON = createChicagoDate(2026, 1, 24, 12, 0); // Saturday noon
 const SUNDAY_NOON = createChicagoDate(2026, 1, 25, 12, 0);   // Sunday noon
 
-// Reward claim window: 7:00–9:00 AM Central
+// Reward claim window: 6:00–8:00 AM Central
+const MONDAY_559 = createChicagoDate(2026, 1, 19, 5, 59);
+const MONDAY_6AM = createChicagoDate(2026, 1, 19, 6, 0);
 const MONDAY_659 = createChicagoDate(2026, 1, 19, 6, 59);
-const MONDAY_7AM = createChicagoDate(2026, 1, 19, 7, 0);
 const MONDAY_730 = createChicagoDate(2026, 1, 19, 7, 30);
-const MONDAY_859 = createChicagoDate(2026, 1, 19, 8, 59);
+const MONDAY_759 = createChicagoDate(2026, 1, 19, 7, 59);
 
 // =============================================================================
 // TEST SUITES
@@ -349,20 +350,28 @@ describe('getNextBusinessDay', () => {
 });
 
 describe('isWithinRewardClaimWindow', () => {
-  it('returns false at 6:59 AM', () => {
-    expect(isWithinRewardClaimWindow(MONDAY_659)).toBe(false);
+  it('returns false at 5:59 AM', () => {
+    expect(isWithinRewardClaimWindow(MONDAY_559)).toBe(false);
   });
 
-  it('returns true at 7:00 AM', () => {
-    expect(isWithinRewardClaimWindow(MONDAY_7AM)).toBe(true);
+  it('returns true at 6:00 AM', () => {
+    expect(isWithinRewardClaimWindow(MONDAY_6AM)).toBe(true);
+  });
+
+  it('returns true at 6:59 AM', () => {
+    expect(isWithinRewardClaimWindow(MONDAY_659)).toBe(true);
   });
 
   it('returns true during window (7:30 AM)', () => {
     expect(isWithinRewardClaimWindow(MONDAY_730)).toBe(true);
   });
 
-  it('returns true at 8:59 AM (last valid minute)', () => {
-    expect(isWithinRewardClaimWindow(MONDAY_859)).toBe(true);
+  it('returns true at 7:59 AM (last valid minute)', () => {
+    expect(isWithinRewardClaimWindow(MONDAY_759)).toBe(true);
+  });
+
+  it('returns false at 8:00 AM', () => {
+    expect(isWithinRewardClaimWindow(MONDAY_8AM)).toBe(false);
   });
 
   it('returns false at 9:00 AM', () => {
@@ -376,44 +385,46 @@ describe('isWithinRewardClaimWindow', () => {
 
 describe('getRewardClaimWindowMessage', () => {
   it('returns null when inside window', () => {
-    expect(getRewardClaimWindowMessage(MONDAY_7AM)).toBe(null);
+    expect(getRewardClaimWindowMessage(MONDAY_6AM)).toBe(null);
     expect(getRewardClaimWindowMessage(MONDAY_730)).toBe(null);
-    expect(getRewardClaimWindowMessage(MONDAY_859)).toBe(null);
+    expect(getRewardClaimWindowMessage(MONDAY_759)).toBe(null);
   });
 
-  it('returns "Claim opens at 7 AM Central" before 7 AM', () => {
-    expect(getRewardClaimWindowMessage(MONDAY_659)).toBe('Claim opens at 7 AM Central');
+  it('returns "Claim opens at 6 AM Central" before 6 AM', () => {
+    expect(getRewardClaimWindowMessage(MONDAY_559)).toBe('Claim opens at 6 AM Central');
   });
 
-  it('returns "Claim window closed (7–9 AM Central)" after 9 AM', () => {
-    expect(getRewardClaimWindowMessage(MONDAY_9AM)).toBe('Claim window closed (7–9 AM Central)');
-    expect(getRewardClaimWindowMessage(MONDAY_10AM)).toBe('Claim window closed (7–9 AM Central)');
+  it('returns "Claim window closed (6–8 AM Central)" after 8 AM', () => {
+    expect(getRewardClaimWindowMessage(MONDAY_8AM)).toBe('Claim window closed (6–8 AM Central)');
+    expect(getRewardClaimWindowMessage(MONDAY_9AM)).toBe('Claim window closed (6–8 AM Central)');
+    expect(getRewardClaimWindowMessage(MONDAY_10AM)).toBe('Claim window closed (6–8 AM Central)');
   });
 });
 
 describe('getTimeUntilClaimWindowOpens', () => {
-  it('returns null at 7:00 AM', () => {
-    expect(getTimeUntilClaimWindowOpens(MONDAY_7AM)).toBe(null);
+  it('returns null at 6:00 AM', () => {
+    expect(getTimeUntilClaimWindowOpens(MONDAY_6AM)).toBe(null);
   });
 
   it('returns null during window', () => {
     expect(getTimeUntilClaimWindowOpens(MONDAY_730)).toBe(null);
-    expect(getTimeUntilClaimWindowOpens(MONDAY_859)).toBe(null);
+    expect(getTimeUntilClaimWindowOpens(MONDAY_759)).toBe(null);
   });
 
   it('returns null after window', () => {
+    expect(getTimeUntilClaimWindowOpens(MONDAY_8AM)).toBe(null);
     expect(getTimeUntilClaimWindowOpens(MONDAY_9AM)).toBe(null);
   });
 
-  it('returns time until 7 AM when before window', () => {
-    const result = getTimeUntilClaimWindowOpens(MONDAY_659);
+  it('returns time until 6 AM when before window', () => {
+    const result = getTimeUntilClaimWindowOpens(MONDAY_559);
     expect(result).not.toBe(null);
     expect(result!.minutes).toBe(1);
     expect(result!.hours).toBe(0);
   });
 
-  it('returns correct span 1 hour before 7 AM', () => {
-    const oneHourBefore = createChicagoDate(2026, 1, 19, 6, 0);
+  it('returns correct span 1 hour before 6 AM', () => {
+    const oneHourBefore = createChicagoDate(2026, 1, 19, 5, 0);
     const result = getTimeUntilClaimWindowOpens(oneHourBefore);
     expect(result).toEqual({ hours: 1, minutes: 0 });
   });

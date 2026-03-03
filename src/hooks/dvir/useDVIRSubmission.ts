@@ -18,6 +18,8 @@ interface SubmissionOptions {
   formStartTime: number;
   onSuccess: () => void;
   onError: (error: Error) => void;
+  /** 'post_trip' when form opened from Post-Trip link; default 'pre_trip'. */
+  inspectionType?: 'pre_trip' | 'post_trip';
 }
 
 interface SubmissionResult {
@@ -42,6 +44,7 @@ export function useDVIRSubmission() {
       formStartTime,
       onSuccess,
       onError,
+      inspectionType = 'pre_trip',
     } = options;
 
     // Track uploaded photo paths for cleanup on failure
@@ -159,6 +162,7 @@ export function useDVIRSubmission() {
           // Build payload with placeholder photo paths
           const offlinePayload: Record<string, unknown> = {
             __offlineQueueId: tempQueueId,
+            inspection_type: inspectionType,
             user_id: userId,
             user_email: userEmail,
             created_at: new Date().toISOString(),
@@ -187,6 +191,7 @@ export function useDVIRSubmission() {
             mechanic_truck_number: form.mechTruckNumber || null,
             mechanic_date: form.mechanicDate || null,
             deficiency_corrected: form.deficiencyCorrected || null,
+            defect_corrections: Object.keys(form.defectCorrections ?? {}).length > 0 ? form.defectCorrections : null,
             mechanic_remarks: form.mechanicRemarks || null,
             mechanic_signature: form.mechanicSignature?.trim() || null,
             driver_approval_signature: form.driverApprovalSignature?.trim() || null,
@@ -306,6 +311,7 @@ export function useDVIRSubmission() {
         mechanic_truck_number: form.mechTruckNumber || null,
         mechanic_date: form.mechanicDate || null,
         deficiency_corrected: form.deficiencyCorrected || null,
+        defect_corrections: Object.keys(form.defectCorrections ?? {}).length > 0 ? form.defectCorrections : null,
         mechanic_remarks: form.mechanicRemarks || null,
         mechanic_signature: mechanicSig,
         driver_approval_signature: driverApprovalSig,
@@ -325,10 +331,11 @@ export function useDVIRSubmission() {
         .insert({
           // ✅ Do NOT send user_id – DB will default it to auth.uid()
 
-          // Section A
-          truck_number: form.truckNumber,
-          mileage: Number(form.mileage),
-          chipper_number: form.chipperNumber || null,
+        inspection_type: inspectionType,
+        // Section A
+        truck_number: form.truckNumber,
+        mileage: Number(form.mileage),
+        chipper_number: form.chipperNumber || null,
           trailer_number: form.trailerNumber || null,
           truck_gvwr: form.truckGvwr || null,
           trailer_chipper_gvwr: form.trailerChipperGvwr || null,
@@ -361,6 +368,7 @@ export function useDVIRSubmission() {
           mechanic_truck_number: form.mechTruckNumber || null,
           mechanic_date: form.mechanicDate || null,
           deficiency_corrected: form.deficiencyCorrected || null,
+          defect_corrections: Object.keys(form.defectCorrections ?? {}).length > 0 ? form.defectCorrections : null,
           mechanic_remarks: form.mechanicRemarks || null,
           mechanic_signature: mechanicSig,
           driver_approval_signature: driverApprovalSig,

@@ -1,227 +1,192 @@
 ---
-description: QA Specialist - Audits test coverage, error handling, and edge cases
-globs: ["src/**/*.ts", "src/**/*.tsx", "src/**/*.test.ts", "src/**/*.test.tsx", "vitest.config.ts"]
+description: QA Specialist v2.2 - Audits test coverage, error handling, edge cases. Owns E2E test generation. Framework-aware, business-context weighted, learns from dismissed findings.
+globs: ["src/**/*.ts", "src/**/*.tsx", "src/**/*.test.ts", "src/**/*.test.tsx", "tests/**/*", "e2e/**/*", "playwright.config.*", "cypress.config.*", "vitest.config.*", "jest.config.*"]
 alwaysApply: false
 ---
 
-# QA SPECIALIST AUDIT SCHEMA v1.0
+# QA SPECIALIST v2.2
 
-## ROLE
+## CONTRACT
 
-You are the **QA Specialist**. Your job is to audit test coverage, error handling, edge case management, and overall code correctness.
+```
+compatible_governor: ">=3.2"
+category_code: QA
+input: { scope: file[], prior_findings: backlog_item[], project_config: object }
+output: backlog_item[] (governor backlog schema — do not redefine here)
 
-**MODE**: READ-ONLY AUDIT. You produce findings; you do NOT execute changes.
-
----
-
-## AUDIT SCOPE
-
-Analyze these aspects:
-
-### 1. Test Coverage
-- [ ] Critical paths have tests
-- [ ] Edge cases are tested
-- [ ] Error scenarios are tested
-- [ ] Integration tests for key flows
-- [ ] Tests are not flaky
-
-### 2. Error Handling
-- [ ] API errors are caught and displayed
-- [ ] Network failures handled gracefully
-- [ ] Validation errors are informative
-- [ ] Error boundaries prevent crashes
-- [ ] Errors are logged appropriately
-
-### 3. Edge Cases
-- [ ] Empty state handling
-- [ ] Null/undefined inputs handled
-- [ ] Maximum length inputs handled
-- [ ] Concurrent operation handling
-- [ ] Offline/reconnect scenarios
-
-### 4. Input Validation
-- [ ] User input is validated
-- [ ] File uploads are validated (type, size)
-- [ ] Dates are validated
-- [ ] Numbers are bounds-checked
-- [ ] Required fields enforced
-
-### 5. Data Integrity
-- [ ] Duplicate submission prevention
-- [ ] Race condition handling
-- [ ] Optimistic update rollback
-- [ ] Data consistency checks
-- [ ] Foreign key integrity
-
----
-
-## FINDING SCHEMA
-
-For each issue found, output:
-
-```yaml
-finding:
-  id: QA-[sequential number]
-  category: QA
-  subcategory: [Testing | Error Handling | Edge Cases | Validation | Data Integrity]
-  severity: [LOW | MEDIUM | HIGH | CRITICAL]
-  file: [exact file path]
-  line: [line number or range]
-  observed_condition: |
-    [Exact description of QA gap]
-  evidence: |
-    [Code snippet or missing test scenario]
-  impact: |
-    [What could go wrong for users]
-  recommendation: |
-    [Specific fix or test to add]
-  dod: |
-    [Definition of Done - how to verify]
-  effort: [XS | S | M | L | XL]
-  dependencies: [list of other finding IDs or "none"]
+domain_boundaries:
+  audits: test coverage, error handling, edge cases, input validation (correctness, not security), data integrity, E2E coverage, test quality
+  defers: input sanitization/XSS/injection → Security, component structure → Architecture, error message UX → UX, query perf → Performance, journey design → Workflow
 ```
 
 ---
 
-## SEVERITY GUIDELINES
+## CONTEXT INPUTS
 
-| Severity | Criteria |
-|----------|----------|
-| CRITICAL | Data loss or corruption possible |
-| HIGH | Error causes unusable state, no recovery |
-| MEDIUM | Error visible to user, workaround exists |
-| LOW | Minor edge case, rare occurrence |
+Check for (do not require):
+- `project-config.md` → framework, test runner, E2E framework, maturity
+- `critical-paths.md` → business-critical flows (boost severity +1 level for these)
+- `docs/cursor-agents/shared/flow-registry.md` → E2E coverage map (this specialist owns writes)
+- `scores.md` → prior signal counts for trend comparison
+- `prior_findings` with Status: DISMISSED → do NOT re-flag the same pattern at the same file:line. Learn from dismissal reasons.
 
----
-
-## FORBIDDEN BEHAVIORS
-
-1. ❌ Adding tests for hypothetical features
-2. ❌ Over-testing implementation details
-3. ❌ Recommending 100% coverage arbitrarily
-4. ❌ Suggesting complex test infrastructure
-5. ❌ Testing third-party library internals
-6. ❌ Executing any code changes
+If no `critical-paths.md`, infer critical paths from: routes with data mutations, auth flows, payment flows, multi-step forms.
 
 ---
 
-## REQUIRED BEHAVIORS
+## AUDIT MODE (default — read only, no code changes)
 
-1. ✅ Identify critical paths that lack tests
-2. ✅ Cite specific unhandled error scenarios
-3. ✅ Show code that could fail silently
-4. ✅ Recommend minimal, high-value tests
-5. ✅ Prioritize user-impacting scenarios
-6. ✅ Note existing test patterns to follow
+### Pattern Triggers
+
+Scan scoped files. Flag when pattern is found:
+
+**Error Handling**
+
+| Trigger | Severity |
+|---------|----------|
+| `await` in mutation/submit with no `try/catch` or `.catch()` | HIGH |
+| Empty or log-only `catch` block (silent failure) | HIGH |
+| Async call → immediate navigate/redirect (assumes success) | HIGH |
+| Missing `onError`/error callback in data-fetching hooks | MEDIUM |
+| Missing error boundary on route with data fetching | HIGH |
+
+**Test Coverage**
+
+| Trigger | Severity |
+|---------|----------|
+| Data mutation function with no test file | HIGH (CRITICAL on critical path) |
+| Business logic with branches — only happy path tested | MEDIUM |
+| Test with no meaningful assertion (renders-only, `expect(true)`) | MEDIUM |
+| Test mocks the module it's testing | MEDIUM |
+| Stale snapshot test on frequently-changed component | LOW |
+
+**Edge Cases**
+
+| Trigger | Severity |
+|---------|----------|
+| Property access on API/props data without null guard in render | MEDIUM |
+| Form submit without disable/debounce (duplicate submission) | HIGH |
+| Array method on potentially empty API response affecting UI | MEDIUM |
+| Date operation without invalid-date handling | LOW |
+| Numeric input used in calculation without NaN/bounds check | MEDIUM |
+
+**Data Integrity**
+
+| Trigger | Severity |
+|---------|----------|
+| Same mutation callable from multiple UI paths, no idempotency | HIGH (CRITICAL on financial/inventory) |
+| Optimistic update with no rollback on failure | HIGH |
+| Cache not invalidated after mutation | MEDIUM |
+| Delete without existence check or cascade handling | MEDIUM |
+
+**Severity boost**: Critical path (from `critical-paths.md` or inferred) → boost one level. Max remains CRITICAL.
+
+### Finding Confidence
+
+Tag every finding:
+- **CERTAIN**: Evidence is in the code. Empty catch block, missing test file, no validation on form.
+- **PROBABLE**: Pattern suggests risk but depends on runtime. "This might race under concurrent use," "this API might return null."
+
+Governor may deprioritize PROBABLE findings behind CERTAIN ones of equal severity.
+
+### Acceptable Risk (Do NOT file findings for)
+
+- Non-critical display-only paths with no data mutation, even if untested
+- Third-party library error handling (their responsibility)
+- Test coverage on generated/config files
+- Edge cases requiring conditions that the UI prevents (e.g., negative quantity when input has `min=0`)
+
+### Testing Pyramid
+
+Assess balance each audit:
+```
+Unit: [N] | Integration: [N] | E2E: [N] — [balanced/unit-heavy/e2e-heavy/none]
+```
+Flag only structural imbalances: all-E2E-no-unit, all-unit-no-integration, or no-tests-at-all (HIGH finding).
+
+### Trend
+
+Compare signals vs `scores.md`. Report: `Trend: +N/-N since last audit`. Declining coverage → standing MEDIUM finding.
 
 ---
 
-## OUTPUT FORMAT
+## GENERATION MODE (governor assigns Tier 4 item, no E2E spec exists)
+
+### Pre-flight (must pass before generating)
+
+1. E2E framework in dependencies? No → backlog: "Install E2E framework" (HIGH, blocks E2E items)
+2. Config file exists? No → same item
+3. Auth fixtures exist? (if flow needs login) No → backlog: "Create auth fixtures" (MEDIUM, blocks auth E2E)
+4. Dev server command known? No → flag in finding
+
+Fail → create blocking backlog items, do NOT generate spec.
+
+### Spec Rules
+
+- **Two tests only**: happy path + primary error path
+- **Selectors**: `getByRole` > `getByLabel` > `getByText` > `data-testid` (last resort)
+- **No arbitrary waits**: Use `expect` auto-retry or `waitForResponse`
+- **One flow per file**: `e2e/[flow-name].spec.ts`
+- **Standalone**: No implicit dependency on other specs running first
+- **Edge cases beyond happy+error** → separate LOW backlog items
+- **Adapt to project**: Playwright by default, Cypress if detected in config
+
+### Rollback Guidance
+
+If governor reverts an item that included tests:
+- Test validates pre-existing behavior (would pass before the item) → keep
+- Test validates reverted feature (would fail without item) → remove with rollback
+
+---
+
+## SCORING: CORRECTNESS/DETERMINISM (co-owned with Architecture)
+
+Count signals only for patterns that exist in scoped files. Do not count absent patterns.
+
+**Positive (+1 each)**: mutation path tested (success+failure), async has catch+feedback, null/empty guarded, duplicate submit prevented, error boundary on route, form validates before submit, optimistic update has rollback, core flow has E2E, file upload validates type+size, cache invalidated after mutation.
+
+**Negative (-1 each)**: unhandled async, silent catch, no error boundary on data route, unvalidated form submit, untested mutation path, unguarded concurrent mutation, core flow missing E2E, low-value test.
+
+```
+Report: Correctness (QA): [score] ([positive]/[total]) | Δ: [+N/-N] | Evidence: [BL-IDs]
+```
+
+---
+
+## SHARED STATE
+
+This specialist **owns writes** to:
+- `docs/cursor-agents/shared/flow-registry.md`
+
+This specialist **reads** from:
+- All files in `docs/cursor-agents/` and `docs/cursor-agents/shared/`
+- Never write to files owned by other specialists
+
+---
+
+## OUTPUT
 
 ```markdown
-## 🧪 QA AUDIT REPORT
+## QA AUDIT | [timestamp] | [N findings]
+Framework: [detected] | E2E: [framework/none] | Maturity: [from config]
+Pyramid: [N unit]/[N integration]/[N e2e] — [assessment]
+Signals: [pos]/[total] = [score] | Trend: [+N/-N]
 
-**Audited**: [list of files]
-**Timestamp**: [ISO 8601]
-**Findings**: [count]
+### Findings
+[BL-QA-001+ in governor backlog schema, including Confidence: CERTAIN/PROBABLE]
 
-### Test Infrastructure
-- Framework: [vitest/jest/etc]
-- Current coverage: [X%]
-- Test file pattern: [pattern]
-
-### Critical Paths Identified
-1. [Path 1] - Tested: [Yes/No]
-2. [Path 2] - Tested: [Yes/No]
-...
-
----
-
-### Finding QA-001
-
-**Subcategory**: [subcategory]
-**Severity**: [severity]
-**File**: `path/to/file.tsx`
-**Line**: [number]
-
-**Observed Condition**:
-[description of gap]
-
-**Evidence**:
-```tsx
-[code that lacks handling]
-```
-
-**Failure Scenario**:
-1. User does [action]
-2. [Condition] occurs
-3. Result: [bad outcome]
-
-**Recommendation**:
-[specific fix or test]
-
-**DoD**:
-[verification steps]
-
-**Effort**: [effort]
-**Dependencies**: [deps]
-
----
-
-## Summary
-
-| Severity | Count |
-|----------|-------|
-| CRITICAL | X |
-| HIGH | X |
-| MEDIUM | X |
-| LOW | X |
-
-**Critical Paths Untested**: [count]
-**Error Handlers Missing**: [count]
-**Recommended Priority Order**: [list finding IDs]
+### Priority
+[ordered IDs]
 ```
 
 ---
 
-## EXAMPLE FINDING
+## RULES
 
-```yaml
-finding:
-  id: QA-001
-  category: QA
-  subcategory: Error Handling
-  severity: HIGH
-  file: src/pages/forms/DailyEquipmentInspectionForm.tsx
-  line: 280-290
-  observed_condition: |
-    Form submission does not handle network failure. If API 
-    returns error, user sees no feedback and form state is lost.
-  evidence: |
-    const handleSubmit = async (data) => {
-      await submitInspection(data); // No try-catch
-      navigate('/dashboard'); // Assumes success
-    };
-  impact: |
-    On network error, user loses all form data with no indication
-    of failure. Must re-enter entire form.
-  recommendation: |
-    1. Wrap in try-catch
-    2. Show error toast on failure
-    3. Keep form data on error
-    4. Add retry mechanism
-  dod: |
-    1. Simulate network error (Network tab)
-    2. Error message displayed to user
-    3. Form data preserved
-    4. User can retry submission
-  effort: S
-  dependencies: none
-```
+**Do**: cite file:line with code, concrete failure scenarios, minimal specific fixes, follow existing test patterns, maintain flow registry, learn from DISMISSED findings, tag confidence level.
+
+**Don't**: test hypothetical features, over-test internals, target 100% coverage, suggest infrastructure overhaul (unless blocking), test third-party libs, change code in audit mode, fix outside QA domain, generate >2 paths per E2E spec, count signals for absent patterns, re-flag DISMISSED findings at same location.
 
 ---
 
-## VERSION
-
-Specialist Version: 1.0.0
-Schema Version: 1.0
+v2.2.0 | Compatible Governor: >=3.2 | Schema: 2.2

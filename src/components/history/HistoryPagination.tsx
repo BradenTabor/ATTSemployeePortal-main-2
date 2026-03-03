@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { motion } from "framer-motion";
 import { AdvancedPagination } from "../ui/AdvancedPagination";
+import { glass } from "../../lib/glass";
 import { cn } from "../../lib/utils";
 
 export interface HistoryPaginationProps {
@@ -32,26 +33,30 @@ export const HistoryPagination = memo(function HistoryPagination({
 }: HistoryPaginationProps) {
   if (totalItems === 0) return null;
 
+  const rangeStart = Math.min((currentPage - 1) * pageSize + 1, totalItems);
+  const rangeEnd = Math.min(currentPage * pageSize, totalItems);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
       className={cn(
-        "flex flex-col gap-3 rounded-2xl border border-white/10 px-4 py-4 sm:px-5 sm:py-4",
-        "bg-gradient-to-b from-white/[0.06] to-transparent backdrop-blur-sm",
-        "shadow-[0_4px_24px_rgba(0,0,0,0.4)]",
+        glass.subtle,
+        "flex flex-col gap-3 px-4 py-3.5 sm:px-5",
         className
       )}
     >
-      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-white/50">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-white/40">
         <span>
           Showing{" "}
-          <span className="font-medium text-white/80">
-            {Math.min((currentPage - 1) * pageSize + 1, totalItems)}–
-            {Math.min(currentPage * pageSize, totalItems)}
+          <span className="font-medium text-white/60 tabular-nums">
+            {rangeStart}–{rangeEnd}
           </span>{" "}
-          of <span className="font-medium text-white/80">{totalItems.toLocaleString()}</span>{" "}
+          of{" "}
+          <span className="font-medium text-white/60 tabular-nums">
+            {totalItems.toLocaleString()}
+          </span>{" "}
           {label}
         </span>
       </div>

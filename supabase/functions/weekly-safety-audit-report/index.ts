@@ -14,6 +14,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { sendGmailEmail } from '../_shared/gmail.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -83,85 +84,6 @@ async function getEmailRecipients(
   } catch (err) {
     console.error('[Recipients] Error:', err);
     return fallback;
-  }
-}
-
-// -----------------------------------------------------------------------------
-// Gmail SMTP (same pattern as admin-compliance-cron)
-// -----------------------------------------------------------------------------
-function base64Encode(str: string): string {
-  return btoa(unescape(encodeURIComponent(str)));
-}
-
-async function sendGmailEmail(
-  recipients: string[],
-  subject: string,
-  textBody: string,
-  htmlBody: string
-): Promise<{ success: boolean; error?: string }> {
-  if (!GMAIL_APP_PASSWORD) {
-    return { success: false, error: 'GMAIL_APP_PASSWORD not configured' };
-  }
-  if (recipients.length === 0) {
-    return { success: false, error: 'No recipients' };
-  }
-  try {
-    const boundary = `boundary_${Date.now()}`;
-    const rawEmail = [
-      `From: ATTS Safety Compliance <${GMAIL_USER}>`,
-      `To: ${recipients.join(', ')}`,
-      `Subject: ${subject}`,
-      `MIME-Version: 1.0`,
-      `Content-Type: multipart/alternative; boundary="${boundary}"`,
-      '',
-      `--${boundary}`,
-      `Content-Type: text/plain; charset="UTF-8"`,
-      '',
-      textBody,
-      '',
-      `--${boundary}`,
-      `Content-Type: text/html; charset="UTF-8"`,
-      '',
-      htmlBody,
-      '',
-      `--${boundary}--`,
-    ].join('\r\n');
-
-    const conn = await Deno.connectTls({ hostname: 'smtp.gmail.com', port: 465 });
-    const encoder = new TextEncoder();
-    const decoder = new TextDecoder();
-    async function sendCmd(cmd: string): Promise<string> {
-      await conn.write(encoder.encode(cmd + '\r\n'));
-      const buf = new Uint8Array(1024);
-      const n = await conn.read(buf);
-      return decoder.decode(buf.subarray(0, n || 0));
-    }
-    async function readResp(): Promise<string> {
-      const buf = new Uint8Array(1024);
-      const n = await conn.read(buf);
-      return decoder.decode(buf.subarray(0, n || 0));
-    }
-
-    await readResp();
-    await sendCmd('EHLO localhost');
-    await sendCmd('AUTH LOGIN');
-    await sendCmd(base64Encode(GMAIL_USER));
-    const passResp = await sendCmd(base64Encode(GMAIL_APP_PASSWORD.replace(/\s/g, '')));
-    if (!passResp.includes('235')) {
-      conn.close();
-      return { success: false, error: 'Authentication failed' };
-    }
-    await sendCmd(`MAIL FROM:<${GMAIL_USER}>`);
-    for (const r of recipients) await sendCmd(`RCPT TO:<${r}>`);
-    await sendCmd('DATA');
-    await conn.write(encoder.encode(rawEmail + '\r\n.\r\n'));
-    await readResp();
-    await sendCmd('QUIT');
-    conn.close();
-    return { success: true };
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : 'Unknown error';
-    return { success: false, error: msg };
   }
 }
 
@@ -918,7 +840,11 @@ serve(async (req) => {
     if (!dryRun) {
       const recs = await getEmailRecipients(supabase, 'weekly_safety_audit', FALLBACK_RECIPIENTS);
       recipients.push(...recs);
-      const emailResult = await sendGmailEmail(recipients, subject, textBody, htmlBody);
+      const emailResult = await sendGmailEmail(recipients, subject, textBody, htmlBody, {
+        gmailUser: GMAIL_USER,
+        gmailAppPassword: GMAIL_APP_PASSWORD,
+        fromLabel: 'ATTS Safety Compliance',
+      });
       emailSent = emailResult.success;
       emailError = emailResult.error ?? null;
       await supabase.from('email_send_log').insert({

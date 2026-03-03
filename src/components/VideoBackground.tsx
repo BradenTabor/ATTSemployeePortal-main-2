@@ -22,64 +22,77 @@ export const VideoBackground: React.FC<VideoBackgroundProps> = ({
 }) => {
   const [loaded, setLoaded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  
+  const cleanupRef = useRef<(() => void) | null>(null);
+
   // Get device capabilities (cached)
   const caps = useMemo(() => getDeviceCapabilities(), []);
   
   // Determine if we should show video or fallback to static gradient
-  // Skip video on: slow connections, save-data mode, reduced motion preference, or low-end devices
+  // Skip video only for: save-data / 2g, or reduced motion. Allow video on most devices including mobile.
   const shouldShowVideo = useMemo(() => {
     if (caps.isSlowConnection) {
-      logger.debug("[VideoBackground] Skipping video: slow connection detected");
+      logger.debug("[VideoBackground] Skipping video: slow connection (save-data or 2g)");
       return false;
     }
     if (caps.prefersReducedMotion) {
       logger.debug("[VideoBackground] Skipping video: user prefers reduced motion");
       return false;
     }
-    if (caps.isLowEnd && caps.isMobile) {
-      logger.debug("[VideoBackground] Skipping video: low-end mobile device");
-      return false;
-    }
     return true;
-  }, [caps.isSlowConnection, caps.prefersReducedMotion, caps.isLowEnd, caps.isMobile]);
+  }, [caps.isSlowConnection, caps.prefersReducedMotion]);
 
-  // Video playback and visibility handling
+  // Video playback and visibility handling. Defer so ref is set after commit (avoids ref being null on first run).
   useEffect(() => {
     if (!shouldShowVideo) return;
-    
-    const video = videoRef.current;
-    if (!video) return;
 
-    const handleCanPlay = async () => {
-      try {
-        await video.play();
-        setLoaded(true);
-      } catch (err) {
-        logger.warn("Autoplay may be blocked:", err);
-        setLoaded(true);
-      }
-    };
-
-    video.addEventListener("canplaythrough", handleCanPlay);
-    
-    // Pause/resume video based on document visibility (battery optimization)
-    const unsubscribeVisibility = onVisibilityChange((isVisible) => {
+    const id = setTimeout(() => {
+      const video = videoRef.current;
       if (!video) return;
-      
-      if (isVisible) {
-        video.play().catch(() => {
-          // Ignore play errors (e.g., autoplay policy)
-        });
+
+      const handleCanPlay = async () => {
+        try {
+          await video.play();
+          setLoaded(true);
+        } catch (err) {
+          logger.warn("Autoplay may be blocked:", err);
+          setLoaded(true);
+        }
+      };
+
+      // If video is already ready (e.g. cached), play immediately so we don't miss canplaythrough
+      if (video.readyState >= 3) {
+        handleCanPlay();
       } else {
-        video.pause();
-        logger.debug("[VideoBackground] Video paused: tab hidden");
+        video.addEventListener("canplaythrough", handleCanPlay);
       }
-    });
+
+      // Fallback: show video after delay even if canplaythrough never fires (slow network / quirks)
+      const fallbackId = setTimeout(() => setLoaded(true), 2000);
+
+      // Pause/resume video based on document visibility (battery optimization)
+      const unsubscribeVisibility = onVisibilityChange((isVisible) => {
+        if (!video) return;
+        if (isVisible) {
+          video.play().catch(() => {});
+        } else {
+          video.pause();
+          logger.debug("[VideoBackground] Video paused: tab hidden");
+        }
+      });
+
+      const cleanup = () => {
+        clearTimeout(fallbackId);
+        video.removeEventListener("canplaythrough", handleCanPlay);
+        unsubscribeVisibility();
+      };
+
+      cleanupRef.current = cleanup;
+    }, 0);
 
     return () => {
-      video.removeEventListener("canplaythrough", handleCanPlay);
-      unsubscribeVisibility();
+      clearTimeout(id);
+      cleanupRef.current?.();
+      cleanupRef.current = null;
     };
   }, [shouldShowVideo]);
 
@@ -104,19 +117,36 @@ export const VideoBackground: React.FC<VideoBackgroundProps> = ({
             loaded ? "opacity-100" : "opacity-0"
           } z-0`}
           onLoadedData={() => setLoaded(true)}
-          onError={(e) => logger.error("Video load error:", e)}
+          onError={(e) => {
+            const target = e.currentTarget;
+            const err = target?.error;
+            const msg = err?.message ?? "unknown";
+            logger.error("Video load error:", msg);
+            if (target?.networkState === 3 /* NETWORK_NO_SOURCE */) {
+              logger.warn("[VideoBackground] If the video returns 401, ensure the Cloudinary asset is public or use a signed URL.");
+            }
+          }}
         />
       )}
 
-      {/* Gradient overlay - always visible, acts as fallback on slow connections */}
+      {/* Gradient overlay - lighter when video is shown so the video is visible */}
       <div 
-        className="absolute inset-0 z-10"
+        className="absolute inset-0 z-10 pointer-events-none"
         style={{
           background: shouldShowVideo
-            ? 'linear-gradient(to bottom right, rgba(20, 83, 45, 0.6), rgba(22, 101, 52, 0.5), rgba(21, 128, 61, 0.4))'
+            ? 'linear-gradient(135deg, rgba(196, 182, 130, 0.35) 38%, rgba(167, 154, 108, 0.25) 54%, rgba(21, 128, 61, 0.2) 75%)'
             : 'radial-gradient(ellipse at 30% 20%, rgba(22, 101, 52, 0.9) 0%, rgba(6, 78, 59, 0.95) 40%, rgba(2, 44, 34, 1) 100%)',
         }}
       />
+      {/* Center vignette - obscures watermarks in the middle of the video */}
+      {shouldShowVideo && (
+        <div
+          className="absolute inset-0 z-10 pointer-events-none"
+          style={{
+            background: 'radial-gradient(ellipse 80% 70% at 50% 50%, rgba(2, 44, 34, 0.92) 0%, rgba(2, 44, 34, 0.4) 45%, transparent 70%)',
+          }}
+        />
+      )}
 
       <div className="relative z-20 flex flex-col items-center justify-center min-h-screen text-white text-center px-4">
         {children}

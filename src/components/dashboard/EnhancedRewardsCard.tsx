@@ -158,8 +158,8 @@ const LEVELS: Level[] = [
 const themeConfig = {
   emerald: {
     border: 'border-emerald-400/20',
-    bgGradient: 'bg-gradient-to-br from-[#041a12] via-[#021810] to-[#010d08]',
-    glassOverlay: 'bg-gradient-to-br from-emerald-500/5 via-transparent to-emerald-400/3',
+    bgGradientCSS: 'linear-gradient(135deg, rgba(5, 5, 5, 0.3) 0%, rgba(2, 24, 16, 0.4) 50%, rgba(1, 13, 8, 1) 100%)',
+    glassOverlay: 'bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent',
     accentGlow: 'rgba(16, 185, 129, 0.15)',
     shimmer: 'from-transparent via-emerald-300/20 to-transparent',
     orbColor: 'from-emerald-400/20 via-emerald-500/10 to-transparent',
@@ -167,7 +167,7 @@ const themeConfig = {
   },
   blue: {
     border: 'border-blue-400/20',
-    bgGradient: 'bg-gradient-to-br from-[#0a1628] via-[#061220] to-[#030810]',
+    bgGradientCSS: 'linear-gradient(to bottom right, #0a1628, #061220, #030810)',
     glassOverlay: 'bg-gradient-to-br from-blue-500/5 via-transparent to-blue-400/3',
     accentGlow: 'rgba(59, 130, 246, 0.15)',
     shimmer: 'from-transparent via-blue-300/20 to-transparent',
@@ -880,7 +880,7 @@ function EnhancedRewardsCardComponent({
   // Loading state
   if (rewards.loading) {
     return (
-      <div className={`rounded-xl sm:rounded-2xl border ${themeStyles.border} ${themeStyles.bgGradient} p-3 sm:p-4 animate-pulse`}>
+      <div className={`rounded-xl sm:rounded-2xl border ${themeStyles.border} p-3 sm:p-4 animate-pulse`} style={{ background: themeStyles.bgGradientCSS }}>
         <div className="flex items-start gap-2.5 sm:gap-4">
           <div className="w-14 h-14 sm:w-[72px] sm:h-[72px] md:w-20 md:h-20 rounded-xl sm:rounded-2xl bg-white/5" />
           <div className="flex-1 space-y-2 sm:space-y-3">
@@ -900,9 +900,9 @@ function EnhancedRewardsCardComponent({
       transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
       className={`
         relative overflow-hidden rounded-2xl border ${themeStyles.border}
-        ${themeStyles.bgGradient}
       `}
       style={{ 
+        background: themeStyles.bgGradientCSS,
         boxShadow: `0 8px 40px ${themeStyles.accentGlow}, 0 0 0 1px rgba(255,255,255,0.03) inset`,
       }}
     >
@@ -1020,6 +1020,23 @@ function EnhancedRewardsCardComponent({
           currentLevel={currentLevel}
           enableAnimations={enableAnimations}
         />
+
+        {/* Safety Rewards link */}
+        <Link
+          to="/safety-rewards"
+          className={`
+            mt-2.5 sm:mt-3 flex items-center justify-between gap-2
+            px-2.5 py-2 sm:px-3 sm:py-2.5 rounded-lg
+            ${currentLevel.bgColor} border ${currentLevel.borderColor}
+            backdrop-blur-sm text-white/90 hover:text-white
+            transition-all duration-200 hover:border-opacity-50
+          `}
+        >
+          <span className="text-[11px] sm:text-xs font-medium">
+            Monthly raffle & prizes
+          </span>
+          <ChevronRight className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${currentLevel.color}`} />
+        </Link>
       </div>
       
       {/* Bottom border shine */}

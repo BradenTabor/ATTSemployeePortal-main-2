@@ -1324,8 +1324,23 @@ export default function DailyJSAForm() {
       case 4:
         return (
           <StepSiteHazards
-            form={form}
+            form={{
+              ...form,
+              electricalHazardData: form.electricalHazardData ?? null,
+            }}
             onBooleanGroupChange={handleBooleanGroupChange}
+            onElectricalHazardChange={(data) =>
+              setForm((prev) => ({ ...prev, electricalHazardData: data }))
+            }
+            crewMembers={[
+              ...(user?.id && user?.email
+                ? [{ id: user.id, name: user.email.split('@')[0] || 'You' }]
+                : []),
+              ...(form.sharedWithUsers?.map((u) => ({
+                id: u.id,
+                name: u.full_name || u.email || u.id,
+              })) ?? []),
+            ]}
           />
         );
       case 5:
@@ -1451,7 +1466,7 @@ export default function DailyJSAForm() {
               <button
                 type="button"
                 onClick={handleBack}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg bg-white/5 border border-white/10 text-white/80 hover:text-white hover:bg-white/10"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg bg-white/5 border border-white/10 text-white/80 hover:text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
               >
                 <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span className="text-xs sm:text-sm font-medium">Back</span>
@@ -1461,7 +1476,7 @@ export default function DailyJSAForm() {
                 <button
                   type="button"
                   onClick={handleSwitchToDigital}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25 text-xs font-semibold"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
                   aria-label="Switch to full digital JSA form"
                 >
                   <FileText className="w-3.5 h-3.5" aria-hidden />

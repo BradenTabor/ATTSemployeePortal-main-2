@@ -18,6 +18,7 @@
 
 import { format } from 'date-fns';
 import Papa from 'papaparse';
+import { logger } from './logger';
 
 // Heavy libraries loaded on-demand via dynamic import
 // xlsx (~200KB), jspdf (~150KB), jspdf-autotable (~50KB)
@@ -461,12 +462,14 @@ export function getExportColumns<T>(
   return allColumns;
 }
 
+let _globalExportInProgress = false;
+
 /**
  * Main data exporter class
  */
 export class DataExporter<T = Record<string, unknown>> {
-  /** Guard: prevents duplicate export in the same tab when user double-clicks or retries. */
-  private exportInProgress = false;
+  private get exportInProgress() { return _globalExportInProgress; }
+  private set exportInProgress(v: boolean) { _globalExportInProgress = v; }
 
   /**
    * Transform data using column definitions
@@ -508,7 +511,7 @@ export class DataExporter<T = Record<string, unknown>> {
    */
   exportCSV(options: ExportOptions<T>): void {
     if (this.exportInProgress) {
-      console.warn('[DataExporter] Export already in progress; skipping duplicate request.');
+      logger.warn('[DataExporter] Export already in progress; skipping duplicate request.');
       return;
     }
     this.exportInProgress = true;
@@ -548,7 +551,7 @@ export class DataExporter<T = Record<string, unknown>> {
    */
   async exportExcel(options: ExportOptions<T>): Promise<void> {
     if (this.exportInProgress) {
-      console.warn('[DataExporter] Export already in progress; skipping duplicate request.');
+      logger.warn('[DataExporter] Export already in progress; skipping duplicate request.');
       return;
     }
     this.exportInProgress = true;
@@ -600,7 +603,7 @@ export class DataExporter<T = Record<string, unknown>> {
    */
   async exportPDF(options: PDFExportOptions<T>): Promise<void> {
     if (this.exportInProgress) {
-      console.warn('[DataExporter] Export already in progress; skipping duplicate request.');
+      logger.warn('[DataExporter] Export already in progress; skipping duplicate request.');
       return;
     }
     this.exportInProgress = true;

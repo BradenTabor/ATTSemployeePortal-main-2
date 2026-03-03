@@ -420,6 +420,18 @@ describe.skipIf(SKIP_RLS_TESTS)('RLS Policy Verification', () => {
         
         expect(error).toBeNull();
       });
+
+      it('should reject update that changes user_id (audit trail protection)', async () => {
+        await signInAsTestUser(testClient, 'mechanic');
+        const fakeUserId = '00000000-0000-0000-0000-000000000001';
+
+        const { error } = await testClient
+          .from('daily_equipment_inspections')
+          .update({ user_id: fakeUserId })
+          .eq('id', inspectionId);
+
+        expect(error).not.toBeNull();
+      });
     });
   });
   
@@ -476,6 +488,69 @@ describe.skipIf(SKIP_RLS_TESTS)('RLS Policy Verification', () => {
     });
   });
   
+  describe('safety_incidents RLS (OSHA 5-year retention — no DELETE)', () => {
+    // These tests require service role to insert a test incident; then we assert DELETE is rejected
+    // for admin, safety_officer, and employee when using the anon client as that role.
+    let testIncidentId: string | null = null;
+
+    beforeAll(async () => {
+      if (!serviceClient) return;
+      const { data: adminUser } = await serviceClient
+        .from('app_users')
+        .select('user_id')
+        .eq('email', TEST_USERS.admin.email)
+        .single();
+      if (!adminUser?.user_id) return;
+      const { data } = await serviceClient
+        .from('safety_incidents')
+        .insert({
+          incident_date: new Date().toISOString().slice(0, 10),
+          severity: 'first_aid',
+          description: 'TEST-RLS-DELETE incident',
+          reported_by: adminUser.user_id,
+        })
+        .select('id')
+        .single();
+      if (data?.id) testIncidentId = data.id;
+    });
+
+    afterAll(async () => {
+      if (serviceClient && testIncidentId) {
+        await serviceClient.from('safety_incidents').delete().eq('id', testIncidentId);
+      }
+    });
+
+    it('should reject DELETE on safety_incidents for admin (OSHA retention)', async () => {
+      await signInAsTestUser(testClient, 'admin');
+      if (!testIncidentId) return;
+      const { error } = await testClient
+        .from('safety_incidents')
+        .delete()
+        .eq('id', testIncidentId);
+      expect(error).not.toBeNull();
+    });
+
+    it('should reject DELETE on safety_incidents for general_foreman', async () => {
+      await signInAsTestUser(testClient, 'general_foreman');
+      if (!testIncidentId) return;
+      const { error } = await testClient
+        .from('safety_incidents')
+        .delete()
+        .eq('id', testIncidentId);
+      expect(error).not.toBeNull();
+    });
+
+    it('should reject DELETE on safety_incidents for employee', async () => {
+      await signInAsTestUser(testClient, 'employee');
+      if (!testIncidentId) return;
+      const { error } = await testClient
+        .from('safety_incidents')
+        .delete()
+        .eq('id', testIncidentId);
+      expect(error).not.toBeNull();
+    });
+  });
+
   describe('Storage Bucket RLS', () => {
     it('should allow authenticated user to upload to dvir-photos', async () => {
       const user = await signInAsTestUser(testClient, 'employee');

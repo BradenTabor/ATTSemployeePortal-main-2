@@ -9,17 +9,17 @@ export function TestProgress({ current, total, answeredCount }: TestProgressProp
 
   return (
     <div className="flex-1 min-w-0 space-y-1.5">
-      <div className="flex items-center justify-between gap-4 text-xs font-medium text-emerald-100/90">
+      <div className="flex items-center justify-between gap-4 text-xs font-medium text-white/60">
         <span className="whitespace-nowrap shrink-0">
           Question {current} of {total}
         </span>
-        <span className="whitespace-nowrap shrink-0 text-emerald-300/80">
+        <span className="whitespace-nowrap shrink-0 text-emerald-400/80">
           {pct}% answered
         </span>
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-emerald-950/40 border border-emerald-500/20">
+      <div className="h-1.5 overflow-hidden rounded-full bg-gray-800">
         <div
-          className="h-full rounded-full bg-emerald-500/80 shadow-md transition-all duration-300"
+          className="h-full rounded-full bg-emerald-500 transition-all duration-300 ease-out"
           style={{ width: `${pct}%` }}
         />
       </div>

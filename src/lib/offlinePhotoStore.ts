@@ -35,7 +35,7 @@ export interface OfflinePhoto {
   /** Links to the offline queue submission ID. */
   queueId: string;
   /** Form type this photo belongs to. */
-  formType: 'dvir' | 'equipment' | 'jsa';
+  formType: 'dvir' | 'equipment' | 'jsa' | 'near_miss';
   /** Field name identifying the photo slot (e.g. 'oil_dipstick', 'hydraulic', 'tire'). */
   fieldName: string;
   /** The actual compressed photo blob. */

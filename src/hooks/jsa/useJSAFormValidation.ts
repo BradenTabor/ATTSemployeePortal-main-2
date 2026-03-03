@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useFormValidation, type ValidationRule } from '../useFormValidation';
 import { validators } from '../../lib/formValidation';
-import type { DailyJsaFormState } from '../../pages/forms/DailyJSAForm';
+import type { DailyJsaFormState } from '../../pages/forms/dailyJSAFormState';
 
 function jobDateValidator(value: unknown): string | null {
   return validators.required(value) || (typeof value === 'string' && value?.trim() ? null : "Job date is required");
@@ -105,7 +105,7 @@ export function useJSAFormValidation(form: DailyJsaFormState) {
     showErrorsAfterSubmitAttempt: false,
   });
 
-  // Additional validation: spans (digital only)
+  // Additional validation: spans (digital only), electrical hazards
   const additionalErrors = useMemo(() => {
     const errs: Record<string, string> = {};
     if (form.submissionType === 'paper') return errs;
@@ -113,8 +113,22 @@ export function useJSAFormValidation(form: DailyJsaFormState) {
     if (!hasValidSpan && form.spans.length > 0) {
       errs.spans = "At least one span must have location or hazards filled";
     }
+    const electricalKeys = ['lines_energized', 'secondary_voltage', 'open_wire_secondary'];
+    const hasElectricalHazard = electricalKeys.some(k => form.hazardsPresent?.[k]);
+    const elec = (form as { electricalHazardData?: { voltage_kv: number; utility_company_contacted: boolean; crew_qualifications_verified: boolean; crew_qualification_issues?: string[]; second_worker_required?: boolean; second_worker_name?: string } | null }).electricalHazardData;
+    if (hasElectricalHazard) {
+      if (!elec || elec.voltage_kv <= 0 || elec.voltage_kv === -1) {
+        errs.electricalHazardData = "Select voltage when electrical hazards are present";
+      } else if (!elec.utility_company_contacted) {
+        errs.electricalHazardData = "Utility company must be contacted (or acknowledge reason)";
+      } else if (!elec.crew_qualifications_verified || (elec.crew_qualification_issues?.length ?? 0) > 0) {
+        errs.electricalHazardData = "Crew qualifications must be verified (all qualified)";
+      } else if (elec.voltage_kv > 0.75 && !elec.second_worker_name?.trim()) {
+        errs.electricalHazardData = "Second qualified worker name required for voltage >750V";
+      }
+    }
     return errs;
-  }, [form.submissionType, form.spans]);
+  }, [form]);
 
   const allErrors = useMemo(() => {
     const combined: Record<string, string> = {};

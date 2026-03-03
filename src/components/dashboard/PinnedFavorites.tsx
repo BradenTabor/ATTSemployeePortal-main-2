@@ -158,6 +158,7 @@ const allNavItems: NavItem[] = [
   { id: 'history', label: 'Forms History', path: '/forms-history', icon: <img src="/assets/forms-history.png" alt="" className="w-full h-full object-contain" />, description: 'Past submissions', iconAsImage: true },
   { id: 'announcements', label: 'Announcements', path: '/announcements', icon: <img src="/assets/announcements.png" alt="" className="w-full h-full object-contain" />, description: 'Company updates', iconAsImage: true },
   { id: 'resources', label: 'Resources', path: '/resources', icon: <img src="/assets/resources.png" alt="" className="w-full h-full object-contain" />, description: 'Training materials', iconAsImage: true },
+  { id: 'emergency', label: 'Emergency Action Plan', path: '/emergency-action-plan', icon: <img src="/assets/resources.png" alt="" className="w-full h-full object-contain" />, description: '911, contacts, evacuation, OSHA', iconAsImage: true },
   { id: 'contact', label: 'Contact', path: '/contact', icon: <img src="/assets/contact.png" alt="" className="w-full h-full object-contain" />, description: 'Reach management', iconAsImage: true },
   { id: 'profile', label: 'My Profile', path: '/profile', icon: <img src="/assets/my-profile.png" alt="" className="w-full h-full object-contain" />, description: 'Account settings', iconAsImage: true },
   { id: 'settings', label: 'Settings', path: '/settings', icon: <img src="/assets/settings.png" alt="" className="w-full h-full object-contain" />, description: 'Saved data & preferences', iconAsImage: true },

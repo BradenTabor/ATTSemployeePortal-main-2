@@ -173,7 +173,8 @@ const formatPageName = (path: string | null): string => {
     "/contact": "Contact",
     "/profile": "Profile",
     "/admin": "Admin Panel",
-    "/admin/users": "User Management",
+    "/admin/users": "Users & Activity",
+    "/admin/requests-oversight": "Requests & Oversight",
     "/admin/rto": "RTO Requests",
     "/admin/jsa": "JSA Oversight",
     "/mechanic-dashboard": "Mechanic Dashboard",
@@ -553,7 +554,12 @@ const UserActivityCard = memo(
 UserActivityCard.displayName = "UserActivityCard";
 
 // Main Component
-function AdminUserActivity() {
+interface AdminUserActivityProps {
+  /** When true, render only inner content (no layout). Used by AdminUsersHub. */
+  embedded?: boolean;
+}
+
+function AdminUserActivity({ embedded = false }: AdminUserActivityProps) {
   const { role: currentUserRole } = useAuth();
   const [sessions, setSessions] = useState<UserActivitySession[]>([]);
   const [loading, setLoading] = useState(true);
@@ -623,6 +629,16 @@ function AdminUserActivity() {
         return;
       }
 
+      // Fetch last activity per user (form submissions, incidents, telemetry) for offline "last seen"
+      const { data: lastActivityRows, error: lastActivityError } = await supabase.rpc("get_user_last_activity");
+      if (lastActivityError) {
+        logger.warn("Failed to fetch user last activity (offline last-seen may show account creation date):", lastActivityError);
+      }
+      const lastActivityMap = new Map<string, string>();
+      (lastActivityRows || []).forEach((row: { user_id: string; last_activity_at: string }) => {
+        lastActivityMap.set(row.user_id, row.last_activity_at);
+      });
+
       // Fetch active/idle sessions from user_activity_feed
       // Optimized: select only needed fields (80% data reduction) + limit to 50 most recent
       const { data: activeSessions, error: sessionsError } = await supabase
@@ -659,13 +675,14 @@ function AdminUserActivity() {
             avatar_url: getAvatarPublicUrl(activeSession.avatar_url),
           };
         } else {
-          // User is offline (no active session)
+          // User is offline: use last activity from forms/incidents/telemetry, else account creation
+          const lastActivityAt = lastActivityMap.get(user.user_id) ?? user.created_at;
           return {
             id: `offline-${user.user_id}`,
             user_id: user.user_id,
             session_id: "",
             status: "offline" as const,
-            last_seen_at: user.created_at, // Use created_at as fallback
+            last_seen_at: lastActivityAt,
             started_at: user.created_at,
             ended_at: null,
             current_page: null,
@@ -786,6 +803,7 @@ function AdminUserActivity() {
 
   // Access denied for non-admins
   if (currentUserRole !== "admin") {
+    if (embedded) return null;
     return (
       <div className="min-h-screen bg-gradient-to-br from-neutral-900 via-black to-neutral-900 flex items-center justify-center">
         <div className="text-center">
@@ -797,9 +815,8 @@ function AdminUserActivity() {
     );
   }
 
-  return (
-    <DashboardLayout title="User Activity">
-      <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 pb-4 pt-3 sm:pt-6">
+  const inner = (
+    <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 pb-4 pt-3 sm:pt-6">
         {/* Compact Header for Mobile / Premium Glass Header for Desktop */}
         <div className="mb-3 sm:mb-5">
           <motion.div
@@ -1149,9 +1166,11 @@ function AdminUserActivity() {
             </div>
           )}
         </motion.div>
-      </div>
-    </DashboardLayout>
+    </div>
   );
+
+  if (embedded) return inner;
+  return <DashboardLayout title="User Activity">{inner}</DashboardLayout>;
 }
 
 export default memo(AdminUserActivity);

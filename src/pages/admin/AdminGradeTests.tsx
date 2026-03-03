@@ -104,13 +104,16 @@ function ReviewCard({ review }: { review: PendingReview }) {
     }
   };
 
+  const cardBase =
+    "relative overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-gray-900 via-gray-900/95 to-gray-950 shadow-lg shadow-black/25 before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent before:pointer-events-none";
+
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 overflow-hidden">
+    <div className={cardBase}>
       {/* Header - always visible */}
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition"
+        className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/[0.04] transition"
       >
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
@@ -154,7 +157,7 @@ function ReviewCard({ review }: { review: PendingReview }) {
             {pendingAnswers.map((answer, idx) => (
               <div
                 key={answer.question_id}
-                className="rounded-lg border border-white/10 bg-white/5 p-4"
+                className="rounded-lg border border-white/10 bg-gray-800/80 p-4"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
@@ -170,7 +173,7 @@ function ReviewCard({ review }: { review: PendingReview }) {
                     <p className="text-sm text-white font-medium mb-1">
                       Employee's answer:
                     </p>
-                    <p className="text-sm text-gray-300 bg-white/5 rounded px-3 py-2 whitespace-pre-wrap">
+                    <p className="text-sm text-gray-300 bg-gray-800 rounded px-3 py-2 whitespace-pre-wrap">
                       {answer.user_answer || <em className="text-gray-500">No answer provided</em>}
                     </p>
                   </div>
@@ -185,7 +188,7 @@ function ReviewCard({ review }: { review: PendingReview }) {
                     className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
                       grades[answer.question_id]?.is_correct === true
                         ? "bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/50"
-                        : "bg-white/5 text-gray-400 hover:bg-emerald-500/10 hover:text-emerald-400"
+                        : "bg-gray-800 text-gray-400 hover:bg-emerald-500/10 hover:text-emerald-400"
                     }`}
                   >
                     <CheckCircle className="h-4 w-4" />
@@ -197,7 +200,7 @@ function ReviewCard({ review }: { review: PendingReview }) {
                     className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
                       grades[answer.question_id]?.is_correct === false
                         ? "bg-red-500/20 text-red-400 ring-1 ring-red-500/50"
-                        : "bg-white/5 text-gray-400 hover:bg-red-500/10 hover:text-red-400"
+                        : "bg-gray-800 text-gray-400 hover:bg-red-500/10 hover:text-red-400"
                     }`}
                   >
                     <XCircle className="h-4 w-4" />
@@ -212,7 +215,7 @@ function ReviewCard({ review }: { review: PendingReview }) {
                     placeholder="Optional notes..."
                     value={grades[answer.question_id]?.admin_notes ?? ""}
                     onChange={(e) => handleNotes(answer.question_id, e.target.value)}
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white placeholder-gray-500 focus:border-amber-500/50 focus:outline-none"
+                    className="w-full rounded-lg border border-white/10 bg-gray-800 px-3 py-1.5 text-sm text-white placeholder-gray-500 focus:border-amber-500/50 focus:outline-none"
                   />
                 </div>
               </div>
@@ -242,7 +245,7 @@ export default function AdminGradeTests() {
   return (
     <DashboardLayout title="Grade Certification Tests">
       <div className="mx-auto max-w-3xl space-y-6">
-        <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+        <div className="relative overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-gray-900 via-gray-900/95 to-gray-950 p-4 shadow-lg shadow-black/25 before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent before:pointer-events-none">
           <h2 className="text-lg font-semibold text-white mb-1">
             Pending Reviews
           </h2>
@@ -252,19 +255,19 @@ export default function AdminGradeTests() {
         </div>
 
         {isLoading && (
-          <div className="rounded-xl border border-white/10 bg-white/5 p-6 text-center">
+          <div className="relative overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-gray-900 to-gray-950 p-6 text-center shadow-md shadow-black/20 before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent before:pointer-events-none">
             <p className="text-gray-400">Loading pending reviews...</p>
           </div>
         )}
 
         {isError && (
-          <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-center">
+          <div className="relative overflow-hidden rounded-xl border border-red-500/30 bg-gradient-to-br from-red-950/90 to-red-950/70 p-6 text-center shadow-lg shadow-black/25 before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-red-400/10 before:to-transparent before:pointer-events-none">
             <p className="text-red-400">Failed to load pending reviews.</p>
           </div>
         )}
 
         {!isLoading && !isError && pendingReviews?.length === 0 && (
-          <div className="rounded-xl border border-white/10 bg-white/5 p-6 text-center">
+          <div className="relative overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-gray-900 to-gray-950 p-6 text-center shadow-md shadow-black/20 before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent before:pointer-events-none">
             <CheckCircle className="mx-auto h-10 w-10 text-emerald-400 mb-2" />
             <p className="text-white font-medium">All caught up!</p>
             <p className="text-sm text-gray-400">

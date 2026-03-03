@@ -781,7 +781,12 @@ const DeleteUserModal = ({
   return typeof document !== 'undefined' ? createPortal(content, document.body) : null;
 };
 
-function AdminUsers() {
+interface AdminUsersProps {
+  /** When true, render only inner content (no layout). Used by AdminUsersHub. */
+  embedded?: boolean;
+}
+
+function AdminUsers({ embedded = false }: AdminUsersProps) {
   const { role: currentUserRole, user: authUser } = useAuth();
   const [users, setUsers] = useState<AppUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -917,6 +922,13 @@ function AdminUsers() {
           logger.error('Failed to update user role:', error);
           return { success: false, error: error.message };
         }
+
+        logger.info('Admin role change', {
+          adminEmail: authUser?.email,
+          targetUserId: userId,
+          targetEmail,
+          newRole,
+        });
 
         return { success: true };
       } catch (err) {
@@ -1068,7 +1080,7 @@ function AdminUsers() {
         setTotalUsers(count);
       }
     } catch (err: unknown) {
-      console.error("Unexpected error:", err);
+      logger.error("[AdminUsers] Unexpected error:", err);
       toast.error("Unexpected error loading users");
       setUsers([]);
     } finally {
@@ -1260,6 +1272,7 @@ function AdminUsers() {
   }, [fetchUsers]);
 
   if (currentUserRole !== "admin") {
+    if (embedded) return null;
     return (
       <div className="min-h-screen bg-gradient-to-br from-neutral-900 via-black to-neutral-900 flex items-center justify-center">
         <div className="text-center">
@@ -1271,8 +1284,8 @@ function AdminUsers() {
     );
   }
 
-  return (
-    <DashboardLayout title="User Management">
+  const inner = (
+    <>
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pb-4 pt-4 sm:pt-6">
         {/* Premium Glass Header - Gold Theme */}
         <div className="mb-5 md:mb-6">
@@ -1773,8 +1786,11 @@ function AdminUsers() {
           pending={deletePending}
         />
       )}
-    </DashboardLayout>
+    </>
   );
+
+  if (embedded) return inner;
+  return <DashboardLayout title="User Management">{inner}</DashboardLayout>;
 }
 
 export default memo(AdminUsers);

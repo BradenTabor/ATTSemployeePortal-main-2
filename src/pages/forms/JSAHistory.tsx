@@ -14,9 +14,10 @@ import {
   JsaDetailModal,
 } from "../../components/history";
 import { BlurFade } from "../../components/ui/blur-fade";
+import { glass } from "../../lib/glass";
 import {
   AlertTriangle,
-  CalendarClock,
+  ClipboardList,
   Users,
   HardHat,
   UserPlus,
@@ -218,13 +219,12 @@ export default function JSAHistory() {
         <HistoryPageShell
           subtitle="Safety compliance"
           title="Job Safety Analysis History"
-          description="Review every JSA you have submitted, track hazards identified, and verify observer signatures for compliance audits."
-          badgeLabel="Auto-synced"
+          description="Review your JSA submissions, track identified hazards, and verify observer signatures."
           searchValue={searchTerm}
           onSearchChange={setSearchTerm}
-          searchPlaceholder="Search work location, circuit, jobs, hazards, or keywords…"
-          filterHint="Search by location, circuit, jobs, hazards, or observer names. Pagination syncs with Supabase."
+          searchPlaceholder="Search by location, circuit, hazards, or keywords…"
           variant="emerald"
+          totalCount={totalJsas}
         />
 
         {loading ? (
@@ -244,12 +244,7 @@ export default function JSAHistory() {
           />
         ) : (
           <>
-            <motion.div
-              layout
-              initial={false}
-              animate={{ opacity: 1 }}
-              className="grid grid-cols-1 lg:grid-cols-2 gap-4"
-            >
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {filteredJsas.map((jsa, index) => {
                 const hazardsCount = getHazardsCount(jsa);
                 const ppeCount = getPpeCount(jsa);
@@ -271,96 +266,111 @@ export default function JSAHistory() {
                     <motion.button
                       type="button"
                       onClick={() => handleJsaClick(jsa)}
-                      whileHover={prefersReducedMotion ? undefined : { scale: 1.01 }}
-                      whileTap={prefersReducedMotion ? undefined : { scale: 0.99 }}
-                      transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+                      whileHover={prefersReducedMotion ? undefined : { scale: 1.005 }}
+                      whileTap={prefersReducedMotion ? undefined : { scale: 0.995 }}
+                      transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
                       className={cn(
-                        "group w-full text-left rounded-2xl border bg-gradient-to-b from-white/[0.08] to-transparent backdrop-blur-xl p-4 sm:p-5 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] outline-none transition-all duration-300",
+                        "group w-full text-left rounded-2xl border p-4 sm:p-5 focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-950 outline-none transition-all duration-200 h-full flex flex-col",
+                        glass.card,
                         isShared
-                          ? "border-amber-500/30 hover:border-amber-400/50 hover:shadow-amber-500/10"
-                          : "border-white/10 hover:border-emerald-400/40 hover:shadow-emerald-500/10"
+                          ? "border-amber-500/20 hover:border-amber-400/40"
+                          : "hover:border-emerald-400/30"
                       )}
                       aria-label={`View JSA: ${jsa.work_location || "N/A"}${jsa.circuit_number ? `, Circuit ${jsa.circuit_number}` : ""}`}
                     >
                       {/* Ownership badges */}
-                      <div className="flex items-center gap-2 mb-3 flex-wrap">
-                        {isShared && (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-500/10 border border-amber-500/30 rounded-md text-xs text-amber-300 font-semibold">
-                            <Users className="w-3 h-3" />
-                            Shared with you
-                          </span>
-                        )}
-                        
-                        {sharedUsersCount > 0 && isOwner && (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded-md text-xs text-emerald-300 font-semibold">
-                            <UserPlus className="w-3 h-3" />
-                            Shared with {sharedUsersCount} user{sharedUsersCount > 1 ? 's' : ''}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex items-start justify-between gap-3 mb-3">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs uppercase tracking-wider text-white/40 mb-1">
-                            Location
-                          </p>
-                          <p className="text-lg font-semibold text-white truncate">
-                            {jsa.work_location || "N/A"}
-                          </p>
-                          {jsa.circuit_number && (
-                            <p className="text-sm text-white/60 mt-1">
-                              Circuit: {jsa.circuit_number}
-                            </p>
+                      {(isShared || (sharedUsersCount > 0 && isOwner)) && (
+                        <div className="flex items-center gap-2 mb-3 flex-wrap">
+                          {isShared && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 rounded-full text-[11px] text-amber-300 font-medium">
+                              <Users className="w-3 h-3" aria-hidden />
+                              Shared with you
+                            </span>
+                          )}
+                          {sharedUsersCount > 0 && isOwner && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-[11px] text-emerald-300 font-medium">
+                              <UserPlus className="w-3 h-3" aria-hidden />
+                              Shared ({sharedUsersCount})
+                            </span>
                           )}
                         </div>
+                      )}
+
+                      {/* Top row: location + status */}
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className={cn(
+                            "p-2 rounded-lg border flex-shrink-0",
+                            isShared
+                              ? "bg-amber-500/10 border-amber-500/20"
+                              : "bg-blue-500/10 border-blue-500/20"
+                          )}>
+                            <ClipboardList className={cn(
+                              "w-4 h-4",
+                              isShared ? "text-amber-300" : "text-blue-300"
+                            )} aria-hidden />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-base sm:text-lg font-semibold text-white truncate">
+                              {jsa.work_location || "N/A"}
+                            </p>
+                            <p className="text-xs text-white/40 font-mono">
+                              {formatDistanceToNow(new Date(jsa.created_at || ""), {
+                                addSuffix: true,
+                              })}
+                              {jsa.circuit_number && (
+                                <span className="text-white/30"> · Circuit {jsa.circuit_number}</span>
+                              )}
+                            </p>
+                          </div>
+                        </div>
                         <span
-                          className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium flex-shrink-0 ${
+                          className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold flex-shrink-0 ${
                             status === "draft"
-                              ? "border-yellow-400/60 bg-yellow-500/10 text-yellow-100"
-                              : "border-emerald-400/60 bg-emerald-500/10 text-emerald-100"
+                              ? "border-yellow-500/40 bg-yellow-500/15 text-yellow-200"
+                              : "border-emerald-500/40 bg-emerald-500/15 text-emerald-200"
                           }`}
                         >
                           {status === "draft" ? "Draft" : "Complete"}
                         </span>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-2 text-sm text-white/70 mb-3">
-                        <span className="inline-flex items-center gap-1">
-                          <CalendarClock className="w-4 h-4 text-emerald-300" />
-                          {formatDistanceToNow(new Date(jsa.created_at || ""), {
-                            addSuffix: true,
-                          })}
-                        </span>
+                      {/* Info chips */}
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-white/60 flex-1">
                         {hazardsCount > 0 && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-red-400/60 bg-red-500/10 px-2 py-0.5 text-[11px] text-red-100">
-                            <AlertTriangle className="w-3 h-3" />
+                          <span className="inline-flex items-center gap-1 rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-red-200">
+                            <AlertTriangle className="w-3 h-3" aria-hidden />
                             {hazardsCount} Hazard{hazardsCount !== 1 ? "s" : ""}
                           </span>
                         )}
                         {ppeCount > 0 && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-blue-400/60 bg-blue-500/10 px-2 py-0.5 text-[11px] text-blue-100">
-                            <HardHat className="w-3 h-3" />
+                          <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/30 bg-blue-500/10 px-2 py-0.5 text-blue-200">
+                            <HardHat className="w-3 h-3" aria-hidden />
                             {ppeCount} PPE
                           </span>
                         )}
                         {observerCount > 0 && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-purple-400/60 bg-purple-500/10 px-2 py-0.5 text-[11px] text-purple-100">
-                            <Users className="w-3 h-3" />
+                          <span className="inline-flex items-center gap-1 rounded-full border border-purple-500/30 bg-purple-500/10 px-2 py-0.5 text-purple-200">
+                            <Users className="w-3 h-3" aria-hidden />
                             {observerCount} Observer{observerCount !== 1 ? "s" : ""}
                           </span>
                         )}
+                        {hazardsCount === 0 && ppeCount === 0 && observerCount === 0 && (
+                          <span className="text-white/40">No hazards flagged</span>
+                        )}
                       </div>
 
+                      {/* Notes preview */}
                       {jsa.notes && (
-                        <p className="text-sm text-white/60 line-clamp-2">
-                          "{jsa.notes}"
+                        <p className="mt-3 pt-3 border-t border-white/[0.06] text-xs text-white/50 line-clamp-2 italic">
+                          {jsa.notes}
                         </p>
                       )}
                     </motion.button>
                   </BlurFade>
                 );
               })}
-            </motion.div>
+            </div>
 
             <HistoryPagination
               currentPage={currentPage}

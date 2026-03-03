@@ -1,11 +1,12 @@
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { motion } from "framer-motion";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { formToast } from "../../lib/formToast";
 import { useRTOSubmission, useRTOUserProfile } from "../../hooks/rto";
+import { useFormValidation, type ValidationRule } from "../../hooks/useFormValidation";
 import { DateField, TimeField } from "../../components/forms/GlassyPickers";
-import { CalendarDays, Clock } from "lucide-react";
+import { AlertCircle, CalendarDays, Clock } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { getRoleDashboard } from "../../lib/navigation";
 import { FormSuccessCelebration } from "../../components/forms/FormSuccessCelebration";
@@ -18,7 +19,7 @@ export default function RequestTimeOff() {
   const { user, fullName: userFullName, role } = useAuth();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    fullName: "",
+    fullName: userFullName || "",
     email: "",
     phoneNumber: "",
     startDate: "",
@@ -30,6 +31,66 @@ export default function RequestTimeOff() {
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [totalDuration, setTotalDuration] = useState("");
+
+  // Validation rules translated from rtoRequestSchema (src/schemas/rto.ts)
+  // Do NOT pass the Zod schema directly — useFormValidation takes ValidationRule[]
+  type FormShape = typeof formData;
+  const validationRules = useMemo<ValidationRule<FormShape>[]>(() => [
+    {
+      field: "fullName",
+      validator: (val: unknown) => {
+        if (!val || !String(val).trim()) return "Full name is required";
+        return null;
+      },
+    },
+    {
+      field: "phoneNumber",
+      validator: (val: unknown) => {
+        if (!val || !String(val).trim()) return "Phone number is required";
+        const digits = String(val).replace(/\D/g, '');
+        if (digits.length < 7) return "Enter a valid phone number";
+        return null;
+      },
+    },
+    {
+      field: "startDate",
+      validator: (val: unknown) => {
+        if (!val || !String(val).trim()) return "Start date is required";
+        return null;
+      },
+    },
+    {
+      field: "endDate",
+      validator: (_val: unknown, form: unknown) => {
+        const f = form as FormShape;
+        if (!f.endDate) return "End date is required";
+        if (!f.startDate) return null;
+        return f.endDate >= f.startDate
+          ? null
+          : "Return date must be on or after start date";
+      },
+      validateOn: "change" as const,
+    },
+    {
+      field: "reason",
+      validator: (val: unknown) => {
+        if (!val || !String(val).trim()) return "Reason is required";
+        return null;
+      },
+    },
+  ], []);
+
+  const {
+    shouldShowError,
+    getFieldError,
+    validateAll,
+    handleFieldChange,
+    markSubmitAttempted,
+  } = useFormValidation(formData, validationRules, {
+    validateOnChange: true,
+    showErrorsAfterSubmitAttempt: false,
+    formType: "rto",
+  });
 
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">(
     "idle"
@@ -78,6 +139,9 @@ export default function RequestTimeOff() {
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === "endDate" || name === "startDate") {
+      handleFieldChange("endDate" as keyof FormShape);
+    }
   };
 
   useEffect(() => {
@@ -88,26 +152,17 @@ export default function RequestTimeOff() {
       return;
     }
 
-    // Parse dates
-    const startDate = new Date(formData.startDate);
-    const endDate = new Date(formData.endDate);
+    // Parse dates using split-and-construct to avoid UTC midnight off-by-one
+    const [sy, sm, sd] = formData.startDate.split("-").map(Number);
+    const [ey, em, ed] = formData.endDate.split("-").map(Number);
 
-    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    if ([sy, sm, sd, ey, em, ed].some((v) => Number.isNaN(v))) {
       setTotalDuration("");
       return;
     }
 
-    // Normalize to midnight so we can safely count whole days
-    const startDay = new Date(
-      startDate.getFullYear(),
-      startDate.getMonth(),
-      startDate.getDate()
-    );
-    const endDay = new Date(
-      endDate.getFullYear(),
-      endDate.getMonth(),
-      endDate.getDate()
-    );
+    const startDay = new Date(sy, sm - 1, sd);
+    const endDay = new Date(ey, em - 1, ed);
 
     const oneDayMs = 24 * 60 * 60 * 1000;
     let diffDays =
@@ -200,6 +255,12 @@ export default function RequestTimeOff() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    markSubmitAttempted();
+    const { isValid } = validateAll();
+    if (!isValid) {
+      formToast.error("Validation Error", "Please fix the highlighted fields before submitting.");
+      return;
+    }
     await submitForm();
   };
   
@@ -230,7 +291,7 @@ export default function RequestTimeOff() {
           Submit a Time-Off Request
         </h2>
 
-        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="space-y-3 sm:space-y-4">
           {/* Name, Email & Phone */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
@@ -240,6 +301,7 @@ export default function RequestTimeOff() {
               <input
                 type="text"
                 name="fullName"
+                autoComplete="name"
                 value={formData.fullName}
                 onChange={handleChange}
                 required
@@ -254,6 +316,7 @@ export default function RequestTimeOff() {
               <input
                 type="email"
                 name="email"
+                autoComplete="email"
                 value={formData.email}
                 onChange={handleChange}
                 required
@@ -269,6 +332,7 @@ export default function RequestTimeOff() {
               <input
                 type="tel"
                 name="phoneNumber"
+                autoComplete="tel"
                 value={formData.phoneNumber}
                 onChange={handleChange}
                 required
@@ -288,14 +352,23 @@ export default function RequestTimeOff() {
               helperText="First day off"
               required
             />
-            <DateField
-              label="End Date"
-              name="endDate"
-              value={formData.endDate}
-              onChange={handleChange}
-              helperText="Last day off"
-              required
-            />
+            <div>
+              <DateField
+                label="End Date"
+                name="endDate"
+                value={formData.endDate}
+                onChange={handleChange}
+                helperText="Last day off"
+                required
+                min={formData.startDate || undefined}
+              />
+              {shouldShowError("endDate" as keyof FormShape) && (
+                <p className="flex items-center gap-1 text-red-400 text-xs mt-1">
+                  <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                  {getFieldError("endDate" as keyof FormShape)}
+                </p>
+              )}
+            </div>
             <TimeField
               label={
                 <>
@@ -421,7 +494,7 @@ export default function RequestTimeOff() {
       {/* Success Celebration */}
       <FormSuccessCelebration
         isVisible={showCelebration}
-        formType="dvir" // Using 'dvir' for green theme since RTO doesn't have a specific type
+        formType="rto"
         title="Request Submitted!"
         message="Your time-off request has been submitted and is pending approval. You'll be notified once it's reviewed."
         onContinue={handleCelebrationContinue}
@@ -433,8 +506,17 @@ export default function RequestTimeOff() {
 
 function formatFriendlyDate(value: string) {
   if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
+  const [datePart] = value.split("T");
+  if (!datePart) return value;
+  const [yearStr, monthStr, dayStr] = datePart.split("-");
+  const y = Number(yearStr);
+  const m = Number(monthStr);
+  const d = Number(dayStr);
+  if (Number.isNaN(y) || Number.isNaN(m) || Number.isNaN(d) || m < 1 || m > 12 || d < 1 || d > 31) {
+    return value;
+  }
+  // Construct in local timezone to avoid UTC midnight off-by-one
+  const date = new Date(y, m - 1, d);
   return date.toLocaleDateString(undefined, {
     weekday: "short",
     month: "short",

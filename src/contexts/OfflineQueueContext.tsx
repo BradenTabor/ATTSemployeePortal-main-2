@@ -230,6 +230,33 @@ async function submitEquipment(
   await deletePhotosForQueue(queueId);
 }
 
+async function submitNearMiss(
+  payload: Record<string, unknown>,
+  photoIds: string[],
+  queueId: string,
+  userId: string,
+): Promise<void> {
+  const bucket = 'jsa-photos'; // Reuse safety photos bucket for near-miss
+  if (photoIds.length > 0) {
+    const pathMap = await uploadQueuePhotos(queueId, bucket, userId);
+    const paths = Array.from(pathMap.values());
+    const nearMissData = (payload.near_miss_data as Record<string, unknown>) ?? {};
+    payload.near_miss_data = { ...nearMissData, photo_paths: paths };
+  }
+
+  const { error } = await supabase
+    .from('safety_incidents')
+    .insert([payload])
+    .select('id')
+    .single();
+
+  if (error) throw new Error(error.message);
+
+  if (photoIds.length > 0) {
+    await deletePhotosForQueue(queueId);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Provider
 // ---------------------------------------------------------------------------
@@ -274,6 +301,8 @@ export function OfflineQueueProvider({ children }: { children: ReactNode }) {
           return submitDVIR(payload, photoIds, queueId, userId);
         case 'equipment':
           return submitEquipment(payload, photoIds, queueId, userId);
+        case 'near_miss':
+          return submitNearMiss(payload, photoIds, queueId, userId);
         default:
           throw new Error(`Unknown form type: ${formType}`);
       }

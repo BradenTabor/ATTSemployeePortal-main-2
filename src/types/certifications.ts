@@ -31,6 +31,8 @@ export interface CertificationType {
   is_active: boolean;
   /** When true, all authenticated users can access this cert and study guide; when false, only admins and individually granted users. */
   allow_all_users?: boolean;
+  /** Days before expiry to send reminder (e.g. [30, 14, 7]). Empty or null = no reminders. */
+  reminder_days?: number[] | null;
   created_at: string;
   updated_at: string;
 }
@@ -98,6 +100,10 @@ export interface CertificationRecord {
   revoked_at: string | null;
   revoked_by: string | null;
   revoked_reason: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  /** Public 8-char code for /verify/:code and certificate PDF. */
+  verification_code?: string;
   created_at: string;
   updated_at: string;
 }

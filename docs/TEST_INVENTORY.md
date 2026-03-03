@@ -29,8 +29,8 @@ Maps all application features to routes, key behaviors, and test coverage.
 |---------|--------|---------------|------|-------------|-----|------|
 | Admin Dashboard | `/admin` | Overview, navigation cards | — | — | `admin-tools.spec.ts` | No unit tests |
 | User Management | `/admin/users` | User list, role editing, search | — | — | `admin-tools.spec.ts` | No unit tests |
-| RTO Management | `/admin/rto` | Approve/deny requests | — | — | `admin-tools.spec.ts` | Limited coverage |
-| JSA Management | `/admin/jsa` | View all JSAs | — | — | `admin-tools.spec.ts` | Limited coverage |
+| RTO Management | `/admin/requests-oversight?section=rto` | Approve/deny requests | — | — | `admin-tools.spec.ts` | Limited coverage |
+| JSA Management | `/admin/requests-oversight?section=jsa` | View all JSAs | — | — | `admin-tools.spec.ts` | Limited coverage |
 | Operations Hub | `/admin/operations` | Sites, crews, jobs management | — | — | `admin-tools.spec.ts` | Limited coverage |
 | Safety Analytics | `/admin/safety-analytics` | Charts, reports, exports | — | — | — | No tests |
 | Compliance Audit | `/admin/compliance-audit` | OSHA compliance, audit log | — | — | — | No tests |
@@ -41,7 +41,7 @@ Maps all application features to routes, key behaviors, and test coverage.
 | Activity | `/admin/activity` | User activity logs | — | — | — | No tests |
 | Risk Calibration | `/admin/risk-calibration` | Risk scoring config | — | — | — | No tests |
 | Job Progress | `/admin/job-progress` | Track job completion | — | — | — | No tests |
-| Parts & Fixes | `/admin/parts-fixes` | Equipment repairs overview | — | — | — | No tests |
+| Parts & Fixes | `/admin/requests-oversight?section=parts-fixes` | Equipment repairs overview | — | — | `admin-tools.spec.ts` | Via hub |
 
 ### 1.3 Dashboard & Navigation
 

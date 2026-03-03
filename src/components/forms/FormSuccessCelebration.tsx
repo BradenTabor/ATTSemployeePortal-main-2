@@ -53,7 +53,7 @@ interface FormSuccessCelebrationProps {
   /** Whether to show the celebration */
   isVisible: boolean;
   /** Form type for contextual messaging */
-  formType: 'jsa' | 'dvir' | 'equipment' | 'incident';
+  formType: 'jsa' | 'dvir' | 'equipment' | 'incident' | 'near_miss' | 'rto';
   /** Callback when user clicks to continue */
   onContinue: () => void;
   /** Optional custom title */
@@ -73,6 +73,8 @@ const FORM_LABELS: Record<string, string> = {
   dvir: 'Vehicle Inspection',
   equipment: 'Equipment Inspection',
   incident: 'Safety Incident Report',
+  near_miss: 'Near-Miss Report',
+  rto: 'Time-Off Request',
 };
 
 // Pre-generate random values for confetti particles
@@ -159,6 +161,7 @@ const FORM_BORDER_COLORS: Record<string, string> = {
   equipment: 'border-amber-500/30 hover:border-amber-400/50',
   jsa: 'border-sky-500/30 hover:border-sky-400/50',
   incident: 'border-red-500/30 hover:border-red-400/50',
+  near_miss: 'border-amber-500/30 hover:border-amber-400/50',
 };
 
 const FORM_ICON_COLORS: Record<string, string> = {
@@ -166,6 +169,7 @@ const FORM_ICON_COLORS: Record<string, string> = {
   equipment: 'text-amber-400',
   jsa: 'text-sky-400',
   incident: 'text-red-400',
+  near_miss: 'text-amber-400',
 };
 
 // Theme colors based on form type
@@ -198,6 +202,13 @@ const THEME_COLORS: Record<string, { confetti: string[], glow: string, icon: str
     badge: 'bg-red-500/15 border-red-500/30',
     badgeText: 'text-red-300',
   },
+  near_miss: {
+    confetti: ['#f59e0b', '#fbbf24', '#fcd34d', '#10b981', '#34d399', '#ffffff'],
+    glow: 'bg-amber-500',
+    icon: 'from-amber-500 to-amber-600',
+    badge: 'bg-amber-500/15 border-amber-500/30',
+    badgeText: 'text-amber-300',
+  },
 };
 
 export function FormSuccessCelebration({
@@ -218,9 +229,15 @@ export function FormSuccessCelebration({
   const confettiColors = useMemo(() => theme.confetti, [theme.confetti]);
   const confettiParticles = useMemo(() => generateParticleData(50, confettiColors), [confettiColors]);
   
-  // Lock body and dashboard scroll container when overlay is visible.
-  // See docs/ModalsAndOverlays.md: overlays inside DashboardLayout must portal to body
-  // and lock [data-scroll-container] so the user cannot scroll the page behind the overlay.
+  useEffect(() => {
+    if (!isVisible) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onContinue();
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [isVisible, onContinue]);
+
   useEffect(() => {
     if (!isVisible) return;
     const body = document.body;
@@ -454,6 +471,7 @@ export function FormSuccessCelebration({
                             border ${FORM_BORDER_COLORS[form.type]}
                             transition-all duration-200
                             hover:scale-[1.02] active:scale-[0.98]
+                            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50
                             group
                           `}
                         >
@@ -484,7 +502,7 @@ export function FormSuccessCelebration({
                 }
                 text-white font-semibold rounded-xl transition-all 
                 ${hasRemaining ? 'shadow-lg' : 'shadow-lg shadow-emerald-900/30'} 
-                active:scale-[0.98]
+                active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black
               `}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}

@@ -73,7 +73,7 @@ const statusFilters = STATUS_FILTERS;
 const jsaExportColumns = JSA_EXPORT_COLUMNS;
 const statusBadge = STATUS_BADGE;
 
-export default function AdminJSA() {
+export function AdminJSAContent() {
   const { isAdmin, user, role } = useAuth();
   const [allUsers, setAllUsers] = useState<{ id: string; name: string; email: string }[]>([]);
   const [page, setPage] = useState(1);
@@ -477,8 +477,7 @@ export default function AdminJSA() {
   };
 
   return (
-    <DashboardLayout title="Daily JSA Oversight">
-      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 pb-4 pt-4 sm:pt-6">
+    <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 pb-4 pt-4 sm:pt-6">
         {/* Premium Glass Header - Gold Theme */}
         <div className="mb-5 md:mb-6">
           <motion.div
@@ -1161,6 +1160,13 @@ export default function AdminJSA() {
           <kbd className="px-1 sm:px-1.5 py-0.5 rounded bg-[#1b1914] border border-[#f6dcb2]/20 text-[9px] sm:text-xs">Esc</kbd> to exit fullscreen
         </div>
       </div>
+  );
+}
+
+export default function AdminJSA() {
+  return (
+    <DashboardLayout title="Daily JSA Oversight">
+      <AdminJSAContent />
     </DashboardLayout>
   );
 }

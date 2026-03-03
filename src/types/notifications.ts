@@ -20,7 +20,8 @@ export type NotificationCategory =
   | 'job_update'
   | 'rto_decision'
   | 'admin_notice'
-  | 'certification_expiry';
+  | 'certification_expiry'
+  | 'certification_expiry_digest';
 
 /**
  * Severity levels for notification prioritization

@@ -1,0 +1,199 @@
+/* src/styles/eap-print.css */
+/* ============================================================
+   Emergency Action Plan — Print Stylesheet
+   Purpose: OSHA requires EAPs to be postable on walls.
+   This ensures the dark-theme web page prints legibly.
+   ============================================================ */
+
+@media print {
+  /* ---- Reset dark theme ---- */
+  body,
+  html {
+    background: white !important;
+    color: black !important;
+    font-size: 11pt !important;
+    line-height: 1.4 !important;
+  }
+
+  /* ---- Hide app chrome ---- */
+  nav,
+  .sidebar,
+  .app-shell-nav,
+  .particles-container,
+  .emerald-particles,
+  footer,
+  .bottom-nav,
+  .floating-action-button,
+  .pinned-favorites,
+  [data-print-hide],
+  .print-hide {
+    display: none !important;
+  }
+
+  /* ---- Full width ---- */
+  main,
+  .main-content,
+  .page-container {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* ---- Cards: remove dark backgrounds (slate + transparency) ---- */
+  .card,
+  [class*='bg-slate-'],
+  [class*='bg-white/'],
+  [class*='bg-red-9'],
+  [class*='bg-red-6'],
+  [class*='bg-amber-9'],
+  [class*='bg-emerald-'],
+  [class*='bg-gradient-'] {
+    background: white !important;
+    border: 1px solid #333 !important;
+    color: black !important;
+    box-shadow: none !important;
+    margin-bottom: 8pt !important;
+    padding: 8pt !important;
+  }
+
+  /* ---- Accent left borders: keep for visual structure ---- */
+  [class*='border-l-red'] {
+    border-left: 4px solid #dc2626 !important;
+  }
+  [class*='border-l-amber'] {
+    border-left: 4px solid #d97706 !important;
+  }
+  [class*='border-l-emerald'] {
+    border-left: 4px solid #059669 !important;
+  }
+  [class*='border-l-sky'] {
+    border-left: 4px solid #0284c7 !important;
+  }
+  [class*='border-l-orange'] {
+    border-left: 4px solid #ea580c !important;
+  }
+
+  /* ---- Text: force black ---- */
+  h1, h2, h3, h4, h5, h6,
+  p, span, a, li, td, th, div {
+    color: black !important;
+  }
+
+  /* ---- Muted text: darken for print ---- */
+  [class*='text-slate-'],
+  [class*='text-white/'],
+  [class*='text-gray-'],
+  .text-muted {
+    color: #333 !important;
+  }
+
+  /* ---- Red headings: keep red for emergency emphasis ---- */
+  [class*='text-red-3'],
+  [class*='text-red-2'] {
+    color: #b91c1c !important;
+  }
+
+  /* ---- Amber headings: keep for warning sections ---- */
+  [class*='text-amber-3'],
+  [class*='text-amber-2'] {
+    color: #92400e !important;
+  }
+
+  /* ---- Links: show URL for phone numbers ---- */
+  a[href^='tel:']::after {
+    content: ' (' attr(href) ')';
+    font-size: 9pt;
+    color: #555;
+  }
+
+  /* ---- Links: show URL for directions ---- */
+  a[href*='maps']::after {
+    content: ' [See online map]';
+    font-size: 9pt;
+    color: #555;
+  }
+
+  /* ---- Triage buttons: render as labeled boxes ---- */
+  .emergency-triage-button {
+    display: inline-block !important;
+    border: 2px solid black !important;
+    padding: 4pt 8pt !important;
+    margin: 2pt !important;
+    font-weight: bold !important;
+    background: white !important;
+  }
+
+  /* ---- Site location banner: high visibility ---- */
+  .site-location-banner {
+    border: 3px solid black !important;
+    padding: 12pt !important;
+    margin-bottom: 12pt !important;
+    font-size: 13pt !important;
+  }
+
+  /* ---- OSHA section: distinct border ---- */
+  .osha-section {
+    border: 2px solid black !important;
+    page-break-before: always;
+  }
+
+  /* ---- Emergency roles table ---- */
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  th, td {
+    border: 1px solid #333 !important;
+    padding: 4pt 6pt !important;
+    text-align: left !important;
+  }
+
+  th {
+    background: #eee !important;
+    font-weight: bold !important;
+  }
+
+  /* ---- Step badges: print-friendly ---- */
+  [class*='rounded-lg'][class*='bg-red-6'],
+  [class*='rounded-lg'][class*='bg-slate-7'] {
+    background: #eee !important;
+    border: 2px solid #333 !important;
+    color: black !important;
+  }
+
+  /* ---- Shadows: remove all ---- */
+  [class*='shadow-'] {
+    box-shadow: none !important;
+  }
+
+  /* ---- Page headers/footers ---- */
+  @page {
+    margin: 0.75in;
+    @top-center {
+      content: 'EMERGENCY ACTION PLAN — POST IN VISIBLE LOCATION';
+      font-size: 9pt;
+      font-weight: bold;
+    }
+    @bottom-left {
+      content: 'Effective: attr(data-eap-version)';
+      font-size: 8pt;
+    }
+    @bottom-right {
+      content: 'Page ' counter(page) ' of ' counter(pages);
+      font-size: 8pt;
+    }
+  }
+
+  /* ---- Prevent awkward page breaks ---- */
+  .emergency-protocol-card,
+  .contact-card,
+  .equipment-section {
+    page-break-inside: avoid !important;
+  }
+
+  /* ---- Icons: replace colored emoji with text labels if needed ---- */
+  .emoji-icon::after {
+    content: attr(data-print-label);
+  }
+}

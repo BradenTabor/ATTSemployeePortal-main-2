@@ -131,7 +131,10 @@ Deno.serve(async (req: Request) => {
     } catch {
       /* no body */
     }
-    const listKey = body.listKey === "safety_forecast" ? "safety_forecast" : "compliance_summary";
+    const allowedListKeys = ["compliance_summary", "safety_forecast", "weekly_safety_audit", "certification_expiry_digest", "safety_rewards_winners"] as const;
+    const listKey = allowedListKeys.includes(body.listKey as typeof allowedListKeys[number])
+      ? (body.listKey as typeof allowedListKeys[number])
+      : "compliance_summary";
 
     const admin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",

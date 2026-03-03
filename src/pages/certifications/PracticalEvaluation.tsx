@@ -78,7 +78,7 @@ export default function PracticalEvaluation() {
         evaluatorNotes: notes || undefined,
       });
       toast.success("Evaluation submitted.");
-      navigate("/admin/certifications");
+      navigate("/admin/certifications?tab=pending");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Submission failed.");
     }

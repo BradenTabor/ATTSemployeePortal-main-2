@@ -36,59 +36,62 @@ const fadeUp = {
 };
 
 // =============================================================================
-// COMPACT NAV CARD - Mobile-optimized
+// COMPACT NAV CARD - Mobile-optimized, mechanic theme
 // =============================================================================
-const CompactNavCard = memo(function CompactNavCard({ 
-  title, 
-  icon, 
-  to, 
+const CompactNavCard = memo(function CompactNavCard({
+  title,
+  icon,
+  to,
   description,
-  comingSoon = false 
-}: { 
-  title: string; 
-  icon: React.ReactNode; 
-  to: string; 
+  comingSoon = false,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  to: string;
   description?: string;
   comingSoon?: boolean;
 }) {
   const navigate = useNavigate();
-  
+
   if (comingSoon) {
     return (
-      <div className="relative opacity-50 cursor-not-allowed">
-        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-[#1a0c08]/60 border border-orange-500/10">
-          <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-400/50">
+      <div className="relative rounded-xl border border-orange-500/15 bg-gradient-to-r from-[#1a0c08]/50 to-[#0f0705]/40 overflow-hidden">
+        <div className="flex items-center gap-3 px-3.5 py-3 opacity-75">
+          <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400/60 flex-shrink-0 [&>img]:max-w-[20px] [&>img]:max-h-[20px] [&>img]:object-contain">
             {icon}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-white/40 truncate">{title}</span>
-              <span className="text-[8px] uppercase font-bold px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-300/50 border border-orange-500/20">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm font-semibold text-white/50 truncate">{title}</span>
+              <span className="text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-md bg-orange-500/20 text-orange-300/70 border border-orange-500/25 flex-shrink-0">
                 Soon
               </span>
             </div>
+            {description && (
+              <span className="text-[11px] text-orange-300/35 line-clamp-2 mt-0.5 block">{description}</span>
+            )}
           </div>
         </div>
       </div>
     );
   }
-  
+
   return (
     <motion.button
       onClick={() => navigate(to)}
-      className="group w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-gradient-to-r from-[#1a0c08] to-[#0f0705] border border-orange-500/20 hover:border-orange-500/40 active:scale-[0.98] transition-all"
-      whileTap={{ scale: 0.98 }}
+      className="group w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-left border-l-2 border-l-transparent bg-gradient-to-r from-[#1a0c08]/80 to-[#0f0705]/60 border border-orange-500/20 hover:border-orange-500/35 hover:border-l-orange-500/50 active:scale-[0.99] transition-all duration-200"
+      whileTap={{ scale: 0.99 }}
     >
-      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500/25 to-orange-600/15 flex items-center justify-center text-orange-400 group-hover:text-orange-300 transition-colors">
+      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500/20 to-orange-600/10 border border-orange-500/20 flex items-center justify-center text-orange-400 group-hover:text-orange-300 transition-colors flex-shrink-0 [&>img]:max-w-[22px] [&>img]:max-h-[22px] [&>img]:object-contain">
         {icon}
       </div>
-      <div className="flex-1 min-w-0 text-left">
-        <span className="text-sm font-semibold text-white/90 group-hover:text-white truncate block">{title}</span>
+      <div className="flex-1 min-w-0">
+        <span className="text-sm font-semibold text-white/95 group-hover:text-white truncate block">{title}</span>
         {description && (
-          <span className="text-[10px] text-orange-300/40 truncate block">{description}</span>
+          <span className="text-[11px] text-orange-300/50 group-hover:text-orange-300/60 truncate block mt-0.5">{description}</span>
         )}
       </div>
-      <ChevronRight className="w-4 h-4 text-orange-400/40 group-hover:text-orange-400/70 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+      <ChevronRight className="w-4 h-4 text-orange-400/50 group-hover:text-orange-400 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
     </motion.button>
   );
 });
@@ -141,40 +144,47 @@ const QuickActionGrid = memo(function QuickActionGrid() {
 });
 
 // =============================================================================
-// NAV SECTION - Collapsible tools menu
+// NAV SECTION - Grouped panel with mechanic theme
 // =============================================================================
-const NavSection = memo(function NavSection({ 
-  title, 
-  cards 
-}: { 
-  title: string; 
-  cards: Array<{ title: string; description?: string; icon?: React.ReactNode; to: string; comingSoon?: boolean }> 
+const NavSection = memo(function NavSection({
+  title,
+  cards,
+}: {
+  title: string;
+  cards: Array<{ title: string; description?: string; icon?: React.ReactNode; to: string; comingSoon?: boolean }>;
 }) {
   const caps = useMemo(() => getDeviceCapabilities(), []);
   const shouldReduceMotion = caps.prefersReducedMotion || caps.isLowEnd;
-  
+
   return (
-    <div className="space-y-2">
-      <p className="text-[9px] uppercase tracking-[0.2em] text-orange-400/50 font-bold px-1">{title}</p>
-      <motion.div 
-        className="space-y-1.5"
-        variants={shouldReduceMotion ? undefined : staggerContainer}
-        initial="hidden"
-        animate="visible"
-      >
-        {cards.map((card) => (
-          <motion.div key={card.to} variants={shouldReduceMotion ? undefined : fadeUp}>
-            <CompactNavCard
-              title={card.title}
-              description={card.description}
-              icon={card.icon}
-              to={card.to}
-              comingSoon={card.comingSoon}
-            />
-          </motion.div>
-        ))}
-      </motion.div>
-    </div>
+    <section className="rounded-2xl border border-orange-500/15 bg-gradient-to-b from-[#1a0c08]/30 to-transparent overflow-hidden">
+      <div className="px-3.5 pt-3 pb-2 border-b border-orange-500/10">
+        <div className="flex items-center gap-2">
+          <div className="w-0.5 h-4 rounded-full bg-gradient-to-b from-orange-400 to-orange-600 flex-shrink-0" />
+          <p className="text-[10px] uppercase tracking-[0.18em] text-orange-400/70 font-bold">{title}</p>
+        </div>
+      </div>
+      <div className="p-2.5 space-y-1.5">
+        <motion.div
+          className="space-y-1.5"
+          variants={shouldReduceMotion ? undefined : staggerContainer}
+          initial="hidden"
+          animate="visible"
+        >
+          {cards.map((card) => (
+            <motion.div key={card.to} variants={shouldReduceMotion ? undefined : fadeUp}>
+              <CompactNavCard
+                title={card.title}
+                description={card.description}
+                icon={card.icon}
+                to={card.to}
+                comingSoon={card.comingSoon}
+              />
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
   );
 });
 

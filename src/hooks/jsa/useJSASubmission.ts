@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { logger } from '../../lib/logger';
 import { isOnline, addToQueue } from '../../lib/offlineQueue';
 import { storePhotosForQueue } from '../../lib/offlinePhotoStore';
-import type { DailyJSA, DailyJsaFormState, JobSelection, SharedUser } from '../../pages/forms/DailyJSAForm';
+import type { DailyJSA, DailyJsaFormState, JobSelection, SharedUser } from '../../pages/forms/dailyJSAFormState';
 import { useJSAPhotoUpload } from './useJSAPhotoUpload';
 
 const JOB_OPTIONS = [
@@ -120,6 +120,10 @@ export function useJSASubmission() {
       hazards_present: form.hazardsPresent,
       traffic_hazards: form.trafficHazards,
       traffic_setup: form.trafficSetup,
+      electrical_hazard_data:
+        form.electricalHazardData && Object.keys(form.electricalHazardData).length > 0
+          ? form.electricalHazardData
+          : null,
       spans: form.spans.map(span => ({
         ...span,
         // Remove unpaired Unicode surrogates (incomplete emojis) that cause JSON errors

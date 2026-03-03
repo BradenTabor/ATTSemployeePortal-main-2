@@ -260,7 +260,7 @@ export default function SafetyPointsLeaderboard({
                 {showAnalyticsLink && (
                   <div className={cn("px-2 py-2 border-t", t.border)}>
                     <Link
-                      to="/admin/safety-analytics"
+                      to="/admin/safety-compliance?section=analytics"
                       className={cn("flex items-center justify-center gap-1 py-1.5 rounded-lg border text-[10px] font-medium transition-all", t.linkBg)}
                     >
                       View Analytics →

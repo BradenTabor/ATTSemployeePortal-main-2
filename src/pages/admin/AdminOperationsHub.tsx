@@ -734,9 +734,14 @@ function SitesTabContent() {
       if (error) throw error;
       toast.success('Site deleted');
       fetchSites();
-    } catch (error) {
-      logger.error('[Sites] Delete error:', error);
-      toast.error('Failed to delete site');
+    } catch (err: unknown) {
+      logger.error('[Sites] Delete error:', err);
+      const code = (err as { code?: string })?.code;
+      const msg =
+        code === '23503'
+          ? 'Site is linked to jobs. Unlink jobs from this site first, or run the latest database migration to allow deletion.'
+          : 'Failed to delete site';
+      toast.error(msg);
     }
   };
 

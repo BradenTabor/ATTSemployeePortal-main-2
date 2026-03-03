@@ -234,6 +234,7 @@ export function SectionA({
           <input
             id="driversName"
             name="driversName"
+            autoComplete="name"
             data-testid="drivers-name-input"
             value={form.driversName}
             onChange={(e) => {
@@ -276,6 +277,7 @@ export function SectionA({
           </label>
           <input
             id="driversLicenseNumber"
+            autoComplete="off"
             value={form.driversLicenseNumber}
             onChange={(e) => setForm((prev) => ({ ...prev, driversLicenseNumber: e.target.value }))}
             placeholder="Enter license number"

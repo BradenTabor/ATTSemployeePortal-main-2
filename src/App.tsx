@@ -5,6 +5,25 @@ import {
   useLocation,
   Navigate,
 } from "react-router-dom";
+
+/** Redirects to Safety & Compliance hub with section (and optional auditTab), merging existing query params. */
+function SafetyComplianceRedirect({
+  section,
+  auditTab,
+}: {
+  section: "analytics" | "risk-calibration" | "compliance-audit";
+  auditTab?: string;
+}) {
+  const location = useLocation();
+  const merged = useMemo(() => {
+    const next = new URLSearchParams(location.search);
+    next.set("section", section);
+    if (auditTab) next.set("auditTab", auditTab);
+    else next.delete("auditTab");
+    return next.toString();
+  }, [location.search, section, auditTab]);
+  return <Navigate to={{ pathname: "/admin/safety-compliance", search: merged }} replace />;
+}
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { AnimatePresence } from "framer-motion";
 import { Suspense, lazy, useEffect, useMemo } from "react";
@@ -50,20 +69,19 @@ const Settings = lazy(() => import("./pages/Settings"));
 // Admin pages
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminRTO = lazy(() => import("./pages/admin/AdminRTO"));
-const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const AdminUsersHub = lazy(() => import("./pages/admin/AdminUsersHub"));
 const AdminJSA = lazy(() => import("./pages/admin/AdminJSA"));
 const AdminJobProgress = lazy(() => import("./pages/admin/AdminJobProgress"));
 const AdminRewards = lazy(() => import("./pages/admin/AdminRewards"));
-const SafetyAnalyticsDashboard = lazy(() => import("./pages/admin/SafetyAnalyticsDashboard"));
 const AdminPartsFixesOverview = lazy(() => import("./pages/admin/AdminPartsFixesOverview"));
 const AdminTelemetry = lazy(() => import("./pages/admin/AdminTelemetry"));
-const AdminUserActivity = lazy(() => import("./pages/admin/AdminUserActivity"));
 const RiskCalibrationDashboard = lazy(() => import("./pages/admin/RiskCalibrationDashboard"));
 const AdminOperationsHub = lazy(() => import("./pages/admin/AdminOperationsHub"));
-const AdminCertifications = lazy(() => import("./pages/admin/AdminCertifications"));
-const AdminGradeTests = lazy(() => import("./pages/admin/AdminGradeTests"));
+const CertificationsHub = lazy(() => import("./pages/admin/CertificationsHub"));
 const AdminEmailRecipients = lazy(() => import("./pages/admin/AdminEmailRecipients"));
 const AdminComplianceAudit = lazy(() => import("./pages/admin/AdminComplianceAudit"));
+const SafetyComplianceHub = lazy(() => import("./pages/admin/SafetyComplianceHub"));
+const RequestsOversightHub = lazy(() => import("./pages/admin/RequestsOversightHub"));
 
 // Mechanic pages
 const MechanicDashboard = lazy(() => import("./pages/mechanic/MechanicDashboard"));
@@ -86,6 +104,10 @@ const GeneralForemanEquipmentLogs = lazy(() => import("./pages/general-foreman/G
 
 // Safety Officer pages
 const SafetyOfficerDashboard = lazy(() => import("./pages/safety-officer/SafetyOfficerDashboard"));
+const OSHA300ASummary = lazy(() => import("./pages/safety-officer/OSHA300ASummary"));
+// EAP: direct import — no lazy-load so it's ready immediately in an emergency
+import EmergencyActionPlan from "./pages/safety-officer/EmergencyActionPlan";
+const InspectionReadiness = lazy(() => import("./pages/safety-officer/InspectionReadiness"));
 
 // Form pages
 const RequestTimeOff = lazy(() => import("./pages/forms/RequestTimeOff"));
@@ -93,12 +115,20 @@ const DVIRForm = lazy(() => import("./pages/forms/DVIRForm"));
 const DailyEquipmentInspectionForm = lazy(
   () => import("./pages/forms/DailyEquipmentInspectionForm")
 );
+const NearMissReportForm = lazy(
+  () => import("./pages/forms/NearMissReportForm")
+);
 const DailyJSAForm = lazy(() => import("./pages/forms/DailyJSAForm"));
 const TreeFellingJSAForm = lazy(() => import("./pages/forms/TreeFellingJSAForm"));
 const FormHistory = lazy(() => import("./pages/forms/FormHistory"));
 const DVIRHistory = lazy(() => import("./pages/forms/DVIRHistory"));
 const JSAHistory = lazy(() => import("./pages/forms/JSAHistory"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const CertificateVerification = lazy(() => import("./pages/CertificateVerification"));
+const SafetyBriefingPage = lazy(() => import("./pages/SafetyBriefingPage"));
+const SafetyRewardsPage = lazy(() => import("./pages/SafetyRewardsPage"));
+const AdminSafetyRewardsPage = lazy(() => import("./pages/admin/AdminSafetyRewardsPage"));
+const SafetyBriefingGuard = lazy(() => import("./components/SafetyBriefingGuard"));
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -137,13 +167,49 @@ function AnimatedRoutes() {
               }
             />
 
+            {/* Certificate verification (public, minimal layout) */}
+            <Route
+              path="/verify/:code"
+              element={
+                <Suspense fallback={<LoadingScreen />}>
+                  <CertificateVerification />
+                </Suspense>
+              }
+            />
+
+            {/* Daily Safety Briefing (field roles must complete before dashboard) */}
+            <Route
+              path="/safety-briefing"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute>
+                    <SafetyBriefingPage />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            {/* Safety Rewards (visible to all authenticated users) */}
+            <Route
+              path="/safety-rewards"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute>
+                    <SafetyRewardsPage />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
             {/* Main Dashboard */}
             <Route
               path="/dashboard"
               element={
                 <PageWrapper>
                   <ProtectedRoute>
-                    <Dashboard />
+                    <SafetyBriefingGuard>
+                      <Dashboard />
+                    </SafetyBriefingGuard>
                   </ProtectedRoute>
                 </PageWrapper>
               }
@@ -202,6 +268,16 @@ function AnimatedRoutes() {
                 <PageWrapper>
                   <ProtectedRoute>
                     <DailyEquipmentInspectionForm />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+            <Route
+              path="/dashboard/forms/near-miss"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute>
+                    <NearMissReportForm />
                   </ProtectedRoute>
                 </PageWrapper>
               }
@@ -388,7 +464,9 @@ function AnimatedRoutes() {
               element={
                 <PageWrapper>
                   <ProtectedRoute requireMechanicAccess={true}>
-                    <MechanicDashboard />
+                    <SafetyBriefingGuard>
+                      <MechanicDashboard />
+                    </SafetyBriefingGuard>
                   </ProtectedRoute>
                 </PageWrapper>
               }
@@ -453,7 +531,9 @@ function AnimatedRoutes() {
               element={
                 <PageWrapper>
                   <ProtectedRoute allowedRoles={["admin", "general_foreman"]}>
-                    <GeneralForemanDashboard />
+                    <SafetyBriefingGuard>
+                      <GeneralForemanDashboard />
+                    </SafetyBriefingGuard>
                   </ProtectedRoute>
                 </PageWrapper>
               }
@@ -471,16 +551,10 @@ function AnimatedRoutes() {
               }
             />
 
-            {/* General Foreman crew-oversight (alias for E2E / gf nav) */}
+            {/* General Foreman crew-oversight redirect to canonical route */}
             <Route
               path="/general-foreman/crew-oversight"
-              element={
-                <PageWrapper>
-                  <ProtectedRoute allowedRoles={["admin", "general_foreman"]}>
-                    <CrewOversight />
-                  </ProtectedRoute>
-                </PageWrapper>
-              }
+              element={<Navigate to="/crew-oversight" replace />}
             />
 
             {/* General Foreman Safety Compliance - GF and admin only */}
@@ -512,8 +586,42 @@ function AnimatedRoutes() {
               path="/safety-officer-dashboard"
               element={
                 <PageWrapper>
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={["admin", "safety_officer"]}>
                     <SafetyOfficerDashboard />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            {/* Emergency Action Plan — PUBLIC for guest/emergency access */}
+            <Route
+              path="/emergency-action-plan"
+              element={
+                <PageWrapper>
+                  <EmergencyActionPlan />
+                </PageWrapper>
+              }
+            />
+
+            {/* OSHA Inspection Readiness — admin and safety_officer */}
+            <Route
+              path="/inspection-readiness"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute allowedRoles={["admin", "safety_officer"]}>
+                    <InspectionReadiness />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            {/* OSHA 300A Annual Summary — admin and safety_officer */}
+            <Route
+              path="/safety-officer/osha-300a"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute allowedRoles={["admin", "safety_officer"]}>
+                    <OSHA300ASummary />
                   </ProtectedRoute>
                 </PageWrapper>
               }
@@ -524,8 +632,10 @@ function AnimatedRoutes() {
               path="/foreman-dashboard"
               element={
                 <PageWrapper>
-                  <ProtectedRoute>
-                    <ForemanDashboard />
+                  <ProtectedRoute allowedRoles={["admin", "foreman", "general_foreman"]}>
+                    <SafetyBriefingGuard>
+                      <ForemanDashboard />
+                    </SafetyBriefingGuard>
                   </ProtectedRoute>
                 </PageWrapper>
               }
@@ -536,7 +646,7 @@ function AnimatedRoutes() {
               path="/foreman/daily-reports"
               element={
                 <PageWrapper>
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={["admin", "foreman", "general_foreman"]}>
                     <ForemanDailyReports />
                   </ProtectedRoute>
                 </PageWrapper>
@@ -577,7 +687,7 @@ function AnimatedRoutes() {
               element={
                 <PageWrapper>
                   <ProtectedRoute requiredRole="admin">
-                    <AdminUsers />
+                    <AdminUsersHub />
                   </ProtectedRoute>
                 </PageWrapper>
               }
@@ -609,11 +719,16 @@ function AnimatedRoutes() {
               path="/admin/jsa"
               element={
                 <PageWrapper>
-                  <ProtectedRoute requiredRole="admin">
+                  <ProtectedRoute allowedRoles={["admin", "safety_officer"]}>
                     <AdminJSA />
                   </ProtectedRoute>
                 </PageWrapper>
               }
+            />
+
+            <Route
+              path="/admin/worker-qualifications"
+              element={<Navigate to="/admin/certifications?tab=worker-qualifications" replace />}
             />
 
             {/* Legacy route - redirect to Operations Hub */}
@@ -645,15 +760,42 @@ function AnimatedRoutes() {
               }
             />
 
+            {/* Safety & Compliance Hub — single entry for analytics, risk calibration, compliance audit */}
             <Route
-              path="/admin/safety-analytics"
+              path="/admin/safety-compliance"
               element={
                 <PageWrapper>
-                  <ProtectedRoute requiredRole="admin">
-                    <SafetyAnalyticsDashboard />
+                  <ProtectedRoute allowedRoles={["admin", "safety_officer"]}>
+                    <SafetyComplianceHub />
                   </ProtectedRoute>
                 </PageWrapper>
               }
+            />
+
+            {/* Requests & Oversight Hub — RTO, JSA, Parts & Fixes (Phase 1: standalone routes below still active) */}
+            <Route
+              path="/admin/requests-oversight"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute allowedRoles={["admin", "safety_officer"]}>
+                    <RequestsOversightHub />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            {/* Legacy routes — redirect to hub with section, preserving query params */}
+            <Route
+              path="/admin/safety-analytics"
+              element={<SafetyComplianceRedirect section="analytics" />}
+            />
+            <Route
+              path="/admin/risk-calibration"
+              element={<SafetyComplianceRedirect section="risk-calibration" />}
+            />
+            <Route
+              path="/admin/compliance-audit"
+              element={<SafetyComplianceRedirect section="compliance-audit" />}
             />
 
             <Route
@@ -669,13 +811,7 @@ function AnimatedRoutes() {
 
             <Route
               path="/admin/activity"
-              element={
-                <PageWrapper>
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminUserActivity />
-                  </ProtectedRoute>
-                </PageWrapper>
-              }
+              element={<Navigate to="/admin/users?tab=activity" replace />}
             />
 
             <Route
@@ -719,26 +855,32 @@ function AnimatedRoutes() {
               }
             />
 
-            {/* Certifications */}
+            {/* Certifications & Qualifications Hub */}
             <Route
               path="/admin/certifications"
               element={
                 <PageWrapper>
+                  <ProtectedRoute allowedRoles={["admin", "safety_officer"]}>
+                    <CertificationsHub />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            {/* Safety Rewards Management (admin only) */}
+            <Route
+              path="/admin/safety-rewards"
+              element={
+                <PageWrapper>
                   <ProtectedRoute requiredRole="admin">
-                    <AdminCertifications />
+                    <AdminSafetyRewardsPage />
                   </ProtectedRoute>
                 </PageWrapper>
               }
             />
             <Route
               path="/admin/grade-tests"
-              element={
-                <PageWrapper>
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminGradeTests />
-                  </ProtectedRoute>
-                </PageWrapper>
-              }
+              element={<Navigate to="/admin/certifications?tab=pending" replace />}
             />
 
             {/* 404 Catch-all Route - "Go to Dashboard" is role-aware */}

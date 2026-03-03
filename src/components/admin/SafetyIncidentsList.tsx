@@ -33,6 +33,9 @@ import {
   downloadOsha300CsvFromRows,
   type Osha300Row,
 } from "../../lib/osha300Export";
+import { logReportExported } from "../../lib/safetyAuditLog";
+import { useAuth } from "../../contexts/AuthContext";
+import { useDashboardCardTheme } from "../../contexts/dashboardCardTheme";
 
 // ============================================================================
 // TYPES
@@ -383,7 +386,12 @@ function getInitialDateRange() {
 
 const ITEMS_PER_PAGE = 5;
 
+const LIST_CARD_BASE = "rounded-xl sm:rounded-2xl p-4 sm:p-5";
+const LIST_CARD_COMPACT = "rounded-xl sm:rounded-2xl p-2.5 sm:p-3 overflow-visible";
+
 export default function SafetyIncidentsList({ onLogIncident, className }: SafetyIncidentsListProps) {
+  const { cardClass } = useDashboardCardTheme();
+  const { user, role } = useAuth();
   const [selectedIncident, setSelectedIncident] = useState<SafetyIncident | null>(null);
   const [filterSeverity, setFilterSeverity] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -432,7 +440,7 @@ export default function SafetyIncidentsList({ onLogIncident, className }: Safety
 
   if (isLoading) {
     return (
-      <div className={cn("rounded-xl sm:rounded-2xl border border-red-500/20 bg-gradient-to-br from-[#140a0a] via-[#0a0505] to-[#020205] p-4 sm:p-5", className)}>
+      <div className={cn(cardClass, LIST_CARD_BASE, className)}>
         <div className="flex items-center justify-center py-8">
           <Loader2 className="w-6 h-6 animate-spin text-red-400" />
           <span className="ml-2 text-sm text-white/60">Loading incidents...</span>
@@ -443,7 +451,7 @@ export default function SafetyIncidentsList({ onLogIncident, className }: Safety
 
   if (error) {
     return (
-      <div className={cn("rounded-xl sm:rounded-2xl border border-red-500/20 bg-gradient-to-br from-[#140a0a] via-[#0a0505] to-[#020205] p-4 sm:p-5", className)}>
+      <div className={cn(cardClass, LIST_CARD_BASE, className)}>
         <div className="flex items-center justify-center py-8 text-red-400">
           <AlertTriangle className="w-5 h-5 mr-2" />
           Failed to load incidents
@@ -454,7 +462,7 @@ export default function SafetyIncidentsList({ onLogIncident, className }: Safety
 
   return (
     <>
-      <div className={cn("rounded-xl sm:rounded-2xl border border-red-500/20 bg-gradient-to-br from-[#140a0a] via-[#0a0505] to-[#020205] p-2.5 sm:p-3 overflow-visible", className)}>
+      <div className={cn(cardClass, LIST_CARD_COMPACT, className)}>
         {/* Row 1: Icon + Title at top */}
         <div className="flex items-center gap-2 mb-2 overflow-visible">
           <div className="relative w-6 h-6 flex items-center justify-center flex-shrink-0 overflow-visible">
@@ -751,6 +759,17 @@ export default function SafetyIncidentsList({ onLogIncident, className }: Safety
                       if (osha300PreviewData) {
                         downloadOsha300CsvFromRows(osha300PreviewData.rows, osha300PreviewData.dateTo);
                         toast.success("OSHA 300 log downloaded");
+                        logReportExported(
+                          {
+                            reportType: "osha_300",
+                            format: "csv",
+                            dateTo: osha300PreviewData.dateTo,
+                            totalRecords: osha300PreviewData.rows.length,
+                          },
+                          { userId: user?.id, role: role ?? undefined }
+                        ).catch((e) => {
+                          logger.error("[SafetyIncidentsList] OSHA 300 export audit log failed", e);
+                        });
                       }
                     }}
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30 transition-colors disabled:opacity-50 disabled:pointer-events-none"

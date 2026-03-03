@@ -5,28 +5,30 @@ import type { CertificationRecord } from "../../types/certifications";
 interface CertificationCardProps {
   cert: CertificationType;
   record?: CertificationRecord | null;
+  visited?: boolean;
+  onClick?: () => void;
 }
 
 function getStatusLabel(status: string | null): { text: string; className: string } | null {
   if (!status) return null;
   switch (status) {
     case "active":
-      return { text: "Active", className: "text-emerald-300 font-semibold" };
+      return { text: "Active", className: "text-emerald-300 font-medium" };
     case "expired":
-      return { text: "Expired", className: "text-red-300 font-semibold" };
+      return { text: "Expired", className: "text-red-300 font-medium" };
     case "pending":
     case "written_passed":
-      return { text: "In progress", className: "text-amber-300 font-semibold" };
+      return { text: "In progress", className: "text-amber-300 font-medium" };
     case "revoked":
-      return { text: "Revoked", className: "text-red-200/90 font-semibold" };
+      return { text: "Revoked", className: "text-red-200/90 font-medium" };
     case "renewed":
-      return { text: "Renewed", className: "text-emerald-200 font-semibold" };
+      return { text: "Renewed", className: "text-emerald-200 font-medium" };
     default:
-      return { text: status, className: "text-emerald-100/80 font-medium" };
+      return { text: status, className: "text-white/60 font-medium" };
   }
 }
 
-export function CertificationCard({ cert, record }: CertificationCardProps) {
+export function CertificationCard({ cert, record, visited, onClick }: CertificationCardProps) {
   const status = record?.status ?? null;
   const statusLabel = getStatusLabel(status);
 
@@ -46,6 +48,8 @@ export function CertificationCard({ cert, record }: CertificationCardProps) {
       to={`/resources/certification/${cert.slug}/test`}
       title={cert.name}
       subtitle={subtitle}
+      visited={visited}
+      onClick={onClick}
     />
   );
 }

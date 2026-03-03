@@ -6,6 +6,7 @@ import {
   useCallback,
   useMemo,
 } from "react";
+import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { OfflineFormIndicator } from "../../components/OfflineFormIndicator";
@@ -70,6 +71,9 @@ export type { DVIRFormState } from "./dvir";
 
 export default function DVIRForm() {
   const { user, fullName } = useAuth();
+  const [searchParams] = useSearchParams();
+  const inspectionType = searchParams.get("inspection_type") === "post_trip" ? "post_trip" : "pre_trip";
+  const isPostTrip = inspectionType === "post_trip";
   
   // Consolidated form state for persistence
   const [form, setForm] = useState<DVIRFormState>(() => createInitialDVIRFormState());
@@ -608,6 +612,13 @@ export default function DVIRForm() {
     }
   }, [suggestions, autoAppliedDefaults, hasDraft, suggestionsLoading, form.truckNumber, form.mileage, form.driversName, handleApplySuggestion]);
 
+  useEffect(() => {
+    if (fullName && !form.driversName) {
+      setForm(prev => ({ ...prev, driversName: fullName }));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- One-time pre-fill; draft restore runs first.
+  }, [fullName]);
+
   function handleExtraPhotoChange(type: keyof ExtraPhotos, file?: File) {
     if (file) {
       // Validate file type and size
@@ -697,6 +708,7 @@ export default function DVIRForm() {
       extraPhotos,
       uploadPhoto,
       formStartTime,
+      inspectionType,
       onSuccess: async () => {
         // ✅ Dismiss loading toast before showing celebration
         formToast.dismiss();
@@ -754,7 +766,7 @@ export default function DVIRForm() {
   }
 
   return (
-    <DashboardLayout title="Daily Vehicle Inspection (DVIR)">
+    <DashboardLayout title={isPostTrip ? "Post-Trip Vehicle Inspection" : "Daily Vehicle Inspection (DVIR)"}>
       {/* Progress indicator - floating card at top */}
       <FormProgress 
         steps={progressSteps} 
@@ -798,7 +810,7 @@ export default function DVIRForm() {
           />
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6" data-testid="dvir-form">
+        <form onSubmit={handleSubmit} noValidate className="space-y-6" data-testid="dvir-form">
           {/* Validation Summary */}
           {Object.keys(allErrors).filter(k => (allErrors as Record<string, string>)[k]).length > 0 && (
             <ValidationSummary
@@ -1311,6 +1323,62 @@ export default function DVIRForm() {
                     className="w-full rounded-2xl bg-black/60 border border-white/10 px-3 py-2 text-sm text-white"
                   />
                 </div>
+
+                {/* 49 CFR 396.13(b)(3): per-defect corrected / need not be corrected */}
+                {(Object.entries(form.vehicleTrailerChecklist).some(([, v]) => v === "F") ||
+                  Object.entries(form.aerialChecklist).some(([, v]) => v === "F")) && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-white/70 font-medium">Defect status (per item)</p>
+                    <div className="space-y-2">
+                      {VEHICLE_TRAILER_ITEMS.filter((item) => form.vehicleTrailerChecklist[item.id] === "F").map((item) => (
+                        <div key={item.id} className="flex flex-wrap items-center gap-2">
+                          <span className="text-xs text-white/80 min-w-0 flex-1">{item.label}</span>
+                          <select
+                            value={form.defectCorrections?.[item.id] ?? ""}
+                            onChange={(e) =>
+                              setForm((prev) => ({
+                                ...prev,
+                                defectCorrections: {
+                                  ...(prev.defectCorrections ?? {}),
+                                  [item.id]: e.target.value as "corrected" | "need_not_be_corrected",
+                                },
+                              }))
+                            }
+                            className="rounded-lg border border-white/10 bg-black/60 px-2 py-1.5 text-xs text-white min-w-[200px]"
+                            aria-label={`Status for ${item.label}`}
+                          >
+                            <option value="">Select status</option>
+                            <option value="corrected">Condition was corrected</option>
+                            <option value="need_not_be_corrected">Condition need not be corrected before vehicle operation</option>
+                          </select>
+                        </div>
+                      ))}
+                      {AERIAL_LIFT_ITEMS.filter((item) => form.aerialChecklist[item.id] === "F").map((item) => (
+                        <div key={item.id} className="flex flex-wrap items-center gap-2">
+                          <span className="text-xs text-white/80 min-w-0 flex-1">{item.label}</span>
+                          <select
+                            value={form.defectCorrections?.[item.id] ?? ""}
+                            onChange={(e) =>
+                              setForm((prev) => ({
+                                ...prev,
+                                defectCorrections: {
+                                  ...(prev.defectCorrections ?? {}),
+                                  [item.id]: e.target.value as "corrected" | "need_not_be_corrected",
+                                },
+                              }))
+                            }
+                            className="rounded-lg border border-white/10 bg-black/60 px-2 py-1.5 text-xs text-white min-w-[200px]"
+                            aria-label={`Status for ${item.label}`}
+                          >
+                            <option value="">Select status</option>
+                            <option value="corrected">Condition was corrected</option>
+                            <option value="need_not_be_corrected">Condition need not be corrected before vehicle operation</option>
+                          </select>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <label htmlFor="mechanicRemarks" className="block text-xs text-white/70 mb-1">

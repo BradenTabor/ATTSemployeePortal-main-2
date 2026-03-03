@@ -15,6 +15,7 @@ import { cn } from "../../lib/utils";
 import { JSA_STEPS } from "./jsaSteps";
 import { FormProgressRing, FormProgressBar } from "./FormProgressRing";
 import { AutoSaveIndicator } from "./AutoSaveIndicator";
+import { logger } from "../../lib/logger";
 
 export type SaveMode = "draft" | "complete";
 
@@ -548,7 +549,7 @@ export function JsaWizard({
                   } catch (err) {
                     const message = err instanceof Error ? err.message : "Submission failed. Please try again.";
                     setCompleteError(message);
-                    console.error("[JsaWizard] onComplete error", err);
+                    logger.error("[JsaWizard] onComplete error", err);
                   }
                 }}
                 disabled={saving || !isValid}

@@ -39,7 +39,9 @@ export function useRTOSubmission() {
     formTimer: { getDuration: () => number }
   ): Promise<SubmissionResult> => {
     try {
-      // 1. Insert to Supabase FIRST and get the record ID
+      // DB safety: start_date and end_date are sent as raw YYYY-MM-DD strings
+      // from <input type="date">, not converted via new Date().toISOString().
+      // The Postgres `date` column stores them correctly. No UTC off-by-one on write.
       const { data: insertedRecord, error } = await supabase
         .from("rto_requests")
         .insert([

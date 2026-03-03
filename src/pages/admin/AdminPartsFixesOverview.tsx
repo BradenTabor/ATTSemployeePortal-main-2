@@ -1117,7 +1117,7 @@ function FilterBar({ filters, onFiltersChange, onClear }: FilterBarProps) {
 // MAIN COMPONENT
 // =============================================================================
 
-export default function AdminPartsFixesOverview() {
+export function AdminPartsFixesContent() {
   const { role } = useAuth();
   const hasAccess = role === 'admin';
   
@@ -1169,23 +1169,20 @@ export default function AdminPartsFixesOverview() {
   // Access check
   if (!hasAccess) {
     return (
-      <DashboardLayout title="Parts & Fixes Overview">
-        <div className="min-h-[50vh] sm:min-h-[60vh] flex items-center justify-center px-4">
-          <div className="text-center">
-            <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-full bg-[#f4c979]/10 flex items-center justify-center mx-auto mb-3 sm:mb-4">
-              <Shield className="w-7 h-7 sm:w-10 sm:h-10 text-[#f4c979]" />
-            </div>
-            <h2 className="text-lg sm:text-2xl font-bold text-white mb-1.5 sm:mb-2">Admin Access Required</h2>
-            <p className="text-sm sm:text-base text-gray-400">You do not have permission to view this page.</p>
+      <div className="min-h-[50vh] sm:min-h-[60vh] flex items-center justify-center px-4">
+        <div className="text-center">
+          <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-full bg-[#f4c979]/10 flex items-center justify-center mx-auto mb-3 sm:mb-4">
+            <Shield className="w-7 h-7 sm:w-10 sm:h-10 text-[#f4c979]" />
           </div>
+          <h2 className="text-lg sm:text-2xl font-bold text-white mb-1.5 sm:mb-2">Admin Access Required</h2>
+          <p className="text-sm sm:text-base text-gray-400">You do not have permission to view this page.</p>
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
   
   return (
-    <DashboardLayout title="Parts & Fixes Overview">
-      <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 md:px-6 pb-4 pt-3 sm:pt-4 md:pt-6">
+    <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 md:px-6 pb-4 pt-3 sm:pt-4 md:pt-6">
         {/* Premium Glass Header - Gold Theme */}
         <div className="mb-4 sm:mb-6">
           <motion.div
@@ -1383,6 +1380,13 @@ export default function AdminPartsFixesOverview() {
           * Estimated costs used when actual costs not recorded
         </p>
       </div>
+  );
+}
+
+export default function AdminPartsFixesOverview() {
+  return (
+    <DashboardLayout title="Parts & Fixes Overview">
+      <AdminPartsFixesContent />
     </DashboardLayout>
   );
 }

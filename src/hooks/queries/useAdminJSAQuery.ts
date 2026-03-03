@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabaseClient';
 import { queryKeys } from '../../lib/queryKeys';
 import { logger } from '../../lib/logger';
-import type { DailyJsaRecord } from '../../pages/forms/DailyJSAForm';
+import type { DailyJsaRecord } from '../../pages/forms/dailyJSAFormState';
 
 export interface AdminJSAQueryParams {
   page: number;

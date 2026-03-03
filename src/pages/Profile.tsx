@@ -31,6 +31,7 @@ import {
   RefreshCw,
   Loader2,
   Settings,
+  Download,
 } from 'lucide-react';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { useAuth } from '../contexts/AuthContext';
@@ -42,6 +43,7 @@ import { EnableNotificationsButton } from '../components/notifications';
 // ScrollReveal import removed - not currently used
 import AvatarUpload from '../components/profile/AvatarUpload';
 import { useMyCertificationRecords, useCertificationTypes } from '../hooks/useCertifications';
+import { downloadCertificatePDF } from '../components/certifications/certificatePDFDownload';
 
 // ============================================================================
 // TYPES
@@ -662,6 +664,7 @@ export default function Profile() {
           status,
           daysUntilExpiry,
           recordStatus: rec.status,
+          verificationCode: rec.verification_code ?? null,
         };
       })
       .sort((a, b) => {
@@ -988,6 +991,27 @@ export default function Profile() {
                           </span>
                         )}
                       </div>
+                      {(cert as { verificationCode?: string | null }).verificationCode && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const code = (cert as { verificationCode: string }).verificationCode;
+                            if (!code) return;
+                            downloadCertificatePDF({
+                              fullName: fullName || profile?.full_name || 'Employee',
+                              certificationName: cert.name,
+                              certifiedAt: cert.certifiedAt ?? null,
+                              expiresAt: cert.expiresAt,
+                              verificationCode: code,
+                              verificationUrl: `${window.location.origin}/verify/${code}`,
+                            }).catch(() => {});
+                          }}
+                          className="mt-2 w-full flex items-center justify-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 py-1.5 text-[10px] sm:text-xs font-medium text-emerald-300 hover:bg-emerald-500/20 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50"
+                        >
+                          <Download className="w-3 h-3" aria-hidden />
+                          Download Certificate
+                        </button>
+                      )}
                     </motion.div>
                   );
                 })}

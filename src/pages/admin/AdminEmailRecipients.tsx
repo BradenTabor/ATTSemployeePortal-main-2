@@ -8,7 +8,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "../../lib/toast";
 import { logger } from "../../lib/logger";
 
-type ListKey = "compliance_summary" | "safety_forecast" | "weekly_safety_audit";
+type ListKey = "compliance_summary" | "safety_forecast" | "weekly_safety_audit" | "certification_expiry_digest" | "safety_rewards_winners";
 
 const LISTS: { key: ListKey; label: string; description: string }[] = [
   {
@@ -26,7 +26,21 @@ const LISTS: { key: ListKey; label: string; description: string }[] = [
     label: "Weekly Safety Audit",
     description: "Weekly safety audit report email recipients",
   },
+  {
+    key: "certification_expiry_digest",
+    label: "Certification Expiry Digest",
+    description: "Daily digest of certifications expiring in 30/14/7 days (admins and safety officers)",
+  },
+  {
+    key: "safety_rewards_winners",
+    label: "Safety Rewards Drawing Winners",
+    description: "Recipients notified when the monthly safety rewards drawing is run (winners and prizes)",
+  },
 ];
+
+function listKeyToLabel(key: string): string {
+  return LISTS.find((l) => l.key === key)?.label ?? key.replace(/_/g, " ");
+}
 
 const EMAIL_REGEX = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
 function isValidEmail(email: string): boolean {
@@ -496,7 +510,7 @@ function AdminEmailRecipients() {
                       <tbody className="divide-y divide-[#f6dcb2]/5">
                         {logRows.map((row, i) => (
                           <tr key={i} className="hover:bg-white/5">
-                            <td className="px-2 sm:px-3 py-1.5 sm:py-2 text-[#fdf4db]">{row.list_key.replace("_", " ")}</td>
+                            <td className="px-2 sm:px-3 py-1.5 sm:py-2 text-[#fdf4db]">{listKeyToLabel(row.list_key)}</td>
                             <td className="px-2 sm:px-3 py-1.5 sm:py-2 text-[#c7b696]">
                               {Array.isArray(row.recipients) ? row.recipients.length : 0}
                             </td>

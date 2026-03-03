@@ -27,6 +27,7 @@ import {
 } from "../../lib/exportUtils";
 import { logReportExported } from "../../lib/safetyAuditLog";
 import { cn } from "../../lib/utils";
+import { logger } from "../../lib/logger";
 import { useAuth } from "../../contexts/AuthContext";
 import { dvirExportColumns, equipmentExportColumns, DVIR_PDF_EXPORT_COLUMNS, EQUIPMENT_PDF_EXPORT_COLUMNS } from "../../pages/mechanic/equipment-logs/exportColumns";
 import type { DVIRReport } from "../../pages/mechanic/equipment-logs/types";
@@ -446,12 +447,16 @@ export default function ComplianceDataExportPanel() {
       dateFrom: string,
       dateTo: string
     ) => {
-      await logReportExported(
-        { reportType, dateFrom, dateTo, format, totalRecords },
-        { userId: user?.id, role: role ?? undefined }
-      );
+      try {
+        await logReportExported(
+          { reportType, dateFrom, dateTo, format, totalRecords },
+          { userId: user?.id, role: role ?? undefined }
+        );
+      } catch (e) {
+        logger.error('[ComplianceDataExportPanel] audit log failed', e);
+      }
     },
-    [user?.id, role]
+    [user, role]
   );
 
   const sections: SectionConfig<unknown>[] = [
@@ -467,13 +472,13 @@ export default function ComplianceDataExportPanel() {
       fetchData: async (fromDate, toDate) => {
         const { data, error } = await supabase
           .from("dvir_reports")
-          .select("*")
+          .select("id, user_id, report_date, truck_number, mileage, driver_name, vehicle_condition, trailer_condition, vehicle_trailer_checklist, above_below_checklist, notes, deficiency_notes, status, created_at, updated_at")
           .gte("report_date", fromDate)
           .lte("report_date", toDate)
           .order("report_date", { ascending: false })
           .limit(PAGE_SIZE);
         if (error) throw new Error(error.message);
-        return (data ?? []) as DVIRReport[];
+        return (data ?? []) as unknown as DVIRReport[];
       },
     },
     {
@@ -508,13 +513,13 @@ export default function ComplianceDataExportPanel() {
       fetchData: async (fromDate, toDate) => {
         const { data, error } = await supabase
           .from("daily_equipment_inspections")
-          .select("*")
+          .select("id, user_id, submitted_by, equipment_type, equipment_number, inspection_date, template, notes, general_checklist, specific_checklist, overview_photo_path, damage_photo_path, attachments_photo_path, hydraulic_photo_path, created_at")
           .gte("inspection_date", fromDate)
           .lte("inspection_date", toDate)
           .order("inspection_date", { ascending: false })
           .limit(PAGE_SIZE);
         if (error) throw new Error(error.message);
-        return (data ?? []) as EquipmentInspection[];
+        return (data ?? []) as unknown as EquipmentInspection[];
       },
     },
     {

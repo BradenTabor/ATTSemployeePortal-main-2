@@ -13,12 +13,16 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  ThumbsUp,
+  ThumbsDown,
+  Loader2,
 } from "lucide-react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../contexts/AuthContext";
 import { subscribeToTableChanges } from "../../lib/realtime";
 import { logger } from "../../lib/logger";
+import { formToast } from "../../lib/formToast";
 import TableSkeleton from "../../components/skeletons/TableSkeleton";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { TextEffect } from "../../components/ui/TextEffect";
@@ -29,11 +33,17 @@ interface RTORequest {
   user_id: string;
   start_date: string;
   end_date: string;
+  start_time?: string;
+  end_time?: string;
+  total_duration?: string;
+  // PII: phone_number visible only to admins (enforced by RLS admin-only SELECT policy)
+  phone_number?: string;
   reason: string;
   status: "Pending" | "Approved" | "Denied";
   submitted_at: string;
   email: string;
   full_name: string;
+  admin_notes?: string;
 }
 
 interface StatusConfig {
@@ -223,6 +233,10 @@ interface CompactRequestRowProps {
   formatDateRange: (start: string, end: string) => string;
   calculateInclusiveDays: (start: string, end: string) => number | null;
   formatDateTime: (value: string) => string;
+  formatTimeRange: (start?: string, end?: string) => string | null;
+  updatingId: string | null;
+  onApprove: (id: string) => void;
+  onDenyClick: (id: string) => void;
   index: number;
 }
 
@@ -232,6 +246,10 @@ const CompactRequestRow = memo(function CompactRequestRow({
   formatDateRange,
   calculateInclusiveDays,
   formatDateTime,
+  formatTimeRange,
+  updatingId,
+  onApprove,
+  onDenyClick,
   index,
 }: CompactRequestRowProps) {
   const days = calculateInclusiveDays(request.start_date, request.end_date);
@@ -268,7 +286,7 @@ const CompactRequestRow = memo(function CompactRequestRow({
         </div>
       </td>
 
-      {/* Dates */}
+      {/* Dates & Times */}
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
           <CalendarDays className="w-3.5 h-3.5 text-[#f4c979]/60 flex-shrink-0" />
@@ -276,11 +294,14 @@ const CompactRequestRow = memo(function CompactRequestRow({
             <p className="text-sm text-white font-medium truncate">
               {formatDateRange(request.start_date, request.end_date)}
             </p>
-            {days && (
-              <p className="text-[0.65rem] text-[#c7b696]">
-                {days} day{days !== 1 ? "s" : ""}
+            {formatTimeRange(request.start_time, request.end_time) && (
+              <p className="text-[0.65rem] text-[#d0bfa0]">
+                {formatTimeRange(request.start_time, request.end_time)}
               </p>
             )}
+            <p className="text-[0.65rem] text-[#c7b696]">
+              {request.total_duration || (days ? `${days} day${days !== 1 ? "s" : ""}` : "")}
+            </p>
           </div>
         </div>
       </td>
@@ -308,6 +329,44 @@ const CompactRequestRow = memo(function CompactRequestRow({
           {formatDateTime(request.submitted_at)}
         </p>
       </td>
+
+      {/* Actions */}
+      <td className="px-4 py-3">
+        {request.status === "Pending" ? (
+          <div className="flex items-center gap-1.5">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              disabled={updatingId === request.id}
+              onClick={() => onApprove(request.id)}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-[0.7rem] font-semibold hover:bg-emerald-500/25 disabled:opacity-50 transition-all"
+            >
+              {updatingId === request.id ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <ThumbsUp className="w-3 h-3" />
+              )}
+              Approve
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              disabled={updatingId === request.id}
+              onClick={() => onDenyClick(request.id)}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-500/10 border border-red-400/25 text-red-300 text-[0.7rem] font-semibold hover:bg-red-500/20 disabled:opacity-50 transition-all"
+            >
+              <ThumbsDown className="w-3 h-3" />
+              Deny
+            </motion.button>
+          </div>
+        ) : (
+          request.admin_notes && (
+            <p className="text-[0.65rem] text-[#c7b696] truncate max-w-[150px]" title={request.admin_notes}>
+              {request.admin_notes}
+            </p>
+          )
+        )}
+      </td>
     </motion.tr>
   );
 });
@@ -322,6 +381,10 @@ interface CompactMobileCardProps {
   formatDateRange: (start: string, end: string) => string;
   calculateInclusiveDays: (start: string, end: string) => number | null;
   formatDateTime: (value: string) => string;
+  formatTimeRange: (start?: string, end?: string) => string | null;
+  updatingId: string | null;
+  onApprove: (id: string) => void;
+  onDenyClick: (id: string) => void;
   index: number;
 }
 
@@ -331,6 +394,10 @@ const CompactMobileCard = memo(function CompactMobileCard({
   formatDateRange,
   calculateInclusiveDays,
   formatDateTime,
+  formatTimeRange,
+  updatingId,
+  onApprove,
+  onDenyClick,
   index,
 }: CompactMobileCardProps) {
   const days = calculateInclusiveDays(request.start_date, request.end_date);
@@ -384,11 +451,14 @@ const CompactMobileCard = memo(function CompactMobileCard({
             <p className="text-white font-medium text-[10px] sm:text-xs truncate">
               {formatDateRange(request.start_date, request.end_date)}
             </p>
-            {days && (
-              <p className="text-[9px] sm:text-[0.6rem] text-[#c7b696] mt-0.5">
-                {days} day{days !== 1 ? "s" : ""}
+            {formatTimeRange(request.start_time, request.end_time) && (
+              <p className="text-[9px] sm:text-[0.6rem] text-[#d0bfa0] mt-0.5">
+                {formatTimeRange(request.start_time, request.end_time)}
               </p>
             )}
+            <p className="text-[9px] sm:text-[0.6rem] text-[#c7b696] mt-0.5">
+              {request.total_duration || (days ? `${days} day${days !== 1 ? "s" : ""}` : "")}
+            </p>
           </div>
         </div>
         <div className="flex items-start gap-1.5 sm:gap-2">
@@ -413,6 +483,46 @@ const CompactMobileCard = memo(function CompactMobileCard({
           <p className="text-[10px] sm:text-xs text-[#fdf4db]/80 line-clamp-2">
             {request.reason}
           </p>
+        </div>
+      )}
+
+      {/* Admin Notes (for decided requests) */}
+      {request.status !== "Pending" && request.admin_notes && (
+        <div className="mt-2 pt-2 border-t border-[#f6dcb2]/10">
+          <p className="text-[9px] sm:text-[0.65rem] uppercase tracking-wider text-[#d0bfa0] mb-0.5">
+            Admin Note
+          </p>
+          <p className="text-[10px] sm:text-xs text-[#fdf4db]/60 line-clamp-2">
+            {request.admin_notes}
+          </p>
+        </div>
+      )}
+
+      {/* Actions for Pending requests */}
+      {request.status === "Pending" && (
+        <div className="mt-2.5 sm:mt-3 pt-2.5 sm:pt-3 border-t border-[#f6dcb2]/15 flex gap-2">
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            disabled={updatingId === request.id}
+            onClick={() => onApprove(request.id)}
+            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-xs font-semibold hover:bg-emerald-500/25 active:bg-emerald-500/30 disabled:opacity-50 transition-all min-h-[36px]"
+          >
+            {updatingId === request.id ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <ThumbsUp className="w-3.5 h-3.5" />
+            )}
+            Approve
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            disabled={updatingId === request.id}
+            onClick={() => onDenyClick(request.id)}
+            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-400/25 text-red-300 text-xs font-semibold hover:bg-red-500/20 active:bg-red-500/30 disabled:opacity-50 transition-all min-h-[36px]"
+          >
+            <ThumbsDown className="w-3.5 h-3.5" />
+            Deny
+          </motion.button>
         </div>
       )}
     </motion.div>
@@ -484,7 +594,7 @@ function persistAdminRTOState(state: Partial<AdminRTOState>): void {
   } catch { /* ignore */ }
 }
 
-export default function AdminRTO() {
+export function AdminRTOContent() {
   const { role: currentUserRole, user, loading: authLoading } = useAuth();
   const [requests, setRequests] = useState<RTORequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -527,10 +637,9 @@ export default function AdminRTO() {
         const from = (currentPage - 1) * pageSize;
         const to = from + pageSize - 1;
 
-        // PERF-018: Select only needed columns instead of SELECT *
         let query = supabase
           .from("rto_requests")
-          .select("id, user_id, start_date, end_date, reason, status, submitted_at, email, full_name", { count: "exact" })
+          .select("id, user_id, start_date, end_date, start_time, end_time, total_duration, phone_number, reason, status, submitted_at, email, full_name, admin_notes", { count: "exact" })
           .order("submitted_at", { ascending: false });
 
         if (debouncedSearchQuery.trim()) {
@@ -549,11 +658,15 @@ export default function AdminRTO() {
           const year = Number(yearStr);
           const month = Number(monthStr);
           if (!Number.isNaN(year) && !Number.isNaN(month)) {
-            const monthStart = new Date(year, month - 1, 1);
-            const nextMonthStart = new Date(year, month, 1);
+            // Use YYYY-MM-DD strings (not .toISOString()) for date column comparison
+            // to avoid UTC off-by-one at month boundaries
+            const monthStartStr = `${year}-${String(month).padStart(2, "0")}-01`;
+            const nextMonth = month === 12 ? 1 : month + 1;
+            const nextYear = month === 12 ? year + 1 : year;
+            const nextMonthStartStr = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`;
             query = query
-              .gte("start_date", monthStart.toISOString())
-              .lt("start_date", nextMonthStart.toISOString());
+              .gte("start_date", monthStartStr)
+              .lt("start_date", nextMonthStartStr);
           }
         }
 
@@ -664,9 +777,28 @@ export default function AdminRTO() {
     });
   };
 
+  const formatTimeRange = (startTime?: string, endTime?: string): string | null => {
+    if (!startTime || !endTime) return null;
+    const fmt = (t: string) => {
+      const [h, m] = t.split(":").map(Number);
+      if (Number.isNaN(h) || Number.isNaN(m)) return t;
+      const d = new Date();
+      d.setHours(h, m, 0, 0);
+      return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+    };
+    return `${fmt(startTime)} – ${fmt(endTime)}`;
+  };
+
   const formatDateWithWeekday = (dateStr: string) => {
-    const date = new Date(dateStr);
-    if (Number.isNaN(date.getTime())) return null;
+    const [datePart] = dateStr.split("T");
+    if (!datePart) return null;
+    const [yStr, mStr, dStr] = datePart.split("-");
+    const y = Number(yStr);
+    const m = Number(mStr);
+    const d = Number(dStr);
+    if (Number.isNaN(y) || Number.isNaN(m) || Number.isNaN(d)) return null;
+    // Construct in local timezone to avoid UTC midnight off-by-one
+    const date = new Date(y, m - 1, d);
     return date.toLocaleDateString("en-US", {
       weekday: "short",
       month: "short",
@@ -686,10 +818,13 @@ export default function AdminRTO() {
   };
 
   const calculateInclusiveDays = (startDate: string, endDate: string): number | null => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    // Split-and-construct to avoid UTC midnight off-by-one
+    const [sy, sm, sd] = startDate.split("-").map(Number);
+    const [ey, em, ed] = endDate.split("-").map(Number);
+    if ([sy, sm, sd, ey, em, ed].some((v) => Number.isNaN(v))) return null;
 
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
+    const start = new Date(sy, sm - 1, sd);
+    const end = new Date(ey, em - 1, ed);
     if (end.getTime() < start.getTime()) return null;
 
     const diffInDays =
@@ -712,27 +847,73 @@ export default function AdminRTO() {
     setCurrentPage(Math.max(1, Math.min(page, totalPages)));
   }, [totalPages]);
 
+  // Approve/Deny state
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [denyDialogId, setDenyDialogId] = useState<string | null>(null);
+  const [denyReason, setDenyReason] = useState("");
+
+  // AdminRTO uses local state (not React Query); no queryClient invalidation needed.
+  const handleStatusUpdate = useCallback(async (
+    id: string,
+    newStatus: "Approved" | "Denied",
+    adminNotes?: string,
+  ) => {
+    setUpdatingId(id);
+    try {
+      const updatePayload: Record<string, string> = { status: newStatus };
+      if (adminNotes) updatePayload.admin_notes = adminNotes;
+
+      const { error } = await supabase
+        .from("rto_requests")
+        .update(updatePayload)
+        .eq("id", id);
+
+      if (error) throw error;
+
+      logger.info("Admin updated RTO status", {
+        id,
+        status: newStatus,
+        adminId: user?.id,
+      });
+
+      formToast.success(
+        `Request ${newStatus}`,
+        `The time-off request has been ${newStatus.toLowerCase()}.`
+      );
+
+      fetchRTORequests(false);
+    } catch (err) {
+      logger.error("Failed to update RTO status:", err);
+      formToast.error(
+        "Update Failed",
+        err instanceof Error ? err.message : "Could not update request status."
+      );
+    } finally {
+      setUpdatingId(null);
+      setDenyDialogId(null);
+      setDenyReason("");
+    }
+  }, [user?.id, fetchRTORequests]);
+
   const hasActiveFilters = searchQuery || statusFilter || monthFilter;
 
   if (currentUserRole !== "admin") {
     return (
-      <DashboardLayout title="RTO Management">
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-white mb-2">Access Denied</h2>
-            <p className="text-gray-400">
-              You do not have permission to view this page.
-            </p>
-          </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-white mb-2">Access Denied</h2>
+          <p className="text-gray-400">
+            You do not have permission to view this page.
+          </p>
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
 
   return (
-    <DashboardLayout title="RTO Management">
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pb-4 pt-4 sm:pt-6">
+    <>
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pb-4 pt-4 sm:pt-6">
         {/* Premium Glass Header - Gold Theme */}
         <div className="mb-5 md:mb-6">
           <motion.div
@@ -942,6 +1123,7 @@ export default function AdminRTO() {
                             Submitted
                           </span>
                         </th>
+                        <th className="px-4 py-3 text-left font-semibold">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -956,6 +1138,10 @@ export default function AdminRTO() {
                             formatDateRange={formatDateRange}
                             calculateInclusiveDays={calculateInclusiveDays}
                             formatDateTime={formatDateTime}
+                            formatTimeRange={formatTimeRange}
+                            updatingId={updatingId}
+                            onApprove={(id) => handleStatusUpdate(id, "Approved")}
+                            onDenyClick={(id) => setDenyDialogId(id)}
                             index={index}
                           />
                         );
@@ -977,6 +1163,10 @@ export default function AdminRTO() {
                         formatDateRange={formatDateRange}
                         calculateInclusiveDays={calculateInclusiveDays}
                         formatDateTime={formatDateTime}
+                        formatTimeRange={formatTimeRange}
+                        updatingId={updatingId}
+                        onApprove={(id) => handleStatusUpdate(id, "Approved")}
+                        onDenyClick={(id) => setDenyDialogId(id)}
                         index={index}
                       />
                     );
@@ -999,6 +1189,76 @@ export default function AdminRTO() {
           </motion.div>
         </div>
       </div>
+
+      {/* Deny Confirmation Dialog */}
+      <AnimatePresence>
+        {denyDialogId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            onClick={() => { setDenyDialogId(null); setDenyReason(""); }}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-md rounded-2xl border border-red-400/20 bg-[#1a1a2e]/95 backdrop-blur-xl p-6 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-semibold text-white mb-1">
+                Deny Time-Off Request
+              </h3>
+              <p className="text-sm text-white/60 mb-4">
+                Are you sure you want to deny this request? You can optionally provide a reason.
+              </p>
+
+              <textarea
+                value={denyReason}
+                onChange={(e) => setDenyReason(e.target.value.slice(0, 200))}
+                placeholder="Reason for denial (optional)"
+                maxLength={200}
+                rows={3}
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-red-400/40 resize-none"
+              />
+              <p className="text-right text-[0.65rem] text-white/30 mt-1 mb-4">
+                {denyReason.length}/200
+              </p>
+
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => { setDenyDialogId(null); setDenyReason(""); }}
+                  className="px-4 py-2 rounded-xl border border-white/10 text-sm text-white/70 hover:bg-white/5 transition-colors"
+                >
+                  Cancel
+                </button>
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  disabled={updatingId === denyDialogId}
+                  onClick={() => handleStatusUpdate(denyDialogId, "Denied", denyReason || undefined)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-500/20 border border-red-400/30 text-red-300 text-sm font-semibold hover:bg-red-500/30 disabled:opacity-50 transition-all"
+                >
+                  {updatingId === denyDialogId ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <ThumbsDown className="w-3.5 h-3.5" />
+                  )}
+                  Deny Request
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
+export default function AdminRTO() {
+  return (
+    <DashboardLayout title="RTO Management">
+      <AdminRTOContent />
     </DashboardLayout>
   );
 }

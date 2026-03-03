@@ -25,7 +25,7 @@ const DB_NAME = 'atts-offline-queue';
 const DB_VERSION = 2;
 const STORE_NAME = 'submissions';
 
-export type FormType = 'jsa' | 'dvir' | 'equipment';
+export type FormType = 'jsa' | 'dvir' | 'equipment' | 'near_miss' | 'tree_felling_jsa' | 'rto';
 
 export type QueuedSubmissionStatus =
   | 'pending'

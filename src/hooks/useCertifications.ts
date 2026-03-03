@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabaseClient';
+import { queryKeys } from '../lib/queryKeys';
 import type {
   CertificationType,
   CertificationQuestion,
@@ -11,6 +12,17 @@ import type {
 } from '../types/certifications';
 
 const CERT_QUERY_KEY = ['certifications'];
+
+export interface CertificationAuditLogEntry {
+  id: string;
+  actor_id: string | null;
+  actor_name: string | null;
+  action: string;
+  record_id: string | null;
+  old_value: Record<string, unknown> | null;
+  new_value: Record<string, unknown> | null;
+  created_at: string;
+}
 
 export function useCertificationTypes() {
   return useQuery({
@@ -223,6 +235,9 @@ export interface UserCertificationMatrixRow {
   certification_name: string;
   status: string | null;
   expires_at: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  reviewed_by_name: string | null;
   compliance_status: string;
 }
 
@@ -237,10 +252,13 @@ export function useCertificationCompletionStats() {
   });
 }
 
-export function useUserCertificationMatrix(filters?: {
-  certification_type_id?: string;
-  compliance_status?: string;
-}) {
+export function useUserCertificationMatrix(
+  filters?: {
+    certification_type_id?: string;
+    compliance_status?: string;
+  },
+  options?: { enabled?: boolean }
+) {
   return useQuery({
     queryKey: [...CERT_QUERY_KEY, 'matrix', filters?.certification_type_id, filters?.compliance_status],
     queryFn: async (): Promise<UserCertificationMatrixRow[]> => {
@@ -251,6 +269,7 @@ export function useUserCertificationMatrix(filters?: {
       if (error) throw error;
       return (data ?? []) as UserCertificationMatrixRow[];
     },
+    enabled: options?.enabled ?? true,
   });
 }
 
@@ -341,6 +360,9 @@ export interface PendingReview {
   correct_answers: number;
   score_percentage: number;
   pending_count: number;
+  grading_started_at: string | null;
+  grading_started_by: string | null;
+  grading_started_by_name: string | null;
   answers: {
     question_id: string;
     question_text?: string;  // The actual question for admin to see
@@ -363,6 +385,38 @@ export function usePendingCertificationReviews() {
         .order('submitted_at', { ascending: true });
       if (error) throw error;
       return (data ?? []) as PendingReview[];
+    },
+  });
+}
+
+export function useSetCertificationGradingStarted() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationKey: [...CERT_QUERY_KEY, 'set-grading-started'],
+    mutationFn: async (attemptId: string) => {
+      const { error } = await supabase.rpc('set_certification_grading_started', {
+        p_attempt_id: attemptId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [...CERT_QUERY_KEY, 'pending-reviews'] });
+    },
+  });
+}
+
+export function useClearCertificationGradingStarted() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationKey: [...CERT_QUERY_KEY, 'clear-grading-started'],
+    mutationFn: async (attemptId: string) => {
+      const { error } = await supabase.rpc('clear_certification_grading_started', {
+        p_attempt_id: attemptId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [...CERT_QUERY_KEY, 'pending-reviews'] });
     },
   });
 }
@@ -540,6 +594,66 @@ export function useSetCertificationAllowAllUsers() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: CERT_QUERY_KEY });
+    },
+  });
+}
+
+export function useUpdateCertificationReminderDays() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      certificationTypeId,
+      reminderDays,
+    }: {
+      certificationTypeId: string;
+      reminderDays: number[];
+    }) => {
+      const { error } = await supabase
+        .from('certification_types')
+        .update({ reminder_days: reminderDays })
+        .eq('id', certificationTypeId);
+      if (error) throw new Error(error.message ?? 'Failed to update reminder schedule');
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: CERT_QUERY_KEY });
+    },
+  });
+}
+
+/** Admin/safety_officer: last 50 certification audit log entries with actor names. */
+export function useCertificationAuditLog(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.certifications.auditLog(50),
+    enabled: options?.enabled ?? true,
+    queryFn: async (): Promise<CertificationAuditLogEntry[]> => {
+      const { data: rows, error } = await supabase
+        .from('certification_audit_log')
+        .select('id, actor_id, action, record_id, old_value, new_value, created_at')
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (error) throw new Error(error.message ?? 'Failed to load audit log');
+      const list = rows ?? [];
+      const actorIds = [...new Set(list.map((r) => r.actor_id).filter(Boolean))] as string[];
+      const nameMap: Record<string, string> = {};
+      if (actorIds.length > 0) {
+        const { data: users } = await supabase
+          .from('app_users')
+          .select('user_id, full_name')
+          .in('user_id', actorIds);
+        for (const u of users ?? []) {
+          if (u.full_name) nameMap[u.user_id] = u.full_name;
+        }
+      }
+      return list.map((r) => ({
+        id: r.id,
+        actor_id: r.actor_id ?? null,
+        actor_name: (r.actor_id && nameMap[r.actor_id]) ?? null,
+        action: r.action,
+        record_id: r.record_id ?? null,
+        old_value: r.old_value as Record<string, unknown> | null,
+        new_value: r.new_value as Record<string, unknown> | null,
+        created_at: r.created_at,
+      }));
     },
   });
 }

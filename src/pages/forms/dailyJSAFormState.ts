@@ -4,6 +4,7 @@
  */
 
 import type { JsaSpan } from "../../components/forms/jsa-steps";
+import type { ElectricalHazardData } from "../../types/electricalHazard";
 
 export type ConditionState = "good" | "needs_replaced";
 
@@ -56,6 +57,7 @@ export type DailyJSA = {
   hazards_present: HazardMap;
   traffic_hazards: TrafficMap;
   traffic_setup: TrafficMap;
+  electrical_hazard_data?: ElectricalHazardData | null;
   spans: JsaSpan[];
   notes: string | null;
   employee_signature: string | null;
@@ -105,6 +107,7 @@ export interface DailyJsaFormState {
   hazardsPresent: Record<string, boolean>;
   trafficHazards: Record<string, boolean>;
   trafficSetup: Record<string, boolean>;
+  electricalHazardData?: ElectricalHazardData | null;
   spans: JsaSpan[];
   notes: string;
   employeeSignature: string;
@@ -234,6 +237,7 @@ export const createInitialFormState = (): DailyJsaFormState => {
     hazardsPresent: createBooleanMap(HAZARD_ITEMS),
     trafficHazards: createBooleanMap(TRAFFIC_HAZARDS),
     trafficSetup: createBooleanMap(TRAFFIC_SETUP),
+    electricalHazardData: null,
     spans: Array.from({ length: DEFAULT_SPANS }, (_unused, idx) =>
       createBlankSpan(idx + 1)
     ),
@@ -302,6 +306,7 @@ export function transformRecordToFormState(record: DailyJsaRecord): DailyJsaForm
     hazardsPresent: record.hazards_present || createBooleanMap(HAZARD_ITEMS),
     trafficHazards: record.traffic_hazards || createBooleanMap(TRAFFIC_HAZARDS),
     trafficSetup: record.traffic_setup || createBooleanMap(TRAFFIC_SETUP),
+    electricalHazardData: (record as { electrical_hazard_data?: ElectricalHazardData | null }).electrical_hazard_data ?? null,
     spans:
       record.spans && record.spans.length > 0
         ? record.spans

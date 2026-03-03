@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import { ErrorBoundary as ReactErrorBoundary } from 'react-error-boundary';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { queryClient } from '../../lib/queryClient';
@@ -46,24 +47,27 @@ interface AppErrorBoundaryProps {
   onReset?: () => void;
 }
 
-export function AppErrorBoundary({ children, onReset }: AppErrorBoundaryProps) {
-  return (
-    <ReactErrorBoundary
-      FallbackComponent={ErrorFallback}
-      onError={(error, info) => {
-        logger.error('React Error Boundary caught error:', error);
-        logger.error('Component stack:', info.componentStack);
-      }}
-      onReset={() => {
-        // Clear query cache on reset
-        queryClient.clear();
-        onReset?.();
-      }}
-    >
-      {children}
-    </ReactErrorBoundary>
-  );
-}
+export const AppErrorBoundary = forwardRef<HTMLDivElement, AppErrorBoundaryProps>(
+  function AppErrorBoundary({ children, onReset }, ref) {
+    return (
+      <div ref={ref}>
+        <ReactErrorBoundary
+          FallbackComponent={ErrorFallback}
+          onError={(error, info) => {
+            logger.error('React Error Boundary caught error:', error);
+            logger.error('Component stack:', info.componentStack);
+          }}
+          onReset={() => {
+            queryClient.clear();
+            onReset?.();
+          }}
+        >
+          {children}
+        </ReactErrorBoundary>
+      </div>
+    );
+  }
+);
 
 // Page-level error boundary with smaller UI
 export function PageErrorBoundary({ children }: { children: React.ReactNode }) {

@@ -54,7 +54,7 @@ export type TelemetryEventName =
 /**
  * Form types (constrained to match database CHECK constraint)
  */
-export type FormType = 'dvir' | 'equipment' | 'rto' | 'jsa';
+export type FormType = 'dvir' | 'equipment' | 'rto' | 'jsa' | 'near_miss' | 'tree_felling_jsa';
 
 /**
  * Properties for form_started event
@@ -78,7 +78,7 @@ export interface FormSubmittedProps {
  */
 export interface FormSubmitErrorProps {
   form_type: FormType;
-  error_code: 'VALIDATION_FAILED' | 'NETWORK_ERROR' | 'SERVER_ERROR' | 'AUTH_ERROR' | 'RLS_VIOLATION';
+  error_code: 'VALIDATION_FAILED' | 'NETWORK_ERROR' | 'SERVER_ERROR' | 'AUTH_ERROR' | 'RLS_VIOLATION' | 'UNKNOWN';
   field_name?: string;
   [key: string]: unknown;
 }

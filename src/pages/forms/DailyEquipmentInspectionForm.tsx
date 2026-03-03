@@ -38,7 +38,6 @@ import { validators as formValidators } from "../../lib/formValidation";
 import { useEquipmentFormValidation } from "../../hooks/equipment";
 import {
   type ChecklistValue,
-  type ChecklistItem,
   type EquipmentFormState,
   type PhotoState,
   type PhotoTypes,
@@ -48,119 +47,23 @@ import {
   GENERAL_ITEMS,
   EQUIPMENT_NUMBERS_BY_TYPE,
   EQUIPMENT_TYPE_OPTIONS,
+  getSpecificItems,
+  PHOTO_DEFINITIONS,
+  REQUIRED_PHOTO_KEYS,
+  PHOTO_KEYS_ORDER,
+  EQUIPMENT_PHOTO_BUCKET,
+  calcPercentage,
+  createInitialEquipmentFormState,
+  normalizeFormStateFromDraft,
+  getTodayChicagoDate,
 } from "./equipmentConstants";
+import { LOTOSection } from "../../components/forms/LOTOSection";
 import { ValidationSummary } from "../../components/forms/ValidationSummary";
 import { ValidatedSubmitButton } from "../../components/forms/ValidatedSubmitButton";
 import { scrollToFirstError } from "../../lib/scrollToError";
 import { AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 
-// Specific equipment checklist groups (Section B) — form-only; general list in equipmentConstants
-const SKY_TRIM_ITEMS: ChecklistItem[] = [
-  { id: "tires", label: "Tires" },
-  { id: "wheels", label: "Wheels / lugs" },
-  { id: "steps_handles", label: "Steps / handles" },
-  { id: "doors_latches", label: "Doors / latches" },
-  { id: "lift_arms", label: "Lift arms / booms" },
-  { id: "outriggers_stabilizers", label: "Outriggers / stabilizers" },
-  { id: "controls", label: "Controls" },
-  { id: "system_function", label: "System function test" },
-];
-
-const GEO_BOY_ITEMS: ChecklistItem[] = [
-  { id: "tracks_tires", label: "Tracks / tires" },
-  { id: "wheels_rollers", label: "Wheels / rollers / sprockets" },
-  { id: "safety_flaps", label: "Safety flaps / guards" },
-  { id: "teeth", label: "Teeth / cutting head" },
-  { id: "hydraulic_lines", label: "Hydraulic lines" },
-  { id: "attachments", label: "Attachments secure" },
-  { id: "system_function", label: "System function test" },
-];
-
-const SKID_STEER_ITEMS: ChecklistItem[] = [
-  { id: "tracks_tires", label: "Tracks / tires" },
-  { id: "wheels_rollers", label: "Wheels / rollers / sprockets" },
-  { id: "steps_handles", label: "Steps / handles" },
-  { id: "doors_latches", label: "Doors / latches" },
-  { id: "lift_arms", label: "Lift arms" },
-  { id: "attachments", label: "Attachments (mulcher / grapple)" },
-  { id: "safety_flaps", label: "Safety flaps / guards" },
-  { id: "system_function", label: "System function test" },
-];
-
-function getSpecificItems(template: EquipmentTemplate): ChecklistItem[] {
-  switch (template) {
-    case "sky_trim":
-      return SKY_TRIM_ITEMS;
-    case "geo_boy":
-      return GEO_BOY_ITEMS;
-    case "skid_steer":
-      return SKID_STEER_ITEMS;
-    default:
-      return [];
-  }
-}
-
-const BUCKET_NAME = "equipment-inspection-photos";
-
-const PHOTO_DEFINITIONS: Array<{
-  key: PhotoTypes;
-  label: string;
-  description?: string;
-  required?: boolean;
-}> = [
-  {
-    key: "overview",
-    label: "Equipment Overview",
-    description: "Capture a wide photo of the machine.",
-  },
-  {
-    key: "damage",
-    label: "Damage / Wear",
-    description: "Highlight any defects or wear areas.",
-  },
-  {
-    key: "attachments",
-    label: "Attachments / Teeth",
-    description: "Mulcher head, grapple, or accessories.",
-  },
-  {
-    key: "hydraulic",
-    label: "Hydraulic Fluid Level",
-    description: "Required for compliance",
-    required: true,
-  },
-];
-
-const REQUIRED_PHOTO_KEYS = PHOTO_DEFINITIONS.filter((photo) => photo.required).map(
-  (photo) => photo.key
-);
-
-const PHOTO_KEYS_ORDER = PHOTO_DEFINITIONS.map((photo) => photo.key);
-
-const calcPercentage = (current: number, total: number) =>
-  total === 0 ? 0 : Math.round((current / total) * 100);
-
-// Get today's date in America/Chicago timezone (matches compliance queries)
-function getTodayChicagoDate(): string {
-  const now = new Date();
-  const chicagoDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
-  const year = chicagoDate.getFullYear();
-  const month = String(chicagoDate.getMonth() + 1).padStart(2, '0');
-  const day = String(chicagoDate.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-const createInitialEquipmentFormState = (): EquipmentFormState => ({
-  submittedBy: "",
-  equipmentType: "",
-  equipmentNumber: "",
-  inspectionDate: getTodayChicagoDate(),
-  template: "",
-  notes: "",
-  generalChecklist: {},
-  specificChecklist: {},
-});
 
 export default function DailyEquipmentInspectionForm() {
   const { user, fullName } = useAuth();
@@ -354,7 +257,7 @@ export default function DailyEquipmentInspectionForm() {
     const draftAgeMs = savedAtMs ? Date.now() - savedAtMs : Infinity;
     const AUTO_RESTORE_WINDOW_MS = 60_000;
     if (draftAgeMs < AUTO_RESTORE_WINDOW_MS) {
-      setForm(draftData.form);
+      setForm(normalizeFormStateFromDraft(draftData.form));
       setCurrentStep(draftData.currentStep);
       setCompletedSteps(new Set(draftData.completedSteps));
       clearDraft();
@@ -383,7 +286,7 @@ export default function DailyEquipmentInspectionForm() {
   // Handle draft restoration
   const handleRestoreDraft = useCallback(() => {
     if (draftData) {
-      setForm(draftData.form);
+      setForm(normalizeFormStateFromDraft(draftData.form));
       setCurrentStep(draftData.currentStep);
       setCompletedSteps(new Set(draftData.completedSteps));
       setShowDraftModal(false);
@@ -543,7 +446,7 @@ export default function DailyEquipmentInspectionForm() {
       const objectPath = `${safeUserBucket}/${safeDate}/${kind}-${safeEquipment}-${uniqueId}.${extension}`;
 
       const { error } = await supabase.storage
-        .from(BUCKET_NAME)
+        .from(EQUIPMENT_PHOTO_BUCKET)
         .upload(objectPath, compressed, {
           cacheControl: "3600",
           upsert: false,
@@ -668,6 +571,8 @@ export default function DailyEquipmentInspectionForm() {
           notes: form.notes.trim() ? form.notes.trim() : null,
           general_checklist: form.generalChecklist,
           specific_checklist: form.specificChecklist,
+          loto_required: showLOTO,
+          loto_data: showLOTO && form.lotoData ? form.lotoData : null,
           // Photo paths are placeholders — replaced during sync
           overview_photo_path: photos.overview ? `offline://${tempQueueId}/overview` : null,
           damage_photo_path: photos.damage ? `offline://${tempQueueId}/damage` : null,
@@ -746,6 +651,8 @@ export default function DailyEquipmentInspectionForm() {
         notes: form.notes.trim() ? form.notes.trim() : null,
         general_checklist: form.generalChecklist,
         specific_checklist: form.specificChecklist,
+        loto_required: showLOTO,
+        loto_data: showLOTO && form.lotoData ? form.lotoData : null,
         overview_photo_path: photoPathMap.overview ?? null,
         damage_photo_path: photoPathMap.damage ?? null,
         attachments_photo_path: photoPathMap.attachments ?? null,
@@ -805,7 +712,7 @@ export default function DailyEquipmentInspectionForm() {
       if (uploadedPaths.length > 0) {
         try {
           const { error: cleanupError } = await supabase.storage
-            .from(BUCKET_NAME)
+            .from(EQUIPMENT_PHOTO_BUCKET)
             .remove(uploadedPaths);
           
           if (cleanupError) {
@@ -847,6 +754,15 @@ export default function DailyEquipmentInspectionForm() {
   }
 
   const specificItems = useMemo(() => getSpecificItems(form.template), [form.template]);
+
+  const hasAnyFail = useMemo(() => {
+    const generalHasF = Object.values(form.generalChecklist).some((v) => v === "F");
+    const specificHasF = Object.values(form.specificChecklist).some((v) => v === "F");
+    return generalHasF || specificHasF;
+  }, [form.generalChecklist, form.specificChecklist]);
+
+  const LOTO_APPLICABLE_TEMPLATES: EquipmentTemplate[] = ["chipper", "sky_trim", "geo_boy"];
+  const showLOTO = hasAnyFail && form.template && LOTO_APPLICABLE_TEMPLATES.includes(form.template);
 
   const generalCompleteCount = useMemo(
     () =>
@@ -1020,7 +936,7 @@ export default function DailyEquipmentInspectionForm() {
           />
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4 sm:space-y-5">
           {/* Validation Summary */}
           {Object.keys(allErrors).filter(k => (allErrors as Record<string, string>)[k]).length > 0 && (
             <ValidationSummary
@@ -1212,6 +1128,8 @@ export default function DailyEquipmentInspectionForm() {
                   <option value="sky_trim">Sky Trim / Jarraff</option>
                   <option value="geo_boy">Geo Boy</option>
                   <option value="skid_steer">Skid Steer</option>
+                  <option value="chipper">Chipper</option>
+                  <option value="chainsaw">Chainsaw</option>
                 </select>
                 <p id="template-help" className="text-[9px] text-white/50 mt-1">
                   {form.equipmentType 
@@ -1388,7 +1306,7 @@ export default function DailyEquipmentInspectionForm() {
               <div className="rounded-xl border border-dashed border-white/20 bg-white/[0.02] px-3 py-4 text-xs text-white/60 text-center">
                 {form.template ? (
                   <p className="text-xs text-white/60">
-                    {specificItems.length} specific items loaded for {form.template === 'sky_trim' ? 'Sky Trim/Jarraff' : form.template === 'geo_boy' ? 'Geo Boy' : 'Skid Steer'} template
+                    {specificItems.length} specific items loaded for {form.template === 'sky_trim' ? 'Sky Trim/Jarraff' : form.template === 'geo_boy' ? 'Geo Boy' : form.template === 'skid_steer' ? 'Skid Steer' : form.template === 'chipper' ? 'Chipper' : form.template === 'chainsaw' ? 'Chainsaw' : form.template} template
                   </p>
                 ) : (
                   <p className="text-xs text-white/60">
@@ -1480,6 +1398,13 @@ export default function DailyEquipmentInspectionForm() {
               </>
             )}
           </section>
+
+          {showLOTO && (
+            <LOTOSection
+              value={form.lotoData ?? null}
+              onChange={(data) => setForm((prev) => ({ ...prev, lotoData: data }))}
+            />
+          )}
 
           {/* Card: Photos (Camera Capture) */}
           <section className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#051313] via-[#040909] to-[#020405] p-4 sm:p-5 space-y-3 shadow-[0_20px_50px_rgba(0,0,0,0.45)]">

@@ -184,7 +184,7 @@ async function cleanupTestUsers(): Promise<void> {
   const { error: appUsersError } = await supabase
     .from('app_users')
     .delete()
-    .like('email', '%@atts.test');
+    .ilike('email', '%@atts.test');
   
   if (appUsersError) {
     console.error('Error deleting from app_users:', appUsersError.message);

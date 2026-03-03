@@ -6,6 +6,7 @@
  */
 
 import { test, expect } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
 import { loginAs } from './helpers/auth';
 
 test.describe('Accessibility - DVIR Form', () => {
@@ -512,5 +513,33 @@ test.describe('Accessibility - Form Error States', () => {
     const indicatorCount = await errorIndicators.count();
     const textVisible = await errorText.first().isVisible().catch(() => false);
     expect(indicatorCount > 0 || textVisible).toBe(true);
+  });
+});
+
+test.describe('Accessibility - Dashboard (Employee Hub)', () => {
+  test.setTimeout(60000);
+
+  test.beforeEach(async ({ page }) => {
+    await loginAs(page, 'employee');
+    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(2000);
+    await page.waitForSelector('[data-testid="dashboard"]', { timeout: 15000 }).catch(() => {});
+  });
+
+  test('should have no critical or serious axe violations', async ({ page }) => {
+    const results = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+      .analyze();
+
+    const criticalOrSerious = results.violations.filter(
+      (v) => v.impact === 'critical' || v.impact === 'serious'
+    );
+    if (criticalOrSerious.length > 0) {
+      const summary = criticalOrSerious
+        .map((v) => `[${v.impact}] ${v.id}: ${v.help} (${v.nodes.length} nodes)`)
+        .join('\n');
+      throw new Error(`Dashboard a11y: ${criticalOrSerious.length} critical/serious violation(s):\n${summary}`);
+    }
+    expect(criticalOrSerious).toEqual([]);
   });
 });

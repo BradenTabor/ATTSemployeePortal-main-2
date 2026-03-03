@@ -1,5 +1,6 @@
 import {
   ClipboardList,
+  FileText,
   Users,
   Wrench,
   Gauge,
@@ -64,21 +65,37 @@ export function getCommonNavCards(variant: CardVariant): AdminNavCardConfig[] {
       variant,
       iconAsImage: true,
     },
+    {
+      title: "Emergency Action Plan",
+      description: "911, contacts, evacuation, OSHA reporting",
+      icon: <img src="/assets/emergency-action-plan.png" alt="" className="w-full h-full object-contain" />,
+      to: "/emergency-action-plan",
+      variant,
+      iconAsImage: true,
+    },
+    {
+      title: "Safety Rewards",
+      description: "Monthly raffle entries and prizes",
+      icon: <img src="/assets/safety-rewards.png" alt="" className="w-full h-full object-contain" />,
+      to: "/safety-rewards",
+      variant,
+      iconAsImage: true,
+    },
   ];
 }
 
 export const ADMIN_CORE_NAV_CARDS: AdminNavCardConfig[] = [
   {
-    title: "RTO Requests",
-    description: "View and manage employee time-off submissions.",
+    title: "Requests & Oversight",
+    description: "RTO, JSA oversight, and parts & fixes in one place.",
     icon: <img src="/assets/rto-requests.png" alt="" className="w-full h-full object-contain" />,
-    to: "/admin/rto",
+    to: "/admin/requests-oversight",
     variant: "gold",
     iconAsImage: true,
   },
   {
-    title: "User Management",
-    description: "Manage user accounts and permissions.",
+    title: "Users & Activity",
+    description: "Manage accounts and view live engagement.",
     icon: <img src="/assets/user-management.png" alt="" className="w-full h-full object-contain" />,
     to: "/admin/users",
     variant: "gold",
@@ -89,14 +106,6 @@ export const ADMIN_CORE_NAV_CARDS: AdminNavCardConfig[] = [
     description: "Manage compliance and safety forecast email lists.",
     icon: <img src="/assets/email-recipients.png" alt="" className="w-full h-full object-contain" />,
     to: "/admin/email-recipients",
-    variant: "gold",
-    iconAsImage: true,
-  },
-  {
-    title: "Daily JSA Oversight",
-    description: "Audit every job safety analysis in one place.",
-    icon: <img src="/assets/daily-jsa-oversight.png" alt="" className="w-full h-full object-contain" />,
-    to: "/admin/jsa",
     variant: "gold",
     iconAsImage: true,
   },
@@ -117,18 +126,10 @@ export const ADMIN_CORE_NAV_CARDS: AdminNavCardConfig[] = [
     iconAsImage: true,
   },
   {
-    title: "Parts & Fixes Overview",
-    description: "Fleet-wide maintenance analytics and cost tracking.",
-    icon: <img src="/assets/parts-fixes-overview.png" alt="" className="w-full h-full object-contain" />,
-    to: "/admin/parts-fixes",
-    variant: "gold",
-    iconAsImage: true,
-  },
-  {
-    title: "Safety Analytics",
-    description: "Unified compliance metrics, leaderboards, and engagement analytics.",
+    title: "Safety & Compliance",
+    description: "Analytics · Risk Calibration · Compliance Audit",
     icon: <img src="/assets/safety-analytics.png" alt="" className="w-full h-full object-contain" />,
-    to: "/admin/safety-analytics",
+    to: "/admin/safety-compliance",
     variant: "gold",
     iconAsImage: true,
   },
@@ -141,34 +142,26 @@ export const ADMIN_CORE_NAV_CARDS: AdminNavCardConfig[] = [
     iconAsImage: true,
   },
   {
-    title: "User Activity",
-    description: "Live feed of active users and real-time engagement.",
-    icon: <img src="/assets/user-activity.png" alt="" className="w-full h-full object-contain" />,
-    to: "/admin/activity",
-    variant: "gold",
-    iconAsImage: true,
-  },
-  {
-    title: "Risk Calibration",
-    description: "Automated safety forecast tuning and incident tracking.",
-    icon: <img src="/assets/risk-calibration.png" alt="" className="w-full h-full object-contain" />,
-    to: "/admin/risk-calibration",
-    variant: "gold",
-    iconAsImage: true,
-  },
-  {
-    title: "Compliance Audit",
-    description: "Safety audit log, OSHA mapping, compliance reports, and weekly safety audit runs.",
-    icon: <img src="/assets/compliance-audit.png" alt="" className="w-full h-full object-contain" />,
-    to: "/admin/compliance-audit",
-    variant: "gold",
-    iconAsImage: true,
-  },
-  {
-    title: "Certifications",
-    description: "Track certifications, grade tests, and manage access.",
+    title: "Certifications & Qualifications",
+    description: "Track certifications, grade tests, manage access, and OSHA 1910.269 electrical levels.",
     icon: <img src="/assets/certifications.png" alt="" className="w-full h-full object-contain" />,
     to: "/admin/certifications",
+    variant: "gold",
+    iconAsImage: true,
+  },
+  {
+    title: "Emergency Action Plan",
+    description: "Site emergency contacts, triage, evacuation, OSHA reporting.",
+    icon: <img src="/assets/emergency-action-plan.png" alt="" className="w-full h-full object-contain" />,
+    to: "/emergency-action-plan",
+    variant: "gold",
+    iconAsImage: true,
+  },
+  {
+    title: "Safety Rewards",
+    description: "Manage monthly raffle prizes and run drawings.",
+    icon: <img src="/assets/safety-rewards.png" alt="" className="w-full h-full object-contain" />,
+    to: "/admin/safety-rewards",
     variant: "gold",
     iconAsImage: true,
   },
@@ -219,6 +212,13 @@ export const ADMIN_ROLE_DASHBOARDS_NAV_CARDS: AdminNavCardConfig[] = [
 ];
 
 export const MECHANIC_NAV_CARDS: AdminNavCardConfig[] = [
+  {
+    title: "Equipment Center",
+    description: "Equipment inspection control center.",
+    icon: <Wrench className="w-8 h-8 text-[#ff9c63]" />,
+    to: "/mechanic-equipment-center",
+    variant: "ember",
+  },
   {
     title: "Fleet & Equipment Center",
     description: "Review DVIRs and equipment inspections, log repairs.",
@@ -271,6 +271,13 @@ export const GENERAL_FOREMAN_NAV_CARDS: AdminNavCardConfig[] = [
 ];
 
 export const SAFETY_OFFICER_NAV_CARDS: AdminNavCardConfig[] = [
+  {
+    title: "OSHA 300A Summary",
+    description: "Annual summary of work-related injuries and illnesses; certify and export.",
+    icon: <FileText className="w-8 h-8 text-[#fecaca]" />,
+    to: "/safety-officer/osha-300a",
+    variant: "redwhite",
+  },
   {
     title: "Incident Reports",
     description: "Track and investigate safety incidents.",

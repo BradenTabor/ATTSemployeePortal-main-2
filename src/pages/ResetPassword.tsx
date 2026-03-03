@@ -171,10 +171,10 @@ export default function ResetPassword() {
           {/* Main glass container */}
           <div className="relative">
             {/* Glow effect behind card */}
-            <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 via-white/5 to-emerald-500/20 rounded-[2rem] blur-2xl opacity-60" />
+            <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 via-white/5 to-emerald-500/20 rounded-[2rem] blur-[25px] opacity-60" />
             
             {/* Card */}
-            <div className="relative bg-white/[0.04] backdrop-blur-3xl rounded-[1.75rem] border border-white/[0.08] shadow-[0_8px_64px_rgba(0,0,0,0.4)] overflow-hidden">
+            <div className="relative bg-white/[0.04] backdrop-blur-[10px] rounded-[1.75rem] border border-white/[0.08] shadow-[0_8px_64px_rgba(0,0,0,0.4)] overflow-hidden">
               {/* Subtle inner glow */}
               <div className="absolute inset-0 bg-gradient-to-b from-white/[0.06] via-transparent to-transparent pointer-events-none" />
               

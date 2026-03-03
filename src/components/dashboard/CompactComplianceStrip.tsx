@@ -57,7 +57,7 @@ interface CompactComplianceStripProps {
 const themeConfig = {
   emerald: {
     border: 'border-emerald-400/20',
-    bg: 'rgba(4, 30, 21, 0.95)',
+    bg: 'rgba(0, 0, 0, 0.15)',
     headerBg: 'from-emerald-500/10 to-emerald-600/5',
     accent: 'text-emerald-400',
     accentBg: 'bg-emerald-500/10',
@@ -174,7 +174,7 @@ const ComplianceItem = memo(function ComplianceItem({ form, index, themeStyles }
             className={`
               flex items-center gap-1 px-2 py-1 rounded-lg
               ${themeStyles.pendingBg} ${themeStyles.pendingBorder} border
-              hover:bg-amber-500/20 transition-colors
+              hover:bg-[#cc640f73] transition-colors
               group
             `}
           >
@@ -280,6 +280,7 @@ const QuickFormLinksRow = memo(function QuickFormLinksRow({ themeStyles }: Quick
                 ${themeStyles.accentHover} ${themeStyles.accentActive} transition-colors group
                 min-h-[44px]
               `}
+              style={{ backgroundColor: 'rgba(92, 92, 92, 1)', boxShadow: 'inset 0px -6px 12px 2px rgba(0,0,0,0.65), inset 0px -2px 6px 2px rgba(0,0,0,0.95)' }}
               title={link.label}
             >
               <Icon className={`w-3.5 h-3.5 sm:w-3 sm:h-3 ${themeStyles.accent}`} />
@@ -453,7 +454,10 @@ function CompactComplianceStripComponent({ theme = 'emerald', onComplianceChange
       <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
       
       {/* Header */}
-      <div className={`px-4 py-3 bg-gradient-to-r ${themeStyles.headerBg} border-b border-white/5`}>
+      <div
+        className="px-4 py-3 border-b border-white/5"
+        style={{ background: `linear-gradient(90deg, rgba(16, 185, 129, 0.15) 9%, rgba(5, 150, 105, 0.05) 100%)` }}
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <motion.div

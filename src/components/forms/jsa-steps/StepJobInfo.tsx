@@ -9,6 +9,7 @@ import { SavedLocationPicker } from "../SavedLocationPicker";
 import { useJSAPhotoUpload, MAX_JSA_PHOTOS } from "../../../hooks/jsa/useJSAPhotoUpload";
 import { formToast } from "../../../lib/formToast";
 import { isOnline } from "../../../lib/offlineQueue";
+import { logger } from "../../../lib/logger";
 
 type JobInfoFields = {
   jobDate: string;
@@ -190,7 +191,7 @@ function PhotoThumbnail({ path, onRemove, isRemoving, getSignedUrl }: PhotoThumb
       .catch((err) => {
         if (!cancelled) {
           setLoadError(true);
-          console.error("[StepJobInfo] Photo thumbnail load failed", path, err);
+          logger.error("[StepJobInfo] Photo thumbnail load failed", path, err);
         }
       });
     return () => { cancelled = true; };
@@ -291,7 +292,7 @@ export function PaperJsaUpload({ photoPaths, onPathsChange, required }: PaperJsa
         );
       }
     } catch (err) {
-      console.error("[StepJobInfo] Photo upload failed", err);
+      logger.error("[StepJobInfo] Photo upload failed", err);
       const message = err instanceof Error ? err.message : "Photo upload failed. Please try again.";
       formToast.error("Upload Failed", message);
     } finally {
@@ -305,7 +306,7 @@ export function PaperJsaUpload({ photoPaths, onPathsChange, required }: PaperJsa
       await deletePhoto(path);
       onPathsChange(photoPaths.filter((p) => p !== path));
     } catch (err) {
-      console.error("[StepJobInfo] Remove photo failed", path, err);
+      logger.error("[StepJobInfo] Remove photo failed", path, err);
       formToast.error("Remove Failed", "Failed to remove photo. Please try again.");
     } finally {
       setRemovingPath(null);

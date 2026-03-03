@@ -55,6 +55,22 @@ const userPages = [
     iconAsImage: true,
   },
   {
+    id: "emergency",
+    label: "Emergency Action Plan",
+    path: "/emergency-action-plan",
+    icon: <img src="/assets/emergency-action-plan.png" alt="" className="w-full h-full object-contain" />,
+    description: "911, emergency contacts, evacuation procedures",
+    iconAsImage: true,
+  },
+  {
+    id: "safety-rewards",
+    label: "Safety Rewards",
+    path: "/safety-rewards",
+    icon: <img src="/assets/safety-rewards.png" alt="" className="w-full h-full object-contain" />,
+    description: "Monthly raffle entries and prizes",
+    iconAsImage: true,
+  },
+  {
     id: "profile",
     label: "My Profile",
     path: "/profile",

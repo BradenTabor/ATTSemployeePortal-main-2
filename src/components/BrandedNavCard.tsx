@@ -276,7 +276,7 @@ export default function BrandedNavCard({
             selected.outer,
             !comingSoon && selected.outerHover,
             !comingSoon && selected.glow,
-            comingSoon && "opacity-50 grayscale-[30%]",
+            comingSoon && "opacity-70",
             isMobile && !comingSoon && "active:scale-[0.98] active:opacity-95"
           )}
         >

@@ -30,6 +30,10 @@ export function useDVIRFormValidation(
         if (!value || !String(value).trim()) {
           return "Odometer reading is required";
         }
+        const numVal = Number(String(value).trim());
+        if (Number.isNaN(numVal) || numVal < 0) {
+          return "Odometer reading must be a valid number";
+        }
         return validators.mileage(value, previousMileage);
       },
     },
@@ -77,9 +81,18 @@ export function useDVIRFormValidation(
     if (!hasDriver && !hasForeman) {
       errs.signature = "At least one signature (Driver or Foreman) is required";
     }
+
+    const vehicleHasFail = Object.values(form.vehicleTrailerChecklist).some((v) => v === "F");
+    const aerialHasFail = Object.values(form.aerialChecklist).some((v) => v === "F");
+    if (vehicleHasFail && !form.notes?.trim()) {
+      errs.notes = "Defect notes are required when items are marked Fail.";
+    }
+    if (aerialHasFail && !form.aerialNotes?.trim()) {
+      errs.aerialNotes = "Defect notes are required when aerial items are marked Fail.";
+    }
     
     return errs;
-  }, [oilDipstickPhoto, form.finalDriverSignature, form.generalForemanSignature]);
+  }, [oilDipstickPhoto, form.finalDriverSignature, form.generalForemanSignature, form.vehicleTrailerChecklist, form.aerialChecklist, form.notes, form.aerialNotes]);
 
   // Combined errors
   const allErrors = useMemo(() => {

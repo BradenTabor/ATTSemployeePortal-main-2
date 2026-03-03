@@ -198,6 +198,13 @@ useSyncHistory.subscribe((state) => {
   persistToStorage({ items: state.items, lastCycleSummary: state.lastCycleSummary });
 });
 
+// Auto-prune expired items every 5 minutes
+if (typeof window !== 'undefined') {
+  setInterval(() => {
+    useSyncHistory.getState().pruneExpired();
+  }, 5 * 60 * 1000);
+}
+
 // ---------------------------------------------------------------------------
 // Convenience selectors
 // ---------------------------------------------------------------------------
@@ -221,6 +228,9 @@ const FORM_LABELS: Record<FormType, string> = {
   jsa: 'JSA',
   dvir: 'DVIR',
   equipment: 'Equipment Inspection',
+  near_miss: 'Near-Miss Report',
+  tree_felling_jsa: 'Tree Felling JSA',
+  rto: 'RTO',
 };
 
 export function getFormLabel(formType: FormType): string {

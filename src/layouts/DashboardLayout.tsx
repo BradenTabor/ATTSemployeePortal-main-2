@@ -1,46 +1,132 @@
-import { ReactNode, lazy, Suspense } from "react";
+import { ReactNode, lazy, Suspense, useState, useEffect, useRef, useMemo } from "react";
 import ReturnButton from "../components/ReturnButton";
 import logo from "../assets/ATTS_Logo-removebg-preview.png";
-import { getDeviceCapabilities } from "../lib/mobilePerf";
+import { getDeviceCapabilities, onVisibilityChange } from "../lib/mobilePerf";
 import { CertificationResultOverlay } from "../components/certifications/CertificationResultOverlay";
+import { logger } from "../lib/logger";
 
-// Lazy load BackgroundParticles for better initial load performance
 const BackgroundParticles = lazy(() => import("../components/ui/BackgroundParticles"));
+
+const DASHBOARD_VIDEO_SRC = "/videos/evergreen-bg.mp4";
 
 interface DashboardLayoutProps {
   title?: string;
   children: ReactNode;
-  /** Hide the header section (logo + title + return button) */
   hideHeader?: boolean;
 }
 
 export default function DashboardLayout({ title, children, hideHeader = false }: DashboardLayoutProps) {
-  // Get device capabilities for adaptive particle settings
   const capabilities = getDeviceCapabilities();
   const { isLowEnd, isMobile, prefersReducedMotion } = capabilities;
 
-  // Completely disable particles on low-end devices or if user prefers reduced motion
   const shouldShowParticles = !isLowEnd && !prefersReducedMotion;
-  
-  // Adaptive particle count: 30 on mobile, 50 on desktop
   const particleCount = isMobile ? 30 : 50;
-  
-  // Disable expensive features on mobile
   const enableConnections = !isMobile;
   const enableShootingStars = !isMobile;
-  
-  // Sparkles are always disabled (highest CPU cost)
   const enableSparkles = false;
+
+  // --- Video background state ---
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const cleanupRef = useRef<(() => void) | null>(null);
+  const [videoLoaded, setVideoLoaded] = useState(false);
+
+  const shouldShowVideo = useMemo(() => {
+    if (capabilities.isSlowConnection) return false;
+    if (prefersReducedMotion) return false;
+    return true;
+  }, [capabilities.isSlowConnection, prefersReducedMotion]);
+
+  useEffect(() => {
+    if (!shouldShowVideo) return;
+    const id = setTimeout(() => {
+      const video = videoRef.current;
+      if (!video) return;
+
+      const handleCanPlay = async () => {
+        try {
+          await video.play();
+          setVideoLoaded(true);
+        } catch {
+          logger.warn("[DashboardLayout] Video autoplay blocked");
+          setVideoLoaded(true);
+        }
+      };
+
+      if (video.readyState >= 3) {
+        handleCanPlay();
+      } else {
+        video.addEventListener("canplaythrough", handleCanPlay);
+      }
+
+      const fallbackId = setTimeout(() => setVideoLoaded(true), 2500);
+
+      const unsubVisibility = onVisibilityChange((visible) => {
+        if (!video) return;
+        if (visible) video.play().catch(() => {});
+        else video.pause();
+      });
+
+      cleanupRef.current = () => {
+        clearTimeout(fallbackId);
+        video.removeEventListener("canplaythrough", handleCanPlay);
+        unsubVisibility();
+      };
+    }, 0);
+
+    return () => {
+      clearTimeout(id);
+      cleanupRef.current?.();
+      cleanupRef.current = null;
+    };
+  }, [shouldShowVideo]);
+
+  const preloadStrategy = isMobile ? "metadata" as const : "auto" as const;
 
   return (
     <div
       className="relative h-screen flex flex-col text-white w-full overflow-hidden"
-      style={{ 
-        background: 'radial-gradient(ellipse at 50% 50%, rgba(255, 236, 204, 0.75) 0%, rgba(180, 160, 126, 1) 18%, rgba(113, 101, 80, 1) 62%, rgba(63, 56, 44, 1) 96%, rgba(1, 6, 4, 1) 100%)',
-        boxShadow: 'inset 0px 4px 75px 25px rgba(0, 0, 0, 0.85)'
+      style={{
+        background: '#0a0a0a',
+        boxShadow: 'inset 0px 4px 75px 25px rgba(0, 0, 0, 0.85)',
       }}
     >
-      {/* Ultra-Premium Particles: Fixed background layer */}
+      {/* Video background layer */}
+      {shouldShowVideo && (
+        <video
+          ref={videoRef}
+          src={DASHBOARD_VIDEO_SRC}
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload={preloadStrategy}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[1500ms] ${
+            videoLoaded ? "opacity-100" : "opacity-0"
+          } z-0 blur-[5px] saturate-[0.55]`}
+          onLoadedData={() => setVideoLoaded(true)}
+          onError={() => logger.error("[DashboardLayout] Video load error")}
+        />
+      )}
+
+      {/* Subtle dark overlay so text stays readable over the video */}
+      <div
+        className="absolute inset-0 z-[1] pointer-events-none"
+        style={{
+          background: 'linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.55) 100%)',
+        }}
+      />
+
+      {/* Prominent white fade — top-left corner, over video, under content */}
+      <div
+        className="absolute top-0 left-0 z-[2] pointer-events-none"
+        style={{
+          width: '65%',
+          height: '45%',
+          background: 'linear-gradient(137.9deg, rgba(255, 255, 255, 0.6) 0%, rgba(0, 0, 0, 0) 35%)',
+        }}
+      />
+
+      {/* Particles above video overlays */}
       {shouldShowParticles && (
         <Suspense fallback={null}>
           <BackgroundParticles
@@ -59,23 +145,20 @@ export default function DashboardLayout({ title, children, hideHeader = false }:
         </Suspense>
       )}
 
-      {/* Scrollable content wrapper - scroll-container enables momentum + containment for smooth mobile scroll */}
+      {/* Scrollable content wrapper */}
       <div
         data-scroll-container
         className={`flex-1 overflow-y-auto overflow-x-hidden px-4 sm:px-8 scroll-container scroll-smooth-touch gpu-layer ${hideHeader ? 'pt-0' : 'pt-6 sm:pt-10'} pb-6 relative z-10`}
       >
-        {/* Header Area - conditionally rendered */}
         {!hideHeader && (
           <header className="flex items-center gap-2 sm:gap-4 mb-6 w-full">
-            {/* Logo - Smaller on mobile to leave room for title */}
             <img
               src={logo}
               alt="ATTS Logo"
               // @ts-expect-error fetchpriority is a valid HTML attribute but not in React types yet
               fetchpriority="high"
-              className="w-[100px] sm:w-40 md:w-48 object-contain drop-shadow-lg flex-shrink-0"
+              className="w-[100px] sm:w-40 md:w-48 object-contain drop-shadow-lg flex-shrink-0 relative z-[15]"
             />
-            {/* Title - No truncation, wraps if needed */}
             {title && (
               <h1
                 className="text-lg sm:text-2xl md:text-3xl font-bold tracking-wide text-transparent bg-clip-text gradient-animated leading-tight"
@@ -92,16 +175,12 @@ export default function DashboardLayout({ title, children, hideHeader = false }:
           </header>
         )}
 
-        {/* Main Content */}
         <main className="flex flex-col items-center justify-start w-full pb-8">
           {children}
         </main>
       </div>
 
-      {/* Floating Return Navigation - Fixed position, stays visible */}
       <ReturnButton />
-
-      {/* Certification Result Overlay - Shows when test is graded by admin */}
       <CertificationResultOverlay />
     </div>
   );
