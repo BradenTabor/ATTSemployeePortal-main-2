@@ -23,6 +23,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [fullName, setFullName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [driversLicenseNumber, setDriversLicenseNumber] = useState("");
   const [driversLicenseClass, setDriversLicenseClass] = useState("");
   const [driversLicenseExpiration, setDriversLicenseExpiration] = useState("");
@@ -76,6 +77,7 @@ export default function Home() {
     setShowPassword(false);
     if (newMode === "login") {
       setFullName("");
+      setPhoneNumber("");
       setDriversLicenseNumber("");
       setDriversLicenseClass("");
       setDriversLicenseExpiration("");
@@ -138,6 +140,7 @@ export default function Home() {
           emailRedirectTo: redirectUrl,
           data: {
             full_name: normalizedFullName,
+            phone_number: phoneNumber.trim() || undefined,
             drivers_license_number: normalizedDlNumber,
             drivers_license_class: normalizedDlClass,
             drivers_license_expiration: normalizedDlExpiration,
@@ -158,6 +161,7 @@ export default function Home() {
           setEmail("");
           setPassword("");
           setFullName("");
+          setPhoneNumber("");
           setDriversLicenseNumber("");
           setDriversLicenseClass("");
           setDriversLicenseExpiration("");
@@ -356,6 +360,22 @@ export default function Home() {
                               className={inputStyles}
                             />
                           </div>
+                        </div>
+
+                        {/* Phone Number - optional */}
+                        <div className="space-y-2">
+                          <label htmlFor="auth-phone" className={labelStyles}>
+                            Phone Number
+                          </label>
+                          <input
+                            id="auth-phone"
+                            type="tel"
+                            value={phoneNumber}
+                            onChange={(e) => setPhoneNumber(e.target.value)}
+                            placeholder="(555) 555-5555"
+                            autoComplete="tel"
+                            className={inputStyles}
+                          />
                         </div>
 
                         {/* License Class & Expiration - stack on small phones (<640px) */}
