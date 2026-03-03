@@ -24,6 +24,9 @@ dist-ssr
 # One-off SQL with secrets (delete after running in SQL Editor)
 scripts/restore-admin-compliance-9am-with-key.sql
 
+# Cursor plugin-internal state (machine-specific paths, local timestamps)
+.cursor/hooks/
+
 # --- Performance & Lighthouse artifacts ---
 
 # Raw Lighthouse HTML reports
