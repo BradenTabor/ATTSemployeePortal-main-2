@@ -7,7 +7,8 @@ import { logger } from "../lib/logger";
 
 const BackgroundParticles = lazy(() => import("../components/ui/BackgroundParticles"));
 
-const DASHBOARD_VIDEO_SRC = "/videos/evergreen-bg.mp4";
+const DASHBOARD_VIDEO_PRIMARY = "/videos/evergreen-bg.mp4";
+const DASHBOARD_VIDEO_FALLBACK = "/videos/4k.mp4";
 
 interface DashboardLayoutProps {
   title?: string;
@@ -25,10 +26,11 @@ export default function DashboardLayout({ title, children, hideHeader = false }:
   const enableShootingStars = !isMobile;
   const enableSparkles = false;
 
-  // --- Video background state ---
+  // --- Video background state (fallback to 4k.mp4 when evergreen-bg.mp4 is missing) ---
   const videoRef = useRef<HTMLVideoElement>(null);
   const cleanupRef = useRef<(() => void) | null>(null);
   const [videoLoaded, setVideoLoaded] = useState(false);
+  const [videoSrc, setVideoSrc] = useState(DASHBOARD_VIDEO_PRIMARY);
 
   const shouldShowVideo = useMemo(() => {
     if (capabilities.isSlowConnection) return false;
@@ -82,6 +84,17 @@ export default function DashboardLayout({ title, children, hideHeader = false }:
 
   const preloadStrategy = isMobile ? "metadata" as const : "auto" as const;
 
+  const handleVideoError = () => {
+    if (videoSrc === DASHBOARD_VIDEO_PRIMARY) {
+      logger.warn("[DashboardLayout] evergreen-bg.mp4 failed, using fallback 4k.mp4");
+      setVideoLoaded(false);
+      setVideoSrc(DASHBOARD_VIDEO_FALLBACK);
+    } else {
+      logger.error("[DashboardLayout] Video load error (fallback also failed)");
+      setVideoLoaded(true);
+    }
+  };
+
   return (
     <div
       className="relative h-screen flex flex-col text-white w-full overflow-hidden"
@@ -94,17 +107,19 @@ export default function DashboardLayout({ title, children, hideHeader = false }:
       {shouldShowVideo && (
         <video
           ref={videoRef}
-          src={DASHBOARD_VIDEO_SRC}
+          src={videoSrc}
           autoPlay
           loop
           muted
           playsInline
           preload={preloadStrategy}
+          disablePictureInPicture
+          disableRemotePlayback
           className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[1500ms] ${
             videoLoaded ? "opacity-100" : "opacity-0"
           } z-0 blur-[5px] saturate-[0.55]`}
           onLoadedData={() => setVideoLoaded(true)}
-          onError={() => logger.error("[DashboardLayout] Video load error")}
+          onError={handleVideoError}
         />
       )}
 

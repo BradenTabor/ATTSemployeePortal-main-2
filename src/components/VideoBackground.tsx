@@ -113,6 +113,8 @@ export const VideoBackground: React.FC<VideoBackgroundProps> = ({
           muted
           playsInline
           preload={preloadStrategy}
+          disablePictureInPicture
+          disableRemotePlayback
           className={`absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-1000 ${
             loaded ? "opacity-100" : "opacity-0"
           } z-0`}
@@ -122,6 +124,7 @@ export const VideoBackground: React.FC<VideoBackgroundProps> = ({
             const err = target?.error;
             const msg = err?.message ?? "unknown";
             logger.error("Video load error:", msg);
+            setLoaded(true);
             if (target?.networkState === 3 /* NETWORK_NO_SOURCE */) {
               logger.warn("[VideoBackground] If the video returns 401, ensure the Cloudinary asset is public or use a signed URL.");
             }
