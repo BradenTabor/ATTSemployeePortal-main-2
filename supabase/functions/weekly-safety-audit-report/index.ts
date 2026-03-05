@@ -109,7 +109,8 @@ async function getComplianceMetrics(
     .from('app_users')
     .select('*', { count: 'exact', head: true })
     .in('role', ['employee', 'foreman'])
-    .not('email', 'is', null);
+    .not('email', 'is', null)
+    .not('email', 'ilike', '%@atts.test');
   const required = requiredUsers ?? 0;
   const expectedUserDays = required > 0 && workDayCount > 0 ? required * workDayCount : 0;
 
@@ -140,7 +141,8 @@ async function getComplianceMetrics(
     .from('app_users')
     .select('user_id, full_name, role')
     .in('role', ['employee', 'foreman'])
-    .not('email', 'is', null);
+    .not('email', 'is', null)
+    .not('email', 'ilike', '%@atts.test');
   const users = requiredUserList || [];
   const nonCompliant: { name: string; role: string; missingCount: number }[] = [];
   for (const u of users) {

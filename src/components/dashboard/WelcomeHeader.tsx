@@ -33,6 +33,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { getDeviceCapabilities } from '../../lib/mobilePerf';
 import { TextEffect } from '../ui/TextEffect';
+import { CertStatusChip } from './CertStatusChip';
 
 // ============================================================================
 // TYPES
@@ -646,6 +647,7 @@ function WelcomeHeaderComponent({
                       <span className={`text-[8px] sm:text-[9px] font-semibold ${themeStyles.badgeText}`}>{activeJobsCount} Job{activeJobsCount > 1 ? 's' : ''}</span>
                     </motion.div>
                   )}
+                  <CertStatusChip />
                 </div>
               </div>
             </div>

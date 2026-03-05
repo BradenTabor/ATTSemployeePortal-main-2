@@ -9,8 +9,10 @@
 #   - admin-safety-forecast (Mon-Fri 6:30 AM CST) - writes to risk_score_history
 #   - auto-tune-risk-algorithm (Sunday 2 AM UTC) - weekly tuning
 #   - check-algorithm-performance (Daily 3 AM UTC) - rollback checker
+#   - safety-briefing-reminder-push (Mon-Fri 12:30 UTC = 6:30 AM CST) - Pre–Tier 0 push
 #   - safety-briefing-reminder-sms (Mon-Fri 13:00 UTC = 7 AM CST) - Tier 0 employee reminder
 #   - safety-briefing-escalation-sms (Mon-Fri 16:00 UTC = 10 AM CST) - SMS escalation for overdue briefing
+#   - monthly-compliance-summary (1st of every month, 14:00 UTC = 8 AM CST) - executive compliance email
 #
 # It avoids committing the service role key to the repository.
 #
@@ -229,7 +231,32 @@ SELECT cron.schedule(
 );
 
 -- =============================================================================
--- 6. Safety Briefing Reminder SMS - Tier 0 (Mon-Fri 13:00 UTC = 7 AM CST / 8 AM CDT)
+-- 6. Safety Briefing Reminder Push - Pre–Tier 0 (Mon-Fri 12:30 UTC = 6:30 AM CST / 7:30 AM CDT)
+-- =============================================================================
+DO \$\$
+BEGIN
+  PERFORM cron.unschedule('safety-briefing-reminder-push');
+EXCEPTION WHEN others THEN
+  RAISE NOTICE 'safety-briefing-reminder-push did not exist';
+END \$\$;
+
+SELECT cron.schedule(
+  'safety-briefing-reminder-push',
+  '30 12 * * 1-5',
+  \$cron\$
+  SELECT net.http_post(
+    url := 'https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/safety-briefing-reminder-push',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer $SUPABASE_SERVICE_ROLE_KEY'
+    ),
+    body := '{}'::jsonb
+  );
+  \$cron\$
+);
+
+-- =============================================================================
+-- 7. Safety Briefing Reminder SMS - Tier 0 (Mon-Fri 13:00 UTC = 7 AM CST / 8 AM CDT)
 -- =============================================================================
 DO \$\$
 BEGIN
@@ -254,7 +281,7 @@ SELECT cron.schedule(
 );
 
 -- =============================================================================
--- 7. Safety Briefing Escalation SMS (Mon-Fri 16:00 UTC = 10 AM CST / 11 AM CDT)
+-- 8. Safety Briefing Escalation SMS (Mon-Fri 16:00 UTC = 10 AM CST / 11 AM CDT)
 -- =============================================================================
 DO \$\$
 BEGIN
@@ -279,6 +306,31 @@ SELECT cron.schedule(
 );
 
 -- =============================================================================
+-- 9. Monthly Compliance Summary (1st of every month, 14:00 UTC = 8 AM CST)
+-- =============================================================================
+DO \$\$
+BEGIN
+  PERFORM cron.unschedule('monthly-compliance-summary');
+EXCEPTION WHEN others THEN
+  RAISE NOTICE 'monthly-compliance-summary did not exist';
+END \$\$;
+
+SELECT cron.schedule(
+  'monthly-compliance-summary',
+  '0 14 1 * *',
+  \$cron\$
+  SELECT net.http_post(
+    url := 'https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/monthly-compliance-summary',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer $SUPABASE_SERVICE_ROLE_KEY'
+    ),
+    body := '{}'::jsonb
+  );
+  \$cron\$
+);
+
+-- =============================================================================
 -- Verify all jobs
 -- =============================================================================
 SELECT jobname, schedule, active 
@@ -289,8 +341,10 @@ WHERE jobname IN (
   'admin-safety-forecast',
   'auto-tune-risk-algorithm',
   'check-algorithm-performance',
+  'safety-briefing-reminder-push',
   'safety-briefing-reminder-sms',
-  'safety-briefing-escalation-sms'
+  'safety-briefing-escalation-sms',
+  'monthly-compliance-summary'
 )
 ORDER BY jobname;
 SQL
@@ -305,8 +359,10 @@ if [ $? -eq 0 ]; then
   echo "   • admin-safety-forecast       - Mon-Fri 6:30 AM CST (12:30 UTC)"
   echo "   • auto-tune-risk-algorithm    - Sunday 2:00 AM UTC"
   echo "   • check-algorithm-performance - Daily 3:00 AM UTC"
+  echo "   • safety-briefing-reminder-push    - Mon-Fri 6:30 AM CST (12:30 UTC)"
   echo "   • safety-briefing-reminder-sms     - Mon-Fri 7:00 AM CST (13:00 UTC)"
   echo "   • safety-briefing-escalation-sms   - Mon-Fri 10:00 AM CST (16:00 UTC)"
+  echo "   • monthly-compliance-summary       - 1st of each month 8:00 AM CST (14:00 UTC)"
   echo ""
   echo "📊 To verify execution history:"
   echo "   SELECT * FROM public.cron_job_runs ORDER BY start_time DESC LIMIT 10;"

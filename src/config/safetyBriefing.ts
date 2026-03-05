@@ -195,3 +195,29 @@ export const PERSONALIZED_FALLBACK = {
 /** Fallback for announcement detail when raw_data has no sections (dropdown 3). */
 export const ANNOUNCEMENT_DETAIL_FALLBACK_TITLE = "Today's key points";
 export const ANNOUNCEMENT_DETAIL_FALLBACK_BODY = 'Review the main safety message above. Focus on PPE, equipment checks, and conditions mentioned for today.';
+
+// --- Safety tip of the day (Phase 2) ---
+
+/** Tip bank for "Safety tip of the day". One shown per day by day-of-year. Curated by safety_officer/admin. */
+export const SAFETY_TIPS: string[] = [
+  'Before the first cut, identify escape routes and clear the drop zone.',
+  'Maintain minimum approach distance near energized lines—only qualified personnel inside MAD.',
+  'Hard hat, eye and hearing protection, leg protection, gloves, and boots are required for chainsaw work per ANSI Z133.',
+  'Inspect rigging and equipment before use; communicate with your crew and lookouts.',
+  'Stay hydrated and take breaks in the heat; watch for signs of heat stress in yourself and others.',
+  'Three points of contact when climbing; secure your tie-in before advancing.',
+  'Pre-trip inspection: tires, lights, brakes, and secure loads before driving.',
+  'If you see something that could hurt someone, say something—everyone is responsible for safety.',
+  'Cold weather: dress in layers and keep extremities warm; watch for ice on surfaces.',
+  'Chipper: never reach into the feed area; use a push stick and keep hands clear.',
+  'Know where your first-aid kit and eyewash are on every job site.',
+  'Report near-misses so we can prevent real incidents; no blame.',
+];
+
+/**
+ * Returns the safety tip for the given date (same for all users; day-of-year selection).
+ */
+export function getTodaysTip(dateString: string): string {
+  const day = getDayOfYear(parseISO(dateString));
+  return SAFETY_TIPS[day % SAFETY_TIPS.length] ?? SAFETY_TIPS[0]!;
+}

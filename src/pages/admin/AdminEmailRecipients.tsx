@@ -8,7 +8,15 @@ import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "../../lib/toast";
 import { logger } from "../../lib/logger";
 
-type ListKey = "compliance_summary" | "safety_forecast" | "weekly_safety_audit" | "certification_expiry_digest" | "safety_rewards_winners";
+const MONTHLY_SUMMARY_LIST_KEY = "monthly_compliance_summary" as const;
+
+type ListKey =
+  | "compliance_summary"
+  | "safety_forecast"
+  | "weekly_safety_audit"
+  | "certification_expiry_digest"
+  | "safety_rewards_winners"
+  | typeof MONTHLY_SUMMARY_LIST_KEY;
 
 const LISTS: { key: ListKey; label: string; description: string }[] = [
   {
@@ -35,6 +43,11 @@ const LISTS: { key: ListKey; label: string; description: string }[] = [
     key: "safety_rewards_winners",
     label: "Safety Rewards Drawing Winners",
     description: "Recipients notified when the monthly safety rewards drawing is run (winners and prizes)",
+  },
+  {
+    key: MONTHLY_SUMMARY_LIST_KEY,
+    label: "Monthly Compliance Summary",
+    description: "Executive report on the 1st of each month (8 AM CST): SMS cost, compliance rate, crew rankings, repeat offenders, incidents, data quality",
   },
 ];
 
@@ -86,14 +99,23 @@ function AdminEmailRecipients() {
   const fetchRecipients = useCallback(async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("email_recipient_lists")
-        .select("email, created_at")
-        .eq("list_key", listKey)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setRecipients((data ?? []) as { email: string; created_at: string }[]);
+      if (listKey === MONTHLY_SUMMARY_LIST_KEY) {
+        const { data, error } = await supabase
+          .from("monthly_summary_recipients")
+          .select("email, created_at")
+          .eq("active", true)
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+        setRecipients((data ?? []) as { email: string; created_at: string }[]);
+      } else {
+        const { data, error } = await supabase
+          .from("email_recipient_lists")
+          .select("email, created_at")
+          .eq("list_key", listKey)
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+        setRecipients((data ?? []) as { email: string; created_at: string }[]);
+      }
     } catch (e) {
       logger.error("[AdminEmailRecipients] Fetch error:", e);
       toast.error((e as Error)?.message ?? "Failed to load recipients");
@@ -142,20 +164,35 @@ function AdminEmailRecipients() {
     }
     setAddPending(true);
     try {
-      const { error } = await supabase.from("email_recipient_lists").insert({
-        list_key: listKey,
-        email,
-        ...(appUserId ? { created_by_user_id: appUserId } : {}),
-      });
-      if (error) {
-        if (error.message?.includes("duplicate") || error.code === "23505") {
-          toast.error("Email already in list");
-        } else if (error.message?.includes("valid_email") || error.message?.includes("email_lowercase")) {
-          toast.error("Invalid email format");
-        } else {
-          toast.error(error.message ?? "Failed to add");
+      if (listKey === MONTHLY_SUMMARY_LIST_KEY) {
+        const { error } = await supabase.from("monthly_summary_recipients").insert({
+          email,
+          name: null,
+        });
+        if (error) {
+          if (error.message?.includes("duplicate") || error.code === "23505") {
+            toast.error("Email already in list");
+          } else {
+            toast.error(error.message ?? "Failed to add");
+          }
+          return;
         }
-        return;
+      } else {
+        const { error } = await supabase.from("email_recipient_lists").insert({
+          list_key: listKey,
+          email,
+          ...(appUserId ? { created_by_user_id: appUserId } : {}),
+        });
+        if (error) {
+          if (error.message?.includes("duplicate") || error.code === "23505") {
+            toast.error("Email already in list");
+          } else if (error.message?.includes("valid_email") || error.message?.includes("email_lowercase")) {
+            toast.error("Invalid email format");
+          } else {
+            toast.error(error.message ?? "Failed to add");
+          }
+          return;
+        }
       }
       toast.success("Email added");
       setNewEmail("");
@@ -174,18 +211,29 @@ function AdminEmailRecipients() {
     }
     setRemovePending(email);
     try {
-      const { error } = await supabase
-        .from("email_recipient_lists")
-        .delete()
-        .eq("list_key", listKey)
-        .eq("email", email);
-      if (error) {
-        if (error.message?.includes("Cannot delete last recipient")) {
-          toast.error("Cannot remove the last recipient");
-        } else {
+      if (listKey === MONTHLY_SUMMARY_LIST_KEY) {
+        const { error } = await supabase
+          .from("monthly_summary_recipients")
+          .update({ active: false })
+          .eq("email", email);
+        if (error) {
           toast.error(error.message ?? "Failed to remove");
+          return;
         }
-        return;
+      } else {
+        const { error } = await supabase
+          .from("email_recipient_lists")
+          .delete()
+          .eq("list_key", listKey)
+          .eq("email", email);
+        if (error) {
+          if (error.message?.includes("Cannot delete last recipient")) {
+            toast.error("Cannot remove the last recipient");
+          } else {
+            toast.error(error.message ?? "Failed to remove");
+          }
+          return;
+        }
       }
       toast.success("Email removed");
       await fetchRecipients();
@@ -210,20 +258,37 @@ function AdminEmailRecipients() {
     }
     setBulkPending(true);
     try {
-      const rows = toAdd.map((email) => ({
-        list_key: listKey,
-        email,
-        ...(appUserId ? { created_by_user_id: appUserId } : {}),
-      }));
-      const { error } = await supabase
-        .from("email_recipient_lists")
-        .upsert(rows, {
-          onConflict: "list_key,email",
-          ignoreDuplicates: true,
-        });
-      if (error) {
-        toast.error(error.message ?? "Bulk add failed");
-        return;
+      if (listKey === MONTHLY_SUMMARY_LIST_KEY) {
+        const existing = new Set(recipients.map((r) => r.email));
+        const newEmails = toAdd.filter((e) => !existing.has(e));
+        if (newEmails.length === 0) {
+          toast.info("All emails already in list");
+          setBulkPending(false);
+          return;
+        }
+        const { error } = await supabase.from("monthly_summary_recipients").insert(
+          newEmails.map((email) => ({ email, name: null }))
+        );
+        if (error) {
+          toast.error(error.message ?? "Bulk add failed");
+          return;
+        }
+      } else {
+        const rows = toAdd.map((email) => ({
+          list_key: listKey,
+          email,
+          ...(appUserId ? { created_by_user_id: appUserId } : {}),
+        }));
+        const { error } = await supabase
+          .from("email_recipient_lists")
+          .upsert(rows, {
+            onConflict: "list_key,email",
+            ignoreDuplicates: true,
+          });
+        if (error) {
+          toast.error(error.message ?? "Bulk add failed");
+          return;
+        }
       }
       toast.success("Bulk import complete");
       setBulkText("");

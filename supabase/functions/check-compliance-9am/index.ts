@@ -226,7 +226,8 @@ Deno.serve(async (req: Request) => {
       .from('app_users')
       .select('user_id, email, full_name, role')
       .in('role', REQUIRED_ROLES)
-      .not('email', 'is', null);
+      .not('email', 'is', null)
+      .not('email', 'ilike', '%@atts.test');
 
     if (usersError) {
       throw new Error(`Failed to fetch users: ${usersError.message}`);

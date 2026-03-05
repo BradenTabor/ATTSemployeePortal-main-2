@@ -159,7 +159,8 @@ Deno.serve(async (req: Request) => {
     const { data: users } = await supabase
       .from("app_users")
       .select("user_id, full_name")
-      .in("user_id", allUserIds);
+      .in("user_id", allUserIds)
+      .not("email", "ilike", "%@atts.test");
     (users ?? []).forEach((u: { user_id: string; full_name: string | null }) => {
       userNameById.set(u.user_id, (u.full_name || "Unknown").trim());
     });
@@ -312,7 +313,8 @@ Deno.serve(async (req: Request) => {
       const { data: fallbackRows } = await supabase
         .from("app_users")
         .select("email")
-        .in("role", ["admin", "safety_officer"]);
+        .in("role", ["admin", "safety_officer"])
+        .not("email", "ilike", "%@atts.test");
       recipients = [...new Set((fallbackRows ?? []).map((r: { email: string }) => r.email).filter(Boolean))];
     }
 

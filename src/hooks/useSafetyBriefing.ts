@@ -211,9 +211,285 @@ export function usePersonalizedSafetyContent(userId: string | undefined): Person
   };
 }
 
+export interface FocusItem {
+  title: string;
+  body: string;
+}
+
+/**
+ * Structured "Your focus today" items derived from the same data as usePersonalizedSafetyContent.
+ * Reuses the same query keys so data is shared. Returns up to 3 focus items (certs, hazards, incidents).
+ */
+export function usePersonalizedFocusItems(userId: string | undefined): {
+  focusItems: FocusItem[];
+  isLoading: boolean;
+} {
+  const today = new Date();
+  const sevenDaysAgo = subDays(today, 7).toISOString();
+  const thirtyDaysFromNow = new Date(today);
+  thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+  const thirtyDaysAgo = subDays(today, 30).toISOString();
+  const todayIso = today.toISOString().slice(0, 10);
+  const thirtyDaysIso = thirtyDaysFromNow.toISOString().slice(0, 10);
+
+  const { data: jsaData, isLoading: jsaLoading } = useQuery({
+    queryKey: [...queryKeys.safetyBriefing.personalizedContent(userId ?? ''), 'jsa'],
+    queryFn: async () => {
+      if (!userId) return null;
+      const { data, error } = await supabase
+        .from('daily_jsa')
+        .select('hazards_present')
+        .eq('user_id', userId)
+        .gte('created_at', sevenDaysAgo)
+        .order('created_at', { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!userId,
+  });
+
+  const { data: certData, isLoading: certLoading } = useQuery({
+    queryKey: [...queryKeys.safetyBriefing.personalizedContent(userId ?? ''), 'certs'],
+    queryFn: async () => {
+      if (!userId) return null;
+      const { data, error } = await supabase
+        .from('certification_records')
+        .select('expires_at')
+        .eq('user_id', userId)
+        .in('status', ['active', 'written_passed'])
+        .gte('expires_at', todayIso)
+        .lte('expires_at', thirtyDaysIso)
+        .order('expires_at')
+        .limit(1);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!userId,
+  });
+
+  const { data: incidentData, isLoading: incidentLoading } = useQuery({
+    queryKey: [...queryKeys.safetyBriefing.personalizedContent(userId ?? ''), 'incidents'],
+    queryFn: async () => {
+      if (!userId) return null;
+      const { data, error } = await supabase
+        .from('safety_incidents')
+        .select('incident_type')
+        .eq('reported_by', userId)
+        .gte('incident_date', thirtyDaysAgo.slice(0, 10))
+        .limit(1);
+      if (error) {
+        if (error.code === '42P01') return null;
+        throw error;
+      }
+      return data;
+    },
+    enabled: !!userId,
+    retry: false,
+  });
+
+  const focusItems: FocusItem[] = [];
+  if (certData && Array.isArray(certData) && certData.length > 0) {
+    const first = certData[0] as { expires_at?: string };
+    const exp = first.expires_at ? first.expires_at.slice(0, 10) : '';
+    focusItems.push({
+      title: 'Certification expiring soon',
+      body: `You have a certification expiring on ${exp}. Stay current!`,
+    });
+  }
+  if (jsaData && Array.isArray(jsaData) && jsaData.length > 0) {
+    const hazards = new Set<string>();
+    for (const row of jsaData as { hazards_present?: Record<string, unknown> }[]) {
+      if (row.hazards_present && typeof row.hazards_present === 'object') {
+        Object.keys(row.hazards_present).forEach((k) => {
+          if (row.hazards_present![k]) hazards.add(k);
+        });
+      }
+    }
+    if (hazards.size > 0) {
+      focusItems.push({
+        title: 'Pay extra attention today',
+        body: `You've reported: ${[...hazards].slice(0, 3).join(', ')}. Double-check escape routes and conditions.`,
+      });
+    }
+  }
+  if (incidentData && Array.isArray(incidentData) && incidentData.length > 0) {
+    focusItems.push({
+      title: 'Stay vigilant',
+      body: "You've reported a recent incident. Keep watching for hazards and communicate with your crew.",
+    });
+  }
+
+  return {
+    focusItems: focusItems.slice(0, 3),
+    isLoading: jsaLoading || certLoading || incidentLoading,
+  };
+}
+
+/**
+ * Consecutive days where an announcement existed and the user completed the briefing.
+ * Days with no announcement do not break the streak (weekends, company calendar, etc.).
+ * A user with a single completion (today only) gets streak === 1 (first day).
+ */
+export function useBriefingStreak(userId: string | undefined): {
+  streak: number;
+  isLoading: boolean;
+} {
+  const todayDateString = getTodayDateString();
+  const ninetyDaysAgo = subDays(new Date(), 90).toISOString().slice(0, 10);
+
+  const { data: announcementDates, isLoading: datesLoading } = useQuery({
+    queryKey: queryKeys.safetyBriefing.announcementDates(ninetyDaysAgo),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('announcements')
+        .select('date')
+        .gte('date', ninetyDaysAgo)
+        .order('date', { ascending: false });
+      if (error) throw error;
+      const set = new Set<string>((data || []).map((r: { date: string }) => r.date.slice(0, 10)));
+      return Array.from(set).sort((a, b) => b.localeCompare(a));
+    },
+  });
+
+  const { data: userCompletionDates, isLoading: completionLoading } = useQuery({
+    queryKey: queryKeys.safetyBriefing.streak(userId ?? ''),
+    queryFn: async () => {
+      if (!userId) return [];
+      const { data, error } = await supabase
+        .from('safety_briefing_answers')
+        .select('briefing_date')
+        .eq('user_id', userId)
+        .gte('briefing_date', ninetyDaysAgo)
+        .order('briefing_date', { ascending: false });
+      if (error) throw error;
+      return (data || []).map((r: { briefing_date: string }) => r.briefing_date.slice(0, 10));
+    },
+    enabled: !!userId,
+  });
+
+  const streak = (() => {
+    if (!announcementDates?.length || !userCompletionDates) return 0;
+    const completionSet = new Set(userCompletionDates);
+    let count = 0;
+    for (const d of announcementDates) {
+      if (d > todayDateString) continue;
+      if (!completionSet.has(d)) break;
+      count++;
+    }
+    return count;
+  })();
+
+  return {
+    streak,
+    isLoading: datesLoading || completionLoading,
+  };
+}
+
+export interface CrewBriefingCompletion {
+  crewName: string;
+  total: number;
+  completed: number;
+}
+
+/**
+ * For the current user's primary crew, returns how many members completed today's briefing.
+ * Uses the first crew membership only (limit 1); users in multiple crews see one crew's completion. v1 scope.
+ * Positive framing only. Returns null if user has no crew or no crew members.
+ */
+export function useCrewBriefingCompletion(
+  userId: string | undefined,
+  todayDateString: string
+): { data: CrewBriefingCompletion | null; isLoading: boolean } {
+  const { data: crewMembership, isLoading: crewLoading } = useQuery({
+    queryKey: ['crew-membership', userId],
+    queryFn: async () => {
+      if (!userId) return null;
+      const { data: memberships, error: memError } = await supabase
+        .from('crew_members')
+        .select('crew_id')
+        .eq('user_id', userId)
+        .limit(1);
+      if (memError || !memberships?.length) return null;
+      const crewId = (memberships[0] as { crew_id: string }).crew_id;
+      const { data: crew, error: crewError } = await supabase
+        .from('crews')
+        .select('name')
+        .eq('id', crewId)
+        .single();
+      if (crewError || !crew) return null;
+      const { data: members, error: membersError } = await supabase
+        .from('crew_members')
+        .select('user_id')
+        .eq('crew_id', crewId);
+      if (membersError || !members?.length) return null;
+      return {
+        crewName: (crew as { name: string }).name,
+        userIds: (members as { user_id: string }[]).map((m) => m.user_id),
+      };
+    },
+    enabled: !!userId,
+  });
+
+  const memberIds = crewMembership?.userIds ?? [];
+  const { data: completedCount, isLoading: countLoading } = useQuery({
+    queryKey: queryKeys.safetyBriefing.crewCompletion(userId ?? '', todayDateString),
+    queryFn: async () => {
+      if (!memberIds.length) return 0;
+      const { count, error } = await supabase
+        .from('safety_briefing_answers')
+        .select('*', { count: 'exact', head: true })
+        .in('user_id', memberIds)
+        .eq('briefing_date', todayDateString);
+      if (error) throw error;
+      return count ?? 0;
+    },
+    enabled: memberIds.length > 0,
+  });
+
+  const isLoading = crewLoading || countLoading;
+  const data: CrewBriefingCompletion | null =
+    crewMembership && completedCount !== undefined
+      ? {
+          crewName: crewMembership.crewName,
+          total: memberIds.length,
+          completed: completedCount,
+        }
+      : null;
+
+  return { data, isLoading };
+}
+
+export interface BriefingDailySnapshot {
+  completions_today: number;
+}
+
+/**
+ * Company-level snapshot for "Today in the field" (positive framing only).
+ * Uses RPC get_briefing_daily_snapshot; no PII.
+ */
+export function useBriefingDailySnapshot(todayDateString: string): {
+  data: BriefingDailySnapshot | null;
+  isLoading: boolean;
+} {
+  const { data, isLoading } = useQuery({
+    queryKey: queryKeys.safetyBriefing.dailySnapshot(todayDateString),
+    queryFn: async () => {
+      const { data: result, error } = await supabase.rpc('get_briefing_daily_snapshot', {
+        p_briefing_date: todayDateString,
+      });
+      if (error) throw error;
+      return result as BriefingDailySnapshot | null;
+    },
+  });
+  return { data: data ?? null, isLoading };
+}
+
 export interface SubmitBriefingAnswersPayload {
   announcementId: string;
   answers: { question_id: string; selected_option_id: string; category: BriefingQuestion['category'] }[];
+  /** Optional open-ended response (e.g. "What's one thing you'll watch for today?"). Max 200 chars. */
+  openEndedResponse?: string | null;
 }
 
 /**
@@ -229,12 +505,14 @@ export function useSubmitSafetyBriefingAnswers() {
 
       const todayDateString = getTodayDateString();
 
+      const openEnded = payload.openEndedResponse?.trim().slice(0, 200) || null;
       const { data: answerRow, error: insertAnswerError } = await supabase
         .from('safety_briefing_answers')
         .insert({
           user_id: user.id,
           announcement_id: payload.announcementId,
           briefing_date: todayDateString,
+          ...(openEnded ? { open_ended_response: openEnded } : {}),
         })
         .select('id')
         .single();
@@ -264,10 +542,20 @@ export function useSubmitSafetyBriefingAnswers() {
       return { alreadyCompleted: false } as const;
     },
     onSuccess: () => {
+      const today = getTodayDateString();
       queryClient.invalidateQueries({
-        queryKey: queryKeys.safetyBriefing.status(user?.id ?? '', getTodayDateString()),
+        queryKey: queryKeys.safetyBriefing.status(user?.id ?? '', today),
       });
       queryClient.invalidateQueries({ queryKey: queryKeys.safetyBriefing.all });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.safetyBriefing.streak(user?.id ?? ''),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.safetyBriefing.crewCompletion(user?.id ?? '', today),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.safetyBriefing.dailySnapshot(today),
+      });
     },
   });
 }

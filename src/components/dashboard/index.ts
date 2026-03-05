@@ -39,6 +39,7 @@ export type { PinnedFavoritesTheme } from './PinnedFavorites';
 // Header & Profile
 export { WelcomeHeader } from './WelcomeHeader';
 export type { WelcomeHeaderTheme } from './WelcomeHeader';
+export { CertStatusChip } from './CertStatusChip';
 export { AvatarDropdownPortal } from './AvatarDropdownPortal';
 export type { AvatarTheme } from './AvatarDropdownPortal';
 
@@ -47,6 +48,7 @@ export { PullToRefresh } from './PullToRefresh';
 
 // Featured content
 export { FeaturedAnnouncementSection } from './FeaturedAnnouncementSection';
+export { GoodCatchPrompt } from './GoodCatchPrompt';
 
 // Skeletons
 export {

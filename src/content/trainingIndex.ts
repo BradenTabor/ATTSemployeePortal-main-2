@@ -11,6 +11,7 @@ import geoBoyGuide from './certifications/geo-boy-study-guide.md?raw';
 import groundsmanGuide from './certifications/groundsman-study-guide.md?raw';
 import jaraffTrimmerGuide from './certifications/jarraff-trimmer-study-guide.md?raw';
 import skidSteerGuide from './certifications/skid-steer-study-guide.md?raw';
+import electricalQualificationGuide from './certifications/electrical-qualification-study-guide.md?raw';
 
 export interface TrainingEntry {
   id: string;
@@ -26,6 +27,7 @@ export interface TrainingEntry {
 /** Certification slugs that exist in DB (for validation and filtering). */
 export const CERTIFICATION_SLUGS = [
   'bucket-trimmer',
+  'electrical-qualification',
   'geo-boy',
   'groundsman',
   'jarraff-trimmer',
@@ -78,11 +80,21 @@ export const TRAINING_ENTRIES: TrainingEntry[] = [
     fileKey: 'skid-steer-study-guide',
     certificationSlug: 'skid-steer',
   },
+  {
+    id: 'electrical-qualification-guide',
+    title: 'Electrical Qualification Study Guide',
+    slug: 'electrical-qualification-guide',
+    description: 'Key topics for the Electrical Qualification (OSHA 1910.269) certification test.',
+    source: 'markdown',
+    fileKey: 'electrical-qualification-study-guide',
+    certificationSlug: 'electrical-qualification',
+  },
 ];
 
 // Map fileKey to raw markdown content
 const TRAINING_MARKDOWN: Record<string, string> = {
   'bucket-trimmer-study-guide': bucketTrimmerGuide,
+  'electrical-qualification-study-guide': electricalQualificationGuide,
   'geo-boy-study-guide': geoBoyGuide,
   'groundsman-study-guide': groundsmanGuide,
   'jarraff-trimmer-study-guide': jaraffTrimmerGuide,

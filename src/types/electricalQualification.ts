@@ -10,6 +10,7 @@ export interface WorkerQualification {
   electrical_qualification_level: ElectricalQualificationLevel;
   electrical_qualification_date: string | null;
   electrical_qualification_verified_by: string | null;
+  verified_by_name: string | null;
 }
 
 export const QUALIFICATION_LABELS: Record<ElectricalQualificationLevel, string> = {

@@ -1,3 +1,6 @@
+# Intermediates / PII data — never commit
+.tmp/
+
 logs
 *.log
 npm-debug.log*

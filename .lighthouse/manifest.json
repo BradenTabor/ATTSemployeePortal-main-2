@@ -2,11 +2,11 @@
   {
     "url": "http://127.0.0.1:4173/",
     "isRepresentativeRun": true,
-    "htmlPath": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/.lighthouse/lighthouse--2026_02_04_08_58_18.html",
-    "jsonPath": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/.lighthouse/lighthouse--2026_02_04_08_58_18.html",
+    "htmlPath": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/.lighthouse/lighthouse--2026_03_05_03_39_23.html",
+    "jsonPath": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/.lighthouse/lighthouse--2026_03_05_03_39_23.html",
     "summary": {
-      "performance": 0.72,
-      "accessibility": 1,
+      "performance": 0.6,
+      "accessibility": 0.93,
       "best-practices": 0.96,
       "seo": 0.92
     }
@@ -14,11 +14,11 @@
   {
     "url": "http://127.0.0.1:4173/dashboard",
     "isRepresentativeRun": true,
-    "htmlPath": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/.lighthouse/lighthouse-dashboard-2026_02_04_08_58_29.html",
-    "jsonPath": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/.lighthouse/lighthouse-dashboard-2026_02_04_08_58_29.html",
+    "htmlPath": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/.lighthouse/lighthouse-dashboard-2026_03_05_03_39_39.html",
+    "jsonPath": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/.lighthouse/lighthouse-dashboard-2026_03_05_03_39_39.html",
     "summary": {
-      "performance": 0.72,
-      "accessibility": 1,
+      "performance": 0.52,
+      "accessibility": 0.93,
       "best-practices": 0.96,
       "seo": 0.92
     }
@@ -26,11 +26,11 @@
   {
     "url": "http://127.0.0.1:4173/announcements",
     "isRepresentativeRun": true,
-    "htmlPath": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/.lighthouse/lighthouse-announcements-2026_02_04_08_58_40.html",
-    "jsonPath": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/.lighthouse/lighthouse-announcements-2026_02_04_08_58_40.html",
+    "htmlPath": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/.lighthouse/lighthouse-announcements-2026_03_05_03_39_53.html",
+    "jsonPath": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/.lighthouse/lighthouse-announcements-2026_03_05_03_39_53.html",
     "summary": {
-      "performance": 0.72,
-      "accessibility": 1,
+      "performance": 0.67,
+      "accessibility": 0.93,
       "best-practices": 0.96,
       "seo": 0.92
     }
@@ -38,23 +38,47 @@
   {
     "url": "http://127.0.0.1:4173/admin/users",
     "isRepresentativeRun": true,
-    "htmlPath": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/.lighthouse/lighthouse-admin_users-2026_02_04_08_58_51.html",
-    "jsonPath": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/.lighthouse/lighthouse-admin_users-2026_02_04_08_58_51.html",
+    "htmlPath": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/.lighthouse/lighthouse-admin_users-2026_03_05_03_40_06.html",
+    "jsonPath": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/.lighthouse/lighthouse-admin_users-2026_03_05_03_40_06.html",
     "summary": {
-      "performance": 0.72,
-      "accessibility": 1,
+      "performance": 0.67,
+      "accessibility": 0.93,
       "best-practices": 0.96,
       "seo": 0.92
     }
   },
   {
-    "url": "http://127.0.0.1:4173/admin/rto",
+    "url": "http://127.0.0.1:4173/admin/requests-oversight?section=rto",
     "isRepresentativeRun": true,
-    "htmlPath": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/.lighthouse/lighthouse-admin_rto-2026_02_04_08_59_02.html",
-    "jsonPath": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/.lighthouse/lighthouse-admin_rto-2026_02_04_08_59_02.html",
+    "htmlPath": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/.lighthouse/lighthouse-admin_requests_oversight-2026_03_05_03_40_18.html",
+    "jsonPath": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/.lighthouse/lighthouse-admin_requests_oversight-2026_03_05_03_40_18.html",
     "summary": {
-      "performance": 0.72,
-      "accessibility": 1,
+      "performance": 0.67,
+      "accessibility": 0.93,
+      "best-practices": 0.96,
+      "seo": 0.92
+    }
+  },
+  {
+    "url": "http://127.0.0.1:4173/admin/requests-oversight?section=jsa",
+    "isRepresentativeRun": true,
+    "htmlPath": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/.lighthouse/lighthouse-admin_requests_oversight-2026_03_05_03_40_32.html",
+    "jsonPath": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/.lighthouse/lighthouse-admin_requests_oversight-2026_03_05_03_40_32.html",
+    "summary": {
+      "performance": 0.67,
+      "accessibility": 0.93,
+      "best-practices": 0.96,
+      "seo": 0.92
+    }
+  },
+  {
+    "url": "http://127.0.0.1:4173/admin/requests-oversight?section=parts-fixes",
+    "isRepresentativeRun": true,
+    "htmlPath": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/.lighthouse/lighthouse-admin_requests_oversight-2026_03_05_03_40_47.html",
+    "jsonPath": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/.lighthouse/lighthouse-admin_requests_oversight-2026_03_05_03_40_47.html",
+    "summary": {
+      "performance": 0.67,
+      "accessibility": 0.93,
       "best-practices": 0.96,
       "seo": 0.92
     }
@@ -62,11 +86,11 @@
   {
     "url": "http://127.0.0.1:4173/mechanic-dvir-center",
     "isRepresentativeRun": true,
-    "htmlPath": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/.lighthouse/lighthouse-mechanic_dvir_center-2026_02_04_08_59_13.html",
-    "jsonPath": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/.lighthouse/lighthouse-mechanic_dvir_center-2026_02_04_08_59_13.html",
+    "htmlPath": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/.lighthouse/lighthouse-mechanic_dvir_center-2026_03_05_03_41_08.html",
+    "jsonPath": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/.lighthouse/lighthouse-mechanic_dvir_center-2026_03_05_03_41_08.html",
     "summary": {
-      "performance": 0.72,
-      "accessibility": 1,
+      "performance": 0.66,
+      "accessibility": 0.93,
       "best-practices": 0.96,
       "seo": 0.92
     }
@@ -74,11 +98,11 @@
   {
     "url": "http://127.0.0.1:4173/forms-history/dvir",
     "isRepresentativeRun": true,
-    "htmlPath": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/.lighthouse/lighthouse-forms_history_dvir-2026_02_04_08_59_24.html",
-    "jsonPath": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/.lighthouse/lighthouse-forms_history_dvir-2026_02_04_08_59_24.html",
+    "htmlPath": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/.lighthouse/lighthouse-forms_history_dvir-2026_03_05_03_41_23.html",
+    "jsonPath": "/Users/taborsmac/Downloads/ATTSemployeePortal-main 2/.lighthouse/lighthouse-forms_history_dvir-2026_03_05_03_41_23.html",
     "summary": {
-      "performance": 0.72,
-      "accessibility": 1,
+      "performance": 0.67,
+      "accessibility": 0.93,
       "best-practices": 0.96,
       "seo": 0.92
     }

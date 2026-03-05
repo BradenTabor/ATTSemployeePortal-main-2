@@ -39,6 +39,8 @@ export function useCertificationTypes() {
   });
 }
 
+const CERT_STALE_MS = 10 * 60 * 1000; // 10 min for dashboard/profile cert status
+
 export function useMyCertificationRecords(userId: string | undefined) {
   return useQuery({
     queryKey: [...CERT_QUERY_KEY, 'records', userId],
@@ -52,6 +54,74 @@ export function useMyCertificationRecords(userId: string | undefined) {
       return data ?? [];
     },
     enabled: !!userId,
+    staleTime: CERT_STALE_MS,
+  });
+}
+
+/** Admin/GF: one worker's internal (platform) cert records with type name, for expandable row. */
+export interface WorkerInternalCertRecord {
+  id: string;
+  certification_type_id: string;
+  certification_name: string;
+  certification_slug: string;
+  status: string;
+  expires_at: string | null;
+  certified_at: string | null;
+  has_practical_eval: boolean;
+}
+
+/**
+ * Bulk fetch: all active internal cert records across all workers.
+ * Used for badge-count maps in the worker qualifications table/cards.
+ * Queries certification_records directly (not the materialized view)
+ * so counts are always up-to-date.
+ */
+export function useAllActiveInternalCertRecords() {
+  return useQuery({
+    queryKey: queryKeys.certifications.allActiveRecords(),
+    staleTime: 10 * 60 * 1000,
+    queryFn: async (): Promise<{ user_id: string; certification_type_id: string; status: string; expires_at: string | null }[]> => {
+      const { data, error } = await supabase
+        .from('certification_records')
+        .select('user_id, certification_type_id, status, expires_at')
+        .eq('status', 'active');
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+export function useWorkerInternalCertRecords(
+  userId: string | null | undefined,
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: queryKeys.certifications.workerInternalRecords(userId ?? ''),
+    enabled: (options?.enabled ?? true) && !!userId,
+    queryFn: async (): Promise<WorkerInternalCertRecord[]> => {
+      const { data, error } = await supabase
+        .from('certification_records')
+        .select('id, certification_type_id, status, expires_at, certified_at, cert_type:certification_types(name, slug, has_practical_eval)')
+        .eq('user_id', userId!)
+        .in('status', ['pending', 'written_passed', 'active', 'expired'])
+        .order('certified_at', { ascending: false, nullsFirst: false });
+      if (error) throw error;
+      const rows = data ?? [];
+      return rows.map((r) => {
+        const ct = r.cert_type as { name: string; slug: string; has_practical_eval: boolean } | { name: string; slug: string; has_practical_eval: boolean }[] | null;
+        const typeRow = Array.isArray(ct) ? ct[0] : ct;
+        return {
+          id: r.id,
+          certification_type_id: r.certification_type_id,
+          certification_name: typeRow?.name ?? 'Unknown',
+          certification_slug: typeRow?.slug ?? '',
+          status: r.status ?? '',
+          expires_at: r.expires_at ?? null,
+          certified_at: r.certified_at ?? null,
+          has_practical_eval: typeRow?.has_practical_eval ?? false,
+        };
+      });
+    },
   });
 }
 
@@ -340,6 +410,64 @@ export function useSubmitPracticalEvaluation() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: CERT_QUERY_KEY });
+    },
+  });
+}
+
+/**
+ * Admin quick pass/fail for practical evaluation.
+ * Loads the cert's practical template, builds a synthetic all-pass or all-fail
+ * checklist, and calls the existing submit_practical_evaluation RPC.
+ */
+export function useAdminQuickPracticalDecision() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: {
+      userId: string;
+      certificationTypeId: string;
+      passed: boolean;
+      evaluatorNotes?: string;
+    }) => {
+      const { data: templates, error: tplError } = await supabase
+        .from('practical_evaluation_templates')
+        .select('category_name, items')
+        .eq('certification_type_id', params.certificationTypeId)
+        .order('category_order');
+      if (tplError) throw new Error(tplError.message ?? 'Failed to load template.');
+
+      const checklistItems: Record<string, { item_id: string; item_name: string; passed: boolean; notes: string }[]> = {};
+      if (templates && templates.length > 0) {
+        for (const t of templates) {
+          const items = (t.items as { item_id: string; item_name: string }[]) ?? [];
+          checklistItems[t.category_name] = items.map((it) => ({
+            item_id: it.item_id,
+            item_name: it.item_name,
+            passed: params.passed,
+            notes: '',
+          }));
+        }
+      } else {
+        checklistItems['general'] = [{
+          item_id: 'admin_decision',
+          item_name: params.passed ? 'Admin approved practical' : 'Admin declined practical',
+          passed: params.passed,
+          notes: params.evaluatorNotes ?? '',
+        }];
+      }
+
+      const { data, error } = await supabase.rpc('submit_practical_evaluation', {
+        p_user_id: params.userId,
+        p_certification_type_id: params.certificationTypeId,
+        p_checklist_items: checklistItems,
+        p_evaluator_notes: params.evaluatorNotes ?? (params.passed ? 'Admin quick-pass' : 'Admin quick-fail'),
+        p_evaluator_signature: null,
+      });
+      if (error) throw new Error(error.message ?? 'Failed to submit practical decision.');
+      return data as string;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: CERT_QUERY_KEY });
+      qc.invalidateQueries({ queryKey: queryKeys.workerQualifications.all });
     },
   });
 }

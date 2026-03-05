@@ -6,11 +6,14 @@
  * themselves (app_users + auth.users).
  *
  * Features:
- *   --dry-run   Print row/object counts without deleting anything
+ *   --dry-run           Print row/object counts without deleting anything
+ *   --submissions-only  Delete table data and storage for test users only;
+ *                       do NOT delete app_users or auth.users (keeps test accounts).
  *
  * Usage:
- *   npx tsx tests/setup/cleanupE2EData.ts            # delete everything
- *   npx tsx tests/setup/cleanupE2EData.ts --dry-run   # preview only
+ *   npx tsx tests/setup/cleanupE2EData.ts                     # delete everything
+ *   npx tsx tests/setup/cleanupE2EData.ts --dry-run          # preview only
+ *   npx tsx tests/setup/cleanupE2EData.ts --submissions-only  # clear submissions, keep users
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
@@ -32,6 +35,7 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
 }
 
 const DRY_RUN = process.argv.includes('--dry-run');
+const SUBMISSIONS_ONLY = process.argv.includes('--submissions-only');
 const TEST_EMAIL_DOMAIN = '@atts.test';
 
 const supabase: SupabaseClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
@@ -340,7 +344,7 @@ async function main(): Promise<void> {
   header(DRY_RUN ? 'E2E DATA CLEANUP (DRY RUN)' : 'E2E DATA CLEANUP');
   console.log(`Supabase URL: ${SUPABASE_URL}`);
   console.log(`Test domain:  *${TEST_EMAIL_DOMAIN}`);
-  console.log(`Mode:         ${DRY_RUN ? 'DRY RUN (no changes)' : 'DELETE'}`);
+  console.log(`Mode:         ${DRY_RUN ? 'DRY RUN (no changes)' : SUBMISSIONS_ONLY ? 'DELETE (submissions + storage only, keep users)' : 'DELETE (full)'}`);
 
   // 1. Resolve test user IDs
   header('RESOLVING TEST USERS');
@@ -383,19 +387,26 @@ async function main(): Promise<void> {
   // 5. Storage cleanup
   await cleanupStorage(authIds);
 
-  // 6. Delete app_users
-  header(DRY_RUN ? 'APP_USERS (dry-run)' : 'DELETING APP_USERS');
-  await cleanupAppUsers(authIds);
+  // 6. Delete app_users (skipped when --submissions-only)
+  if (!SUBMISSIONS_ONLY) {
+    header(DRY_RUN ? 'APP_USERS (dry-run)' : 'DELETING APP_USERS');
+    await cleanupAppUsers(authIds);
 
-  // 7. Delete auth users (CASCADE takes care of remaining ON DELETE CASCADE tables)
-  header(DRY_RUN ? 'AUTH USERS (dry-run)' : 'DELETING AUTH USERS');
-  await cleanupAuthUsers(authIds);
+    // 7. Delete auth users (CASCADE takes care of remaining ON DELETE CASCADE tables)
+    header(DRY_RUN ? 'AUTH USERS (dry-run)' : 'DELETING AUTH USERS');
+    await cleanupAuthUsers(authIds);
+  } else {
+    console.log('');
+    console.log('  (Skipping app_users and auth.users — submissions only)');
+  }
 
   // Summary
   header('DONE');
   if (DRY_RUN) {
     console.log('This was a dry run. No data was modified.');
     console.log('Run without --dry-run to delete.');
+  } else if (SUBMISSIONS_ONLY) {
+    console.log('E2E test submissions and storage have been removed. Test user accounts kept.');
   } else {
     console.log('All E2E test data has been removed.');
   }

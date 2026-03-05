@@ -113,12 +113,19 @@ export type DashboardActionType =
   | 'form_link_click'
   | 'job_card_click'
   | 'pull_refresh'
-  | 'view_all_jobs';
+  | 'view_all_jobs'
+  | 'briefing_first_interaction'
+  | 'briefing_completed'
+  | 'briefing_quick_link_click';
 
 export interface DashboardActionProps {
   action: DashboardActionType;
   section_id?: string;  // e.g. 'dashboard-active-jobs', 'dashboard-all-tools'
   job_id?: string;     // for job_card_click
+  /** briefing_completed: seconds from first meaningful interaction to submit */
+  duration_seconds?: number;
+  /** briefing_quick_link_click: 'dvir' | 'equipment' | 'jsa' */
+  briefing_form?: string;
   [key: string]: unknown;
 }
 

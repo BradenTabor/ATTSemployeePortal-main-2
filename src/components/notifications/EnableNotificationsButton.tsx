@@ -206,10 +206,10 @@ function EnableNotificationsButtonComponent({
         aria-label={compact ? 'Enable' : 'Enable Notifications'}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
-        className={`relative flex items-center justify-center gap-2 px-4 py-4 min-h-[56px] rounded-xl border transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden ${currentVariant.unsubscribed}`}
+        className={`relative flex items-center justify-center gap-2 px-4 py-4 min-h-[56px] rounded-xl border-0 transition-all disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden ${currentVariant.unsubscribed}`}
         style={{
           background: 'linear-gradient(90deg, rgba(52, 211, 153, 0) 0%, rgba(16, 185, 129, 0) 6%)',
-          boxShadow: '0px 0px 0px 0px rgba(0, 0, 0, 0), 0px 0px 0px 0px rgba(0, 0, 0, 0), 0px 10px 15px -3px rgba(0, 0, 0, 0.3), 0px 4px 6px -4px rgba(0, 0, 0, 0.6)',
+          boxShadow: 'none',
         }}
       >
         {loading ? (

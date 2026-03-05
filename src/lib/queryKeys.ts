@@ -139,6 +139,9 @@ export const queryKeys = {
     reportsTimeToGrade: () => ['certifications', 'reports', 'time-to-grade'] as const,
     reportsCompliance: () => ['certifications', 'reports', 'compliance'] as const,
     auditLog: (limit?: number) => ['certifications', 'audit-log', limit ?? 50] as const,
+    workerInternalRecords: (userId: string) =>
+      ['certifications', 'worker-internal-records', userId] as const,
+    allActiveRecords: () => ['certifications', 'all-active-records'] as const,
   },
 
   // Near-Miss Reports
@@ -156,6 +159,14 @@ export const queryKeys = {
     detail: (resourceId: string) => ['resources', 'detail', resourceId] as const,
   },
 
+  // External Certifications (admin-managed certs earned outside ATTS)
+  externalCertifications: {
+    all: ['external-certifications'] as const,
+    types: () => ['external-certifications', 'types'] as const,
+    byWorker: (userId: string) => ['external-certifications', 'worker', userId] as const,
+    allWorkers: () => ['external-certifications', 'all-workers'] as const,
+  },
+
   // Worker Qualifications (OSHA 1910.269(r) electrical levels)
   workerQualifications: {
     all: ['worker-qualifications'] as const,
@@ -171,12 +182,25 @@ export const queryKeys = {
       ['safety-briefing', 'status', userId, date] as const,
     personalizedContent: (userId: string) =>
       ['safety-briefing', 'personalized', userId] as const,
+    streak: (userId: string) => ['safety-briefing', 'streak', userId] as const,
+    crewCompletion: (userId: string, date: string) =>
+      ['safety-briefing', 'crew-completion', userId, date] as const,
+    announcementDates: (since: string) =>
+      ['safety-briefing', 'announcement-dates', since] as const,
+    dailySnapshot: (date: string) =>
+      ['safety-briefing', 'daily-snapshot', date] as const,
   },
 
   // Briefing Compliance (admin dashboard)
   briefingCompliance: {
     summary: (startDate: string, endDate: string) =>
       ['briefingCompliance', 'summary', startDate, endDate] as const,
+  },
+
+  // Notification preferences (certification_granted, certification_expiry)
+  notificationPreferences: {
+    all: ['notification-preferences'] as const,
+    user: (userId: string) => ['notification-preferences', 'user', userId] as const,
   },
 
   // Safety Rewards (monthly raffle)

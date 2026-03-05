@@ -4,6 +4,8 @@ import { queryKeys } from '../../lib/queryKeys';
 import { toast } from '../../lib/toast';
 import { logger } from '../../lib/logger';
 import { NotificationBuilders, createNotificationSilent } from '../../lib/pushNotifications';
+import { getTodayDateString } from '../../lib/complianceHelpers';
+import { getBriefingCache, setBriefingCache } from '../../lib/briefingCache';
 
 export interface Announcement {
   id: string;
@@ -46,7 +48,8 @@ export function useAnnouncementsQuery(limit?: number) {
 }
 
 /**
- * Fetches latest announcement for dashboard
+ * Fetches latest announcement for dashboard. On network failure, falls back to
+ * briefing cache for today (24h TTL) so the safety briefing page works offline.
  */
 export function useLatestAnnouncementQuery() {
   return useQuery({
@@ -59,8 +62,38 @@ export function useLatestAnnouncementQuery() {
         .limit(1)
         .single();
 
+      if (!error && data) {
+        const row = data as Announcement & { raw_data?: Record<string, unknown> };
+        const date = row.date?.slice(0, 10);
+        if (date) {
+          await setBriefingCache({
+            id: row.id,
+            title: row.title,
+            message: row.message,
+            author: row.author,
+            date: row.date,
+            created_at: row.created_at,
+            raw_data: row.raw_data,
+          });
+        }
+        return data as Announcement | null;
+      }
+
       if (error && error.code !== 'PGRST116') {
-        // PGRST116 = no rows
+        const today = getTodayDateString();
+        const cached = await getBriefingCache(today);
+        if (cached) {
+          logger.debug('[Announcements] Using cached briefing for', today);
+          return {
+            id: cached.id,
+            title: cached.title,
+            message: cached.message,
+            author: cached.author,
+            date: cached.date,
+            created_at: cached.created_at,
+            ...(cached.raw_data ? { raw_data: cached.raw_data } : {}),
+          } as Announcement;
+        }
         logger.error('Failed to fetch latest announcement:', error);
         throw new Error('Failed to load announcement');
       }

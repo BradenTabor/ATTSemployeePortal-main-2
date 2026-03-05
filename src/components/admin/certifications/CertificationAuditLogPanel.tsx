@@ -12,6 +12,18 @@ function formatActionLabel(action: string): string {
       return "granted cert access";
     case "cert_access_revoke":
       return "revoked cert access";
+    case "external_cert_type_created":
+      return "created external cert type";
+    case "external_cert_type_updated":
+      return "updated external cert type";
+    case "external_cert_assigned":
+      return "assigned external cert";
+    case "external_cert_updated":
+      return "updated external cert";
+    case "external_cert_revoked":
+      return "revoked external cert";
+    case "external_cert_verified":
+      return "verified external cert";
     default:
       return action.replace(/_/g, " ");
   }
@@ -26,6 +38,14 @@ function formatRecordLabel(entry: CertificationAuditLogEntry): string {
     case "cert_access_grant":
     case "cert_access_revoke":
       return "cert access";
+    case "external_cert_type_created":
+    case "external_cert_type_updated":
+      return "certification type";
+    case "external_cert_assigned":
+    case "external_cert_updated":
+    case "external_cert_revoked":
+    case "external_cert_verified":
+      return "worker certification";
     default:
       return "record";
   }

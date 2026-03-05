@@ -17,7 +17,11 @@ import { Download, Loader2 } from "lucide-react";
 import { supabase } from "../../../lib/supabaseClient";
 import { queryKeys } from "../../../lib/queryKeys";
 import { subDays, startOfWeek, format, parseISO } from "date-fns";
-import { toZonedTime } from "date-fns-tz";
+import { toZonedTime, formatInTimeZone } from "date-fns-tz";
+import {
+  useExternalCertificationTypes,
+  useWorkerExternalCertifications,
+} from "../../../hooks/queries/useExternalCertifications";
 import { glass } from "../../../lib/glass";
 
 const TZ = "America/Chicago";
@@ -481,7 +485,7 @@ export default function CertificationsReportsSection() {
         )}
       </section>
 
-      {/* 3. Compliance coverage */}
+      {/* 3. Compliance coverage (ATTS certifications) */}
       <section className={panelClass}>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h3 className="text-base font-semibold text-white sm:text-lg">
@@ -544,6 +548,81 @@ export default function CertificationsReportsSection() {
           </div>
         )}
       </section>
+      {/* 4. External certification coverage */}
+      <ExternalCertCoverageSection />
     </div>
+  );
+}
+
+function ExternalCertCoverageSection() {
+  const { data: extTypes, isLoading: typesLoading } = useExternalCertificationTypes();
+  const { data: allExtCerts, isLoading: certsLoading } = useWorkerExternalCertifications();
+
+  const loading = typesLoading || certsLoading;
+  const today = formatInTimeZone(new Date(), TZ, 'yyyy-MM-dd');
+  const in7 = (() => { const d = new Date(); d.setDate(d.getDate() + 7); return formatInTimeZone(d, TZ, 'yyyy-MM-dd'); })();
+
+  const stats = useMemo(() => {
+    if (!extTypes?.length || !allExtCerts) return [];
+    return extTypes
+      .filter((t) => t.is_active)
+      .map((t) => {
+        const certs = allExtCerts.filter(
+          (c) => c.external_certification_type_id === t.id
+        );
+        const active = certs.filter((c) => c.effective_status === 'active').length;
+        const expiring = certs.filter(
+          (c) =>
+            c.effective_status === 'active' &&
+            c.expiration_date &&
+            c.expiration_date >= today &&
+            c.expiration_date <= in7
+        ).length;
+        return { id: t.id, name: t.name, active, expiring, isRequired: t.is_required };
+      });
+  }, [extTypes, allExtCerts, today, in7]);
+
+  return (
+    <section className={`${glass.card} p-4 sm:p-6`}>
+      <h3 className="mb-3 text-base font-semibold text-white sm:text-lg">
+        External certification coverage
+      </h3>
+      <p className="mb-4 text-sm text-white/60">
+        Workers with active external certifications per type. Expiring counts reflect certs within 7 days.
+      </p>
+      {loading && (
+        <div className="flex items-center gap-2 text-white/60">
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+          Loading…
+        </div>
+      )}
+      {!loading && stats.length === 0 && (
+        <p className="text-sm text-white/50">
+          No external certification types defined yet.
+        </p>
+      )}
+      {!loading && stats.length > 0 && (
+        <div className="space-y-3">
+          {stats.map((s) => (
+            <div key={s.id} className="flex items-center justify-between gap-4 text-sm">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="truncate text-white/90">{s.name}</span>
+                {s.isRequired && (
+                  <span className="shrink-0 rounded-full bg-red-500/20 px-2 py-0.5 text-[10px] font-medium text-red-300 ring-1 ring-red-500/30">
+                    Required
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-3 shrink-0 text-right">
+                <span className="text-emerald-400">{s.active} active</span>
+                {s.expiring > 0 && (
+                  <span className="text-amber-300">{s.expiring} expiring</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }

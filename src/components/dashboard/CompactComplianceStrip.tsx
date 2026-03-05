@@ -456,7 +456,7 @@ function CompactComplianceStripComponent({ theme = 'emerald', onComplianceChange
       {/* Header */}
       <div
         className="px-4 py-3 border-b border-white/5"
-        style={{ background: `linear-gradient(90deg, rgba(16, 185, 129, 0.15) 9%, rgba(5, 150, 105, 0.05) 100%)` }}
+        style={{ background: `linear-gradient(90deg, rgba(16, 185, 129, 0.35) 9%, rgba(5, 150, 105, 0.05) 100%)` }}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">

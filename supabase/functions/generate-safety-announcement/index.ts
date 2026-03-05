@@ -212,7 +212,19 @@ serve(async (req) => {
     };
 
     // Destructure for easier access
-    const { topHazards, nearMissCount, dvirWithIssues, equipmentWithIssues } = stats;
+    const {
+      topHazards,
+      topPPE,
+      nearMissCount,
+      dvirWithIssues,
+      equipmentWithIssues,
+      weatherConditions,
+      jsaCount,
+      dvirCount,
+      equipmentCount,
+      dvirIssues,
+      equipmentIssues,
+    } = stats;
 
     console.log('[SafetyAnnouncement] Stats aggregated:', {
       totalSubmissions,
@@ -302,6 +314,54 @@ CRITICAL REMINDERS:
 
     console.log('[SafetyAnnouncement] Generated message:', message.length, 'chars');
 
+    // Build sections and relatedForms for briefing page (Phase 1)
+    const overview = message.split(/[.!?]/)[0]?.trim() ? `${message.split(/[.!?]/)[0].trim()}.` : message.slice(0, 120);
+    const sections = {
+      overview,
+      topHazards: topHazards.map((h) => ({ hazard: h.hazard, count: h.count, note: '' })),
+      ppeReminders: (topPPE || []).map(([name]) => name),
+      equipmentAlerts: [
+        ...(dvirIssues || []).slice(0, 3).map((d) => `${d.type} (${d.truckNumber})`),
+        ...(equipmentIssues || []).slice(0, 2).map((e) => `${e.type}: ${e.equipmentType}`),
+      ],
+      expectations: [
+        'Complete pre-trip inspections before heading out.',
+        'Wear required PPE at all times.',
+        ...(nearMissCount > 0 ? ['Stay extra cautious — near-misses reported recently.'] : []),
+      ].slice(0, 3),
+    };
+    const relatedForms: string[] = [];
+    if (dvirCount > 0 || dvirWithIssues > 0) relatedForms.push('dvir');
+    if (equipmentCount > 0 || equipmentWithIssues > 0) relatedForms.push('equipment');
+    if (jsaCount > 0) relatedForms.push('jsa');
+
+    // Optional: fetch today's conditions for the briefing page (conditions card)
+    let conditions = null;
+    const openWeatherKey = Deno.env.get('OPENWEATHER_API_KEY');
+    const lat = Deno.env.get('OPENWEATHER_LAT');
+    const lon = Deno.env.get('OPENWEATHER_LON');
+    if (openWeatherKey && lat && lon) {
+      try {
+        const res = await fetch(
+          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=imperial&appid=${openWeatherKey}`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          const tempF = Math.round(Number(data.main?.temp ?? 70));
+          const windSpeed = Math.round(Number(data.wind?.speed ?? 0));
+          const desc = data.weather?.[0]?.description || 'Clear';
+          conditions = {
+            tempF,
+            windSpeed,
+            conditions: desc.charAt(0).toUpperCase() + desc.slice(1),
+            note: 'Dress for the conditions; check your gear before heading out.',
+          };
+        }
+      } catch (e) {
+        console.warn('[SafetyAnnouncement] Weather fetch failed:', e);
+      }
+    }
+
     // =======================================================================
     // Step 8: Save to announcements table (unless dry run)
     // =======================================================================
@@ -339,6 +399,9 @@ CRITICAL REMINDERS:
             originalCharCount: originalLength,
             truncated: originalLength > BODY_MAX_CHARS,
             lowData: isLowData,
+            sections,
+            relatedForms,
+            ...(conditions ? { conditions } : {}),
           },
         })
         .select('id')

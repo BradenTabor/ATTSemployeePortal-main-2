@@ -434,7 +434,8 @@ serve(async (req) => {
       .from('app_users')
       .select('id, user_id, email, full_name, role, manager_id')
       .in('role', REQUIRED_ROLES)
-      .not('email', 'is', null);
+      .not('email', 'is', null)
+      .not('email', 'ilike', '%@atts.test');
 
     if (usersError) throw new Error(`Failed to fetch users: ${usersError.message}`);
 

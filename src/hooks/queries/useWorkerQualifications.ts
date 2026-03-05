@@ -13,21 +13,26 @@ export function useWorkerQualifications(
     queryFn: async (): Promise<WorkerQualification[]> => {
       let q = supabase
         .from('app_users')
-        .select('id, user_id, full_name, role, electrical_qualification_level, electrical_qualification_date, electrical_qualification_verified_by');
+        .select('id, user_id, full_name, role, electrical_qualification_level, electrical_qualification_date, electrical_qualification_verified_by, verifier:app_users!electrical_qualification_verified_by(full_name)');
       if (filterLevel) {
         q = q.eq('electrical_qualification_level', filterLevel);
       }
       const { data, error } = await q.order('full_name', { ascending: true, nullsFirst: false });
       if (error) throw new Error(error.message ?? 'Failed to load workers.');
       const rows = data ?? [];
-      return rows.map((r) => ({
-        user_id: r.user_id,
-        full_name: r.full_name ?? null,
-        role: r.role ?? null,
-        electrical_qualification_level: (r.electrical_qualification_level ?? 'unqualified') as ElectricalQualificationLevel,
-        electrical_qualification_date: r.electrical_qualification_date ?? null,
-        electrical_qualification_verified_by: r.electrical_qualification_verified_by ?? null,
-      }));
+      return rows.map((r) => {
+        const verifier = r.verifier as { full_name: string | null } | { full_name: string | null }[] | null;
+        const verifierRow = Array.isArray(verifier) ? verifier[0] : verifier;
+        return {
+          user_id: r.user_id,
+          full_name: r.full_name ?? null,
+          role: r.role ?? null,
+          electrical_qualification_level: (r.electrical_qualification_level ?? 'unqualified') as ElectricalQualificationLevel,
+          electrical_qualification_date: r.electrical_qualification_date ?? null,
+          electrical_qualification_verified_by: r.electrical_qualification_verified_by ?? null,
+          verified_by_name: verifierRow?.full_name ?? null,
+        };
+      });
     },
   });
 }

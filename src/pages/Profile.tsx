@@ -18,20 +18,15 @@ import {
   User,
   Mail,
   Shield,
-  Award,
   Bell,
   Calendar,
   AlertTriangle,
-  CheckCircle2,
-  Clock,
   ChevronRight,
   CreditCard,
-  Truck,
   Heart,
   RefreshCw,
   Loader2,
   Settings,
-  Download,
 } from 'lucide-react';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { useAuth } from '../contexts/AuthContext';
@@ -42,8 +37,11 @@ import { getDeviceCapabilities } from '../lib/mobilePerf';
 import { EnableNotificationsButton } from '../components/notifications';
 // ScrollReveal import removed - not currently used
 import AvatarUpload from '../components/profile/AvatarUpload';
-import { useMyCertificationRecords, useCertificationTypes } from '../hooks/useCertifications';
-import { downloadCertificatePDF } from '../components/certifications/certificatePDFDownload';
+import { MyCertificationsSection } from '../components/profile/MyCertificationsSection';
+import { useMyCertificationRecords } from '../hooks/useCertifications';
+import { useMyExternalCertifications } from '../hooks/queries/useExternalCertifications';
+import { getCertificationStatus, getExternalCertDisplayStatus } from '../lib/certStatus';
+import { useCertNotificationPreferences } from '../hooks/queries/useCertNotificationPreferences';
 
 // ============================================================================
 // TYPES
@@ -63,14 +61,6 @@ interface UserProfile {
   updated_at: string | null;
 }
 
-interface CertificationStatus {
-  label: string;
-  value: string | null;
-  expirationDate: string | null;
-  icon: typeof CreditCard;
-  status: 'valid' | 'expiring' | 'expired' | 'missing';
-  daysUntilExpiration: number | null;
-}
 
 // ============================================================================
 // CINEMATIC ANIMATION VARIANTS (Context7 Motion patterns)
@@ -169,19 +159,6 @@ const orbVariants: Variants = {
   },
 };
 
-// Shimmer line animation
-const shimmerVariants: Variants = {
-  animate: {
-    x: ['-100%', '200%'],
-    transition: {
-      duration: 2.5,
-      repeat: Infinity,
-      ease: 'easeInOut',
-      repeatDelay: 3,
-    },
-  },
-};
-
 // Badge entrance with bounce
 const badgeVariants: Variants = {
   hidden: { scale: 0, opacity: 0 },
@@ -200,34 +177,6 @@ const badgeVariants: Variants = {
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
-
-function calculateDaysUntilExpiration(expirationDate: string | null): number | null {
-  if (!expirationDate) return null;
-  
-  const expDate = new Date(expirationDate);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  expDate.setHours(0, 0, 0, 0);
-  
-  const diffTime = expDate.getTime() - today.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  
-  return diffDays;
-}
-
-function getCertificationStatus(
-  expirationDate: string | null,
-  value: string | null
-): 'valid' | 'expiring' | 'expired' | 'missing' {
-  if (!value) return 'missing';
-  if (!expirationDate) return 'valid';
-  
-  const days = calculateDaysUntilExpiration(expirationDate);
-  if (days === null) return 'valid';
-  if (days < 0) return 'expired';
-  if (days <= 30) return 'expiring';
-  return 'valid';
-}
 
 function formatDate(dateString: string | null): string {
   if (!dateString) return 'Not set';
@@ -268,143 +217,53 @@ function formatRoleName(role: string): string {
     .join(' ');
 }
 
-// ProfileAvatar component removed - using AvatarUpload instead
-
 // ============================================================================
-// CERTIFICATION CARD COMPONENT - Enhanced animations
+// CERT NOTIFICATION TOGGLE CARD
 // ============================================================================
 
-function CertificationCard({ cert }: { cert: CertificationStatus }) {
-  const statusConfig = {
-    valid: {
-      icon: CheckCircle2,
-      color: 'text-emerald-400',
-      bg: 'bg-emerald-500/10',
-      border: 'border-emerald-500/30',
-      glow: 'rgba(16, 185, 129, 0.15)',
-      label: 'Valid',
-    },
-    expiring: {
-      icon: Clock,
-      color: 'text-amber-400',
-      bg: 'bg-amber-500/10',
-      border: 'border-amber-500/30',
-      glow: 'rgba(245, 158, 11, 0.15)',
-      label: 'Expiring Soon',
-    },
-    expired: {
-      icon: AlertTriangle,
-      color: 'text-red-400',
-      bg: 'bg-red-500/10',
-      border: 'border-red-500/30',
-      glow: 'rgba(239, 68, 68, 0.2)',
-      label: 'Expired',
-    },
-    missing: {
-      icon: AlertTriangle,
-      color: 'text-white/40',
-      bg: 'bg-white/5',
-      border: 'border-white/10',
-      glow: 'rgba(255, 255, 255, 0.05)',
-      label: 'Not Set',
-    },
-  };
-
-  const config = statusConfig[cert.status];
-  const StatusIcon = config.icon;
-  const CertIcon = cert.icon;
-
+function CertNotificationToggleCard({
+  title,
+  description,
+  enabled,
+  onToggle,
+  loading,
+}: {
+  title: string;
+  description: string;
+  enabled: boolean;
+  onToggle: () => void;
+  loading: boolean;
+}) {
   return (
-    <motion.div
-      variants={certCardVariants}
-      whileHover={{ 
-        scale: 1.02, 
-        y: -4,
-        transition: { type: 'spring', stiffness: 300, damping: 20 }
-      }}
-      whileTap={{ scale: 0.98 }}
-      className={`relative overflow-hidden rounded-lg sm:rounded-2xl border ${config.border} ${config.bg} p-3 sm:p-4 cursor-pointer group`}
+    <div
+      className="rounded-lg sm:rounded-xl border border-emerald-500/20 p-3 sm:p-4"
       style={{
-        boxShadow: `0 4px 20px ${config.glow}, 0 0 0 1px ${config.glow}`,
+        background: 'linear-gradient(145deg, rgba(16, 185, 129, 0.05) 0%, rgba(5, 150, 105, 0.02) 100%)',
       }}
     >
-      {/* Animated shimmer line - hidden on mobile for performance */}
-      <motion.div
-        className="absolute top-0 left-0 right-0 h-[1px] overflow-hidden hidden sm:block"
-      >
-        <motion.div
-          variants={shimmerVariants}
-          animate="animate"
-          className="h-full w-1/3"
-          style={{
-            background: `linear-gradient(90deg, transparent, ${cert.status === 'valid' ? 'rgba(16, 185, 129, 0.5)' : cert.status === 'expiring' ? 'rgba(245, 158, 11, 0.5)' : cert.status === 'expired' ? 'rgba(239, 68, 68, 0.5)' : 'rgba(255, 255, 255, 0.2)'}, transparent)`,
-          }}
-        />
-      </motion.div>
-
-      {/* Background pattern - hidden on mobile */}
-      <div 
-        className="absolute inset-0 opacity-[0.03] pointer-events-none hidden sm:block"
-        style={{
-          backgroundImage: `radial-gradient(circle at 50% 50%, currentColor 1px, transparent 1px)`,
-          backgroundSize: '20px 20px',
-        }}
-      />
-      
-      {/* Hover glow effect */}
-      <div 
-        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-        style={{
-          background: `radial-gradient(circle at 50% 50%, ${config.glow} 0%, transparent 70%)`,
-        }}
-      />
-      
-      <div className="relative flex items-start justify-between gap-2 sm:gap-3">
-        <div className="flex items-start gap-2 sm:gap-3 min-w-0 flex-1">
-          <motion.div 
-            className={`flex-shrink-0 w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl ${config.bg} border ${config.border} flex items-center justify-center`}
-            whileHover={{ rotate: [0, -10, 10, 0] }}
-            transition={{ duration: 0.5 }}
-          >
-            <CertIcon className={`w-4 h-4 sm:w-5 sm:h-5 ${config.color}`} />
-          </motion.div>
-          
-          <div className="min-w-0 flex-1">
-            <p className="text-[9px] sm:text-[10px] uppercase tracking-[0.15em] text-white/50 mb-0.5 font-medium">{cert.label}</p>
-            <p className="text-xs sm:text-sm font-semibold text-white truncate">
-              {cert.value || 'Not provided'}
-            </p>
-            {cert.expirationDate && (
-              <p className="text-[10px] sm:text-xs text-white/60 mt-1 sm:mt-1.5 flex items-center gap-1 sm:gap-1.5">
-                <Calendar className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                <span className="hidden sm:inline">Expires:</span> {formatDate(cert.expirationDate)}
-              </p>
-            )}
-          </div>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs sm:text-sm font-semibold text-white">{title}</p>
+          <p className="text-[10px] sm:text-xs text-emerald-200/50 mt-0.5">{description}</p>
         </div>
-        
-        <div className="flex-shrink-0 flex flex-col items-end gap-1 sm:gap-1.5">
-          <motion.div 
-            className={`flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full ${config.bg} border ${config.border}`}
-            whileHover={{ scale: 1.05 }}
-          >
-            <StatusIcon className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${config.color}`} />
-            <span className={`text-[8px] sm:text-[10px] font-bold uppercase tracking-wider ${config.color}`}>
-              {config.label}
-            </span>
-          </motion.div>
-          
-          {cert.daysUntilExpiration !== null && cert.status !== 'missing' && (
-            <span className={`text-[10px] sm:text-xs font-medium ${config.color}`}>
-              {cert.daysUntilExpiration < 0 
-                ? `${Math.abs(cert.daysUntilExpiration)}d ago`
-                : `${cert.daysUntilExpiration}d left`
-              }
-            </span>
-          )}
-        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={enabled}
+          disabled={loading}
+          onClick={onToggle}
+          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#041b14] disabled:opacity-50 ${
+            enabled ? 'bg-emerald-500' : 'bg-white/20'
+          }`}
+        >
+          <span
+            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition ${
+              enabled ? 'translate-x-5' : 'translate-x-1'
+            }`}
+          />
+        </button>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -572,9 +431,9 @@ export default function Profile() {
   const caps = useMemo(() => getDeviceCapabilities(), []);
   const enableAnimations = !caps.prefersReducedMotion && !caps.isLowEnd;
 
-  // Fetch user's certification records (refetches when invalidated e.g. after passing a test)
   const { data: certificationRecords } = useMyCertificationRecords(user?.id);
-  const { data: certificationTypes } = useCertificationTypes();
+  const { data: externalCerts } = useMyExternalCertifications();
+  const certPrefs = useCertNotificationPreferences();
 
   // Fetch user profile from database
   const fetchProfile = useCallback(async () => {
@@ -604,78 +463,36 @@ export default function Profile() {
     fetchProfile();
   }, [fetchProfile]);
 
-  // Build certifications list
-  const certifications = useMemo((): CertificationStatus[] => {
-    if (!profile) return [];
-    
-    const licenseExpDays = calculateDaysUntilExpiration(profile.drivers_license_expiration);
-    
-    return [
-      {
-        label: "Driver's License",
-        value: profile.drivers_license_number,
-        expirationDate: profile.drivers_license_expiration,
-        icon: CreditCard,
-        status: getCertificationStatus(profile.drivers_license_expiration, profile.drivers_license_number),
-        daysUntilExpiration: licenseExpDays,
-      },
-      {
-        label: 'License Class',
-        value: profile.drivers_license_class,
-        expirationDate: null,
-        icon: Truck,
-        status: profile.drivers_license_class ? 'valid' : 'missing',
-        daysUntilExpiration: null,
-      },
-    ];
-  }, [profile]);
-
-  // Count expiring/expired certifications
+  // Count expiring/expired for hero badge (built-in + external + license)
   const certificationAlerts = useMemo(() => {
-    const expiring = certifications.filter(c => c.status === 'expiring').length;
-    const expired = certifications.filter(c => c.status === 'expired').length;
+    let expiring = 0;
+    let expired = 0;
+    if (profile) {
+      const licenseStatus = getCertificationStatus(
+        profile.drivers_license_expiration,
+        profile.drivers_license_number
+      );
+      if (licenseStatus === 'expiring') expiring++;
+      if (licenseStatus === 'expired') expired++;
+    }
+    (certificationRecords ?? []).forEach((rec) => {
+      if (rec.status !== 'active' && rec.status !== 'expired') return;
+      const expiresAt = rec.expires_at ? new Date(rec.expires_at) : null;
+      const days = expiresAt ? Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+      if (days !== null) {
+        if (days < 0) expired++;
+        else if (days <= 30) expiring++;
+      }
+    });
+    (externalCerts ?? []).forEach((c) => {
+      const displayStatus = getExternalCertDisplayStatus(c.effective_status, c.expiration_date);
+      if (displayStatus === 'expiring') expiring++;
+      if (displayStatus === 'expired' || displayStatus === 'revoked') expired++;
+    });
     return { expiring, expired, total: expiring + expired };
-  }, [certifications]);
+  }, [profile, certificationRecords, externalCerts]);
 
-  // Build user's earned certifications list (include written_passed so certs show before practical is done)
-  const earnedCertifications = useMemo(() => {
-    if (!certificationRecords || !certificationTypes) return [];
-    
-    return certificationRecords
-      .filter(rec => rec.status === 'active' || rec.status === 'expired' || rec.status === 'written_passed')
-      .map(rec => {
-        const certType = certificationTypes.find(ct => ct.id === rec.certification_type_id);
-        const expiresAt = rec.expires_at ? new Date(rec.expires_at) : null;
-        const now = new Date();
-        const daysUntilExpiry = expiresAt ? Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : null;
-        
-        let status: 'valid' | 'expiring' | 'expired' = 'valid';
-        if (daysUntilExpiry !== null) {
-          if (daysUntilExpiry < 0) status = 'expired';
-          else if (daysUntilExpiry <= 30) status = 'expiring';
-        }
-        
-        return {
-          id: rec.id,
-          name: certType?.name ?? 'Unknown Certification',
-          certifiedAt: rec.certified_at,
-          expiresAt: rec.expires_at,
-          writtenScore: rec.written_score,
-          status,
-          daysUntilExpiry,
-          recordStatus: rec.status,
-          verificationCode: rec.verification_code ?? null,
-        };
-      })
-      .sort((a, b) => {
-        // Active first, then by expiry date
-        if (a.status === 'expired' && b.status !== 'expired') return 1;
-        if (b.status === 'expired' && a.status !== 'expired') return -1;
-        return (a.daysUntilExpiry ?? 999) - (b.daysUntilExpiry ?? 999);
-      });
-  }, [certificationRecords, certificationTypes]);
-
-  // Scroll to earned certifications when navigating from certification result overlay
+  // Scroll to certifications when navigating from result overlay or deep link
   useEffect(() => {
     const state = location.state as { scrollToCertifications?: boolean } | null;
     if (!state?.scrollToCertifications) return;
@@ -686,13 +503,10 @@ export default function Profile() {
         window.history.replaceState(null, '', window.location.pathname);
       }
     };
-    if (earnedCertifications.length > 0) {
-      scrollToSection();
-    } else {
-      const t = setTimeout(scrollToSection, 800);
-      return () => clearTimeout(t);
-    }
-  }, [location.state, earnedCertifications.length]);
+    scrollToSection();
+    const t = setTimeout(scrollToSection, 800);
+    return () => clearTimeout(t);
+  }, [location.state]);
 
   // Loading state with premium animation
   if (loading) {
@@ -906,155 +720,19 @@ export default function Profile() {
           animate="visible"
           className="space-y-4 sm:space-y-6 md:space-y-8"
         >
-          {/* Earned Certifications - Full width when present */}
-          {earnedCertifications.length > 0 && (
-            <ProfileSection
-              id={PROFILE_CERTIFICATIONS_SECTION_ID}
-              title="Earned Certifications"
-              subtitle={`${earnedCertifications.filter(c => c.status !== 'expired').length} active certification${earnedCertifications.filter(c => c.status !== 'expired').length !== 1 ? 's' : ''}`}
-              icon={<Award className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />}
-            >
-              <motion.div 
-                className="grid gap-2 sm:gap-3 sm:grid-cols-2"
-                variants={containerVariants}
-              >
-                {earnedCertifications.map((cert) => {
-                  const statusConfig = {
-                    valid: {
-                      border: 'border-emerald-500/30',
-                      bg: 'bg-emerald-500/10',
-                      badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
-                      label: 'Active',
-                    },
-                    expiring: {
-                      border: 'border-amber-500/30',
-                      bg: 'bg-amber-500/10',
-                      badge: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
-                      label: 'Expiring Soon',
-                    },
-                    expired: {
-                      border: 'border-red-500/30',
-                      bg: 'bg-red-500/10',
-                      badge: 'bg-red-500/20 text-red-300 border-red-500/40',
-                      label: 'Expired',
-                    },
-                  };
-                  const writtenPassedConfig = {
-                    border: 'border-emerald-500/30',
-                    bg: 'bg-emerald-500/10',
-                    badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
-                    label: 'Written passed',
-                  };
-                  const config =
-                    (cert as { recordStatus?: string }).recordStatus === 'written_passed'
-                      ? writtenPassedConfig
-                      : statusConfig[cert.status];
-                  
-                  return (
-                    <motion.div
-                      key={cert.id}
-                      variants={certCardVariants}
-                      whileHover={{ scale: 1.02, y: -2 }}
-                      className={`relative overflow-hidden rounded-lg sm:rounded-xl border ${config.border} ${config.bg} p-3 sm:p-4 cursor-default`}
-                    >
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg ${config.bg} border ${config.border} flex items-center justify-center shrink-0`}>
-                            <Award className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-xs sm:text-sm font-semibold text-white truncate">{cert.name}</p>
-                            {cert.writtenScore && (
-                              <p className="text-[10px] sm:text-xs text-white/50">Score: {cert.writtenScore.toFixed(0)}%</p>
-                            )}
-                          </div>
-                        </div>
-                        <span className={`shrink-0 inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-full text-[8px] sm:text-[10px] font-bold uppercase tracking-wider border ${config.badge}`}>
-                          {config.label}
-                        </span>
-                      </div>
-                      
-                      <div className="flex items-center justify-between text-[10px] sm:text-xs text-white/50">
-                        <span className="flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                          {cert.certifiedAt ? formatDate(cert.certifiedAt) : 'Certified'}
-                        </span>
-                        {cert.expiresAt && (
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            {cert.daysUntilExpiry !== null && cert.daysUntilExpiry >= 0 
-                              ? `${cert.daysUntilExpiry}d left`
-                              : cert.daysUntilExpiry !== null
-                                ? `Expired ${Math.abs(cert.daysUntilExpiry)}d ago`
-                                : formatDate(cert.expiresAt)
-                            }
-                          </span>
-                        )}
-                      </div>
-                      {(cert as { verificationCode?: string | null }).verificationCode && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const code = (cert as { verificationCode: string }).verificationCode;
-                            if (!code) return;
-                            downloadCertificatePDF({
-                              fullName: fullName || profile?.full_name || 'Employee',
-                              certificationName: cert.name,
-                              certifiedAt: cert.certifiedAt ?? null,
-                              expiresAt: cert.expiresAt,
-                              verificationCode: code,
-                              verificationUrl: `${window.location.origin}/verify/${code}`,
-                            }).catch(() => {});
-                          }}
-                          className="mt-2 w-full flex items-center justify-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 py-1.5 text-[10px] sm:text-xs font-medium text-emerald-300 hover:bg-emerald-500/20 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50"
-                        >
-                          <Download className="w-3 h-3" aria-hidden />
-                          Download Certificate
-                        </button>
-                      )}
-                    </motion.div>
-                  );
-                })}
-              </motion.div>
-              
-              <motion.a 
-                href="/resources"
-                className="mt-3 sm:mt-4 flex items-center justify-center gap-2 text-[10px] sm:text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
-                whileHover={{ x: 3 }}
-              >
-                View all certifications & training
-                <ChevronRight className="w-3 h-3" />
-              </motion.a>
-            </ProfileSection>
-          )}
+          {/* My Certifications - unified built-in, external, license */}
+          <motion.div variants={containerVariants}>
+            <MyCertificationsSection
+              userId={user?.id}
+              driversLicenseNumber={profile?.drivers_license_number ?? null}
+              driversLicenseClass={profile?.drivers_license_class ?? null}
+              driversLicenseExpiration={profile?.drivers_license_expiration ?? null}
+              fullName={fullName || profile?.full_name || 'Employee'}
+            />
+          </motion.div>
 
           {/* Two-column grid for sections on larger screens */}
           <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
-            {/* Licenses & Certifications */}
-            <ProfileSection
-              title="Licenses & Credentials"
-              subtitle="Keep your credentials up to date"
-              icon={<CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />}
-            >
-              <motion.div 
-                className="space-y-2 sm:space-y-3"
-                variants={containerVariants}
-              >
-                {certifications.map((cert) => (
-                  <CertificationCard key={cert.label} cert={cert} />
-                ))}
-              </motion.div>
-              
-              <motion.p 
-                className="mt-3 sm:mt-5 text-[10px] sm:text-xs text-emerald-200/40 text-center"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 1 }}
-              >
-                Contact HR to update your license information
-              </motion.p>
-            </ProfileSection>
-
             {/* Notification Preferences */}
             <ProfileSection
               title="Notifications"
@@ -1083,6 +761,24 @@ export default function Profile() {
                 </div>
                 
                 <EnableNotificationsButton variant="green" />
+              </div>
+
+              {/* Certification notification toggles */}
+              <div className="mt-3 sm:mt-4 space-y-3">
+                <CertNotificationToggleCard
+                  title="New Certification Alerts"
+                  description="Get notified when certifications are added or revoked"
+                  enabled={certPrefs.grantEnabled}
+                  onToggle={certPrefs.toggleGrant}
+                  loading={certPrefs.isLoading}
+                />
+                <CertNotificationToggleCard
+                  title="Expiry Reminders"
+                  description="Get reminded before your certifications expire"
+                  enabled={certPrefs.expiryEnabled}
+                  onToggle={certPrefs.toggleExpiry}
+                  loading={certPrefs.isLoading}
+                />
               </div>
             </ProfileSection>
           </div>

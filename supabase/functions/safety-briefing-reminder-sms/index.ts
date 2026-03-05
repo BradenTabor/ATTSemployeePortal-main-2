@@ -129,7 +129,8 @@ Deno.serve(async (req: Request) => {
     .from("app_users")
     .select("user_id, phone_number, created_at, full_name")
     .in("role", FIELD_ROLES)
-    .eq("status", "active");
+    .eq("status", "active")
+    .not("email", "ilike", "%@atts.test");
   if (usersErr || !fieldUsers?.length) {
     return new Response(
       JSON.stringify({ sent: 0, reason: "No field users or error", error: usersErr?.message }),
@@ -137,11 +138,12 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  // Completed today
+  // Completed today (cross-reference by briefing_date OR announcement_id for robustness)
+  const todayAnnouncementId = (announcementsToday as { id: string }[])[0].id;
   const { data: completed } = await supabase
     .from("safety_briefing_answers")
     .select("user_id")
-    .eq("briefing_date", todayStr);
+    .or(`briefing_date.eq.${todayStr},announcement_id.eq.${todayAnnouncementId}`);
   const completedSet = new Set((completed ?? []).map((r: { user_id: string }) => r.user_id));
 
   const overdue: { user_id: string; phone_number: string; first_name: string | null }[] = [];
@@ -159,14 +161,7 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  if (overdue.length === 0) {
-    return new Response(
-      JSON.stringify({ sent: 0, reason: "No overdue users with phone", date: todayStr }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
-    );
-  }
-
-  // Idempotency: already sent tier 0 for today?
+  // Idempotency: already sent tier 0 for today? (check before zero-overdue insert so we don't double-insert)
   const { data: existingLog } = await supabase
     .from("sms_escalation_send_log")
     .select("sent_at")
@@ -183,6 +178,25 @@ Deno.serve(async (req: Request) => {
         { status: 200, headers: { "Content-Type": "application/json" } }
       );
     }
+  }
+
+  // Zero-overdue audit log: when nobody to notify, still log so admin can distinguish "ran, 0 overdue" from "cron failed"
+  if (overdue.length === 0) {
+    await supabase.from("sms_escalation_send_log").insert({
+      tier: 0,
+      date_checked: todayStr,
+      overdue_count: 0,
+      recipient_count: 0,
+      success: true,
+      error_message: null,
+      total_price: 0,
+      results: null,
+      employee_user_ids: [],
+    });
+    return new Response(
+      JSON.stringify({ sent: 0, reason: "No overdue users with phone", date: todayStr }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
   }
 
   if (!CLICKSEND_USERNAME || !CLICKSEND_PASSWORD) {

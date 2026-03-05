@@ -2,9 +2,9 @@
   {
     "name": "minScore",
     "expected": 0.8,
-    "actual": 0.72,
+    "actual": 0.6,
     "values": [
-      0.72
+      0.6
     ],
     "operator": ">=",
     "passed": false,
@@ -16,9 +16,9 @@
   {
     "name": "minScore",
     "expected": 0.8,
-    "actual": 0.72,
+    "actual": 0.52,
     "values": [
-      0.72
+      0.52
     ],
     "operator": ">=",
     "passed": false,
@@ -30,9 +30,9 @@
   {
     "name": "minScore",
     "expected": 0.8,
-    "actual": 0.72,
+    "actual": 0.67,
     "values": [
-      0.72
+      0.67
     ],
     "operator": ">=",
     "passed": false,
@@ -44,9 +44,9 @@
   {
     "name": "minScore",
     "expected": 0.8,
-    "actual": 0.72,
+    "actual": 0.67,
     "values": [
-      0.72
+      0.67
     ],
     "operator": ">=",
     "passed": false,
@@ -58,23 +58,51 @@
   {
     "name": "minScore",
     "expected": 0.8,
-    "actual": 0.72,
+    "actual": 0.67,
     "values": [
-      0.72
+      0.67
     ],
     "operator": ">=",
     "passed": false,
     "auditProperty": "performance",
     "auditId": "categories",
     "level": "warn",
-    "url": "http://127.0.0.1:4173/admin/rto"
+    "url": "http://127.0.0.1:4173/admin/requests-oversight?section=rto"
   },
   {
     "name": "minScore",
     "expected": 0.8,
-    "actual": 0.72,
+    "actual": 0.67,
     "values": [
-      0.72
+      0.67
+    ],
+    "operator": ">=",
+    "passed": false,
+    "auditProperty": "performance",
+    "auditId": "categories",
+    "level": "warn",
+    "url": "http://127.0.0.1:4173/admin/requests-oversight?section=jsa"
+  },
+  {
+    "name": "minScore",
+    "expected": 0.8,
+    "actual": 0.67,
+    "values": [
+      0.67
+    ],
+    "operator": ">=",
+    "passed": false,
+    "auditProperty": "performance",
+    "auditId": "categories",
+    "level": "warn",
+    "url": "http://127.0.0.1:4173/admin/requests-oversight?section=parts-fixes"
+  },
+  {
+    "name": "minScore",
+    "expected": 0.8,
+    "actual": 0.66,
+    "values": [
+      0.66
     ],
     "operator": ">=",
     "passed": false,
@@ -86,9 +114,9 @@
   {
     "name": "minScore",
     "expected": 0.8,
-    "actual": 0.72,
+    "actual": 0.67,
     "values": [
-      0.72
+      0.67
     ],
     "operator": ">=",
     "passed": false,

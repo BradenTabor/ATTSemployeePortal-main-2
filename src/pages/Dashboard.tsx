@@ -36,6 +36,7 @@ import {
   EnhancedNavCardsSkeleton,
   EnhancedEmptyJobsState,
   FeaturedAnnouncementSection,
+  GoodCatchPrompt,
 } from '../components/dashboard';
 import { CompactJobCard, StackedJobCard } from '../components/jobs';
 import { EnableNotificationsButton } from '../components/notifications';
@@ -496,6 +497,9 @@ function Dashboard() {
               <FeaturedAnnouncementSection />
             </ScrollReveal>
           </div>
+
+          {/* Good-catch prompt: "Did you spot anything yesterday?" — field roles, dismissible for the day */}
+          <GoodCatchPrompt />
 
           {/* ============================================================ */}
           {/* TIER 2: Compliance Strip - Unified form status + actions */}

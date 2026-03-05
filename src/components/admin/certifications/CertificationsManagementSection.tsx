@@ -29,7 +29,7 @@ import { getDeviceCapabilities } from "../../../lib/mobilePerf";
 import { toast } from "../../../lib/toast";
 import { downloadCertificatePDF } from "../../certifications/certificatePDFDownload";
 import { supabase } from "../../../lib/supabaseClient";
-import { CertificationAuditLogPanel } from "./CertificationAuditLogPanel";
+import { ExternalCertTypesManager } from "./ExternalCertTypesManager";
 import { glass } from "../../../lib/glass";
 
 const SECTION_TITLE_STYLE = {
@@ -620,8 +620,8 @@ export function CertificationsManagementSection({
         )}
       </section>
 
-      <section className="mt-6">
-        <CertificationAuditLogPanel />
+      <section className="mt-8">
+        <ExternalCertTypesManager />
       </section>
 
       {manageCert &&

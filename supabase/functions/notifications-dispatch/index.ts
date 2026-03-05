@@ -119,7 +119,8 @@ Deno.serve(async (req: Request) => {
       case "all": {
         const { data, error } = await supabase
           .from("app_users")
-          .select("user_id");
+          .select("user_id")
+          .not("email", "ilike", "%@atts.test");
         
         if (error) {
           console.error("[notifications-dispatch] Failed to fetch all users:", error);
@@ -140,7 +141,8 @@ Deno.serve(async (req: Request) => {
         const { data, error } = await supabase
           .from("app_users")
           .select("user_id")
-          .eq("role", typedEvent.target_ref);
+          .eq("role", typedEvent.target_ref)
+          .not("email", "ilike", "%@atts.test");
         
         if (error) {
           console.error("[notifications-dispatch] Failed to fetch users by role:", error);
@@ -196,7 +198,8 @@ Deno.serve(async (req: Request) => {
           const { data, error } = await supabase
             .from("app_users")
             .select("user_id")
-            .eq("role", role);
+            .eq("role", role)
+            .not("email", "ilike", "%@atts.test");
           if (error) {
             console.error(`[notifications-dispatch] Failed to fetch users for role '${role}':`, error);
             continue;

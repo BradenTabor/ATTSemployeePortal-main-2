@@ -10,7 +10,8 @@ import {
   useAdminGradeShortAnswers,
 } from "../../hooks/useCertifications";
 import { useWorkerQualifications } from "../../hooks/queries/useWorkerQualifications";
-import { CheckCircle2, Clock, RefreshCw, X } from "lucide-react";
+import { useWorkerExternalCertifications } from "../../hooks/queries/useExternalCertifications";
+import { CheckCircle2, Clock, RefreshCw, Shield, X } from "lucide-react";
 import { glass } from "../../lib/glass";
 import { PendingReviewCard } from "../../components/admin/certifications/PendingReviewCard";
 import { createNotificationSilent } from "../../lib/pushNotifications";
@@ -235,6 +236,22 @@ export default function CertificationsHub() {
     refetch: refetchWorkerQualifications,
   } = useWorkerQualifications();
 
+  const { data: allExtCerts } = useWorkerExternalCertifications();
+  const extCertsExpiringSoonCount = useMemo(() => {
+    if (!allExtCerts?.length) return 0;
+    const today = new Date().toISOString().slice(0, 10);
+    const in7 = new Date();
+    in7.setDate(in7.getDate() + 7);
+    const in7Str = in7.toISOString().slice(0, 10);
+    return allExtCerts.filter(
+      (c) =>
+        c.effective_status === "active" &&
+        c.expiration_date &&
+        c.expiration_date >= today &&
+        c.expiration_date <= in7Str
+    ).length;
+  }, [allExtCerts]);
+
   const awaitingCount = (pendingReviews?.length ?? 0) as number;
   const expiringThisWeekCount = useMemo(() => {
     if (!expiringSoon?.length) return 0;
@@ -259,11 +276,13 @@ export default function CertificationsHub() {
   const showAwaitingChip = canAccessPending;
   const showExpiringChip = canAccessCertifications;
   const showUnqualifiedChip = canAccessWorkerQual;
+  const showExtCertsExpiringChip = isAdmin;
   const allTriageZero =
     !triageLoading &&
     (showAwaitingChip ? awaitingCount === 0 : true) &&
     (showExpiringChip ? expiringThisWeekCount === 0 : true) &&
-    (showUnqualifiedChip ? unqualifiedCount === 0 : true);
+    (showUnqualifiedChip ? unqualifiedCount === 0 : true) &&
+    (showExtCertsExpiringChip ? extCertsExpiringSoonCount === 0 : true);
 
   const handleRefreshCurrentTab = useCallback(() => {
     switch (effectiveTab) {
@@ -377,6 +396,21 @@ export default function CertificationsHub() {
                   }`}
                 >
                   <span>{unqualifiedCount} workers unqualified</span>
+                </button>
+              )}
+              {showExtCertsExpiringChip && (
+                <button
+                  type="button"
+                  onClick={() => setTab("worker-qualifications")}
+                  data-testid="cert-hub-triage-ext-certs-expiring"
+                  className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 ${
+                    extCertsExpiringSoonCount > 0
+                      ? "bg-amber-500/20 text-amber-300 ring-1 ring-amber-500/40 hover:bg-amber-500/30"
+                      : "bg-white/5 text-gray-500 hover:bg-white/10"
+                  }`}
+                >
+                  <Shield className="h-4 w-4 shrink-0" aria-hidden />
+                  <span>{extCertsExpiringSoonCount} ext certs expiring</span>
                 </button>
               )}
             </>

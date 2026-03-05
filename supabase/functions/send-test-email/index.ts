@@ -131,7 +131,7 @@ Deno.serve(async (req: Request) => {
     } catch {
       /* no body */
     }
-    const allowedListKeys = ["compliance_summary", "safety_forecast", "weekly_safety_audit", "certification_expiry_digest", "safety_rewards_winners"] as const;
+    const allowedListKeys = ["compliance_summary", "safety_forecast", "weekly_safety_audit", "certification_expiry_digest", "safety_rewards_winners", "monthly_compliance_summary"] as const;
     const listKey = allowedListKeys.includes(body.listKey as typeof allowedListKeys[number])
       ? (body.listKey as typeof allowedListKeys[number])
       : "compliance_summary";
@@ -140,22 +140,39 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
-    const { data: rows, error: fetchErr } = await admin
-      .from("email_recipient_lists")
-      .select("email")
-      .eq("list_key", listKey);
 
-    if (fetchErr || !rows?.length) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: fetchErr?.message ?? "No recipients configured for this list",
-        }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    let recipients: string[];
+    if (listKey === "monthly_compliance_summary") {
+      const { data: rows, error: fetchErr } = await admin
+        .from("monthly_summary_recipients")
+        .select("email")
+        .eq("active", true);
+      if (fetchErr || !rows?.length) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: fetchErr?.message ?? "No recipients configured for this list",
+          }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      recipients = rows.map((r: { email: string }) => r.email);
+    } else {
+      const { data: rows, error: fetchErr } = await admin
+        .from("email_recipient_lists")
+        .select("email")
+        .eq("list_key", listKey);
+      if (fetchErr || !rows?.length) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: fetchErr?.message ?? "No recipients configured for this list",
+          }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      recipients = rows.map((r: { email: string }) => r.email);
     }
-
-    const recipients = rows.map((r: { email: string }) => r.email);
     const subject = `ATTS Test Email – ${listKey.replace("_", " ")}`;
     const textBody = `This is a test email from the ATTS admin Email Recipients tool.\n\nList: ${listKey}\nRecipients: ${recipients.length}\n\nIf you received this, the list is configured correctly.`;
     const htmlBody = `<!DOCTYPE html><html><body style="font-family:sans-serif;"><p>This is a test email from the ATTS admin Email Recipients tool.</p><p><strong>List:</strong> ${listKey}</p><p><strong>Recipients:</strong> ${recipients.length}</p><p>If you received this, the list is configured correctly.</p></body></html>`;
