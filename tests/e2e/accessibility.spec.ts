@@ -166,6 +166,7 @@ test.describe('Accessibility - DVIR Form', () => {
       const inputCount = await inputs.count();
       
       if (inputCount === 0) {
+        // No form inputs found on current page — skip rather than false-pass
         test.skip();
         return;
       }
@@ -330,6 +331,7 @@ test.describe('Accessibility - DVIR Form', () => {
       const count = await inputs.count();
       
       if (count === 0) {
+        // No text inputs rendered at this viewport — skip font-size assertion
         test.skip();
         return;
       }

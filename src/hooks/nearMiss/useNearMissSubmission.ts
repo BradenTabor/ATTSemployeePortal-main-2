@@ -73,39 +73,47 @@ export function useNearMissSubmission() {
       };
 
       if (!isOnline()) {
-        const tempQueueId = `atts-q-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-        let photoIds: string[] = [];
-        const pendingFiles = options?.pendingPhotoFiles ?? [];
-        if (pendingFiles.length > 0) {
-          const { compressImage } = await import('../../lib/imageCompression');
-          const photoEntries = await Promise.all(
-            pendingFiles.map(async (file, i) => {
-              const compressed = await compressImage(file, {
-                maxSizeMB: 2,
-                maxWidthOrHeight: 2048,
-                initialQuality: 0.85,
-                useWebWorker: true,
-              });
-              return {
-                fieldName: `near_miss_photo_${i + 1}`,
-                blob: compressed as Blob,
-                fileName: file.name,
-                contentType: (compressed as { type?: string }).type || 'image/jpeg',
-                compressed: true,
-              };
-            })
-          );
-          photoIds = await storePhotosForQueue(tempQueueId, 'near_miss', photoEntries);
+        try {
+          const tempQueueId = `atts-q-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+          let photoIds: string[] = [];
+          const pendingFiles = options?.pendingPhotoFiles ?? [];
+          if (pendingFiles.length > 0) {
+            const { compressImage } = await import('../../lib/imageCompression');
+            const photoEntries = await Promise.all(
+              pendingFiles.map(async (file, i) => {
+                const compressed = await compressImage(file, {
+                  maxSizeMB: 2,
+                  maxWidthOrHeight: 2048,
+                  initialQuality: 0.85,
+                  useWebWorker: true,
+                });
+                return {
+                  fieldName: `near_miss_photo_${i + 1}`,
+                  blob: compressed as Blob,
+                  fileName: file.name,
+                  contentType: (compressed as { type?: string }).type || 'image/jpeg',
+                  compressed: true,
+                };
+              })
+            );
+            photoIds = await storePhotosForQueue(tempQueueId, 'near_miss', photoEntries);
+          }
+          (payload as Record<string, unknown>).__offlineQueueId = tempQueueId;
+          (payload.near_miss_data as Record<string, unknown>).photo_paths = [];
+          await addToQueue('near_miss', payload as Record<string, unknown>, {
+            userId: user.id,
+            dateFor: incidentDate,
+            photoIds,
+          });
+          logger.info('[NearMiss] Offline: queued for sync');
+          return { success: true, queued: true };
+        } catch (e) {
+          logger.error('[NearMiss] Offline queue failed:', e);
+          return {
+            success: false,
+            error: e instanceof Error ? e : new Error('Failed to queue near-miss report for offline sync'),
+          };
         }
-        (payload as Record<string, unknown>).__offlineQueueId = tempQueueId;
-        (payload.near_miss_data as Record<string, unknown>).photo_paths = [];
-        await addToQueue('near_miss', payload as Record<string, unknown>, {
-          userId: user.id,
-          dateFor: incidentDate,
-          photoIds,
-        });
-        logger.info('[NearMiss] Offline: queued for sync');
-        return { success: true, queued: true };
       }
 
       try {

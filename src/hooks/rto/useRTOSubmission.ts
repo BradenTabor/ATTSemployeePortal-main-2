@@ -2,7 +2,6 @@ import { useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { CONFIG } from '../../lib/config';
 import { logger } from '../../lib/logger';
-import { formToast } from '../../lib/formToast';
 import {
   trackFormSubmitted,
   trackFormSubmitError,
@@ -64,40 +63,35 @@ export function useRTOSubmission() {
 
       if (error) throw error;
 
-      // 2. Send to webhook WITH the record ID
-      if (!CONFIG.make.rtoWebhook) {
-        throw new Error("RTO webhook URL is not configured");
-      }
+      // 2. Send to webhook WITH the record ID (non-fatal — DB record is the source of truth)
+      if (CONFIG.make.rtoWebhook) {
+        try {
+          const payload = {
+            ...formData,
+            rtoRequestId: insertedRecord.id,
+            phoneNumber: formData.phoneNumber,
+            startTime: formData.startTime,
+            endTime: formData.endTime,
+            totalDuration: formData.totalDuration,
+          };
 
-      const payload = {
-        ...formData,
-        rtoRequestId: insertedRecord.id, // The Supabase record ID
-        phoneNumber: formData.phoneNumber,
-        startTime: formData.startTime,
-        endTime: formData.endTime,
-        totalDuration: formData.totalDuration,
-      };
-      
-      const res = await fetch(
-        CONFIG.make.rtoWebhook,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
-
-      if (!res.ok) {
-        logger.warn("Webhook failed but record was saved:", insertedRecord.id);
-        // Show non-blocking info to user that webhook failed but data was saved
-        // Use setTimeout to show after success toast is displayed
-        setTimeout(() => {
-          formToast.info(
-            "Notification Issue",
-            "Your time off request was saved successfully, but there was an issue sending it to the notification system. Your data is safe.",
-            { autoDismiss: 8000, lockBackground: false }
+          const res = await fetch(
+            CONFIG.make.rtoWebhook,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            }
           );
-        }, 2000);
+
+          if (!res.ok) {
+            logger.warn(`RTO webhook ${res.status} but record saved:`, { recordId: insertedRecord.id, url: CONFIG.make.rtoWebhook });
+          }
+        } catch (webhookErr) {
+          logger.warn("RTO webhook network error but record saved:", { recordId: insertedRecord.id, url: CONFIG.make.rtoWebhook }, webhookErr);
+        }
+      } else {
+        logger.warn("RTO webhook URL not configured; record saved without notification:", insertedRecord.id);
       }
 
       // Telemetry: track successful submission with duration

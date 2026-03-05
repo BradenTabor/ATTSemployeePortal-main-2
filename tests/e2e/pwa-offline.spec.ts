@@ -326,7 +326,7 @@ test.describe('Data Persistence', () => {
       // Use driversName as fallback for DVIR form
       await driversNameInput.fill('Persist Test Driver');
     } else {
-      console.log('No suitable input field found for persistence test');
+      // No fillable input found — form UI may have changed
       test.skip();
       return;
     }
@@ -375,7 +375,7 @@ test.describe('Data Persistence', () => {
       // Use driversName as fallback for DVIR form
       await driversNameInput.fill(uniqueLocation);
     } else {
-      console.log('No suitable input field found for recovery test');
+      // No fillable input found — form UI may have changed
       test.skip();
       return;
     }
@@ -448,7 +448,7 @@ test.describe('Auto-Save Functionality', () => {
       // Use driversName as fallback for DVIR form
       await driversNameInput.fill('Auto-Save Test Driver');
     } else {
-      console.log('No suitable input field found for auto-save test');
+      // No fillable input found — form UI may have changed
       test.skip();
       return;
     }

@@ -329,7 +329,7 @@ export default function TreeFellingJSAForm() {
   const labelClass = "mb-1 block text-xs text-gray-400";
   const fieldError = (field: string) =>
     shouldShowError(field) ? (
-      <p className="text-xs text-red-400 mt-0.5">{getFieldError(field)}</p>
+      <p role="alert" className="text-xs text-red-400 mt-0.5">{getFieldError(field)}</p>
     ) : null;
 
   return (

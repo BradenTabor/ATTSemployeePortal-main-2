@@ -221,6 +221,7 @@ test.describe('Toast Notifications', () => {
         expect(isDisabled).toBe(true);
       }
     } else {
+      // Submit button not found — form may not render for this test user/role
       test.skip();
     }
   });
@@ -443,7 +444,7 @@ test.describe('Real-time Notifications', () => {
     const bellVisible = await notificationBell.isVisible().catch(() => false);
     
     if (!bellVisible) {
-      console.log('Notification bell not found - real-time notifications may not be implemented');
+      // Notification bell not found — real-time push UI not yet implemented
       test.skip();
       return;
     }
@@ -507,7 +508,7 @@ test.describe('Notifications - Mobile', () => {
         expect(isDisabled).toBe(true);
       }
     } else {
-      // No submit button visible at all — skip
+      // No submit button visible at mobile viewport — skip toast test
       test.skip();
       return;
     }
