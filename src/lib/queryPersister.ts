@@ -90,6 +90,20 @@ function getDB(): Promise<IDBPDatabase> {
  * If IndexedDB is not available (offlineCapable === false), returns a no-op
  * persister that never reads or writes anything.
  */
+/**
+ * Deletes persisted query cache from IndexedDB.
+ * Called on logout to prevent data leakage on shared devices.
+ */
+export async function removePersistedQueryCache(): Promise<void> {
+  if (!isOfflineCapable()) return;
+  try {
+    const db = await getDB();
+    await db.delete(STORE_NAME, CACHE_KEY);
+  } catch (err) {
+    logger.warn('[queryPersister] Failed to remove persisted cache on logout:', err);
+  }
+}
+
 export function createIDBPersister(): Persister {
   return {
     persistClient: async (client: PersistedClient) => {

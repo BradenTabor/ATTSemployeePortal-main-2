@@ -3,6 +3,8 @@ import { User, Session, type PostgrestSingleResponse } from '@supabase/supabase-
 import { supabase } from '../lib/supabaseClient';
 import { logger } from "../lib/logger";
 import { setCurrentUserId, clearSession as clearTelemetrySession, clearTelemetryStorage } from '../lib/telemetry';
+import { queryClient } from '../lib/queryClient';
+import { removePersistedQueryCache } from '../lib/queryPersister';
 import { redactUserId } from '../lib/logger';
 import { LOCAL_STORAGE_KEYS_PRESERVED_ON_LOGOUT } from '../lib/appVersion';
 
@@ -509,6 +511,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
+      // SEC-002: Clear caches BEFORE signOut so data is wiped even if the
+      // network request fails. Prevents leakage on shared devices.
+      lastKnownRoleRef.current = null;
+      lastKnownFullNameRef.current = null;
+      lastKnownAvatarUrlRef.current = null;
+      clearCachedProfile();
+      clearTelemetrySession();
+      queryClient.clear();
+      await removePersistedQueryCache();
+
       const { error } = await supabase.auth.signOut();
 
       if (error) {
@@ -516,13 +528,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw error;
       }
 
-      // Clear last known values and cache on sign out
-      lastKnownRoleRef.current = null;
-      lastKnownFullNameRef.current = null;
-      lastKnownAvatarUrlRef.current = null;
-      clearCachedProfile();
-      clearTelemetrySession();
-      
       // SEC-001: Clear localStorage on logout to prevent data leakage.
       // Preserve non-sensitive UX keys (e.g. onboarding completed version) so
       // "What's New" shows only once per app version, not on every login.

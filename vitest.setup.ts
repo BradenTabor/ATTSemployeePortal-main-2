@@ -48,6 +48,13 @@ if (typeof globalThis.IntersectionObserver === 'undefined') {
   globalThis.IntersectionObserver = MockIntersectionObserver as unknown as typeof IntersectionObserver;
 }
 
+// HTMLMediaElement mocks — jsdom doesn't implement play/pause, causing uncaught
+// exceptions when DashboardLayout's visibility handler calls video.play().
+if (typeof HTMLMediaElement !== 'undefined') {
+  HTMLMediaElement.prototype.play = () => Promise.resolve();
+  HTMLMediaElement.prototype.pause = () => {};
+}
+
 // Minimal canvas 2d mock for DVIR/JSA forms (signature, image preview) in jsdom
 if (typeof HTMLCanvasElement !== 'undefined') {
   /* eslint-disable @typescript-eslint/no-unused-vars -- getContext signature, params unused in mock */
