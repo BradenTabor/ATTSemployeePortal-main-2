@@ -44,6 +44,7 @@ import { PageWrapper } from "./motion";
 import { UserPresenceTracker } from "./hooks/useUserPresence";
 import { OfflineQueueProvider } from "./contexts/OfflineQueueContext";
 import { OfflineSyncIndicator } from "./components/OfflineSyncIndicator";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 // Main pages
 const Home = lazy(() => import("./pages/Home"));
@@ -961,6 +962,7 @@ export default function App() {
             />
           </Suspense>
         )}
+        <SpeedInsights />
       </ToastOverlayProvider>
     </PersistQueryClientProvider>
   );
