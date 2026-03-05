@@ -92,6 +92,16 @@ export const queryKeys = {
     detail: (equipmentId: string) => ['equipment', 'detail', equipmentId] as const,
   },
 
+  // Attendance (General Foreman roll-call)
+  attendance: {
+    all: ['attendance'] as const,
+    daily: (date: string) => ['attendance', 'daily', date] as const,
+    weeklyBatch: (weekStart: string) =>
+      ['attendance', 'weekly-batch', weekStart] as const,
+    summary: (start: string, end: string) =>
+      ['attendance', 'summary', start, end] as const,
+  },
+
   // Compliance Status (for dashboard)
   compliance: {
     today: (userId: string, date: string) => ['compliance', 'today', userId, date] as const,

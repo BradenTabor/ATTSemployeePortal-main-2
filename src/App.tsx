@@ -102,6 +102,7 @@ const GeneralForemanDashboard = lazy(() => import("./pages/general-foreman/Gener
 const CrewOversight = lazy(() => import("./pages/general-foreman/CrewOversight"));
 const GeneralForemanSafetyCompliance = lazy(() => import("./pages/general-foreman/GeneralForemanSafetyCompliance"));
 const GeneralForemanEquipmentLogs = lazy(() => import("./pages/general-foreman/GeneralForemanEquipmentLogs"));
+const EmployeeAttendance = lazy(() => import("./pages/general-foreman/EmployeeAttendance"));
 
 // Safety Officer pages
 const SafetyOfficerDashboard = lazy(() => import("./pages/safety-officer/SafetyOfficerDashboard"));
@@ -577,6 +578,18 @@ function AnimatedRoutes() {
                 <PageWrapper>
                   <ProtectedRoute allowedRoles={["admin", "general_foreman"]}>
                     <GeneralForemanEquipmentLogs />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            {/* General Foreman Employee Attendance - GF and admin only */}
+            <Route
+              path="/general-foreman/attendance"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute allowedRoles={["admin", "general_foreman"]}>
+                    <EmployeeAttendance />
                   </ProtectedRoute>
                 </PageWrapper>
               }

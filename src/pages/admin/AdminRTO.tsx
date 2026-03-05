@@ -861,6 +861,7 @@ export function AdminRTOContent() {
     setUpdatingId(id);
     try {
       const updatePayload: Record<string, string> = { status: newStatus };
+      if (newStatus === "Approved" && user?.id) updatePayload.approved_by = user.id;
       if (adminNotes) updatePayload.admin_notes = adminNotes;
 
       const { error } = await supabase

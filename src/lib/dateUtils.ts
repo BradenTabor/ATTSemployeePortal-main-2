@@ -10,6 +10,10 @@ import {
   addDays,
   subDays,
   startOfDay,
+  startOfWeek,
+  endOfWeek,
+  eachDayOfInterval,
+  isWeekend,
   parseISO,
 } from 'date-fns';
 
@@ -126,6 +130,36 @@ export function getStartOfToday(): Date {
   return startOfDay(new Date());
 }
 
+/**
+ * Get the Monday of the week containing the given date (ISO week, Mon=1).
+ * Returns 'yyyy-MM-dd' string.
+ */
+export function getWeekStartString(date: string | Date): string {
+  const parsed = typeof date === 'string' ? parseISO(date) : date;
+  return format(startOfWeek(parsed, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+}
+
+/**
+ * Get the Friday of the week containing the given date.
+ * Returns 'yyyy-MM-dd' string.
+ */
+export function getWeekEndString(date: string | Date): string {
+  const parsed = typeof date === 'string' ? parseISO(date) : date;
+  return format(endOfWeek(parsed, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+}
+
+/**
+ * Get weekday dates (Mon-Fri) for the week containing the given date.
+ */
+export function getWeekdayDates(date: string | Date): Date[] {
+  const parsed = typeof date === 'string' ? parseISO(date) : date;
+  const weekStart = startOfWeek(parsed, { weekStartsOn: 1 });
+  const weekEnd = endOfWeek(parsed, { weekStartsOn: 1 });
+  return eachDayOfInterval({ start: weekStart, end: weekEnd }).filter(
+    (d) => !isWeekend(d)
+  );
+}
+
 // Re-export commonly used functions for direct use
 export {
   isToday,
@@ -134,5 +168,7 @@ export {
   addDays,
   subDays,
   parseISO,
+  startOfWeek,
+  format,
 };
 

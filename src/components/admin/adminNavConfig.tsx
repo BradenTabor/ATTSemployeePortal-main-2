@@ -268,6 +268,14 @@ export const GENERAL_FOREMAN_NAV_CARDS: AdminNavCardConfig[] = [
     variant: "purple",
     iconAsImage: true,
   },
+  {
+    title: "Employee Attendance",
+    description: "Track daily attendance for all crew members.",
+    icon: <img src="/assets/crew-oversight.png" alt="" className="w-full h-full object-contain" />,
+    to: "/general-foreman/attendance",
+    variant: "purple",
+    iconAsImage: true,
+  },
 ];
 
 export const SAFETY_OFFICER_NAV_CARDS: AdminNavCardConfig[] = [
