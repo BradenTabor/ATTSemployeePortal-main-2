@@ -633,7 +633,7 @@ function AdminSafetyRewardsPage() {
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center gap-3"
         >
-          <img src="/assets/safety-rewards.png" alt="" className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 object-contain flex-shrink-0" />
+          <img loading="lazy" src="/assets/safety-rewards.png" alt="" className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 object-contain flex-shrink-0" />
           <div>
             <h1 className="text-xl font-bold text-white">Safety Rewards</h1>
             <p className="text-sm text-white/50">

@@ -131,7 +131,7 @@ Deno.serve(async (req: Request) => {
     } catch {
       /* no body */
     }
-    const allowedListKeys = ["compliance_summary", "safety_forecast", "weekly_safety_audit", "certification_expiry_digest", "safety_rewards_winners", "monthly_compliance_summary"] as const;
+    const allowedListKeys = ["compliance_summary", "safety_forecast", "weekly_safety_audit", "weekly_attendance_summary", "certification_expiry_digest", "safety_rewards_winners", "monthly_compliance_summary"] as const;
     const listKey = allowedListKeys.includes(body.listKey as typeof allowedListKeys[number])
       ? (body.listKey as typeof allowedListKeys[number])
       : "compliance_summary";

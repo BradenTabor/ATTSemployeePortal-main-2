@@ -14,6 +14,7 @@ type ListKey =
   | "compliance_summary"
   | "safety_forecast"
   | "weekly_safety_audit"
+  | "weekly_attendance_summary"
   | "certification_expiry_digest"
   | "safety_rewards_winners"
   | typeof MONTHLY_SUMMARY_LIST_KEY;
@@ -33,6 +34,11 @@ const LISTS: { key: ListKey; label: string; description: string }[] = [
     key: "weekly_safety_audit",
     label: "Weekly Safety Audit",
     description: "Weekly safety audit report email recipients",
+  },
+  {
+    key: "weekly_attendance_summary",
+    label: "Weekly Attendance Summary",
+    description: "Monday 7 AM weekly attendance summary (previous week Mon–Fri)",
   },
   {
     key: "certification_expiry_digest",

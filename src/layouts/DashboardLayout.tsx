@@ -4,11 +4,12 @@ import logo from "../assets/ATTS_Logo-removebg-preview.png";
 import { getDeviceCapabilities, onVisibilityChange } from "../lib/mobilePerf";
 import { CertificationResultOverlay } from "../components/certifications/CertificationResultOverlay";
 import { logger } from "../lib/logger";
+import { getVideoUrl } from "../lib/videoCdn";
 
 const BackgroundParticles = lazy(() => import("../components/ui/BackgroundParticles"));
 
-const DASHBOARD_VIDEO_PRIMARY = "/videos/evergreen-bg.mp4";
-const DASHBOARD_VIDEO_FALLBACK = "/videos/4k.mp4";
+const DASHBOARD_VIDEO_PRIMARY = getVideoUrl("/videos/evergreen-bg.mp4");
+const DASHBOARD_VIDEO_FALLBACK = getVideoUrl("/videos/4k.mp4");
 
 interface DashboardLayoutProps {
   title?: string;

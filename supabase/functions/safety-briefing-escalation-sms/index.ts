@@ -3,10 +3,15 @@
  * Safety Briefing Escalation SMS
  *
  * Cron: 16:00 UTC Mon–Fri (10 AM CST / 11 AM CDT). Sends SMS when active field
- * users are overdue on daily safety briefing (briefing-only; no reward check).
- * Tier 1 = 1 business day overdue → per-manager SMS (dynamic via manager_id); orphans
- * routed to tier 2 and logged. Tier 2 = 2 business days → static recipients.
- * Calendar-aware D1/D2, max lookback 5 days, user_absences exclusion, defensive calendar check.
+ * users have not completed the daily safety briefing (briefing-only; no reward check).
+ *
+ * ESCALATION_MODE (env): "single_day" (default) or "legacy".
+ * - single_day: Notifies only for users who missed **today's** briefing (run date).
+ *   Cutoff is 10 AM CST same-day; message body is e.g. "X of Y did not complete the Mar 9 briefing: [names]."
+ * - legacy: Previous D1/D2 behavior (yesterday + two days ago, with "missed D2 but completed D1" etc.).
+ *
+ * Tier 1 = per-manager SMS (dynamic via manager_id); orphans (no manager or no manager phone) → tier 2.
+ * Tier 2 = static recipients from sms_escalation_recipients (tier = 2).
  *
  * Invoke with x-internal-key: INTERNAL_SECRET or Bearer: service role.
  */
@@ -131,7 +136,37 @@ function buildSMSBody(names: string[], totalOverdue: number, totalUsers: number,
   return `ATTS Safety Briefing\n${countLine}\n${nameList}\n${cta}\nReply STOP to opt out.`;
 }
 
-/** D2 section: "missed D2 but completed D1" (current on most recent day) vs "Missed D2 and D1" (need follow-up). When both groups exist, caught-up is count-only to stay within SMS length; names reserved for still-behind. */
+/** Tier 2 body for single-day mode: one overdue list for today; optional line clarifying who has no supervisor (subset). */
+function buildTier2BodySingleDay(
+  overdueNames: string[],
+  overdueCount: number,
+  totalFieldUsers: number,
+  orphanNames: string[],
+  orphanCount: number,
+  dateStr: string
+): string {
+  const dateLabel = formatDateLabel(dateStr);
+  const shown = overdueNames.slice(0, MAX_NAMES_SHOWN);
+  const nameList =
+    overdueCount > MAX_NAMES_SHOWN
+      ? shown.join(", ") + ` +${overdueCount - MAX_NAMES_SHOWN} more`
+      : shown.join(", ");
+  const parts: string[] = [
+    "ATTS Safety Briefing",
+    `${overdueCount} of ${totalFieldUsers} employees did not complete the ${dateLabel} briefing:`,
+    nameList,
+  ];
+  if (orphanCount > 0) {
+    const orphanList = orphanNames.slice(0, MAX_NAMES_SHOWN).join(", ") +
+      (orphanCount > MAX_NAMES_SHOWN ? ` +${orphanCount - MAX_NAMES_SHOWN} more` : "");
+    parts.push(`Of these, ${orphanCount} ${orphanCount === 1 ? "has" : "have"} no supervisor assigned: ${orphanList}.`);
+  }
+  parts.push("Immediate follow-up required.");
+  parts.push("Reply STOP to opt out.");
+  return parts.join("\n");
+}
+
+/** D2 section (legacy only): "missed D2 but completed D1" vs "Missed D2 and D1". */
 function buildTier2D2Section(
   caughtUpNames: string[],
   caughtUpCount: number,
@@ -208,7 +243,10 @@ Deno.serve(async (req: Request) => {
   });
 
   const todayStr = getChicagoToday();
+  const escMode = Deno.env.get("ESCALATION_MODE") ?? "single_day";
 
+  if (escMode === "legacy") {
+  // --- Legacy path: D1/D2, week reset, lookback, Tier 2 D2 section ---
   // Fetch company_calendar only for the bounded window needed for D1/D2 (35 days back); unbounded would add latency as table grows.
   const rangeStart = new Date(todayStr + "T12:00:00.000Z");
   rangeStart.setUTCDate(rangeStart.getUTCDate() - 35);
@@ -614,6 +652,309 @@ Deno.serve(async (req: Request) => {
 
   return new Response(
     JSON.stringify(payload),
+    { status: 200, headers: { "Content-Type": "application/json" } }
+  );
+  }
+
+  // --- Single-day path: only today's briefing; date_checked = todayStr for both tiers ---
+  const calendarRowsSingle = await supabase
+    .from("company_calendar")
+    .select("date")
+    .eq("date", todayStr);
+  const calendarSetSingle = new Set<string>((calendarRowsSingle.data ?? []).map((r: { date: string }) => String(r.date).slice(0, 10)));
+  const skipCalendar = calendarSetSingle.has(todayStr);
+
+  const { data: annToday, error: annErrSingle } = await supabase
+    .from("announcements")
+    .select("id, date")
+    .eq("date", todayStr)
+    .maybeSingle();
+  if (annErrSingle || !annToday) {
+    const payloadSkip = {
+      tier1: { overdueCount: 0, sent: false, skippedReason: "No announcement for today", dateChecked: todayStr },
+      tier2: { overdueCount: 0, sent: false, skippedReason: "No announcement for today", dateChecked: todayStr },
+      errors: annErrSingle ? [annErrSingle.message] : undefined,
+    };
+    return new Response(JSON.stringify(payloadSkip), { status: 200, headers: { "Content-Type": "application/json" } });
+  }
+  const annByDateSingle: Record<string, { id: string }> = { [todayStr]: { id: annToday.id } };
+
+  const { data: absenceRowsSingle } = await supabase
+    .from("user_absences")
+    .select("user_id, date")
+    .eq("date", todayStr);
+  const absentToday = new Set<string>((absenceRowsSingle ?? []).map((r: { user_id: string }) => r.user_id));
+
+  type OverdueRowSingle = { user_id: string; full_name: string | null; manager_id: string | null };
+  const newHireCutoffSingle = new Date();
+  newHireCutoffSingle.setDate(newHireCutoffSingle.getDate() - NEW_HIRE_DAYS);
+  const newHireCutoffStrSingle = newHireCutoffSingle.toISOString().slice(0, 19);
+
+  const { data: allFieldUsersSingle, error: fuErrSingle } = await supabase
+    .from("app_users")
+    .select("user_id, full_name, manager_id, created_at")
+    .in("role", FIELD_ROLES)
+    .eq("status", "active")
+    .not("email", "ilike", "%@atts.test");
+  if (fuErrSingle || !allFieldUsersSingle?.length) {
+    const payloadErr = {
+      tier1: { overdueCount: 0, sent: false, dateChecked: todayStr },
+      tier2: { overdueCount: 0, sent: false, dateChecked: todayStr },
+      errors: ["Failed to fetch field users: " + (fuErrSingle?.message ?? "none found")],
+    };
+    return new Response(JSON.stringify(payloadErr), { status: 200, headers: { "Content-Type": "application/json" } });
+  }
+  const fieldUsersSingle = allFieldUsersSingle.filter(
+    (u: { created_at: string | null }) => !u.created_at || u.created_at <= newHireCutoffStrSingle
+  ) as OverdueRowSingle[];
+  const totalFieldUsersSingle = fieldUsersSingle.length;
+
+  const managerCrewCountSingle: Record<string, number> = {};
+  for (const u of fieldUsersSingle) {
+    if (u.manager_id) managerCrewCountSingle[u.manager_id] = (managerCrewCountSingle[u.manager_id] ?? 0) + 1;
+  }
+
+  const announcementIdSingle = annByDateSingle[todayStr].id;
+  const { data: completedSingle, error: cErrSingle } = await supabase
+    .from("safety_briefing_answers")
+    .select("user_id, briefing_date")
+    .or(`briefing_date.eq.${todayStr},announcement_id.eq.${announcementIdSingle}`);
+  const completedSetSingle = new Set((completedSingle ?? []).map((r: { user_id: string }) => r.user_id));
+  const overdueTodayRaw = fieldUsersSingle
+    .filter((u) => !completedSetSingle.has(u.user_id))
+    .filter((u) => !absentToday.has(u.user_id));
+
+  const errorsSingle: string[] = [];
+  const tier1Single: { overdueCount: number; sent: boolean; skippedReason?: string; dateChecked?: string; dryRunWouldSend?: boolean; totalPrice?: number } = { overdueCount: 0, sent: false };
+  const tier2Single: { overdueCount: number; sent: boolean; skippedReason?: string; dateChecked?: string; dryRunWouldSend?: boolean; totalPrice?: number } = { overdueCount: 0, sent: false };
+
+  const suppressionLogTier1Single: Record<string, unknown> = {
+    date_checked: todayStr,
+    users_excluded_absences: absentToday.size,
+    overdue_before: fieldUsersSingle.length - completedSetSingle.size,
+    overdue_after: overdueTodayRaw.length,
+    announcement_id: announcementIdSingle,
+    completed_set_size: completedSetSingle.size,
+    field_users_count: totalFieldUsersSingle,
+  };
+  const suppressionLogTier2Single: Record<string, unknown> = { ...suppressionLogTier1Single };
+
+  if (skipCalendar) {
+    suppressionLogTier1Single.dates_skipped_calendar = [todayStr];
+    suppressionLogTier2Single.dates_skipped_calendar = [todayStr];
+  }
+
+  const managerIdsSingle = [...new Set(overdueTodayRaw.map((u) => u.manager_id).filter(Boolean))] as string[];
+  let managerPhoneMapSingle: Record<string, string> = {};
+  if (managerIdsSingle.length > 0) {
+    const { data: managersSingle } = await supabase.from("app_users").select("id, phone_number").in("id", managerIdsSingle);
+    (managersSingle ?? []).forEach((m: { id: string; phone_number: string | null }) => {
+      const e164 = toE164(m.phone_number);
+      if (e164) managerPhoneMapSingle[m.id] = e164;
+    });
+  }
+
+  const orphanedSingle: { user_id: string; full_name: string | null; reason: string }[] = [];
+  const byManagerSingle: Record<string, OverdueRowSingle[]> = {};
+  for (const u of overdueTodayRaw) {
+    if (!u.manager_id) {
+      orphanedSingle.push({ user_id: u.user_id, full_name: u.full_name, reason: "no manager" });
+      continue;
+    }
+    const phone = managerPhoneMapSingle[u.manager_id];
+    if (!phone) {
+      orphanedSingle.push({ user_id: u.user_id, full_name: u.full_name, reason: "no manager phone" });
+      continue;
+    }
+    if (!byManagerSingle[u.manager_id]) byManagerSingle[u.manager_id] = [];
+    byManagerSingle[u.manager_id].push(u);
+  }
+
+  const overdueCountSingle = overdueTodayRaw.length;
+  tier1Single.overdueCount = overdueCountSingle;
+  tier2Single.overdueCount = overdueCountSingle;
+
+  const { data: recipientsSingle } = await supabase
+    .from("sms_escalation_recipients")
+    .select("tier, phone_e164, sort_order")
+    .eq("is_active", true)
+    .eq("tier", 2)
+    .order("sort_order", { ascending: true });
+  const tier2PhonesSingle = (recipientsSingle ?? []).map((r: { phone_e164: string }) => r.phone_e164);
+
+  async function alreadySentTodaySingle(tier: number, dateChecked: string): Promise<boolean> {
+    const { data } = await supabase
+      .from("sms_escalation_send_log")
+      .select("sent_at")
+      .eq("tier", tier)
+      .eq("date_checked", dateChecked)
+      .order("sent_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!data?.sent_at) return false;
+    const sentAtChicago = new Date(data.sent_at).toLocaleDateString("en-CA", { timeZone: TZ });
+    return sentAtChicago === todayStr;
+  }
+  const tier1AlreadySentSingle = await alreadySentTodaySingle(1, todayStr);
+  const tier2AlreadySentSingle = await alreadySentTodaySingle(2, todayStr);
+
+  const skipTier1Single = skipCalendar || overdueCountSingle === 0;
+  if (!skipTier1Single && !tier1AlreadySentSingle) {
+    const managerEntriesSingle = Object.entries(byManagerSingle);
+    if (managerEntriesSingle.length > 0 && CLICKSEND_USERNAME && CLICKSEND_PASSWORD && !dryRun) {
+      const messages: { to: string; body: string }[] = [];
+      for (const [_mid, users] of managerEntriesSingle) {
+        const phone = managerPhoneMapSingle[_mid];
+        if (!phone) continue;
+        const names = users.map((u) => abbreviateName(u.full_name));
+        const crewTotal = managerCrewCountSingle[_mid] ?? users.length;
+        messages.push({ to: phone, body: buildSMSBody(names, users.length, crewTotal, 1, todayStr) });
+      }
+      if (messages.length > 0) {
+        const sendResult = await sendSMS(
+          messages.map((m) => ({ to: m.to, body: m.body })),
+          { username: CLICKSEND_USERNAME, password: CLICKSEND_PASSWORD, from: CLICKSEND_FROM_NUMBER }
+        );
+        tier1Single.sent = true;
+        tier1Single.totalPrice = sendResult.totalPrice ?? 0;
+        await supabase.from("sms_escalation_send_log").insert({
+          tier: 1,
+          date_checked: todayStr,
+          overdue_count: overdueCountSingle,
+          recipient_count: messages.length,
+          success: sendResult.success,
+          error_message: sendResult.error ?? null,
+          total_price: sendResult.totalPrice,
+          results: sendResult.results ?? null,
+          employee_user_ids: overdueTodayRaw.map((u) => u.user_id),
+          orphaned_user_ids: orphanedSingle.map((o) => ({ user_id: o.user_id, reason: o.reason })),
+          suppression_log: suppressionLogTier1Single,
+        });
+        if (sendResult.error) errorsSingle.push(`Tier1: ${sendResult.error}`);
+      }
+    } else if (managerEntriesSingle.length > 0 && !dryRun) tier1Single.skippedReason = "ClickSend not configured";
+    if (dryRun && managerEntriesSingle.length > 0) tier1Single.dryRunWouldSend = true;
+  } else {
+    if (skipCalendar) tier1Single.skippedReason = "Date in company_calendar";
+    else if (overdueCountSingle === 0) tier1Single.skippedReason = "No overdue";
+    else if (tier1AlreadySentSingle) tier1Single.skippedReason = "Already sent today";
+    if (overdueCountSingle === 0 && !tier1AlreadySentSingle) {
+      await supabase.from("sms_escalation_send_log").insert({
+        tier: 1,
+        date_checked: todayStr,
+        overdue_count: 0,
+        recipient_count: 0,
+        success: true,
+        error_message: null,
+        total_price: 0,
+        results: null,
+        employee_user_ids: [],
+        orphaned_user_ids: [],
+        suppression_log: suppressionLogTier1Single,
+      });
+    }
+  }
+  tier1Single.dateChecked = todayStr;
+
+  const tier2CombinedCountSingle = overdueCountSingle;
+  const skipTier2Single = skipCalendar || tier2CombinedCountSingle === 0 || tier2PhonesSingle.length === 0 || tier2AlreadySentSingle;
+  if (!skipTier2Single && tier2PhonesSingle.length > 0 && CLICKSEND_USERNAME && CLICKSEND_PASSWORD && !dryRun) {
+    const overdueNamesSingle = overdueTodayRaw.map((u) => abbreviateName(u.full_name));
+    const orphanNamesSingle = orphanedSingle.map((u) => abbreviateName(u.full_name));
+    const bodySingle = buildTier2BodySingleDay(
+      overdueNamesSingle,
+      overdueCountSingle,
+      totalFieldUsersSingle,
+      orphanNamesSingle,
+      orphanedSingle.length,
+      todayStr
+    );
+    const sendResult = await sendSMS(
+      tier2PhonesSingle.map((to) => ({ to, body: bodySingle })),
+      { username: CLICKSEND_USERNAME, password: CLICKSEND_PASSWORD, from: CLICKSEND_FROM_NUMBER }
+    );
+    tier2Single.sent = true;
+    tier2Single.totalPrice = sendResult.totalPrice ?? 0;
+    await supabase.from("sms_escalation_send_log").insert({
+      tier: 2,
+      date_checked: todayStr,
+      overdue_count: tier2CombinedCountSingle,
+      recipient_count: tier2PhonesSingle.length,
+      success: sendResult.success,
+      error_message: sendResult.error ?? null,
+      total_price: sendResult.totalPrice,
+      results: sendResult.results ?? null,
+      employee_user_ids: overdueTodayRaw.map((u) => u.user_id),
+      orphaned_user_ids: orphanedSingle.map((o) => ({ user_id: o.user_id, reason: o.reason })),
+      suppression_log: suppressionLogTier2Single,
+    });
+    if (sendResult.error) errorsSingle.push(`Tier2: ${sendResult.error}`);
+  } else {
+    if (skipCalendar) tier2Single.skippedReason = "Date in company_calendar";
+    else if (tier2CombinedCountSingle === 0) tier2Single.skippedReason = "No overdue";
+    else if (tier2PhonesSingle.length === 0) tier2Single.skippedReason = "No recipients";
+    else if (tier2AlreadySentSingle) tier2Single.skippedReason = "Already sent today";
+    else if (dryRun && tier2PhonesSingle.length > 0 && tier2CombinedCountSingle > 0) tier2Single.dryRunWouldSend = true;
+    else if (!CLICKSEND_USERNAME || !CLICKSEND_PASSWORD) tier2Single.skippedReason = "ClickSend not configured";
+    if (tier2CombinedCountSingle === 0 && !tier2AlreadySentSingle) {
+      await supabase.from("sms_escalation_send_log").insert({
+        tier: 2,
+        date_checked: todayStr,
+        overdue_count: 0,
+        recipient_count: 0,
+        success: true,
+        error_message: null,
+        total_price: 0,
+        results: null,
+        employee_user_ids: [],
+        orphaned_user_ids: [],
+        suppression_log: suppressionLogTier2Single,
+      });
+    }
+  }
+  tier2Single.dateChecked = todayStr;
+
+  console.log("[safety-briefing-escalation-sms] single_day", {
+    todayStr,
+    totalFieldUsers: totalFieldUsersSingle,
+    overdueCount: overdueCountSingle,
+    orphanedCount: orphanedSingle.length,
+  });
+
+  const payloadSingle: Record<string, unknown> = {
+    tier1: { ...tier1Single },
+    tier2: { ...tier2Single },
+    errors: errorsSingle.length ? errorsSingle : undefined,
+  };
+  if (dryRun) {
+    payloadSingle.dryRun = true;
+    payloadSingle.totalFieldUsers = totalFieldUsersSingle;
+    payloadSingle.suppressionLog = { tier1: suppressionLogTier1Single, tier2: suppressionLogTier2Single };
+    // Preview the would-be SMS bodies (single-day format)
+    const overdueNamesSingle = overdueTodayRaw.map((u) => abbreviateName(u.full_name));
+    const orphanNamesSingle = orphanedSingle.map((u) => abbreviateName(u.full_name));
+    payloadSingle.smsBodyPreview = {
+      tier2: buildTier2BodySingleDay(
+        overdueNamesSingle,
+        overdueCountSingle,
+        totalFieldUsersSingle,
+        orphanNamesSingle,
+        orphanedSingle.length,
+        todayStr
+      ),
+      tier1Example: (() => {
+        const firstManager = Object.entries(byManagerSingle)[0];
+        if (!firstManager) return null;
+        const [_mid, users] = firstManager;
+        const names = users.map((u) => abbreviateName(u.full_name));
+        const crewTotal = managerCrewCountSingle[_mid] ?? users.length;
+        return buildSMSBody(names, users.length, crewTotal, 1, todayStr);
+      })(),
+    };
+  }
+
+  return new Response(
+    JSON.stringify(payloadSingle),
     { status: 200, headers: { "Content-Type": "application/json" } }
   );
 });

@@ -339,7 +339,7 @@ export const NotificationsPreview = memo(function NotificationsPreview() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1 mb-0.5">
                 <span className="text-[7px] font-bold text-red-300">SAFETY ALERT</span>
-                <span className="text-[6px] text-white/40">6:00 AM</span>
+                <span className="text-[6px] text-white/40">5:00 AM</span>
               </div>
               <div className="h-1.5 w-full bg-white/20 rounded mb-0.5" />
               <div className="h-1 w-3/4 bg-white/10 rounded" />

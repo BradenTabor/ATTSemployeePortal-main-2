@@ -2,9 +2,9 @@
 /**
  * Safety Briefing Reminder SMS (Tier 0)
  *
- * Cron: 13:00 UTC Mon–Fri (7 AM CST / 8 AM CDT). Sends SMS to active field
- * employees who have not completed today's safety briefing. Suppresses on
- * company_calendar days, user_absences, and new hires (< 5 calendar days).
+ * Cron: 10:40 UTC Mon–Fri (5:40 AM CDT). Sends SMS to active field employees
+ * who have not completed today's safety briefing. Runs 20 min after the push
+ * reminder (10:20 UTC). Suppresses on company_calendar, user_absences, new hires.
  *
  * Invoke with x-internal-key: INTERNAL_SECRET or Bearer: service role.
  */

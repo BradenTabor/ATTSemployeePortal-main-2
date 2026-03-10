@@ -1,6 +1,6 @@
 # Directive: Daily Safety Announcement
 
-> **Status**: ACTIVE - Scheduled for 7:00 AM CST Monday-Friday
+> **Status**: ACTIVE - Scheduled for 5:00 AM Central Monday-Friday
 
 ## Purpose
 Generate a daily safety announcement based on recent safety submissions from multiple data sources:
@@ -23,17 +23,17 @@ These limits are enforced programmatically via `validateBodyLength()` and `valid
 
 ## Trigger
 
-- **Scheduled**: Daily at **7:00 AM America/Chicago**, Monday through Friday only
+- **Scheduled**: Daily at **5:00 AM America/Chicago**, Monday through Friday only
 - **Manual**: On-demand generation via Edge Function invocation
 - **Skip weekends**: Automatically skip Saturday and Sunday
 
 ## Cron Schedule
 
 ```sql
--- 7:00 AM CST = 13:00 UTC (standard time) / 12:00 UTC (daylight time)
+-- 5:00 AM Central = 10:00 UTC (CDT) / 11:00 UTC (CST)
 SELECT cron.schedule(
-  'safety-announcement-7am',
-  '0 13 * * 1-5',  -- Mon-Fri at 13:00 UTC (7 AM CST)
+  'safety-announcement-5am',
+  '0 10 * * 1-5',  -- Mon-Fri at 10:00 UTC (5 AM Central)
   $$
   SELECT net.http_post(
     url := 'https://[project].supabase.co/functions/v1/generate-safety-announcement',
@@ -44,7 +44,7 @@ SELECT cron.schedule(
 );
 ```
 
-**Note:** Adjust UTC hour for DST (12:00 UTC during CDT, 13:00 UTC during CST).
+**Note:** Adjust UTC hour for DST (10:00 UTC during CDT, 11:00 UTC during CST).
 
 ## Required Inputs
 
@@ -273,7 +273,7 @@ See `directives/grounding_and_safety.md` for detailed rules.
 - [x] Includes counts/evidence for all claims
 - [x] **Body is <= 283 characters (target 238)**
 - [x] **Summary is <= 240 characters**
-- [x] Scheduled for 7 AM CST Monday-Friday
+- [x] Scheduled for 5 AM Central Monday-Friday
 - [x] Skips weekends silently
 - [x] Sends push notification to all users
 - [x] Prompt version is recorded in metadata
@@ -285,4 +285,4 @@ See `directives/grounding_and_safety.md` for detailed rules.
 | Version | Date | Changes |
 |---------|------|---------|
 | v1 | 2026-01-08 | Initial directive (JSA only) |
-| v2 | 2026-01-11 | Multi-source (JSA + DVIR + Equipment), 7 AM schedule, 48h window |
+| v2 | 2026-01-11 | Multi-source (JSA + DVIR + Equipment), 5 AM schedule, 48h window |

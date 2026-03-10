@@ -845,7 +845,7 @@ export function DVIRTab({
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-3 bg-gray-950/80">
                               {dvirMediaEntries.map((media) => (
                                 <a key={media.label} href={media.url} target="_blank" rel="noopener noreferrer" className="group/img block rounded-xl border-2 border-gray-800 bg-gray-900 overflow-hidden transition-all hover:border-orange-500/50 hover:shadow-lg">
-                                  <img src={media.url} alt={media.label} className="h-24 w-full object-cover transition-transform duration-200 group-hover/img:scale-105" />
+                                  <img loading="lazy" src={media.url} alt={media.label} className="h-24 w-full object-cover transition-transform duration-200 group-hover/img:scale-105" />
                                   <div className="px-2 py-2 text-xs text-gray-300 truncate font-medium">{media.label}</div>
                                 </a>
                               ))}
@@ -865,7 +865,7 @@ export function DVIRTab({
                                 "url" in sig && sig.url ? (
                                   <a key={sig.label} href={sig.url} target="_blank" rel="noopener noreferrer" className="rounded-xl border-2 border-gray-800 bg-gray-900 p-3 transition-all hover:border-orange-500/50">
                                     <div className="text-xs text-gray-400 mb-2 truncate font-semibold">{sig.label}</div>
-                                    <img src={sig.url} alt={sig.label} className="h-20 w-full object-contain bg-white/5 rounded-lg" />
+                                    <img loading="lazy" src={sig.url} alt={sig.label} className="h-20 w-full object-contain bg-white/5 rounded-lg" />
                                   </a>
                                 ) : (
                                   <div key={sig.label} className="rounded-xl border-2 border-gray-800 bg-gray-900 p-3">

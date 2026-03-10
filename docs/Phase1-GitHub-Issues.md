@@ -15,7 +15,7 @@ Use these as templates to create GitHub issues for Phase 1 of the Safety Complia
 The `src/services/safety-agent/directives/` folder was empty, violating the 3-layer architecture (Directive → Orchestration → Execution). Business logic was embedded in execution scripts, making the system harder to maintain and audit.
 
 **Done:** Directive files have been added for:
-- `daily_safety_announcement.md` – Daily safety announcement generation (7 AM CST)
+- `daily_safety_announcement.md` – Daily safety announcement generation (5 AM Central)
 - `admin_compliance_9am.md` – Admin compliance summary (9 AM CST)
 - `smart_defaults.md` – Smart form defaults (AI tie-breaking, no PII to LLM)
 

@@ -40,6 +40,7 @@ import { parseFormError } from '../lib/errorHandling';
 import { toast } from '../lib/toast';
 import { trackDashboardAction } from '../lib/telemetry';
 import { supabase } from '../lib/supabaseClient';
+import { getVideoUrl } from '../lib/videoCdn';
 
 const FOCUS_RING =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]';
@@ -413,7 +414,7 @@ export default function SafetyBriefingPage() {
     return (
       <div className="relative min-h-screen bg-[#0a0f0d] overflow-hidden">
         <video
-          src="/videos/safety-briefing-bg.mp4"
+          src={getVideoUrl("/videos/safety-briefing-bg.mp4")}
           autoPlay
           loop
           muted
@@ -520,7 +521,7 @@ export default function SafetyBriefingPage() {
     <div className="relative min-h-screen bg-[#0a0f0d] text-white overflow-hidden">
       {/* Full-bleed background video (forest / nature) */}
       <video
-        src="/videos/safety-briefing-bg.mp4"
+        src={getVideoUrl("/videos/safety-briefing-bg.mp4")}
         autoPlay
         loop
         muted

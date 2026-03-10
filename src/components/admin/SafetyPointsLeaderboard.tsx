@@ -150,7 +150,7 @@ export default function SafetyPointsLeaderboard({
               "rounded-lg bg-gradient-to-br flex items-center justify-center border overflow-hidden",
               t.headerIcon
             )}>
-              <img src="/assets/safety-leaderboard.png" alt="" className="w-full h-full object-contain" />
+              <img loading="lazy" src="/assets/safety-leaderboard.png" alt="" className="w-full h-full object-contain" />
             </div>
             <div>
               <h3 className={cn(compact ? "text-xs" : "text-sm", "font-semibold text-white/90")}>Safety Leaderboard</h3>

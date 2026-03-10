@@ -236,7 +236,8 @@ export default function Resources() {
           <div className="flex items-center gap-3 mb-2">
             <div className="flex items-center justify-center w-20 h-20 shrink-0">
               <img
-                src="/assets/emergency-action-plan.png"
+                src="/assets/emergency-action-plan.webp"
+                loading="lazy"
                 alt=""
                 className="w-full h-full object-contain"
                 aria-hidden

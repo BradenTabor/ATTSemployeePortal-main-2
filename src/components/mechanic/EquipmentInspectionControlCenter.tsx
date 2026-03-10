@@ -886,7 +886,7 @@ export function EquipmentInspectionControlCenter({
                                   rel="noopener noreferrer"
                                   className="group/img block rounded-lg border border-white/5 bg-black/30 overflow-hidden transition-all hover:border-amber-500/30"
                                 >
-                                  <img src={photo.url} alt={photo.label} className="h-16 w-full object-cover transition-transform duration-200 group-hover/img:scale-105" />
+                                  <img loading="lazy" src={photo.url} alt={photo.label} className="h-16 w-full object-cover transition-transform duration-200 group-hover/img:scale-105" />
                                   <div className="px-1.5 py-1 text-[9px] text-white/40 truncate">{photo.label}</div>
                                 </a>
                               ))}

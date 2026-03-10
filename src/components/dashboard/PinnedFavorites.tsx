@@ -153,20 +153,20 @@ interface NavItem {
 
 // All available nav items - use same PNG icons as main NavCards
 const allNavItems: NavItem[] = [
-  { id: 'jobs', label: 'My Jobs', path: '/assigned-jobs', icon: <img src="/assets/my-jobs.png" alt="" className="w-full h-full object-contain" />, description: 'View assigned work', iconAsImage: true },
-  { id: 'forms', label: 'Company Forms', path: '/forms', icon: <img src="/assets/company-forms.png" alt="" className="w-full h-full object-contain" />, description: 'Submit required forms', iconAsImage: true },
-  { id: 'history', label: 'Forms History', path: '/forms-history', icon: <img src="/assets/forms-history.png" alt="" className="w-full h-full object-contain" />, description: 'Past submissions', iconAsImage: true },
-  { id: 'announcements', label: 'Announcements', path: '/announcements', icon: <img src="/assets/announcements.png" alt="" className="w-full h-full object-contain" />, description: 'Company updates', iconAsImage: true },
-  { id: 'resources', label: 'Resources', path: '/resources', icon: <img src="/assets/resources.png" alt="" className="w-full h-full object-contain" />, description: 'Training materials', iconAsImage: true },
-  { id: 'emergency', label: 'Emergency Action Plan', path: '/emergency-action-plan', icon: <img src="/assets/resources.png" alt="" className="w-full h-full object-contain" />, description: '911, contacts, evacuation, OSHA', iconAsImage: true },
-  { id: 'contact', label: 'Contact', path: '/contact', icon: <img src="/assets/contact.png" alt="" className="w-full h-full object-contain" />, description: 'Reach management', iconAsImage: true },
-  { id: 'profile', label: 'My Profile', path: '/profile', icon: <img src="/assets/my-profile.png" alt="" className="w-full h-full object-contain" />, description: 'Account settings', iconAsImage: true },
-  { id: 'settings', label: 'Settings', path: '/settings', icon: <img src="/assets/settings.png" alt="" className="w-full h-full object-contain" />, description: 'Saved data & preferences', iconAsImage: true },
-  { id: 'mechanic', label: 'Mechanic', path: '/mechanic-dashboard', icon: <img src="/assets/mechanic-panel.png" alt="" className="w-full h-full object-contain" />, description: 'DVIR queue', roles: ['mechanic', 'admin'], iconAsImage: true },
-  { id: 'foreman', label: 'Foreman', path: '/foreman-dashboard', icon: <img src="/assets/foreman-panel.png" alt="" className="w-full h-full object-contain" />, description: 'Crew management', roles: ['foreman', 'admin'], iconAsImage: true },
-  { id: 'general-foreman', label: 'General Foreman', path: '/general-foreman-dashboard', icon: <img src="/assets/general-foreman-panel.png" alt="" className="w-full h-full object-contain" />, description: 'Crew oversight', roles: ['general_foreman', 'admin'], iconAsImage: true },
-  { id: 'safety-officer', label: 'Safety Officer', path: '/safety-officer-dashboard', icon: <img src="/assets/safety-officer-panel.png" alt="" className="w-full h-full object-contain" />, description: 'Safety compliance', roles: ['safety_officer', 'admin'], iconAsImage: true },
-  { id: 'admin', label: 'Admin', path: '/admin', icon: <img src="/assets/admin-panel.png" alt="" className="w-full h-full object-contain" />, description: 'System admin', roles: ['admin'], iconAsImage: true },
+  { id: 'jobs', label: 'My Jobs', path: '/assigned-jobs', icon: <img loading="lazy" src="/assets/my-jobs.png" alt="" className="w-full h-full object-contain" />, description: 'View assigned work', iconAsImage: true },
+  { id: 'forms', label: 'Company Forms', path: '/forms', icon: <img loading="lazy" src="/assets/company-forms.png" alt="" className="w-full h-full object-contain" />, description: 'Submit required forms', iconAsImage: true },
+  { id: 'history', label: 'Forms History', path: '/forms-history', icon: <img loading="lazy" src="/assets/forms-history.png" alt="" className="w-full h-full object-contain" />, description: 'Past submissions', iconAsImage: true },
+  { id: 'announcements', label: 'Announcements', path: '/announcements', icon: <img loading="lazy" src="/assets/announcements.png" alt="" className="w-full h-full object-contain" />, description: 'Company updates', iconAsImage: true },
+  { id: 'resources', label: 'Resources', path: '/resources', icon: <img loading="lazy" src="/assets/resources.png" alt="" className="w-full h-full object-contain" />, description: 'Training materials', iconAsImage: true },
+  { id: 'emergency', label: 'Emergency Action Plan', path: '/emergency-action-plan', icon: <img loading="lazy" src="/assets/resources.png" alt="" className="w-full h-full object-contain" />, description: '911, contacts, evacuation, OSHA', iconAsImage: true },
+  { id: 'contact', label: 'Contact', path: '/contact', icon: <img loading="lazy" src="/assets/contact.png" alt="" className="w-full h-full object-contain" />, description: 'Reach management', iconAsImage: true },
+  { id: 'profile', label: 'My Profile', path: '/profile', icon: <img loading="lazy" src="/assets/my-profile.png" alt="" className="w-full h-full object-contain" />, description: 'Account settings', iconAsImage: true },
+  { id: 'settings', label: 'Settings', path: '/settings', icon: <img loading="lazy" src="/assets/settings.png" alt="" className="w-full h-full object-contain" />, description: 'Saved data & preferences', iconAsImage: true },
+  { id: 'mechanic', label: 'Mechanic', path: '/mechanic-dashboard', icon: <img loading="lazy" src="/assets/mechanic-panel.png" alt="" className="w-full h-full object-contain" />, description: 'DVIR queue', roles: ['mechanic', 'admin'], iconAsImage: true },
+  { id: 'foreman', label: 'Foreman', path: '/foreman-dashboard', icon: <img loading="lazy" src="/assets/foreman-panel.png" alt="" className="w-full h-full object-contain" />, description: 'Crew management', roles: ['foreman', 'admin'], iconAsImage: true },
+  { id: 'general-foreman', label: 'General Foreman', path: '/general-foreman-dashboard', icon: <img loading="lazy" src="/assets/general-foreman-panel.png" alt="" className="w-full h-full object-contain" />, description: 'Crew oversight', roles: ['general_foreman', 'admin'], iconAsImage: true },
+  { id: 'safety-officer', label: 'Safety Officer', path: '/safety-officer-dashboard', icon: <img loading="lazy" src="/assets/safety-officer-panel.png" alt="" className="w-full h-full object-contain" />, description: 'Safety compliance', roles: ['safety_officer', 'admin'], iconAsImage: true },
+  { id: 'admin', label: 'Admin', path: '/admin', icon: <img loading="lazy" src="/assets/admin-panel.png" alt="" className="w-full h-full object-contain" />, description: 'System admin', roles: ['admin'], iconAsImage: true },
 ];
 
 // ============================================================================

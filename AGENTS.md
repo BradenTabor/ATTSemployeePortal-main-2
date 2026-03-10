@@ -120,7 +120,7 @@ Be pragmatic. Be reliable. Self-anneal.
 - Custom Tailwind breakpoint: xs: 375px defined alongside default sm/md/lg/xl
 - Primary users are field workers — mobile-first, voice-to-text via Web Speech API (VoiceInputButton component)
 - Target devices: iPhone 13+ (P0), iPhone SE / Samsung Galaxy (P1), iPad (P2), Desktop Chrome (P2)
-- Cron schedule: Daily Safety Announcement (6 AM CST M-F, matches reward claim 6–8 AM), Daily Compliance Check (9 AM CST M-F), Weekly Safety Forecast (Sun 7 AM CST), Weekly Safety Audit Report (Fri 5 PM CST)
+- Cron schedule: Daily Safety Announcement (5 AM Central M-F, 10:00 UTC; matches reward claim 5–8 AM), Daily Compliance Check (9 AM CST M-F), Weekly Safety Forecast (Sun 7 AM CST), Weekly Safety Audit Report (Fri 5 PM CST)
 - Auth: Supabase Auth + app_users table for roles; profile cached in localStorage with 24h TTL; Edge Functions must pass Authorization header explicitly
 - Centralized logger: src/lib/logger.ts with redactUserId() for PII-safe logging
 - Smart Defaults edge function (get-smart-defaults) pre-fills form fields from user's historical submissions

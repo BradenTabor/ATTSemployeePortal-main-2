@@ -447,15 +447,15 @@ Verify the `TIMEZONE` env var is set to `America/Chicago`. Check logs for the co
 
 ## Safety Announcements API
 
-### Scheduled Execution (7 AM CST)
+### Scheduled Execution (5 AM Central)
 
-The safety announcement generates automatically at **7:00 AM Central Time, Monday-Friday** via pg_cron:
+The safety announcement generates automatically at **5:00 AM Central Time, Monday-Friday** via pg_cron (job name: `safety-announcement-5am`). 10:00 UTC = 5 AM CDT / 4 AM CST.
 
 ```sql
--- Cron schedule: 0 13 * * 1-5 (13:00 UTC = 7 AM CST)
+-- Cron schedule: 0 10 * * 1-5 (10:00 UTC = 5 AM Central)
 SELECT cron.schedule(
-  'safety-announcement-7am',
-  '0 13 * * 1-5',
+  'safety-announcement-5am',
+  '0 10 * * 1-5',
   $$
   SELECT net.http_post(
     url := 'https://[project].supabase.co/functions/v1/generate-safety-announcement',
@@ -568,7 +568,7 @@ if (jsonResult.success) {
 
 - [x] LLM-assisted safety announcements from JSA data
 - [x] Multi-source data aggregation (JSA + DVIR + Equipment)
-- [x] 7 AM CST scheduled safety announcements (Mon-Fri)
+- [x] 5 AM Central scheduled safety announcements (Mon-Fri)
 - [x] 48-hour data window for announcements
 - [x] Push notifications for safety announcements
 - [x] Admin Compliance Summary email (consolidated report to administration)

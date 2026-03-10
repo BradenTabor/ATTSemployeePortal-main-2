@@ -1103,7 +1103,7 @@ export default function MechanicDVIRCenter() {
                                         rel="noopener noreferrer"
                                         className="group/img block rounded-lg border border-white/5 bg-black/30 overflow-hidden transition-all hover:border-amber-500/30"
                                       >
-                                        <img src={media.url} alt={media.label} className="h-16 sm:h-20 w-full object-cover transition-transform duration-200 group-hover/img:scale-105" />
+                                        <img loading="lazy" src={media.url} alt={media.label} className="h-16 sm:h-20 w-full object-cover transition-transform duration-200 group-hover/img:scale-105" />
                                         <div className="px-1 sm:px-1.5 py-0.5 sm:py-1 text-[8px] sm:text-[9px] text-white/40 truncate">{media.label}</div>
                                       </a>
                                     ))}
@@ -1134,7 +1134,7 @@ export default function MechanicDVIRCenter() {
                                           className="rounded-lg border border-white/5 bg-black/30 p-2 transition-all hover:border-amber-500/30"
                                         >
                                           <div className="text-[9px] text-white/40 mb-1 truncate">{signature.label}</div>
-                                          <img src={signature.url} alt={signature.label} className="h-16 w-full object-contain" />
+                                          <img loading="lazy" src={signature.url} alt={signature.label} className="h-16 w-full object-contain" />
                                         </a>
                                       ) : (
                                         <div

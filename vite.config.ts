@@ -69,8 +69,9 @@ export default defineConfig(({ mode }) => {
       manifest: false, // Use existing /public/manifest.json
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
-        // emergency-action-plan.png ~2.6 MB, daily-safety-briefing.png ~4.5 MB; allow up to 5 MiB
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        // Exclude large assets from precache to reduce bandwidth (Vercel + PWA installs).
+        // Assets over 500 KB are not precached; use CDN or on-demand load for large images/videos.
+        maximumFileSizeToCacheInBytes: 500 * 1024,
       },
       devOptions: {
         enabled: true,

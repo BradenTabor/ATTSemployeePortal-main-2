@@ -495,7 +495,7 @@ export function DVIRTab({
                               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4">
                                 {mediaEntries.map((media) => (
                                   <a key={media.label} href={media.url} target="_blank" rel="noopener noreferrer" className="block rounded-lg sm:rounded-xl border border-purple-500/20 bg-purple-950/30 overflow-hidden transition-colors hover:border-purple-400/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-purple-950/80">
-                                    <img src={media.url} alt={media.label} className="h-16 sm:h-20 lg:h-24 w-full object-cover" />
+                                    <img loading="lazy" src={media.url} alt={media.label} className="h-16 sm:h-20 lg:h-24 w-full object-cover" />
                                     <div className="px-2 py-1.5 sm:px-3 sm:py-2 text-[10px] sm:text-xs text-purple-200/70 truncate font-medium">{media.label}</div>
                                   </a>
                                 ))}
@@ -515,7 +515,7 @@ export function DVIRTab({
                                   "url" in sig && sig.url ? (
                                     <a key={sig.label} href={sig.url} target="_blank" rel="noopener noreferrer" className="rounded-lg sm:rounded-xl border border-purple-500/20 bg-purple-950/30 p-2 sm:p-3 transition-colors hover:border-purple-400/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-purple-950/80">
                                       <div className="text-[10px] sm:text-xs text-purple-200/70 mb-1 sm:mb-2 truncate font-semibold">{sig.label}</div>
-                                      <img src={sig.url} alt={sig.label} className="h-14 sm:h-20 w-full object-contain" />
+                                      <img loading="lazy" src={sig.url} alt={sig.label} className="h-14 sm:h-20 w-full object-contain" />
                                     </a>
                                   ) : (
                                     <div key={sig.label} className="rounded-lg sm:rounded-xl border border-purple-500/20 bg-purple-950/30 p-2 sm:p-3">

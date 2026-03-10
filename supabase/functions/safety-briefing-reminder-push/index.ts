@@ -2,10 +2,9 @@
 /**
  * Safety Briefing Reminder Push (pre–Tier 0)
  *
- * Cron: 12:30 UTC Mon–Fri (6:30 AM CST / 7:30 AM CDT). Sends a push notification
- * to active field users who have not completed today's safety briefing. Runs
- * independently of the 7 AM SMS; the Tier 0 SMS function re-queries at 7 AM and
- * only sends to those still incomplete. No coupling between the two.
+ * Cron: 10:20 UTC Mon–Fri (5:20 AM CDT). Sends a push notification to active
+ * field users who have not completed today's safety briefing. Runs 20 min
+ * after the daily safety announcement (10:00 UTC); SMS runs at 10:40 UTC.
  *
  * Invoke with x-internal-key: INTERNAL_SECRET or Bearer: service role.
  */

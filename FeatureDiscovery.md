@@ -95,7 +95,7 @@
 | # | Feature | Route(s) | Files | Working? | Tests | Issues/Gaps |
 |---|---------|----------|-------|----------|-------|-------------|
 | 25 | Announcements Page | `/announcements` | `src/pages/Announcements.tsx` | ✅ | E2E | No realtime/pagination tests |
-| 26 | AI Safety Announcements | Cron (7 AM CST) | `supabase/functions/generate-safety-announcement/` | ✅ | Unit | No E2E for cron |
+| 26 | AI Safety Announcements | Cron (5 AM Central) | `supabase/functions/generate-safety-announcement/` | ✅ | Unit | No E2E for cron |
 | 27 | Announcement Tracking | Integrated | `src/hooks/useAnnouncementTracking.ts` | ✅ | None | No tests |
 | 28 | Rewards Collection | Integrated | `src/hooks/useAnnouncementRewards.ts` | ✅ | E2E (placeholder) | Time window not tested |
 | 29 | Admin Announcements | `/admin` (tab) | `src/pages/admin/AdminDashboard.tsx` | ✅ | E2E (basic) | No scheduling tests |

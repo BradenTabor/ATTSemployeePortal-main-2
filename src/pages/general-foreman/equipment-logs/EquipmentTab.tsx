@@ -415,7 +415,7 @@ export function EquipmentTab({
                               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
                                 {photoEntries.map((photo) => (
                                   <a key={photo.label} href={photo.url} target="_blank" rel="noopener noreferrer" className="block rounded-lg sm:rounded-xl border border-purple-500/20 bg-purple-950/30 overflow-hidden transition-colors hover:border-purple-400/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-purple-950/80">
-                                    <img src={photo.url} alt={photo.label} className="h-16 sm:h-20 w-full object-cover" />
+                                    <img loading="lazy" src={photo.url} alt={photo.label} className="h-16 sm:h-20 w-full object-cover" />
                                     <div className="px-2 py-1.5 sm:px-3 sm:py-2 text-[10px] sm:text-xs text-purple-200/70 truncate font-medium">{photo.label}</div>
                                   </a>
                                 ))}

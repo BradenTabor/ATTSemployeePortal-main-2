@@ -2,11 +2,11 @@
 
 ## Goal
 
-Generate a single, warm, personalized safety announcement each weekday at 7:00 AM CST by aggregating the last 48 hours of JSA, DVIR, and Equipment Inspection data and synthesizing it with an LLM. Optionally publish the announcement and send push notifications to users.
+Generate a single, warm, personalized safety announcement each weekday at 5:00 AM Central by aggregating the last 48 hours of JSA, DVIR, and Equipment Inspection data and synthesizing it with an LLM. Optionally publish the announcement and send push notifications to users.
 
 ## Inputs
 
-- **Time trigger**: 7:00 AM America/Chicago, Monday–Friday (or cron equivalent in UTC).
+- **Time trigger**: 5:00 AM America/Chicago, Monday–Friday (or cron equivalent in UTC).
 - **Data window**: Configurable lookback (default 48 hours). All aggregation uses this window.
 - **Environment**: `OPENAI_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`. Optional: `ANNOUNCEMENTS_MODE` (`draft` | `auto_publish`), `DRY_RUN`.
 
@@ -42,7 +42,7 @@ Generate a single, warm, personalized safety announcement each weekday at 7:00 A
 
 ## Acceptance Criteria
 
-- [ ] Announcement generated once per weekday at 7 AM CST.
+- [ ] Announcement generated once per weekday at 5 AM Central.
 - [ ] Body and summary within character limits and tone guidelines.
 - [ ] Content grounded only in provided data.
 - [ ] Draft or published correctly written to `safety_announcements`.

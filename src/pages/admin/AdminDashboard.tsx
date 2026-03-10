@@ -35,10 +35,10 @@ const ACTIVE_TAB_STORAGE_KEY = "atts:admin:dashboard:activeTab";
 // Tab icons use inline width/height so size applies even if Tailwind is cached
 const TAB_ICON_SIZE = 44;
 const BASE_DASHBOARD_TABS = [
-  { id: "control-panel", label: "Control Panel", shortLabel: "Control", icon: <img src="/assets/control-panel.png" alt="" className="object-contain flex-shrink-0" style={{ width: TAB_ICON_SIZE, height: TAB_ICON_SIZE, minWidth: TAB_ICON_SIZE, minHeight: TAB_ICON_SIZE }} /> },
-  { id: "announcements", label: "Announcements", shortLabel: "News", icon: <img src="/assets/news-announcements.png" alt="" className="object-contain flex-shrink-0" style={{ width: TAB_ICON_SIZE, height: TAB_ICON_SIZE, minWidth: TAB_ICON_SIZE, minHeight: TAB_ICON_SIZE }} /> },
-  { id: "requests", label: "Contact Requests", shortLabel: "Requests", icon: <img src="/assets/contact-requests.png" alt="" className="object-contain flex-shrink-0" style={{ width: TAB_ICON_SIZE, height: TAB_ICON_SIZE, minWidth: TAB_ICON_SIZE, minHeight: TAB_ICON_SIZE }} /> },
-  { id: "notifications", label: "Push Notifications", shortLabel: "Push", icon: <img src="/assets/push-notifications.png" alt="" className="object-contain flex-shrink-0" style={{ width: TAB_ICON_SIZE, height: TAB_ICON_SIZE, minWidth: TAB_ICON_SIZE, minHeight: TAB_ICON_SIZE }} /> },
+  { id: "control-panel", label: "Control Panel", shortLabel: "Control", icon: <img loading="lazy" src="/assets/control-panel.png" alt="" className="object-contain flex-shrink-0" style={{ width: TAB_ICON_SIZE, height: TAB_ICON_SIZE, minWidth: TAB_ICON_SIZE, minHeight: TAB_ICON_SIZE }} /> },
+  { id: "announcements", label: "Announcements", shortLabel: "News", icon: <img loading="lazy" src="/assets/news-announcements.png" alt="" className="object-contain flex-shrink-0" style={{ width: TAB_ICON_SIZE, height: TAB_ICON_SIZE, minWidth: TAB_ICON_SIZE, minHeight: TAB_ICON_SIZE }} /> },
+  { id: "requests", label: "Contact Requests", shortLabel: "Requests", icon: <img loading="lazy" src="/assets/contact-requests.png" alt="" className="object-contain flex-shrink-0" style={{ width: TAB_ICON_SIZE, height: TAB_ICON_SIZE, minWidth: TAB_ICON_SIZE, minHeight: TAB_ICON_SIZE }} /> },
+  { id: "notifications", label: "Push Notifications", shortLabel: "Push", icon: <img loading="lazy" src="/assets/push-notifications.png" alt="" className="object-contain flex-shrink-0" style={{ width: TAB_ICON_SIZE, height: TAB_ICON_SIZE, minWidth: TAB_ICON_SIZE, minHeight: TAB_ICON_SIZE }} /> },
 ];
 
 // Animation variants for staggered entrance

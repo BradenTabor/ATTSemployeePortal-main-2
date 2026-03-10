@@ -10,6 +10,7 @@ import logo from "../assets/ATTS_Logo-removebg-preview.png";
 import logo2x from "../assets/ATTS_Logo-removebg-preview@2x.png";
 import { logger } from "../lib/logger";
 import { getRoleDashboard } from "../lib/navigation";
+import { getVideoUrl } from "../lib/videoCdn";
 
 type AuthMode = "login" | "signup";
 
@@ -180,7 +181,7 @@ export default function Home() {
   const labelStyles = "text-[11px] font-medium uppercase tracking-[0.2em] text-white/40";
 
   return (
-    <VideoBackground videoSrc="/videos/4k.mp4">
+    <VideoBackground videoSrc={getVideoUrl("/videos/4k.mp4")}>
       <div className="flex flex-col items-center justify-center min-h-screen text-center px-4 py-8">
         {/* Logo and Title */}
         <motion.div
