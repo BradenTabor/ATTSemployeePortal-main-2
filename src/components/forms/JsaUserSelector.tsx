@@ -44,18 +44,19 @@ export function JsaUserSelector({
       setError(null);
 
       try {
+        // Shareable roles must match app_users_role_check: employee, manager, mechanic, foreman, general_foreman, safety_officer (exclude admin)
         const { data, error: fetchError } = await supabase
           .from('app_users')
           .select('user_id, email, full_name, role')
           .neq('user_id', user.id) // Exclude current user
           .neq('role', 'admin') // Exclude admin users
           .in('role', [
+            'employee',
+            'manager',
+            'mechanic',
             'foreman',
             'general_foreman',
-            'lineman',
             'safety_officer',
-            'supervisor',
-            'employee', // Include employees too
           ])
           .order('full_name', { ascending: true, nullsFirst: false })
           .limit(100); // Load up to 100 users

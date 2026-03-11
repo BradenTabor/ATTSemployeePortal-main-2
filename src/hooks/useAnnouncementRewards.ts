@@ -1,14 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabaseClient';
 import { logger } from '../lib/logger';
 import { toast } from '../lib/toast';
 import { useAuth } from '../contexts/AuthContext';
+import { useRewardCelebration } from '../contexts/RewardCelebrationContext';
 import {
   isWithinRewardClaimWindow,
   getRewardClaimWindowMessage,
   getTimeUntilClaimWindowOpens,
+  type RewardClaimWindowParams,
 } from '../lib/complianceHelpers';
+import { useAppSetting } from './queries/useAppSettings';
+import { RewardPointsConfigSchema, REWARDS_DEFAULTS } from '../lib/settingsSchemas';
 
 /**
  * Announcement reward record from the database
@@ -77,23 +81,42 @@ export function useHasClaimedReward(announcementId: string | undefined) {
 }
 
 const REWARD_CLAIM_WINDOW_ERROR =
-  'Safety rewards can only be claimed between 5 AM and 8 AM Central.';
+  'Safety rewards can only be claimed between 5–8 AM Central.';
+
+function buildClaimWindowParams(config: typeof REWARDS_DEFAULTS | undefined): RewardClaimWindowParams | undefined {
+  if (!config) return undefined;
+  return {
+    startHour: config.claim_window_start_hour_central,
+    endHour: config.claim_window_end_hour_central,
+    overrideDates: config.override_dates ?? [],
+  };
+}
 
 /**
  * Reactive hook for the safety reward claim window (5–8 AM Central).
+ * Reads app_settings.reward_points_config so override_dates and claim window hours apply.
  * Updates on an interval so the UI can enable/disable the claim button at 5 AM / 8 AM.
  */
 export function useRewardClaimWindow() {
   const [now, setNow] = useState(() => new Date());
+  const { data: configData } = useAppSetting(
+    'reward_points_config',
+    RewardPointsConfigSchema,
+    REWARDS_DEFAULTS
+  );
+  const params = useMemo(
+    () => buildClaimWindowParams(configData?.data),
+    [configData?.data]
+  );
 
   useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
-  const isWithinClaimWindow = isWithinRewardClaimWindow(now);
-  const message = getRewardClaimWindowMessage(now);
-  const timeUntilOpens = getTimeUntilClaimWindowOpens(now);
+  const isWithinClaimWindow = isWithinRewardClaimWindow(now, params);
+  const message = getRewardClaimWindowMessage(now, params);
+  const timeUntilOpens = getTimeUntilClaimWindowOpens(now, params);
 
   return { isWithinClaimWindow, message, timeUntilOpens };
 }
@@ -104,6 +127,16 @@ export function useRewardClaimWindow() {
 export function useClaimReward() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { showRewardCelebration } = useRewardCelebration();
+  const { data: configData } = useAppSetting(
+    'reward_points_config',
+    RewardPointsConfigSchema,
+    REWARDS_DEFAULTS
+  );
+  const claimWindowParams = useMemo(
+    () => buildClaimWindowParams(configData?.data),
+    [configData?.data]
+  );
 
   return useMutation({
     mutationFn: async (announcementId: string) => {
@@ -111,7 +144,7 @@ export function useClaimReward() {
         throw new Error('Must be logged in to claim rewards');
       }
 
-      if (!isWithinRewardClaimWindow()) {
+      if (!isWithinRewardClaimWindow(undefined, claimWindowParams)) {
         throw new Error(REWARD_CLAIM_WINDOW_ERROR);
       }
 
@@ -152,8 +185,8 @@ export function useClaimReward() {
           queryKey: rewardsQueryKeys.userRewards(user.id) 
         });
       }
-      
-      toast.success('🎉 +1 Point collected!');
+      // Full-screen celebration (replaces success toast); error toasts unchanged below
+      showRewardCelebration(1, 'announcement');
     },
     onError: (error) => {
       const message = error instanceof Error ? error.message : 'Failed to claim reward';

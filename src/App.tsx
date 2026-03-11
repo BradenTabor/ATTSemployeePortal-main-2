@@ -43,6 +43,8 @@ import { createIDBPersister, shouldDehydrateQuery, PERSISTER_MAX_AGE_MS } from "
 import { PageWrapper } from "./motion";
 import { UserPresenceTracker } from "./hooks/useUserPresence";
 import { OfflineQueueProvider } from "./contexts/OfflineQueueContext";
+import { RewardCelebrationProvider } from "./contexts/RewardCelebrationContext";
+import { RewardPointsCelebration } from "./components/rewards/RewardPointsCelebration";
 import { OfflineSyncIndicator } from "./components/OfflineSyncIndicator";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 
@@ -80,6 +82,8 @@ const RiskCalibrationDashboard = lazy(() => import("./pages/admin/RiskCalibratio
 const AdminOperationsHub = lazy(() => import("./pages/admin/AdminOperationsHub"));
 const CertificationsHub = lazy(() => import("./pages/admin/CertificationsHub"));
 const AdminEmailRecipients = lazy(() => import("./pages/admin/AdminEmailRecipients"));
+const AdminSafetySettings = lazy(() => import("./pages/admin/AdminSafetySettings"));
+const AdminMassSms = lazy(() => import("./pages/admin/AdminMassSms"));
 const AdminComplianceAudit = lazy(() => import("./pages/admin/AdminComplianceAudit"));
 const SafetyComplianceHub = lazy(() => import("./pages/admin/SafetyComplianceHub"));
 const RequestsOversightHub = lazy(() => import("./pages/admin/RequestsOversightHub"));
@@ -719,6 +723,28 @@ function AnimatedRoutes() {
             />
 
             <Route
+              path="/admin/safety-settings"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminSafetySettings />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            <Route
+              path="/admin/mass-sms"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminMassSms />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            <Route
               path="/admin/telemetry"
               element={
                 <PageWrapper>
@@ -949,14 +975,17 @@ export default function App() {
     >
       <ToastOverlayProvider>
         <OfflineQueueProvider>
-        <OfflineSyncIndicator />
-        <Router>
-          <AnimatedRoutes />
-          {/* Notifications/onboarding (lazy-loaded for bundle size) — needs Router context */}
-          <Suspense fallback={null}>
-            <AppNotificationShell />
-          </Suspense>
-        </Router>
+          <RewardCelebrationProvider>
+            <OfflineSyncIndicator />
+            <Router>
+              <AnimatedRoutes />
+              {/* Notifications/onboarding (lazy-loaded for bundle size) — needs Router context */}
+              <Suspense fallback={null}>
+                <AppNotificationShell />
+              </Suspense>
+            </Router>
+            <RewardPointsCelebration />
+          </RewardCelebrationProvider>
         </OfflineQueueProvider>
         {/* Corner toasts for non-form notifications */}
         <Toaster />

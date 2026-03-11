@@ -421,13 +421,46 @@ serve(async (req) => {
     if (!isWeekday(dateFor, DEFAULT_TIMEZONE)) {
       console.log('[Compliance] Skipping - weekend:', dateFor);
       return new Response(
-        JSON.stringify({ success: true, status: 'skipped', reason: 'weekend' }),
+        JSON.stringify({
+          success: true,
+          status: 'skipped',
+          reason: 'weekend',
+          dateFor,
+          rewardsAwarded: 0,
+          rewardsDisabledByConfig: false,
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     const cutoffUtc = buildCutoffTimestamp(dateFor, DEFAULT_CUTOFF, DEFAULT_TIMEZONE);
     const dayStart = buildCutoffTimestamp(dateFor, '00:00', DEFAULT_TIMEZONE);
+
+    // Read reward_points_config from app_settings (for compliance reward awarding)
+    let rewardsEnabled = true;
+    let fullCompliancePoints = 5;
+    let partialCompliancePoints = 2;
+    let streakBonusPoints = 10;
+    let streakMinDays = 5;
+    let pointsConfigSnapshot: Record<string, number> = { full_compliance: 5, partial_compliance: 2, streak_bonus: 10 };
+    const { data: rewardsConfigRow } = await supabase
+      .from('app_settings')
+      .select('value')
+      .eq('key', 'reward_points_config')
+      .maybeSingle();
+    if (rewardsConfigRow?.value && typeof rewardsConfigRow.value === 'object') {
+      const cfg = rewardsConfigRow.value as Record<string, unknown>;
+      rewardsEnabled = cfg.enabled !== false;
+      if (typeof cfg.full_compliance_points === 'number') fullCompliancePoints = cfg.full_compliance_points;
+      if (typeof cfg.partial_compliance_points === 'number') partialCompliancePoints = cfg.partial_compliance_points;
+      if (typeof cfg.streak_bonus_points === 'number') streakBonusPoints = cfg.streak_bonus_points;
+      if (typeof cfg.streak_min_days === 'number') streakMinDays = Math.max(1, cfg.streak_min_days);
+      pointsConfigSnapshot = {
+        full_compliance: fullCompliancePoints,
+        partial_compliance: partialCompliancePoints,
+        streak_bonus: streakBonusPoints,
+      };
+    }
 
     // Fetch required users (include manager_id for Phase 2 manager emails)
     const { data: requiredUsers, error: usersError } = await supabase
@@ -545,6 +578,85 @@ serve(async (req) => {
 
     const allRequiredCompliant = totalRequired > 0 && compliantUsers.length === totalRequired && !jsaDataUnavailable;
 
+    // -------------------------------------------------------------------------
+    // Compliance rewards: insert/update rows for all required users (0-point for none).
+    // Explicit upsert (ON CONFLICT DO UPDATE): re-runs overwrite; last run wins.
+    // Table is a complete daily attendance record (0-point rows for no forms).
+    // -------------------------------------------------------------------------
+    let rewardsAwarded = 0;
+    const rewardsDisabledByConfig = !rewardsEnabled;
+    if (rewardsEnabled && requiredUsers && requiredUsers.length > 0) {
+      const formStatusByUser = new Map<string, { hasDvir: boolean; hasEquipment: boolean; hasJsa: boolean }>();
+      for (const u of requiredUsers) {
+        formStatusByUser.set(u.user_id, {
+          hasDvir: dvirSubmitters.has(u.user_id),
+          hasEquipment: equipmentSubmitters.has(u.user_id),
+          hasJsa: jsaSubmitters.has(u.user_id),
+        });
+      }
+      const fullComplianceUserIds: string[] = [];
+      const awardedAt = new Date().toISOString();
+      const rewardRows: Array<{ user_id: string; date_for: string; forms_completed: string[]; points_awarded: number; points_config: Record<string, unknown>; awarded_at: string }> = [];
+      for (const user of requiredUsers) {
+        const status = formStatusByUser.get(user.user_id) ?? { hasDvir: false, hasEquipment: false, hasJsa: false };
+        const completed: string[] = [];
+        if (status.hasDvir) completed.push('dvir');
+        if (status.hasEquipment) completed.push('equipment');
+        if (status.hasJsa) completed.push('jsa');
+        const isFullCompliance = completed.length === 3;
+        let points = completed.length === 0 ? 0 : (isFullCompliance ? fullCompliancePoints : partialCompliancePoints);
+        const configRow: Record<string, unknown> = { ...pointsConfigSnapshot };
+        if (isFullCompliance) fullComplianceUserIds.push(user.user_id);
+        rewardRows.push({
+          user_id: user.user_id,
+          date_for: dateFor,
+          forms_completed: completed,
+          points_awarded: points,
+          points_config: configRow,
+          awarded_at: awardedAt,
+        });
+      }
+      if (fullComplianceUserIds.length > 0) {
+        const { data: streakRows, error: streakErr } = await supabase.rpc('get_compliance_streaks', {
+          p_user_ids: fullComplianceUserIds,
+          p_before_date: dateFor,
+        });
+        if (!streakErr && streakRows && Array.isArray(streakRows)) {
+          const streakMap = new Map<string, number>();
+          for (const row of streakRows as Array<{ user_id: string; streak_days: number }>) {
+            streakMap.set(row.user_id, Number(row.streak_days) || 0);
+          }
+          for (const row of rewardRows) {
+            if (row.forms_completed.length !== 3) continue;
+            const days = streakMap.get(row.user_id) ?? 0;
+            if (days >= streakMinDays) {
+              row.points_awarded += streakBonusPoints;
+              (row.points_config as Record<string, unknown>).streak_days = days;
+            }
+          }
+        } else if (streakErr) {
+          console.warn('[Compliance] get_compliance_streaks failed (continuing without streak bonus):', streakErr.message);
+        }
+      }
+      // ON CONFLICT (user_id, date_for) DO UPDATE: re-run overwrites row (last run wins).
+      // Payload includes all mutable columns (forms_completed, points_awarded, points_config, awarded_at).
+      // Table has no created_at; id is PK and only set on insert — nothing unintended is clobbered.
+      const { error: upsertErr } = await supabase
+        .from('compliance_rewards')
+        .upsert(rewardRows, {
+          onConflict: 'user_id,date_for',
+          ignoreDuplicates: false,
+        });
+      if (upsertErr) {
+        console.error('[Compliance] Failed to upsert compliance_rewards:', upsertErr.message);
+      } else {
+        rewardsAwarded = rewardRows.length;
+        console.log('[Compliance] Awarded compliance rewards:', rewardsAwarded);
+      }
+    } else if (rewardsDisabledByConfig) {
+      console.log('[Compliance] Compliance rewards disabled via app_settings; skipping award step.');
+    }
+
     // Generate email content (form completion list + JSA sharing + logo)
     const { subject, textBody, htmlBody } = generateEmailContent(
       dateFor,
@@ -652,6 +764,8 @@ serve(async (req) => {
         emailError: emailResult.error,
         managerEmailsSent,
         webhookSent: webhookResult.success,
+        rewardsAwarded,
+        rewardsDisabledByConfig,
         durationMs: duration,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

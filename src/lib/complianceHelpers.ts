@@ -14,9 +14,15 @@ const TIMEZONE = 'America/Chicago';
 const CUTOFF_HOUR = 9; // 9:00 AM
 const CUTOFF_MINUTE = 0;
 
-// Safety reward claim window: 5:00–8:00 AM Central (same day as announcement publish + compliance cutoff)
+// Safety reward claim window defaults (can be overridden via app_settings -> reward_points_config)
 export const REWARD_CLAIM_START_HOUR = 5;
 export const REWARD_CLAIM_END_HOUR = 8;
+
+export interface RewardClaimWindowParams {
+  startHour?: number;
+  endHour?: number;
+  overrideDates?: string[];
+}
 
 /**
  * Get today's date string in YYYY-MM-DD format (Chicago timezone)
@@ -139,44 +145,63 @@ export function isSubmissionAllowed(now: Date = new Date()): boolean {
 }
 
 /**
- * Check if current time is within the safety reward claim window (5:00–8:00 AM Central).
- * Inclusive of 5:00 AM, exclusive of 8:00 AM (7:59 allowed).
+ * Check if current time is within the safety reward claim window.
+ * Inclusive of start hour, exclusive of end hour (e.g. 5:00–7:59 AM).
+ * On override dates, returns true all day.
+ * Accepts optional params from app_settings; falls back to hardcoded defaults.
  */
-export function isWithinRewardClaimWindow(now: Date = new Date()): boolean {
+export function isWithinRewardClaimWindow(
+  now: Date = new Date(),
+  params?: RewardClaimWindowParams,
+): boolean {
+  const todayStr = getTodayDateString(now);
+  const overrides = params?.overrideDates ?? [];
+  if (overrides.includes(todayStr)) return true;
   const chicagoNow = toZonedTime(now, TIMEZONE);
   const hour = chicagoNow.getHours();
   const minute = chicagoNow.getMinutes();
   const totalMinutes = hour * 60 + minute;
-  const startMinutes = REWARD_CLAIM_START_HOUR * 60;
-  const endMinutes = REWARD_CLAIM_END_HOUR * 60;
+  const startMinutes = (params?.startHour ?? REWARD_CLAIM_START_HOUR) * 60;
+  const endMinutes = (params?.endHour ?? REWARD_CLAIM_END_HOUR) * 60;
   return totalMinutes >= startMinutes && totalMinutes < endMinutes;
 }
 
 /**
  * Message for UI when outside the reward claim window; null when inside.
+ * On override dates, returns null so the Collect Points button is enabled.
  */
-export function getRewardClaimWindowMessage(now: Date = new Date()): string | null {
-  if (isWithinRewardClaimWindow(now)) return null;
+export function getRewardClaimWindowMessage(
+  now: Date = new Date(),
+  params?: RewardClaimWindowParams,
+): string | null {
+  if (isWithinRewardClaimWindow(now, params)) return null;
   const chicagoNow = toZonedTime(now, TIMEZONE);
   const hour = chicagoNow.getHours();
   const minute = chicagoNow.getMinutes();
   const totalMinutes = hour * 60 + minute;
-  const startMinutes = REWARD_CLAIM_START_HOUR * 60;
+  const startHour = params?.startHour ?? REWARD_CLAIM_START_HOUR;
+  const endHour = params?.endHour ?? REWARD_CLAIM_END_HOUR;
+  const startMinutes = startHour * 60;
   if (totalMinutes < startMinutes) {
-    return 'Claim opens at 5 AM Central';
+    return `Claim opens at ${startHour} AM Central`;
   }
-  return 'Claim window closed (5–8 AM Central)';
+  return `Claim window closed (${startHour}–${endHour} AM Central)`;
 }
 
 /**
- * Time until the reward claim window opens (5 AM Central). Returns null when already at or past 5 AM.
+ * Time until the reward claim window opens. Returns null when already at or past start hour.
+ * On override dates, returns null (window is open all day, no countdown).
  */
 export function getTimeUntilClaimWindowOpens(
-  now: Date = new Date()
+  now: Date = new Date(),
+  params?: RewardClaimWindowParams,
 ): { hours: number; minutes: number } | null {
+  const todayStr = getTodayDateString(now);
+  const overrides = params?.overrideDates ?? [];
+  if (overrides.includes(todayStr)) return null;
   const chicagoNow = toZonedTime(now, TIMEZONE);
   const windowOpen = new Date(chicagoNow);
-  windowOpen.setHours(REWARD_CLAIM_START_HOUR, 0, 0, 0);
+  windowOpen.setHours(params?.startHour ?? REWARD_CLAIM_START_HOUR, 0, 0, 0);
   const diff = windowOpen.getTime() - chicagoNow.getTime();
   if (diff <= 0) return null;
   const totalMinutes = Math.floor(diff / (1000 * 60));

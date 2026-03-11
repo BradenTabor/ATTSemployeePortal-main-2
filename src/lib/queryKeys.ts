@@ -213,6 +213,12 @@ export const queryKeys = {
     user: (userId: string) => ['notification-preferences', 'user', userId] as const,
   },
 
+  // App Settings (admin-configurable feature settings)
+  appSettings: {
+    all: ['app-settings'] as const,
+    detail: (key: string) => ['app-settings', key] as const,
+  },
+
   // Safety Rewards (monthly raffle)
   safetyRewards: {
     reward: (year: number, month: number) =>

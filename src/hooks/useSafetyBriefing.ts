@@ -10,13 +10,12 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLatestAnnouncementQuery } from './queries/useAnnouncementsQuery';
 import type { Announcement } from './queries/useAnnouncementsQuery';
 import {
-  isFieldRole,
   getTodaysQuestions,
   type BriefingQuestion,
+  PERSONALIZED_FALLBACK,
 } from '../config/safetyBriefing';
 import { logger } from '../lib/logger';
 import { subDays } from 'date-fns';
-import { PERSONALIZED_FALLBACK } from '../config/safetyBriefing';
 
 export interface SafetyBriefingAnswer {
   id: string;
@@ -42,6 +41,25 @@ export interface SafetyBriefingStatusResult {
 export function useSafetyBriefingStatus(): SafetyBriefingStatusResult {
   const { user, role } = useAuth();
   const todayDateString = getTodayDateString();
+
+  // Read admin-configurable briefing settings.
+  // We only need enabled + required_roles here, but useAppSetting requires
+  // the full schema. On parse failure it falls back to the provided defaults.
+  const { data: briefingSettingsRaw } = useQuery({
+    queryKey: [...queryKeys.appSettings.detail('safety_briefing_config'), 'status'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'safety_briefing_config')
+        .maybeSingle();
+      if (!data?.value || typeof data.value !== 'object') return null;
+      return data.value as { enabled?: boolean; required_roles?: string[] };
+    },
+    staleTime: 60_000,
+  });
+  const briefingEnabled = briefingSettingsRaw?.enabled ?? true;
+  const requiredRoles: string[] = briefingSettingsRaw?.required_roles ?? ['employee', 'foreman', 'general_foreman', 'mechanic'];
 
   const { data: latestAnnouncement, isLoading: announcementLoading } = useLatestAnnouncementQuery();
 
@@ -71,8 +89,10 @@ export function useSafetyBriefingStatus(): SafetyBriefingStatusResult {
 
   const hasCompletedToday = completedRow != null;
   const isLoading = announcementLoading || completionLoading;
+
+  const roleRequired = role != null && requiredRoles.includes(role);
   const mustComplete =
-    isFieldRole(role) && todayAnnouncement != null && !hasCompletedToday;
+    briefingEnabled && roleRequired && todayAnnouncement != null && !hasCompletedToday;
   const questions = getTodaysQuestions(todayDateString);
 
   return {

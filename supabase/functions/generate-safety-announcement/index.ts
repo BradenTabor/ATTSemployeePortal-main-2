@@ -78,20 +78,24 @@ serve(async (req) => {
 
     // If neither auth method is valid, reject the request
     if (!isServiceRole && !isInternalSecret) {
+      const hintCron = bearerToken === 'SERVICE_ROLE_KEY_PLACEHOLDER'
+        ? 'Cron job is using placeholder key. Run: SUPABASE_SERVICE_ROLE_KEY=... SUPABASE_DB_URL=... ./scripts/deploy-cron-auth.sh'
+        : 'Provide either Authorization header (service role) or x-internal-secret header';
       console.warn('[SafetyAnnouncement] Unauthorized request:', {
         hasAuthHeader: !!authHeader,
         hasInternalSecret: !!internalSecretHeader,
+        placeholderKey: bearerToken === 'SERVICE_ROLE_KEY_PLACEHOLDER',
         timestamp: new Date().toISOString()
       });
-      
+
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: 'Unauthorized',
-          hint: 'Provide either Authorization header (service role) or x-internal-secret header'
-        }), 
-        { 
+          hint: hintCron,
+        }),
+        {
           status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       );
     }
@@ -101,11 +105,54 @@ serve(async (req) => {
 
     // Parse request body with defaults
     const body = await req.json().catch(() => ({}));
-    const windowHours = body.windowHours ?? DEFAULT_WINDOW_HOURS;
     const dryRun = body.dryRun ?? false;
     const skipWeekendCheck = body.skipWeekendCheck ?? false;
 
-    console.log('[SafetyAnnouncement] Config:', { windowHours, dryRun, skipWeekendCheck });
+    // =======================================================================
+    // Read admin-configurable settings from app_settings (single read)
+    // =======================================================================
+    const supabaseUrlEarly = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseKeyEarly = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    let announcementConfig: Record<string, unknown> = {};
+    if (supabaseUrlEarly && supabaseKeyEarly) {
+      const earlyClient = createClient(supabaseUrlEarly, supabaseKeyEarly);
+      const { data: settingsRow } = await earlyClient
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'safety_announcement_config')
+        .maybeSingle();
+      if (settingsRow?.value && typeof settingsRow.value === 'object') {
+        announcementConfig = settingsRow.value as Record<string, unknown>;
+      }
+    }
+
+    // Check if feature is disabled by admin
+    if (announcementConfig.enabled === false && !dryRun) {
+      console.log('[SafetyAnnouncement] Disabled via app_settings; skipping.');
+      return new Response(
+        JSON.stringify({ success: true, status: 'skipped', reason: 'disabled_by_admin' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Override config with DB values (fall back to imported constants / request body)
+    const windowHours = typeof announcementConfig.window_hours === 'number'
+      ? announcementConfig.window_hours
+      : (body.windowHours ?? DEFAULT_WINDOW_HOURS);
+    const cfgMinSubmissions = typeof announcementConfig.min_submissions === 'number'
+      ? announcementConfig.min_submissions
+      : MIN_SUBMISSIONS;
+    const cfgBodyMaxChars = typeof announcementConfig.body_max_chars === 'number'
+      ? announcementConfig.body_max_chars
+      : BODY_MAX_CHARS;
+    const cfgSummaryMaxChars = typeof announcementConfig.summary_max_chars === 'number'
+      ? announcementConfig.summary_max_chars
+      : SUMMARY_MAX_CHARS;
+    const cfgCustomPrompt = typeof announcementConfig.custom_prompt_instructions === 'string'
+      ? announcementConfig.custom_prompt_instructions
+      : '';
+
+    console.log('[SafetyAnnouncement] Config:', { windowHours, dryRun, skipWeekendCheck, cfgMinSubmissions, cfgBodyMaxChars });
 
     // =======================================================================
     // Step 0: Check if today is a weekday (skip weekends)
@@ -239,7 +286,7 @@ serve(async (req) => {
     // Step 7: Generate announcement with OpenAI
     // =======================================================================
     const todayFormatted = formatDateLong(DEFAULT_TIMEZONE);
-    const isLowData = totalSubmissions < MIN_SUBMISSIONS;
+    const isLowData = totalSubmissions < cfgMinSubmissions;
 
     let userPrompt: string;
     
@@ -286,15 +333,20 @@ CRITICAL REMINDERS:
 - INCLUDE appreciation for the crew's work
 - MENTION relevant conditions (weather, equipment reminders) naturally
 - END with an encouraging phrase
-- Message MUST be under ${BODY_MAX_CHARS} characters`;
+- Message MUST be under ${cfgBodyMaxChars} characters`;
     }
 
     console.log('[SafetyAnnouncement] Calling OpenAI...');
     
+    // Build system prompt with optional custom instructions from admin
+    const systemPromptFull = cfgCustomPrompt
+      ? `${SYSTEM_PROMPT}\n\n## Additional Instructions (from admin settings)\n${cfgCustomPrompt}`
+      : SYSTEM_PROMPT;
+
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: systemPromptFull },
         { role: 'user', content: userPrompt },
       ],
       response_format: { type: 'json_object' },
@@ -308,9 +360,9 @@ CRITICAL REMINDERS:
     let message = generated.message || 'Stay safe today! Complete your JSA, inspect equipment, and wear required PPE.';
     const originalLength = message.length;
     
-    if (message.length > BODY_MAX_CHARS) {
-      console.warn('[SafetyAnnouncement] Message too long, truncating:', message.length, '->', BODY_MAX_CHARS);
-      message = truncateText(message, BODY_MAX_CHARS);
+    if (message.length > cfgBodyMaxChars) {
+      console.warn('[SafetyAnnouncement] Message too long, truncating:', message.length, '->', cfgBodyMaxChars);
+      message = truncateText(message, cfgBodyMaxChars);
     }
 
     console.log('[SafetyAnnouncement] Generated message:', message.length, 'chars');
@@ -519,9 +571,9 @@ CRITICAL REMINDERS:
         announcement: {
           title: generated.title,
           body: message,
-          summary: message.substring(0, SUMMARY_MAX_CHARS),
+          summary: message.substring(0, cfgSummaryMaxChars),
           charCount: message.length,
-          truncated: originalLength > BODY_MAX_CHARS,
+          truncated: originalLength > cfgBodyMaxChars,
         },
         announcementId,
         stats: {

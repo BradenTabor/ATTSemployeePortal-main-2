@@ -114,15 +114,13 @@ export default function JSAHistory() {
       const from = (currentPage - 1) * pageSize;
       const to = from + pageSize - 1;
 
-      // Query JSAs where user is owner OR user is in shared_with_users array
-      // Use OR condition with JSONB contains operator
+      // Query JSAs where user is owner OR user is in shared_with_users array.
+      // RLS jsa_select allows both; PostgREST .cs = JSONB @> containment (array contains object with id).
+      const sharedWithFilter = `shared_with_users.cs.${JSON.stringify([{ id: user.id }])}`;
       const { data, error: supabaseError, count } = await supabase
         .from("daily_jsa")
         .select(`*`, { count: "exact" })
-        .or(
-          `user_id.eq.${user.id},` +
-          `shared_with_users.cs.[{"id":"${user.id}"}]`
-        )
+        .or(`user_id.eq.${user.id},${sharedWithFilter}`)
         .order("created_at", { ascending: false })
         .range(from, to);
 

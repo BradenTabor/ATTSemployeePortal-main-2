@@ -14,6 +14,7 @@
 #   - safety-briefing-escalation-sms (Mon-Fri 16:00 UTC = 10 AM CST) - SMS escalation for overdue briefing
 #   - monthly-compliance-summary (1st of every month, 14:00 UTC = 8 AM CST) - executive compliance email
 #   - weekly-attendance-summary (Monday 12:00 UTC = 7 AM CDT / 6 AM CST) - weekly attendance email
+#   - weekly-safety-audit-report (Friday 23:00 UTC = 5 PM CST) - weekly safety audit report
 #
 # It avoids committing the service role key to the repository.
 #
@@ -364,6 +365,31 @@ SELECT cron.schedule(
 );
 
 -- =============================================================================
+-- 11. Weekly Safety Audit Report (Friday 5 PM CST = 23:00 UTC)
+-- =============================================================================
+DO \$\$
+BEGIN
+  PERFORM cron.unschedule('weekly-safety-audit-report');
+EXCEPTION WHEN others THEN
+  RAISE NOTICE 'weekly-safety-audit-report did not exist';
+END \$\$;
+
+SELECT cron.schedule(
+  'weekly-safety-audit-report',
+  '0 23 * * 5',
+  \$cron\$
+  SELECT net.http_post(
+    url := 'https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/weekly-safety-audit-report',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer $SUPABASE_SERVICE_ROLE_KEY'
+    ),
+    body := '{}'::jsonb
+  );
+  \$cron\$
+);
+
+-- =============================================================================
 -- Verify all jobs
 -- =============================================================================
 SELECT jobname, schedule, active 
@@ -378,7 +404,8 @@ WHERE jobname IN (
   'safety-briefing-reminder-sms',
   'safety-briefing-escalation-sms',
   'monthly-compliance-summary',
-  'weekly-attendance-summary'
+  'weekly-attendance-summary',
+  'weekly-safety-audit-report'
 )
 ORDER BY jobname;
 SQL
@@ -398,6 +425,7 @@ if [ $? -eq 0 ]; then
   echo "   • safety-briefing-escalation-sms   - Mon-Fri 10:00 AM CST (16:00 UTC)"
   echo "   • monthly-compliance-summary       - 1st of each month 8:00 AM CST (14:00 UTC)"
   echo "   • weekly-attendance-summary         - Monday 7:00 AM CDT / 6:00 AM CST (12:00 UTC)"
+  echo "   • weekly-safety-audit-report        - Friday 5:00 PM CST (23:00 UTC)"
   echo ""
   echo "📊 To verify execution history:"
   echo "   SELECT * FROM public.cron_job_runs ORDER BY start_time DESC LIMIT 10;"

@@ -110,6 +110,22 @@ export const ADMIN_CORE_NAV_CARDS: AdminNavCardConfig[] = [
     iconAsImage: true,
   },
   {
+    title: "Safety Settings",
+    description: "Configure announcements, briefings, and reward points.",
+    icon: <img loading="lazy" src="/assets/control-panel.png" alt="" className="w-full h-full object-contain" />,
+    to: "/admin/safety-settings",
+    variant: "gold",
+    iconAsImage: true,
+  },
+  {
+    title: "Mass SMS",
+    description: "Send one SMS to all app users with a phone number.",
+    icon: <img loading="lazy" src="/assets/email-recipients.png" alt="" className="w-full h-full object-contain" />,
+    to: "/admin/mass-sms",
+    variant: "gold",
+    iconAsImage: true,
+  },
+  {
     title: "Operations Hub",
     description: "Manage work sites, crews, and job assignments.",
     icon: <img loading="lazy" src="/assets/operations-hub.png" alt="" className="w-full h-full object-contain" />,

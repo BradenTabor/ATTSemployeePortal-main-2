@@ -810,9 +810,10 @@ export default function SafetyBriefingPage() {
         </section>
 
         {/* Claim window message when outside window */}
+        {/* TODO: derive from app_settings reward_points_config (claim_window_start/end_hour_central) when consumed on client */}
         {showCompleteOnly && (
           <p className="text-xs text-white/50 text-center py-1">
-            Safety reward points can be claimed between 6–8 AM Central.
+            Safety reward points can be claimed between 5–8 AM Central.
           </p>
         )}
 
@@ -897,7 +898,7 @@ export default function SafetyBriefingPage() {
               <p className="text-sm text-white/70 mb-2">
                 {successClaimed
                   ? 'Thank you for staying engaged with safety.'
-                  : 'You can claim your reward points between 6–8 AM Central.'}
+                  : 'You can claim your reward points between 5–8 AM Central.'}
               </p>
               <p className="text-sm font-medium text-emerald-200/90 mb-4">
                 You&apos;re good to go. Remember: {successRememberLine}

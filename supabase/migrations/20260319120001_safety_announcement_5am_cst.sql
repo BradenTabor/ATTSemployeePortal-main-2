@@ -3,6 +3,12 @@
 -- safety-announcement-5am. 10:00 UTC = 5 AM CDT / 4 AM CST (pg_cron is fixed UTC).
 -- Matches reward claim window 5–8 AM. Update monitoring view/function.
 -- Rollback: see docs/rollback-safety-5am.md.
+--
+-- REQUIRED AFTER MIGRATION: The job is created with SERVICE_ROLE_KEY_PLACEHOLDER.
+-- You must run the deploy script so the cron sends a valid key, or the 5 AM
+-- run will get 401 and no announcement will be created. From project root:
+--   SUPABASE_SERVICE_ROLE_KEY=<key> SUPABASE_DB_URL=<uri> ./scripts/deploy-cron-auth.sh
+-- See docs/safety-announcement-troubleshooting.md.
 -- =============================================================================
 
 DO $$

@@ -27,7 +27,7 @@ const CLICKSEND_USERNAME = Deno.env.get("CLICKSEND_USERNAME") ?? "";
 const CLICKSEND_PASSWORD = Deno.env.get("CLICKSEND_PASSWORD") ?? "";
 const CLICKSEND_FROM_NUMBER = Deno.env.get("CLICKSEND_FROM_NUMBER") ?? "+18443781444";
 
-const FIELD_ROLES = ["employee", "foreman", "general_foreman", "mechanic"];
+const DEFAULT_FIELD_ROLES = ["employee", "foreman", "general_foreman", "mechanic"];
 const TZ = "America/Chicago";
 const MAX_NAMES_SHOWN = 10;
 const MAX_LOOKBACK_DAYS = 5;
@@ -241,6 +241,26 @@ Deno.serve(async (req: Request) => {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
+
+  // Read briefing settings from app_settings (single read per invocation)
+  let FIELD_ROLES = DEFAULT_FIELD_ROLES;
+  {
+    const { data: settingsRow } = await supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "safety_briefing_config")
+      .maybeSingle();
+    const cfg = settingsRow?.value as Record<string, unknown> | null;
+    if (cfg?.enabled === false && !dryRun) {
+      return new Response(
+        JSON.stringify({ skipped: true, reason: "Briefing disabled by admin" }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    }
+    if (Array.isArray(cfg?.required_roles) && cfg.required_roles.length > 0) {
+      FIELD_ROLES = cfg.required_roles as string[];
+    }
+  }
 
   const todayStr = getChicagoToday();
   const escMode = Deno.env.get("ESCALATION_MODE") ?? "single_day";

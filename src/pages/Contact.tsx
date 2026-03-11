@@ -36,11 +36,11 @@ const CONTACT_CHANNELS = [
   },
   {
     title: "Safety & Field Ops",
-    owner: "Weston Martin",
-    phone: "(870) 719-4227",
-    phoneHref: "tel:8707194227",
-    email: "weston@alltts.com",
-    emailHref: "mailto:weston@alltts.com",
+    owner: "Braden Tabor",
+    phone: "(870) 365-6644",
+    phoneHref: "tel:8703656644",
+    email: "bradenleetabor@gmail.com",
+    emailHref: "mailto:bradenleetabor@gmail.com",
   },
 ];
 
