@@ -6,7 +6,7 @@
 -- If Vault is not enabled, cron is unchanged; use scripts/deploy-cron-auth.sh instead.
 -- =============================================================================
 
-DO $$
+DO $outer$
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'vault') THEN
     CREATE OR REPLACE FUNCTION public.run_safety_announcement_5am()
@@ -14,7 +14,7 @@ BEGIN
     LANGUAGE plpgsql
     SECURITY DEFINER
     SET search_path = public
-    AS $$
+    AS $func$
     DECLARE
       v_key text;
     BEGIN
@@ -35,7 +35,7 @@ BEGIN
         )
       );
     END;
-    $$;
+    $func$;
 
     COMMENT ON FUNCTION public.run_safety_announcement_5am() IS
       'Called by pg_cron at 5 AM Central. Reads CRON_SERVICE_ROLE_KEY from Vault and POSTs to generate-safety-announcement.';
@@ -50,4 +50,4 @@ BEGIN
   ELSE
     RAISE NOTICE 'Vault extension not enabled. To fix 5 AM safety message: run scripts/deploy-cron-auth.sh with SUPABASE_SERVICE_ROLE_KEY and SUPABASE_DB_URL, or enable Vault and add CRON_SERVICE_ROLE_KEY.';
   END IF;
-END $$;
+END $outer$;

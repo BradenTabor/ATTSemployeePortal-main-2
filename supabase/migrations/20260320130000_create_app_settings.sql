@@ -14,16 +14,20 @@ CREATE TABLE IF NOT EXISTS public.app_settings (
 
 ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "authenticated_read" ON public.app_settings;
 CREATE POLICY "authenticated_read" ON public.app_settings
   FOR SELECT TO authenticated USING (true);
 
+DROP POLICY IF EXISTS "admin_insert" ON public.app_settings;
 CREATE POLICY "admin_insert" ON public.app_settings
   FOR INSERT TO authenticated WITH CHECK (public.is_admin());
 
+DROP POLICY IF EXISTS "admin_update" ON public.app_settings;
 CREATE POLICY "admin_update" ON public.app_settings
   FOR UPDATE TO authenticated
   USING (public.is_admin()) WITH CHECK (public.is_admin());
 
+DROP POLICY IF EXISTS "admin_delete" ON public.app_settings;
 CREATE POLICY "admin_delete" ON public.app_settings
   FOR DELETE TO authenticated USING (public.is_admin());
 
@@ -37,6 +41,7 @@ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS trg_app_settings_updated_at ON public.app_settings;
 CREATE TRIGGER trg_app_settings_updated_at
   BEFORE UPDATE ON public.app_settings
   FOR EACH ROW EXECUTE FUNCTION public.app_settings_touch_updated_at();
@@ -53,6 +58,7 @@ CREATE TABLE IF NOT EXISTS public.app_settings_audit (
 
 ALTER TABLE public.app_settings_audit ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "admin_read_audit" ON public.app_settings_audit;
 CREATE POLICY "admin_read_audit" ON public.app_settings_audit
   FOR SELECT TO authenticated USING (public.is_admin());
 
@@ -65,6 +71,7 @@ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS trg_app_settings_audit ON public.app_settings;
 CREATE TRIGGER trg_app_settings_audit
   AFTER UPDATE ON public.app_settings
   FOR EACH ROW EXECUTE FUNCTION public.audit_app_settings();
@@ -124,10 +131,10 @@ INSERT INTO public.app_settings (key, value) VALUES
         {"id":"ph-4","category":"personal_health","text":"Did you get at least 7 hours of sleep last night?","options":[{"id":"ph-4-a","text":"Yes"},{"id":"ph-4-b","text":"Between 5 and 7 hours"},{"id":"ph-4-c","text":"Less than 5 hours"},{"id":"ph-4-d","text":"Prefer not to say"}]}
       ],
       "announcement": [
-        {"id":"ann-1","category":"announcement","text":"After reading today's safety announcement, which area will you pay extra attention to?","options":[{"id":"ann-1-a","text":"PPE compliance"},{"id":"ann-1-b","text":"Equipment pre-trip inspection"},{"id":"ann-1-c","text":"Weather-related hazards"},{"id":"ann-1-d","text":"Communication with my crew"},{"id":"ann-1-e","text":"All of the above"}]},
-        {"id":"ann-2","category":"announcement","text":"What from today's safety message will you apply on the job today?","options":[{"id":"ann-2-a","text":"The main hazard or condition mentioned"},{"id":"ann-2-b","text":"PPE and pre-trip reminders"},{"id":"ann-2-c","text":"Crew communication and lookout"},{"id":"ann-2-d","text":"All of the above"}]},
-        {"id":"ann-3","category":"announcement","text":"Today's announcement reminded us to:","options":[{"id":"ann-3-a","text":"Stay alert and watch out for each other"},{"id":"ann-3-b","text":"Complete inspections before starting"},{"id":"ann-3-c","text":"Dress for the conditions and wear required PPE"},{"id":"ann-3-d","text":"Any of the above (message may vary by day)"}]},
-        {"id":"ann-4","category":"announcement","text":"I have read and understood today's safety announcement.","options":[{"id":"ann-4-a","text":"Yes"},{"id":"ann-4-b","text":"Yes, and I will share key points with my crew"},{"id":"ann-4-c","text":"I need to re-read it"},{"id":"ann-4-d","text":"Prefer not to say"}]}
+        {"id":"ann-1","category":"announcement","text":"After reading today''s safety announcement, which area will you pay extra attention to?","options":[{"id":"ann-1-a","text":"PPE compliance"},{"id":"ann-1-b","text":"Equipment pre-trip inspection"},{"id":"ann-1-c","text":"Weather-related hazards"},{"id":"ann-1-d","text":"Communication with my crew"},{"id":"ann-1-e","text":"All of the above"}]},
+        {"id":"ann-2","category":"announcement","text":"What from today''s safety message will you apply on the job today?","options":[{"id":"ann-2-a","text":"The main hazard or condition mentioned"},{"id":"ann-2-b","text":"PPE and pre-trip reminders"},{"id":"ann-2-c","text":"Crew communication and lookout"},{"id":"ann-2-d","text":"All of the above"}]},
+        {"id":"ann-3","category":"announcement","text":"Today''s announcement reminded us to:","options":[{"id":"ann-3-a","text":"Stay alert and watch out for each other"},{"id":"ann-3-b","text":"Complete inspections before starting"},{"id":"ann-3-c","text":"Dress for the conditions and wear required PPE"},{"id":"ann-3-d","text":"Any of the above (message may vary by day)"}]},
+        {"id":"ann-4","category":"announcement","text":"I have read and understood today''s safety announcement.","options":[{"id":"ann-4-a","text":"Yes"},{"id":"ann-4-b","text":"Yes, and I will share key points with my crew"},{"id":"ann-4-c","text":"I need to re-read it"},{"id":"ann-4-d","text":"Prefer not to say"}]}
       ]
     }
   }'::jsonb
