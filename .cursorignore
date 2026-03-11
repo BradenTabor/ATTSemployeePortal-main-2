@@ -1,5 +1,13 @@
 # Exclude large documentation directories
-docs/cursor-agents/
+# Governor state: ignore dir contents but allow state files (for GO: AUTOPILOT FULL)
+docs/cursor-agents/*
+!docs/cursor-agents/backlog.md
+!docs/cursor-agents/scores.md
+!docs/cursor-agents/changelog.md
+!docs/cursor-agents/dependency-graph.md
+!docs/cursor-agents/project-config.md
+!docs/cursor-agents/metrics.md
+!docs/cursor-agents/.governor-lock
 src/services/safety-agent/directives/
 src/services/safety-agent/prompts/
 
