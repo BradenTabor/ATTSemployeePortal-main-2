@@ -10,7 +10,7 @@
 | BL-006 | ARCH | HIGH | DailyJSAForm 1690 lines — already decomposed (state/steps/validation/submission/wizard) | DISMISSED | — | N/A | N/A |
 | BL-007 | ARCH | HIGH | DailyEquipmentInspectionForm 1799→1646 lines (Phase 1: checklists/photos/helpers → equipmentConstants) | COMPLETE | — | 2 files | 2 |
 | BL-008 | ARCH | HIGH | IncidentLoggingModal monolith 1380→1072 lines (Phase 1: constants/types/hook extracted) | COMPLETE | — | 5 files | 3 |
-| BL-009 | ARCH | HIGH | Mixed data fetching — ~50 files use direct Supabase | OPEN | — | 50+ files | 2 |
+| BL-009 | ARCH | HIGH | Mixed data fetching — ~50 files use direct Supabase | COMPLETE | — | 8 files | 2 |
 | BL-010 | QA | MEDIUM | Near-miss cache invalidation after insert | COMPLETE | — | 1 file | 2 |
 | BL-011 | ARCH | MEDIUM | Hooks import from pages — now import from state/constants files | COMPLETE | — | 3 files | 1 |
 | BL-012 | QA | MEDIUM | Equipment + NearMiss forms submission unit tests (29 tests) | COMPLETE | — | 2 files | 2 |

@@ -4,35 +4,9 @@
  */
 
 import { useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ShieldCheck, XCircle, AlertCircle } from "lucide-react";
-import { supabase } from "../lib/supabaseClient";
-
-interface CertificateRow {
-  full_name: string | null;
-  certification_name: string;
-  certified_at: string | null;
-  expires_at: string;
-  status: string;
-}
-
-function useCertificateByCode(code: string | undefined) {
-  return useQuery({
-    queryKey: ["certificate-verification", code],
-    queryFn: async (): Promise<CertificateRow | null> => {
-      if (!code?.trim()) return null;
-      const { data, error } = await supabase.rpc("get_certificate_by_verification_code", {
-        p_code: code.trim(),
-      });
-      if (error) throw error;
-      const row = Array.isArray(data) ? data[0] : data;
-      return row ? (row as CertificateRow) : null;
-    },
-    enabled: !!code?.trim(),
-    staleTime: 60 * 1000,
-  });
-}
+import { useCertificateByVerificationCode } from "../hooks/queries/useCertificateByVerificationCode";
 
 function StatusBadge({ status, expiresAt }: { status: string; expiresAt: string }) {
   const now = new Date();
@@ -66,7 +40,7 @@ function StatusBadge({ status, expiresAt }: { status: string; expiresAt: string 
 
 export default function CertificateVerification() {
   const { code } = useParams<{ code: string }>();
-  const { data, isLoading, error } = useCertificateByCode(code);
+  const { data, isLoading, error } = useCertificateByVerificationCode(code);
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center p-4">

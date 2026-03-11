@@ -172,3 +172,14 @@ All three quality scores well above 85 threshold. Diminishing returns confirmed:
 - No IN_PROGRESS. Scope unchanged since Session 10.
 - SELECT NEXT: Only OPEN item BL-009 (ARCH HIGH, blast 50+). GATED in FULL.
 - STOP: No executable item. Recommendation: APPROVE: BL-009 or DONE.
+
+## Session 12 — 2026-03-11
+
+### BL-009 (ARCH HIGH) — Mixed data fetching Phase 1: centralize RPC/query usage
+- **Approved** then executed. Phase 1: moved direct Supabase usage from 3 pages into shared React Query hooks.
+- **queryKeys**: Added complianceAudit.summaryByDay, complianceAudit.incidentLogOsha, certifications.verification, jsa.adminStats.
+- **New hooks**: useComplianceAuditReports (useComplianceSummaryByDay, useIncidentLogOsha300301), useCertificateByVerificationCode, useDailyJSAStats.
+- **Pages updated**: AdminComplianceAudit (reports tab uses hooks; types imported from hook), CertificateVerification (uses useCertificateByVerificationCode), AdminJSA (stats from useDailyJSAStats, removed useEffect fetchStats).
+- **Files**: queryKeys.ts, useComplianceAuditReports.ts, useCertificateByVerificationCode.ts, useDailyJSAStats.ts, AdminComplianceAudit.tsx, CertificateVerification.tsx, AdminJSA.tsx.
+- Verification: typecheck PASS, lint PASS, build PASS.
+- Blast radius: 8 files. CD (module cohesion) improved; remaining direct Supabase usage in other files can be migrated in follow-up items.

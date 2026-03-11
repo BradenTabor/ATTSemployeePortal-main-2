@@ -38,6 +38,12 @@ import {
 } from "../../lib/exportUtils";
 import { logReportExported } from "../../lib/safetyAuditLog";
 import ComplianceDataExportPanel from "../../components/admin/ComplianceDataExportPanel";
+import {
+  useComplianceSummaryByDay,
+  useIncidentLogOsha300301,
+  type ComplianceSummaryRow,
+  type IncidentLogRow,
+} from "../../hooks/queries/useComplianceAuditReports";
 
 const PAGE_SIZE = 50;
 
@@ -134,16 +140,6 @@ function formatAuditActor(row: SafetyAuditLogRowWithActor): string {
   return "—";
 }
 
-interface ComplianceSummaryRow {
-  date: string;
-  dvir_count: number;
-  dvir_users: number;
-  equipment_count: number;
-  equipment_users: number;
-  jsa_count: number;
-  jsa_users: number;
-}
-
 function getDefaultDateRange(): { from: string; to: string } {
   const to = new Date();
   const from = new Date(to);
@@ -163,39 +159,6 @@ const COMPLIANCE_SUMMARY_COLUMNS: ExportColumn<ComplianceSummaryRow>[] = [
   { header: "JSA Count", key: "jsa_count", format: (v) => String(v ?? 0), width: 12 },
   { header: "JSA Users", key: "jsa_users", format: (v) => String(v ?? 0), width: 12 },
 ];
-
-// Incident Log (OSHA 300/301) — row shape from get_incident_log_osha_300_301 RPC
-interface IncidentLogRow {
-  case_number: string | null;
-  incident_date: string;
-  incident_time: string | null;
-  employee_name: string | null;
-  employee_job_title: string | null;
-  work_site_name: string | null;
-  description: string | null;
-  what_doing_before: string | null;
-  object_substance_harmed: string | null;
-  body_parts_affected: string | null;
-  injury_illness_type: string | null;
-  severity: string | null;
-  days_away_from_work: number | null;
-  days_restricted_duty: number | null;
-  emergency_room_treatment: boolean | null;
-  hospitalized_overnight: boolean | null;
-  physician_name: string | null;
-  treatment_facility: string | null;
-  time_began_work: string | null;
-  employee_hire_date: string | null;
-  osha_reportable: boolean | null;
-  osha_reported: boolean | null;
-  osha_report_date: string | null;
-  job_name: string | null;
-  crew_name: string | null;
-  supervisor_name: string | null;
-  corrective_actions_taken: string | null;
-  corrective_actions_at: string | null;
-  reported_at: string | null;
-}
 
 interface WeeklySafetyReportRow {
   id: string;
@@ -284,45 +247,17 @@ export function ComplianceAuditContent({ tab, setTab, renderTabs }: ComplianceAu
   const weeklyReportsQuery = useWeeklySafetyReports(tab === "weekly");
   const mappingQuery = useOshaComplianceMapping();
 
-  const summaryQuery = useQuery({
-    queryKey: ["compliance_summary_by_day", reportDateFrom, reportDateTo],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_compliance_summary_by_day", {
-        p_date_from: reportDateFrom,
-        p_date_to: reportDateTo,
-      });
-      if (error) throw new Error(error.message);
-      return (data ?? []).map((row: { date: string } & Record<string, number>) => ({
-        ...row,
-        date: String(row.date).slice(0, 10),
-      })) as ComplianceSummaryRow[];
-    },
-    enabled: tab === "reports" && !!reportDateFrom && !!reportDateTo,
-    staleTime: 1000 * 60,
-  });
-
-  const incidentLogQuery = useQuery({
-    queryKey: ["incident_log_osha_300_301", incidentDateFrom, incidentDateTo],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_incident_log_osha_300_301", {
-        p_date_from: incidentDateFrom,
-        p_date_to: incidentDateTo,
-      });
-      if (error) throw new Error(error.message);
-      return (data ?? []).map((row: Record<string, unknown>) => ({
-        ...row,
-        incident_date: row.incident_date != null ? String(row.incident_date).slice(0, 10) : null,
-        incident_time: row.incident_time != null ? String(row.incident_time) : null,
-        time_began_work: row.time_began_work != null ? String(row.time_began_work) : null,
-        employee_hire_date: row.employee_hire_date != null ? String(row.employee_hire_date).slice(0, 10) : null,
-        osha_report_date: row.osha_report_date != null ? String(row.osha_report_date).slice(0, 10) : null,
-        corrective_actions_at: row.corrective_actions_at != null ? String(row.corrective_actions_at) : null,
-        reported_at: row.reported_at != null ? String(row.reported_at) : null,
-      })) as IncidentLogRow[];
-    },
-    enabled: tab === "reports" && !!incidentDateFrom && !!incidentDateTo,
-    staleTime: 1000 * 60,
-  });
+  const reportsEnabled = tab === "reports";
+  const summaryQuery = useComplianceSummaryByDay(
+    reportDateFrom,
+    reportDateTo,
+    reportsEnabled
+  );
+  const incidentLogQuery = useIncidentLogOsha300301(
+    incidentDateFrom,
+    incidentDateTo,
+    reportsEnabled
+  );
 
   const handleExportComplianceSummary = useCallback(
     async (format: "csv" | "pdf") => {

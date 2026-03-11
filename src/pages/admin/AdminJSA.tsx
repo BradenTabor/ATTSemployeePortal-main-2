@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useAdminJSAQuery } from "../../hooks/queries/useAdminJSAQuery";
+import { useDailyJSAStats } from "../../hooks/queries/useDailyJSAStats";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Shield,
@@ -93,16 +94,16 @@ export function AdminJSAContent() {
   const [jumpToPage, setJumpToPage] = useState("");
   const [isExporting, setIsExporting] = useState(false);
 
-  // Stats
-  const [stats, setStats] = useState({
+  const tableRef = useRef<HTMLDivElement>(null);
+
+  const statsQuery = useDailyJSAStats(!!isAdmin);
+  const stats = statsQuery.data ?? {
     total: 0,
     drafts: 0,
     completed: 0,
     todayCount: 0,
     weekCount: 0,
-  });
-
-  const tableRef = useRef<HTMLDivElement>(null);
+  };
 
   // Use React Query for caching
   const { data, isLoading: loading, error: queryError } = useAdminJSAQuery(
@@ -158,32 +159,6 @@ export function AdminJSAContent() {
       setSelectedId(null);
     }
   }, [records]);
-
-  // Fetch stats on mount
-  useEffect(() => {
-    if (!isAdmin) return;
-    const fetchStats = async () => {
-      const today = new Date().toISOString().split("T")[0];
-      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-
-      const [totalRes, draftsRes, completedRes, todayRes, weekRes] = await Promise.all([
-        supabase.from("daily_jsa").select("id", { count: "exact", head: true }),
-        supabase.from("daily_jsa").select("id", { count: "exact", head: true }).eq("status", "draft"),
-        supabase.from("daily_jsa").select("id", { count: "exact", head: true }).eq("status", "completed"),
-        supabase.from("daily_jsa").select("id", { count: "exact", head: true }).eq("job_date", today),
-        supabase.from("daily_jsa").select("id", { count: "exact", head: true }).gte("created_at", weekAgo),
-      ]);
-
-      setStats({
-        total: totalRes.count || 0,
-        drafts: draftsRes.count || 0,
-        completed: completedRes.count || 0,
-        todayCount: todayRes.count || 0,
-        weekCount: weekRes.count || 0,
-      });
-    };
-    fetchStats();
-  }, [isAdmin]);
 
   // Fetch all users for the filter dropdown and export "Submitted By" resolution.
   // Use user_id (auth uid) so lookup matches daily_jsa.user_id; list key remains id for dropdown value.

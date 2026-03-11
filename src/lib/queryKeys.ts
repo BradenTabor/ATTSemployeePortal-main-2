@@ -62,6 +62,7 @@ export const queryKeys = {
     list: (filters?: { status?: string; date?: string }) =>
       ['jsa', 'list', filters] as const,
     detail: (jsaId: string) => ['jsa', 'detail', jsaId] as const,
+    adminStats: () => ['jsa', 'adminStats'] as const,
     adminList: (params: {
       page: number;
       pageSize: number;
@@ -105,6 +106,14 @@ export const queryKeys = {
   // Compliance Status (for dashboard)
   compliance: {
     today: (userId: string, date: string) => ['compliance', 'today', userId, date] as const,
+  },
+
+  // Compliance Audit (admin reports: summary by day, incident log OSHA 300/301)
+  complianceAudit: {
+    summaryByDay: (dateFrom: string, dateTo: string) =>
+      ['complianceAudit', 'summaryByDay', dateFrom, dateTo] as const,
+    incidentLogOsha: (dateFrom: string, dateTo: string) =>
+      ['complianceAudit', 'incidentLogOsha', dateFrom, dateTo] as const,
   },
 
   // Pending Defects (for mechanic dashboard)
@@ -152,6 +161,7 @@ export const queryKeys = {
     workerInternalRecords: (userId: string) =>
       ['certifications', 'worker-internal-records', userId] as const,
     allActiveRecords: () => ['certifications', 'all-active-records'] as const,
+    verification: (code: string) => ['certifications', 'verification', code] as const,
   },
 
   // Near-Miss Reports
