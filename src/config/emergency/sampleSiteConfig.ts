@@ -163,7 +163,7 @@ const config: EmergencyActionPlanConfig = {
       {
         name: 'Sewer',
         provider: 'Springfield Metro Sanitary District',
-        phone: '—',
+        phone: '217-789-2500',
       },
     ],
     osha: {

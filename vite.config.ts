@@ -114,6 +114,11 @@ export default defineConfig(({ mode }) => {
           'vendor-forms': ['react-hook-form', '@hookform/resolvers', 'zod'],
           // Utilities
           'vendor-utils': ['date-fns', 'clsx', 'tailwind-merge'],
+          // Heavy libs — separate chunks to avoid 500kB warning and improve caching
+          'vendor-jspdf': ['jspdf', 'jspdf-autotable'],
+          'vendor-xlsx': ['xlsx'],
+          'vendor-recharts': ['recharts'],
+          'vendor-react-pdf': ['@react-pdf/renderer'],
         },
         // Optimize chunk file names for caching
         chunkFileNames: (chunkInfo) => {
