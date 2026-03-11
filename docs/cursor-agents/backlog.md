@@ -28,6 +28,7 @@
 | BL-023 | UX | MEDIUM | Add noValidate to 3 forms with custom validation (Equipment, DVIR, Incident) | COMPLETE | — | 3 files | 1 |
 | BL-024 | UX | MEDIUM | Add aria-modal/role/labelledby to IncidentLoggingModal | COMPLETE | — | 1 file | 1 |
 | BL-025 | WF | MEDIUM | Pre-fill RequestTimeOff fullName from auth context | COMPLETE | — | 1 file | 1 |
+| BL-035 | ARCH | MEDIUM | Mixed data fetching Phase 2 — 15 pages/components still use direct Supabase (AdminOperationsHub, AdminUserActivity, AdminEmailRecipients, AdminDashboard, AdminJSA export, Contact, DVIRTab, EquipmentTab, ForemanDailyReports; FlagForReviewButton, CertExpirationWarnings, ComplianceDataExportPanel, JobProgressUpdateForm, ComplianceRatesWidget, AvatarUpload) | OPEN | — | ~15 files | 2 |
 
 ## Dismissed
 
