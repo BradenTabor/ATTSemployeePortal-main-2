@@ -9,8 +9,8 @@ import {
   Send,
 } from "lucide-react";
 import DashboardLayout from "../layouts/DashboardLayout";
-import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../contexts/AuthContext";
+import { useCreateContactRequest } from "../hooks/queries/useContactsQuery";
 import { logger } from "../lib/logger";
 import { TextEffect } from "../components/ui/TextEffect";
 import { getDeviceCapabilities } from "../lib/mobilePerf";
@@ -223,24 +223,18 @@ interface ContactFormProps {
 }
 
 function ContactForm({ userId, userEmail }: ContactFormProps) {
-  const [form, setForm] = useState({
+  const createContact = useCreateContactRequest();
+  const [form, setForm] = useState(() => ({
     name: "",
-    email: "",
+    email: userEmail || "",
     topic: "general",
     message: "",
-  });
+  }));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">(
     "idle"
   );
   const [showConfetti, setShowConfetti] = useState(false);
-
-  // Pre-fill email from user profile
-  useEffect(() => {
-    if (userEmail && !form.email) {
-      setForm((prev) => ({ ...prev, email: userEmail }));
-    }
-  }, [userEmail, form.email]);
 
   const handleChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -272,17 +266,14 @@ function ContactForm({ userId, userEmail }: ContactFormProps) {
     setErrors({});
     setStatus("loading");
     try {
-      const payload = {
+      await createContact.mutateAsync({
         name: form.name.trim(),
         email: form.email.trim(),
         topic: form.topic,
         message: form.message.trim(),
-        user_id: userId,
+        ...(userId != null && { user_id: userId }),
         submitted_at: new Date().toISOString(),
-      };
-
-      const { error } = await supabase.from("contact_requests").insert(payload);
-      if (error) throw error;
+      });
 
       setStatus("success");
       setShowConfetti(true);

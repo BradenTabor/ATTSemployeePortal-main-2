@@ -62,23 +62,20 @@ export const validators = {
   },
 
   /**
-   * Mileage validator
+   * Mileage validator (valid positive number only; previousMileage kept in signature for caller compatibility; no longer used for validation).
    */
-  mileage: (value: unknown, previousMileage?: number | null): ValidationResult => {
-    const num = typeof value === 'string' 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  mileage: (value: unknown, _previousMileage?: number | null): ValidationResult => {
+    const num = typeof value === 'string'
       ? parseInt(value.replace(/[^\d]/g, ''), 10)
       : typeof value === 'number'
       ? value
       : NaN;
-    
+
     if (!value || isNaN(num) || num <= 0) {
       return "Enter a valid odometer reading";
     }
-    
-    if (previousMileage !== null && previousMileage !== undefined && num < previousMileage) {
-      return `Odometer reading must be at least ${previousMileage.toLocaleString()} mi`;
-    }
-    
+
     return null;
   },
 

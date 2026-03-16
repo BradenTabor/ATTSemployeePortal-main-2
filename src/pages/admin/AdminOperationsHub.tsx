@@ -36,8 +36,15 @@ import { useCrews } from '../../hooks/useCrews';
 import { useGoogleMaps, darkMapStyles } from '../../hooks/useGoogleMaps';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { calculateJobProgress } from '../../lib/jobProgressUtils';
-import { supabase } from '../../lib/supabaseClient';
-import { logger } from '../../lib/logger';
+import {
+  useWorkSitesQuery,
+  useWorkSitesActiveCountQuery,
+  useCreateWorkSite,
+  useUpdateWorkSite,
+  useToggleWorkSiteActive,
+  useDeleteWorkSite,
+  type WorkSite,
+} from '../../hooks/queries/useWorkSites';
 import { toast } from '../../lib/toast';
 import { JobList, JobCreationForm, JobTrackerErrorBoundary } from '../../components/jobs';
 import { AdminSegmentedControl, type SegmentTab } from '../../components/admin/AdminSegmentedControl';
@@ -50,18 +57,6 @@ import type { JobFormData, JobStatus } from '../../types/jobs';
 // =============================================================================
 // TYPES
 // =============================================================================
-
-interface WorkSite {
-  id: string;
-  name: string;
-  address: string | null;
-  latitude: number;
-  longitude: number;
-  is_active: boolean;
-  crew_id: string | null;
-  created_at: string;
-  updated_at: string;
-}
 
 interface WorkSiteFormData {
   name: string;
@@ -634,30 +629,21 @@ function SiteFormModal({
 // =============================================================================
 
 function SitesTabContent() {
-  const [sites, setSites] = useState<WorkSite[]>([]);
-  const [loading, setLoading] = useState(true);
+  const workSitesQuery = useWorkSitesQuery(true);
+  const sites = useMemo(() => workSitesQuery.data ?? [], [workSitesQuery.data]);
+  const loading = workSitesQuery.isLoading;
+  const refetchSites = workSitesQuery.refetch;
+  const createWorkSite = useCreateWorkSite();
+  const updateWorkSite = useUpdateWorkSite();
+  const toggleActive = useToggleWorkSiteActive();
+  const deleteWorkSite = useDeleteWorkSite();
+
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebouncedValue(searchQuery, 300);
   const [showModal, setShowModal] = useState(false);
   const [editingSite, setEditingSite] = useState<WorkSite | null>(null);
   const [saving, setSaving] = useState(false);
   const [showInactive, setShowInactive] = useState(false);
-
-  const fetchSites = useCallback(async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase.from('work_sites').select('*').order('name');
-      if (error) throw error;
-      setSites(data || []);
-    } catch (error) {
-      logger.error('[Sites] Fetch error:', error);
-      toast.error('Failed to load sites');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchSites(); }, [fetchSites]);
 
   const filteredSites = useMemo(() => {
     let result = sites;
@@ -695,21 +681,15 @@ function SitesTabContent() {
       };
 
       if (editingSite) {
-        const { error } = await supabase.from('work_sites').update(siteData).eq('id', editingSite.id);
-        if (error) throw error;
-        toast.success('Site updated');
+        await updateWorkSite.mutateAsync({ id: editingSite.id, ...siteData });
       } else {
-        const { error } = await supabase.from('work_sites').insert([{ ...siteData, is_active: true }]);
-        if (error) throw error;
-        toast.success('Site added');
+        await createWorkSite.mutateAsync({ ...siteData, is_active: true });
       }
 
       setShowModal(false);
       setEditingSite(null);
-      fetchSites();
-    } catch (error) {
-      logger.error('[Sites] Save error:', error);
-      toast.error('Failed to save site');
+    } catch {
+      // Toast handled in hook
     } finally {
       setSaving(false);
     }
@@ -717,31 +697,18 @@ function SitesTabContent() {
 
   const handleToggleActive = async (site: WorkSite) => {
     try {
-      const { error } = await supabase.from('work_sites').update({ is_active: !site.is_active }).eq('id', site.id);
-      if (error) throw error;
-      toast.success(site.is_active ? 'Site deactivated' : 'Site activated');
-      fetchSites();
-    } catch (error) {
-      logger.error('[Sites] Toggle error:', error);
-      toast.error('Failed to update site');
+      await toggleActive.mutateAsync(site);
+    } catch {
+      // Toast handled in hook
     }
   };
 
   const handleDelete = async (site: WorkSite) => {
     if (!confirm(`Delete "${site.name}"?`)) return;
     try {
-      const { error } = await supabase.from('work_sites').delete().eq('id', site.id);
-      if (error) throw error;
-      toast.success('Site deleted');
-      fetchSites();
-    } catch (err: unknown) {
-      logger.error('[Sites] Delete error:', err);
-      const code = (err as { code?: string })?.code;
-      const msg =
-        code === '23503'
-          ? 'Site is linked to jobs. Unlink jobs from this site first, or run the latest database migration to allow deletion.'
-          : 'Failed to delete site';
-      toast.error(msg);
+      await deleteWorkSite.mutateAsync(site.id);
+    } catch {
+      // Toast handled in hook
     }
   };
 
@@ -772,7 +739,7 @@ function SitesTabContent() {
           >
             {showInactive ? 'Hide' : 'Show'} Inactive
           </button>
-          <button type="button" onClick={fetchSites} className="p-2 sm:p-2.5 rounded-lg sm:rounded-xl border border-white/10 text-white/50 hover:text-white/70 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] min-h-[44px]" aria-label="Refresh work sites">
+          <button type="button" onClick={() => refetchSites()} className="p-2 sm:p-2.5 rounded-lg sm:rounded-xl border border-white/10 text-white/50 hover:text-white/70 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] min-h-[44px]" aria-label="Refresh work sites">
             <RefreshCw className="w-4 h-4" aria-hidden />
           </button>
           <button
@@ -1109,12 +1076,7 @@ function AdminOperationsHub() {
   // Data for stats
   const { jobs } = useJobs();
   const { crews } = useCrews();
-  const [sitesCount, setSitesCount] = useState(0);
-
-  useEffect(() => {
-    supabase.from('work_sites').select('id', { count: 'exact', head: true }).eq('is_active', true)
-      .then(({ count }) => setSitesCount(count || 0));
-  }, []);
+  const { data: sitesCount = 0 } = useWorkSitesActiveCountQuery(true);
 
   const caps = useMemo(() => getDeviceCapabilities(), []);
   const enableAnimations = !caps.prefersReducedMotion && !caps.isMobile;

@@ -203,3 +203,22 @@ All three quality scores well above 85 threshold. Diminishing returns confirmed:
 - **New backlog item**: BL-035 (ARCH MEDIUM) — Mixed data fetching Phase 2: migrate remaining 15 pages/components to React Query hooks. Blast ~15 files, Tier 2.
 - No other new findings from UX, Workflow, Performance specialists.
 - Backlog: 1 OPEN (BL-035). STALE: BL-013, BL-021 unchanged.
+
+## Session 15 — 2026-03-11
+
+### GO: AUTOPILOT FULL — BL-035 GATED (blast > 10)
+- Pre: Committed Session 14 state (eb6d730). Git tree clean.
+- State: Read OK. Lock: created then removed.
+- SELECT NEXT: Only OPEN item BL-035 (ARCH MEDIUM, Mixed data fetching Phase 2, blast ~15 files). In FULL, blast radius > 10 requires APPROVE.
+- STOP: BL-035 is GATED. Recommendation: APPROVE: BL-035 then GO: AUTOPILOT FULL to execute, or DONE.
+
+## Session 16 — 2026-03-11
+
+### BL-035 (ARCH MEDIUM) — Mixed data fetching Phase 2 (approved, executed)
+- **Approved** then executed. Migrated 3 pages + work_sites to React Query hooks.
+- **Contact**: useCreateContactRequest extended with optional `user_id`/`submitted_at`; Contact page uses hook instead of direct `supabase.from('contact_requests').insert`.
+- **AdminDashboard**: Create path uses `useCreateAnnouncement().mutateAsync`; removed duplicate notification/toast (handled in hook).
+- **Work sites**: New `useWorkSites.ts` (useWorkSitesQuery, useWorkSitesActiveCountQuery, useCreateWorkSite, useUpdateWorkSite, useToggleWorkSiteActive, useDeleteWorkSite). queryKeys.workSites added. AdminOperationsHub SitesTabContent and stats use hooks; removed all direct `supabase.from('work_sites')` usage.
+- **Files**: useContactsQuery.ts, useWorkSites.ts (new), queryKeys.ts, Contact.tsx, AdminDashboard.tsx, AdminOperationsHub.tsx.
+- Verification: lint OK, build PASS.
+- Blast radius: 8 files. Remaining 12 pages/components (AdminUserActivity, AdminEmailRecipients, AdminJSA export, DVIRTab, EquipmentTab, ForemanDailyReports, FlagForReviewButton, CertExpirationWarnings, ComplianceDataExportPanel, JobProgressUpdateForm, ComplianceRatesWidget, AvatarUpload) can be migrated in a follow-up item.

@@ -10,6 +10,8 @@ import { useBriefingCompliance } from "../../../hooks/queries/useBriefingComplia
 import ComplianceRateTrend, {
   type DailyCompliancePoint,
 } from "../../../components/admin/briefing-compliance/ComplianceRateTrend";
+import TodayStatusBoard from "../../../components/admin/briefing-compliance/TodayStatusBoard";
+import RepeatOffenders from "../../../components/admin/briefing-compliance/RepeatOffenders";
 
 const TZ = "America/Chicago";
 
@@ -66,15 +68,22 @@ export default function BriefingComplianceSection() {
       <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
           <h3 className="text-sm font-semibold text-white mb-2">Today&apos;s status</h3>
-          <p className="text-xs text-white/50">
-            TodayStatusBoard (table of field employees, briefing/reward status) — coming next.
-          </p>
+          <TodayStatusBoard
+            rows={rows}
+            todayStr={todayStr}
+            isLoading={isLoading}
+            error={error ?? null}
+            refetch={refetch}
+          />
         </div>
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
           <h3 className="text-sm font-semibold text-white mb-2">Repeat offenders (30d)</h3>
-          <p className="text-xs text-white/50">
-            RepeatOffenders (most missed briefings) — coming next.
-          </p>
+          <RepeatOffenders
+            rows={rows}
+            isLoading={isLoading}
+            error={error ?? null}
+            refetch={refetch}
+          />
         </div>
       </div>
     </div>

@@ -20,10 +20,10 @@ import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
 import { subscribeToTableChanges } from "../../lib/realtime";
 import { logger } from "../../lib/logger";
-import { NotificationBuilders, createNotificationSilent } from "../../lib/pushNotifications";
 import { DateField } from "../../components/forms/GlassyPickers";
 import {
   useAnnouncementsQuery,
+  useCreateAnnouncement,
   useUpdateAnnouncement,
   type Announcement,
 } from "../../hooks/queries/useAnnouncementsQuery";
@@ -268,6 +268,7 @@ export default function AdminDashboard() {
 
   // Announcement hooks
   const { data: announcements, isLoading: announcementsLoading } = useAnnouncementsQuery(10);
+  const createAnnouncement = useCreateAnnouncement();
   const updateAnnouncement = useUpdateAnnouncement();
 
   // Device capabilities for animation decisions
@@ -414,30 +415,11 @@ export default function AdminDashboard() {
         });
         resetToCreateMode();
       } else {
-        // CREATE new announcement
-        const { error } = await supabase.from("announcements").insert(payload);
-        if (error) {
-          logger.error("Failed to publish announcement:", error);
-          setFeedback({
-            type: "error",
-            message: "Failed to publish announcement. Please try again.",
-          });
-          return;
-        }
-
-        // Send notification to all users (non-blocking)
-        const notificationResult = await createNotificationSilent(
-          NotificationBuilders.announcement({
-            title: payload.title as string,
-            message: payload.message as string,
-          })
-        );
-
+        // CREATE new announcement (hook handles notification + toast)
+        await createAnnouncement.mutateAsync(payload);
         setFeedback({
           type: "success",
-          message: notificationResult
-            ? `Announcement published and sent to ${notificationResult.dispatched} users!`
-            : "Announcement published successfully.",
+          message: "Announcement published successfully.",
         });
         setTitle("");
         setMessage("");

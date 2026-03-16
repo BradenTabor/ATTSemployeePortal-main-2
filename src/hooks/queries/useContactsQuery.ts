@@ -50,6 +50,12 @@ export function useContactsQuery(options: UseContactsOptions = {}) {
   });
 }
 
+/** Payload for creating a contact request (optional user_id and submitted_at for auth context) */
+export type CreateContactRequestPayload = Omit<ContactRequest, 'id' | 'submitted_at'> & {
+  user_id?: string;
+  submitted_at?: string;
+};
+
 /**
  * Create a new contact request
  */
@@ -57,10 +63,10 @@ export function useCreateContactRequest() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (contact: Omit<ContactRequest, 'id' | 'submitted_at'>) => {
+    mutationFn: async (payload: CreateContactRequestPayload) => {
       const { data, error } = await supabase
         .from('contact_requests')
-        .insert(contact)
+        .insert(payload)
         .select()
         .single();
 

@@ -14,6 +14,7 @@ import {
   CheckCheck,
   CheckCircle2,
   Gauge,
+  Info,
   RotateCcw,
   TrendingUp,
   Truck,
@@ -81,18 +82,18 @@ export const MileageInput = ({ value, onChange, truckNumber, previousMileage, on
     return current - previousMileage;
   }, [value, previousMileage]);
   
-  // Validation state
+  // Validation state (step 2 before step 3 so "lower than previous" shows suggestion, not negative diff)
   const validation = useMemo(() => {
     const num = parseInt(value.replace(/[^\d]/g, ''), 10);
-    if (!value) return { valid: true, message: '' };
-    if (isNaN(num)) return { valid: false, message: 'Enter a valid number' };
-    if (previousMileage && num < previousMileage) {
-      return { valid: false, message: 'Lower than previous reading' };
+    if (!value) return { valid: true, message: '', suggestion: false };
+    if (isNaN(num) || num <= 0) return { valid: false, message: 'Enter a valid number', suggestion: false };
+    if (previousMileage != null && num < previousMileage) {
+      return { valid: true, message: 'Lower than last recorded. Submit if this reading is correct.', suggestion: true };
     }
-    if (mileageDiff && mileageDiff > 500) {
-      return { valid: true, message: `+${mileageDiff.toLocaleString()} miles since last DVIR` };
+    if (mileageDiff != null && mileageDiff > 500) {
+      return { valid: true, message: `+${mileageDiff.toLocaleString()} miles since last DVIR`, suggestion: false };
     }
-    return { valid: true, message: '' };
+    return { valid: true, message: '', suggestion: false };
   }, [value, previousMileage, mileageDiff]);
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -177,13 +178,17 @@ export const MileageInput = ({ value, onChange, truckNumber, previousMileage, on
             exit={{ opacity: 0, y: -4 }}
             className={cn(
               "flex items-center gap-1.5 text-xs",
-              validation.valid ? "text-emerald-400/80" : "text-red-400"
+              !validation.valid && "text-red-400",
+              validation.valid && validation.suggestion && "text-amber-400/90",
+              validation.valid && !validation.suggestion && "text-emerald-400/80"
             )}
           >
-            {validation.valid ? (
-              <TrendingUp className="w-3 h-3" />
-            ) : (
+            {!validation.valid ? (
               <AlertTriangle className="w-3 h-3" />
+            ) : validation.suggestion ? (
+              <Info className="w-3 h-3" />
+            ) : (
+              <TrendingUp className="w-3 h-3" />
             )}
             {validation.message}
           </motion.div>

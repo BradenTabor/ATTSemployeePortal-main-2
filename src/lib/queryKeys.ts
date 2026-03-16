@@ -56,6 +56,13 @@ export const queryKeys = {
       ['contactRequests', 'list', filters] as const,
   },
 
+  // Work Sites (admin Operations Hub)
+  workSites: {
+    all: ['workSites'] as const,
+    list: () => ['workSites', 'list'] as const,
+    activeCount: () => ['workSites', 'activeCount'] as const,
+  },
+
   // JSA
   jsa: {
     all: ['jsa'] as const,

@@ -72,9 +72,11 @@ function validateDriversName(value: string | undefined | null): ValidationResult
 /**
  * Validate mileage
  */
+/** previousMileage kept in signature for call-site compatibility; no longer used (suggestion only in production). */
 function validateMileage(
   value: number | string | undefined | null,
-  previousMileage?: number | null
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- signature compatibility
+  _previousMileage?: number | null
 ): ValidationResult {
   const errors: string[] = [];
   
@@ -104,12 +106,9 @@ function validateMileage(
   if (mileageNum < 0) {
     errors.push('Mileage cannot be negative');
   }
-  
-  // Check against previous mileage if provided
-  if (previousMileage !== undefined && previousMileage !== null && mileageNum < previousMileage) {
-    errors.push(`Mileage cannot be less than previous reading (${previousMileage})`);
-  }
-  
+
+  // previousMileage is suggestion only in production; no rejection when lower.
+
   return {
     valid: errors.length === 0,
     errors,
@@ -354,10 +353,10 @@ describe('DVIR Validation', () => {
       expect(result.valid).toBe(true);
     });
 
-    it('rejects mileage lower than previous reading', () => {
+    it('accepts mileage lower than previous reading (suggestion only)', () => {
       const result = validateMileage(40000, 50000);
-      expect(result.valid).toBe(false);
-      expect(result.errors[0]).toContain('cannot be less than previous');
+      expect(result.valid).toBe(true);
+      expect(result.errors).toHaveLength(0);
     });
 
     it('accepts mileage equal to previous reading', () => {
@@ -645,9 +644,13 @@ describe('DVIR mileage validation (production validator)', () => {
     expect(result).toBeNull();
   });
 
-  it('rejects odometer reading less than previous', () => {
+  it('accepts odometer reading less than previous (suggestion only)', () => {
     const result = validators.mileage('11999', 12000);
-    expect(result).not.toBeNull();
-    expect(result).toMatch(/must be at least 12,000 mi/i);
+    expect(result).toBeNull();
+  });
+
+  it('accepts odometer reading of 1 with large previous mileage', () => {
+    const result = validators.mileage('1', 50000);
+    expect(result).toBeNull();
   });
 });
