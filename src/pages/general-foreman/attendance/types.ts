@@ -5,7 +5,7 @@ export interface AttendanceRecord {
   user_id: string;
   date: string;
   status: AttendanceStatus;
-  marked_by: string;
+  marked_by: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;

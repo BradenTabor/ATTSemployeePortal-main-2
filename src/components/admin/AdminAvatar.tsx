@@ -731,22 +731,6 @@ function AdminAvatarComponent({ className = '' }: AdminAvatarProps) {
           </g>
         </svg>
       </div>
-
-      {/* Floating animation keyframes */}
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        @keyframes adminFloat {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-6px); }
-        }
-        @keyframes adminGlow {
-          0%, 100% { opacity: 0.5; }
-          50% { opacity: 0.7; }
-        }
-      `}</style>
     </div>
   );
 }

@@ -36,8 +36,8 @@ export default function EmergencyActionPlan() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { scrollYProgress } = useScroll({ target: scrollRef, offset: ['start start', 'end end'] });
-  const accentHue = useTransform(scrollYProgress, [0, 0.5, 1], [0, 20, 45]);
-  const accentOpacity = useTransform(scrollYProgress, [0, 0.1, 0.9, 1], [0.6, 0.3, 0.2, 0.1]);
+  const accentHue = useTransform(scrollYProgress, [0, 0.5, 1], [340, 350, 15]);
+  const accentOpacity = useTransform(scrollYProgress, [0, 0.1, 0.9, 1], [0.5, 0.25, 0.15, 0.08]);
 
   const handleShowTriage = useCallback(() => setPhase('triage'), []);
   const handleShowSupervisor = useCallback(() => setPhase('supervisor'), []);
@@ -121,7 +121,7 @@ export default function EmergencyActionPlan() {
           {phase === 'actions' && selectedProtocols.length > 0 && (
             <motion.div
               key="action-steps"
-              className="mb-10 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border border-red-800/30 rounded-2xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.3),0_12px_40px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.03)]"
+              className="mb-10 bg-gradient-to-b from-stone-900 via-stone-900 to-stone-950 border border-rose-800/20 rounded-2xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.3),0_12px_40px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.03)]"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
@@ -135,12 +135,12 @@ export default function EmergencyActionPlan() {
         <AnimatePresence>
           {phase === 'actions' && selectedProtocols.length === 0 && (
             <motion.div
-              className="mb-10 bg-slate-800/80 border border-slate-700/80 rounded-xl px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.2),0_6px_20px_rgba(0,0,0,0.15)]"
+              className="mb-10 bg-stone-800/80 border border-stone-700/80 rounded-xl px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.2),0_6px_20px_rgba(0,0,0,0.15)]"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
-              <p className="text-slate-400 text-sm">
+              <p className="text-stone-400 text-sm">
                 Tap an emergency type above to see response steps.
               </p>
             </motion.div>
@@ -157,8 +157,8 @@ export default function EmergencyActionPlan() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.35 }}
             >
-              <div className="bg-slate-800/80 border border-slate-700/80 rounded-xl px-5 py-4 shadow-md">
-                <p className="text-slate-400 text-sm">Coordination tools coming soon.</p>
+              <div className="bg-stone-800/80 border border-stone-700/80 rounded-xl px-5 py-4 shadow-md">
+                <p className="text-stone-400 text-sm">Coordination tools coming soon.</p>
               </div>
               <EmergencyRoles config={config} />
             </motion.div>
@@ -167,7 +167,7 @@ export default function EmergencyActionPlan() {
 
         {/* ── ROLES AND EQUIPMENT ── */}
         <div className="space-y-10 mt-10">
-          <div className="border-t border-slate-700/60" />
+          <div className="border-t border-stone-700/60" />
           <motion.div variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-40px' }} custom={0}>
             <EmergencyRoles config={config} />
           </motion.div>

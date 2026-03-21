@@ -4,11 +4,12 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabaseClient';
+import { queryKeys } from '../../lib/queryKeys';
 import type { OSHA300ASummary, OSHA300ACertification } from '../../types/osha300a';
 
 export function useOSHA300ASummary(year: number) {
   return useQuery({
-    queryKey: ['osha300a', 'summary', year],
+    queryKey: queryKeys.osha300a.summary(year),
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_osha_300a_summary', {
         p_year: year,
@@ -44,14 +45,14 @@ export function useCertify300A() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['osha300a'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.osha300a.all });
     },
   });
 }
 
 export function use300ACertification(year: number) {
   return useQuery({
-    queryKey: ['osha300a', 'certification', year],
+    queryKey: queryKeys.osha300a.certification(year),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('osha_300a_certifications')
@@ -76,7 +77,7 @@ export function useMark300APosted(year: number) {
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['osha300a'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.osha300a.all });
     },
   });
 }

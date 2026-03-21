@@ -2,6 +2,7 @@ import {
   useState,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   type ReactNode,
 } from 'react';
@@ -207,13 +208,13 @@ export function ToastOverlayProvider({ children }: ToastOverlayProviderProps) {
     };
   }, [clearAutoDismissTimer]);
 
-  const contextValue: ToastOverlayContextValue = {
+  const contextValue: ToastOverlayContextValue = useMemo(() => ({
     state,
     show,
     dismiss,
     updateState,
     isVisible: state.visible,
-  };
+  }), [state, show, dismiss, updateState]);
 
   // Register context with formToast API for global access
   useEffect(() => {

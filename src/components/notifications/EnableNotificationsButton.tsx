@@ -223,7 +223,7 @@ function EnableNotificationsButtonComponent({
         {/* Decorative overlay - sized to fit inside button so bell is fully contained */}
         {!loading && (
           <img
-            src="/assets/enable-notifications-overlay.png"
+            src="/assets/enable-notifications-overlay.webp"
             alt=""
             aria-hidden
             className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none rounded-xl"

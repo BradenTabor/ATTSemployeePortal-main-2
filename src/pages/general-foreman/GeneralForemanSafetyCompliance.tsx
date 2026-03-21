@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Shield,
@@ -14,7 +15,6 @@ import {
   Wind,
   AlertTriangle,
   ChevronRight,
-  Sparkles,
   FileText,
   CheckCircle2,
   FileEdit,
@@ -24,6 +24,7 @@ import {
   Maximize2,
   Minimize2,
   Info,
+  Download,
 } from "lucide-react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useAuth } from "../../contexts/AuthContext";
@@ -32,9 +33,10 @@ import { PaginationControls } from "../../components/PaginationControls";
 import type { DailyJsaRecord, JsaSpan, ObserverSignature, SharedUser } from "../forms/DailyJSAForm";
 import TableSkeleton from "../../components/skeletons/TableSkeleton";
 import CardListSkeleton from "../../components/skeletons/CardListSkeleton";
-import { TextEffect } from "../../components/ui/TextEffect";
-import { getDeviceCapabilities } from "../../lib/mobilePerf";
+import { glass } from "../../lib/glass";
 import { logger } from "../../lib/logger";
+import JsaExportModal from "./JsaExportModal";
+import type { AdminJsaRow } from "../admin/admin-jsa/types";
 
 type GFJsaRow = DailyJsaRecord & {
   user_email?: string | null;
@@ -134,6 +136,10 @@ export default function GeneralForemanSafetyCompliance() {
   const [signatureFilter, setSignatureFilter] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isDetailFullscreen, setIsDetailFullscreen] = useState(false);
+
+  // Export state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [exportRecords, setExportRecords] = useState<AdminJsaRow[] | null>(null);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
@@ -293,9 +299,54 @@ export default function GeneralForemanSafetyCompliance() {
     [records, selectedId]
   );
 
-  // Device capabilities for animation decisions
-  const caps = useMemo(() => getDeviceCapabilities(), []);
-  const enableAnimations = !caps.prefersReducedMotion && !caps.isMobile;
+  // Lock background scroll when detail modal is open
+  useEffect(() => {
+    if (!selectedRecord) return;
+    const scrollContainer = document.querySelector('.scroll-container');
+    if (scrollContainer) (scrollContainer as HTMLElement).style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    return () => {
+      if (scrollContainer) (scrollContainer as HTMLElement).style.overflow = '';
+      document.body.style.overflow = '';
+    };
+  }, [selectedRecord]);
+
+  // ── Batch selection helpers ───────────────────────────────
+  const toggleSelectRecord = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAllOnPage = useCallback(() => {
+    setSelectedIds(prev => {
+      const pageIds = records.map(r => r.id);
+      const allSelected = pageIds.every(id => prev.has(id));
+      if (allSelected) {
+        const next = new Set(prev);
+        pageIds.forEach(id => next.delete(id));
+        return next;
+      }
+      return new Set([...prev, ...pageIds]);
+    });
+  }, [records]);
+
+  const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
+
+  const allOnPageSelected = records.length > 0 && records.every(r => selectedIds.has(r.id));
+
+  const openBatchExport = useCallback(() => {
+    const rows = records.filter(r => selectedIds.has(r.id)) as AdminJsaRow[];
+    if (rows.length === 0) return;
+    setExportRecords(rows);
+  }, [records, selectedIds]);
+
+  const openSingleExport = useCallback((record: GFJsaRow) => {
+    setExportRecords([record as AdminJsaRow]);
+  }, []);
 
   if (!hasAccess) {
     return (
@@ -330,61 +381,37 @@ export default function GeneralForemanSafetyCompliance() {
   return (
     <DashboardLayout title="Safety Compliance">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pb-4 pt-4 sm:pt-6">
-        {/* Premium Glass Header - Purple Theme */}
-        <div className="mb-5 md:mb-6">
+        {/* Compact header — solid premium surface */}
+        <header className="mb-4 sm:mb-5">
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="relative"
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className={`${glass.cardPurple} px-5 py-4 sm:px-6 sm:py-5`}
           >
-            <div 
-              className="relative overflow-hidden rounded-2xl md:rounded-3xl border border-white/[0.12] shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.1)]"
-              style={{
-                background: 'linear-gradient(145deg, rgba(192, 132, 252, 0.1) 0%, rgba(45, 27, 78, 0.65) 40%, rgba(10, 5, 19, 0.75) 100%)',
-                backdropFilter: 'blur(24px) saturate(1.6)',
-                WebkitBackdropFilter: 'blur(24px) saturate(1.6)',
-              }}
-            >
-              <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(125deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 25%, transparent 50%)' }} />
-              <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 40%)' }} />
-              <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 25% 0%, rgba(192, 132, 252, 0.2) 0%, transparent 45%)' }} />
-              <div className="absolute top-0 left-0 w-32 h-32 pointer-events-none" style={{ background: 'radial-gradient(circle at 20% 20%, rgba(255,255,255,0.12) 0%, transparent 50%)' }} />
-              <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-white/5 via-white/25 to-white/5 rounded-t-[inherit]" />
-              <div className="absolute top-0 left-0 bottom-0 w-[1px] bg-gradient-to-b from-white/20 via-white/5 to-transparent rounded-l-[inherit]" />
-
-              <div className="relative px-5 py-4 md:px-7 md:py-5">
-                <div className="flex items-center gap-3 mb-3">
-                  <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.2 }} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#c084fc]/15 border border-[#c084fc]/30">
-                    <Sparkles className="w-3.5 h-3.5 text-[#c084fc]" />
-                    <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#e9d5ff]">General Foreman • Safety</span>
-                  </motion.div>
-                  <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.3 }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#2d1b4e]/60 border border-[#c084fc]/20">
-                    <ClipboardList className="w-3 h-3 text-[#c084fc]" />
-                    <span className="text-[9px] uppercase tracking-wider font-semibold text-[#e9d5ff]/70">{statusFilter === "all" ? "All statuses" : statusFilter}</span>
-                  </motion.div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <motion.div initial={{ scaleY: 0, opacity: 0 }} animate={{ scaleY: 1, opacity: 1 }} transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }} className="w-1 h-14 md:h-16 rounded-full bg-gradient-to-b from-[#c084fc] via-[#a855f7] to-[#7c3aed] origin-top flex-shrink-0" style={{ boxShadow: '0 0 20px rgba(192, 132, 252, 0.5), 0 0 40px rgba(192, 132, 252, 0.25)' }} />
-                  <div className="flex-1 min-w-0">
-                    {enableAnimations ? (
-                      <TextEffect as="h1" preset="blurSlide" per="char" delay={0.15} className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight" segmentWrapperClassName="bg-gradient-to-r from-white via-[#e9d5ff] to-white/90 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(192,132,252,0.35)]">
-                        Safety Compliance Review
-                      </TextEffect>
-                    ) : (
-                      <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight bg-gradient-to-r from-white via-[#e9d5ff] to-white/90 bg-clip-text text-transparent">Safety Compliance Review</h1>
-                    )}
-                    <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.7 }} className="mt-1.5 md:mt-2 text-xs sm:text-sm text-[#e9d5ff]/50 font-medium leading-relaxed max-w-xl">
-                      Review crew JSA submissions and ensure field safety compliance
-                    </motion.p>
-                  </div>
-                </div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-500/20 border border-purple-400/25 text-[10px] font-semibold uppercase tracking-wider text-purple-200">
+                <Shield className="w-3.5 h-3.5" aria-hidden />
+                General Foreman &middot; Safety
+              </span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-black/20 border border-purple-500/15 text-[10px] font-medium text-purple-200/70">
+                <ClipboardList className="w-3 h-3" aria-hidden />
+                {statusFilter === "all" ? "All statuses" : statusFilter}
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-1 h-10 sm:h-12 rounded-full bg-gradient-to-b from-purple-400 via-violet-500 to-purple-600 flex-shrink-0" aria-hidden />
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+                  Safety Compliance Review
+                </h1>
+                <p className="text-xs sm:text-sm text-white/50 mt-0.5 max-w-xl">
+                  Review crew JSA submissions and ensure field safety compliance
+                </p>
               </div>
-              <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-black/30 to-transparent" />
-              <div className="absolute top-0 right-0 bottom-0 w-[1px] bg-gradient-to-b from-transparent via-black/20 to-transparent" />
             </div>
           </motion.div>
-        </div>
+        </header>
 
         <div className="space-y-6">
           {/* Status Tabs - Purple Theme */}
@@ -426,12 +453,12 @@ export default function GeneralForemanSafetyCompliance() {
             })}
           </motion.div>
 
-          {/* Search & Filters Bar - Purple Theme */}
+          {/* Search & Filters Bar */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.05 }}
-            className="rounded-3xl border border-[#c084fc]/20 bg-gradient-to-br from-[#2d1b4e] via-[#1a0f2e] to-[#0a0513] p-5 space-y-4 shadow-[0_25px_50px_rgba(0,0,0,0.55)]"
+            transition={{ duration: 0.2, delay: 0.05 }}
+            className={`${glass.card} p-4 sm:p-5 space-y-4`}
           >
             {/* Filter Header */}
             <div className="flex items-center justify-between">
@@ -515,10 +542,10 @@ export default function GeneralForemanSafetyCompliance() {
         {/* Main Content */}
         <div className="mt-6">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.1 }}
-            className="rounded-3xl border border-[#c084fc]/20 bg-gradient-to-br from-[#1a0f2e] via-[#0f0819] to-[#0a0513] backdrop-blur-xl p-4 sm:p-6 shadow-[0_35px_60px_rgba(0,0,0,0.6)]"
+            transition={{ duration: 0.2, delay: 0.1 }}
+            className={`${glass.card} p-4 sm:p-6`}
           >
             {loading ? (
               <TableSkeleton rows={6} columns={6} variant="purple" />
@@ -532,6 +559,15 @@ export default function GeneralForemanSafetyCompliance() {
                   <table className="w-full text-left">
                     <thead>
                       <tr className="text-[0.65rem] uppercase tracking-[0.3em] text-[#c084fc]/80 border-b border-[#c084fc]/20">
+                        <th className="px-3 py-3 w-10">
+                          <input
+                            type="checkbox"
+                            checked={allOnPageSelected}
+                            onChange={toggleSelectAllOnPage}
+                            className="w-3.5 h-3.5 accent-[#c084fc] rounded cursor-pointer"
+                            aria-label="Select all on page"
+                          />
+                        </th>
                         <th className="px-6 py-3 text-left">Job Date</th>
                         <th className="px-6 py-3 text-left">Location</th>
                         <th className="px-6 py-3 text-left">Owner</th>
@@ -552,6 +588,15 @@ export default function GeneralForemanSafetyCompliance() {
                               isSelected ? "bg-[#c084fc]/10 border-l-2 border-l-[#c084fc]" : "hover:bg-white/5"
                             }`}
                           >
+                            <td className="px-3 py-4" onClick={e => e.stopPropagation()}>
+                              <input
+                                type="checkbox"
+                                checked={selectedIds.has(record.id)}
+                                onChange={() => toggleSelectRecord(record.id)}
+                                className="w-3.5 h-3.5 accent-[#c084fc] rounded cursor-pointer"
+                                aria-label={`Select JSA for ${record.work_location || 'unknown location'}`}
+                              />
+                            </td>
                             <td className="px-6 py-4">{formatDate(record.job_date)}</td>
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-2">
@@ -641,6 +686,8 @@ export default function GeneralForemanSafetyCompliance() {
                       record={record}
                       isSelected={record.id === selectedId}
                       onSelect={() => setSelectedId(record.id)}
+                      isChecked={selectedIds.has(record.id)}
+                      onCheckToggle={() => toggleSelectRecord(record.id)}
                     />
                   ))}
                 </div>
@@ -664,48 +711,95 @@ export default function GeneralForemanSafetyCompliance() {
           </motion.div>
         </div>
 
-        {/* Detail Panel - Overlay Modal */}
-        <AnimatePresence mode="wait">
-          {selectedRecord && (
-            <>
-              {/* Backdrop */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                onClick={() => setSelectedId(null)}
-                className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40"
-              />
-              {/* Modal */}
-              <motion.div
-                key={isDetailFullscreen ? "fullscreen" : "modal"}
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                className={`fixed z-50 rounded-3xl border border-[#c084fc]/20 bg-gradient-to-br from-[#2d1b4e] via-[#1a0f2e] to-[#0a0513] backdrop-blur-xl shadow-[0_35px_60px_rgba(0,0,0,0.6)] overflow-auto ${
-                  isDetailFullscreen
-                    ? "inset-2 sm:inset-4"
-                    : "inset-3 sm:inset-6 md:inset-8 lg:inset-12 xl:inset-x-[15%] xl:inset-y-8 max-h-[calc(100vh-24px)] sm:max-h-[calc(100vh-48px)]"
-                }`}
-              >
-                {loading ? (
-                  <div className="p-4 sm:p-6">
-                    <CardListSkeleton rows={2} variant="purple" />
-                  </div>
-                ) : (
-                  <SelectedJsaDetail 
-                    record={selectedRecord} 
-                    onClose={() => setSelectedId(null)}
-                    isFullscreen={isDetailFullscreen}
-                    onToggleFullscreen={() => setIsDetailFullscreen(!isDetailFullscreen)}
-                  />
-                )}
-              </motion.div>
-            </>
+        {/* Detail Panel - Portaled to body to escape scroll containers */}
+        {createPortal(
+          <AnimatePresence mode="wait">
+            {selectedRecord && (
+              <>
+                {/* Backdrop */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  onClick={() => setSelectedId(null)}
+                  className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9998]"
+                />
+                {/* Modal */}
+                <motion.div
+                  key={isDetailFullscreen ? "fullscreen" : "modal"}
+                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                  transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                  className={`fixed z-[9999] ${glass.elevated} overflow-auto ${
+                    isDetailFullscreen
+                      ? "inset-2 sm:inset-4"
+                      : "inset-3 sm:inset-6 md:inset-8 lg:inset-12 xl:inset-x-[15%] xl:inset-y-8 max-h-[calc(100vh-24px)] sm:max-h-[calc(100vh-48px)]"
+                  }`}
+                >
+                  {loading ? (
+                    <div className="p-4 sm:p-6">
+                      <CardListSkeleton rows={2} variant="purple" />
+                    </div>
+                  ) : (
+                    <SelectedJsaDetail 
+                      record={selectedRecord} 
+                      onClose={() => setSelectedId(null)}
+                      isFullscreen={isDetailFullscreen}
+                      onToggleFullscreen={() => setIsDetailFullscreen(!isDetailFullscreen)}
+                      onExport={() => openSingleExport(selectedRecord)}
+                    />
+                  )}
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>,
+          document.body
+        )}
+
+        {/* Floating Batch Export Bar */}
+        <AnimatePresence>
+          {selectedIds.size > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+              className="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 pb-safe"
+            >
+              <div className={`${glass.elevated} flex items-center gap-3 px-4 py-3`}>
+                <span className="text-xs text-[#e9d5ff] font-semibold whitespace-nowrap">
+                  {selectedIds.size} selected
+                </span>
+                <motion.button
+                  type="button"
+                  onClick={openBatchExport}
+                  whileTap={{ scale: 0.97 }}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#c084fc] via-[#a855f7] to-[#7c3aed] text-white text-xs font-semibold shadow-[0_4px_12px_rgba(192,132,252,0.3)] transition min-h-[36px]"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Export
+                </motion.button>
+                <button
+                  type="button"
+                  onClick={clearSelection}
+                  className="text-xs text-[#a78bfa]/70 hover:text-[#e9d5ff] transition font-medium"
+                >
+                  Clear
+                </button>
+              </div>
+            </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Export Modal */}
+        {exportRecords && (
+          <JsaExportModal
+            records={exportRecords}
+            onClose={() => setExportRecords(null)}
+          />
+        )}
       </div>
     </DashboardLayout>
   );
@@ -749,11 +843,13 @@ function SelectedJsaDetail({
   onClose,
   isFullscreen,
   onToggleFullscreen,
+  onExport,
 }: {
   record: GFJsaRow;
   onClose: () => void;
   isFullscreen: boolean;
   onToggleFullscreen: () => void;
+  onExport: () => void;
 }) {
   // Use employee_signature as fallback for name if profile data unavailable
   const ownerName = record.user_name || record.employee_signature?.trim() || "Unknown User";
@@ -789,6 +885,14 @@ function SelectedJsaDetail({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onExport}
+            className="p-2 rounded-lg bg-[#0a0513]/70 border border-[#c084fc]/25 text-[#c084fc] hover:bg-[#c084fc]/10 transition-all"
+            title="Export JSA"
+          >
+            <Download className="w-4 h-4" />
+          </button>
           <button
             type="button"
             onClick={onToggleFullscreen}
@@ -963,10 +1067,14 @@ function MobileJsaCard({
   record,
   onSelect,
   isSelected,
+  isChecked,
+  onCheckToggle,
 }: {
   record: GFJsaRow;
   onSelect: () => void;
   isSelected: boolean;
+  isChecked: boolean;
+  onCheckToggle: () => void;
 }) {
   return (
     <div
@@ -975,7 +1083,15 @@ function MobileJsaCard({
       } bg-[#1a0f2e]/70 p-4 space-y-3 shadow-lg shadow-black/30`}
     >
       <div className="flex items-start justify-between gap-3">
-        <div>
+        <div className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            checked={isChecked}
+            onChange={onCheckToggle}
+            className="w-4 h-4 accent-[#c084fc] rounded cursor-pointer mt-1 flex-shrink-0"
+            aria-label={`Select JSA for ${record.work_location || 'unknown location'}`}
+          />
+          <div>
           <p className="text-xs uppercase tracking-[0.3em] text-[#c084fc]/80 mb-1">
             {formatDate(record.job_date)}
           </p>
@@ -985,6 +1101,7 @@ function MobileJsaCard({
           <p className="text-xs text-[#a78bfa]">
             {record.circuit_number || "Circuit pending"}
           </p>
+        </div>
         </div>
         <div className="flex flex-wrap items-center gap-1">
           <span

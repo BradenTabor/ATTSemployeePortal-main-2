@@ -327,7 +327,7 @@ export default function ForemanDashboard() {
                       icon={
                         <div className="relative w-full h-full flex items-center justify-center overflow-visible min-w-[100px] min-h-[120px] md:min-w-[120px] md:min-h-[140px]">
                           <img
-                            src="/assets/jobs-specialist.png"
+                            src="/assets/jobs-specialist.webp"
                             alt=""
                             width={312}
                             height={384}
@@ -414,7 +414,7 @@ export default function ForemanDashboard() {
                 icon={
                   <div className="relative w-full h-full flex items-center justify-center overflow-visible min-w-[130px] min-h-[156px] md:min-w-[156px] md:min-h-[192px]">
                     <img
-                      src="/assets/foreman-creative.png"
+                      src="/assets/foreman-creative.webp"
                       alt=""
                       width={312}
                       height={384}
@@ -470,7 +470,7 @@ export default function ForemanDashboard() {
               icon={
                 <div className="relative w-full h-full flex items-center justify-center overflow-visible min-w-[130px] min-h-[156px] md:min-w-[156px] md:min-h-[192px]">
                   <img
-                    src="/assets/all-tools.png"
+                    src="/assets/all-tools.webp"
                     alt=""
                     width={312}
                     height={384}

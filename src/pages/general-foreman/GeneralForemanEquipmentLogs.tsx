@@ -13,6 +13,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
 import { getDeviceCapabilities } from "../../lib/mobilePerf";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
+import { glass } from "../../lib/glass";
 import { logger } from "../../lib/logger";
 import type { DVIRReport, EquipmentInspection } from "./equipment-logs/types";
 import { getDVIRStatus, inspectionHasFailures, getDateRangeStart } from "./equipment-logs/helpers";
@@ -228,35 +229,33 @@ export default function GeneralForemanEquipmentLogs() {
 
   return (
     <DashboardLayout title="Equipment Logs" hideHeader>
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pt-6 sm:pt-8 pb-8">
-        {/* Hero - compressed, mobile-optimized */}
-        <header className="mb-4 sm:mb-6 md:mb-8">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pt-4 sm:pt-6 pb-8">
+        {/* Compact header — solid premium surface */}
+        <header className="mb-4 sm:mb-6">
           <motion.div
             initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-            className="rounded-xl sm:rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-900/60 via-purple-950/80 to-black/90 overflow-hidden shadow-lg sm:shadow-xl shadow-purple-500/10"
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className={`${glass.cardPurple} px-5 py-4 sm:px-6 sm:py-5`}
           >
-            <div className="px-4 py-4 sm:px-6 sm:py-5 md:px-8 md:py-6">
-              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-4 sm:mb-5">
-                <span className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl bg-purple-600/40 border border-purple-500/30 text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-purple-100">
-                  <HardHat className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" aria-hidden />
-                  General Foreman
-                </span>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg bg-black/30 border border-purple-500/20 text-[10px] sm:text-[11px] font-medium uppercase tracking-wider text-purple-200/80">
-                  {role === "admin" ? "Admin" : "Gen Foreman"}
-                </span>
-              </div>
-              <div className="flex items-start gap-3 sm:gap-4">
-                <div className="w-0.5 sm:w-1 h-10 xs:h-12 sm:h-16 md:h-20 rounded-full bg-gradient-to-b from-purple-400 via-violet-500 to-purple-600 flex-shrink-0" aria-hidden />
-                <div className="min-w-0 flex-1">
-                  <h1 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-white">
-                    Equipment Logs
-                  </h1>
-                  <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm md:text-base text-white/70 max-w-xl">
-                    Combined DVIR and equipment inspection oversight
-                  </p>
-                </div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-500/20 border border-purple-400/25 text-[10px] font-semibold uppercase tracking-wider text-purple-200">
+                <HardHat className="w-3.5 h-3.5" aria-hidden />
+                General Foreman
+              </span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-black/20 border border-purple-500/15 text-[10px] font-medium text-purple-200/70">
+                {role === "admin" ? "Admin" : "Gen Foreman"}
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-1 h-10 sm:h-12 rounded-full bg-gradient-to-b from-purple-400 via-violet-500 to-purple-600 flex-shrink-0" aria-hidden />
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+                  Equipment Logs
+                </h1>
+                <p className="text-xs sm:text-sm text-white/50 mt-0.5">
+                  Combined DVIR and equipment inspection oversight
+                </p>
               </div>
             </div>
           </motion.div>
@@ -268,8 +267,8 @@ export default function GeneralForemanEquipmentLogs() {
             <motion.div
               initial={prefersReducedMotion ? false : { opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25, delay: 0.05, ease: [0.4, 0, 0.2, 1] }}
-              className="rounded-xl sm:rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-800/50 via-purple-900/60 to-violet-950/80 p-4 sm:p-5 md:p-6 shadow-lg shadow-purple-500/10 transition-shadow duration-200 hover:shadow-purple-500/15"
+              transition={{ duration: 0.2, delay: 0.05 }}
+              className={`${glass.card} p-4 sm:p-5 transition-shadow duration-200 hover:shadow-[0_4px_20px_rgba(147,51,234,0.1)]`}
             >
               <div className="flex flex-wrap items-center justify-between gap-4 sm:gap-5 md:gap-6">
                 <div className="flex items-center gap-3 sm:gap-4">

@@ -57,12 +57,15 @@ async function fetchMonthlyDrawing(
     }
   }
 
-  function resolveWinner(userId: string | null): DrawingWinner | null {
-    if (!userId) return null;
-    const profile = winnerMap.get(userId);
+  function resolveWinner(userId: string | null, fallbackName: string | null): DrawingWinner | null {
+    if (!userId && !fallbackName) return null;
+    if (!userId && fallbackName) {
+      return { user_id: '', full_name: fallbackName, email: null };
+    }
+    const profile = winnerMap.get(userId!);
     return {
-      user_id: userId,
-      full_name: profile?.full_name ?? 'Former employee',
+      user_id: userId!,
+      full_name: profile?.full_name ?? fallbackName ?? 'Former employee',
       email: profile?.email ?? null,
     };
   }
@@ -72,9 +75,9 @@ async function fetchMonthlyDrawing(
     reward_id: data.reward_id,
     month: data.month,
     year: data.year,
-    grand_prize_winner: resolveWinner(data.grand_prize_winner_id),
-    runner_up_1_winner: resolveWinner(data.runner_up_1_winner_id),
-    runner_up_2_winner: resolveWinner(data.runner_up_2_winner_id),
+    grand_prize_winner: resolveWinner(data.grand_prize_winner_id, data.grand_prize_winner_name),
+    runner_up_1_winner: resolveWinner(data.runner_up_1_winner_id, data.runner_up_1_winner_name),
+    runner_up_2_winner: resolveWinner(data.runner_up_2_winner_id, data.runner_up_2_winner_name),
     total_entries: data.total_entries,
     total_participants: data.total_participants,
     drawn_at: data.drawn_at,

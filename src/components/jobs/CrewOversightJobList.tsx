@@ -381,12 +381,15 @@ function CrewOversightJobListComponent({
       )}
 
       {/* Result count - Compact */}
-      <div className="text-center text-[10px] sm:text-xs text-[#e9d5ff]/40 pt-1">
-        {filteredJobs.length} job{filteredJobs.length !== 1 ? 's' : ''} 
-        {displayItems.filter(i => i.type === 'group').length > 0 && (
-          <span> · {displayItems.filter(i => i.type === 'group').length} stacked</span>
-        )}
-      </div>
+      {(() => {
+        const stackedCount = displayItems.filter(i => i.type === 'group').length;
+        return (
+          <div className="text-center text-[10px] sm:text-xs text-[#e9d5ff]/40 pt-1">
+            {filteredJobs.length} job{filteredJobs.length !== 1 ? 's' : ''}
+            {stackedCount > 0 && <span> · {stackedCount} stacked</span>}
+          </div>
+        );
+      })()}
     </div>
   );
 }

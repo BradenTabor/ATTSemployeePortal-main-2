@@ -11,8 +11,6 @@ import type {
   CertificationAccessGrant,
 } from '../types/certifications';
 
-const CERT_QUERY_KEY = ['certifications'];
-
 export interface CertificationAuditLogEntry {
   id: string;
   actor_id: string | null;
@@ -26,7 +24,7 @@ export interface CertificationAuditLogEntry {
 
 export function useCertificationTypes() {
   return useQuery({
-    queryKey: [...CERT_QUERY_KEY, 'types'],
+    queryKey: queryKeys.certifications.types,
     queryFn: async (): Promise<CertificationType[]> => {
       const { data, error } = await supabase
         .from('certification_types')
@@ -39,11 +37,27 @@ export function useCertificationTypes() {
   });
 }
 
+/** Includes inactive types — use for name resolution on profile/history views. */
+export function useAllCertificationTypes() {
+  return useQuery({
+    queryKey: queryKeys.certifications.typesAll,
+    queryFn: async (): Promise<CertificationType[]> => {
+      const { data, error } = await supabase
+        .from('certification_types')
+        .select('*')
+        .order('name');
+      if (error) throw error;
+      return data ?? [];
+    },
+    staleTime: 30 * 60 * 1000,
+  });
+}
+
 const CERT_STALE_MS = 10 * 60 * 1000; // 10 min for dashboard/profile cert status
 
 export function useMyCertificationRecords(userId: string | undefined) {
   return useQuery({
-    queryKey: [...CERT_QUERY_KEY, 'records', userId],
+    queryKey: queryKeys.certifications.records(userId!),
     queryFn: async (): Promise<CertificationRecord[]> => {
       const { data, error } = await supabase
         .from('certification_records')
@@ -127,7 +141,7 @@ export function useWorkerInternalCertRecords(
 
 export function useMyAttempts(userId: string | undefined, certificationTypeId: string | undefined) {
   return useQuery({
-    queryKey: [...CERT_QUERY_KEY, 'attempts', userId, certificationTypeId],
+    queryKey: queryKeys.certifications.attempts(userId!, certificationTypeId!),
     queryFn: async (): Promise<CertificationAttempt[]> => {
       const { data, error } = await supabase
         .from('certification_attempts')
@@ -144,7 +158,7 @@ export function useMyAttempts(userId: string | undefined, certificationTypeId: s
 
 export function useInProgressAttempt(userId: string | undefined, certTypeId: string | undefined) {
   return useQuery({
-    queryKey: [...CERT_QUERY_KEY, 'in-progress', userId, certTypeId],
+    queryKey: queryKeys.certifications.inProgress(userId!, certTypeId!),
     queryFn: async (): Promise<CertificationAttempt | null> => {
       const { data, error } = await supabase
         .from('certification_attempts')
@@ -164,7 +178,7 @@ export function useInProgressAttempt(userId: string | undefined, certTypeId: str
 
 export function useCanStartAttempt(certTypeId: string | undefined) {
   return useQuery({
-    queryKey: [...CERT_QUERY_KEY, 'can-start', certTypeId],
+    queryKey: queryKeys.certifications.canStart(certTypeId!),
     queryFn: async (): Promise<CanStartResult> => {
       const { data, error } = await supabase.rpc('can_start_certification_attempt', {
         p_cert_type_id: certTypeId,
@@ -194,14 +208,14 @@ export function useCreateAttempt() {
       return data as string;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: CERT_QUERY_KEY });
+      qc.invalidateQueries({ queryKey: queryKeys.certifications.all });
     },
   });
 }
 
 export function useGetTestQuestions(certTypeSlug: string, attemptId: string | undefined) {
   return useQuery({
-    queryKey: [...CERT_QUERY_KEY, 'questions', certTypeSlug, attemptId],
+    queryKey: queryKeys.certifications.questions(certTypeSlug, attemptId!),
     queryFn: async (): Promise<CertificationQuestion[]> => {
       const { data, error } = await supabase.rpc('get_certification_test_questions', {
         p_cert_type_slug: certTypeSlug,
@@ -245,7 +259,7 @@ export function useSubmitTest() {
       };
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: CERT_QUERY_KEY });
+      qc.invalidateQueries({ queryKey: queryKeys.certifications.all });
     },
   });
 }
@@ -268,7 +282,7 @@ export function useSaveAttemptAnswers() {
       if (error) throw error;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: CERT_QUERY_KEY });
+      qc.invalidateQueries({ queryKey: queryKeys.certifications.all });
     },
   });
 }
@@ -283,7 +297,7 @@ export function useAbandonAttempt() {
       if (error) throw error;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: CERT_QUERY_KEY });
+      qc.invalidateQueries({ queryKey: queryKeys.certifications.all });
     },
   });
 }
@@ -313,7 +327,7 @@ export interface UserCertificationMatrixRow {
 
 export function useCertificationCompletionStats() {
   return useQuery({
-    queryKey: [...CERT_QUERY_KEY, 'completion-stats'],
+    queryKey: queryKeys.certifications.completionStats,
     queryFn: async (): Promise<CertificationCompletionStat[]> => {
       const { data, error } = await supabase.rpc('get_certification_completion_stats');
       if (error) throw error;
@@ -330,7 +344,7 @@ export function useUserCertificationMatrix(
   options?: { enabled?: boolean }
 ) {
   return useQuery({
-    queryKey: [...CERT_QUERY_KEY, 'matrix', filters?.certification_type_id, filters?.compliance_status],
+    queryKey: queryKeys.certifications.matrix(filters?.certification_type_id, filters?.compliance_status),
     queryFn: async (): Promise<UserCertificationMatrixRow[]> => {
       const { data, error } = await supabase.rpc('get_user_certification_matrix', {
         p_cert_type_id: filters?.certification_type_id ?? null,
@@ -354,7 +368,7 @@ export interface PracticalTemplateRow {
 
 export function usePracticalTemplates(certificationTypeId: string | undefined) {
   return useQuery({
-    queryKey: [...CERT_QUERY_KEY, 'practical-templates', certificationTypeId],
+    queryKey: queryKeys.certifications.practicalTemplates(certificationTypeId!),
     queryFn: async (): Promise<PracticalTemplateRow[]> => {
       const { data, error } = await supabase
         .from('practical_evaluation_templates')
@@ -374,7 +388,7 @@ export function useCanEvaluateUser(
   evaluatorId: string | undefined
 ) {
   return useQuery({
-    queryKey: [...CERT_QUERY_KEY, 'can-evaluate', evaluateeId, certTypeId, evaluatorId],
+    queryKey: queryKeys.certifications.canEvaluate(evaluateeId!, certTypeId!, evaluatorId!),
     queryFn: async (): Promise<boolean> => {
       const { data, error } = await supabase.rpc('can_evaluate_user', {
         p_evaluator_id: evaluatorId,
@@ -409,7 +423,7 @@ export function useSubmitPracticalEvaluation() {
       return data as string;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: CERT_QUERY_KEY });
+      qc.invalidateQueries({ queryKey: queryKeys.certifications.all });
     },
   });
 }
@@ -466,7 +480,7 @@ export function useAdminQuickPracticalDecision() {
       return data as string;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: CERT_QUERY_KEY });
+      qc.invalidateQueries({ queryKey: queryKeys.certifications.all });
       qc.invalidateQueries({ queryKey: queryKeys.workerQualifications.all });
     },
   });
@@ -505,7 +519,7 @@ export interface PendingReview {
 
 export function usePendingCertificationReviews() {
   return useQuery({
-    queryKey: [...CERT_QUERY_KEY, 'pending-reviews'],
+    queryKey: queryKeys.certifications.pendingReviews,
     queryFn: async (): Promise<PendingReview[]> => {
       const { data, error } = await supabase
         .from('pending_certification_reviews')
@@ -520,7 +534,7 @@ export function usePendingCertificationReviews() {
 export function useSetCertificationGradingStarted() {
   const qc = useQueryClient();
   return useMutation({
-    mutationKey: [...CERT_QUERY_KEY, 'set-grading-started'],
+    mutationKey: queryKeys.certifications.setGradingStarted,
     mutationFn: async (attemptId: string) => {
       const { error } = await supabase.rpc('set_certification_grading_started', {
         p_attempt_id: attemptId,
@@ -528,7 +542,7 @@ export function useSetCertificationGradingStarted() {
       if (error) throw error;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: [...CERT_QUERY_KEY, 'pending-reviews'] });
+      qc.invalidateQueries({ queryKey: queryKeys.certifications.pendingReviews });
     },
   });
 }
@@ -536,7 +550,7 @@ export function useSetCertificationGradingStarted() {
 export function useClearCertificationGradingStarted() {
   const qc = useQueryClient();
   return useMutation({
-    mutationKey: [...CERT_QUERY_KEY, 'clear-grading-started'],
+    mutationKey: queryKeys.certifications.clearGradingStarted,
     mutationFn: async (attemptId: string) => {
       const { error } = await supabase.rpc('clear_certification_grading_started', {
         p_attempt_id: attemptId,
@@ -544,7 +558,7 @@ export function useClearCertificationGradingStarted() {
       if (error) throw error;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: [...CERT_QUERY_KEY, 'pending-reviews'] });
+      qc.invalidateQueries({ queryKey: queryKeys.certifications.pendingReviews });
     },
   });
 }
@@ -572,7 +586,7 @@ export function useAdminGradeShortAnswers() {
       };
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: CERT_QUERY_KEY });
+      qc.invalidateQueries({ queryKey: queryKeys.certifications.all });
     },
   });
 }
@@ -580,7 +594,7 @@ export function useAdminGradeShortAnswers() {
 // Hook to get user's recently graded tests (for showing result overlay)
 export function useRecentlyGradedTests(userId: string | undefined) {
   return useQuery({
-    queryKey: [...CERT_QUERY_KEY, 'recently-graded', userId],
+    queryKey: queryKeys.certifications.recentlyGraded(userId!),
     queryFn: async () => {
       // Find attempts that were graded in the last 24 hours and user hasn't seen yet
       const { data, error } = await supabase
@@ -631,7 +645,7 @@ export function useMarkTestResultSeen() {
       }
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: CERT_QUERY_KEY });
+      qc.invalidateQueries({ queryKey: queryKeys.certifications.all });
     },
   });
 }
@@ -643,7 +657,7 @@ export function useMarkTestResultSeen() {
 /** All grants; used by admin to show restricted certs and grantees per cert. */
 export function useAllCertificationGrants() {
   return useQuery({
-    queryKey: [...CERT_QUERY_KEY, 'access-grants'],
+    queryKey: queryKeys.certifications.accessGrants,
     queryFn: async (): Promise<CertificationAccessGrant[]> => {
       const { data, error } = await supabase
         .from('certification_access_grants')
@@ -675,7 +689,7 @@ export function useGrantCertificationAccess() {
       }
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: CERT_QUERY_KEY });
+      qc.invalidateQueries({ queryKey: queryKeys.certifications.all });
     },
   });
 }
@@ -698,7 +712,7 @@ export function useRevokeCertificationAccess() {
       if (error) throw error;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: CERT_QUERY_KEY });
+      qc.invalidateQueries({ queryKey: queryKeys.certifications.all });
     },
   });
 }
@@ -721,7 +735,7 @@ export function useSetCertificationAllowAllUsers() {
       if (error) throw new Error(error.message ?? 'Failed to update access');
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: CERT_QUERY_KEY });
+      qc.invalidateQueries({ queryKey: queryKeys.certifications.all });
     },
   });
 }
@@ -743,7 +757,7 @@ export function useUpdateCertificationReminderDays() {
       if (error) throw new Error(error.message ?? 'Failed to update reminder schedule');
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: CERT_QUERY_KEY });
+      qc.invalidateQueries({ queryKey: queryKeys.certifications.all });
     },
   });
 }

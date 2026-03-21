@@ -1,13 +1,14 @@
 /**
- * SafetyIncidentsList - Displays logged safety incidents with detail view
+ * SafetyIncidentsList - Premium collapsible safety incidents card
  *
- * Shows a list of safety incidents that admins can click on to view full details.
+ * Double-Bezel (Doppelrand) architecture with consistent red/danger theme.
+ * Compact by default with expand toggle to reveal full incident list.
+ * Used on Admin, Safety Officer, and General Foreman dashboards.
  */
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { useModalOverlay } from "../../hooks/useModalOverlay";
 import {
   AlertTriangle,
   Calendar,
@@ -16,14 +17,17 @@ import {
   FileText,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
   X,
   Clock,
   ShieldAlert,
   XCircle,
   Loader2,
   Download,
+  Plus,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { glass } from "../../lib/glass";
 import { supabase } from "../../lib/supabaseClient";
 import { logger } from "../../lib/logger";
 import { toast } from "../../lib/toast";
@@ -35,7 +39,7 @@ import {
 } from "../../lib/osha300Export";
 import { logReportExported } from "../../lib/safetyAuditLog";
 import { useAuth } from "../../contexts/AuthContext";
-import { useDashboardCardTheme } from "../../contexts/dashboardCardTheme";
+import { useModalOverlay } from "../../hooks/useModalOverlay";
 
 // ============================================================================
 // TYPES
@@ -46,7 +50,6 @@ interface SafetyIncidentsListProps {
   className?: string;
 }
 
-// OSHA 300 preview table columns
 const OSHA_300_PREVIEW_COLUMNS: { key: keyof Osha300Row; label: string }[] = [
   { key: "case_number", label: "Case #" },
   { key: "employee_name", label: "Employee" },
@@ -66,45 +69,45 @@ const OSHA_300_PREVIEW_COLUMNS: { key: keyof Osha300Row; label: string }[] = [
 const SEVERITY_CONFIG = {
   near_miss: {
     label: "Near Miss",
-    color: "amber",
-    bgClass: "bg-amber-500/20",
-    borderClass: "border-amber-500/30",
+    bgClass: "bg-amber-500/15",
+    borderClass: "border-amber-500/25",
     textClass: "text-amber-300",
     dotClass: "bg-amber-400",
+    glowClass: "shadow-[0_0_8px_rgba(245,158,11,0.15)]",
   },
   first_aid: {
     label: "First Aid",
-    color: "blue",
-    bgClass: "bg-blue-500/20",
-    borderClass: "border-blue-500/30",
-    textClass: "text-blue-300",
-    dotClass: "bg-blue-400",
+    bgClass: "bg-sky-500/15",
+    borderClass: "border-sky-500/25",
+    textClass: "text-sky-300",
+    dotClass: "bg-sky-400",
+    glowClass: "shadow-[0_0_8px_rgba(14,165,233,0.15)]",
   },
   recordable: {
     label: "Recordable",
-    color: "orange",
-    bgClass: "bg-orange-500/20",
-    borderClass: "border-orange-500/30",
+    bgClass: "bg-orange-500/15",
+    borderClass: "border-orange-500/25",
     textClass: "text-orange-300",
     dotClass: "bg-orange-400",
+    glowClass: "shadow-[0_0_8px_rgba(249,115,22,0.15)]",
   },
   lost_time: {
     label: "Lost Time",
-    color: "red",
-    bgClass: "bg-red-500/20",
-    borderClass: "border-red-500/30",
+    bgClass: "bg-red-500/15",
+    borderClass: "border-red-500/25",
     textClass: "text-red-300",
     dotClass: "bg-red-400",
+    glowClass: "shadow-[0_0_8px_rgba(239,68,68,0.15)]",
   },
   fatality: {
     label: "Fatality",
-    color: "red",
-    bgClass: "bg-red-600/30",
-    borderClass: "border-red-600/50",
+    bgClass: "bg-red-600/20",
+    borderClass: "border-red-600/40",
     textClass: "text-red-200",
     dotClass: "bg-red-500",
+    glowClass: "shadow-[0_0_12px_rgba(220,38,38,0.25)]",
   },
-};
+} as const;
 
 const INCIDENT_TYPE_LABELS: Record<string, string> = {
   fall: "Fall",
@@ -130,13 +133,16 @@ const CONTRIBUTING_FACTOR_LABELS: Record<string, string> = {
   other: "Other",
 };
 
+// Spring config for expand/collapse
+const springTransition = { type: "spring" as const, stiffness: 300, damping: 30 };
+const itemSpring = { type: "spring" as const, stiffness: 400, damping: 35 };
+
 // ============================================================================
-// HELPER FUNCTIONS
+// HELPERS
 // ============================================================================
 
 function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
+  return new Date(dateString).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -144,20 +150,17 @@ function formatDate(dateString: string): string {
 }
 
 function getRelativeTime(dateString: string): string {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
+  const diffMs = Date.now() - new Date(dateString).getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  
   if (diffDays === 0) return "Today";
   if (diffDays === 1) return "Yesterday";
-  if (diffDays < 7) return `${diffDays} days ago`;
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
   return formatDate(dateString);
 }
 
 // ============================================================================
-// SUB-COMPONENTS
+// INCIDENT DETAIL MODAL
 // ============================================================================
 
 function IncidentDetailModal({
@@ -171,34 +174,22 @@ function IncidentDetailModal({
   const [involvedEmployees, setInvolvedEmployees] = useState<{ user_id: string; full_name: string | null }[]>([]);
   const [loadingEmployees, setLoadingEmployees] = useState(false);
 
-  // Fetch employee names for involved users
-  useEffect(() => {
-    async function fetchEmployeeNames() {
-      if (!incident.involved_user_ids || incident.involved_user_ids.length === 0) return;
-      
-      setLoadingEmployees(true);
-      try {
-        const { data } = await supabase
-          .from('app_users')
-          .select('user_id, full_name')
-          .in('user_id', incident.involved_user_ids);
-        
-        if (data) {
-          setInvolvedEmployees(data);
-        }
-      } catch (error) {
-        logger.error('[SafetyIncidentsList] Error fetching employee names:', error);
-      } finally {
+  useState(() => {
+    if (!incident.involved_user_ids || incident.involved_user_ids.length === 0) return;
+    setLoadingEmployees(true);
+    supabase
+      .from("app_users")
+      .select("user_id, full_name")
+      .in("user_id", incident.involved_user_ids)
+      .then(({ data, error }) => {
+        if (error) logger.error("[SafetyIncidentsList] Error fetching employee names:", error);
+        else if (data) setInvolvedEmployees(data);
         setLoadingEmployees(false);
-      }
-    }
-    
-    fetchEmployeeNames();
-  }, [incident.involved_user_ids]);
+      });
+  });
 
-  // Map user IDs to names
   const getEmployeeName = (userId: string): string => {
-    const employee = involvedEmployees.find(e => e.user_id === userId);
+    const employee = involvedEmployees.find((e) => e.user_id === userId);
     return employee?.full_name || `User: ${userId.slice(0, 8)}...`;
   };
 
@@ -209,7 +200,8 @@ function IncidentDetailModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 flex items-center justify-center p-3 bg-black/70 backdrop-blur-sm"
+      transition={{ duration: 0.2 }}
+      className="fixed inset-0 flex items-center justify-center p-3 bg-black/80 backdrop-blur-sm"
       style={{ zIndex }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       aria-hidden
@@ -219,150 +211,175 @@ function IncidentDetailModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="incident-detail-modal-title"
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        initial={{ opacity: 0, scale: 0.92, y: 24 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        exit={{ opacity: 0, scale: 0.92, y: 24 }}
+        transition={{ type: "spring", stiffness: 350, damping: 30 }}
         onClick={(e) => e.stopPropagation()}
-        className={cn(
-          "w-full max-w-md max-h-[85vh] overflow-hidden rounded-xl border",
-          severityConfig.borderClass,
-          "bg-gradient-to-br from-[#140a0a] via-[#0a0505] to-[#020205]"
-        )}
+        className={cn("w-full max-w-md max-h-[85vh] overflow-hidden", glass.incidentModal)}
       >
-        {/* Compact Header */}
-        <div className={cn("flex items-center justify-between px-3 py-2 border-b border-white/10", severityConfig.bgClass)}>
-          <div className="flex items-center gap-2">
-            <div className={cn("p-1.5 rounded-md", severityConfig.bgClass, severityConfig.textClass)}>
-              <AlertTriangle className="w-3.5 h-3.5" />
+        {/* Header — severity-tinted bar */}
+        <div className={cn(
+          "flex items-center justify-between px-4 py-3 border-b border-red-500/10",
+          "bg-gradient-to-r from-red-500/[0.08] to-transparent"
+        )}>
+          <div className="flex items-center gap-2.5">
+            <div className={cn(
+              "w-8 h-8 rounded-lg flex items-center justify-center",
+              severityConfig.bgClass, severityConfig.glowClass
+            )}>
+              <AlertTriangle className={cn("w-4 h-4", severityConfig.textClass)} />
             </div>
             <div>
-              <h2 id="incident-detail-modal-title" className="text-xs font-semibold text-white">Incident Details</h2>
-              <p className="text-[9px] text-white/50">ID: {incident.id.slice(0, 8)}...</p>
+              <h2 id="incident-detail-modal-title" className="text-sm font-semibold text-white tracking-tight">
+                Incident Details
+              </h2>
+              <p className="text-[10px] text-white/40 font-mono tabular-nums">
+                {incident.id.slice(0, 8)}
+              </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-md hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-all duration-200 active:scale-95"
             aria-label="Close incident details"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Compact Content */}
-        <div className="p-3 overflow-y-auto max-h-[calc(85vh-48px)] space-y-3">
-          {/* Top Info Row - Compact Badges */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span
-              className={cn(
-                "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border",
-                severityConfig.bgClass,
-                severityConfig.borderClass,
-                severityConfig.textClass
-              )}
-            >
-              <span className={cn("w-1 h-1 rounded-full", severityConfig.dotClass)} />
+        {/* Body */}
+        <div className="p-4 overflow-y-auto max-h-[calc(85vh-56px)] space-y-3">
+          {/* Severity + Type badges */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05, ...itemSpring }}
+            className="flex flex-wrap items-center gap-1.5"
+          >
+            <span className={cn(
+              "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border",
+              severityConfig.bgClass, severityConfig.borderClass, severityConfig.textClass, severityConfig.glowClass
+            )}>
+              <span className={cn("w-1.5 h-1.5 rounded-full", severityConfig.dotClass)} />
               {severityConfig.label}
             </span>
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-white/10 text-white/70 border border-white/20">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-medium bg-white/[0.06] text-white/60 border border-white/[0.08]">
               {INCIDENT_TYPE_LABELS[incident.incident_type] || incident.incident_type}
             </span>
             {incident.preventable && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-500/10 text-red-300 border border-red-500/20">
-                <XCircle className="w-2.5 h-2.5" />
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-red-500/10 text-red-300 border border-red-500/15">
+                <XCircle className="w-3 h-3" />
                 Preventable
               </span>
             )}
             {incident.was_forecasted_high_risk && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-300 border border-amber-500/20">
-                <ShieldAlert className="w-2.5 h-2.5" />
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-amber-500/10 text-amber-300 border border-amber-500/15">
+                <ShieldAlert className="w-3 h-3" />
                 High Risk
               </span>
             )}
-          </div>
+          </motion.div>
 
-          {/* Date, Time, Location - Compact Grid */}
-          <div className="grid grid-cols-2 gap-2 p-2 rounded-lg bg-white/5 border border-white/10">
-            <div className="flex items-center gap-1.5">
-              <Calendar className="w-3 h-3 text-white/40 flex-shrink-0" />
+          {/* Date / Time / Location — inner panel */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, ...itemSpring }}
+            className="grid grid-cols-2 gap-2.5 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]"
+          >
+            <div className="flex items-center gap-2">
+              <Calendar className="w-3.5 h-3.5 text-red-400/60 flex-shrink-0" />
               <div className="min-w-0">
-                <p className="text-[8px] text-white/40 uppercase">Date</p>
-                <p className="text-[10px] text-white/80 font-medium truncate">{formatDate(incident.incident_date)}</p>
+                <p className="text-[9px] text-white/35 uppercase tracking-wider font-medium">Date</p>
+                <p className="text-[11px] text-white/80 font-medium tabular-nums">{formatDate(incident.incident_date)}</p>
               </div>
             </div>
-            <div className="flex items-center gap-1.5">
-              <Clock className="w-3 h-3 text-white/40 flex-shrink-0" />
+            <div className="flex items-center gap-2">
+              <Clock className="w-3.5 h-3.5 text-red-400/60 flex-shrink-0" />
               <div className="min-w-0">
-                <p className="text-[8px] text-white/40 uppercase">Reported</p>
-                <p className="text-[10px] text-white/80 font-medium truncate">{getRelativeTime(incident.reported_at)}</p>
+                <p className="text-[9px] text-white/35 uppercase tracking-wider font-medium">Reported</p>
+                <p className="text-[11px] text-white/80 font-medium">{getRelativeTime(incident.reported_at)}</p>
               </div>
             </div>
             {incident.work_site_name && (
-              <div className="flex items-center gap-1.5 col-span-2">
-                <MapPin className="w-3 h-3 text-white/40 flex-shrink-0" />
+              <div className="flex items-center gap-2 col-span-2">
+                <MapPin className="w-3.5 h-3.5 text-red-400/60 flex-shrink-0" />
                 <div className="min-w-0">
-                  <p className="text-[8px] text-white/40 uppercase">Site</p>
-                  <p className="text-[10px] text-white/80 font-medium truncate">{incident.work_site_name}</p>
+                  <p className="text-[9px] text-white/35 uppercase tracking-wider font-medium">Work Site</p>
+                  <p className="text-[11px] text-white/80 font-medium truncate">{incident.work_site_name}</p>
                 </div>
               </div>
             )}
-          </div>
+          </motion.div>
 
-          {/* Description - Compact */}
-          <div>
-            <div className="flex items-center gap-1.5 mb-1">
-              <FileText className="w-3 h-3 text-white/40" />
-              <p className="text-[9px] text-white/40 uppercase font-medium">Description</p>
+          {/* Description */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15, ...itemSpring }}
+          >
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <FileText className="w-3.5 h-3.5 text-white/30" />
+              <p className="text-[10px] text-white/35 uppercase tracking-wider font-medium">Description</p>
             </div>
-            <p className="text-[10px] text-white/80 leading-relaxed bg-white/5 rounded-lg p-2 border border-white/10">
+            <p className="text-[12px] text-white/75 leading-relaxed bg-white/[0.03] rounded-xl p-3 border border-white/[0.06]">
               {incident.description}
             </p>
-          </div>
+          </motion.div>
 
-          {/* Contributing Factors - Compact */}
+          {/* Contributing Factors */}
           {incident.contributing_factors && incident.contributing_factors.length > 0 && (
-            <div>
-              <p className="text-[9px] text-white/40 uppercase font-medium mb-1.5">Contributing Factors</p>
-              <div className="flex flex-wrap gap-1">
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, ...itemSpring }}
+            >
+              <p className="text-[10px] text-white/35 uppercase tracking-wider font-medium mb-2">Contributing Factors</p>
+              <div className="flex flex-wrap gap-1.5">
                 {incident.contributing_factors.map((factor) => (
                   <span
                     key={factor}
-                    className="px-2 py-0.5 rounded-full text-[9px] font-medium bg-red-500/10 text-red-300 border border-red-500/20"
+                    className="px-2.5 py-1 rounded-lg text-[10px] font-medium bg-red-500/8 text-red-300/80 border border-red-500/15"
                   >
                     {CONTRIBUTING_FACTOR_LABELS[factor] || factor}
                   </span>
                 ))}
               </div>
-            </div>
+            </motion.div>
           )}
 
-          {/* Involved Employees - Compact */}
+          {/* Involved Employees */}
           {incident.involved_user_ids && incident.involved_user_ids.length > 0 && (
-            <div>
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <Users className="w-3 h-3 text-white/40" />
-                <p className="text-[9px] text-white/40 uppercase font-medium">
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25, ...itemSpring }}
+            >
+              <div className="flex items-center gap-1.5 mb-2">
+                <Users className="w-3.5 h-3.5 text-white/30" />
+                <p className="text-[10px] text-white/35 uppercase tracking-wider font-medium">
                   Involved ({incident.involved_user_ids.length})
                 </p>
               </div>
               {loadingEmployees ? (
-                <div className="flex items-center gap-1.5 text-white/40 text-[9px]">
-                  <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                <div className="flex items-center gap-1.5 text-white/40 text-[10px]">
+                  <Loader2 className="w-3 h-3 animate-spin" />
                   Loading...
                 </div>
               ) : (
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-wrap gap-1.5">
                   {incident.involved_user_ids.map((userId) => (
                     <span
                       key={userId}
-                      className="px-2 py-0.5 rounded-full text-[9px] font-medium bg-blue-500/10 text-blue-300 border border-blue-500/20"
+                      className="px-2.5 py-1 rounded-lg text-[10px] font-medium bg-sky-500/8 text-sky-300/80 border border-sky-500/15"
                     >
                       {getEmployeeName(userId)}
                     </span>
                   ))}
                 </div>
               )}
-            </div>
+            </motion.div>
           )}
         </div>
       </motion.div>
@@ -373,10 +390,37 @@ function IncidentDetailModal({
 }
 
 // ============================================================================
+// SEVERITY DOT BAR — visual summary of severity distribution
+// ============================================================================
+
+function SeverityDotBar({ bySeverity, total }: { bySeverity: Record<string, number>; total: number }) {
+  if (total === 0) return null;
+
+  return (
+    <div className="flex items-center gap-0.5 h-1.5 rounded-full overflow-hidden bg-white/[0.04] flex-1 max-w-[120px]">
+      {Object.entries(SEVERITY_CONFIG).map(([key, config]) => {
+        const count = bySeverity[key] || 0;
+        if (count === 0) return null;
+        const widthPercent = Math.max((count / total) * 100, 6);
+        return (
+          <motion.div
+            key={key}
+            initial={{ width: 0 }}
+            animate={{ width: `${widthPercent}%` }}
+            transition={{ delay: 0.2, duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
+            className={cn("h-full rounded-full", config.dotClass)}
+            title={`${config.label}: ${count}`}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+// ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
-// Calculate date range outside component to avoid render-time impure function calls
 function getInitialDateRange() {
   const now = Date.now();
   const end = new Date(now).toISOString().split("T")[0];
@@ -386,75 +430,71 @@ function getInitialDateRange() {
 
 const ITEMS_PER_PAGE = 5;
 
-const LIST_CARD_BASE = "rounded-xl sm:rounded-2xl p-4 sm:p-5";
-const LIST_CARD_COMPACT = "rounded-xl sm:rounded-2xl p-2.5 sm:p-3 overflow-visible";
-
 export default function SafetyIncidentsList({ onLogIncident, className }: SafetyIncidentsListProps) {
-  const { cardClass } = useDashboardCardTheme();
   const { user, role } = useAuth();
+  const [expanded, setExpanded] = useState(false);
   const [selectedIncident, setSelectedIncident] = useState<SafetyIncident | null>(null);
   const [filterSeverity, setFilterSeverity] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [showOsha300Preview, setShowOsha300Preview] = useState(false);
-  const [osha300PreviewData, setOsha300PreviewData] = useState<{
-    rows: Osha300Row[];
-    dateTo: string;
-  } | null>(null);
+  const [osha300PreviewData, setOsha300PreviewData] = useState<{ rows: Osha300Row[]; dateTo: string } | null>(null);
   const [osha300PreviewLoading, setOsha300PreviewLoading] = useState(false);
 
-  // Fetch incidents for the last 90 days
-  // Date range is calculated once per component instance via useState initializer
   const [dateRange] = useState(getInitialDateRange);
-
   const { data: incidents, isLoading, error } = useSafetyIncidents(dateRange);
 
-  // Handler to change filter and reset page in one action (avoids useEffect anti-pattern)
-  const handleFilterChange = (newSeverity: string) => {
+  const handleFilterChange = useCallback((newSeverity: string) => {
     setFilterSeverity(newSeverity);
     setCurrentPage(1);
-  };
+  }, []);
 
-  // Filter incidents
   const filteredIncidents = useMemo(() => {
     if (!incidents) return [];
     if (filterSeverity === "all") return incidents;
     return incidents.filter((i) => i.severity === filterSeverity);
   }, [incidents, filterSeverity]);
 
-  // Pagination calculations
   const totalPages = Math.ceil(filteredIncidents.length / ITEMS_PER_PAGE);
   const paginatedIncidents = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     return filteredIncidents.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredIncidents, currentPage]);
 
-  // Stats
   const stats = useMemo(() => {
-    if (!incidents) return { total: 0, bySeverity: {} };
+    if (!incidents) return { total: 0, bySeverity: {} as Record<string, number> };
     const bySeverity: Record<string, number> = {};
-    incidents.forEach((i) => {
-      bySeverity[i.severity] = (bySeverity[i.severity] || 0) + 1;
-    });
+    incidents.forEach((i) => { bySeverity[i.severity] = (bySeverity[i.severity] || 0) + 1; });
     return { total: incidents.length, bySeverity };
   }, [incidents]);
 
+  const latestIncident = incidents?.[0] ?? null;
+
+  // Loading state
   if (isLoading) {
     return (
-      <div className={cn(cardClass, LIST_CARD_BASE, className)}>
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="w-6 h-6 animate-spin text-red-400" />
-          <span className="ml-2 text-sm text-white/60">Loading incidents...</span>
+      <div className={cn(glass.incidentOuter, className)}>
+        <div className={cn(glass.incidentInner, "p-5")}>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-red-500/10 animate-pulse" />
+            <div className="flex-1 space-y-2">
+              <div className="h-3 w-28 rounded bg-white/[0.06] animate-pulse" />
+              <div className="h-2 w-20 rounded bg-white/[0.04] animate-pulse" />
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
+  // Error state
   if (error) {
     return (
-      <div className={cn(cardClass, LIST_CARD_BASE, className)}>
-        <div className="flex items-center justify-center py-8 text-red-400">
-          <AlertTriangle className="w-5 h-5 mr-2" />
-          Failed to load incidents
+      <div className={cn(glass.incidentOuter, className)}>
+        <div className={cn(glass.incidentInner, "p-5")}>
+          <div className="flex items-center gap-3 text-red-400">
+            <AlertTriangle className="w-5 h-5" />
+            <span className="text-sm font-medium">Failed to load incidents</span>
+          </div>
         </div>
       </div>
     );
@@ -462,184 +502,313 @@ export default function SafetyIncidentsList({ onLogIncident, className }: Safety
 
   return (
     <>
-      <div className={cn(cardClass, LIST_CARD_COMPACT, className)}>
-        {/* Row 1: Icon + Title at top */}
-        <div className="flex items-center gap-2 mb-2 overflow-visible">
-          <div className="relative w-6 h-6 flex items-center justify-center flex-shrink-0 overflow-visible">
-            <img 
-              src="/assets/safety-incidents.png" 
-              alt="" 
-              className="absolute left-0 top-1/2 -translate-y-1/2 object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]" 
-              style={{ width: 52, height: 64, minWidth: 52, minHeight: 64 }}
-            />
-          </div>
-          <div className="min-w-0 flex-1 ml-6">
-            <h3 className="text-xs sm:text-sm font-semibold text-white truncate">Safety Incidents</h3>
-            <p className="text-[9px] text-white/50">{stats.total} logged</p>
-          </div>
-        </div>
+      {/* Double-Bezel Outer Shell */}
+      <div className={cn(glass.incidentOuter, "relative group", className)}>
+        {/* Ambient border glow */}
+        <div className="absolute inset-0 rounded-[1.25rem] bg-gradient-to-br from-red-500/[0.06] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
-        {/* Row 2: Export + Log buttons */}
-        <div className="flex items-center gap-1.5 mb-2">
-          <button
-            type="button"
-            onClick={async () => {
-              setOsha300PreviewLoading(true);
-              setShowOsha300Preview(true);
-              try {
-                const { rows, dateTo } = await fetchOsha300Rows();
-                setOsha300PreviewData({ rows, dateTo });
-              } catch (e) {
-                logger.error("[SafetyIncidentsList] OSHA 300 fetch failed", e);
-                toast.error("Could not load report", (e as Error)?.message ?? "Failed to load OSHA 300 log");
-                setShowOsha300Preview(false);
-              } finally {
-                setOsha300PreviewLoading(false);
-              }
-            }}
-            disabled={osha300PreviewLoading}
-            aria-label="Preview and export OSHA 300 log (CSV)"
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white/5 border border-white/10 hover:bg-white/10 text-[9px] font-medium text-white/70 disabled:opacity-50 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-400/50"
-          >
-            <Download className="w-2.5 h-2.5" aria-hidden />
-            OSHA 300
-          </button>
-          <button
-            type="button"
-            onClick={onLogIncident}
-            aria-label="Log new safety incident"
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-300 text-[9px] font-medium transition-colors"
-          >
-            Log Incident
-          </button>
-        </div>
+        {/* Inner Core */}
+        <div className={cn(glass.incidentInner, "relative overflow-hidden")}>
+          {/* Subtle top-edge highlight */}
+          <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-red-400/15 to-transparent pointer-events-none" />
 
-        {/* Row 3: Filter pills */}
-        {stats.total > 0 && (
-          <div className="flex flex-wrap gap-1 mb-2">
-            {Object.entries(SEVERITY_CONFIG).map(([key, config]) => {
-              const count = stats.bySeverity[key] || 0;
-              return (
-                <button
-                  key={key}
-                  onClick={() => handleFilterChange(filterSeverity === key ? "all" : key)}
-                  className={cn(
-                    "px-1.5 py-0.5 rounded text-[9px] font-medium border transition-all",
-                    filterSeverity === key
-                      ? cn(config.bgClass, config.borderClass, config.textClass)
-                      : count > 0
-                      ? "bg-white/5 border-white/10 text-white/60 hover:border-white/20"
-                      : "bg-white/5 border-white/5 text-white/30"
-                  )}
-                >
-                  {config.label}
-                  <span className="ml-0.5 opacity-70">{count}</span>
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Compact Incidents List */}
-        {filteredIncidents.length === 0 ? (
-          <div className="text-center py-4">
-            <AlertTriangle className="w-5 h-5 text-white/20 mx-auto mb-1" />
-            <p className="text-[10px] text-white/40">
-              {stats.total === 0 ? "No incidents logged" : "No matches"}
-            </p>
-            {stats.total === 0 && (
-              <button
-                onClick={onLogIncident}
-                className="mt-1.5 text-[9px] text-red-400 hover:text-red-300 transition-colors"
-              >
-                Log first incident
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-1">
-            {paginatedIncidents.map((incident) => {
-              const severityConfig = SEVERITY_CONFIG[incident.severity];
-              return (
-                <motion.button
-                  key={incident.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  onClick={() => setSelectedIncident(incident)}
-                  className="w-full flex items-center justify-between p-1.5 rounded-md border bg-white/5 border-white/10 hover:bg-white/10 text-left transition-colors"
-                >
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <div className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", severityConfig.dotClass)} />
-                    <span className={cn("text-[9px] font-medium flex-shrink-0", severityConfig.textClass)}>
-                      {severityConfig.label}
-                    </span>
-                    <p className="text-[9px] text-white/50 truncate">
-                      {incident.description}
-                    </p>
-                  </div>
-                  <ChevronRight className="w-2.5 h-2.5 text-white/30 flex-shrink-0 ml-1" />
-                </motion.button>
-              );
-            })}
-
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between pt-1.5 border-t border-white/10">
-                <button
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className={cn(
-                    "flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium transition-colors",
-                    currentPage === 1
-                      ? "text-white/30 cursor-not-allowed"
-                      : "text-white/60 hover:text-white hover:bg-white/10"
-                  )}
-                >
-                  <ChevronLeft className="w-3 h-3" />
-                  Prev
-                </button>
-                
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={cn(
-                        "w-6 h-6 rounded text-[10px] font-medium transition-colors",
-                        page === currentPage
-                          ? "bg-red-500/30 text-red-300 border border-red-500/40"
-                          : "text-white/50 hover:text-white hover:bg-white/10"
-                      )}
-                    >
-                      {page}
-                    </button>
-                  ))}
+          {/* Header — always visible */}
+          <div className="p-3.5 sm:p-4">
+            <div className="flex items-center gap-3">
+              {/* Severity indicator */}
+              <div className="relative flex-shrink-0">
+                <div className={cn(
+                  "w-10 h-10 rounded-xl flex items-center justify-center",
+                  "bg-gradient-to-br from-red-500/20 to-red-600/10",
+                  "border border-red-500/15",
+                  stats.total > 0 && "animate-incident-pulse"
+                )}>
+                  <AlertTriangle className="w-4.5 h-4.5 text-red-400" />
                 </div>
-
-                <button
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                  className={cn(
-                    "flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium transition-colors",
-                    currentPage === totalPages
-                      ? "text-white/30 cursor-not-allowed"
-                      : "text-white/60 hover:text-white hover:bg-white/10"
-                  )}
-                >
-                  Next
-                  <ChevronRight className="w-3 h-3" />
-                </button>
+                {stats.total > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-red-500 text-[9px] font-bold text-white flex items-center justify-center ring-2 ring-[#0d0505] tabular-nums">
+                    {stats.total > 99 ? "99+" : stats.total}
+                  </span>
+                )}
               </div>
-            )}
 
-            {/* Items indicator */}
-            {filteredIncidents.length > ITEMS_PER_PAGE && (
-              <p className="text-[9px] text-white/40 text-center">
-                Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, filteredIncidents.length)} of {filteredIncidents.length}
-              </p>
-            )}
+              {/* Title + summary */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-[13px] sm:text-sm font-semibold text-white tracking-tight">
+                    Safety Incidents
+                  </h3>
+                  <SeverityDotBar bySeverity={stats.bySeverity} total={stats.total} />
+                </div>
+                <p className="text-[10px] text-white/40 mt-0.5 font-medium tabular-nums">
+                  {stats.total === 0
+                    ? "No incidents in 90 days"
+                    : `${stats.total} logged \u00b7 Last 90 days`}
+                </p>
+              </div>
+
+              {/* Expand toggle */}
+              <motion.button
+                onClick={() => setExpanded((v) => !v)}
+                className="p-2 rounded-lg hover:bg-white/[0.06] text-white/40 hover:text-white/70 transition-colors active:scale-95"
+                aria-label={expanded ? "Collapse incidents" : "Expand incidents"}
+                aria-expanded={expanded}
+              >
+                <motion.div
+                  animate={{ rotate: expanded ? 180 : 0 }}
+                  transition={springTransition}
+                >
+                  <ChevronDown className="w-4 h-4" />
+                </motion.div>
+              </motion.button>
+            </div>
+
+            {/* Quick actions row + latest incident preview (collapsed) */}
+            <div className="flex items-center gap-2 mt-3">
+              <button
+                type="button"
+                onClick={async () => {
+                  setOsha300PreviewLoading(true);
+                  setShowOsha300Preview(true);
+                  try {
+                    const { rows, dateTo } = await fetchOsha300Rows();
+                    setOsha300PreviewData({ rows, dateTo });
+                  } catch (e) {
+                    logger.error("[SafetyIncidentsList] OSHA 300 fetch failed", e);
+                    toast.error("Could not load report", (e as Error)?.message ?? "Failed to load OSHA 300 log");
+                    setShowOsha300Preview(false);
+                  } finally {
+                    setOsha300PreviewLoading(false);
+                  }
+                }}
+                disabled={osha300PreviewLoading}
+                aria-label="Preview and export OSHA 300 log (CSV)"
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition-all duration-200 active:scale-[0.97]",
+                  "bg-white/[0.04] border border-white/[0.08] text-white/50 hover:text-white/70 hover:bg-white/[0.07] hover:border-white/[0.12]",
+                  "disabled:opacity-40 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-400/40"
+                )}
+              >
+                <Download className="w-3 h-3" aria-hidden />
+                OSHA 300
+              </button>
+
+              <button
+                type="button"
+                onClick={onLogIncident}
+                aria-label="Log new safety incident"
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-semibold transition-all duration-200 active:scale-[0.97]",
+                  "bg-red-500/15 border border-red-500/20 text-red-300 hover:bg-red-500/25 hover:border-red-500/30",
+                  "shadow-[0_0_12px_rgba(239,68,68,0.08)]"
+                )}
+              >
+                <Plus className="w-3 h-3" aria-hidden />
+                Log Incident
+              </button>
+
+              {/* Latest incident preview (collapsed only) */}
+              {!expanded && latestIncident && (
+                <motion.button
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1, ...itemSpring }}
+                  onClick={() => setSelectedIncident(latestIncident)}
+                  className="flex-1 min-w-0 flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.05] transition-colors text-left"
+                >
+                  <div className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", SEVERITY_CONFIG[latestIncident.severity].dotClass)} />
+                  <span className="text-[10px] text-white/50 truncate">{latestIncident.description}</span>
+                  <ChevronRight className="w-2.5 h-2.5 text-white/25 flex-shrink-0 ml-auto" />
+                </motion.button>
+              )}
+            </div>
           </div>
-        )}
+
+          {/* Expandable Content */}
+          <AnimatePresence initial={false}>
+            {expanded && (
+              <motion.div
+                key="expanded-content"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={springTransition}
+                className="overflow-hidden"
+              >
+                <div className="px-3.5 sm:px-4 pb-3.5 sm:pb-4 space-y-3">
+                  {/* Separator */}
+                  <div className="h-px bg-gradient-to-r from-transparent via-red-500/15 to-transparent" />
+
+                  {/* Severity breakdown chips */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.05, ...itemSpring }}
+                    className="grid grid-cols-5 gap-1.5"
+                  >
+                    {Object.entries(SEVERITY_CONFIG).map(([key, config]) => {
+                      const count = stats.bySeverity[key] || 0;
+                      return (
+                        <button
+                          key={key}
+                          onClick={() => handleFilterChange(filterSeverity === key ? "all" : key)}
+                          className={cn(
+                            "flex flex-col items-center gap-0.5 py-2 px-1 rounded-lg border transition-all duration-200 active:scale-[0.97]",
+                            filterSeverity === key
+                              ? cn(config.bgClass, config.borderClass, config.glowClass)
+                              : count > 0
+                              ? "bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.05] hover:border-white/[0.1]"
+                              : "bg-white/[0.02] border-white/[0.03] opacity-40"
+                          )}
+                        >
+                          <span className={cn(
+                            "text-sm font-bold tabular-nums leading-none",
+                            filterSeverity === key ? config.textClass : count > 0 ? "text-white/70" : "text-white/30"
+                          )}>
+                            {count}
+                          </span>
+                          <span className={cn(
+                            "text-[8px] font-medium tracking-wide leading-none",
+                            filterSeverity === key ? config.textClass : "text-white/35"
+                          )}>
+                            {config.label.split(" ")[0]}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </motion.div>
+
+                  {/* Incident list */}
+                  {filteredIncidents.length === 0 ? (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.1 }}
+                      className="text-center py-6"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-white/[0.03] mx-auto mb-2 flex items-center justify-center">
+                        <AlertTriangle className="w-5 h-5 text-white/15" />
+                      </div>
+                      <p className="text-[11px] text-white/35 font-medium">
+                        {stats.total === 0 ? "No incidents logged in 90 days" : "No incidents match this filter"}
+                      </p>
+                      {stats.total === 0 && (
+                        <button
+                          onClick={onLogIncident}
+                          className="mt-2 text-[10px] font-semibold text-red-400/70 hover:text-red-300 transition-colors"
+                        >
+                          Log the first incident
+                        </button>
+                      )}
+                    </motion.div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {paginatedIncidents.map((incident, idx) => {
+                        const sc = SEVERITY_CONFIG[incident.severity];
+                        return (
+                          <motion.button
+                            key={incident.id}
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.08 + idx * 0.03, ...itemSpring }}
+                            onClick={() => setSelectedIncident(incident)}
+                            className={cn(
+                              "w-full flex items-center gap-2.5 p-2.5 rounded-xl text-left transition-all duration-200",
+                              "bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.05] hover:border-white/[0.1]",
+                              "active:scale-[0.99] group/item"
+                            )}
+                          >
+                            {/* Severity dot + label */}
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <div className={cn("w-2 h-2 rounded-full", sc.dotClass, sc.glowClass)} />
+                              <span className={cn("text-[10px] font-semibold w-[52px]", sc.textClass)}>
+                                {sc.label.split(" ").map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(" ")}
+                              </span>
+                            </div>
+
+                            {/* Description */}
+                            <p className="text-[11px] text-white/50 truncate flex-1 min-w-0 group-hover/item:text-white/65 transition-colors">
+                              {incident.description}
+                            </p>
+
+                            {/* Date */}
+                            <span className="text-[9px] text-white/30 font-medium tabular-nums flex-shrink-0">
+                              {getRelativeTime(incident.reported_at)}
+                            </span>
+
+                            <ChevronRight className="w-3 h-3 text-white/20 flex-shrink-0 group-hover/item:text-white/40 group-hover/item:translate-x-0.5 transition-all" />
+                          </motion.button>
+                        );
+                      })}
+
+                      {/* Pagination */}
+                      {totalPages > 1 && (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.2 }}
+                          className="flex items-center justify-between pt-2 border-t border-white/[0.05]"
+                        >
+                          <button
+                            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                            className={cn(
+                              "flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-medium transition-all duration-200 active:scale-[0.97]",
+                              currentPage === 1
+                                ? "text-white/20 cursor-not-allowed"
+                                : "text-white/50 hover:text-white/70 hover:bg-white/[0.05]"
+                            )}
+                          >
+                            <ChevronLeft className="w-3 h-3" />
+                            Prev
+                          </button>
+
+                          <div className="flex items-center gap-1">
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                              <button
+                                key={page}
+                                onClick={() => setCurrentPage(page)}
+                                className={cn(
+                                  "w-6 h-6 rounded-lg text-[10px] font-semibold transition-all duration-200 tabular-nums",
+                                  page === currentPage
+                                    ? "bg-red-500/20 text-red-300 border border-red-500/25 shadow-[0_0_8px_rgba(239,68,68,0.1)]"
+                                    : "text-white/40 hover:text-white/60 hover:bg-white/[0.05]"
+                                )}
+                              >
+                                {page}
+                              </button>
+                            ))}
+                          </div>
+
+                          <button
+                            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages}
+                            className={cn(
+                              "flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-medium transition-all duration-200 active:scale-[0.97]",
+                              currentPage === totalPages
+                                ? "text-white/20 cursor-not-allowed"
+                                : "text-white/50 hover:text-white/70 hover:bg-white/[0.05]"
+                            )}
+                          >
+                            Next
+                            <ChevronRight className="w-3 h-3" />
+                          </button>
+                        </motion.div>
+                      )}
+
+                      {/* Items indicator */}
+                      {filteredIncidents.length > ITEMS_PER_PAGE && (
+                        <p className="text-[9px] text-white/25 text-center font-medium tabular-nums">
+                          {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredIncidents.length)} of {filteredIncidents.length}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* Detail Modal */}
@@ -652,7 +821,7 @@ export default function SafetyIncidentsList({ onLogIncident, className }: Safety
         )}
       </AnimatePresence>
 
-      {/* OSHA 300 Preview Modal — preview report before downloading or closing */}
+      {/* OSHA 300 Preview Modal */}
       {showOsha300Preview &&
         createPortal(
           <AnimatePresence>
@@ -660,7 +829,7 @@ export default function SafetyIncidentsList({ onLogIncident, className }: Safety
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+              className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
               onClick={(e) => {
                 if (e.target === e.currentTarget) {
                   setShowOsha300Preview(false);
@@ -669,18 +838,26 @@ export default function SafetyIncidentsList({ onLogIncident, className }: Safety
               }}
             >
               <motion.div
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.98 }}
-                className="w-full max-w-4xl max-h-[90vh] flex flex-col rounded-xl border border-red-500/30 bg-gradient-to-br from-[#140a0a] via-[#0a0505] to-[#020205] shadow-xl"
+                initial={{ opacity: 0, scale: 0.95, y: 16 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 16 }}
+                transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                className={cn("w-full max-w-4xl max-h-[90vh] flex flex-col", glass.incidentModal)}
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-                  <div>
-                    <h3 className="text-base font-semibold text-white">OSHA 300 Log Preview</h3>
-                    <p className="text-[10px] text-white/50 mt-0.5">
-                      Review the report below, then download CSV or close.
-                    </p>
+                {/* Header */}
+                <div className={cn(
+                  "flex items-center justify-between px-5 py-4 border-b border-red-500/10",
+                  "bg-gradient-to-r from-red-500/[0.06] to-transparent"
+                )}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-red-500/15 border border-red-500/15 flex items-center justify-center">
+                      <FileText className="w-4 h-4 text-red-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-semibold text-white tracking-tight">OSHA 300 Log Preview</h3>
+                      <p className="text-[10px] text-white/40 mt-0.5">Review before downloading</p>
+                    </div>
                   </div>
                   <button
                     type="button"
@@ -688,35 +865,38 @@ export default function SafetyIncidentsList({ onLogIncident, className }: Safety
                       setShowOsha300Preview(false);
                       setOsha300PreviewData(null);
                     }}
-                    className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+                    className="p-2 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-all duration-200 active:scale-95"
                     aria-label="Close preview"
                   >
                     <X className="w-5 h-5" />
                   </button>
                 </div>
 
-                <div className="flex-1 overflow-auto min-h-0 p-4">
+                {/* Table Content */}
+                <div className="flex-1 overflow-auto min-h-0 p-5">
                   {osha300PreviewLoading ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-white/60">
-                      <Loader2 className="w-8 h-8 animate-spin text-red-400 mb-3" />
-                      <span className="text-sm">Loading OSHA 300 log...</span>
+                    <div className="flex flex-col items-center justify-center py-16 text-white/50">
+                      <Loader2 className="w-8 h-8 animate-spin text-red-400/60 mb-4" />
+                      <span className="text-sm font-medium">Loading OSHA 300 log...</span>
                     </div>
                   ) : osha300PreviewData?.rows.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-white/50 text-center max-w-sm mx-auto">
-                      <FileText className="w-10 h-10 mb-3 opacity-50" />
-                      <p className="text-sm font-medium text-white/70">No recordable incidents in the last 366 days</p>
-                      <p className="text-xs mt-2">
-                        The OSHA 300 log only includes <strong className="text-white/60">Recordable</strong>, <strong className="text-white/60">Lost Time</strong>, and <strong className="text-white/60">Fatality</strong>. Near-miss and first-aid are not listed here.
+                    <div className="flex flex-col items-center justify-center py-16 text-white/40 text-center max-w-sm mx-auto">
+                      <div className="w-14 h-14 rounded-2xl bg-white/[0.03] flex items-center justify-center mb-4">
+                        <FileText className="w-7 h-7 opacity-30" />
+                      </div>
+                      <p className="text-sm font-semibold text-white/60 mb-2">No recordable incidents</p>
+                      <p className="text-xs leading-relaxed">
+                        The OSHA 300 log only includes <strong className="text-white/50">Recordable</strong>, <strong className="text-white/50">Lost Time</strong>, and <strong className="text-white/50">Fatality</strong> incidents from the last 366 days.
                       </p>
-                      <p className="text-[10px] mt-3 text-white/40">You can still download a CSV with headers.</p>
+                      <p className="text-[10px] mt-3 text-white/30">You can still download a CSV with headers.</p>
                     </div>
                   ) : osha300PreviewData ? (
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
                       <table className="w-full text-left text-xs border-collapse">
                         <thead>
-                          <tr className="border-b border-white/10 text-white/60">
+                          <tr className="border-b border-white/[0.08] bg-white/[0.02]">
                             {OSHA_300_PREVIEW_COLUMNS.map((col) => (
-                              <th key={col.key} className="py-2 px-2 font-medium whitespace-nowrap">
+                              <th key={col.key} className="py-2.5 px-3 font-semibold text-white/50 whitespace-nowrap text-[11px] uppercase tracking-wider">
                                 {col.label}
                               </th>
                             ))}
@@ -724,16 +904,19 @@ export default function SafetyIncidentsList({ onLogIncident, className }: Safety
                         </thead>
                         <tbody>
                           {osha300PreviewData.rows.map((row, idx) => (
-                            <tr
+                            <motion.tr
                               key={row.case_number ?? idx}
-                              className="border-b border-white/5 hover:bg-white/[0.02]"
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ delay: idx * 0.02 }}
+                              className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors"
                             >
                               {OSHA_300_PREVIEW_COLUMNS.map((col) => (
-                                <td key={col.key} className="py-2 px-2 text-white/80 max-w-[180px] truncate" title={String(row[col.key] ?? "")}>
-                                  {row[col.key] != null ? String(row[col.key]) : "—"}
+                                <td key={col.key} className="py-2.5 px-3 text-white/70 max-w-[180px] truncate tabular-nums" title={String(row[col.key] ?? "")}>
+                                  {row[col.key] != null ? String(row[col.key]) : "\u2014"}
                                 </td>
                               ))}
-                            </tr>
+                            </motion.tr>
                           ))}
                         </tbody>
                       </table>
@@ -741,14 +924,15 @@ export default function SafetyIncidentsList({ onLogIncident, className }: Safety
                   ) : null}
                 </div>
 
-                <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-white/10 bg-black/20">
+                {/* Footer actions */}
+                <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-white/[0.06] bg-black/20">
                   <button
                     type="button"
                     onClick={() => {
                       setShowOsha300Preview(false);
                       setOsha300PreviewData(null);
                     }}
-                    className="px-4 py-2 rounded-lg text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                    className="px-4 py-2.5 rounded-xl text-sm font-medium text-white/50 hover:text-white/70 hover:bg-white/[0.06] transition-all duration-200 active:scale-[0.98]"
                   >
                     Close
                   </button>
@@ -772,7 +956,12 @@ export default function SafetyIncidentsList({ onLogIncident, className }: Safety
                         });
                       }
                     }}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30 transition-colors disabled:opacity-50 disabled:pointer-events-none"
+                    className={cn(
+                      "inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 active:scale-[0.97]",
+                      "bg-red-500/15 text-red-300 border border-red-500/20 hover:bg-red-500/25",
+                      "shadow-[0_0_16px_rgba(239,68,68,0.1)]",
+                      "disabled:opacity-40 disabled:pointer-events-none"
+                    )}
                   >
                     <Download className="w-4 h-4" />
                     Download CSV

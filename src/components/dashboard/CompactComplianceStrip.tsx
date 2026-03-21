@@ -487,8 +487,8 @@ function CompactComplianceStripComponent({ theme = 'emerald', onComplianceChange
               />
             </motion.div>
             <div>
-              <h3 className="text-sm font-bold text-white">Today's Mission</h3>
-              <p className="text-[10px] text-white/40">
+              <h3 className="text-sm font-semibold tracking-tight text-white">Today's Mission</h3>
+              <p className="text-[10px] font-medium text-white/35">
                 {allComplete ? (
                   <span className="text-emerald-400 font-medium">All forms complete ✓</span>
                 ) : (

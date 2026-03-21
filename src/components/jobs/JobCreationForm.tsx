@@ -17,7 +17,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { isValidDateRange, getTodayDateString } from '../../lib/jobProgressUtils';
+import { isValidDateRange } from '../../lib/jobProgressUtils';
 import { JobCrewSelector } from './JobCrewSelector';
 import { JobMilestoneEditor } from './JobMilestoneEditor';
 import { useCrews, useCrewDetails } from '../../hooks/useCrews';
@@ -648,7 +648,6 @@ function JobCreationFormComponent({
               type="date"
               value={formData.start_date}
               onChange={(e) => updateField('start_date', e.target.value)}
-              min={getTodayDateString()}
               disabled={submitting}
               className={cn(
                 inputClassName,
@@ -669,7 +668,7 @@ function JobCreationFormComponent({
               type="date"
               value={formData.end_date}
               onChange={(e) => updateField('end_date', e.target.value)}
-              min={formData.start_date || getTodayDateString()}
+              min={formData.start_date || undefined}
               disabled={submitting}
               className={cn(
                 inputClassName,

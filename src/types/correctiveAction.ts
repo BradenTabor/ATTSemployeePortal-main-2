@@ -8,7 +8,7 @@ export interface CorrectiveAction {
   action_type: ActionType;
   assigned_to: string | null;
   assigned_to_name?: string;
-  assigned_by: string;
+  assigned_by: string | null;
   assigned_by_name?: string;
   due_date: string;
   status: ActionStatus;

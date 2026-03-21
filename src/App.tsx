@@ -66,6 +66,7 @@ const CertificationTest = lazy(() => import("./pages/certifications/Certificatio
 const PracticalEvaluation = lazy(() => import("./pages/certifications/PracticalEvaluation"));
 const ResourceDocView = lazy(() => import("./pages/ResourceDocView"));
 const Contact = lazy(() => import("./pages/Contact"));
+const TeamContacts = lazy(() => import("./pages/TeamContacts"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Settings = lazy(() => import("./pages/Settings"));
 
@@ -435,6 +436,17 @@ function AnimatedRoutes() {
                 <PageWrapper>
                   <ProtectedRoute>
                     <Contact />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            <Route
+              path="/team-contacts"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute>
+                    <TeamContacts />
                   </ProtectedRoute>
                 </PageWrapper>
               }
@@ -948,10 +960,10 @@ function usePreloadCriticalChunks() {
       void import("./pages/Home");
     };
     if (typeof requestIdleCallback !== "undefined") {
-      const id = requestIdleCallback(preload, { timeout: 2500 });
+      const id = requestIdleCallback(preload);
       return () => cancelIdleCallback(id);
     }
-    const id = setTimeout(preload, 2000);
+    const id = setTimeout(preload, 0);
     return () => clearTimeout(id);
   }, []);
 }

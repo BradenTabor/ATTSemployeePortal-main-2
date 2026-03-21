@@ -46,27 +46,27 @@ interface ThemeConfig {
 const themeConfig: Record<ExpandableSectionTheme, ThemeConfig> = {
   emerald: {
     glowColors: ['#10b981', '#059669', '#34d399', '#047857'],
-    cardBg: 'bg-gradient-to-br from-[#04150f]/95 via-[#041812]/90 to-[#03120c]/95',
-    borderColor: 'border-emerald-500/30',
-    shadow: 'shadow-[0px_0px_0px_0px_rgba(0,0,0,0),0px_0px_0px_0px_rgba(0,0,0,0),0px_10px_15px_-3px_rgba(0,0,0,0.3),0px_8px_6px_-4px_rgba(0,0,0,0.6)]',
-    shadowMobile: 'shadow-[0px_0px_0px_0px_rgba(0,0,0,0),0px_0px_0px_0px_rgba(0,0,0,0),0px_10px_15px_-3px_rgba(0,0,0,0.3),0px_4px_6px_-4px_rgba(0,0,0,0.6)]',
-    innerGlowAccent: 'bg-gradient-to-b from-emerald-500/5 via-transparent to-transparent',
-    headerBg: 'radial-gradient(circle at 50% 50%, rgba(16, 66, 42, 1) 0%, rgba(0, 0, 0, 1) 100%)',
+    cardBg: 'bg-gradient-to-br from-[#061f16]/95 via-[#04180f]/90 to-[#020e09]/95',
+    borderColor: 'border-emerald-500/[0.15]',
+    shadow: 'shadow-[0_2px_8px_rgba(6,50,30,0.2),0_10px_24px_-4px_rgba(0,0,0,0.4)]',
+    shadowMobile: 'shadow-[0_2px_8px_rgba(6,50,30,0.15),0_4px_12px_-4px_rgba(0,0,0,0.4)]',
+    innerGlowAccent: 'bg-gradient-to-b from-emerald-500/[0.04] via-transparent to-transparent',
+    headerBg: 'linear-gradient(135deg, rgba(6,50,30,0.6) 0%, rgba(4,24,15,0.4) 60%, rgba(2,14,9,0.2) 100%)',
     focusRing: 'focus-visible:ring-emerald-400/50 focus-visible:ring-offset-[#04150f]',
-    hoverBg: 'hover:bg-emerald-500/5',
+    hoverBg: 'hover:bg-emerald-500/[0.04]',
     iconContainerBg: 'bg-gradient-to-br from-emerald-500/15 via-emerald-600/8 to-transparent',
-    iconContainerBorder: 'border-emerald-400/30',
-    iconContainerShadow: 'shadow-xl shadow-emerald-500/20',
-    iconContainerShadowMobile: 'shadow-lg shadow-emerald-500/15',
+    iconContainerBorder: 'border-emerald-400/25',
+    iconContainerShadow: 'shadow-[0_4px_12px_rgba(16,185,129,0.12)]',
+    iconContainerShadowMobile: 'shadow-[0_2px_8px_rgba(16,185,129,0.08)]',
     iconContainerRing: 'ring-emerald-300/5',
     iconGlowHover: 'from-emerald-500/8 via-transparent to-emerald-400/3',
     iconGlowDefault: 'from-emerald-500/8 via-transparent to-emerald-400/3',
-    titleGradient: 'from-white via-emerald-100 to-white/80',
-    subtitleColor: 'text-emerald-200/60',
-    chevronBg: 'bg-emerald-500/10',
-    chevronBorder: 'border-emerald-500/20',
-    chevronColor: 'text-emerald-400/70',
-    dividerGradient: 'from-transparent via-emerald-500/30 to-transparent',
+    titleGradient: 'from-white via-emerald-50 to-white/80',
+    subtitleColor: 'text-emerald-300/50',
+    chevronBg: 'bg-emerald-500/[0.08]',
+    chevronBorder: 'border-emerald-500/[0.15]',
+    chevronColor: 'text-emerald-400/60',
+    dividerGradient: 'from-transparent via-emerald-500/20 to-transparent',
   },
   blue: {
     glowColors: ['#3b82f6', '#2563eb', '#60a5fa', '#1d4ed8'],
@@ -380,13 +380,13 @@ function ExpandableSectionComponent({
 
                 {/* Title and subtitle */}
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-base md:text-lg font-bold text-white flex items-center gap-2">
+                  <h3 className="text-base md:text-lg font-semibold tracking-tight text-white flex items-center gap-2">
                     <span className={cn('bg-gradient-to-r bg-clip-text text-transparent', themeStyles.titleGradient)}>
                       {title}
                     </span>
                   </h3>
                   {subtitle && (
-                    <p className={cn('text-xs md:text-sm mt-0.5 line-clamp-1', themeStyles.subtitleColor)}>
+                    <p className={cn('text-[11px] md:text-xs mt-0.5 font-medium tracking-wide uppercase line-clamp-1', themeStyles.subtitleColor)}>
                       {subtitle}
                     </p>
                   )}

@@ -74,7 +74,7 @@ const CircularProgress = memo(function CircularProgress({
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-sm font-bold text-white">{Math.round(value)}</span>
+        <span className="text-sm font-bold text-white font-mono tabular-nums">{Math.round(value)}</span>
       </div>
     </div>
   );
@@ -108,9 +108,9 @@ const StatPill = memo(function StatPill({
       <div className="min-w-0">
         <div className="text-[9px] uppercase tracking-wider text-white/40">{label}</div>
         <div className="flex items-center gap-1">
-          <span className="text-sm font-bold text-white">{value}</span>
+          <span className="text-sm font-bold text-white font-mono tabular-nums">{value}</span>
           {trend !== undefined && trend !== 0 && (
-            <span className={cn("flex items-center text-[10px]", trend > 0 ? "text-emerald-400" : "text-red-400")}>
+            <span className={cn("flex items-center text-[10px] font-mono tabular-nums", trend > 0 ? "text-emerald-400" : "text-red-400")}>
               {trend > 0 ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
               {Math.abs(trend)}%
             </span>
@@ -658,14 +658,14 @@ export default function SafetyAnalyticsSection() {
                         <ClipboardCheck className="w-3.5 h-3.5 text-emerald-400" />
                         <span className="text-[10px] text-white/60">Forms</span>
                       </div>
-                      <span className="text-xs font-bold text-emerald-300">{data?.stats.total_compliance_points || 0}</span>
+                      <span className="text-xs font-bold text-emerald-300 font-mono tabular-nums">{data?.stats.total_compliance_points || 0}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
                         <Megaphone className="w-3.5 h-3.5 text-amber-400" />
                         <span className="text-[10px] text-white/60">Announce</span>
                       </div>
-                      <span className="text-xs font-bold text-amber-300">{data?.stats.total_announcement_points || 0}</span>
+                      <span className="text-xs font-bold text-amber-300 font-mono tabular-nums">{data?.stats.total_announcement_points || 0}</span>
                     </div>
                     <div className="h-px bg-white/10 my-1" />
                     <div className="flex items-center justify-between">
@@ -673,7 +673,7 @@ export default function SafetyAnalyticsSection() {
                         <Trophy className="w-3.5 h-3.5 text-[#f4c979]" />
                         <span className="text-[10px] text-white/80 font-medium">Total</span>
                       </div>
-                      <span className="text-sm font-bold text-[#f4c979]">{data?.stats.total_combined_points || 0}</span>
+                      <span className="text-sm font-bold text-[#f4c979] font-mono tabular-nums">{data?.stats.total_combined_points || 0}</span>
                     </div>
                   </div>
                 </motion.div>
@@ -708,11 +708,11 @@ export default function SafetyAnalyticsSection() {
                   ) : (
                     <div className="grid grid-cols-2 gap-2">
                       <div className="text-center p-2 rounded-lg bg-white/[0.03] border border-white/5">
-                        <div className="text-lg font-bold text-white">{data?.stats.total_compliance_days || 0}</div>
+                        <div className="text-lg font-bold text-white font-mono tabular-nums">{data?.stats.total_compliance_days || 0}</div>
                         <div className="text-[8px] text-white/40 uppercase">Days</div>
                       </div>
                       <div className="text-center p-2 rounded-lg bg-white/[0.03] border border-white/5">
-                        <div className="text-lg font-bold text-white">{data?.stats.full_compliance_users || 0}</div>
+                        <div className="text-lg font-bold text-white font-mono tabular-nums">{data?.stats.full_compliance_users || 0}</div>
                         <div className="text-[8px] text-white/40 uppercase">100%</div>
                       </div>
                     </div>

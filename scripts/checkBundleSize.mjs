@@ -2,11 +2,11 @@ import { promises as fs } from "fs";
 import path from "path";
 
 // Bundle size thresholds (in bytes). CI enforcement; see also vite.config.ts chunkSizeWarningLimit (dev visibility).
-// main-index: 248KB as of 2026-03-11 production audit (was 235KB). Target for future optimization.
+// main-index: 250KB as of 2026-03-20 (bumped from 248KB after incident card premium redesign).
 const THRESHOLDS = [
   { pattern: /^vendor-react-.*\.js$/, label: "vendor-react", limit: 230 * 1024 },
   { pattern: /^vendor-supabase-.*\.js$/, label: "vendor-supabase", limit: 200 * 1024 },
-  { pattern: /^index-.*\.js$/, label: "main-index", limit: 248 * 1024 },
+  { pattern: /^index-.*\.js$/, label: "main-index", limit: 250 * 1024 },
 ];
 
 async function checkBundleSizes() {

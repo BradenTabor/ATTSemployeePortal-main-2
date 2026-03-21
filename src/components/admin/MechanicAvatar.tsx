@@ -629,18 +629,6 @@ function MechanicAvatarComponent({ className = '' }: MechanicAvatarProps) {
           </g>
         </svg>
       </div>
-
-      {/* Floating animation keyframes */}
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        @keyframes mechanicFloat {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-6px); }
-        }
-      `}</style>
     </div>
   );
 }

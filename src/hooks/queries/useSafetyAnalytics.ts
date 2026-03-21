@@ -169,47 +169,25 @@ export function useSafetyAnalytics(period: Period = 'month', leaderboardLimit: n
   return useQuery({
     queryKey: safetyAnalyticsKeys.stats(period),
     queryFn: async (): Promise<SafetyAnalyticsResult> => {
-      // Fetch all data sources with individual error handling
-      let complianceLeaderboard: ComplianceLeaderboardEntry[] = [];
-      let complianceData: ComplianceRecord[] = [];
-      let announcementData: AnnouncementRecord[] = [];
-      let usersData: UserRecord[] = [];
-      let trendData: SafetyTrendData[] = [];
-      
-      try {
-        // Use RPC function for compliance leaderboard (bypasses RLS with SECURITY DEFINER)
-        complianceLeaderboard = await fetchComplianceLeaderboardRPC(start, end, leaderboardLimit);
-      } catch (error) {
-        logger.warn('[useSafetyAnalytics] Compliance leaderboard fetch failed, continuing with empty data', error);
-      }
-      
-      try {
-        // Fetch compliance data (may fail due to RLS, that's okay)
-        complianceData = await fetchComplianceData(start, end);
-      } catch (error) {
-        logger.warn('[useSafetyAnalytics] Compliance data fetch failed, continuing with empty data', error);
-      }
-      
-      try {
-        // Fetch announcement data
-        announcementData = await fetchAnnouncementData(start, end);
-      } catch (error) {
-        logger.warn('[useSafetyAnalytics] Announcement data fetch failed, continuing with empty data', error);
-      }
-      
-      try {
-        // Fetch users data
-        usersData = await fetchUsersData();
-      } catch (error) {
-        logger.warn('[useSafetyAnalytics] Users data fetch failed, continuing with empty data', error);
-      }
-      
-      try {
-        // Fetch trend data
-        trendData = await fetchTrendData(period);
-      } catch (error) {
-        logger.warn('[useSafetyAnalytics] Trend data fetch failed, continuing with empty data', error);
-      }
+      // Fetch all data sources in parallel (each function handles its own errors)
+      const [
+        complianceLeaderboard,
+        complianceData,
+        announcementData,
+        usersData,
+        trendData,
+      ] = await Promise.all([
+        fetchComplianceLeaderboardRPC(start, end, leaderboardLimit)
+          .catch((error) => { logger.warn('[useSafetyAnalytics] Compliance leaderboard fetch failed, continuing with empty data', error); return [] as ComplianceLeaderboardEntry[]; }),
+        fetchComplianceData(start, end)
+          .catch((error) => { logger.warn('[useSafetyAnalytics] Compliance data fetch failed, continuing with empty data', error); return [] as ComplianceRecord[]; }),
+        fetchAnnouncementData(start, end)
+          .catch((error) => { logger.warn('[useSafetyAnalytics] Announcement data fetch failed, continuing with empty data', error); return [] as AnnouncementRecord[]; }),
+        fetchUsersData()
+          .catch((error) => { logger.warn('[useSafetyAnalytics] Users data fetch failed, continuing with empty data', error); return [] as UserRecord[]; }),
+        fetchTrendData(period)
+          .catch((error) => { logger.warn('[useSafetyAnalytics] Trend data fetch failed, continuing with empty data', error); return [] as SafetyTrendData[]; }),
+      ]);
       
       // Build unified leaderboard combining RPC data with announcement data
       let leaderboard: UnifiedLeaderboardEntry[] = [];
@@ -377,7 +355,7 @@ async function fetchTrendData(period: Period): Promise<SafetyTrendData[]> {
   try {
     const { start, end } = getDateRange(period);
     
-    // Get compliance data grouped by date
+    // Get compliance and announcement data in parallel
     let complianceQuery = supabase
       .from('compliance_rewards')
       .select('date_for, points_awarded');
@@ -385,17 +363,17 @@ async function fetchTrendData(period: Period): Promise<SafetyTrendData[]> {
     if (start) complianceQuery = complianceQuery.gte('date_for', start);
     if (end) complianceQuery = complianceQuery.lte('date_for', end);
     
-    const { data: complianceData } = await complianceQuery;
-    
-    // Get announcement data grouped by date
     let announcementQuery = supabase
       .from('announcement_rewards')
       .select('claimed_at, points_awarded');
     
     if (start) announcementQuery = announcementQuery.gte('claimed_at', `${start}T00:00:00`);
     if (end) announcementQuery = announcementQuery.lte('claimed_at', `${end}T23:59:59`);
-    
-    const { data: announcementData } = await announcementQuery;
+
+    const [{ data: complianceData }, { data: announcementData }] = await Promise.all([
+      complianceQuery,
+      announcementQuery,
+    ]);
     
     // Aggregate by date
     const dateMap = new Map<string, SafetyTrendData>();
@@ -717,7 +695,7 @@ export function useUserSafetyDetail(userId: string, period: Period = 'month') {
         return null;
       }
       
-      // Fetch compliance data
+      // Fetch compliance and announcement data in parallel (both independent, only need userId)
       let complianceQuery = supabase
         .from('compliance_rewards')
         .select('*')
@@ -727,9 +705,6 @@ export function useUserSafetyDetail(userId: string, period: Period = 'month') {
       if (start) complianceQuery = complianceQuery.gte('date_for', start);
       if (end) complianceQuery = complianceQuery.lte('date_for', end);
       
-      const { data: complianceData } = await complianceQuery;
-      
-      // Fetch announcement rewards with announcement details
       let announcementQuery = supabase
         .from('announcement_rewards')
         .select(`
@@ -744,8 +719,11 @@ export function useUserSafetyDetail(userId: string, period: Period = 'month') {
       
       if (start) announcementQuery = announcementQuery.gte('claimed_at', `${start}T00:00:00`);
       if (end) announcementQuery = announcementQuery.lte('claimed_at', `${end}T23:59:59`);
-      
-      const { data: announcementData } = await announcementQuery;
+
+      const [{ data: complianceData }, { data: announcementData }] = await Promise.all([
+        complianceQuery,
+        announcementQuery,
+      ]);
       
       // Calculate metrics
       const compliancePoints = (complianceData || []).reduce((sum, r) => sum + (r.points_awarded || 0), 0);

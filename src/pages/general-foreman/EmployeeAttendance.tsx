@@ -1,8 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  ArrowLeft,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -14,6 +12,7 @@ import { UserAvatar } from '../../components/ui/UserAvatar';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { useAuth } from '../../contexts/AuthContext';
 import { cn } from '../../lib/utils';
+import { glass } from '../../lib/glass';
 import { getTodayDateString } from '../../lib/complianceHelpers';
 import {
   formatDate,
@@ -86,7 +85,6 @@ function SkeletonRow() {
 }
 
 export default function EmployeeAttendance() {
-  const navigate = useNavigate();
   const { role } = useAuth();
 
   const [viewMode, setViewMode] = useState<ViewMode>('rollcall');
@@ -237,92 +235,88 @@ export default function EmployeeAttendance() {
   return (
     <DashboardLayout title="Employee Attendance">
       <div className="w-full max-w-7xl mx-auto px-2 xs:px-3 sm:px-6 pb-24 pt-3 sm:pt-6">
-        {/* Header */}
+        {/* Compact header — solid premium surface */}
         <ScrollReveal variant="fadeUp" delay={0}>
-          <div className="mb-5">
-            <button
-              type="button"
-              onClick={() => navigate('/general-foreman-dashboard')}
-              className="flex items-center gap-1.5 text-sm text-[#e9d5ff]/70 hover:text-[#e9d5ff] transition-colors mb-3"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Dashboard
-            </button>
-
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-white">
-                  Employee Attendance
-                </h1>
-                <p className="text-sm text-gray-400 mt-0.5">
-                  {viewMode === 'rollcall'
-                    ? 'Track daily roll-call for crew members'
-                    : 'View attendance summary and AI insights'}
-                </p>
-              </div>
-
-              <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2">
-                {/* View mode toggle */}
-                <div className="flex rounded-xl border border-white/10 overflow-hidden bg-white/[0.03]">
-                  <button
-                    type="button"
-                    onClick={() => setViewMode('rollcall')}
-                    className={cn(
-                      'px-3 py-2 text-sm font-medium transition-colors',
-                      viewMode === 'rollcall'
-                        ? 'bg-[#c084fc]/20 text-[#e9d5ff] border-r border-white/10'
-                        : 'text-gray-400 hover:text-white'
-                    )}
-                  >
-                    Roll Call
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setViewMode('summary')}
-                    className={cn(
-                      'px-3 py-2 text-sm font-medium transition-colors',
-                      viewMode === 'summary'
-                        ? 'bg-[#c084fc]/20 text-[#e9d5ff] border-l border-white/10'
-                        : 'text-gray-400 hover:text-white'
-                    )}
-                  >
-                    Summary
-                  </button>
+          <header className="mb-4">
+            <div className={`${glass.cardPurple} px-4 py-3 sm:px-6 sm:py-4`}>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-1 h-10 sm:h-12 rounded-full bg-gradient-to-b from-purple-400 via-violet-500 to-purple-600 flex-shrink-0" aria-hidden />
+                  <div>
+                    <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+                      Employee Attendance
+                    </h1>
+                    <p className="text-xs sm:text-sm text-white/50 mt-0.5">
+                      {viewMode === 'rollcall'
+                        ? 'Track daily roll-call for crew members'
+                        : 'View attendance summary and AI insights'}
+                    </p>
+                  </div>
                 </div>
 
-                {/* Date navigator (roll call only) */}
-                {viewMode === 'rollcall' && (
-                  <div className="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2">
+                <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 ml-4 sm:ml-0">
+                  {/* View mode toggle */}
+                  <div className="flex rounded-xl border border-white/10 overflow-hidden bg-white/[0.03]">
                     <button
                       type="button"
-                      onClick={handlePrevDay}
-                      className="p-1 hover:bg-white/[0.06] rounded-lg transition-colors"
-                      aria-label="Previous day"
-                    >
-                      <ChevronLeft className="w-4 h-4 text-gray-400" />
-                    </button>
-                    <span className="text-sm font-medium text-white min-w-[120px] text-center">
-                      {isToday ? 'Today' : formatDate(selectedDate, 'EEE, MMM d')}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={handleNextDay}
-                      disabled={isToday}
+                      onClick={() => setViewMode('rollcall')}
                       className={cn(
-                        'p-1 rounded-lg transition-colors',
-                        isToday
-                          ? 'opacity-30 cursor-not-allowed'
-                          : 'hover:bg-white/[0.06]'
+                        'px-3 py-2 text-sm font-medium transition-colors',
+                        viewMode === 'rollcall'
+                          ? 'bg-purple-500/20 text-purple-200 border-r border-white/10'
+                          : 'text-gray-400 hover:text-white'
                       )}
-                      aria-label="Next day"
                     >
-                      <ChevronRight className="w-4 h-4 text-gray-400" />
+                      Roll Call
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setViewMode('summary')}
+                      className={cn(
+                        'px-3 py-2 text-sm font-medium transition-colors',
+                        viewMode === 'summary'
+                          ? 'bg-purple-500/20 text-purple-200 border-l border-white/10'
+                          : 'text-gray-400 hover:text-white'
+                      )}
+                    >
+                      Summary
                     </button>
                   </div>
-                )}
+
+                  {/* Date navigator (roll call only) */}
+                  {viewMode === 'rollcall' && (
+                    <div className="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2">
+                      <button
+                        type="button"
+                        onClick={handlePrevDay}
+                        className="p-1 hover:bg-white/[0.06] rounded-lg transition-colors"
+                        aria-label="Previous day"
+                      >
+                        <ChevronLeft className="w-4 h-4 text-gray-400" />
+                      </button>
+                      <span className="text-sm font-medium text-white min-w-[120px] text-center">
+                        {isToday ? 'Today' : formatDate(selectedDate, 'EEE, MMM d')}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleNextDay}
+                        disabled={isToday}
+                        className={cn(
+                          'p-1 rounded-lg transition-colors',
+                          isToday
+                            ? 'opacity-30 cursor-not-allowed'
+                            : 'hover:bg-white/[0.06]'
+                        )}
+                        aria-label="Next day"
+                      >
+                        <ChevronRight className="w-4 h-4 text-gray-400" />
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          </header>
         </ScrollReveal>
 
         {viewMode === 'summary' ? (

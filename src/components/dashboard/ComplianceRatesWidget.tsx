@@ -92,44 +92,44 @@ export default function ComplianceRatesWidget() {
 
   const expected = expectedUsersQuery.data ?? 0;
   const rows = useMemo(() => summaryQuery.data ?? [], [summaryQuery.data]);
-  const todayRow = rows.find((r) => r.date === todayStr);
 
   const cards = useMemo(() => {
     const num = (v: unknown) => (typeof v === "number" && !Number.isNaN(v) ? v : Number(v) || 0);
-    const pct = (users: number) => (expected > 0 ? Math.min(100, Math.round((users / expected) * 100)) : 0);
     const series = (key: "jsa_users" | "dvir_users" | "equipment_users") =>
       rows.map((r) => num((r as unknown as Record<string, unknown>)[key]));
-    const today = todayRow
-      ? {
-          jsa_users: num(todayRow.jsa_users),
-          dvir_users: num(todayRow.dvir_users),
-          equipment_users: num(todayRow.equipment_users),
-        }
-      : null;
+
+    const activeDays = rows.filter(
+      (r) => r.jsa_count > 0 || r.dvir_count > 0 || r.equipment_count > 0
+    );
+    const avgPct = (key: "jsa_users" | "dvir_users" | "equipment_users") => {
+      if (activeDays.length === 0 || expected === 0) return 0;
+      const totalRate = activeDays.reduce((sum, r) => {
+        return sum + num((r as unknown as Record<string, unknown>)[key]) / expected;
+      }, 0);
+      return Math.min(100, Math.round((totalRate / activeDays.length) * 100));
+    };
+
     return [
       {
         label: "JSA",
         icon: ClipboardCheck,
-        todayPct: today ? pct(today.jsa_users) : 0,
-        todayUsers: today?.jsa_users ?? 0,
+        pct: avgPct("jsa_users"),
         sparkValues: series("jsa_users"),
       },
       {
         label: "DVIR",
         icon: Truck,
-        todayPct: today ? pct(today.dvir_users) : 0,
-        todayUsers: today?.dvir_users ?? 0,
+        pct: avgPct("dvir_users"),
         sparkValues: series("dvir_users"),
       },
       {
         label: "Equipment",
         icon: Wrench,
-        todayPct: today ? pct(today.equipment_users) : 0,
-        todayUsers: today?.equipment_users ?? 0,
+        pct: avgPct("equipment_users"),
         sparkValues: series("equipment_users"),
       },
     ];
-  }, [rows, todayRow, expected]);
+  }, [rows, expected]);
 
   if (summaryQuery.isLoading || summaryQuery.isError) {
     return (
@@ -150,7 +150,7 @@ export default function ComplianceRatesWidget() {
     <div className={`${cardClass} p-4`}>
       <h3 className="text-sm font-semibold text-white mb-3">Compliance rates</h3>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {cards.map(({ label, icon: Icon, todayPct, sparkValues }) => (
+        {cards.map(({ label, icon: Icon, pct, sparkValues }) => (
           <div
             key={label}
             className={`${subtleClass} flex flex-col gap-1.5 p-3`}
@@ -159,10 +159,10 @@ export default function ComplianceRatesWidget() {
               <Icon className="w-4 h-4 text-emerald-400/90" aria-hidden />
               <span className="text-xs font-medium">{label}</span>
             </div>
-            <div className="text-2xl font-bold text-white">{todayPct}%</div>
+            <div className="text-2xl font-bold text-white">{pct}%</div>
             <div className="mt-0.5 flex items-center gap-2">
               <Sparkline values={sparkValues} />
-              <span className="text-xs text-white/60">7-day</span>
+              <span className="text-xs text-white/60">7-day avg</span>
             </div>
           </div>
         ))}

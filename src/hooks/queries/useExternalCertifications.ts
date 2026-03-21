@@ -167,7 +167,7 @@ export function useWorkerExternalCertifications(userId?: string, options?: { ena
           notes: (r.notes as string) ?? null,
           verified_by: (r.verified_by as string) ?? null,
           verified_at: (r.verified_at as string) ?? null,
-          granted_by: r.granted_by as string,
+          granted_by: (r.granted_by as string) ?? null,
           granted_at: r.granted_at as string,
           cert_type_name: certType?.name,
           worker_name: worker?.full_name ?? undefined,

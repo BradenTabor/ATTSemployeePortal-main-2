@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { cn } from "../../lib/utils";
+import { glass } from "../../lib/glass";
 import {
   useAutoTuningConfig,
   useToggleAutoTuning,
@@ -616,64 +617,84 @@ function IncidentsSummary({
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-white/10 bg-white/5 p-4 animate-pulse">
-        <div className="h-6 w-40 bg-white/10 rounded mb-4" />
-        <div className="h-24 bg-white/10 rounded" />
+      <div className={cn(glass.incidentOuter)}>
+        <div className={cn(glass.incidentInner, "p-5 animate-pulse")}>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-xl bg-red-500/10" />
+            <div className="space-y-2 flex-1">
+              <div className="h-3 w-28 rounded bg-white/[0.06]" />
+              <div className="h-2 w-16 rounded bg-white/[0.04]" />
+            </div>
+          </div>
+          <div className="h-20 bg-white/[0.03] rounded-xl" />
+        </div>
       </div>
     );
   }
 
   return (
-    <motion.div
-      variants={itemVariants}
-      className="rounded-xl sm:rounded-2xl border border-red-500/20 bg-gradient-to-br from-[#140a0a] via-[#0a0505] to-[#020205] p-4 sm:p-5"
-    >
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-red-500/10 text-red-400">
-            <AlertTriangle className="w-4 h-4" />
-          </div>
-          <div>
-            <h3 className="text-base font-semibold text-white">Safety Incidents</h3>
-            <p className="text-xs text-white/40">{summary.total} logged</p>
-          </div>
-        </div>
-        <button
-          onClick={onLogIncident}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/20 text-red-300 text-xs font-medium hover:bg-red-500/30 transition-colors border border-red-500/30"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          Log Incident
-        </button>
-      </div>
+    <motion.div variants={itemVariants} className={cn(glass.incidentOuter, "relative group")}>
+      <div className={cn(glass.incidentInner, "relative overflow-hidden p-4 sm:p-5")}>
+        <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-red-400/15 to-transparent pointer-events-none" />
 
-      {summary.total === 0 ? (
-        <div className="text-center py-6 text-white/40 text-sm">
-          No incidents logged in this period
-        </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <div className="rounded-lg bg-white/5 p-3 text-center">
-              <p className="text-2xl font-bold text-white">{summary.total}</p>
-              <p className="text-[10px] text-white/40 uppercase">Total Incidents</p>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className={cn(
+              "w-10 h-10 rounded-xl flex items-center justify-center",
+              "bg-gradient-to-br from-red-500/20 to-red-600/10 border border-red-500/15",
+              summary.total > 0 && "animate-incident-pulse"
+            )}>
+              <AlertTriangle className="w-4 h-4 text-red-400" />
             </div>
-            <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/30 p-3 text-center">
-              <p className="text-2xl font-bold text-emerald-400">{forecastedRate}%</p>
-              <p className="text-[10px] text-white/40 uppercase">Forecasted</p>
+            <div>
+              <h3 className="text-sm font-semibold text-white tracking-tight">Safety Incidents</h3>
+              <p className="text-[10px] text-white/40 font-medium tabular-nums">{summary.total} logged</p>
             </div>
           </div>
+          <button
+            onClick={onLogIncident}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold transition-all duration-200 active:scale-[0.97]",
+              "bg-red-500/15 border border-red-500/20 text-red-300 hover:bg-red-500/25",
+              "shadow-[0_0_12px_rgba(239,68,68,0.08)]"
+            )}
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Log Incident
+          </button>
+        </div>
 
-          <div className="space-y-1.5">
-            {Object.entries(summary.bySeverity).map(([severity, count]) => (
-              <div key={severity} className="flex items-center justify-between text-xs">
-                <span className="text-white/60 capitalize">{severity.replace('_', ' ')}</span>
-                <span className="text-white font-medium">{count}</span>
+        {summary.total === 0 ? (
+          <div className="text-center py-6">
+            <div className="w-10 h-10 rounded-xl bg-white/[0.03] mx-auto mb-2 flex items-center justify-center">
+              <AlertTriangle className="w-5 h-5 text-white/15" />
+            </div>
+            <p className="text-[11px] text-white/35 font-medium">No incidents logged in this period</p>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-3.5 text-center">
+                <p className="text-2xl font-bold text-white tabular-nums">{summary.total}</p>
+                <p className="text-[9px] text-white/35 uppercase tracking-wider font-medium mt-0.5">Total Incidents</p>
               </div>
-            ))}
-          </div>
-        </>
-      )}
+              <div className="rounded-xl bg-emerald-500/8 border border-emerald-500/15 p-3.5 text-center shadow-[0_0_12px_rgba(16,185,129,0.06)]">
+                <p className="text-2xl font-bold text-emerald-400 tabular-nums">{forecastedRate}%</p>
+                <p className="text-[9px] text-white/35 uppercase tracking-wider font-medium mt-0.5">Forecasted</p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {Object.entries(summary.bySeverity).map(([severity, count]) => (
+                <div key={severity} className="flex items-center justify-between text-xs px-2 py-1.5 rounded-lg bg-white/[0.02]">
+                  <span className="text-white/50 capitalize font-medium">{severity.replace('_', ' ')}</span>
+                  <span className="text-white/80 font-semibold tabular-nums">{count}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
     </motion.div>
   );
 }

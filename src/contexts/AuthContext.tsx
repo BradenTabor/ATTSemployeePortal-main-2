@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useRef, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, ReactNode, useCallback, useMemo } from 'react';
 import { User, Session, type PostgrestSingleResponse } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
 import { logger } from "../lib/logger";
@@ -502,7 +502,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [fetchUserProfile]);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     try {
       const channels = supabase.getChannels();
       if (channels.length > 0) {
@@ -560,10 +560,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logger.error('Failed to sign out:', error);
       throw error;
     }
-  };
+  }, []);
 
   // Keep external setSession API compatible
-  const setSession = (session: Session | null) => {
+  const setSession = useCallback((session: Session | null) => {
     if (!session) {
       setSessionState(null);
       return;
@@ -574,7 +574,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       role: role || undefined,
     };
     setSessionState(extended);
-  };
+  }, [role]);
 
   // Refresh avatar URL after upload - skips cache to get fresh data
   const refreshAvatar = useCallback(async () => {
@@ -596,21 +596,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user?.id, fetchUserProfile, role, fullName]);
 
+  const contextValue = useMemo(() => ({
+    user,
+    session,
+    loading,
+    role,
+    fullName,
+    avatarUrl,
+    isAdmin,
+    isMechanic,
+    hasMechanicAccess,
+    signOut,
+    setSession,
+    refreshAvatar,
+  }), [user, session, loading, role, fullName, avatarUrl, isAdmin, isMechanic, hasMechanicAccess, signOut, setSession, refreshAvatar]);
+
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      session, 
-      loading, 
-      role, 
-      fullName, 
-      avatarUrl,
-      isAdmin, 
-      isMechanic, 
-      hasMechanicAccess, 
-      signOut, 
-      setSession,
-      refreshAvatar,
-    }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

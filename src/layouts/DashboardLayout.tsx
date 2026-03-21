@@ -164,7 +164,7 @@ export default function DashboardLayout({ title, children, hideHeader = false }:
       {/* Scrollable content wrapper */}
       <div
         data-scroll-container
-        className={`flex-1 overflow-y-auto overflow-x-hidden px-4 sm:px-8 scroll-container scroll-smooth-touch gpu-layer ${hideHeader ? 'pt-0' : 'pt-6 sm:pt-10'} pb-6 relative z-10`}
+        className={`flex-1 overflow-y-auto overflow-x-hidden px-4 sm:px-8 scroll-container scroll-smooth-touch ${hideHeader ? 'pt-0' : 'pt-6 sm:pt-10'} pb-6 relative z-10`}
       >
         {!hideHeader && (
           <header className="flex items-center gap-2 sm:gap-4 mb-6 w-full">

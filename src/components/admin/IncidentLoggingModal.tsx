@@ -26,6 +26,7 @@ import {
   Activity,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { glass } from "../../lib/glass";
 import { useLogIncident, type IncidentFormData } from "../../hooks/queries/useRiskCalibration";
 import { VoiceInputButton } from "../forms/VoiceInputButton";
 import { FormSuccessCelebration } from "../forms/FormSuccessCelebration";
@@ -253,42 +254,43 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80"
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm"
           >
             <motion.div
-              initial={{ scale: 0.95 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.95 }}
-              className="w-full max-w-md p-6 rounded-xl bg-red-950 border border-red-500/50"
+              initial={{ scale: 0.92, y: 16 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.92, y: 16 }}
+              transition={{ type: "spring", stiffness: 350, damping: 30 }}
+              className={cn("w-full max-w-md p-5", glass.incidentModal)}
             >
               <div className="flex items-start gap-4">
-                <div className="p-3 rounded-full bg-red-500/20">
-                  <AlertCircle className="w-6 h-6 text-red-400" />
+                <div className="w-11 h-11 rounded-xl bg-red-500/20 border border-red-500/20 flex items-center justify-center flex-shrink-0 shadow-[0_0_16px_rgba(239,68,68,0.15)]">
+                  <AlertCircle className="w-5 h-5 text-red-400" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-white mb-2">
+                  <h3 className="text-base font-semibold text-white tracking-tight mb-2">
                     OSHA Reporting Required
                   </h3>
-                  <p className="text-sm text-white/70 mb-4">
+                  <p className="text-sm text-white/65 mb-3 leading-relaxed">
                     {formData.severity === 'fatality' 
                       ? 'Fatalities must be reported to OSHA within 8 hours.'
                       : 'Hospitalizations must be reported to OSHA within 24 hours.'}
                   </p>
-                  <p className="text-xs text-white/50 mb-4">
-                    Call OSHA at 1-800-321-OSHA (6742) or report online at osha.gov/opa/electronic-reporting
+                  <p className="text-xs text-white/40 mb-5 font-mono tabular-nums">
+                    1-800-321-OSHA (6742) &middot; osha.gov/opa/electronic-reporting
                   </p>
                   <div className="flex gap-3">
                     <button
                       type="button"
                       onClick={() => setShowOshaWarning(false)}
-                      className="flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-white/10 text-white hover:bg-white/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+                      className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium bg-white/[0.06] text-white/70 hover:bg-white/[0.1] border border-white/[0.08] transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
                     >
                       Go Back
                     </button>
                     <button
                       type="button"
                       onClick={handleSubmit}
-                      className="flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50"
+                      className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold bg-red-500/90 text-white hover:bg-red-500 shadow-[0_0_20px_rgba(239,68,68,0.2)] transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50"
                     >
                       I Understand, Submit
                     </button>
@@ -307,7 +309,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm"
             onClick={(e) => {
               if (e.target === e.currentTarget) onClose();
             }}
@@ -316,31 +318,35 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
               role="dialog"
               aria-modal="true"
               aria-labelledby="incident-modal-title"
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.97 }}
-              className="w-full max-w-lg max-h-[85vh] overflow-hidden rounded-xl border border-red-500/30 bg-gradient-to-br from-[#140a0a] via-[#0a0505] to-[#020205]"
+              initial={{ opacity: 0, scale: 0.92, y: 24 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 24 }}
+              transition={{ type: "spring", stiffness: 350, damping: 30 }}
+              className={cn("w-full max-w-lg max-h-[85vh] overflow-hidden", glass.incidentModal)}
             >
-              {/* Compact Header */}
-              <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/10">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-lg bg-red-500/20 text-red-400">
-                    <AlertTriangle className="w-4 h-4" />
+              {/* Header */}
+              <div className={cn(
+                "flex items-center justify-between px-4 py-3 border-b border-red-500/10",
+                "bg-gradient-to-r from-red-500/[0.08] to-transparent"
+              )}>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-red-500/15 border border-red-500/15 flex items-center justify-center shadow-[0_0_12px_rgba(239,68,68,0.1)]">
+                    <AlertTriangle className="w-4 h-4 text-red-400" />
                   </div>
                   <div>
-                    <h2 id="incident-modal-title" className="text-sm font-semibold text-white">Log Incident</h2>
-                    <p className="text-[10px] text-white/50">OSHA 300/301 Compliant</p>
+                    <h2 id="incident-modal-title" className="text-sm font-semibold text-white tracking-tight">Log Incident</h2>
+                    <p className="text-[10px] text-white/40 font-medium">OSHA 300/301 Compliant</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
                   {isOshaRecordable && (
-                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-300">
+                    <span className="text-[9px] font-semibold px-2 py-0.5 rounded-md bg-orange-500/15 text-orange-300 border border-orange-500/15">
                       Recordable
                     </span>
                   )}
                   <button
                     onClick={onClose}
-                    className="p-1.5 rounded-lg hover:bg-white/5 text-white/50 hover:text-white transition-colors"
+                    className="p-1.5 rounded-lg hover:bg-white/[0.08] text-white/40 hover:text-white transition-all duration-200 active:scale-95"
                     aria-label="Close incident form"
                   >
                     <X className="w-4 h-4" />
@@ -348,12 +354,12 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                 </div>
               </div>
 
-              {/* Compact Warning Banner */}
+              {/* OSHA Immediate Report Warning */}
               {requiresImmediateReport && (
-                <div className="px-3 py-2 bg-red-500/10 border-b border-red-500/20">
-                  <div className="flex items-center gap-1.5 text-red-300">
+                <div className="px-4 py-2.5 bg-gradient-to-r from-red-500/10 to-transparent border-b border-red-500/10">
+                  <div className="flex items-center gap-2 text-red-300">
                     <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span className="text-[10px] font-medium">
+                    <span className="text-[10px] font-semibold tracking-wide">
                       OSHA notification required within {requiresImmediateReport}
                     </span>
                   </div>
@@ -375,37 +381,37 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                     <div className="grid grid-cols-2 gap-2">
                       {/* Date */}
                       <div>
-                        <label className="text-[10px] font-medium text-white/70 mb-1 block">Date *</label>
+                        <label className="text-[10px] font-medium text-white/60 mb-1 block">Date *</label>
                         <input
                           type="date"
                           value={formData.incident_date}
                           onChange={(e) => setFormData(prev => ({ ...prev, incident_date: e.target.value }))}
                           max={new Date().toISOString().split('T')[0]}
                           required
-                          className="w-full px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-red-500/50"
+                          className="w-full px-2.5 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200"
                         />
                       </div>
                       {/* Time */}
                       <div>
-                        <label className="text-[10px] font-medium text-white/70 mb-1 block">Time {isOshaRecordable && '*'}</label>
+                        <label className="text-[10px] font-medium text-white/60 mb-1 block">Time {isOshaRecordable && '*'}</label>
                         <input
                           type="time"
                           value={formData.incident_time || ''}
                           onChange={(e) => setFormData(prev => ({ ...prev, incident_time: e.target.value || null }))}
                           required={isOshaRecordable}
-                          className="w-full px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-red-500/50"
+                          className="w-full px-2.5 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200"
                         />
                       </div>
                       {/* Work Site - Full Width */}
                       <div className="col-span-2">
-                        <label className="text-[10px] font-medium text-white/70 mb-1 block">
+                        <label className="text-[10px] font-medium text-white/60 mb-1 block">
                           Work Site {isOshaRecordable && '*'}
                         </label>
                         <select
                           value={formData.work_site_id || ""}
                           onChange={(e) => handleWorkSiteChange(e.target.value)}
                           required={isOshaRecordable}
-                          className="w-full px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-red-500/50"
+                          className="w-full px-2.5 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200"
                         >
                           <option value="">Select site</option>
                           {workSites.map((site) => (
@@ -428,7 +434,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                     </p>
                     <div className="grid grid-cols-1 gap-2">
                       <div>
-                        <label className="text-[10px] font-medium text-white/70 mb-1 block">Job</label>
+                        <label className="text-[10px] font-medium text-white/60 mb-1 block">Job</label>
                         <select
                           value={formData.job_id || ""}
                           onChange={(e) => {
@@ -440,7 +446,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                               crew_id: job?.crew_id ?? prev.crew_id,
                             }));
                           }}
-                          className="w-full px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-red-500/50"
+                          className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200"
                         >
                           <option value="">None</option>
                           {jobs.map((job) => (
@@ -452,13 +458,13 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                         </select>
                       </div>
                       <div>
-                        <label className="text-[10px] font-medium text-white/70 mb-1 block">Crew</label>
+                        <label className="text-[10px] font-medium text-white/60 mb-1 block">Crew</label>
                         <select
                           value={formData.crew_id || ""}
                           onChange={(e) =>
                             setFormData((prev) => ({ ...prev, crew_id: e.target.value || null }))
                           }
-                          className="w-full px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-red-500/50"
+                          className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200"
                         >
                           <option value="">None</option>
                           {crews.map((crew) => (
@@ -467,13 +473,13 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                         </select>
                       </div>
                       <div>
-                        <label className="text-[10px] font-medium text-white/70 mb-1 block">Supervisor</label>
+                        <label className="text-[10px] font-medium text-white/60 mb-1 block">Supervisor</label>
                         <select
                           value={formData.supervisor_id || ""}
                           onChange={(e) =>
                             setFormData((prev) => ({ ...prev, supervisor_id: e.target.value || null }))
                           }
-                          className="w-full px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-red-500/50"
+                          className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200"
                         >
                           <option value="">None</option>
                           {employees
@@ -585,7 +591,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                   >
                     {/* Description */}
                     <div>
-                      <label className="text-[10px] font-medium text-white/70 mb-1 block">Description *</label>
+                      <label className="text-[10px] font-medium text-white/60 mb-1 block">Description *</label>
                       <div className="relative">
                         <textarea
                           value={formData.description}
@@ -593,7 +599,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                           placeholder="What happened?"
                           rows={2}
                           required
-                          className="w-full px-2 py-1.5 pr-10 rounded-lg bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-red-500/50 resize-none placeholder:text-white/30"
+                          className="w-full px-2 py-1.5 pr-10 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 resize-none placeholder:text-white/30"
                         />
                         <div className="absolute right-1.5 top-1.5">
                           <VoiceInputButton
@@ -611,25 +617,25 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                     {isOshaRecordable && (
                       <>
                         <div>
-                          <label className="text-[10px] font-medium text-white/70 mb-1 block">Activity before incident *</label>
+                          <label className="text-[10px] font-medium text-white/60 mb-1 block">Activity before incident *</label>
                           <input
                             type="text"
                             value={formData.what_doing_before}
                             onChange={(e) => setFormData(prev => ({ ...prev, what_doing_before: e.target.value }))}
                             placeholder="e.g., Climbing ladder"
                             required={isOshaRecordable}
-                            className="w-full px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-red-500/50 placeholder:text-white/30"
+                            className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 placeholder:text-white/25"
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] font-medium text-white/70 mb-1 block">Object/substance that caused harm *</label>
+                          <label className="text-[10px] font-medium text-white/60 mb-1 block">Object/substance that caused harm *</label>
                           <input
                             type="text"
                             value={formData.object_substance_harmed}
                             onChange={(e) => setFormData(prev => ({ ...prev, object_substance_harmed: e.target.value }))}
                             placeholder="e.g., Chainsaw, branch, floor"
                             required={isOshaRecordable}
-                            className="w-full px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-red-500/50 placeholder:text-white/30"
+                            className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 placeholder:text-white/25"
                           />
                         </div>
                       </>
@@ -637,7 +643,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
 
                     {/* Body Parts - Compact */}
                     <div>
-                      <label className="text-[10px] font-medium text-white/70 mb-1 block">
+                      <label className="text-[10px] font-medium text-white/60 mb-1 block">
                         Body part(s) {isOshaRecordable && '*'}
                       </label>
                       <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto p-1.5 rounded-lg bg-white/[0.02] border border-white/5">
@@ -703,23 +709,23 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                     {(formData.emergency_room_treatment || formData.hospitalized_overnight) && (
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="text-[10px] font-medium text-white/70 mb-1 block">Physician</label>
+                          <label className="text-[10px] font-medium text-white/60 mb-1 block">Physician</label>
                           <input
                             type="text"
                             value={formData.physician_name || ''}
                             onChange={(e) => setFormData(prev => ({ ...prev, physician_name: e.target.value || null }))}
                             placeholder="Dr. Name"
-                            className="w-full px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-red-500/50 placeholder:text-white/30"
+                            className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 placeholder:text-white/25"
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] font-medium text-white/70 mb-1 block">Facility</label>
+                          <label className="text-[10px] font-medium text-white/60 mb-1 block">Facility</label>
                           <input
                             type="text"
                             value={formData.treatment_facility || ''}
                             onChange={(e) => setFormData(prev => ({ ...prev, treatment_facility: e.target.value || null }))}
                             placeholder="Hospital"
-                            className="w-full px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-red-500/50 placeholder:text-white/30"
+                            className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 placeholder:text-white/25"
                           />
                         </div>
                       </div>
@@ -738,7 +744,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                     >
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                          <label className="text-sm font-medium text-white/80 mb-1.5 block">
+                          <label className="text-xs font-medium text-white/60 mb-1.5 block">
                             Days Away From Work
                           </label>
                           <input
@@ -750,12 +756,12 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                               days_away_from_work: e.target.value ? parseInt(e.target.value) : null 
                             }))}
                             placeholder="0"
-                            className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-red-500/50 placeholder:text-white/30"
+                            className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-sm focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 placeholder:text-white/25"
                           />
                           <p className="mt-1 text-xs text-white/40">Calendar days (exclude day of injury)</p>
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-white/80 mb-1.5 block">
+                          <label className="text-xs font-medium text-white/60 mb-1.5 block">
                             Days of Restricted Duty
                           </label>
                           <input
@@ -767,7 +773,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                               days_restricted_duty: e.target.value ? parseInt(e.target.value) : null 
                             }))}
                             placeholder="0"
-                            className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-red-500/50 placeholder:text-white/30"
+                            className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-sm focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 placeholder:text-white/25"
                           />
                           <p className="mt-1 text-xs text-white/40">Days on light/modified duty</p>
                         </div>
@@ -787,7 +793,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                     {isOshaRecordable && (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                         <div>
-                          <label className="text-sm font-medium text-white/80 mb-1.5 block">
+                          <label className="text-xs font-medium text-white/60 mb-1.5 block">
                             Employee Job Title *
                           </label>
                           <input
@@ -796,18 +802,18 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                             onChange={(e) => setFormData(prev => ({ ...prev, employee_job_title: e.target.value || null }))}
                             placeholder="e.g., Tree Trimmer, Equipment Operator"
                             required={isOshaRecordable}
-                            className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-red-500/50 placeholder:text-white/30"
+                            className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-sm focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 placeholder:text-white/25"
                           />
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-white/80 mb-1.5 block">
+                          <label className="text-xs font-medium text-white/60 mb-1.5 block">
                             Time Began Work That Day
                           </label>
                           <input
                             type="time"
                             value={formData.time_began_work || ''}
                             onChange={(e) => setFormData(prev => ({ ...prev, time_began_work: e.target.value || null }))}
-                            className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-red-500/50"
+                            className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-sm focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200"
                           />
                         </div>
                       </div>
@@ -815,7 +821,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
 
                     {/* Involved Employees */}
                     <div>
-                      <label className="text-sm font-medium text-white/80 mb-2 block">
+                      <label className="text-xs font-medium text-white/60 mb-2 block">
                         Involved Employees
                       </label>
                       {isLoadingOptions ? (
@@ -829,15 +835,15 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                           No employees found
                         </div>
                       ) : (
-                        <div className="rounded-lg bg-white/5 border border-white/10 overflow-hidden">
-                          <div className="relative border-b border-white/10">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                        <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] overflow-hidden">
+                          <div className="relative border-b border-white/[0.06]">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/25" />
                             <input
                               type="text"
                               value={employeeSearch}
                               onChange={(e) => setEmployeeSearch(e.target.value)}
                               placeholder="Search employees..."
-                              className="w-full pl-9 pr-3 py-2 bg-transparent text-white text-sm placeholder:text-white/30 focus:outline-none"
+                              className="w-full pl-9 pr-3 py-2 bg-transparent text-white text-xs placeholder:text-white/25 focus:outline-none"
                             />
                           </div>
                           <div className="max-h-40 overflow-y-auto p-2">
@@ -877,34 +883,34 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                           <p className="text-[10px] font-medium text-white/70">Employee Demographics (OSHA 301)</p>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div className="sm:col-span-2">
-                              <label className="text-[10px] font-medium text-white/70 mb-1 block">Street Address</label>
+                              <label className="text-[10px] font-medium text-white/60 mb-1 block">Street Address</label>
                               <input
                                 type="text"
                                 autoComplete="street-address"
                                 value={demographics.employee_street_address}
                                 onChange={(e) => setDemographics((p) => ({ ...p, employee_street_address: e.target.value }))}
                                 placeholder="123 Main St"
-                                className="w-full px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-red-500/50 placeholder:text-white/30"
+                                className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 placeholder:text-white/25"
                               />
                             </div>
                             <div>
-                              <label className="text-[10px] font-medium text-white/70 mb-1 block">City</label>
+                              <label className="text-[10px] font-medium text-white/60 mb-1 block">City</label>
                               <input
                                 type="text"
                                 autoComplete="address-level2"
                                 value={demographics.employee_city}
                                 onChange={(e) => setDemographics((p) => ({ ...p, employee_city: e.target.value }))}
                                 placeholder="City"
-                                className="w-full px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-red-500/50 placeholder:text-white/30"
+                                className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 placeholder:text-white/25"
                               />
                             </div>
                             <div>
-                              <label className="text-[10px] font-medium text-white/70 mb-1 block">State</label>
+                              <label className="text-[10px] font-medium text-white/60 mb-1 block">State</label>
                               <select
                                 autoComplete="address-level1"
                                 value={demographics.employee_state}
                                 onChange={(e) => setDemographics((p) => ({ ...p, employee_state: e.target.value }))}
-                                className="w-full px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-red-500/50"
+                                className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200"
                               >
                                 <option value="">Select</option>
                                 {US_STATES.map((s) => (
@@ -913,28 +919,28 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                               </select>
                             </div>
                             <div>
-                              <label className="text-[10px] font-medium text-white/70 mb-1 block">ZIP</label>
+                              <label className="text-[10px] font-medium text-white/60 mb-1 block">ZIP</label>
                               <input
                                 type="text"
                                 autoComplete="postal-code"
                                 value={demographics.employee_zip}
                                 onChange={(e) => setDemographics((p) => ({ ...p, employee_zip: e.target.value }))}
                                 placeholder="ZIP"
-                                className="w-full px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-red-500/50 placeholder:text-white/30"
+                                className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 placeholder:text-white/25"
                               />
                             </div>
                             <div>
-                              <label className="text-[10px] font-medium text-white/70 mb-1 block">Date of Birth</label>
+                              <label className="text-[10px] font-medium text-white/60 mb-1 block">Date of Birth</label>
                               <input
                                 type="date"
                                 autoComplete="bday"
                                 value={demographics.employee_date_of_birth}
                                 onChange={(e) => setDemographics((p) => ({ ...p, employee_date_of_birth: e.target.value }))}
-                                className="w-full px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-red-500/50"
+                                className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200"
                               />
                             </div>
                             <div>
-                              <label className="text-[10px] font-medium text-white/70 mb-1 block">Sex</label>
+                              <label className="text-[10px] font-medium text-white/60 mb-1 block">Sex</label>
                               <div className="flex flex-wrap gap-2">
                                 {SEX_OPTIONS.map((opt) => (
                                   <label key={opt.value} className="flex items-center gap-1 text-xs text-white/80 cursor-pointer">
@@ -954,12 +960,12 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                           </div>
                           {formData.severity === 'fatality' && (
                             <div>
-                              <label className="text-[10px] font-medium text-white/70 mb-1 block">Date of Death</label>
+                              <label className="text-[10px] font-medium text-white/60 mb-1 block">Date of Death</label>
                               <input
                                 type="date"
                                 value={demographics.date_of_death}
                                 onChange={(e) => setDemographics((p) => ({ ...p, date_of_death: e.target.value }))}
-                                className="w-full px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-red-500/50"
+                                className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200"
                               />
                             </div>
                           )}
@@ -989,7 +995,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                   >
                     {/* Contributing Factors */}
                     <div>
-                      <label className="text-sm font-medium text-white/80 mb-2 block">Contributing Factors</label>
+                      <label className="text-xs font-medium text-white/60 mb-2 block">Contributing Factors</label>
                       <div className="flex flex-wrap gap-2">
                         {CONTRIBUTING_FACTORS.map((factor) => (
                           <button
@@ -1013,10 +1019,10 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                     </div>
 
                     {/* Preventable Toggle */}
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/10">
+                    <div className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
                       <div>
-                        <p className="text-sm font-medium text-white">Preventable Incident</p>
-                        <p className="text-xs text-white/40">Could this have been prevented?</p>
+                        <p className="text-xs font-semibold text-white/90">Preventable Incident</p>
+                        <p className="text-[10px] text-white/35 mt-0.5">Could this have been prevented?</p>
                       </div>
                       <button
                         type="button"
@@ -1039,12 +1045,12 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center justify-between gap-3 mt-6 pt-4 border-t border-white/10">
-                  <div className="text-xs text-white/40">
+                <div className="flex items-center justify-between gap-3 mt-6 pt-4 border-t border-white/[0.06]">
+                  <div className="text-[10px] text-white/30 font-medium">
                     {isOshaRecordable && (
                       <span className="flex items-center gap-1">
                         <AlertCircle className="w-3 h-3" />
-                        Case number will be auto-generated
+                        Case # auto-generated
                       </span>
                     )}
                   </div>
@@ -1052,7 +1058,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                     <button
                       type="button"
                       onClick={onClose}
-                      className="px-4 py-2 rounded-lg text-sm font-medium text-white/60 hover:text-white hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+                      className="px-4 py-2.5 rounded-xl text-sm font-medium text-white/50 hover:text-white/70 hover:bg-white/[0.06] transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
                     >
                       Cancel
                     </button>
@@ -1061,11 +1067,13 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                       data-testid="incident-logging-submit"
                       disabled={logIncidentMutation.isPending || !formData.description.trim()}
                       className={cn(
-                        "px-6 py-2 rounded-lg text-sm font-medium transition-all",
-                        "bg-red-500/20 text-red-300 border border-red-500/30",
-                        "hover:bg-red-500/30 disabled:opacity-50 disabled:cursor-not-allowed",
+                        "px-6 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 active:scale-[0.97]",
+                        "bg-red-500/15 text-red-300 border border-red-500/20",
+                        "hover:bg-red-500/25 hover:border-red-500/30",
+                        "shadow-[0_0_20px_rgba(239,68,68,0.08)]",
+                        "disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none",
                         "flex items-center gap-2",
-                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50"
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/40"
                       )}
                     >
                       {logIncidentMutation.isPending ? (

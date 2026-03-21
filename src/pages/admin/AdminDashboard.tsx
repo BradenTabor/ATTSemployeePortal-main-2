@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useModalOverlay } from "../../hooks/useModalOverlay";
-import { Shield, Megaphone, Sparkles, Inbox, X, Filter, Pencil, Bell } from "lucide-react";
+import { Shield, Megaphone, Inbox, X, Filter, Pencil, Bell, ChevronDown } from "lucide-react";
 import IncidentLoggingModal from "../../components/admin/IncidentLoggingModal";
 import SafetyIncidentsList from "../../components/admin/SafetyIncidentsList";
 import DashboardLayout from "../../layouts/DashboardLayout";
@@ -35,53 +35,54 @@ const ACTIVE_TAB_STORAGE_KEY = "atts:admin:dashboard:activeTab";
 // Tab icons use inline width/height so size applies even if Tailwind is cached
 const TAB_ICON_SIZE = 44;
 const BASE_DASHBOARD_TABS = [
-  { id: "control-panel", label: "Control Panel", shortLabel: "Control", icon: <img loading="lazy" src="/assets/control-panel.png" alt="" className="object-contain flex-shrink-0" style={{ width: TAB_ICON_SIZE, height: TAB_ICON_SIZE, minWidth: TAB_ICON_SIZE, minHeight: TAB_ICON_SIZE }} /> },
-  { id: "announcements", label: "Announcements", shortLabel: "News", icon: <img loading="lazy" src="/assets/news-announcements.png" alt="" className="object-contain flex-shrink-0" style={{ width: TAB_ICON_SIZE, height: TAB_ICON_SIZE, minWidth: TAB_ICON_SIZE, minHeight: TAB_ICON_SIZE }} /> },
-  { id: "requests", label: "Contact Requests", shortLabel: "Requests", icon: <img loading="lazy" src="/assets/contact-requests.png" alt="" className="object-contain flex-shrink-0" style={{ width: TAB_ICON_SIZE, height: TAB_ICON_SIZE, minWidth: TAB_ICON_SIZE, minHeight: TAB_ICON_SIZE }} /> },
-  { id: "notifications", label: "Push Notifications", shortLabel: "Push", icon: <img loading="lazy" src="/assets/push-notifications.png" alt="" className="object-contain flex-shrink-0" style={{ width: TAB_ICON_SIZE, height: TAB_ICON_SIZE, minWidth: TAB_ICON_SIZE, minHeight: TAB_ICON_SIZE }} /> },
+  { id: "control-panel", label: "Control Panel", shortLabel: "Control", icon: <img loading="lazy" src="/assets/control-panel.webp" alt="" className="object-contain flex-shrink-0" style={{ width: TAB_ICON_SIZE, height: TAB_ICON_SIZE, minWidth: TAB_ICON_SIZE, minHeight: TAB_ICON_SIZE }} /> },
+  { id: "announcements", label: "Announcements", shortLabel: "News", icon: <img loading="lazy" src="/assets/news-announcements.webp" alt="" className="object-contain flex-shrink-0" style={{ width: TAB_ICON_SIZE, height: TAB_ICON_SIZE, minWidth: TAB_ICON_SIZE, minHeight: TAB_ICON_SIZE }} /> },
+  { id: "requests", label: "Contact Requests", shortLabel: "Requests", icon: <img loading="lazy" src="/assets/contact-requests.webp" alt="" className="object-contain flex-shrink-0" style={{ width: TAB_ICON_SIZE, height: TAB_ICON_SIZE, minWidth: TAB_ICON_SIZE, minHeight: TAB_ICON_SIZE }} /> },
+  { id: "notifications", label: "Push Notifications", shortLabel: "Push", icon: <img loading="lazy" src="/assets/push-notifications.webp" alt="" className="object-contain flex-shrink-0" style={{ width: TAB_ICON_SIZE, height: TAB_ICON_SIZE, minWidth: TAB_ICON_SIZE, minHeight: TAB_ICON_SIZE }} /> },
 ];
 
-// Animation variants for staggered entrance
+// Animation variants - spring physics per taste-skill (stiffness: 100, damping: 20)
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.08,
-      delayChildren: 0.05,
+      staggerChildren: 0.06,
+      delayChildren: 0.04,
     },
   },
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, y: 16 },
   visible: {
     opacity: 1,
     y: 0,
     transition: {
-      duration: 0.4,
-      ease: [0.4, 0, 0.2, 1] as [number, number, number, number],
+      type: "spring" as const,
+      stiffness: 100,
+      damping: 20,
     },
   },
 };
 
 // Tab content animation variants
 const tabContentVariants = {
-  initial: { opacity: 0, y: 12 },
+  initial: { opacity: 0, y: 10 },
   animate: { 
     opacity: 1, 
     y: 0,
     transition: {
-      duration: 0.3,
-      ease: [0.4, 0, 0.2, 1] as [number, number, number, number],
+      type: "spring" as const,
+      stiffness: 120,
+      damping: 22,
     }
   },
   exit: { 
     opacity: 0, 
-    y: -8,
+    y: -6,
     transition: {
-      duration: 0.2,
-      ease: [0.4, 0, 1, 1] as [number, number, number, number],
+      duration: 0.15,
     }
   },
 };
@@ -134,25 +135,25 @@ function ContactRequestModalContent({
           role="dialog"
           aria-modal="true"
           aria-labelledby="contact-request-title"
-          className="relative w-full max-w-2xl rounded-3xl border border-[#f4c979]/20 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] p-6 text-white shadow-[0_45px_80px_rgba(0,0,0,0.7)] space-y-4"
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          className="relative w-full max-w-lg rounded-2xl border border-[#f4c979]/15 bg-[#0e0c09]/95 backdrop-blur-xl p-5 text-white shadow-[0_30px_60px_rgba(0,0,0,0.6)] space-y-4"
+          initial={{ opacity: 0, scale: 0.96, y: 16 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+          exit={{ opacity: 0, scale: 0.96, y: 16 }}
+          transition={{ type: "spring", stiffness: 200, damping: 25 }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start justify-between gap-3">
             <div>
               <p
                 id="contact-request-title"
-                className="text-sm font-semibold tracking-[0.3em] uppercase text-[#f4c979]"
+                className="text-[10px] font-semibold tracking-[0.25em] uppercase text-[#f4c979]/80"
               >
                 Contact message
               </p>
-              <p className="text-2xl font-semibold text-white mt-1">{request.name}</p>
+              <p className="text-xl font-bold tracking-tight text-white mt-1">{request.name}</p>
               <a
                 href={`mailto:${request.email}`}
-                className="text-sm text-[#f4c979] hover:text-white"
+                className="text-xs text-[#f4c979]/70 hover:text-white transition-colors"
               >
                 {request.email}
               </a>
@@ -160,18 +161,18 @@ function ContactRequestModalContent({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-full border border-white/10 bg-white/5 p-2 text-white/70 hover:text-white hover:bg-white/10 transition"
+              className="rounded-lg border border-white/8 bg-white/[0.04] p-2 text-white/50 hover:text-white hover:bg-white/8 transition"
               aria-label="Close full message"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3">
-            <div className="flex items-center justify-between text-xs text-white/70 uppercase tracking-[0.3em]">
+          <div className="rounded-xl border border-white/8 bg-white/[0.03] p-3.5 space-y-2.5">
+            <div className="flex items-center justify-between text-[10px] text-white/50 uppercase tracking-[0.2em]">
               <span>{CONTACT_TOPIC_LABELS[request.topic] ?? request.topic}</span>
               <span>{new Date(request.submitted_at).toLocaleString()}</span>
             </div>
-            <p className="text-sm text-white/90 leading-relaxed whitespace-pre-line">
+            <p className="text-sm text-white/80 leading-relaxed whitespace-pre-line">
               {request.message}
             </p>
           </div>
@@ -179,9 +180,9 @@ function ContactRequestModalContent({
             <motion.button
               type="button"
               onClick={onClose}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.98 }}
-              className="inline-flex items-center justify-center gap-2 rounded-full border border-transparent bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] px-5 py-2 text-sm font-semibold text-[#2e1b02] shadow-[0_10px_25px_rgba(244,201,121,0.3)] transition"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.97 }}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-transparent bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] px-4 py-2 text-sm font-semibold text-[#2e1b02] shadow-[0_6px_16px_rgba(244,201,121,0.2)] transition"
             >
               Close
             </motion.button>
@@ -265,6 +266,10 @@ export default function AdminDashboard() {
   
   // Incident logging modal state
   const [showIncidentModal, setShowIncidentModal] = useState(false);
+
+  // Nav cards expand/collapse state
+  const [showAllNavCards, setShowAllNavCards] = useState(false);
+  const VISIBLE_NAV_CARD_COUNT = 6;
 
   // Announcement hooks
   const { data: announcements, isLoading: announcementsLoading } = useAnnouncementsQuery(10);
@@ -447,76 +452,115 @@ export default function AdminDashboard() {
   // ============================================================
 
   // Control Panel Tab Content
-  const renderControlPanelTab = () => (
-    <motion.div
-      key="control-panel"
-      variants={tabContentVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      className="space-y-4"
-    >
-      {/* Role dashboards — admin can navigate the entire app (compact row) */}
+  const renderControlPanelTab = () => {
+    const visibleCards = showAllNavCards 
+      ? ADMIN_CORE_NAV_CARDS 
+      : ADMIN_CORE_NAV_CARDS.slice(0, VISIBLE_NAV_CARD_COUNT);
+    const hiddenCount = ADMIN_CORE_NAV_CARDS.length - VISIBLE_NAV_CARD_COUNT;
+
+    return (
       <motion.div
-        variants={itemVariants}
-        initial="hidden"
-        animate="visible"
-        className="space-y-1.5"
+        key="control-panel"
+        variants={tabContentVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        className="space-y-4"
       >
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-[#f8e5bb]/70 px-0.5">
-          Navigate app
-        </p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-          {ADMIN_ROLE_DASHBOARDS_NAV_CARDS.map((card, index) => (
-            <motion.div key={card.to} variants={itemVariants} custom={index}>
+        {/* Role dashboards — horizontal scroll on mobile, compact row on desktop */}
+        <motion.div
+          variants={itemVariants}
+          initial="hidden"
+          animate="visible"
+          className="space-y-1.5"
+        >
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-[#f8e5bb]/60 px-0.5">
+            Navigate app
+          </p>
+          <div className="flex gap-2 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-1 sm:grid sm:grid-cols-3 lg:grid-cols-5 sm:overflow-visible sm:pb-0">
+            {ADMIN_ROLE_DASHBOARDS_NAV_CARDS.map((card, index) => (
+              <motion.div 
+                key={card.to} 
+                variants={itemVariants} 
+                custom={index}
+                className="snap-center flex-none w-[65%] sm:w-auto sm:flex-auto"
+              >
+                <BrandedNavCard
+                  title={card.title}
+                  description={card.description}
+                  icon={card.icon}
+                  to={card.to}
+                  variant={card.variant ?? "gold"}
+                  compact
+                  iconAsImage={card.iconAsImage}
+                />
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Admin core nav cards — bento grid on desktop, stacked on mobile */}
+        <motion.div 
+          className="grid gap-2.5 sm:gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          {visibleCards.map((card, index) => (
+            <motion.div
+              key={card.to}
+              variants={itemVariants}
+              custom={index}
+            >
               <BrandedNavCard
                 title={card.title}
                 description={card.description}
                 icon={card.icon}
                 to={card.to}
                 variant={card.variant ?? "gold"}
-                compact
                 iconAsImage={card.iconAsImage}
               />
             </motion.div>
           ))}
-        </div>
-      </motion.div>
+        </motion.div>
 
-      <motion.div 
-        className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        {ADMIN_CORE_NAV_CARDS.map((card, index) => (
+        {/* Show more / Show less toggle */}
+        {hiddenCount > 0 && (
           <motion.div
-            key={card.to}
             variants={itemVariants}
-            custom={index}
+            initial="hidden"
+            animate="visible"
+            className="flex justify-center"
           >
-            <BrandedNavCard
-              title={card.title}
-              description={card.description}
-              icon={card.icon}
-              to={card.to}
-              variant={card.variant ?? "gold"}
-              iconAsImage={card.iconAsImage}
-            />
+            <motion.button
+              type="button"
+              onClick={() => setShowAllNavCards(prev => !prev)}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#f4c979]/25 text-[#f8e5bb]/70 text-xs sm:text-sm font-medium transition-colors hover:text-[#f8e5bb] hover:border-[#f4c979]/40 hover:bg-white/[0.03]"
+            >
+              {showAllNavCards ? "Show less" : `Show ${hiddenCount} more`}
+              <motion.span
+                animate={{ rotate: showAllNavCards ? 180 : 0 }}
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              >
+                <ChevronDown className="w-3.5 h-3.5" />
+              </motion.span>
+            </motion.button>
           </motion.div>
-        ))}
+        )}
+        
+        {/* Safety Incidents Section */}
+        <motion.div
+          variants={itemVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <SafetyIncidentsList onLogIncident={() => setShowIncidentModal(true)} />
+        </motion.div>
       </motion.div>
-      
-      {/* Safety Incidents Section */}
-      <motion.div
-        variants={itemVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        <SafetyIncidentsList onLogIncident={() => setShowIncidentModal(true)} />
-      </motion.div>
-    </motion.div>
-  );
+    );
+  };
 
   // Announcements Tab Content
   const renderAnnouncementsTab = () => (
@@ -527,50 +571,51 @@ export default function AdminDashboard() {
       animate="animate"
       exit="exit"
     >
-      <section className="rounded-2xl sm:rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 shadow-[0_35px_60px_rgba(0,0,0,0.6)] relative overflow-hidden">
-        {/* Ambient glow overlays */}
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(247,228,189,0.06),transparent_50%)]" />
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(209,152,57,0.04),transparent_40%)]" />
+      <section className="rounded-2xl sm:rounded-3xl border border-[#f6dcb2]/15 bg-gradient-to-br from-[#14110d]/95 via-[#0b0906]/95 to-[#050403]/95 p-3 sm:p-5 md:p-6 space-y-3 sm:space-y-4 shadow-[0_20px_40px_rgba(0,0,0,0.5)] relative overflow-hidden backdrop-blur-xl">
+        {/* Single ambient glow overlay */}
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(247,228,189,0.05),transparent_50%)]" />
         
-        <div className="relative flex flex-col gap-3 sm:gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="relative flex flex-col gap-2.5 sm:gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1">
-            <div className="inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 bg-[#fef3d1]/10 border border-[#f6dcb2]/40 rounded-full text-[0.6rem] sm:text-[0.65rem] font-semibold tracking-[0.2em] sm:tracking-[0.3em] uppercase text-[#f8dfb3] mb-2 sm:mb-4">
+            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 sm:px-3 sm:py-1 bg-[#fef3d1]/8 border border-[#f6dcb2]/30 rounded-full text-[0.6rem] sm:text-[0.65rem] font-semibold tracking-[0.2em] uppercase text-[#f8dfb3] mb-1.5 sm:mb-3">
               {isEditMode ? (
-                <Pencil className="w-3 h-3 sm:w-4 sm:h-4 text-[#f5cf82]" />
+                <Pencil className="w-3 h-3 text-[#f5cf82]" />
               ) : (
-                <Megaphone className="w-3 h-3 sm:w-4 sm:h-4 text-[#f5cf82]" />
+                <Megaphone className="w-3 h-3 text-[#f5cf82]" />
               )}
               {isEditMode ? "Edit" : "Publish"}
             </div>
-            <h3 className="text-base sm:text-lg md:text-xl font-semibold text-white">
+            <h3 className="text-sm sm:text-lg md:text-xl font-bold tracking-tight text-white">
               {isEditMode ? "Edit Announcement" : "Create Announcement"}
             </h3>
-            <p className="hidden sm:block text-sm text-[#f8e5bb]/80 mt-1">
+            <p className="hidden sm:block text-xs sm:text-sm text-[#f8e5bb]/60 mt-0.5 leading-relaxed max-w-lg">
               {isEditMode
                 ? "Update the details below and save your changes."
                 : "Publish news that appears instantly on the announcements page."}
             </p>
           </div>
-          <button
+          <motion.button
             type="button"
             onClick={() => setComposerOpen(true)}
             disabled={composerOpen}
-            className="inline-flex items-center justify-center whitespace-nowrap rounded-full border border-transparent bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] px-3 sm:px-5 py-2 text-xs sm:text-sm font-semibold text-[#332308] shadow-[0_15px_30px_rgba(0,0,0,0.45)] transition hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c0b09] disabled:cursor-not-allowed disabled:opacity-60 min-h-[40px] sm:min-h-[44px]"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+            className="inline-flex items-center justify-center whitespace-nowrap rounded-xl border border-transparent bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] px-3 sm:px-5 py-2 text-xs sm:text-sm font-semibold text-[#332308] shadow-[0_8px_20px_rgba(0,0,0,0.3)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c0b09] disabled:cursor-not-allowed disabled:opacity-60 min-h-[44px]"
             aria-expanded={composerOpen ? "true" : "false"}
           >
             <span className="sm:hidden">+ New</span>
             <span className="hidden sm:inline">Create New Announcement</span>
-          </button>
+          </motion.button>
         </div>
 
         {composerOpen ? (
-          <div className="relative space-y-3 sm:space-y-4">
+          <div className="relative space-y-3">
             {feedback && (
               <div
-                className={`rounded-xl sm:rounded-2xl px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm ${
+                className={`rounded-xl px-3 py-2 text-xs sm:text-sm ${
                   feedback.type === "success"
-                    ? "bg-[#1d1a14] text-[#f4d589] border border-[#f4d589]/50"
-                    : "bg-[#2b1414] text-[#f2a4a4] border border-[#f47373]/40"
+                    ? "bg-[#1d1a14] text-[#f4d589] border border-[#f4d589]/40"
+                    : "bg-[#2b1414] text-[#f2a4a4] border border-[#f47373]/30"
                 }`}
               >
                 {feedback.message}
@@ -579,18 +624,18 @@ export default function AdminDashboard() {
 
             <form
               aria-label={isEditMode ? "Edit announcement form" : "Create announcement form"}
-              className={`space-y-3 sm:space-y-4 ${isEditMode ? "ring-2 ring-[#f4c979]/50 rounded-xl sm:rounded-2xl p-3 sm:p-4" : ""}`}
+              className={`space-y-3 ${isEditMode ? "ring-1 ring-[#f4c979]/40 rounded-xl p-3 sm:p-4" : ""}`}
               onSubmit={handleCreateAnnouncement}
             >
               {isEditMode && editingAnnouncement && (
-                <div className="flex items-center gap-2 text-xs sm:text-sm text-[#f4c979] pb-2 border-b border-[#f4c979]/20">
-                  <Pencil className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="truncate">Editing: <strong className="truncate">{editingAnnouncement.title}</strong></span>
+                <div className="flex items-center gap-2 text-xs text-[#f4c979] pb-2 border-b border-[#f4c979]/15">
+                  <Pencil className="w-3 h-3" />
+                  <span className="truncate">Editing: <strong>{editingAnnouncement.title}</strong></span>
                 </div>
               )}
-              <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+              <div className="space-y-2.5 sm:grid sm:grid-cols-2 sm:gap-3 sm:space-y-0">
                 <div className="sm:col-span-2 lg:col-span-1">
-                  <label className="text-[10px] sm:text-xs uppercase tracking-[0.25em] sm:tracking-[0.35em] text-[#f3d9a4]/70 block mb-1.5 sm:mb-2">
+                  <label className="text-[10px] uppercase tracking-[0.25em] text-[#f3d9a4]/60 block mb-1.5">
                     Title
                   </label>
                   <input
@@ -598,12 +643,12 @@ export default function AdminDashboard() {
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="e.g. New safety protocols"
-                    className="w-full bg-[#050402]/80 border border-[#f6dcb2]/20 rounded-xl sm:rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 focus:ring-offset-2 focus:ring-offset-[#030201] min-h-[44px] sm:min-h-[48px]"
+                    className="w-full bg-[#050402]/80 border border-[#f6dcb2]/15 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-[#f4c979]/50 focus:ring-offset-2 focus:ring-offset-[#030201] min-h-[44px]"
                   />
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="text-[10px] sm:text-xs uppercase tracking-[0.25em] sm:tracking-[0.35em] text-[#f3d9a4]/70 block mb-1.5 sm:mb-2">
+                  <label className="text-[10px] uppercase tracking-[0.25em] text-[#f3d9a4]/60 block mb-1.5">
                     Message
                   </label>
                   <textarea
@@ -611,13 +656,13 @@ export default function AdminDashboard() {
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="Share the details your team should know..."
                     rows={3}
-                    className="w-full bg-[#050402]/80 border border-[#f6dcb2]/20 rounded-xl sm:rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 focus:ring-offset-2 focus:ring-offset-[#030201] resize-none"
+                    className="w-full bg-[#050402]/80 border border-[#f6dcb2]/15 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-[#f4c979]/50 focus:ring-offset-2 focus:ring-offset-[#030201] resize-none"
                   />
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                <label className="inline-flex items-center gap-2 text-xs sm:text-sm text-[#f8e5bb]/80">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
+                <label className="inline-flex items-center gap-2 text-xs text-[#f8e5bb]/70">
                   <input
                     type="checkbox"
                     checked={scheduleLater}
@@ -634,69 +679,70 @@ export default function AdminDashboard() {
                       onChange={(e) => setPublishDate(e.target.value)}
                       helperText="Goes live at 12:01 AM"
                       containerClassName="text-white"
-                      labelClassName="text-[0.65rem] uppercase tracking-[0.3em] text-[#f3d9a4]/70"
+                      labelClassName="text-[0.65rem] uppercase tracking-[0.3em] text-[#f3d9a4]/60"
                       variant="gold"
                     />
                   </div>
                 )}
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-1 sm:pt-2">
-                <button
+              <div className="flex gap-2 pt-1">
+                <motion.button
                   type="submit"
                   disabled={!isValid || submitting || (isEditMode && updateAnnouncement.isPending)}
-                  className="flex-1 inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#2e1b02] text-sm sm:text-base font-semibold transition hover:scale-[1.01] border border-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#050301] disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px] sm:min-h-[48px]"
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#2e1b02] text-sm font-semibold transition border border-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#050301] disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px]"
                 >
                   {submitting || (isEditMode && updateAnnouncement.isPending)
                     ? (isEditMode ? "Updating..." : "Publishing...")
                     : (isEditMode ? "Update" : "Publish")}
-                </button>
-                <button
+                </motion.button>
+                <motion.button
                   type="button"
                   onClick={() => {
                     setComposerOpen(false);
                     if (isEditMode) resetToCreateMode();
                   }}
-                  className="sm:w-auto inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl border border-[#f4c979]/30 text-[#f4c979] text-sm sm:text-base font-semibold transition hover:bg-[#f4c979]/10 focus-visible:outline-none min-h-[44px] sm:min-h-[48px]"
+                  whileTap={{ scale: 0.97 }}
+                  className="inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-[#f4c979]/25 text-[#f4c979] text-sm font-semibold transition hover:bg-[#f4c979]/8 focus-visible:outline-none min-h-[44px]"
                 >
                   {isEditMode ? "Cancel" : "Hide"}
-                </button>
+                </motion.button>
               </div>
               {(submitting || (isEditMode && updateAnnouncement.isPending)) && (
-                <div className="h-1 w-full rounded-full bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] animate-pulse" />
+                <div className="h-0.5 w-full rounded-full bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] animate-pulse" />
               )}
             </form>
           </div>
         ) : (
-          <p className="relative text-xs sm:text-sm text-[#f8e5bb]/70 border-t border-white/5 pt-3 sm:pt-4">
-            <span className="hidden sm:inline">Keep the dashboard tidy—open the composer only when you need to publish an update.</span>
-            <span className="sm:hidden">Open composer to publish an update.</span>
+          <p className="relative text-xs text-[#f8e5bb]/50 border-t border-white/5 pt-3">
+            Open composer to publish an update.
           </p>
         )}
 
         {/* Recent Announcements List */}
-        <div className="relative border-t border-white/5 pt-4 sm:pt-6 mt-1 sm:mt-2">
+        <div className="relative border-t border-white/5 pt-3 sm:pt-5 mt-1">
           <GoldCollapsibleSection
             id="recent-announcements"
             title="Recent Announcements"
             subtitle="Edit or manage past broadcasts"
             storageKey="recent-announcements-collapsed"
             defaultOpen={true}
-            icon={<Megaphone className="w-4 h-4 sm:w-5 sm:h-5 text-[#f4c979]" />}
+            icon={<Megaphone className="w-4 h-4 text-[#f4c979]" />}
           >
             {announcementsLoading ? (
-              <div className="space-y-2 sm:grid sm:grid-cols-2 sm:gap-3 sm:space-y-0 lg:grid-cols-3">
+              <div className="space-y-2 sm:grid sm:grid-cols-2 sm:gap-2.5 sm:space-y-0 lg:grid-cols-3">
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="h-16 sm:h-16 rounded-lg sm:rounded-xl bg-white/5 animate-pulse" />
+                  <div key={i} className="h-14 rounded-lg bg-white/5 animate-pulse" />
                 ))}
               </div>
             ) : !announcements || announcements.length === 0 ? (
-              <p className="text-xs sm:text-sm text-[#f8e5bb]/70">No announcements yet.</p>
+              <p className="text-xs text-[#f8e5bb]/50">No announcements yet.</p>
             ) : (
-              <div className="space-y-1.5 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-2 lg:grid-cols-3 lg:gap-3 max-h-[50vh] sm:max-h-[60vh] overflow-y-auto pr-1 -mr-1 scrollbar-thin scrollbar-thumb-[#f4c979]/20 scrollbar-track-transparent">
+              <div className="space-y-1.5 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-2 lg:grid-cols-3 max-h-[50vh] overflow-y-auto pr-1 -mr-1 scrollbar-thin scrollbar-thumb-[#f4c979]/15 scrollbar-track-transparent">
                 {announcements.map((announcement) => {
                   const isEditing = editingAnnouncement?.id === announcement.id;
-                  // Format author - truncate email if too long
                   const authorDisplay = announcement.author.includes('@') 
                     ? announcement.author.split('@')[0] 
                     : announcement.author;
@@ -704,45 +750,43 @@ export default function AdminDashboard() {
                   return (
                     <motion.div
                       key={announcement.id}
-                      className={`group relative rounded-lg sm:rounded-xl border transition-all ${
+                      className={`group relative rounded-lg border transition-all ${
                         isEditing
-                          ? "border-[#f4c979]/50 bg-[#f4c979]/10 ring-1 ring-[#f4c979]/30"
-                          : "border-white/10 bg-black/30 hover:border-[#f4c979]/30 hover:bg-black/40"
+                          ? "border-[#f4c979]/40 bg-[#f4c979]/8 ring-1 ring-[#f4c979]/25"
+                          : "border-white/8 bg-black/20 hover:border-[#f4c979]/25 hover:bg-black/30"
                       }`}
                       whileHover={{ scale: 1.01 }}
                       whileTap={{ scale: 0.99 }}
                     >
-                      {/* Compact layout */}
-                      <div className="flex items-center p-2 sm:p-3 gap-2 sm:gap-3">
+                      <div className="flex items-center p-2 sm:p-2.5 gap-2">
                         <div className="flex-1 min-w-0">
                           <p className="text-xs sm:text-sm font-medium text-white truncate leading-snug">
                             {announcement.title}
                           </p>
-                          <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5 sm:mt-1 text-[9px] sm:text-[10px] md:text-xs text-[#f8e5bb]/60">
+                          <div className="flex items-center gap-1.5 mt-0.5 text-[9px] sm:text-[10px] text-[#f8e5bb]/50">
                             <span className="shrink-0">{announcement.date}</span>
-                            <span className="text-[#f4c979]/40">·</span>
+                            <span className="text-[#f4c979]/30">·</span>
                             <span className="truncate">{authorDisplay}</span>
                           </div>
                         </div>
                         
-                        {/* Edit button - compact */}
-                        <button
+                        <motion.button
                           type="button"
                           onClick={() => handleEditAnnouncement(announcement)}
-                          className={`shrink-0 flex items-center justify-center rounded-lg border transition-all min-w-[36px] min-h-[36px] sm:min-w-[40px] sm:min-h-[40px] p-1.5 sm:p-2 ${
+                          whileTap={{ scale: 0.95 }}
+                          className={`shrink-0 flex items-center justify-center rounded-lg border transition-all min-w-[36px] min-h-[36px] p-1.5 ${
                             isEditing
-                              ? "border-[#f4c979]/50 bg-[#f4c979]/20 text-[#f4c979]"
-                              : "border-[#f4c979]/30 text-[#f4c979] hover:bg-[#f4c979]/10 active:bg-[#f4c979]/20"
+                              ? "border-[#f4c979]/40 bg-[#f4c979]/15 text-[#f4c979]"
+                              : "border-[#f4c979]/20 text-[#f4c979]/70 hover:bg-[#f4c979]/8 active:bg-[#f4c979]/15"
                           }`}
                           aria-label={`Edit announcement: ${announcement.title}`}
                         >
-                          <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        </button>
+                          <Pencil className="w-3.5 h-3.5" />
+                        </motion.button>
                       </div>
                       
-                      {/* Editing indicator */}
                       {isEditing && (
-                        <div className="absolute -top-1 -right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#f4c979] shadow-[0_0_8px_rgba(244,201,121,0.8)]">
+                        <div className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#f4c979] shadow-[0_0_6px_rgba(244,201,121,0.7)]">
                           <span className="absolute inset-0 rounded-full bg-[#f4c979] animate-ping opacity-75" />
                         </div>
                       )}
@@ -766,50 +810,43 @@ export default function AdminDashboard() {
       animate="animate"
       exit="exit"
     >
-      <section className="rounded-2xl sm:rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 shadow-[0_35px_60px_rgba(0,0,0,0.6)] relative overflow-hidden">
-        {/* Ambient glow overlays */}
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(247,228,189,0.06),transparent_50%)]" />
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(209,152,57,0.04),transparent_40%)]" />
+      <section className="rounded-2xl sm:rounded-3xl border border-[#f6dcb2]/15 bg-gradient-to-br from-[#14110d]/95 via-[#0b0906]/95 to-[#050403]/95 p-3 sm:p-5 md:p-6 space-y-3 sm:space-y-4 shadow-[0_20px_40px_rgba(0,0,0,0.5)] relative overflow-hidden backdrop-blur-xl">
+        {/* Single ambient glow */}
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(247,228,189,0.05),transparent_50%)]" />
         
-        <div className="relative flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
+        <div className="relative flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <div className="inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 bg-[#fef3d1]/10 border border-[#f6dcb2]/40 rounded-full text-[0.6rem] sm:text-[0.65rem] font-semibold tracking-[0.2em] sm:tracking-[0.3em] uppercase text-[#f8dfb3] mb-2 sm:mb-4">
-              <Inbox className="w-3 h-3 sm:w-4 sm:h-4 text-[#f5cf82]" />
-              <span className="hidden sm:inline">Contact Inbox</span>
-              <span className="sm:hidden">Inbox</span>
+            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 sm:px-3 sm:py-1 bg-[#fef3d1]/8 border border-[#f6dcb2]/30 rounded-full text-[0.6rem] font-semibold tracking-[0.2em] uppercase text-[#f8dfb3] mb-1.5 sm:mb-3">
+              <Inbox className="w-3 h-3 text-[#f5cf82]" />
+              Inbox
             </div>
-            <h3 className="text-base sm:text-lg md:text-xl font-semibold text-white">
-              <span className="hidden sm:inline">Latest Contact Requests</span>
-              <span className="sm:hidden">Contact Requests</span>
+            <h3 className="text-sm sm:text-lg md:text-xl font-bold tracking-tight text-white">
+              Contact Requests
             </h3>
-            <p className="hidden sm:block text-sm text-[#f8e5bb]/70 mt-1">
-              Messages submitted through the Contact page are routed here for admin follow-up.
+            <p className="hidden sm:block text-xs text-[#f8e5bb]/50 mt-0.5 leading-relaxed max-w-lg">
+              Messages from the Contact page routed here for follow-up.
             </p>
           </div>
-          <span className="text-[10px] sm:text-xs text-[#f8e5bb]/60 whitespace-nowrap px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-white/5 border border-white/10 self-start">
+          <span className="text-[10px] text-[#f8e5bb]/50 whitespace-nowrap px-2 py-1 rounded-lg bg-white/[0.04] border border-white/8 shrink-0">
             {contactRequests.length} · live
           </span>
         </div>
 
+        {/* Topic filter pills */}
         {contactRequests.length > 0 && (
-          <div className="relative flex flex-wrap items-center gap-2 sm:gap-3 rounded-xl sm:rounded-2xl border border-white/5 bg-white/5 p-2 sm:p-3">
-            <div className="inline-flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs uppercase tracking-[0.2em] sm:tracking-[0.35em] text-[#f4c979]">
-              <Filter className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">Filter topics</span>
-              <span className="sm:hidden">Filter</span>
-            </div>
-            <div className="flex flex-wrap gap-1.5 sm:gap-2">
+          <div className="relative flex items-center gap-2 overflow-x-auto scrollbar-none pb-0.5">
+            <Filter className="w-3 h-3 text-[#f4c979]/70 shrink-0" />
+            <div className="flex gap-1.5">
               {["all", "general", "hr", "safety", "payroll"].map((topic) => (
                 <motion.button
                   key={topic}
                   type="button"
                   onClick={() => setContactTopicFilter(topic)}
-                  whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className={`rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold transition-all duration-200 ${
+                  className={`rounded-lg px-2.5 py-1 text-[10px] sm:text-xs font-semibold transition-all whitespace-nowrap ${
                     contactTopicFilter === topic
-                      ? "bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#2e1b02] shadow-[0_5px_20px_rgba(244,201,121,0.35)]"
-                      : "border border-white/10 text-[#f8e5bb]/80 hover:text-white hover:border-[#f4c979]/40 hover:bg-white/5"
+                      ? "bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#2e1b02]"
+                      : "border border-white/8 text-[#f8e5bb]/60 hover:text-white hover:border-[#f4c979]/30"
                   }`}
                 >
                   {topic === "all" ? "All" : CONTACT_TOPIC_LABELS[topic] ?? topic}
@@ -820,13 +857,12 @@ export default function AdminDashboard() {
               <motion.button
                 type="button"
                 onClick={() => setContactTopicFilter("all")}
-                initial={{ opacity: 0, x: -10 }}
+                initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                whileHover={{ scale: 1.05 }}
-                className="text-[10px] sm:text-xs font-semibold text-[#f8e5bb]/70 hover:text-white transition-colors inline-flex items-center gap-1"
+                whileTap={{ scale: 0.95 }}
+                className="text-[10px] font-semibold text-[#f8e5bb]/50 hover:text-white transition-colors inline-flex items-center gap-0.5 shrink-0"
               >
-                <X className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                <X className="w-2.5 h-2.5" />
                 Reset
               </motion.button>
             )}
@@ -834,67 +870,69 @@ export default function AdminDashboard() {
         )}
 
         {contactError && (
-          <div className="rounded-xl sm:rounded-2xl border border-[#f47373]/40 bg-[#2b1414]/70 text-[#f2a4a4] px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">
+          <div className="rounded-xl border border-[#f47373]/30 bg-[#2b1414]/60 text-[#f2a4a4] px-3 py-2 text-xs">
             {contactError}
           </div>
         )}
 
         {contactLoading ? (
-          <div className="grid gap-2 sm:gap-3 sm:grid-cols-2">
+          <div className="space-y-2 sm:grid sm:grid-cols-2 sm:gap-2.5 sm:space-y-0">
             {Array.from({ length: 4 }).map((_, index) => (
               <div
                 key={index}
-                className="rounded-xl sm:rounded-2xl border border-white/5 bg-white/5 h-24 sm:h-32 animate-pulse"
+                className="rounded-xl border border-white/5 bg-white/[0.03] h-20 sm:h-24 animate-pulse"
               />
             ))}
           </div>
         ) : filteredContactRequests.length === 0 ? (
-          <p className="text-xs sm:text-sm text-[#f8e5bb]/70">
+          <p className="text-xs text-[#f8e5bb]/50 py-2">
             {contactRequests.length === 0
               ? "No contact requests yet."
               : "No requests match this filter."}
           </p>
         ) : (
-          <div className="grid gap-2 sm:gap-3 md:gap-4 sm:grid-cols-2">
+          <div className="space-y-2 sm:grid sm:grid-cols-2 sm:gap-2.5 sm:space-y-0">
             {filteredContactRequests.map((request, index) => (
               <motion.article
                 key={request.id}
-                initial={{ opacity: 0, y: 15 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05, duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
-                whileHover={{ scale: 1.02, y: -2 }}
-                className="rounded-xl sm:rounded-2xl border border-white/10 bg-black/30 p-2.5 sm:p-4 text-white/85 space-y-2 sm:space-y-3 transition-all duration-300 hover:border-[#f4c979]/30 hover:bg-black/40 hover:shadow-[0_10px_30px_rgba(0,0,0,0.4)] cursor-pointer"
+                transition={{ 
+                  type: "spring", 
+                  stiffness: 100, 
+                  damping: 20, 
+                  delay: index * 0.04 
+                }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setExpandedRequest(request)}
+                className="rounded-xl border border-white/8 bg-black/20 p-3 text-white/85 space-y-1.5 transition-all hover:border-[#f4c979]/25 hover:bg-black/30 cursor-pointer active:bg-black/40"
               >
-                <div className="flex items-start justify-between gap-2 sm:gap-3">
+                <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <p className="text-xs sm:text-sm font-semibold text-white truncate">{request.name}</p>
                     <a
                       href={`mailto:${request.email}`}
-                      className="text-[10px] sm:text-xs text-[#f4c979] hover:text-[#ffe6bc] transition-colors truncate block"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-[10px] text-[#f4c979]/80 hover:text-[#ffe6bc] transition-colors truncate block"
                     >
                       {request.email}
                     </a>
                   </div>
-                  <span className="text-[8px] sm:text-[0.65rem] uppercase tracking-[0.15em] sm:tracking-[0.25em] px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-full border border-[#f6dcb2]/30 text-[#f8e5bb]/80 transition-colors hover:border-[#f4c979]/50 shrink-0">
+                  <span className="text-[8px] uppercase tracking-[0.15em] px-1.5 py-0.5 rounded-md border border-[#f6dcb2]/20 text-[#f8e5bb]/60 shrink-0">
                     {CONTACT_TOPIC_LABELS[request.topic] ?? request.topic}
                   </span>
                 </div>
-                <div className="space-y-1.5 sm:space-y-2">
-                  <p className="text-xs sm:text-sm text-white/80 leading-relaxed line-clamp-2 sm:line-clamp-3">
-                    {request.message}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setExpandedRequest(request)}
-                    className="text-[10px] sm:text-xs font-semibold tracking-wide text-[#f4c979] hover:text-white transition-colors inline-flex items-center gap-1 group"
-                  >
-                    View full
-                    <span className="transform transition-transform group-hover:translate-x-1">→</span>
-                  </button>
-                </div>
-                <p className="text-[9px] sm:text-xs text-[#f8e5bb]/60">
-                  {new Date(request.submitted_at).toLocaleString()}
+                <p className="text-xs text-white/60 leading-relaxed line-clamp-2">
+                  {request.message}
                 </p>
+                <div className="flex items-center justify-between">
+                  <p className="text-[9px] text-[#f8e5bb]/40">
+                    {new Date(request.submitted_at).toLocaleString()}
+                  </p>
+                  <span className="text-[10px] font-medium text-[#f4c979]/60">
+                    View →
+                  </span>
+                </div>
               </motion.article>
             ))}
           </div>
@@ -911,33 +949,30 @@ export default function AdminDashboard() {
       initial="initial"
       animate="animate"
       exit="exit"
-      className="space-y-4 sm:space-y-6"
+      className="space-y-3 sm:space-y-5"
     >
-      <section className="rounded-2xl sm:rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-5 shadow-[0_35px_60px_rgba(0,0,0,0.6)] relative overflow-hidden">
-        {/* Ambient glow overlays */}
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(247,228,189,0.06),transparent_50%)]" />
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(209,152,57,0.04),transparent_40%)]" />
+      <section className="rounded-2xl sm:rounded-3xl border border-[#f6dcb2]/15 bg-gradient-to-br from-[#14110d]/95 via-[#0b0906]/95 to-[#050403]/95 p-3 sm:p-5 md:p-6 space-y-3 sm:space-y-4 shadow-[0_20px_40px_rgba(0,0,0,0.5)] relative overflow-hidden backdrop-blur-xl">
+        {/* Single ambient glow */}
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(247,228,189,0.05),transparent_50%)]" />
         
         <div className="relative">
-          <div className="inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 bg-[#fef3d1]/10 border border-[#f6dcb2]/40 rounded-full text-[0.6rem] sm:text-[0.65rem] font-semibold tracking-[0.2em] sm:tracking-[0.3em] uppercase text-[#f8dfb3] mb-2 sm:mb-4">
-            <Bell className="w-3 h-3 sm:w-4 sm:h-4 text-[#f5cf82]" />
-            <span className="hidden sm:inline">Manual Push Notifications</span>
-            <span className="sm:hidden">Push</span>
+          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 sm:px-3 sm:py-1 bg-[#fef3d1]/8 border border-[#f6dcb2]/30 rounded-full text-[0.6rem] font-semibold tracking-[0.2em] uppercase text-[#f8dfb3] mb-1.5 sm:mb-3">
+            <Bell className="w-3 h-3 text-[#f5cf82]" />
+            Push
           </div>
-          <h3 className="text-base sm:text-lg md:text-xl font-semibold text-white">
+          <h3 className="text-sm sm:text-lg md:text-xl font-bold tracking-tight text-white">
             Send Push Notification
           </h3>
-          <p className="hidden sm:block text-sm text-[#f8e5bb]/70 mt-1">
+          <p className="hidden sm:block text-xs text-[#f8e5bb]/50 mt-0.5 leading-relaxed max-w-lg">
             Broadcast important messages directly to users' devices. Target all users, specific roles, or job crews.
           </p>
         </div>
         
-        <div className="relative border-t border-white/5 pt-3 sm:pt-6">
+        <div className="relative border-t border-white/5 pt-3 sm:pt-5">
           <AdminManualNotifications />
         </div>
       </section>
       
-      {/* Enable Notifications Button */}
       <div className="flex justify-center">
         <EnableNotificationsButton variant="gold" />
       </div>
@@ -969,88 +1004,47 @@ export default function AdminDashboard() {
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ type: "spring", stiffness: 100, damping: 20 }}
               className="relative"
             >
               {/* Glass backdrop container - Gold theme */}
               <div 
                 className="relative overflow-hidden rounded-2xl md:rounded-3xl border border-white/[0.12] shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.1)]"
                 style={{
-                  background: 'linear-gradient(145deg, rgba(244, 201, 121, 0.1) 0%, rgba(28, 28, 31, 0.65) 40%, rgba(15, 13, 9, 0.75) 100%)',
+                  background: 'linear-gradient(145deg, rgba(244, 201, 121, 0.08) 0%, rgba(28, 28, 31, 0.65) 40%, rgba(15, 13, 9, 0.75) 100%)',
                   backdropFilter: 'blur(24px) saturate(1.6)',
                   WebkitBackdropFilter: 'blur(24px) saturate(1.6)',
                 }}
               >
-                {/* Realistic glass gloss - diagonal shine reflection */}
+                {/* Glass gloss - single combined layer for performance */}
                 <div 
                   className="absolute inset-0 pointer-events-none"
                   style={{
-                    background: 'linear-gradient(125deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 25%, transparent 50%, transparent 100%)',
-                  }}
-                />
-                
-                {/* Secondary gloss layer */}
-                <div 
-                  className="absolute inset-0 pointer-events-none"
-                  style={{
-                    background: 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 40%)',
-                  }}
-                />
-                
-                {/* Inner gold glow */}
-                <div 
-                  className="absolute inset-0 pointer-events-none"
-                  style={{
-                    background: 'radial-gradient(ellipse at 25% 0%, rgba(244, 201, 121, 0.2) 0%, transparent 45%)',
-                  }}
-                />
-                
-                {/* Specular highlight - corner gleam */}
-                <div 
-                  className="absolute top-0 left-0 w-32 h-32 pointer-events-none"
-                  style={{
-                    background: 'radial-gradient(circle at 20% 20%, rgba(255,255,255,0.12) 0%, transparent 50%)',
+                    background: 'linear-gradient(125deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 20%, transparent 45%), radial-gradient(ellipse at 25% 0%, rgba(244, 201, 121, 0.15) 0%, transparent 45%)',
                   }}
                 />
                 
                 {/* Top edge highlight */}
-                <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-white/5 via-white/25 to-white/5 rounded-t-[inherit]" />
-                
-                {/* Left edge highlight */}
-                <div className="absolute top-0 left-0 bottom-0 w-[1px] bg-gradient-to-b from-white/20 via-white/5 to-transparent rounded-l-[inherit]" />
+                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-white/5 via-white/20 to-white/5 rounded-t-[inherit]" />
 
-                {/* Content area */}
-                <div className="relative px-3 py-3 sm:px-5 sm:py-4 md:px-7 md:py-5">
-                  {/* Eyebrow with role badge */}
-                  <div className="flex items-center justify-between gap-2 mb-2 sm:mb-3">
-                    <div className="flex items-center gap-1.5 sm:gap-2">
+                {/* Content area - tighter mobile padding */}
+                <div className="relative px-3 py-2.5 sm:px-5 sm:py-4 md:px-7 md:py-5">
+                  {/* Eyebrow - single row with role badge + avatar */}
+                  <div className="flex items-center justify-between gap-2 mb-1.5 sm:mb-3">
+                    <div className="flex items-center gap-1.5">
                       <motion.div
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.4, delay: 0.2 }}
-                        className="flex items-center gap-1.5 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl bg-[#f4c979]/15 border border-[#f4c979]/30"
+                        transition={{ type: "spring", stiffness: 300, damping: 25, delay: 0.15 }}
+                        className="flex items-center gap-1.5 px-2 py-0.5 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl bg-[#f4c979]/12 border border-[#f4c979]/25"
                       >
-                        <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#f4c979]" />
-                        <span className="text-[8px] sm:text-[10px] uppercase tracking-[0.15em] sm:tracking-[0.2em] font-bold text-[#f8e5bb]">
-                          <span className="hidden sm:inline">Admin Control Room</span>
-                          <span className="sm:hidden">Admin</span>
-                        </span>
-                      </motion.div>
-                      
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.4, delay: 0.3 }}
-                        className="flex items-center gap-1 sm:gap-1.5 px-2 py-1 sm:px-2.5 rounded-lg bg-[#1c1c1f]/60 border border-[#f4c979]/20"
-                      >
-                        <Shield className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#f4c979]" />
-                        <span className="text-[8px] sm:text-[9px] uppercase tracking-wider font-semibold text-[#f8e5bb]/70">
+                        <Shield className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 text-[#f4c979]" />
+                        <span className="text-[8px] sm:text-[10px] uppercase tracking-[0.15em] font-bold text-[#f8e5bb]/90">
                           {role || "Admin"}
                         </span>
                       </motion.div>
                     </div>
                     
-                    {/* Avatar dropdown portal */}
                     <AvatarDropdownPortal
                       email={session?.user?.email}
                       role={role}
@@ -1061,19 +1055,18 @@ export default function AdminDashboard() {
                     />
                   </div>
 
-                  <div className="flex items-center gap-2.5 sm:gap-4">
-                    {/* Gradient line accent - Gold */}
+                  {/* Title area - gold accent line + heading */}
+                  <div className="flex items-center gap-2 sm:gap-3">
                     <motion.div
                       initial={{ scaleY: 0, opacity: 0 }}
                       animate={{ scaleY: 1, opacity: 1 }}
-                      transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                      className="w-0.5 sm:w-1 h-10 sm:h-14 md:h-16 rounded-full bg-gradient-to-b from-[#f7e4bd] via-[#f4c979] to-[#d79a32] origin-top flex-shrink-0"
+                      transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.2 }}
+                      className="w-0.5 sm:w-1 h-8 sm:h-12 md:h-14 rounded-full bg-gradient-to-b from-[#f7e4bd] via-[#f4c979] to-[#d79a32] origin-top flex-shrink-0"
                       style={{
-                        boxShadow: '0 0 20px rgba(244, 201, 121, 0.5), 0 0 40px rgba(244, 201, 121, 0.25)',
+                        boxShadow: '0 0 16px rgba(244, 201, 121, 0.4)',
                       }}
                     />
                     
-                    {/* Text content */}
                     <div className="flex-1 min-w-0">
                       {enableAnimations ? (
                         <TextEffect
@@ -1081,37 +1074,36 @@ export default function AdminDashboard() {
                           preset="blurSlide"
                           per="char"
                           delay={0.15}
-                          className="text-lg sm:text-2xl md:text-3xl font-black tracking-tight"
-                          segmentWrapperClassName="bg-gradient-to-r from-white via-[#f8e5bb] to-white/90 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(244,201,121,0.35)]"
+                          className="text-base sm:text-2xl md:text-3xl font-black tracking-tighter"
+                          segmentWrapperClassName="bg-gradient-to-r from-white via-[#f8e5bb] to-white/90 bg-clip-text text-transparent"
                         >
                           {`Welcome back, ${displayName}`}
                         </TextEffect>
                       ) : (
                         <h1 
-                          className="text-lg sm:text-2xl md:text-3xl font-black tracking-tight bg-gradient-to-r from-white via-[#f8e5bb] to-white/90 bg-clip-text text-transparent"
+                          className="text-base sm:text-2xl md:text-3xl font-black tracking-tighter bg-gradient-to-r from-white via-[#f8e5bb] to-white/90 bg-clip-text text-transparent"
                         >
                           {`Welcome back, ${displayName}`}
                         </h1>
                       )}
                       
-                      {/* Description - hidden on mobile */}
                       <motion.p
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.5, delay: 0.7, ease: 'easeOut' }}
-                        className="hidden sm:block mt-1.5 md:mt-2 text-xs sm:text-sm text-[#f8e5bb]/50 font-medium leading-relaxed max-w-xl"
+                        transition={{ duration: 0.5, delay: 0.5, ease: 'easeOut' }}
+                        className="hidden sm:block mt-1 md:mt-1.5 text-xs sm:text-sm text-[#f8e5bb]/45 font-medium leading-relaxed max-w-xl"
                       >
                         Manage users, broadcast announcements, and track mission-critical tools
                       </motion.p>
                     </div>
                   </div>
 
-                  {/* Segmented Control - Embedded in Header */}
+                  {/* Segmented Control */}
                   <motion.div
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                    className="mt-3 sm:mt-5 md:mt-6"
+                    transition={{ type: "spring", stiffness: 200, damping: 25, delay: 0.35 }}
+                    className="mt-2 sm:mt-4 md:mt-5"
                   >
                     <AdminSegmentedControl
                       tabs={DASHBOARD_TABS}
@@ -1121,11 +1113,8 @@ export default function AdminDashboard() {
                   </motion.div>
                 </div>
                 
-                {/* Bottom edge shadow */}
-                <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-black/30 to-transparent" />
-                
-                {/* Right edge shadow */}
-                <div className="absolute top-0 right-0 bottom-0 w-[1px] bg-gradient-to-b from-transparent via-black/20 to-transparent" />
+                {/* Bottom edge */}
+                <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-black/20 to-transparent" />
               </div>
             </motion.div>
           </div>

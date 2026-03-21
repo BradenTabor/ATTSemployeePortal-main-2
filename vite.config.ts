@@ -99,26 +99,35 @@ export default defineConfig(({ mode }) => {
     target: 'es2020',
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Core React ecosystem
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          // Animation library (used heavily by avatars)
-          'vendor-motion': ['framer-motion'],
-          // Backend services
-          'vendor-supabase': ['@supabase/supabase-js'],
-          // Data fetching
-          'vendor-query': ['@tanstack/react-query'],
-          // Query persistence (IndexedDB) — keep out of main-index for bundle limit
-          'vendor-query-persist': ['@tanstack/react-query-persist-client', 'idb'],
-          // Form handling
-          'vendor-forms': ['react-hook-form', '@hookform/resolvers', 'zod'],
-          // Utilities
-          'vendor-utils': ['date-fns', 'clsx', 'tailwind-merge'],
-          // Heavy libs — separate chunks to avoid 500kB warning and improve caching
-          'vendor-jspdf': ['jspdf', 'jspdf-autotable'],
-          'vendor-xlsx': ['xlsx'],
-          'vendor-recharts': ['recharts'],
-          'vendor-react-pdf': ['@react-pdf/renderer'],
+        manualChunks(id) {
+          if (id.includes('@react-google-maps/api')) return 'vendor-google-maps';
+          if (!id.includes('node_modules')) return;
+          const vendorChunks: [string, string[]][] = [
+            // Core React ecosystem
+            ['vendor-react', ['react', 'react-dom', 'react-router-dom']],
+            // Animation library (used heavily by avatars)
+            ['vendor-motion', ['framer-motion']],
+            // Backend services
+            ['vendor-supabase', ['@supabase/supabase-js']],
+            // Query persistence (IndexedDB) — keep out of main-index for bundle limit
+            ['vendor-query-persist', ['@tanstack/react-query-persist-client', 'idb']],
+            // Data fetching
+            ['vendor-query', ['@tanstack/react-query']],
+            // Form handling
+            ['vendor-forms', ['react-hook-form', '@hookform/resolvers', 'zod']],
+            // Utilities
+            ['vendor-utils', ['date-fns', 'clsx', 'tailwind-merge']],
+            // Heavy libs — separate chunks to avoid 500kB warning and improve caching
+            ['vendor-jspdf', ['jspdf', 'jspdf-autotable']],
+            ['vendor-xlsx', ['xlsx']],
+            ['vendor-recharts', ['recharts']],
+            ['vendor-react-pdf', ['@react-pdf/renderer']],
+          ];
+          for (const [chunk, packages] of vendorChunks) {
+            for (const pkg of packages) {
+              if (id.includes(`node_modules/${pkg}/`)) return chunk;
+            }
+          }
         },
         // Optimize chunk file names for caching
         chunkFileNames: (chunkInfo) => {

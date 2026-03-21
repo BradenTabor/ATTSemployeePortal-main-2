@@ -3,11 +3,14 @@ export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Outfit', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+      },
       screens: {
-        'xs': '375px', // Extra small screens (iPhone SE, etc.)
+        'xs': '375px',
       },
       colors: {
-        // WCAG AA compliant secondary text on dark backgrounds (#0a0f0d ~ #111827)
         accessibleMuted: '#b0b8c4',
       },
     },

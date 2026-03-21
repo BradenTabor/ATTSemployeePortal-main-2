@@ -59,7 +59,7 @@ const tabButtonVariants = {
   hover: { scale: 1.02 },
 };
 
-// Breakpoint for switching between wrapped and inline layouts
+// Breakpoint for switching between scroll and inline layouts
 const MOBILE_BREAKPOINT = 900;
 
 function AdminSegmentedControlComponent({
@@ -97,23 +97,28 @@ function AdminSegmentedControlComponent({
 
   // Update indicator position when active tab changes (only for desktop)
   useEffect(() => {
-    if (!containerRef.current || isMobileLayout) return;
+    if (!containerRef.current) return;
 
     const activeButton = containerRef.current.querySelector(
       `[data-tab-id="${activeTab}"]`
     ) as HTMLButtonElement | null;
 
-    if (activeButton) {
-      const containerRect = containerRef.current.getBoundingClientRect();
-      const buttonRect = activeButton.getBoundingClientRect();
-      
-      setIndicatorStyle({
-        left: buttonRect.left - containerRect.left,
-        width: buttonRect.width,
-        top: buttonRect.top - containerRect.top,
-        height: buttonRect.height,
-      });
+    if (!activeButton) return;
+
+    if (isMobileLayout) {
+      activeButton.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      return;
     }
+
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const buttonRect = activeButton.getBoundingClientRect();
+    
+    setIndicatorStyle({
+      left: buttonRect.left - containerRect.left,
+      width: buttonRect.width,
+      top: buttonRect.top - containerRect.top,
+      height: buttonRect.height,
+    });
   }, [activeTab, tabs, isMobileLayout]);
 
   // Handle keyboard navigation
@@ -163,9 +168,9 @@ function AdminSegmentedControlComponent({
           'rounded-2xl',
           // Shadow for depth
           'shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.06)]',
-          // Layout based on JS state
+          // Mobile: horizontal scroll with snap; Desktop: inline flex
           isMobileLayout
-            ? 'flex flex-wrap items-center justify-center gap-1.5'
+            ? 'flex flex-nowrap items-stretch gap-1.5 overflow-x-auto snap-x snap-mandatory scroll-smooth scrollbar-none'
             : 'inline-flex flex-nowrap items-center justify-start gap-1'
         )}
       >
@@ -238,10 +243,10 @@ function AdminSegmentedControlComponent({
               className={cn(
                 'relative flex items-center justify-center rounded-xl',
                 // Gap and layout based on mode
-                isMobileLayout ? 'gap-1.5' : 'gap-2',
-                // Mobile: equal sizing with flex for 2x2 grid
+                isMobileLayout ? 'gap-1.5 snap-center' : 'gap-2',
+                // Mobile: fixed width for scroll, shrink-proof
                 isMobileLayout 
-                  ? 'flex-1 min-w-[calc(50%-0.375rem)]' 
+                  ? 'flex-none w-[calc(50%-0.375rem)] min-w-[140px]' 
                   : 'flex-initial',
                 // Padding based on size and mode
                 isLarge 
@@ -352,11 +357,19 @@ function AdminSegmentedControlComponent({
         })}
       </div>
 
-      {/* CSS for shimmer animation */}
+      {/* CSS for shimmer animation and scrollbar hide */}
       <style>{`
         @keyframes indicatorShimmer {
           0% { background-position: 200% 0; }
           100% { background-position: -200% 0; }
+        }
+        
+        .scrollbar-none::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-none {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
         }
         
         @media (prefers-reduced-motion: reduce) {

@@ -195,8 +195,8 @@ export default function InspectionReadiness() {
   if (isLoading) {
     return (
       <DashboardLayout title="Inspection Readiness">
-        <div className="max-w-2xl mx-auto flex items-center justify-center min-h-[40vh]" aria-busy="true" aria-live="polite">
-          <Loader2 className="w-8 h-8 animate-spin text-red-400" aria-hidden />
+        <div className="max-w-3xl mx-auto flex items-center justify-center min-h-[40vh]" aria-busy="true" aria-live="polite">
+          <Loader2 className="w-8 h-8 animate-spin text-rose-400" aria-hidden />
         </div>
       </DashboardLayout>
     );
@@ -204,41 +204,43 @@ export default function InspectionReadiness() {
 
   return (
     <DashboardLayout title="Inspection Readiness">
-      <div className="max-w-2xl mx-auto pb-20">
-        {/* Section label */}
-        <p className="text-xs font-medium text-white/60 uppercase tracking-wider mb-2" aria-hidden>
+      <div className="max-w-3xl mx-auto pb-20">
+        <p className="text-xs font-medium text-rose-200/60 uppercase tracking-widest mb-1.5" aria-hidden>
           Live checklist
         </p>
-        <p className="text-base text-white/80 leading-relaxed mb-6">
+        <p className="text-sm text-white/70 leading-relaxed mb-4 max-w-[60ch]">
           OSHA inspection preparedness from live data. Verify 300A posting and electrical qualifications manually.
         </p>
 
-        {/* Summary strip */}
+        {/* Summary pills — inline dense strip */}
         <div
-          className={`${glass.card} p-4 mb-6 grid grid-cols-3 gap-3 text-center`}
+          className="flex items-center gap-3 mb-4"
           role="status"
           aria-live="polite"
           aria-label={`Checklist summary: ${summary.compliant} compliant, ${summary.warning} to verify, ${summary.nonCompliant} need attention`}
         >
-          <div>
-            <span className="block text-2xl font-semibold text-green-400 tabular-nums">{summary.compliant}</span>
-            <span className="text-xs text-white/60">Compliant</span>
-          </div>
-          <div>
-            <span className="block text-2xl font-semibold text-amber-400 tabular-nums">{summary.warning}</span>
-            <span className="text-xs text-white/60">Verify</span>
-          </div>
-          <div>
-            <span className="block text-2xl font-semibold text-red-400 tabular-nums">{summary.nonCompliant}</span>
-            <span className="text-xs text-white/60">Needs attention</span>
-          </div>
+          <span className="inline-flex items-center gap-1.5 text-sm font-mono tabular-nums text-emerald-400">
+            <span className="w-2 h-2 rounded-full bg-emerald-400" aria-hidden />
+            {summary.compliant}
+            <span className="text-[10px] uppercase tracking-wider text-white/40 font-sans">pass</span>
+          </span>
+          <span className="inline-flex items-center gap-1.5 text-sm font-mono tabular-nums text-amber-400">
+            <span className="w-2 h-2 rounded-full bg-amber-400" aria-hidden />
+            {summary.warning}
+            <span className="text-[10px] uppercase tracking-wider text-white/40 font-sans">verify</span>
+          </span>
+          <span className="inline-flex items-center gap-1.5 text-sm font-mono tabular-nums text-rose-400">
+            <span className="w-2 h-2 rounded-full bg-rose-400" aria-hidden />
+            {summary.nonCompliant}
+            <span className="text-[10px] uppercase tracking-wider text-white/40 font-sans">action</span>
+          </span>
         </div>
 
         {/* Checklist */}
         <div className={`${glass.card} overflow-hidden`}>
-          <div className="p-4 border-b border-white/[0.06] flex items-center gap-2">
-            <ClipboardCheck className="w-5 h-5 text-red-400 flex-shrink-0" aria-hidden />
-            <span className="text-sm font-medium text-white">Checklist</span>
+          <div className="px-3 py-2.5 border-b border-white/[0.06] flex items-center gap-2">
+            <ClipboardCheck className="w-4 h-4 text-rose-400 flex-shrink-0" aria-hidden />
+            <span className="text-xs font-medium text-white/80 uppercase tracking-wider">Checklist</span>
           </div>
           <ul className="divide-y divide-white/[0.04]" aria-label="Inspection readiness checklist">
             {items.map((item, index) => (
@@ -248,26 +250,26 @@ export default function InspectionReadiness() {
                 initial="hidden"
                 animate="visible"
                 transition={{ duration: 0.2, delay: Math.min(index * 0.04, 0.24) }}
-                className={`flex items-start gap-3 p-4 transition-colors duration-150 ${
+                className={`flex items-start gap-2.5 px-3 py-2.5 transition-colors duration-150 ${
                   item.status === "compliant"
-                    ? "bg-green-950/30 border-l-2 border-green-500/40"
+                    ? "bg-green-950/20 border-l-2 border-emerald-500/40"
                     : item.status === "non-compliant"
-                      ? "bg-red-950/30 border-l-2 border-red-500/40"
-                      : "bg-amber-950/20 border-l-2 border-amber-500/40"
+                      ? "bg-rose-950/20 border-l-2 border-rose-500/40"
+                      : "bg-amber-950/15 border-l-2 border-amber-500/30"
                 }`}
               >
                 <span className="flex-shrink-0 mt-0.5" aria-hidden>
                   {item.status === "compliant" ? (
-                    <Check className="w-5 h-5 text-green-400" strokeWidth={2} />
+                    <Check className="w-4 h-4 text-emerald-400" strokeWidth={2} />
                   ) : item.status === "non-compliant" ? (
-                    <X className="w-5 h-5 text-red-400" strokeWidth={2} />
+                    <X className="w-4 h-4 text-rose-400" strokeWidth={2} />
                   ) : (
-                    <AlertTriangle className="w-5 h-5 text-amber-400" strokeWidth={2} />
+                    <AlertTriangle className="w-4 h-4 text-amber-400" strokeWidth={2} />
                   )}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-white">{item.label}</div>
-                  <div className="text-xs text-white/60 mt-1 leading-relaxed">{item.detail}</div>
+                  <div className="text-sm font-medium text-white leading-tight">{item.label}</div>
+                  <div className="text-xs text-white/50 mt-0.5 leading-relaxed font-mono">{item.detail}</div>
                 </div>
               </motion.li>
             ))}
@@ -275,12 +277,12 @@ export default function InspectionReadiness() {
         </div>
 
         {/* CTA */}
-        <div className="mt-6">
+        <div className="mt-4">
           <button
             type="button"
             onClick={generatePdf}
             disabled={generating}
-            className="inline-flex items-center justify-center gap-2 min-h-[44px] px-5 rounded-xl bg-red-600/20 border border-red-500/30 text-red-300 font-medium hover:bg-red-600/30 hover:border-red-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
+            className="inline-flex items-center justify-center gap-2 min-h-[44px] px-5 rounded-xl bg-rose-600/20 border border-rose-500/25 text-rose-300 font-medium hover:bg-rose-600/30 hover:border-rose-500/35 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150"
             aria-busy={generating}
             aria-live="polite"
           >

@@ -316,7 +316,7 @@ export default function BrandedNavCard({
             {/* Admin badge overlay (gold) - far right, behind content */}
             {variant === "gold" && (
               <img
-                src="/assets/admin-badge.png"
+                src="/assets/admin-badge.webp"
                 alt=""
                 aria-hidden
                 className="absolute -right-6 top-1/2 -translate-y-1/2 h-20 sm:h-24 md:h-[96px] w-auto object-contain object-right pointer-events-none rounded-[inherit] z-0 opacity-90"

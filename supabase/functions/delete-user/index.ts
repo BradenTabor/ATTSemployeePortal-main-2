@@ -148,6 +148,22 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Snapshot winner names into denormalized columns before deletion
+    const { data: targetProfile } = await supabaseAdmin
+      .from("app_users")
+      .select("full_name")
+      .eq("user_id", userId)
+      .single();
+    const winnerName = targetProfile?.full_name ?? targetEmail;
+
+    for (const col of ["grand_prize_winner", "runner_up_1_winner", "runner_up_2_winner"]) {
+      await supabaseAdmin
+        .from("monthly_reward_drawings")
+        .update({ [`${col}_name`]: winnerName })
+        .eq(`${col}_id`, userId)
+        .is(`${col}_name`, null);
+    }
+
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
     if (deleteError) {

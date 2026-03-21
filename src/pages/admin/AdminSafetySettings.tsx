@@ -44,7 +44,7 @@ const TABS: SegmentTab[] = [
     icon: (
       <img
         loading="lazy"
-        src="/assets/news-announcements.png"
+        src="/assets/news-announcements.webp"
         alt=""
         className="object-contain flex-shrink-0"
         style={{ width: TAB_ICON_SIZE, height: TAB_ICON_SIZE }}
@@ -58,7 +58,7 @@ const TABS: SegmentTab[] = [
     icon: (
       <img
         loading="lazy"
-        src="/assets/safety-compliance.png"
+        src="/assets/safety-compliance.webp"
         alt=""
         className="object-contain flex-shrink-0"
         style={{ width: TAB_ICON_SIZE, height: TAB_ICON_SIZE }}
@@ -72,7 +72,7 @@ const TABS: SegmentTab[] = [
     icon: (
       <img
         loading="lazy"
-        src="/assets/safety-rewards.png"
+        src="/assets/safety-rewards.webp"
         alt=""
         className="object-contain flex-shrink-0"
         style={{ width: TAB_ICON_SIZE, height: TAB_ICON_SIZE }}

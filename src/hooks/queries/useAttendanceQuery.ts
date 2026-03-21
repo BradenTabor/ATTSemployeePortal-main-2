@@ -19,24 +19,27 @@ export function useAttendanceForDate(date: string) {
   return useQuery({
     queryKey: queryKeys.attendance.daily(date),
     queryFn: async (): Promise<UserWithAttendance[]> => {
-      const { data: users, error: usersError } = await supabase
-        .from('app_users')
-        .select('id, user_id, full_name, email, role, avatar_url')
-        .eq('status', 'active')
-        .in('role', ['employee', 'foreman', 'general_foreman', 'mechanic', 'safety_officer'])
-        .not('email', 'like', '%@atts.test')
-        .order('full_name', { ascending: true });
+      const [usersResult, recordsResult] = await Promise.all([
+        supabase
+          .from('app_users')
+          .select('id, user_id, full_name, email, role, avatar_url')
+          .eq('status', 'active')
+          .in('role', ['employee', 'foreman', 'general_foreman', 'mechanic', 'safety_officer'])
+          .not('email', 'like', '%@atts.test')
+          .order('full_name', { ascending: true }),
+        supabase
+          .from('daily_attendance')
+          .select('id, user_id, status')
+          .eq('date', date),
+      ]);
 
+      const { data: users, error: usersError } = usersResult;
       if (usersError) {
         logger.error('Failed to fetch users for attendance:', usersError);
         throw new Error('Failed to load employees');
       }
 
-      const { data: records, error: recordsError } = await supabase
-        .from('daily_attendance')
-        .select('id, user_id, status')
-        .eq('date', date);
-
+      const { data: records, error: recordsError } = recordsResult;
       if (recordsError) {
         logger.error('Failed to fetch attendance records:', recordsError);
         throw new Error('Failed to load attendance records');

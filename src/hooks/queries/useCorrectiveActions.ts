@@ -25,7 +25,7 @@ function toCorrectiveAction(row: Record<string, unknown>): CorrectiveAction {
     action_type: row.action_type as ActionType,
     assigned_to: (row.assigned_to as string) ?? null,
     assigned_to_name: row.assigned_to_name as string | undefined,
-    assigned_by: row.assigned_by as string,
+    assigned_by: (row.assigned_by as string) ?? null,
     assigned_by_name: row.assigned_by_name as string | undefined,
     due_date: dueDate,
     status,

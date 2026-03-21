@@ -38,6 +38,7 @@ export const queryKeys = {
   announcements: {
     all: ['announcements'] as const,
     latest: ['announcements', 'latest'] as const,
+    list: (limit: number) => ['announcements', limit] as const,
   },
 
   // Announcement Rewards
@@ -128,6 +129,7 @@ export const queryKeys = {
 
   // Risk Calibration (for admin dashboard)
   riskCalibration: {
+    all: ['riskCalibration'] as const,
     autoTuningConfig: ['riskCalibration', 'autoTuningConfig'] as const,
     tuningDecisions: (limit: number) => ['riskCalibration', 'tuningDecisions', limit] as const,
     tuningRuns: ['riskCalibration', 'tuningRuns'] as const,
@@ -155,12 +157,46 @@ export const queryKeys = {
     open: ['correctiveActions', 'open'] as const,
   },
 
+  // OSHA 300A Annual Summary
+  osha300a: {
+    all: ['osha300a'] as const,
+    summary: (year: number) => ['osha300a', 'summary', year] as const,
+    certification: (year: number) => ['osha300a', 'certification', year] as const,
+  },
+
+  // Crew Membership (used by safety briefing crew completion)
+  crewMembership: {
+    user: (userId: string) => ['crew-membership', userId] as const,
+  },
+
   // Certifications
   certifications: {
     all: ['certifications'] as const,
     list: (userId?: string) => ['certifications', 'list', userId] as const,
     detail: (certId: string) => ['certifications', 'detail', certId] as const,
     tests: (certId: string) => ['certifications', 'tests', certId] as const,
+    types: ['certifications', 'types'] as const,
+    typesAll: ['certifications', 'types-all'] as const,
+    records: (userId: string) => ['certifications', 'records', userId] as const,
+    attempts: (userId: string, certTypeId: string) =>
+      ['certifications', 'attempts', userId, certTypeId] as const,
+    inProgress: (userId: string, certTypeId: string) =>
+      ['certifications', 'in-progress', userId, certTypeId] as const,
+    canStart: (certTypeId: string) => ['certifications', 'can-start', certTypeId] as const,
+    questions: (certTypeSlug: string, attemptId: string) =>
+      ['certifications', 'questions', certTypeSlug, attemptId] as const,
+    completionStats: ['certifications', 'completion-stats'] as const,
+    matrix: (certTypeId?: string, complianceStatus?: string) =>
+      ['certifications', 'matrix', certTypeId, complianceStatus] as const,
+    practicalTemplates: (certTypeId: string) =>
+      ['certifications', 'practical-templates', certTypeId] as const,
+    canEvaluate: (evaluateeId: string, certTypeId: string, evaluatorId: string) =>
+      ['certifications', 'can-evaluate', evaluateeId, certTypeId, evaluatorId] as const,
+    pendingReviews: ['certifications', 'pending-reviews'] as const,
+    setGradingStarted: ['certifications', 'set-grading-started'] as const,
+    clearGradingStarted: ['certifications', 'clear-grading-started'] as const,
+    recentlyGraded: (userId: string) => ['certifications', 'recently-graded', userId] as const,
+    accessGrants: ['certifications', 'access-grants'] as const,
     reportsPassRate: (since: string) => ['certifications', 'reports', 'pass-rate', since] as const,
     reportsTimeToGrade: () => ['certifications', 'reports', 'time-to-grade'] as const,
     reportsCompliance: () => ['certifications', 'reports', 'compliance'] as const,
@@ -234,6 +270,21 @@ export const queryKeys = {
   appSettings: {
     all: ['app-settings'] as const,
     detail: (key: string) => ['app-settings', key] as const,
+  },
+
+  // Team Contacts (employee directory)
+  teamContacts: {
+    all: ['team-contacts'] as const,
+    list: (filters?: { role?: string; search?: string }) =>
+      ['team-contacts', 'list', filters] as const,
+  },
+
+  // Inspection Readiness (command bar status + full page)
+  inspectionReadiness: {
+    all: ['inspectionReadiness'] as const,
+    recordables: () => ['inspectionReadiness', 'recordables'] as const,
+    expiredCerts: () => ['inspectionReadiness', 'expiredCerts'] as const,
+    latestEquipment: () => ['inspectionReadiness', 'latestEquipment'] as const,
   },
 
   // Safety Rewards (monthly raffle)

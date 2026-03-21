@@ -694,8 +694,8 @@ const StatPill = memo(function StatPill({
     >
       <Icon className={`w-3 h-3 sm:w-4 sm:h-4 ${color}`} />
       <div className="flex items-baseline gap-0.5 sm:gap-1">
-        <span className="text-xs sm:text-sm font-bold text-white">{value}</span>
-        <span className="text-[9px] sm:text-[10px] text-white/40">{label}</span>
+        <span className="text-xs sm:text-sm font-semibold tabular-nums text-white">{value}</span>
+        <span className="text-[10px] sm:text-[11px] text-white/35 font-medium">{label}</span>
       </div>
     </motion.div>
   );
@@ -967,7 +967,7 @@ function EnhancedRewardsCardComponent({
           <div className="flex-1 min-w-0 pt-0.5 sm:pt-1">
             {/* Level name + streak */}
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
-              <span className={`text-xs sm:text-sm md:text-base font-bold ${currentLevel.textGradient} bg-clip-text text-transparent`}>
+              <span className={`text-xs sm:text-sm md:text-base font-semibold tracking-tight ${currentLevel.textGradient} bg-clip-text text-transparent`}>
                 {currentLevel.name}
               </span>
               <StreakIndicator 

@@ -422,7 +422,7 @@ export function useCrewBriefingCompletion(
   todayDateString: string
 ): { data: CrewBriefingCompletion | null; isLoading: boolean } {
   const { data: crewMembership, isLoading: crewLoading } = useQuery({
-    queryKey: ['crew-membership', userId],
+    queryKey: queryKeys.crewMembership.user(userId ?? ''),
     queryFn: async () => {
       if (!userId) return null;
       const { data: memberships, error: memError } = await supabase

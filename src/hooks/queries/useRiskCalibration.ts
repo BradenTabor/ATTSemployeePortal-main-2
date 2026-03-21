@@ -507,7 +507,7 @@ export function useInvalidateRiskCalibration() {
   const queryClient = useQueryClient();
   
   return useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['riskCalibration'] });
-    queryClient.invalidateQueries({ queryKey: ['safetyIncidents'] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.riskCalibration.all });
+    queryClient.invalidateQueries({ queryKey: queryKeys.safetyIncidents.all });
   }, [queryClient]);
 }

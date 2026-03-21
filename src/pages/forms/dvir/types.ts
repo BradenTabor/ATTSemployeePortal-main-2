@@ -122,6 +122,7 @@ export const TRUCK_NUMBERS = [
   "139",
   "141",
   "125",
+  "142",
   "143",
 ];
 

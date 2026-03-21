@@ -21,12 +21,12 @@ const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 6 }, (_, i) => CURRENT_YEAR - 1 - i);
 
 const INPUT_CLASS =
-  'w-full min-h-[44px] px-3 py-2 rounded-xl bg-gray-800 border border-white/10 text-white text-base ' +
-  'placeholder:text-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-150';
+  'w-full min-h-[44px] px-3 py-2 rounded-xl bg-gray-800 border border-white/10 text-white text-base font-mono tabular-nums ' +
+  'placeholder:text-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-150';
 
 const BTN_SECONDARY =
-  'inline-flex items-center justify-center gap-2 min-h-[44px] px-4 rounded-xl bg-gray-800 border border-white/10 text-white/90 text-sm font-medium ' +
-  'hover:bg-gray-700 hover:border-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 transition-colors duration-150';
+  'inline-flex items-center justify-center gap-2 min-h-[44px] px-4 rounded-xl bg-stone-800 border border-white/10 text-white/90 text-sm font-medium ' +
+  'hover:bg-stone-700 hover:border-white/20 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 transition-all duration-150';
 
 function generate300APdf(summary: SummaryType, certifiedBy: string, certifiedTitle: string, certifiedAt: string) {
   import('jspdf').then(({ jsPDF }) => {
@@ -157,7 +157,7 @@ export default function OSHA300ASummaryPage() {
           Back to Safety Officer Dashboard
         </Link>
 
-        <p className="text-xs font-medium text-white/60 uppercase tracking-wider mb-1" aria-hidden>
+        <p className="text-xs font-medium text-rose-200/60 uppercase tracking-widest mb-1" aria-hidden>
           Annual summary
         </p>
         <h1 className="text-2xl font-bold text-white leading-tight mb-2">OSHA 300A Annual Summary</h1>
@@ -174,7 +174,7 @@ export default function OSHA300ASummaryPage() {
             id="osha-300a-year"
             value={year}
             onChange={(e) => setYear(parseInt(e.target.value, 10))}
-            className="w-full max-w-[180px] min-h-[44px] px-3 py-2 rounded-xl bg-gray-800 border border-white/10 text-white text-base focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 transition-colors duration-150"
+            className="w-full max-w-[180px] min-h-[44px] px-3 py-2 rounded-xl bg-gray-800 border border-white/10 text-white text-base font-mono tabular-nums focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 transition-colors duration-150"
             aria-describedby="year-desc"
           >
             {YEARS.map((y) => (
@@ -190,24 +190,24 @@ export default function OSHA300ASummaryPage() {
             aria-busy="true"
             aria-live="polite"
           >
-            <Loader2 className="w-8 h-8 animate-spin text-red-400" aria-hidden />
+            <Loader2 className="w-8 h-8 animate-spin text-rose-400" aria-hidden />
             <span className="text-sm">Loading summary…</span>
           </div>
         ) : summaryWithManual ? (
           <div className="space-y-6">
             {/* Summary data card */}
             <div className={glass.card}>
-              <h2 className="text-xs font-medium text-white/60 uppercase tracking-wider mb-3">Summary (from incident data)</h2>
-              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm">
-                <div><dt className="text-white/60">Total recordable cases</dt><dd className="text-white font-medium font-mono tabular-nums mt-0.5">{summaryWithManual.total_recordable_cases}</dd></div>
-                <div><dt className="text-white/60">Cases with days away</dt><dd className="text-white font-medium font-mono tabular-nums mt-0.5">{summaryWithManual.cases_days_away}</dd></div>
-                <div><dt className="text-white/60">Cases with job transfer</dt><dd className="text-white font-medium font-mono tabular-nums mt-0.5">{summaryWithManual.cases_job_transfer}</dd></div>
-                <div><dt className="text-white/60">Other recordable</dt><dd className="text-white font-medium font-mono tabular-nums mt-0.5">{summaryWithManual.other_recordable}</dd></div>
-                <div><dt className="text-white/60">Total days away</dt><dd className="text-white font-medium font-mono tabular-nums mt-0.5">{summaryWithManual.total_days_away}</dd></div>
-                <div><dt className="text-white/60">Total days restricted</dt><dd className="text-white font-medium font-mono tabular-nums mt-0.5">{summaryWithManual.total_days_restricted}</dd></div>
-                <div><dt className="text-white/60">Injuries</dt><dd className="text-white font-medium font-mono tabular-nums mt-0.5">{summaryWithManual.total_injuries}</dd></div>
-                <div><dt className="text-white/60">Illnesses</dt><dd className="text-white font-medium font-mono tabular-nums mt-0.5">{summaryWithManual.total_illnesses}</dd></div>
-                <div><dt className="text-white/60">Deaths</dt><dd className="text-white font-medium font-mono tabular-nums mt-0.5">{summaryWithManual.death_count}</dd></div>
+              <h2 className="text-xs font-medium text-rose-200/60 uppercase tracking-widest mb-2 px-4 pt-3">Summary (from incident data)</h2>
+              <dl className="grid grid-cols-1 sm:grid-cols-2 text-sm">
+                <div className="flex items-baseline justify-between px-4 py-2 border-b border-white/[0.04]"><dt className="text-white/60 text-xs">Total recordable cases</dt><dd className="text-white font-medium font-mono tabular-nums">{summaryWithManual.total_recordable_cases}</dd></div>
+                <div className="flex items-baseline justify-between px-4 py-2 border-b border-white/[0.04]"><dt className="text-white/60 text-xs">Cases with days away</dt><dd className="text-white font-medium font-mono tabular-nums">{summaryWithManual.cases_days_away}</dd></div>
+                <div className="flex items-baseline justify-between px-4 py-2 border-b border-white/[0.04]"><dt className="text-white/60 text-xs">Cases with job transfer</dt><dd className="text-white font-medium font-mono tabular-nums">{summaryWithManual.cases_job_transfer}</dd></div>
+                <div className="flex items-baseline justify-between px-4 py-2 border-b border-white/[0.04]"><dt className="text-white/60 text-xs">Other recordable</dt><dd className="text-white font-medium font-mono tabular-nums">{summaryWithManual.other_recordable}</dd></div>
+                <div className="flex items-baseline justify-between px-4 py-2 border-b border-white/[0.04]"><dt className="text-white/60 text-xs">Total days away</dt><dd className="text-white font-medium font-mono tabular-nums">{summaryWithManual.total_days_away}</dd></div>
+                <div className="flex items-baseline justify-between px-4 py-2 border-b border-white/[0.04]"><dt className="text-white/60 text-xs">Total days restricted</dt><dd className="text-white font-medium font-mono tabular-nums">{summaryWithManual.total_days_restricted}</dd></div>
+                <div className="flex items-baseline justify-between px-4 py-2 border-b border-white/[0.04]"><dt className="text-white/60 text-xs">Injuries</dt><dd className="text-white font-medium font-mono tabular-nums">{summaryWithManual.total_injuries}</dd></div>
+                <div className="flex items-baseline justify-between px-4 py-2 border-b border-white/[0.04]"><dt className="text-white/60 text-xs">Illnesses</dt><dd className="text-white font-medium font-mono tabular-nums">{summaryWithManual.total_illnesses}</dd></div>
+                <div className="flex items-baseline justify-between px-4 py-2 sm:col-span-2"><dt className="text-white/60 text-xs">Deaths</dt><dd className="text-white font-medium font-mono tabular-nums">{summaryWithManual.death_count}</dd></div>
               </dl>
             </div>
 

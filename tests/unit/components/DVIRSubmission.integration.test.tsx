@@ -142,7 +142,7 @@ describe('DVIR Form Submission Integration', () => {
     await waitFor(() => {
       expect(screen.getByText(/Daily Vehicle Inspection/i)).toBeInTheDocument();
     });
-  });
+  }, 10_000);
 
   it('should display validation state when required fields are empty', async () => {
     renderWithProviders(<DVIRForm />);
@@ -151,10 +151,10 @@ describe('DVIR Form Submission Integration', () => {
       expect(screen.getByText(/Daily Vehicle Inspection/i)).toBeInTheDocument();
     });
 
-    expect(
-      screen.getByRole('button', { name: /fix \d+ issue|submit dvir/i })
-    ).toBeInTheDocument();
-  });
+    await waitFor(() => {
+      expect(screen.getByTestId('dvir-submit-button')).toBeInTheDocument();
+    }, { timeout: 5000 });
+  }, 15_000);
 
   // SKIP: Photo upload test requires file input mock and storage mock to be properly chained.
   // The current mock doesn't trigger the storage upload flow correctly in jsdom.

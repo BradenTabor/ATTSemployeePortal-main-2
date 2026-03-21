@@ -9,6 +9,7 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabaseClient';
+import { queryKeys } from '../lib/queryKeys';
 import { subscribeToTableChanges } from '../lib/realtime';
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { logger } from '../lib/logger';
@@ -71,7 +72,7 @@ export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
   const prevCountRef = useRef(0);
 
   const query = useQuery({
-    queryKey: ['announcements', limit],
+    queryKey: queryKeys.announcements.list(limit),
     queryFn: () => fetchAnnouncementsData(limit),
     staleTime: 5 * 60 * 1000, // 5 min
     gcTime: 24 * 60 * 60 * 1000, // 24h (matches persister)
@@ -89,13 +90,13 @@ export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
       channelName: 'announcements-realtime-rq',
       table: 'announcements',
       onInsert: () => {
-        queryClient.invalidateQueries({ queryKey: ['announcements'] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.announcements.all });
       },
       onUpdate: () => {
-        queryClient.invalidateQueries({ queryKey: ['announcements'] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.announcements.all });
       },
       onDelete: () => {
-        queryClient.invalidateQueries({ queryKey: ['announcements'] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.announcements.all });
       },
     });
 
@@ -117,7 +118,7 @@ export function useAnnouncements(options: UseAnnouncementsOptions = {}) {
   }, [query.data?.totalCount]);
 
   const refresh = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['announcements'] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.announcements.all });
   }, [queryClient]);
 
   return {

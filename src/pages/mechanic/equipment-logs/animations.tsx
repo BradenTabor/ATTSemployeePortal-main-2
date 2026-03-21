@@ -37,10 +37,6 @@ export function ScrollRevealSection({
 // =============================================================================
 
 export const animationStyles = `
-  @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-  }
   @keyframes pulse-glow {
     0%, 100% { box-shadow: 0 0 20px rgba(251, 146, 60, 0.3), 0 0 40px rgba(251, 146, 60, 0.1); }
     50% { box-shadow: 0 0 30px rgba(251, 146, 60, 0.5), 0 0 60px rgba(251, 146, 60, 0.2); }
@@ -53,7 +49,7 @@ export const animationStyles = `
   .animate-shimmer {
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
     background-size: 200% 100%;
-    animation: shimmer 3s infinite;
+    animation: shimmer-sweep 3s ease-in-out infinite;
   }
   .animate-gradient {
     background-size: 200% 200%;

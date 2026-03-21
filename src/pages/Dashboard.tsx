@@ -100,8 +100,9 @@ const NavigableJobCard = memo(
         onClick={() => trackDashboardAction({ action: 'job_card_click', job_id: job.id })}
       >
         <motion.div
-          whileHover={{ scale: 1.01 }}
-          whileTap={{ scale: 0.99 }}
+          whileHover={{ scale: 1.01, y: -1 }}
+          whileTap={{ scale: 0.98, y: 0 }}
+          transition={{ type: "spring", stiffness: 400, damping: 25 }}
           className="rounded-xl"
         >
           <CompactJobCard job={job} />
@@ -266,7 +267,7 @@ const AssignedJobsSection = memo(function AssignedJobsSection({
         <div className="flex items-center gap-2.5">
           <div className="relative w-full h-full flex items-center justify-center overflow-visible min-w-[80px] min-h-[96px] md:min-w-[96px] md:min-h-[112px] flex-shrink-0">
             <img
-              src="/assets/jobs-specialist.png"
+              src="/assets/jobs-specialist.webp"
               alt=""
               width={312}
               height={384}
@@ -282,8 +283,8 @@ const AssignedJobsSection = memo(function AssignedJobsSection({
             />
           </div>
           <div>
-            <h3 className="text-xs sm:text-sm font-bold text-white">Active Jobs</h3>
-            <p className="text-xs text-emerald-400/60">
+            <h3 className="text-xs sm:text-sm font-semibold tracking-tight text-white">Active Jobs</h3>
+            <p className="text-[10px] sm:text-xs text-emerald-400/50 font-medium">
               {jobs.length} assignment{jobs.length !== 1 ? 's' : ''}
             </p>
           </div>
@@ -489,11 +490,20 @@ function Dashboard() {
           </div>
 
           {/* ============================================================ */}
-          {/* TIER 1.5: Featured Announcement - Right below header */}
-          {/* Premium announcement card for immediate visibility */}
+          {/* TIER 2: Compliance Strip - #1 morning action for field crews */}
+          {/* Elevated above announcements for immediate form access */}
           {/* ============================================================ */}
           <div className="mb-3 sm:mb-4">
-            <ScrollReveal variant="fadeUp" delay={0.02}>
+            <ScrollReveal variant="fadeUp" delay={0.05}>
+              <CompactComplianceStrip onComplianceChange={handleComplianceChange} />
+            </ScrollReveal>
+          </div>
+
+          {/* ============================================================ */}
+          {/* TIER 2.5: Featured Announcement - Safety briefing awareness */}
+          {/* ============================================================ */}
+          <div className="mb-3 sm:mb-4">
+            <ScrollReveal variant="fadeUp" delay={0.1}>
               <FeaturedAnnouncementSection />
             </ScrollReveal>
           </div>
@@ -502,22 +512,12 @@ function Dashboard() {
           <GoodCatchPrompt />
 
           {/* ============================================================ */}
-          {/* TIER 2: Compliance Strip - Unified form status + actions */}
-          {/* Replaces both ComplianceHeroGrid and QuickLinksRow */}
-          {/* ============================================================ */}
-          <div className="mb-3 sm:mb-4">
-            <ScrollReveal variant="fadeUp" delay={0.04}>
-              <CompactComplianceStrip onComplianceChange={handleComplianceChange} />
-            </ScrollReveal>
-          </div>
-
-          {/* ============================================================ */}
           {/* TIER 3: Primary Content Grid */}
           {/* Two columns on md+ screens: Jobs | Announcements+Rewards */}
           {/* Single column stacked on mobile */}
           {/* ============================================================ */}
           <div className="mb-3 sm:mb-4">
-            <ScrollReveal variant="fadeUp" delay={0.06}>
+            <ScrollReveal variant="fadeUp" delay={0.15}>
               <DashboardGrid
                 gap="md"
                 primaryWider={hasActiveJobs}
@@ -540,7 +540,7 @@ function Dashboard() {
                       icon={
                         <div className="relative w-full h-full flex items-center justify-center overflow-visible min-w-[100px] min-h-[120px] md:min-w-[120px] md:min-h-[140px]">
                           <img
-                            src="/assets/jobs-specialist.png"
+                            src="/assets/jobs-specialist.webp"
                             alt=""
                             width={312}
                             height={384}
@@ -623,7 +623,7 @@ function Dashboard() {
           {/* ============================================================ */}
           {/* TIER 4: All Tools (Expandable) - Full width */}
           {/* ============================================================ */}
-          <ScrollReveal variant="fadeUp" delay={0.12} className="shadow-[0px_4px_12px_0px_rgba(0,0,0,0.15)]">
+          <ScrollReveal variant="fadeUp" delay={0.2} className="shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
             <ExpandableSection
               id="dashboard-all-tools"
               title="All Tools"
@@ -632,7 +632,7 @@ function Dashboard() {
               icon={
                 <div className="relative w-full h-full flex items-center justify-center overflow-visible min-w-[130px] min-h-[156px] md:min-w-[156px] md:min-h-[192px]">
                   <img
-                    src="/assets/all-tools.png"
+                    src="/assets/all-tools.webp"
                     alt=""
                     width={312}
                     height={384}
@@ -679,7 +679,7 @@ function Dashboard() {
           {/* ============================================================ */}
           {/* TIER 5: Push Notifications Toggle */}
           {/* ============================================================ */}
-          <ScrollReveal variant="fadeUp" delay={0.16}>
+          <ScrollReveal variant="fadeUp" delay={0.25}>
             <div className="flex justify-center mt-4">
               <EnableNotificationsButton variant="green" />
             </div>

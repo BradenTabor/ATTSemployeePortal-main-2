@@ -15,7 +15,7 @@ import {
   ExternalLink,
   FileText,
 } from 'lucide-react';
-import { useMyCertificationRecords, useCertificationTypes } from '../../hooks/useCertifications';
+import { useMyCertificationRecords, useAllCertificationTypes } from '../../hooks/useCertifications';
 import { useMyExternalCertifications, useExternalCertificationTypes } from '../../hooks/queries/useExternalCertifications';
 import {
   calculateDaysUntilExpiration,
@@ -122,7 +122,7 @@ export function MyCertificationsSection({
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const { data: certificationRecords } = useMyCertificationRecords(userId);
-  const { data: certificationTypes } = useCertificationTypes();
+  const { data: certificationTypes } = useAllCertificationTypes();
   const { data: externalCerts } = useMyExternalCertifications();
   const { data: externalTypes } = useExternalCertificationTypes();
 

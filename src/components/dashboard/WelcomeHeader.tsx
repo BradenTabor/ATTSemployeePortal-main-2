@@ -530,7 +530,7 @@ function WelcomeHeaderComponent({
     >
       {/* Glass backdrop container - overflow visible to allow dropdown to escape */}
       <div
-        className="relative rounded-2xl md:rounded-3xl border border-white/[0.12] shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.1)]"
+        className="relative rounded-2xl md:rounded-3xl border border-white/[0.08] shadow-[0_2px_8px_rgba(0,0,0,0.3),0_8px_32px_rgba(6,50,30,0.15),inset_0_1px_0_rgba(255,255,255,0.08)]"
         style={{
           background: themeStyles.bgGradient,
           backdropFilter: 'blur(24px) saturate(1.6)',
@@ -559,7 +559,7 @@ function WelcomeHeaderComponent({
           />
           
           {/* Top edge highlight */}
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-white/5 via-white/25 to-white/5 rounded-t-[inherit]" />
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent rounded-t-[inherit]" />
         </div>
 
         {/* Content area */}
@@ -586,13 +586,13 @@ function WelcomeHeaderComponent({
                     preset="blurSlide"
                     per="char"
                     delay={0.15}
-                    className="text-base sm:text-xl md:text-2xl lg:text-3xl font-black tracking-tight"
+                    className="text-base sm:text-xl md:text-2xl lg:text-3xl font-bold tracking-tighter"
                     segmentWrapperClassName={`${themeStyles.textGradient} bg-clip-text text-transparent ${themeStyles.textShadow}`}
                   >
                     {message.greeting}
                   </TextEffect>
                 ) : (
-                  <h1 className={`text-base sm:text-xl md:text-2xl lg:text-3xl font-black tracking-tight ${themeStyles.textGradient} bg-clip-text text-transparent`}>
+                  <h1 className={`text-base sm:text-xl md:text-2xl lg:text-3xl font-bold tracking-tighter ${themeStyles.textGradient} bg-clip-text text-transparent`}>
                     {message.greeting}
                   </h1>
                 )}
@@ -609,7 +609,7 @@ function WelcomeHeaderComponent({
                   {timeOfDay === 'afternoon' && <Sun className={`w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 ${themeStyles.iconColor} flex-shrink-0`} />}
                   {timeOfDay === 'evening' && <Sunset className={`w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 ${themeStyles.iconColor} flex-shrink-0`} />}
                   {timeOfDay === 'night' && <Moon className={`w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 ${themeStyles.iconColor} flex-shrink-0`} />}
-                  <p className={`text-[9px] sm:text-xs md:text-sm ${themeStyles.subtitleColor} font-medium tracking-wide truncate`}>
+                  <p className={`text-[10px] sm:text-xs md:text-sm ${themeStyles.subtitleColor} font-medium tracking-wide truncate`}>
                     {message.subtitle}
                   </p>
                 </motion.div>

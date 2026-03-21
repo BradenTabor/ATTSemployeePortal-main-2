@@ -129,7 +129,7 @@ function FeaturedAnnouncementSectionComponent() {
             <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 border border-emerald-400/30 flex items-center justify-center">
               <Megaphone className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
             </div>
-            <span className="text-xs sm:text-sm font-bold text-white">Latest Update</span>
+            <span className="text-xs sm:text-sm font-semibold tracking-tight text-white">Latest Update</span>
           </div>
         </div>
 
@@ -169,8 +169,8 @@ function FeaturedAnnouncementSectionComponent() {
               </div>
             </div>
             <div>
-              <h3 className="text-xs sm:text-sm font-bold text-white">Latest Update</h3>
-              <p className="text-xs text-emerald-400/50 font-medium">
+              <h3 className="text-xs sm:text-sm font-semibold tracking-tight text-white">Latest Update</h3>
+              <p className="text-[10px] sm:text-xs text-emerald-400/40 font-medium tracking-wide">
                 Stay informed
               </p>
             </div>
@@ -218,10 +218,10 @@ function FeaturedAnnouncementSectionComponent() {
 
           {/* Inner card */}
           <div 
-            className="relative rounded-[inherit] border border-emerald-400/30 overflow-hidden"
+            className="relative rounded-[inherit] border border-emerald-400/[0.15] overflow-hidden"
             style={{
-              background: 'linear-gradient(145deg, rgba(4, 32, 22, 0.98) 0%, rgba(2, 18, 12, 1) 50%, rgba(1, 10, 6, 1) 100%)',
-              boxShadow: '0 8px 50px -12px rgba(16, 185, 129, 0.35), 0 4px 25px -8px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255,255,255,0.03)',
+              background: 'linear-gradient(145deg, rgba(6, 31, 22, 0.98) 0%, rgba(4, 24, 15, 1) 50%, rgba(2, 14, 9, 1) 100%)',
+              boxShadow: '0 4px_24px -8px rgba(16, 185, 129, 0.2), 0 8px 32px -4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(167, 243, 208, 0.04)',
             }}
           >
             {/* Top shine line */}
@@ -323,7 +323,7 @@ function FeaturedAnnouncementSectionComponent() {
                 initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2, duration: 0.4 }}
-                className="text-base sm:text-lg md:text-xl font-black leading-tight mb-2 line-clamp-2 group-hover:brightness-110 transition-all"
+                className="text-base sm:text-lg md:text-xl font-bold tracking-tight leading-tight mb-2 line-clamp-2 group-hover:brightness-110 transition-all"
                 style={{
                   background: 'linear-gradient(135deg, #ffffff 0%, #d1fae5 40%, #a7f3d0 100%)',
                   WebkitBackgroundClip: 'text',

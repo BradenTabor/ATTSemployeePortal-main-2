@@ -62,7 +62,7 @@ export function StatCard({
     >
       <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-black/20 [&>svg]:w-4 [&>svg]:h-4 sm:[&>svg]:w-5 sm:[&>svg]:h-5">{icon}</div>
       <div className="min-w-0">
-        <p className="text-lg sm:text-2xl font-bold text-white truncate">{value.toLocaleString()}</p>
+        <p className="text-lg sm:text-2xl font-bold text-white font-mono tabular-nums truncate">{value.toLocaleString()}</p>
         <p className="text-[9px] sm:text-xs text-[#c7b696] truncate">{label}</p>
       </div>
     </div>

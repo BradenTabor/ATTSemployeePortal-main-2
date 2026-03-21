@@ -5,98 +5,75 @@ import React, { useMemo } from "react";
 import { getDeviceCapabilities } from "../lib/mobilePerf";
 import { usePinnedFavorites } from "./dashboard";
 
-const userPages = [
+interface NavPage {
+  id: string;
+  label: string;
+  path: string;
+  icon: React.ReactNode;
+  description: string;
+  iconAsImage: boolean;
+}
+
+const IMG = (src: string) => (
+  <img loading="lazy" src={src} alt="" className="w-full h-full object-contain" />
+);
+
+const categories: { key: string; label: string; items: NavPage[] }[] = [
   {
-    id: "jobs",
-    label: "My Jobs",
-    path: "/assigned-jobs",
-    icon: <img loading="lazy" src="/assets/my-jobs.png" alt="" className="w-full h-full object-contain" />,
-    description: "View and track your assigned work",
-    iconAsImage: true,
+    key: "daily-work",
+    label: "Daily Work",
+    items: [
+      { id: "jobs", label: "My Jobs", path: "/assigned-jobs", icon: IMG("/assets/my-jobs.webp"), description: "View and track your assigned work", iconAsImage: true },
+      { id: "forms", label: "Company Forms", path: "/forms", icon: IMG("/assets/company-forms.webp"), description: "Access and submit required ATTS forms", iconAsImage: true },
+      { id: "history", label: "Forms History", path: "/forms-history", icon: IMG("/assets/forms-history.webp"), description: "View your past form submissions", iconAsImage: true },
+    ],
   },
   {
-    id: "forms",
-    label: "Company Forms",
-    path: "/forms",
-    icon: <img loading="lazy" src="/assets/company-forms.png" alt="" className="w-full h-full object-contain" />,
-    description: "Access and submit required ATTS forms",
-    iconAsImage: true,
+    key: "safety",
+    label: "Safety & Emergency",
+    items: [
+      { id: "safety-rewards", label: "Safety Rewards", path: "/safety-rewards", icon: IMG("/assets/safety-rewards.webp"), description: "Monthly raffle entries and prizes", iconAsImage: true },
+      { id: "emergency", label: "Emergency Action Plan", path: "/emergency-action-plan", icon: IMG("/assets/emergency-action-plan.webp"), description: "911, emergency contacts, evacuation", iconAsImage: true },
+    ],
   },
   {
-    id: "history",
-    label: "Forms History",
-    path: "/forms-history",
-    icon: <img loading="lazy" src="/assets/forms-history.png" alt="" className="w-full h-full object-contain" />,
-    description: "View your past form submissions",
-    iconAsImage: true,
+    key: "communication",
+    label: "Communication",
+    items: [
+      { id: "announcements", label: "Announcements", path: "/announcements", icon: IMG("/assets/announcements.webp"), description: "Latest company news and updates", iconAsImage: true },
+      { id: "resources", label: "Resources", path: "/resources", icon: IMG("/assets/resources.webp"), description: "Training materials and documents", iconAsImage: true },
+      { id: "contact", label: "Contact", path: "/contact", icon: IMG("/assets/contact.webp"), description: "Reach out to management and HR", iconAsImage: true },
+      { id: "team-contacts", label: "Team Contacts", path: "/team-contacts", icon: IMG("/assets/contact.webp"), description: "Call or email any teammate directly", iconAsImage: true },
+    ],
   },
   {
-    id: "announcements",
-    label: "Announcements",
-    path: "/announcements",
-    icon: <img loading="lazy" src="/assets/announcements.png" alt="" className="w-full h-full object-contain" />,
-    description: "Latest company news and updates",
-    iconAsImage: true,
-  },
-  {
-    id: "resources",
-    label: "Resources",
-    path: "/resources",
-    icon: <img loading="lazy" src="/assets/resources.png" alt="" className="w-full h-full object-contain" />,
-    description: "Training materials and documents",
-    iconAsImage: true,
-  },
-  {
-    id: "contact",
-    label: "Contact",
-    path: "/contact",
-    icon: <img loading="lazy" src="/assets/contact.png" alt="" className="w-full h-full object-contain" />,
-    description: "Reach out to management and HR",
-    iconAsImage: true,
-  },
-  {
-    id: "emergency",
-    label: "Emergency Action Plan",
-    path: "/emergency-action-plan",
-    icon: <img loading="lazy" src="/assets/emergency-action-plan.webp" alt="" className="w-full h-full object-contain" />,
-    description: "911, emergency contacts, evacuation procedures",
-    iconAsImage: true,
-  },
-  {
-    id: "safety-rewards",
-    label: "Safety Rewards",
-    path: "/safety-rewards",
-    icon: <img loading="lazy" src="/assets/safety-rewards.png" alt="" className="w-full h-full object-contain" />,
-    description: "Monthly raffle entries and prizes",
-    iconAsImage: true,
-  },
-  {
-    id: "profile",
-    label: "My Profile",
-    path: "/profile",
-    icon: <img loading="lazy" src="/assets/my-profile.png" alt="" className="w-full h-full object-contain" />,
-    description: "View credentials and settings",
-    iconAsImage: true,
-  },
-  {
-    id: "settings",
-    label: "Settings",
-    path: "/settings",
-    icon: <img loading="lazy" src="/assets/settings.png" alt="" className="w-full h-full object-contain" />,
-    description: "Manage saved data and preferences",
-    iconAsImage: true,
+    key: "account",
+    label: "Account",
+    items: [
+      { id: "profile", label: "My Profile", path: "/profile", icon: IMG("/assets/my-profile.webp"), description: "View credentials and settings", iconAsImage: true },
+      { id: "settings", label: "Settings", path: "/settings", icon: IMG("/assets/settings.webp"), description: "Manage saved data and preferences", iconAsImage: true },
+    ],
   },
 ];
+
+function SectionHeader({ label }: { label: string }) {
+  return (
+    <div className="col-span-full flex items-center gap-3 pt-3 pb-1 first:pt-0">
+      <span className="text-[10px] sm:text-[11px] font-semibold tracking-widest uppercase text-white/30">
+        {label}
+      </span>
+      <div className="flex-1 h-px bg-gradient-to-r from-white/[0.08] to-transparent" />
+    </div>
+  );
+}
 
 export default function NavCards() {
   const { isAdmin, hasMechanicAccess, role } = useAuth();
   const { togglePin, isPinned, canPinMore } = usePinnedFavorites();
   
-  // Get device capabilities for mobile optimization
   const caps = useMemo(() => getDeviceCapabilities(), []);
   const shouldReduceMotion = caps.prefersReducedMotion || caps.isLowEnd;
 
-  // Stagger animation - faster/simpler on mobile
   const containerVariants = useMemo(() => ({
     hidden: { opacity: 0 },
     visible: {
@@ -109,10 +86,7 @@ export default function NavCards() {
   }), [caps.isMobile, shouldReduceMotion]);
 
   const itemVariants = useMemo(() => ({
-    hidden: { 
-      opacity: 0, 
-      y: shouldReduceMotion ? 0 : 6 
-    },
+    hidden: { opacity: 0, y: shouldReduceMotion ? 0 : 6 },
     visible: { 
       opacity: 1, 
       y: 0,
@@ -124,25 +98,13 @@ export default function NavCards() {
     },
   }), [shouldReduceMotion]);
 
-  // Build the cards array dynamically
-  const allCards = [
-    ...userPages.map((page) => ({
-      key: page.path,
-      itemId: page.id,
-      title: page.label,
-      description: page.description,
-      icon: page.icon,
-      to: page.path,
-      variant: "emerald" as const,
-      show: true,
-      iconAsImage: 'iconAsImage' in page ? page.iconAsImage : false,
-    })),
+  const rolePanels = useMemo(() => [
     {
       key: "/mechanic-dashboard",
       itemId: "mechanic",
       title: "Mechanic Panel",
       description: "Review DVIR queues and shop work",
-      icon: <img loading="lazy" src="/assets/mechanic-panel.png" alt="" className="w-full h-full object-contain" />,
+      icon: IMG("/assets/mechanic-panel.webp"),
       to: "/mechanic-dashboard",
       variant: "ember" as const,
       show: hasMechanicAccess,
@@ -153,7 +115,7 @@ export default function NavCards() {
       itemId: "general-foreman",
       title: "General Foreman Panel",
       description: "Oversee crews and safety compliance",
-      icon: <img loading="lazy" src="/assets/general-foreman-panel.png" alt="" className="w-full h-full object-contain" />,
+      icon: IMG("/assets/general-foreman-panel.webp"),
       to: "/general-foreman-dashboard",
       variant: "purple" as const,
       show: role === "general_foreman" || isAdmin,
@@ -164,7 +126,7 @@ export default function NavCards() {
       itemId: "safety-officer",
       title: "Safety Officer Panel",
       description: "Manage incidents and compliance",
-      icon: <img loading="lazy" src="/assets/safety-officer-panel.png" alt="" className="w-full h-full object-contain" />,
+      icon: IMG("/assets/safety-officer-panel.webp"),
       to: "/safety-officer-dashboard",
       variant: "redwhite" as const,
       show: role === "safety_officer" || isAdmin,
@@ -175,7 +137,7 @@ export default function NavCards() {
       itemId: "foreman",
       title: "Foreman Panel",
       description: "Manage crew and daily reports",
-      icon: <img loading="lazy" src="/assets/foreman-panel.png" alt="" className="w-full h-full object-contain" />,
+      icon: IMG("/assets/foreman-panel.webp"),
       to: "/foreman-dashboard",
       variant: "bluewhite" as const,
       show: role === "foreman" || isAdmin,
@@ -186,13 +148,13 @@ export default function NavCards() {
       itemId: "admin",
       title: "Admin Panel",
       description: "Manage users and approvals",
-      icon: <img loading="lazy" src="/assets/admin-panel.png" alt="" className="w-full h-full object-contain" />,
+      icon: IMG("/assets/admin-panel.webp"),
       to: "/admin",
       variant: "gold" as const,
       show: isAdmin,
       iconAsImage: true,
     },
-  ].filter(card => card.show);
+  ].filter(c => c.show), [isAdmin, hasMechanicAccess, role]);
 
   return (
     <motion.div 
@@ -201,22 +163,51 @@ export default function NavCards() {
       initial="hidden"
       animate="visible"
     >
-      {allCards.map((card) => (
-          <motion.div key={card.key} variants={itemVariants}>
-            <BrandedNavCard
-              title={card.title}
-              description={card.description}
-              icon={typeof card.icon === 'function' ? (() => { const Icon = card.icon as React.ComponentType; return <Icon />; })() : card.icon}
-              to={card.to}
-              variant={card.variant}
-              iconAsImage={card.iconAsImage}
-              itemId={card.itemId}
-              isPinned={isPinned(card.itemId)}
-              canPinMore={canPinMore}
-              onTogglePin={togglePin}
-            />
-          </motion.div>
-        ))}
+      {/* Role-specific panels first */}
+      {rolePanels.length > 0 && (
+        <>
+          <SectionHeader label="Role Panels" />
+          {rolePanels.map((card) => (
+            <motion.div key={card.key} variants={itemVariants}>
+              <BrandedNavCard
+                title={card.title}
+                description={card.description}
+                icon={card.icon}
+                to={card.to}
+                variant={card.variant}
+                iconAsImage={card.iconAsImage}
+                itemId={card.itemId}
+                isPinned={isPinned(card.itemId)}
+                canPinMore={canPinMore}
+                onTogglePin={togglePin}
+              />
+            </motion.div>
+          ))}
+        </>
+      )}
+
+      {/* Categorized user pages */}
+      {categories.map((category) => (
+        <React.Fragment key={category.key}>
+          <SectionHeader label={category.label} />
+          {category.items.map((page) => (
+            <motion.div key={page.path} variants={itemVariants}>
+              <BrandedNavCard
+                title={page.label}
+                description={page.description}
+                icon={page.icon}
+                to={page.path}
+                variant="emerald"
+                iconAsImage={page.iconAsImage}
+                itemId={page.id}
+                isPinned={isPinned(page.id)}
+                canPinMore={canPinMore}
+                onTogglePin={togglePin}
+              />
+            </motion.div>
+          ))}
+        </React.Fragment>
+      ))}
     </motion.div>
   );
 }

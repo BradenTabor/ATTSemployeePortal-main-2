@@ -29,7 +29,7 @@ export interface WorkerExternalCertification {
   notes: string | null;
   verified_by: string | null;
   verified_at: string | null;
-  granted_by: string;
+  granted_by: string | null;
   granted_at: string;
   cert_type_name?: string;
   worker_name?: string;
