@@ -56,8 +56,8 @@ interface UseFormPersistenceReturn<T> {
   clearDraft: () => void;
   /** Dismiss draft recovery prompt */
   dismissDraft: () => void;
-  /** Mark changes as saved (after successful server save) */
-  markAsSaved: () => void;
+  /** Mark changes as saved (after successful server save). Pass the current form to snapshot it so subsequent identical saveDraft calls are detected as unchanged. */
+  markAsSaved: (form?: T) => void;
 }
 
 export function useFormPersistence<T>({
@@ -212,7 +212,19 @@ export function useFormPersistence<T>({
   }, [storageKey, formType]);
 
   // Mark as saved (after server save)
-  const markAsSaved = useCallback(() => {
+  const markAsSaved = useCallback((form?: T) => {
+    // Cancel any pending debounced save so a stale write cannot land in
+    // localStorage after the server already has the latest data.
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
+    }
+
+    // Snapshot the saved form so an identical saveDraft is a correct no-op.
+    if (form !== undefined) {
+      lastSavedFormRef.current = JSON.stringify(form);
+    }
+
     setHasUnsavedChanges(false);
     setLastSaved(new Date());
   }, []);
