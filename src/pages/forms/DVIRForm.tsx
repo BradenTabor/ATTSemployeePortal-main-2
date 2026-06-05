@@ -19,7 +19,7 @@ import { SmartDefaultsPanel } from "../../components/forms/SmartDefaultsPanel";
 import { VoiceInputButton } from "../../components/forms/VoiceInputButton";
 import { formToast } from "../../lib/formToast";
 import { validators as formValidators } from "../../lib/formValidation";
-import { useFormPersistence } from "../../hooks/useFormPersistence";
+import { useFormDraftLifecycle } from "../../hooks/useFormDraftLifecycle";
 import { DraftRecoveryModal } from "../../components/forms/DraftRecoveryModal";
 import { FormSuccessCelebration } from "../../components/forms/FormSuccessCelebration";
 import { useAuth } from "../../contexts/AuthContext";
@@ -83,7 +83,6 @@ export default function DVIRForm() {
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   
   // Draft recovery and celebration state
-  const [showDraftModal, setShowDraftModal] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [remainingForms, setRemainingForms] = useState<RemainingForm[]>([]);
   // Camera-related state (Files can't be persisted to localStorage)
@@ -103,40 +102,13 @@ export default function DVIRForm() {
   // Previous mileage for validation (not persisted - fetched from DB)
   const [previousMileage, setPreviousMileage] = useState<number | null>(null);
   
-  // Form persistence (auto-save drafts to localStorage)
-  const {
-    hasDraft,
-    draftData,
-    lastSaved,
-    hasUnsavedChanges,
-    saveDraft,
-    flushPendingSave,
-    clearDraft,
-    dismissDraft,
-    markAsSaved,
-  } = useFormPersistence<DVIRFormState>({
-    formType: 'dvir',
-    userId: user?.id,
-    createInitialState: createInitialDVIRFormState,
-    isEditMode: false,
-    debounceMs: 300,
-  });
-
-  // Refs for flush-on-unmount so latest state is saved before remount
-  const formRef = useRef(form);
-  const currentStepRef = useRef(currentStep);
-  const completedStepsRef = useRef(completedSteps);
-  formRef.current = form;
-  currentStepRef.current = currentStep;
-  completedStepsRef.current = completedSteps;
-
   // Single source of truth for "a template is incoming", resolved synchronously
   // on the FIRST render — before any mount effect runs — by reading
   // sessionStorage exactly once into a ref. Both the template effect and the
-  // draft auto-restore/recovery effects read this, so template-vs-draft
-  // precedence never depends on effect declaration order or removeItem() timing.
-  // Clicking "Use as Template" is a deliberate user action and must win over an
-  // auto-saved draft (the L133 contract: template "takes precedence over draft").
+  // draft-recovery hook read this, so template-vs-draft precedence never depends
+  // on effect declaration order or removeItem() timing. Clicking "Use as
+  // Template" is a deliberate user action and must win over an auto-saved draft
+  // (the L133 contract: template "takes precedence over draft").
   const incomingTemplateRef = useRef<boolean | null>(null);
   if (incomingTemplateRef.current === null) {
     incomingTemplateRef.current =
@@ -144,6 +116,40 @@ export default function DVIRForm() {
       sessionStorage.getItem("dvir-template") !== null;
   }
   const hasIncomingTemplate = incomingTemplateRef.current;
+
+  // Draft lifecycle (persistence + auto-restore + recovery modal + autosave +
+  // flush-on-unmount + beforeunload), extracted into a shared hook. The page
+  // still owns the template effect; the hook stands down for the entire
+  // draft-recovery subsystem (auto-restore, modal, AND empty-draft discard)
+  // whenever a template is incoming via `draftRecoveryEnabled`.
+  const {
+    hasDraft,
+    lastSaved,
+    hasUnsavedChanges,
+    saveDraft,
+    clearDraft,
+    markAsSaved,
+    draftRecoveryModalProps,
+  } = useFormDraftLifecycle<DVIRFormState>({
+    formType: 'dvir',
+    userId: user?.id,
+    createInitialState: createInitialDVIRFormState,
+    isEditMode: false,
+    debounceMs: 300,
+    form,
+    setForm,
+    currentStep,
+    setCurrentStep,
+    completedSteps,
+    setCompletedSteps,
+    draftRecoveryEnabled: !hasIncomingTemplate,
+    enableAutoRestore: true,
+    enableAutosave: true,
+    hasUnsavedPhotos: () =>
+      Boolean(oilDipstickPhoto) || Object.keys(extraPhotos).length > 0,
+    blockWhen: () => showCelebration,
+    restoredToastMessage: "Your previous DVIR progress has been restored.",
+  });
 
   // Check for template data from history (takes precedence over draft)
   useEffect(() => {
@@ -180,102 +186,6 @@ export default function DVIRForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Run once on mount; hasIncomingTemplate/clearDraft are stable.
   }, []);
 
-  // Auto-restore drafts saved very recently (same session / remount recovery)
-  const didAutoRestoreRef = useRef(false);
-  useEffect(() => {
-    // Template wins: never auto-restore a draft over an incoming template.
-    if (hasIncomingTemplate) return;
-    if (!hasDraft || !draftData) return;
-    const savedAtMs = draftData.savedAt ? new Date(draftData.savedAt).getTime() : 0;
-    const draftAgeMs = savedAtMs ? Date.now() - savedAtMs : Infinity;
-    const AUTO_RESTORE_WINDOW_MS = 60_000;
-    if (draftAgeMs < AUTO_RESTORE_WINDOW_MS) {
-      setForm(draftData.form);
-      setCurrentStep(draftData.currentStep);
-      setCompletedSteps(new Set(draftData.completedSteps));
-      clearDraft();
-      didAutoRestoreRef.current = true;
-      setShowDraftModal(false);
-      formToast.success("Draft restored", "Your recent progress has been restored.");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Run once on mount; hasDraft/draftData/clearDraft are stable from initial hook state.
-  }, []);
-
-  // Show draft recovery modal if draft exists (with small delay); skip if we auto-restored.
-  // Ignore "empty" drafts: step 1, 0 completed, AND form still matches initial (opened and left).
-  // If user filled any fields, form !== initial → keep draft and show modal.
-  useEffect(() => {
-    // Template wins: never surface the draft-recovery modal over a template.
-    if (hasIncomingTemplate) return;
-    if (!hasDraft || !draftData || didAutoRestoreRef.current) return;
-    const noSteps = draftData.currentStep === 1 && (draftData.completedSteps?.length ?? 0) === 0;
-    const formMatchesInitial =
-      JSON.stringify(draftData.form) === JSON.stringify(createInitialDVIRFormState());
-    if (noSteps && formMatchesInitial) {
-      clearDraft();
-      return;
-    }
-    const timer = setTimeout(() => setShowDraftModal(true), 500);
-    return () => clearTimeout(timer);
-  }, [hasDraft, draftData, clearDraft, hasIncomingTemplate]);
-
-  // Handle draft restoration
-  const handleRestoreDraft = useCallback(() => {
-    if (draftData) {
-      setForm(draftData.form);
-      setCurrentStep(draftData.currentStep);
-      setCompletedSteps(new Set(draftData.completedSteps));
-      setShowDraftModal(false);
-      formToast.success("Draft Restored", "Your previous DVIR progress has been restored.");
-    }
-  }, [draftData]);
-  
-  // Handle draft dismissal
-  const handleDismissDraft = useCallback(() => {
-    dismissDraft();
-    setShowDraftModal(false);
-  }, [dismissDraft]);
-  
-  // Auto-save form changes
-  useEffect(() => {
-    if (user?.id) {
-      saveDraft(form, currentStep, completedSteps);
-    }
-  }, [form, currentStep, completedSteps, user?.id, saveDraft]);
-
-  // Flush draft on unmount so remounts don't lose last keystrokes
-  useEffect(() => {
-    return () => {
-      if (user?.id) {
-        flushPendingSave(formRef.current, currentStepRef.current, completedStepsRef.current);
-      }
-    };
-  }, [user?.id, flushPendingSave]);
-
-  // Warn before closing browser/tab with unsaved changes (beforeunload)
-  // Also warn if photos are selected (photos can't be persisted to localStorage)
-  // Save draft immediately if there are unsaved changes
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      const hasPhotos = Boolean(oilDipstickPhoto) || Object.keys(extraPhotos).length > 0;
-      if ((hasUnsavedChanges || hasPhotos) && !showCelebration) {
-        // Save draft immediately before page unload (synchronous, bypasses debounce)
-        if (hasUnsavedChanges && user?.id) {
-          flushPendingSave(form, currentStep, completedSteps);
-        }
-        
-        e.preventDefault();
-        e.returnValue = hasPhotos 
-          ? 'You have photos selected that will be lost if you leave this page. Are you sure you want to leave?'
-          : 'You have unsaved changes. Your draft is auto-saved and can be recovered on the next visit.';
-        return e.returnValue;
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [hasUnsavedChanges, showCelebration, oilDipstickPhoto, extraPhotos, user?.id, form, currentStep, completedSteps, flushPendingSave]);
-  
   // 🔽 Fetch previous mileage when truck is selected
   // Use AbortController to prevent race conditions when truck number changes rapidly
   useEffect(() => {
@@ -1479,13 +1389,7 @@ export default function DVIRForm() {
       </div>
       
       {/* Draft Recovery Modal */}
-      <DraftRecoveryModal
-        isOpen={showDraftModal}
-        draft={draftData}
-        formType="dvir"
-        onRestore={handleRestoreDraft}
-        onDiscard={handleDismissDraft}
-      />
+      <DraftRecoveryModal {...draftRecoveryModalProps} />
       
       {/* Success Celebration with Remaining Forms Nudge */}
       <FormSuccessCelebration
