@@ -33,13 +33,11 @@ export default function ProtectedRoute({
 
   // 🔹 After loading: if there is still no session, bounce to home/login
   if (!session) {
-    // console.log("🔒 No active session, redirecting to home page");
     return <Navigate to="/" replace />;
   }
 
   // 🔹 If a specific role is required (e.g. admin only)
   if (requiredRole && role !== requiredRole) {
-    // console.log(`🚫 Access denied. Required role: ${requiredRole}, User role: ${role}`);
     return <Navigate to={getRoleDashboard(role)} replace />;
   }
 
@@ -47,14 +45,12 @@ export default function ProtectedRoute({
   if (allowedRoles && allowedRoles.length > 0) {
     const hasAllowedRole = isAdmin || (role && allowedRoles.includes(role as UserRole));
     if (!hasAllowedRole) {
-      // console.log(`🚫 Access denied. Allowed roles: ${allowedRoles.join(', ')}, User role: ${role}`);
       return <Navigate to={getRoleDashboard(role)} replace />;
     }
   }
 
   // 🔹 If mechanic access is required (admin OR mechanic)
   if (requireMechanicAccess && !hasMechanicAccess) {
-    // console.log(`🚫 Mechanic access denied. User role: ${role}`);
     return <Navigate to={getRoleDashboard(role)} replace />;
   }
 

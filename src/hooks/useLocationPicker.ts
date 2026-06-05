@@ -76,7 +76,6 @@ export function useLocationPicker({
         const div = document.createElement('div');
         placesService.current = new window.google.maps.places.PlacesService(div);
         sessionToken.current = new window.google.maps.places.AutocompleteSessionToken();
-        console.log('[LocationPicker] Google Places services initialized successfully');
         return true;
       }
       return false;
@@ -86,7 +85,6 @@ export function useLocationPicker({
     if (initGoogleServices()) return;
 
     // If not available, poll for it (Google Maps loads asynchronously)
-    console.log('[LocationPicker] Google Maps not ready, waiting...');
     const interval = setInterval(() => {
       if (initGoogleServices()) {
         clearInterval(interval);
@@ -215,8 +213,6 @@ export function useLocationPicker({
 
     placesService.current.textSearch(request, (results, status) => {
       setIsSearching(false);
-
-      console.log('[LocationPicker] Nearby search status:', status, 'Results:', results?.length || 0);
 
       if (status === window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS || !results || results.length === 0) {
         // Try fallback with nearbySearch if textSearch returns no results
