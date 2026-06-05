@@ -225,6 +225,23 @@ export default function DailyJSAForm() {
   const formStartTime = useRef(Date.now());
   const formTimer = useRef(createFormTimer());
 
+  // Single source of truth for "a duplicate is incoming", resolved synchronously
+  // on the FIRST render — before any mount effect runs — by reading sessionStorage
+  // exactly once into a lazy-init ref. The auto-restore and recovery-modal effects
+  // read this so duplicate-vs-draft precedence never depends on effect declaration
+  // order or on when the async Supabase fetch resolves. Clicking "Duplicate" in
+  // JSA History is a deliberate user action and must win over an auto-saved draft.
+  // Scoped to the new-form route (!id) to agree with the duplicate effect's own
+  // `!id` guard — in edit mode the duplicate path never runs, so the flag is false.
+  const incomingDuplicateRef = useRef<boolean | null>(null);
+  if (incomingDuplicateRef.current === null) {
+    incomingDuplicateRef.current =
+      typeof sessionStorage !== "undefined" &&
+      sessionStorage.getItem("jsa-duplicate") !== null &&
+      !id;
+  }
+  const hasIncomingDuplicate = incomingDuplicateRef.current;
+
   // Form persistence (auto-save drafts)
   const {
     hasDraft,
@@ -255,7 +272,10 @@ export default function DailyJSAForm() {
   // Auto-restore drafts saved very recently (same session / remount recovery)
   const didAutoRestoreRef = useRef(false);
   useEffect(() => {
-    if (!hasDraft || !draftData || isEditMode) return;
+    // An incoming duplicate owns the form; stand down so a recent draft can't
+    // overwrite (or flash over) the duplicated record. The flag is frozen on
+    // first render, so this gate holds regardless of fetch latency.
+    if (!hasDraft || !draftData || isEditMode || hasIncomingDuplicate) return;
     const savedAtMs = draftData.savedAt ? new Date(draftData.savedAt).getTime() : 0;
     const draftAgeMs = savedAtMs ? Date.now() - savedAtMs : Infinity;
     const AUTO_RESTORE_WINDOW_MS = 60_000;
@@ -274,7 +294,10 @@ export default function DailyJSAForm() {
   // Show draft recovery modal if draft exists; skip if we auto-restored.
   // Ignore "empty" drafts: step 1, 0 completed, AND form matches initial (opened and left).
   useEffect(() => {
-    if (!hasDraft || !draftData || isEditMode || didAutoRestoreRef.current) return;
+    // Suppressed entirely when a duplicate is incoming: no modal AND no
+    // empty-draft discard. The 500ms timer below is never scheduled, so the
+    // modal cannot appear in the window before the async duplicate resolves.
+    if (!hasDraft || !draftData || isEditMode || hasIncomingDuplicate || didAutoRestoreRef.current) return;
     const noSteps = draftData.currentStep === 1 && (draftData.completedSteps?.length ?? 0) === 0;
     const formMatchesInitial =
       JSON.stringify(draftData.form) === JSON.stringify(createInitialFormState());
@@ -284,7 +307,7 @@ export default function DailyJSAForm() {
     }
     const timer = setTimeout(() => setShowDraftModal(true), 500);
     return () => clearTimeout(timer);
-  }, [hasDraft, draftData, isEditMode, clearDraft]);
+  }, [hasDraft, draftData, isEditMode, hasIncomingDuplicate, clearDraft]);
 
   // Handle draft restoration
   const handleRestoreDraft = useCallback(() => {
@@ -641,6 +664,8 @@ export default function DailyJSAForm() {
             logger.error("Failed to load JSA for duplication:", fetchError);
             formToast.error("Duplicate Failed", "Unable to load JSA record. Please try again.");
             sessionStorage.removeItem('jsa-duplicate');
+            // Rider B: the duplicate didn't take, so leave the autosaved draft
+            // intact (no clearDraft). It surfaces for recovery on the next visit.
             return;
           }
 
@@ -665,6 +690,11 @@ export default function DailyJSAForm() {
           
           // Clear duplicate data after use
           sessionStorage.removeItem('jsa-duplicate');
+          // Rider A: the user explicitly chose to start from this record, so any
+          // draft auto-saved on a prior visit is now orphaned. Clear it so it
+          // can't re-surface (auto-restore / recovery modal) on the next visit.
+          // Mirrors DVIR's template handler.
+          clearDraft();
           formToast.success("JSA Duplicated", "Previous JSA data has been loaded. Please review and update as needed.");
         };
         fetchAndDuplicate();
@@ -672,8 +702,12 @@ export default function DailyJSAForm() {
       } catch (err) {
         logger.error("Failed to parse duplicate data:", err);
         sessionStorage.removeItem('jsa-duplicate');
+        // Rider B: surface why the form is blank. Leave the draft intact (no
+        // clearDraft): a corrupt duplicate must not cost the user their work.
+        formToast.error("Duplicate couldn't be loaded", "The saved duplicate data was invalid. Starting with a blank form.");
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- clearDraft is stable (useFormPersistence useCallback); intentionally keyed on [id] to match the duplicate route guard.
   }, [id]);
 
   // Load record if editing
