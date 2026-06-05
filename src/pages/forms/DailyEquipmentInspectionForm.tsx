@@ -15,7 +15,7 @@ import { cn } from "../../lib/utils";
 import { DateField } from "../../components/forms/GlassyPickers";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../contexts/AuthContext";
-import { useFormPersistence } from "../../hooks/useFormPersistence";
+import { useFormDraftLifecycle } from "../../hooks/useFormDraftLifecycle";
 import { DraftRecoveryModal } from "../../components/forms/DraftRecoveryModal";
 import { AutoSaveIndicator } from "../../components/forms/AutoSaveIndicator";
 import { FormSuccessCelebration } from "../../components/forms/FormSuccessCelebration";
@@ -76,7 +76,6 @@ export default function DailyEquipmentInspectionForm() {
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   
   // Draft recovery and celebration state
-  const [showDraftModal, setShowDraftModal] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [remainingForms, setRemainingForms] = useState<RemainingForm[]>([]);
   
@@ -222,123 +221,40 @@ export default function DailyEquipmentInspectionForm() {
     validateAll();
   }, [form.generalChecklist, validateAll]);
 
-  // Form persistence (auto-save drafts to localStorage)
+  // Draft lifecycle (persistence + auto-restore + recovery modal + autosave +
+  // flush-on-unmount + beforeunload), extracted into a shared hook. Equipment
+  // has no cross-page template handoff (its "template" is an in-form equipment-
+  // type selector, i.e. form state), so the draft-recovery subsystem is always
+  // enabled. The hook applies `normalizeFormStateFromDraft` on both silent
+  // auto-restore and modal-restore (NOT on the empty-draft discard check) —
+  // matching the prior inline behavior exactly.
   const {
-    hasDraft,
-    draftData,
     lastSaved,
     hasUnsavedChanges,
     saveDraft,
-    flushPendingSave,
     clearDraft,
-    dismissDraft,
     markAsSaved,
-  } = useFormPersistence<EquipmentFormState>({
+    draftRecoveryModalProps,
+  } = useFormDraftLifecycle<EquipmentFormState>({
     formType: 'equipment',
     userId: user?.id,
     createInitialState: createInitialEquipmentFormState,
     isEditMode: false,
     debounceMs: 300,
+    form,
+    setForm,
+    currentStep,
+    setCurrentStep,
+    completedSteps,
+    setCompletedSteps,
+    draftRecoveryEnabled: true,
+    enableAutoRestore: true,
+    enableAutosave: true,
+    applyFormFromDraft: normalizeFormStateFromDraft,
+    hasUnsavedPhotos: () => Object.keys(photos).length > 0,
+    blockWhen: () => showCelebration,
+    restoredToastMessage: "Your previous equipment inspection progress has been restored.",
   });
-
-  // Refs for flush-on-unmount
-  const formRef = useRef(form);
-  const currentStepRef = useRef(currentStep);
-  const completedStepsRef = useRef(completedSteps);
-  formRef.current = form;
-  currentStepRef.current = currentStep;
-  completedStepsRef.current = completedSteps;
-
-  // Auto-restore drafts saved very recently (same session / remount recovery)
-  const didAutoRestoreRef = useRef(false);
-  useEffect(() => {
-    if (!hasDraft || !draftData) return;
-    const savedAtMs = draftData.savedAt ? new Date(draftData.savedAt).getTime() : 0;
-    const draftAgeMs = savedAtMs ? Date.now() - savedAtMs : Infinity;
-    const AUTO_RESTORE_WINDOW_MS = 60_000;
-    if (draftAgeMs < AUTO_RESTORE_WINDOW_MS) {
-      setForm(normalizeFormStateFromDraft(draftData.form));
-      setCurrentStep(draftData.currentStep);
-      setCompletedSteps(new Set(draftData.completedSteps));
-      clearDraft();
-      didAutoRestoreRef.current = true;
-      setShowDraftModal(false);
-      formToast.success("Draft restored", "Your recent progress has been restored.");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Run once on mount; hasDraft/draftData/clearDraft are stable from initial hook state.
-  }, []);
-
-  // Show draft recovery modal if draft exists; skip if we auto-restored.
-  // Ignore "empty" drafts: step 1, 0 completed, AND form matches initial (opened and left).
-  useEffect(() => {
-    if (!hasDraft || !draftData || didAutoRestoreRef.current) return;
-    const noSteps = draftData.currentStep === 1 && (draftData.completedSteps?.length ?? 0) === 0;
-    const formMatchesInitial =
-      JSON.stringify(draftData.form) === JSON.stringify(createInitialEquipmentFormState());
-    if (noSteps && formMatchesInitial) {
-      clearDraft();
-      return;
-    }
-    const timer = setTimeout(() => setShowDraftModal(true), 500);
-    return () => clearTimeout(timer);
-  }, [hasDraft, draftData, clearDraft]);
-
-  // Handle draft restoration
-  const handleRestoreDraft = useCallback(() => {
-    if (draftData) {
-      setForm(normalizeFormStateFromDraft(draftData.form));
-      setCurrentStep(draftData.currentStep);
-      setCompletedSteps(new Set(draftData.completedSteps));
-      setShowDraftModal(false);
-      formToast.success("Draft Restored", "Your previous equipment inspection progress has been restored.");
-    }
-  }, [draftData]);
-  
-  // Handle draft dismissal
-  const handleDismissDraft = useCallback(() => {
-    dismissDraft();
-    setShowDraftModal(false);
-  }, [dismissDraft]);
-  
-  // Auto-save form changes
-  useEffect(() => {
-    if (user?.id) {
-      saveDraft(form, currentStep, completedSteps);
-    }
-  }, [form, currentStep, completedSteps, user?.id, saveDraft]);
-
-  // Flush draft on unmount
-  useEffect(() => {
-    return () => {
-      if (user?.id) {
-        flushPendingSave(formRef.current, currentStepRef.current, completedStepsRef.current);
-      }
-    };
-  }, [user?.id, flushPendingSave]);
-
-  // Warn before closing browser/tab with unsaved changes (beforeunload)
-  // Also warn if photos are selected (photos can't be persisted to localStorage)
-  // Save draft immediately if there are unsaved changes
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      const hasPhotos = Object.keys(photos).length > 0;
-      if ((hasUnsavedChanges || hasPhotos) && !showCelebration) {
-        // Save draft immediately before page unload (synchronous, bypasses debounce)
-        if (hasUnsavedChanges && user?.id) {
-          flushPendingSave(form, currentStep, completedSteps);
-        }
-        
-        e.preventDefault();
-        e.returnValue = hasPhotos 
-          ? 'You have photos selected that will be lost if you leave this page. Are you sure you want to leave?'
-          : 'You have unsaved changes. Your draft is auto-saved and can be recovered on the next visit.';
-        return e.returnValue;
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [hasUnsavedChanges, showCelebration, photos, user?.id, form, currentStep, completedSteps, flushPendingSave]);
 
   function handleChecklistChange(
     type: "general" | "specific",
@@ -1619,13 +1535,7 @@ export default function DailyEquipmentInspectionForm() {
       </div>
       
       {/* Draft Recovery Modal */}
-      <DraftRecoveryModal
-        isOpen={showDraftModal}
-        draft={draftData}
-        formType="equipment"
-        onRestore={handleRestoreDraft}
-        onDiscard={handleDismissDraft}
-      />
+      <DraftRecoveryModal {...draftRecoveryModalProps} />
       
       {/* Success Celebration with Remaining Forms Nudge */}
       <FormSuccessCelebration
