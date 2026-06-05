@@ -7,7 +7,7 @@ import { supabase } from "../../lib/supabaseClient";
 import { logger } from "../../lib/logger";
 import { formToast } from "../../lib/formToast";
 import { useSmartDefaults } from "../../hooks/useSmartDefaults";
-import { useFormPersistence } from "../../hooks/useFormPersistence";
+import { useFormDraftLifecycle } from "../../hooks/useFormDraftLifecycle";
 import { SmartDefaultsPanel } from "../../components/forms/SmartDefaultsPanel";
 import { FormSuccessCelebration } from "../../components/forms/FormSuccessCelebration";
 import { DraftRecoveryModal } from "../../components/forms/DraftRecoveryModal";
@@ -208,7 +208,6 @@ export default function DailyJSAForm() {
 
   // Success celebration state
   const [showCelebration, setShowCelebration] = useState(false);
-  const [showDraftModal, setShowDraftModal] = useState(false);
   const [remainingForms, setRemainingForms] = useState<RemainingForm[]>([]);
   
   // Compliance toast for nudging and full celebration
@@ -242,126 +241,38 @@ export default function DailyJSAForm() {
   }
   const hasIncomingDuplicate = incomingDuplicateRef.current;
 
-  // Form persistence (auto-save drafts)
+  // Draft lifecycle (persistence + auto-restore + recovery modal + autosave +
+  // flush-on-unmount + beforeunload), extracted into a shared hook. The page
+  // still owns the async jsa-duplicate handler; the hook stands down for the
+  // entire draft-recovery subsystem (auto-restore, modal, AND empty-draft
+  // discard) whenever a duplicate is incoming via `draftRecoveryEnabled`.
+  // JSA has no photo branch in beforeunload, so `hasUnsavedPhotos` is omitted.
   const {
     hasDraft,
-    draftData,
     lastSaved,
     hasUnsavedChanges,
     saveDraft,
-    flushPendingSave,
     clearDraft,
-    dismissDraft,
     markAsSaved,
-  } = useFormPersistence<DailyJsaFormState>({
+    draftRecoveryModalProps,
+  } = useFormDraftLifecycle<DailyJsaFormState>({
     formType: 'jsa',
     userId: user?.id,
     createInitialState: createInitialFormState,
     isEditMode,
     debounceMs: 300,
+    form,
+    setForm,
+    currentStep,
+    setCurrentStep,
+    completedSteps,
+    setCompletedSteps,
+    draftRecoveryEnabled: !isEditMode && !hasIncomingDuplicate,
+    enableAutoRestore: true,
+    enableAutosave: !isEditMode,
+    blockWhen: () => showCelebration,
+    restoredToastMessage: "Your previous progress has been restored.",
   });
-
-  // Refs for flush-on-unmount (named to avoid collision with existing currentStepRef below)
-  const draftFormRef = useRef(form);
-  const draftStepRef = useRef(currentStep);
-  const draftCompletedStepsRef = useRef(completedSteps);
-  draftFormRef.current = form;
-  draftStepRef.current = currentStep;
-  draftCompletedStepsRef.current = completedSteps;
-
-  // Auto-restore drafts saved very recently (same session / remount recovery)
-  const didAutoRestoreRef = useRef(false);
-  useEffect(() => {
-    // An incoming duplicate owns the form; stand down so a recent draft can't
-    // overwrite (or flash over) the duplicated record. The flag is frozen on
-    // first render, so this gate holds regardless of fetch latency.
-    if (!hasDraft || !draftData || isEditMode || hasIncomingDuplicate) return;
-    const savedAtMs = draftData.savedAt ? new Date(draftData.savedAt).getTime() : 0;
-    const draftAgeMs = savedAtMs ? Date.now() - savedAtMs : Infinity;
-    const AUTO_RESTORE_WINDOW_MS = 60_000;
-    if (draftAgeMs < AUTO_RESTORE_WINDOW_MS) {
-      setForm(draftData.form);
-      setCurrentStep(draftData.currentStep);
-      setCompletedSteps(new Set(draftData.completedSteps));
-      clearDraft();
-      didAutoRestoreRef.current = true;
-      setShowDraftModal(false);
-      formToast.success("Draft restored", "Your recent progress has been restored.");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Run once on mount; hasDraft/draftData/clearDraft/isEditMode are stable from initial hook state.
-  }, []);
-
-  // Show draft recovery modal if draft exists; skip if we auto-restored.
-  // Ignore "empty" drafts: step 1, 0 completed, AND form matches initial (opened and left).
-  useEffect(() => {
-    // Suppressed entirely when a duplicate is incoming: no modal AND no
-    // empty-draft discard. The 500ms timer below is never scheduled, so the
-    // modal cannot appear in the window before the async duplicate resolves.
-    if (!hasDraft || !draftData || isEditMode || hasIncomingDuplicate || didAutoRestoreRef.current) return;
-    const noSteps = draftData.currentStep === 1 && (draftData.completedSteps?.length ?? 0) === 0;
-    const formMatchesInitial =
-      JSON.stringify(draftData.form) === JSON.stringify(createInitialFormState());
-    if (noSteps && formMatchesInitial) {
-      clearDraft();
-      return;
-    }
-    const timer = setTimeout(() => setShowDraftModal(true), 500);
-    return () => clearTimeout(timer);
-  }, [hasDraft, draftData, isEditMode, hasIncomingDuplicate, clearDraft]);
-
-  // Handle draft restoration
-  const handleRestoreDraft = useCallback(() => {
-    if (draftData) {
-      setForm(draftData.form);
-      setCurrentStep(draftData.currentStep);
-      setCompletedSteps(new Set(draftData.completedSteps));
-      setShowDraftModal(false);
-      formToast.success("Draft Restored", "Your previous progress has been restored.");
-    }
-  }, [draftData]);
-
-  // Handle draft dismissal
-  const handleDismissDraft = useCallback(() => {
-    dismissDraft();
-    setShowDraftModal(false);
-  }, [dismissDraft]);
-
-  // Auto-save form changes
-  useEffect(() => {
-    if (!isEditMode && user?.id) {
-      saveDraft(form, currentStep, completedSteps);
-    }
-  }, [form, currentStep, completedSteps, isEditMode, user?.id, saveDraft]);
-
-  // Flush draft on unmount (new form only)
-  useEffect(() => {
-    return () => {
-      if (!isEditMode && user?.id) {
-        flushPendingSave(draftFormRef.current, draftStepRef.current, draftCompletedStepsRef.current);
-      }
-    };
-  }, [isEditMode, user?.id, flushPendingSave]);
-
-  // Warn before closing browser/tab with unsaved changes (beforeunload)
-  // Also save draft immediately if there are unsaved changes
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasUnsavedChanges && !isEditMode && !showCelebration) {
-        // Save draft immediately before page unload (synchronous, bypasses debounce)
-        if (user?.id) {
-          flushPendingSave(form, currentStep, completedSteps);
-        }
-        
-        e.preventDefault();
-        // Most browsers ignore custom messages, but setting returnValue is required
-        e.returnValue = 'You have unsaved changes. Your draft is auto-saved and can be recovered on the next visit.';
-        return e.returnValue;
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [hasUnsavedChanges, isEditMode, showCelebration, user?.id, form, currentStep, completedSteps, flushPendingSave]);
 
   // Note: URL syncing is now handled above using useSearchParams for proper React Router integration
 
@@ -707,7 +618,7 @@ export default function DailyJSAForm() {
         formToast.error("Duplicate couldn't be loaded", "The saved duplicate data was invalid. Starting with a blank form.");
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- clearDraft is stable (useFormPersistence useCallback); intentionally keyed on [id] to match the duplicate route guard.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- clearDraft is stable (useFormDraftLifecycle passthrough); intentionally keyed on [id] to match the duplicate route guard.
   }, [id]);
 
   // Load record if editing
@@ -1693,13 +1604,7 @@ export default function DailyJSAForm() {
         )}
 
         {/* Draft Recovery Modal */}
-        <DraftRecoveryModal
-          isOpen={showDraftModal}
-          draft={draftData}
-          formType="jsa"
-          onRestore={handleRestoreDraft}
-          onDiscard={handleDismissDraft}
-        />
+        <DraftRecoveryModal {...draftRecoveryModalProps} />
 
         {/* Success Celebration with Remaining Forms Nudge */}
         <FormSuccessCelebration
