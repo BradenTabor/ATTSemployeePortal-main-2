@@ -95,6 +95,15 @@ interface UseFormDraftLifecycleOptions<T> {
   enableAutoRestore: boolean;
   /** When true, form changes are autosaved (and flushed on unmount). */
   enableAutosave: boolean;
+  /**
+   * Master gate for the entire draft-recovery subsystem. When false, the hook
+   * stands down completely: no silent auto-restore, no recovery modal, and no
+   * empty-draft discard — because another path now owns the form (e.g. a
+   * history template whose effect performs its own draft clearing).
+   * `enableAutoRestore` is subordinate to this: it only matters when this is
+   * true. Defaults to true so omitting it preserves current behavior.
+   */
+  draftRecoveryEnabled?: boolean;
 
   // --- optional behavior ---
   /**
@@ -165,6 +174,7 @@ export function useFormDraftLifecycle<T>({
   setCompletedSteps,
   enableAutoRestore,
   enableAutosave,
+  draftRecoveryEnabled = true,
   applyFormFromDraft,
   hasUnsavedPhotos,
   blockWhen,
@@ -226,7 +236,7 @@ export function useFormDraftLifecycle<T>({
   // synchronously-computed initial state.
   const didAutoRestoreRef = useRef(false);
   useEffect(() => {
-    if (!enableAutoRestore || !hasDraft || !draftData) return;
+    if (!draftRecoveryEnabled || !enableAutoRestore || !hasDraft || !draftData) return;
     const savedAtMs = draftData.savedAt ? new Date(draftData.savedAt).getTime() : 0;
     const draftAgeMs = savedAtMs ? Date.now() - savedAtMs : Infinity;
     if (draftAgeMs < AUTO_RESTORE_WINDOW_MS) {
@@ -244,6 +254,10 @@ export function useFormDraftLifecycle<T>({
   // Show the recovery modal when a non-empty draft exists and we did not
   // auto-restore. Ignore "empty" drafts (step 1, 0 completed, form === initial).
   useEffect(() => {
+    // Master gate: when recovery is off (e.g. a template owns the form), the
+    // hook must not touch the draft at all — including the empty-draft discard
+    // below. Suppress before any draft inspection.
+    if (!draftRecoveryEnabled) return;
     if (!hasDraft || !draftData || didAutoRestoreRef.current) return;
     const noSteps =
       draftData.currentStep === 1 && (draftData.completedSteps?.length ?? 0) === 0;
@@ -255,7 +269,7 @@ export function useFormDraftLifecycle<T>({
     }
     const timer = setTimeout(() => setShowDraftModal(true), DRAFT_MODAL_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [hasDraft, draftData, clearDraft]);
+  }, [hasDraft, draftData, clearDraft, draftRecoveryEnabled]);
 
   // Restore from the recovery modal.
   const handleRestoreDraft = useCallback(() => {

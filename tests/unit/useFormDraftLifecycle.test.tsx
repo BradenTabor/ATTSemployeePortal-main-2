@@ -315,6 +315,131 @@ describe('useFormDraftLifecycle', () => {
     });
   });
 
+  describe('draftRecoveryEnabled gate', () => {
+    it('draftRecoveryEnabled=false + recent draft → no silent restore, no toast, no modal', () => {
+      // Recent draft that WOULD auto-restore if recovery were on.
+      const draft = makeStoredDraft({
+        savedAt: new Date(NOW.getTime() - 5_000).toISOString(),
+      });
+      seedDraft(draft);
+
+      const setForm = vi.fn();
+      const setCurrentStep = vi.fn();
+      const setCompletedSteps = vi.fn();
+
+      const { result } = renderLifecycle({
+        draftRecoveryEnabled: false,
+        enableAutoRestore: true, // would fire if not for the gate
+        enableAutosave: false,
+        setForm,
+        setCurrentStep,
+        setCompletedSteps,
+      });
+
+      // Whole subsystem stood down: no restore applied, no toast.
+      expect(setForm).not.toHaveBeenCalled();
+      expect(setCurrentStep).not.toHaveBeenCalled();
+      expect(setCompletedSteps).not.toHaveBeenCalled();
+      expect(formToastSuccess).not.toHaveBeenCalled();
+
+      // Modal must never appear, even after the delay window.
+      act(() => {
+        vi.advanceTimersByTime(600);
+      });
+      expect(result.current.showDraftModal).toBe(false);
+      expect(result.current.draftRecoveryModalProps.isOpen).toBe(false);
+    });
+
+    it('draftRecoveryEnabled=false + old draft → modal NOT shown', () => {
+      // Old draft that WOULD surface the recovery modal if recovery were on.
+      const draft = makeStoredDraft({
+        savedAt: new Date(NOW.getTime() - 120_000).toISOString(),
+      });
+      seedDraft(draft);
+
+      const { result } = renderLifecycle({
+        draftRecoveryEnabled: false,
+        enableAutoRestore: true,
+        enableAutosave: false,
+      });
+
+      act(() => {
+        vi.advanceTimersByTime(600);
+      });
+
+      expect(result.current.showDraftModal).toBe(false);
+      expect(result.current.draftRecoveryModalProps.isOpen).toBe(false);
+    });
+
+    it('draftRecoveryEnabled=false + empty draft → empty-discard clearDraft NOT called', () => {
+      // Initial-state draft that the modal effect WOULD normally discard.
+      const emptyDraft = makeStoredDraft({
+        form: createInitialState(),
+        currentStep: 1,
+        completedSteps: [],
+      });
+      seedDraft(emptyDraft);
+
+      renderLifecycle({
+        draftRecoveryEnabled: false,
+        enableAutoRestore: false,
+        enableAutosave: false,
+      });
+
+      act(() => {
+        vi.advanceTimersByTime(600);
+      });
+
+      // The template path owns draft clearing — the hook must not reach into
+      // the draft at all, including the "helpfully clear an empty draft" path.
+      expect(localStorageMock.removeItem).not.toHaveBeenCalledWith(STORAGE_KEY);
+    });
+
+    it('draftRecoveryEnabled=true (explicit) + recent draft → silent restore still fires', () => {
+      const draft = makeStoredDraft({
+        savedAt: new Date(NOW.getTime() - 5_000).toISOString(),
+      });
+      seedDraft(draft);
+
+      const setForm = vi.fn();
+
+      renderLifecycle({
+        draftRecoveryEnabled: true,
+        enableAutoRestore: true,
+        enableAutosave: false,
+        setForm,
+      });
+
+      expect(setForm).toHaveBeenCalledWith(draft.form);
+      expect(formToastSuccess).toHaveBeenCalledWith(
+        'Draft restored',
+        'Your recent progress has been restored.',
+      );
+    });
+
+    it('draftRecoveryEnabled OMITTED + recent draft → silent restore fires (default true)', () => {
+      const draft = makeStoredDraft({
+        savedAt: new Date(NOW.getTime() - 5_000).toISOString(),
+      });
+      seedDraft(draft);
+
+      const setForm = vi.fn();
+
+      // draftRecoveryEnabled intentionally omitted — must default to true.
+      renderLifecycle({
+        enableAutoRestore: true,
+        enableAutosave: false,
+        setForm,
+      });
+
+      expect(setForm).toHaveBeenCalledWith(draft.form);
+      expect(formToastSuccess).toHaveBeenCalledWith(
+        'Draft restored',
+        'Your recent progress has been restored.',
+      );
+    });
+  });
+
   describe('autosave gating', () => {
     it('does NOT save drafts on form change when enableAutosave=false', () => {
       const { rerender } = renderLifecycle({ enableAutosave: false });
