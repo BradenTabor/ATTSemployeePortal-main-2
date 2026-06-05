@@ -98,10 +98,7 @@ If you want to re-enable the always-on behavior (not recommended):
 1. **Autopilot Governor:**
    Edit `00-autopilot-governor.mdc` and change `alwaysApply: false` to `alwaysApply: true`
 
-2. **Safety Agent:**
-   Rename `AGENTS.md.disabled` back to `AGENTS.md`
-
-3. **Specialists:**
+2. **Specialists:**
    Edit individual `.mdc` files and change `alwaysApply: false` to `alwaysApply: true`
 
 ⚠️ **Warning:** Re-enabling these will significantly increase token consumption.
@@ -113,17 +110,15 @@ To check if rules are active in a conversation:
 - Check for specialist report formats (Specialist active)
 - Notice verbose structured outputs (Rules loading)
 
-## 🔧 Safety Agent (Disabled)
+## 🔧 Agent Instructions
 
-The Safety Agent system (`AGENTS.md.disabled`) is disabled by default as it's only needed for:
-- Developing the safety announcement feature
-- Working on compliance notification systems
-- Debugging the AI-assisted form defaults
+`AGENTS.md` at the repo root is the **always-active** single source of truth for agent behavior. It is loaded via workspace rules on every conversation — there is no enable/disable toggle.
 
-To re-enable: rename back to `AGENTS.md`
+The same content is mirrored to `CLAUDE.md` and `GEMINI.md` only when another AI environment needs an equivalent file at repo root.
 
 ## 📝 Notes
 
+- `AGENTS.md` is always on; only `.mdc` specialist rules and the Autopilot Governor are opt-in
 - All specialist schemas are preserved and functional
 - They activate automatically when the Autopilot Governor is active
 - You can still manually request specific audits anytime
