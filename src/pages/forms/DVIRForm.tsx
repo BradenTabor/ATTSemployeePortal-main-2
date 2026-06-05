@@ -130,8 +130,24 @@ export default function DVIRForm() {
   currentStepRef.current = currentStep;
   completedStepsRef.current = completedSteps;
 
+  // Single source of truth for "a template is incoming", resolved synchronously
+  // on the FIRST render — before any mount effect runs — by reading
+  // sessionStorage exactly once into a ref. Both the template effect and the
+  // draft auto-restore/recovery effects read this, so template-vs-draft
+  // precedence never depends on effect declaration order or removeItem() timing.
+  // Clicking "Use as Template" is a deliberate user action and must win over an
+  // auto-saved draft (the L133 contract: template "takes precedence over draft").
+  const incomingTemplateRef = useRef<boolean | null>(null);
+  if (incomingTemplateRef.current === null) {
+    incomingTemplateRef.current =
+      typeof sessionStorage !== "undefined" &&
+      sessionStorage.getItem("dvir-template") !== null;
+  }
+  const hasIncomingTemplate = incomingTemplateRef.current;
+
   // Check for template data from history (takes precedence over draft)
   useEffect(() => {
+    if (!hasIncomingTemplate) return;
     const templateDataStr = sessionStorage.getItem('dvir-template');
     if (templateDataStr) {
       try {
@@ -148,17 +164,27 @@ export default function DVIRForm() {
         });
         // Clear template data after use
         sessionStorage.removeItem('dvir-template');
+        // The user explicitly chose to start from this template, so any draft
+        // auto-saved on a prior visit is now orphaned. Clear it so it can't
+        // re-surface (auto-restore / recovery modal) on the next visit.
+        clearDraft();
         formToast.success("Template Loaded", "Previous DVIR data has been loaded. Please review and update as needed.");
       } catch (err) {
         logger.error("Failed to parse template data:", err);
         sessionStorage.removeItem('dvir-template');
+        // Surface why the form is blank. Leave the draft intact (no clearDraft):
+        // a corrupt template must not cost the user their autosaved work.
+        formToast.error("Template couldn't be loaded", "The saved template was invalid. Starting with a blank form.");
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Run once on mount; hasIncomingTemplate/clearDraft are stable.
   }, []);
 
   // Auto-restore drafts saved very recently (same session / remount recovery)
   const didAutoRestoreRef = useRef(false);
   useEffect(() => {
+    // Template wins: never auto-restore a draft over an incoming template.
+    if (hasIncomingTemplate) return;
     if (!hasDraft || !draftData) return;
     const savedAtMs = draftData.savedAt ? new Date(draftData.savedAt).getTime() : 0;
     const draftAgeMs = savedAtMs ? Date.now() - savedAtMs : Infinity;
@@ -179,6 +205,8 @@ export default function DVIRForm() {
   // Ignore "empty" drafts: step 1, 0 completed, AND form still matches initial (opened and left).
   // If user filled any fields, form !== initial → keep draft and show modal.
   useEffect(() => {
+    // Template wins: never surface the draft-recovery modal over a template.
+    if (hasIncomingTemplate) return;
     if (!hasDraft || !draftData || didAutoRestoreRef.current) return;
     const noSteps = draftData.currentStep === 1 && (draftData.completedSteps?.length ?? 0) === 0;
     const formMatchesInitial =
@@ -189,7 +217,7 @@ export default function DVIRForm() {
     }
     const timer = setTimeout(() => setShowDraftModal(true), 500);
     return () => clearTimeout(timer);
-  }, [hasDraft, draftData, clearDraft]);
+  }, [hasDraft, draftData, clearDraft, hasIncomingTemplate]);
 
   // Handle draft restoration
   const handleRestoreDraft = useCallback(() => {
