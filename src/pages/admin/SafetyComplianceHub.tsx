@@ -40,14 +40,24 @@ export default function SafetyComplianceHub() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { role } = useAuth();
 
-  const section = (searchParams.get("section") as SectionId) || SECTION_ANALYTICS;
-  const validSection: SectionId =
-    section === SECTION_RISK || section === SECTION_AUDIT || section === SECTION_BRIEFING
-      ? section
-      : SECTION_ANALYTICS;
-
   const isAdmin = role === "admin";
   const showRiskCalibration = isAdmin;
+
+  // Risk Calibration is admin-only. Enforce it here, in the render-deciding
+  // derivation, so BOTH entry doors close at one chokepoint: the legacy
+  // /admin/risk-calibration redirect and a direct ?section=risk-calibration URL
+  // both set section=SECTION_RISK, and a non-admin requesting it is treated as
+  // an invalid section → analytics (same fallback as unknown sections). Hiding
+  // the tab (showRiskCalibration) is cosmetic; this is the access enforcement.
+  const section = (searchParams.get("section") as SectionId) || SECTION_ANALYTICS;
+  const validSection: SectionId =
+    section === SECTION_RISK
+      ? isAdmin
+        ? SECTION_RISK
+        : SECTION_ANALYTICS
+      : section === SECTION_AUDIT || section === SECTION_BRIEFING
+        ? section
+        : SECTION_ANALYTICS;
 
   const tabs: SegmentTab[] = useMemo(() => {
     const base = [
