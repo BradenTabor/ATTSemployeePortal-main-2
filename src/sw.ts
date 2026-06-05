@@ -116,8 +116,6 @@ registerRoute(new NavigationRoute(navigationHandler));
 // Push Notification Handler (iOS Safari Compatible)
 // ============================================
 self.addEventListener('push', (event: PushEvent) => {
-  console.log('[SW] Push received:', event);
-
   if (!event.data) {
     console.warn('[SW] Push event has no data');
     return;
@@ -174,8 +172,6 @@ self.addEventListener('push', (event: PushEvent) => {
     event.waitUntil(
       self.registration.showNotification(title || 'ATTS Portal', notificationOptions)
     );
-    
-    console.log('[SW] Notification shown:', title, 'Severity:', data?.severity);
   } catch (error) {
     console.error('[SW] Failed to parse push payload:', error);
     
@@ -195,13 +191,10 @@ self.addEventListener('push', (event: PushEvent) => {
 // Notification Click Handler (iOS Compatible)
 // ============================================
 self.addEventListener('notificationclick', (event: NotificationEvent) => {
-  console.log('[SW] Notification clicked:', event.notification.tag, 'Action:', event.action);
-
   event.notification.close();
 
   // Handle "dismiss" action explicitly - don't open app
   if (event.action === 'dismiss') {
-    console.log('[SW] Notification dismissed by user');
     return;
   }
 
@@ -217,7 +210,6 @@ self.addEventListener('notificationclick', (event: NotificationEvent) => {
       for (const client of clientList) {
         if (client.url.includes(self.location.origin) && 'focus' in client) {
           // Navigate existing window to the URL and focus it
-          console.log('[SW] Focusing existing window');
           client.postMessage({ type: 'NAVIGATE', url: urlToOpen });
           return client.focus();
         }
@@ -225,7 +217,6 @@ self.addEventListener('notificationclick', (event: NotificationEvent) => {
 
       // Open new window if not found
       if (self.clients.openWindow) {
-        console.log('[SW] Opening new window:', urlToOpen);
         return self.clients.openWindow(urlToOpen);
       }
     })
@@ -235,8 +226,7 @@ self.addEventListener('notificationclick', (event: NotificationEvent) => {
 // ============================================
 // Notification Close Handler (for analytics)
 // ============================================
-self.addEventListener('notificationclose', (event: NotificationEvent) => {
-  console.log('[SW] Notification closed without interaction:', event.notification.tag);
+self.addEventListener('notificationclose', () => {
   // Could send analytics here if needed
 });
 
