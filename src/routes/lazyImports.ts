@@ -25,7 +25,6 @@ export const AdminJobProgress = lazy(() => import("@/pages/admin/AdminJobProgres
 export const AdminRewards = lazy(() => import("@/pages/admin/AdminRewards"));
 export const AdminPartsFixesOverview = lazy(() => import("@/pages/admin/AdminPartsFixesOverview"));
 export const AdminTelemetry = lazy(() => import("@/pages/admin/AdminTelemetry"));
-export const RiskCalibrationDashboard = lazy(() => import("@/pages/admin/RiskCalibrationDashboard"));
 export const AdminOperationsHub = lazy(() => import("@/pages/admin/AdminOperationsHub"));
 export const CertificationsHub = lazy(() => import("@/pages/admin/CertificationsHub"));
 export const AdminEmailRecipients = lazy(() => import("@/pages/admin/AdminEmailRecipients"));

@@ -9,5 +9,4 @@ export { default as AdminTelemetry } from './AdminTelemetry';
 export { default as AdminUserActivity } from './AdminUserActivity';
 export { default as AdminUsers } from './AdminUsers';
 export { default as AdminUsersHub } from './AdminUsersHub';
-export { default as RiskCalibrationDashboard } from './RiskCalibrationDashboard';
 export { default as SafetyAnalyticsDashboard } from './SafetyAnalyticsDashboard';

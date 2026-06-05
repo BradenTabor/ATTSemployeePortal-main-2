@@ -38,7 +38,6 @@ import {
   AdminRewards,
   AdminPartsFixesOverview,
   AdminTelemetry,
-  RiskCalibrationDashboard,
   AdminOperationsHub,
   CertificationsHub,
   AdminEmailRecipients,
@@ -825,17 +824,6 @@ export function AnimatedRoutes() {
             <Route
               path="/admin/activity"
               element={<Navigate to="/admin/users?tab=activity" replace />}
-            />
-
-            <Route
-              path="/admin/risk-calibration"
-              element={
-                <PageWrapper>
-                  <ProtectedRoute requiredRole="admin">
-                    <RiskCalibrationDashboard />
-                  </ProtectedRoute>
-                </PageWrapper>
-              }
             />
 
             {/* Compliance Audit - safety_audit_log + osha_compliance_mapping (admin/safety_officer) */}
