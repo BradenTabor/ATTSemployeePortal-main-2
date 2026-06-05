@@ -17,6 +17,10 @@ All cron jobs that call Edge Functions require a valid **service role** key. Mig
 | auto-tune-risk-algorithm | 0 2 * * 0 | Sunday 2:00 AM | auto-tune-risk-algorithm |
 | check-algorithm-performance | 0 3 * * * | Daily 3:00 AM | check-algorithm-performance |
 | monthly-compliance-summary | 0 14 1 * * | 1st of month 8:00 AM | monthly-compliance-summary |
+| payroll-hours-reminder-sms-utc14 | 0 14 * * 4,5,6 | Thu–Sat 8:00 AM CST | payroll-hours-reminder-sms |
+| payroll-hours-reminder-sms-utc13 | 0 13 * * 4,5,6 | Thu–Sat 8:00 AM CDT | payroll-hours-reminder-sms |
+
+**Payroll SMS DST:** Both UTC jobs run year-round; only the invocation at true 8:00 AM America/Chicago sends (wall-clock guard in the Edge Function). See [PAYROLL_SMS_REMINDER.md](./PAYROLL_SMS_REMINDER.md).
 
 ## Other cron jobs (no HTTP auth)
 
@@ -32,7 +36,7 @@ All cron jobs that call Edge Functions require a valid **service role** key. Mig
    ```bash
    SUPABASE_SERVICE_ROLE_KEY="..." SUPABASE_DB_URL="..." ./scripts/deploy-cron-auth.sh
    ```
-   This updates all 11 HTTP jobs with the real key.
+   This updates all 13 HTTP jobs with the real key.
 
 2. **Option B (5 AM announcement only):** Use Vault: add secret **CRON_SERVICE_ROLE_KEY** in Dashboard → Vault. Migration `20260319120005` makes `safety-announcement-5am` call `run_safety_announcement_5am()`, which reads that secret. Other jobs still need Option A unless you add more Vault-based wrappers.
 
@@ -46,7 +50,8 @@ All cron jobs that call Edge Functions require a valid **service role** key. Mig
     'auto-tune-risk-algorithm', 'check-algorithm-performance',
     'safety-briefing-reminder-push', 'safety-briefing-reminder-sms',
     'safety-briefing-escalation-sms', 'monthly-compliance-summary',
-    'weekly-attendance-summary', 'weekly-safety-audit-report'
+    'weekly-attendance-summary', 'weekly-safety-audit-report',
+    'payroll-hours-reminder-sms-utc14', 'payroll-hours-reminder-sms-utc13'
   )
   ORDER BY jobname;
   ```

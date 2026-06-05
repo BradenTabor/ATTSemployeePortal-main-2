@@ -15,6 +15,7 @@
 #   - monthly-compliance-summary (1st of every month, 14:00 UTC = 8 AM CST) - executive compliance email
 #   - weekly-attendance-summary (Monday 12:00 UTC = 7 AM CDT / 6 AM CST) - weekly attendance email
 #   - weekly-safety-audit-report (Friday 23:00 UTC = 5 PM CST) - weekly safety audit report
+#   - payroll-hours-reminder-sms-utc14 / utc13 (Thu-Sat 14:00/13:00 UTC) - payroll hours SMS; wall-clock 8 AM CT guard
 #
 # It avoids committing the service role key to the repository.
 #
@@ -390,6 +391,56 @@ SELECT cron.schedule(
 );
 
 -- =============================================================================
+-- 12. Payroll Hours Reminder SMS — UTC+14 slot (Thu-Sat 14:00 UTC = 8 AM CST)
+-- =============================================================================
+DO \$\$
+BEGIN
+  PERFORM cron.unschedule('payroll-hours-reminder-sms-utc14');
+EXCEPTION WHEN others THEN
+  RAISE NOTICE 'payroll-hours-reminder-sms-utc14 did not exist';
+END \$\$;
+
+SELECT cron.schedule(
+  'payroll-hours-reminder-sms-utc14',
+  '0 14 * * 4,5,6',
+  \$cron\$
+  SELECT net.http_post(
+    url := 'https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/payroll-hours-reminder-sms',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer $SUPABASE_SERVICE_ROLE_KEY'
+    ),
+    body := '{"dryRun":false}'::jsonb
+  );
+  \$cron\$
+);
+
+-- =============================================================================
+-- 13. Payroll Hours Reminder SMS — UTC+13 slot (Thu-Sat 13:00 UTC = 8 AM CDT)
+-- =============================================================================
+DO \$\$
+BEGIN
+  PERFORM cron.unschedule('payroll-hours-reminder-sms-utc13');
+EXCEPTION WHEN others THEN
+  RAISE NOTICE 'payroll-hours-reminder-sms-utc13 did not exist';
+END \$\$;
+
+SELECT cron.schedule(
+  'payroll-hours-reminder-sms-utc13',
+  '0 13 * * 4,5,6',
+  \$cron\$
+  SELECT net.http_post(
+    url := 'https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/payroll-hours-reminder-sms',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer $SUPABASE_SERVICE_ROLE_KEY'
+    ),
+    body := '{"dryRun":false}'::jsonb
+  );
+  \$cron\$
+);
+
+-- =============================================================================
 -- Verify all jobs
 -- =============================================================================
 SELECT jobname, schedule, active 
@@ -405,7 +456,9 @@ WHERE jobname IN (
   'safety-briefing-escalation-sms',
   'monthly-compliance-summary',
   'weekly-attendance-summary',
-  'weekly-safety-audit-report'
+  'weekly-safety-audit-report',
+  'payroll-hours-reminder-sms-utc14',
+  'payroll-hours-reminder-sms-utc13'
 )
 ORDER BY jobname;
 SQL
@@ -426,6 +479,8 @@ if [ $? -eq 0 ]; then
   echo "   • monthly-compliance-summary       - 1st of each month 8:00 AM CST (14:00 UTC)"
   echo "   • weekly-attendance-summary         - Monday 7:00 AM CDT / 6:00 AM CST (12:00 UTC)"
   echo "   • weekly-safety-audit-report        - Friday 5:00 PM CST (23:00 UTC)"
+  echo "   • payroll-hours-reminder-sms-utc14  - Thu-Sat 8 AM CST (14:00 UTC) + wall-clock guard"
+  echo "   • payroll-hours-reminder-sms-utc13  - Thu-Sat 8 AM CDT (13:00 UTC) + wall-clock guard"
   echo ""
   echo "📊 To verify execution history:"
   echo "   SELECT * FROM public.cron_job_runs ORDER BY start_time DESC LIMIT 10;"
