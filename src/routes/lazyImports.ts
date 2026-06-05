@@ -30,7 +30,6 @@ export const CertificationsHub = lazy(() => import("@/pages/admin/Certifications
 export const AdminEmailRecipients = lazy(() => import("@/pages/admin/AdminEmailRecipients"));
 export const AdminSafetySettings = lazy(() => import("@/pages/admin/AdminSafetySettings"));
 export const AdminMassSms = lazy(() => import("@/pages/admin/AdminMassSms"));
-export const AdminComplianceAudit = lazy(() => import("@/pages/admin/AdminComplianceAudit"));
 export const SafetyComplianceHub = lazy(() => import("@/pages/admin/SafetyComplianceHub"));
 export const RequestsOversightHub = lazy(() => import("@/pages/admin/RequestsOversightHub"));
 

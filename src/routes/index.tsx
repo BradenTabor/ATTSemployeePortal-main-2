@@ -43,7 +43,6 @@ import {
   AdminEmailRecipients,
   AdminSafetySettings,
   AdminMassSms,
-  AdminComplianceAudit,
   SafetyComplianceHub,
   RequestsOversightHub,
   MechanicDashboard,
@@ -824,18 +823,6 @@ export function AnimatedRoutes() {
             <Route
               path="/admin/activity"
               element={<Navigate to="/admin/users?tab=activity" replace />}
-            />
-
-            {/* Compliance Audit - safety_audit_log + osha_compliance_mapping (admin/safety_officer) */}
-            <Route
-              path="/admin/compliance-audit"
-              element={
-                <PageWrapper>
-                  <ProtectedRoute allowedRoles={["admin", "safety_officer"]}>
-                    <AdminComplianceAudit />
-                  </ProtectedRoute>
-                </PageWrapper>
-              }
             />
 
             {/* Legacy route - redirect to Operations Hub */}
