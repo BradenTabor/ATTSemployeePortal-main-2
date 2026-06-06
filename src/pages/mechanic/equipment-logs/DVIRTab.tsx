@@ -339,14 +339,13 @@ export function DVIRTab({
             {/* Primary filters row */}
             <div className="flex flex-col sm:flex-row gap-3">
               {/* Status toggle */}
-              <div className="flex gap-1.5 p-1.5 bg-gray-950 rounded-xl border border-gray-800">
+              <div className="flex gap-1.5 p-1.5 bg-gray-950 rounded-xl border border-gray-800 hover:scale-[1.02]">
                 {[
                   { id: "failed" as const, label: "Need Review", shortLabel: "Review", icon: AlertTriangle, count: failedDvirCount, activeGradient: "from-rose-600 to-red-700", activeBorder: "border-rose-400/50", inactiveIcon: "text-rose-400" },
                   { id: "passed" as const, label: "Passed", shortLabel: "Pass", icon: CheckCircle2, count: passedDvirCount, activeGradient: "from-emerald-600 to-green-700", activeBorder: "border-emerald-400/50", inactiveIcon: "text-emerald-400" },
                 ].map(({ id, label, shortLabel, icon: Icon, count, activeGradient, activeBorder, inactiveIcon }) => (
                   <motion.button
                     key={id}
-                    whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.97 }}
                     onClick={() => { setDvirStatus(id); setDvirPage(1); }}
                     className={`flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold transition-all duration-300 ${
@@ -407,9 +406,8 @@ export function DVIRTab({
                 </motion.button>
                 
                 {/* Export Dropdown */}
-                <div className="relative group">
+                <div className="relative group hover:scale-[1.02]">
                   <motion.button
-                    whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     disabled={isExporting || filteredDvirReports.length === 0}
                     className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 border border-blue-400/50 text-white text-xs font-bold hover:shadow-lg hover:shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
@@ -576,10 +574,9 @@ export function DVIRTab({
                             <span className="text-[10px] text-gray-500">{formatDateTime(report.created_at)}</span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
+                        <div className="flex items-center gap-2 flex-shrink-0 hover:scale-110">
                           {allFails.length > 0 && (
                             <motion.span 
-                              whileHover={{ scale: 1.15 }}
                               className="text-xs font-black text-white bg-gradient-to-r from-rose-600 to-red-700 px-2.5 py-1 rounded-lg shadow-lg shadow-rose-500/30"
                             >
                               {allFails.length}
@@ -668,11 +665,10 @@ export function DVIRTab({
                                 animate={{ scale: 1 }}
                                 className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-green-700 border-2 border-emerald-400/60 rounded-xl text-sm font-bold text-white shadow-xl shadow-emerald-500/30"
                               >
-                                <Wrench className="w-4 h-4" />Fixed
+                                <Wrench className="w-4 h-4 hover:scale-105" />Fixed
                               </motion.span>
                             )}
                             <motion.span 
-                              whileHover={{ scale: 1.05 }}
                               className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold shadow-xl ${
                                 getDVIRStatus(selectedDvir) === "failed" 
                                   ? "bg-gradient-to-r from-rose-600 to-red-700 text-white border-2 border-rose-400/60 shadow-rose-500/30" 
@@ -932,9 +928,8 @@ export function DVIRTab({
                         {/* Parts */}
                         <div>
                           <div className="flex items-center justify-between mb-3">
-                            <label className="text-xs uppercase tracking-wider text-orange-300 font-bold">Parts Used <span className="text-gray-500">(Optional)</span></label>
+                            <label className="text-xs uppercase tracking-wider text-orange-300 font-bold hover:scale-105">Parts Used <span className="text-gray-500">(Optional)</span></label>
                             <motion.button 
-                              whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
                               type="button" 
                               onClick={handleAddDvirPart} 
@@ -957,10 +952,9 @@ export function DVIRTab({
                                     <div className="flex-1 grid grid-cols-3 gap-2">
                                       <input type="text" placeholder="Part name" value={part.part_name} onChange={(e) => handleDvirPartChange(index, { ...part, part_name: e.target.value })} className="col-span-2 sm:col-span-1 bg-gray-950 border-2 border-gray-700 text-white text-sm rounded-lg px-3 py-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50 transition-all placeholder:text-gray-600" />
                                       <input type="number" placeholder="Qty" min={1} value={part.quantity || ""} onChange={(e) => handleDvirPartChange(index, { ...part, quantity: parseInt(e.target.value) || 1 })} className="bg-gray-950 border-2 border-gray-700 text-white text-sm rounded-lg px-3 py-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50 transition-all placeholder:text-gray-600" />
-                                      <input type="text" placeholder="Part #" value={part.part_number || ""} onChange={(e) => handleDvirPartChange(index, { ...part, part_number: e.target.value })} className="bg-gray-950 border-2 border-gray-700 text-white text-sm rounded-lg px-3 py-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50 transition-all placeholder:text-gray-600" />
+                                      <input type="text" placeholder="Part #" value={part.part_number || ""} onChange={(e) => handleDvirPartChange(index, { ...part, part_number: e.target.value })} className="bg-gray-950 border-2 border-gray-700 text-white text-sm rounded-lg px-3 py-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50 transition-all placeholder:text-gray-600 hover:scale-110" />
                                     </div>
                                     <motion.button 
-                                      whileHover={{ scale: 1.15 }}
                                       whileTap={{ scale: 0.9 }}
                                       type="button" 
                                       onClick={() => handleDvirPartRemove(index)} 

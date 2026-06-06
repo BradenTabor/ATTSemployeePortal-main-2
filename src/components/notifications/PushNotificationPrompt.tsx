@@ -333,12 +333,11 @@ function PushNotificationPromptComponent() {
                     initial={{ y: 10, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.25 }}
-                    className="flex flex-col gap-3"
+                    className="flex flex-col gap-3 hover:scale-[1.02]"
                   >
                     <motion.button
                       onClick={handleEnable}
                       disabled={loading}
-                      whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       className="w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-semibold shadow-lg shadow-emerald-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >

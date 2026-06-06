@@ -89,10 +89,9 @@ function PWAUpdatePromptComponent({ position = 'bottom-right' }: PWAUpdatePrompt
               </button>
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex gap-2 hover:scale-[1.02]">
               <motion.button
                 onClick={() => updateServiceWorker(true)}
-                whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 aria-label="Update app now"
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white text-sm font-medium transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"

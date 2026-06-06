@@ -17,9 +17,8 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
   isNew = false,
 }) => (
   <motion.div
-    whileHover={{ scale: 1.02 }}
     transition={{ duration: 0.25, ease: "easeOut" }}
-    className="relative overflow-hidden rounded-2xl border border-green-800/40 bg-gradient-to-br from-neutral-950/90 via-neutral-900/90 to-black/80 shadow-md hover:shadow-[0_0_20px_rgba(34,197,94,0.3)] backdrop-blur-sm p-5 sm:p-6 transition-all duration-200"
+    className="relative overflow-hidden rounded-2xl border border-green-800/40 bg-gradient-to-br from-neutral-950/90 via-neutral-900/90 to-black/80 shadow-md hover:shadow-[0_0_20px_rgba(34,197,94,0.3)] backdrop-blur-sm p-5 sm:p-6 transition-all duration-200 hover:scale-[1.02]"
   >
     <div className="absolute top-3 right-3 pointer-events-none">
       {isNew && (

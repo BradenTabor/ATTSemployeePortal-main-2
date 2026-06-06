@@ -303,7 +303,7 @@ export default function ImageCropper({
               <h2 id="cropper-title" className="text-lg sm:text-xl font-bold text-white">
                 Crop Photo
               </h2>
-              <p className="text-xs text-emerald-300/50 hidden sm:block">
+              <p className="text-xs text-emerald-300/50 hidden sm:block hover:scale-110">
                 Drag to adjust • Square crop
               </p>
             </div>
@@ -311,7 +311,6 @@ export default function ImageCropper({
           
           <motion.button
             onClick={onCancel}
-            whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
             aria-label="Close cropper"
@@ -407,12 +406,11 @@ export default function ImageCropper({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="relative flex flex-col sm:flex-row items-center justify-between gap-3 px-4 sm:px-6 py-4 border-t border-emerald-500/10 bg-black/40 backdrop-blur-sm"
+          className="relative flex flex-col sm:flex-row items-center justify-between gap-3 px-4 sm:px-6 py-4 border-t border-emerald-500/10 bg-black/40 backdrop-blur-sm hover:scale-[1.02]"
         >
           {/* Reset Button - left side */}
           <motion.button
             onClick={handleReset}
-            whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-emerald-300/70 hover:text-emerald-300 bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/20 hover:border-emerald-500/40 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 order-2 sm:order-1"
             aria-label="Reset crop to center"
@@ -422,11 +420,10 @@ export default function ImageCropper({
           </motion.button>
           
           {/* Main action buttons - right side */}
-          <div className="flex items-center gap-3 w-full sm:w-auto order-1 sm:order-2">
+          <div className="flex items-center gap-3 w-full sm:w-auto order-1 sm:order-2 hover:scale-[1.02]">
             {/* Cancel Button */}
             <motion.button
               onClick={onCancel}
-              whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className="flex-1 sm:flex-none px-6 py-3 rounded-xl text-sm font-semibold text-white/70 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
             >

@@ -539,8 +539,7 @@ export default function AvatarUpload({
       <div className="relative">
         {/* Main Avatar */}
         <motion.div
-          className="relative group cursor-pointer"
-          whileHover={{ scale: 1.02 }}
+          className="relative group cursor-pointer hover:scale-[1.02]"
           whileTap={{ scale: 0.98 }}
           onClick={handleAvatarClick}
         >

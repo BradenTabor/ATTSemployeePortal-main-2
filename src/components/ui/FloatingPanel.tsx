@@ -461,7 +461,7 @@ export function FloatingPanelCloseButton({
       whileTap={{ scale: 0.98 }}
     >
       <ArrowLeftIcon size={14} className="text-emerald-300" />
-      <span className="text-xs font-medium">Close</span>
+      <span className="text-xs font-medium hover:scale-[1.02]">Close</span>
     </motion.button>
   )
 }
@@ -485,7 +485,6 @@ export function FloatingPanelSubmitButton({
       )}
       type="submit"
       aria-label="Submit note"
-      whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
     >
       Submit

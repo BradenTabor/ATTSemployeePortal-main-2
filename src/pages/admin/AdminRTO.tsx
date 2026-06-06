@@ -159,10 +159,9 @@ const EnhancedPagination = memo(function EnhancedPagination({
       </div>
 
       {/* Page navigation */}
-      <div className="flex items-center gap-1 sm:gap-1.5 order-1 sm:order-2">
+      <div className="flex items-center gap-1 sm:gap-1.5 order-1 sm:order-2 hover:scale-105">
         {/* Previous button */}
         <motion.button
-          whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           disabled={currentPage === 1 || loading}
           onClick={() => onPageChange(currentPage - 1)}
@@ -178,14 +177,13 @@ const EnhancedPagination = memo(function EnhancedPagination({
             page === "ellipsis" ? (
               <span
                 key={`ellipsis-${idx}`}
-                className="w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center text-[#f4c979]/50 text-xs sm:text-sm"
+                className="w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center text-[#f4c979]/50 text-xs sm:text-sm hover:scale-[1.08]"
               >
                 ⋯
               </span>
             ) : (
               <motion.button
                 key={page}
-                whileHover={{ scale: 1.08 }}
                 whileTap={{ scale: 0.95 }}
                 disabled={loading}
                 onClick={() => onPageChange(page)}
@@ -205,12 +203,11 @@ const EnhancedPagination = memo(function EnhancedPagination({
         <div className="xs:hidden flex items-center gap-1 px-2">
           <span className="text-xs font-semibold text-[#f4c979]">{currentPage}</span>
           <span className="text-[10px] text-[#f8e5bb]/50">/</span>
-          <span className="text-xs text-[#f8e5bb]/70">{totalPages}</span>
+          <span className="text-xs text-[#f8e5bb]/70 hover:scale-105">{totalPages}</span>
         </div>
 
         {/* Next button */}
         <motion.button
-          whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           disabled={currentPage >= totalPages || loading}
           onClick={() => onPageChange(currentPage + 1)}
@@ -334,9 +331,8 @@ const CompactRequestRow = memo(function CompactRequestRow({
       {/* Actions */}
       <td className="px-4 py-3">
         {request.status === "Pending" ? (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 hover:scale-105">
             <motion.button
-              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               disabled={updatingId === request.id}
               onClick={() => onApprove(request.id)}
@@ -345,12 +341,11 @@ const CompactRequestRow = memo(function CompactRequestRow({
               {updatingId === request.id ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
               ) : (
-                <ThumbsUp className="w-3 h-3" />
+                <ThumbsUp className="w-3 h-3 hover:scale-105" />
               )}
               Approve
             </motion.button>
             <motion.button
-              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               disabled={updatingId === request.id}
               onClick={() => onDenyClick(request.id)}

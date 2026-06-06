@@ -155,7 +155,7 @@ export const DateRangeChips = memo(function DateRangeChips({
     <div
       role="group"
       aria-label="Date range"
-      className="flex flex-wrap items-center gap-0.5 sm:gap-1 p-0.5 sm:p-1 bg-black/20 rounded-lg sm:rounded-xl border border-white/5"
+      className="flex flex-wrap items-center gap-0.5 sm:gap-1 p-0.5 sm:p-1 bg-black/20 rounded-lg sm:rounded-xl border border-white/5 hover:scale-[1.02]"
     >
       {ranges.map((range, index) => (
         <motion.button
@@ -164,7 +164,6 @@ export const DateRangeChips = memo(function DateRangeChips({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: index * 0.05 }}
-          whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={() => onRangeChange(range.id)}
           className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium border transition-all duration-200 min-h-[32px] sm:min-h-0

@@ -156,7 +156,7 @@ function EnableNotificationsButtonComponent({
         <div className="min-w-0">
           <p className="text-sm font-medium">Notifications Blocked</p>
           {!compact && (
-            <p className="text-xs opacity-70 truncate">
+            <p className="text-xs opacity-70 truncate hover:scale-[1.02]">
               {isIOS 
                 ? 'Go to Settings → ATTS Portal → Notifications'
                 : 'Enable in browser settings'
@@ -175,7 +175,6 @@ function EnableNotificationsButtonComponent({
         <motion.button
           onClick={unsubscribe}
           disabled={loading}
-          whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           className={`flex items-center gap-2 px-4 py-3 rounded-xl border transition-all disabled:opacity-50 disabled:cursor-not-allowed ${currentVariant.subscribed}`}
         >
@@ -189,7 +188,7 @@ function EnableNotificationsButtonComponent({
           </span>
         </motion.button>
         {!compact && (
-          <p className="text-xs text-center text-emerald-400/80">
+          <p className="text-xs text-center text-emerald-400/80 hover:scale-[1.02]">
             ✓ Push notifications are enabled
           </p>
         )}
@@ -204,7 +203,6 @@ function EnableNotificationsButtonComponent({
         onClick={requestPermission}
         disabled={loading}
         aria-label={compact ? 'Enable' : 'Enable Notifications'}
-        whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         className={`relative flex items-center justify-center gap-2 px-4 py-4 min-h-[56px] rounded-xl border-0 transition-all disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden ${currentVariant.unsubscribed}`}
         style={{

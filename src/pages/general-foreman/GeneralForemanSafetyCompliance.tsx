@@ -419,7 +419,7 @@ export default function GeneralForemanSafetyCompliance() {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="flex flex-wrap items-center gap-2"
+            className="flex flex-wrap items-center gap-2 hover:scale-[1.02]"
           >
             {statusFilters.map((filter) => {
               const isActive = statusFilter === filter.value;
@@ -431,7 +431,6 @@ export default function GeneralForemanSafetyCompliance() {
                   key={filter.value}
                   type="button"
                   onClick={() => setStatusFilter(filter.value as "all" | "draft" | "completed")}
-                  whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-semibold transition-all duration-200 ${
                     isActive

@@ -174,11 +174,10 @@ export const AdvancedPagination = memo(function AdvancedPagination({
       </div>
 
       {/* Right side - Pagination controls */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 hover:scale-105">
         {/* First page button */}
         <motion.button
           type="button"
-          whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => onPageChange(1)}
           disabled={currentPage === 1}
@@ -187,13 +186,12 @@ export const AdvancedPagination = memo(function AdvancedPagination({
           title="First page"
           aria-label="Go to first page"
         >
-          <ChevronsLeft className="w-4 h-4" aria-hidden />
+          <ChevronsLeft className="w-4 h-4 hover:scale-105" aria-hidden />
         </motion.button>
 
         {/* Previous page button */}
         <motion.button
           type="button"
-          whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
@@ -271,13 +269,12 @@ export const AdvancedPagination = memo(function AdvancedPagination({
           title="Next page"
           aria-label="Go to next page"
         >
-          <ChevronRight className="w-4 h-4" aria-hidden />
+          <ChevronRight className="w-4 h-4 hover:scale-105" aria-hidden />
         </motion.button>
 
         {/* Last page button */}
         <motion.button
           type="button"
-          whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => onPageChange(totalPages)}
           disabled={currentPage === totalPages}

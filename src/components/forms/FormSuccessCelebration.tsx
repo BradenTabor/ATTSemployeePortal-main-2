@@ -483,7 +483,7 @@ export function FormSuccessCelebration({
                             <p className="text-sm font-semibold text-white">{form.shortLabel}</p>
                             <p className="text-[10px] text-white/40">Tap to complete</p>
                           </div>
-                          <ChevronRight className="w-4 h-4 text-white/30 group-hover:text-white/60 group-hover:translate-x-0.5 transition-all" />
+                          <ChevronRight className="w-4 h-4 text-white/30 group-hover:text-white/60 group-hover:translate-x-0.5 transition-all hover:scale-[1.02]" />
                         </Link>
                       </motion.div>
                     );
@@ -508,7 +508,6 @@ export function FormSuccessCelebration({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: hasRemaining ? 0.8 : 0.5 }}
-              whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
               {hasRemaining ? 'Return to Dashboard' : 'Return to Dashboard'}

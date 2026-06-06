@@ -157,12 +157,11 @@ function JobDetailExpandedComponent({ job, onJobUpdate }: JobDetailExpandedProps
             <div className="flex items-center gap-2">
               <Ruler className="w-4 h-4 text-blue-400" />
               <span className="text-sm font-medium text-white/70">Span Progress</span>
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border border-blue-500/40 bg-blue-500/10 text-blue-200">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border border-blue-500/40 bg-blue-500/10 text-blue-200 hover:scale-[1.03]">
                 {job.span_progress_metric === 'feet' ? 'FEET' : 'SPANS'}
               </span>
             </div>
             <motion.button
-              whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => setShowProgressForm(true)}
               className="relative inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-[#f4c979]/50 text-[#fdf4db] text-sm font-bold ring-1 ring-[#f4c979]/20 hover:border-[#f4c979]/70 hover:ring-[#f4c979]/30 transition-all duration-300"

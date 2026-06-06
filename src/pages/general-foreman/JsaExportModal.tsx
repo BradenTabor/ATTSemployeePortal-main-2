@@ -290,17 +290,16 @@ function JsaExportModalInner({ records, onClose }: JsaExportModalProps) {
             )}
 
             {/* Action buttons */}
-            <div className="flex gap-2 pt-1">
+            <div className="flex gap-2 pt-1 hover:scale-[1.02]">
               {canShare && selectedFormat === 'pdf' && (
                 <motion.button
                   type="button"
                   onClick={() => handleExport(true)}
                   disabled={exporting || isOverCap || (selectedFormat === 'pdf' && enabledSections.size === 0)}
-                  whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-gradient-to-r from-[#c084fc] via-[#a855f7] to-[#7c3aed] text-white text-sm font-semibold shadow-[0_6px_16px_rgba(192,132,252,0.3)] transition disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
                 >
-                  {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
+                  {exporting ? <Loader2 className="w-4 h-4 animate-spin hover:scale-[1.02]" /> : <Share2 className="w-4 h-4" />}
                   Share
                 </motion.button>
               )}
@@ -309,7 +308,6 @@ function JsaExportModalInner({ records, onClose }: JsaExportModalProps) {
                 type="button"
                 onClick={() => handleExport(false)}
                 disabled={exporting || isOverCap || (selectedFormat === 'pdf' && enabledSections.size === 0)}
-                whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className={`inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] ${
                   canShare && selectedFormat === 'pdf'

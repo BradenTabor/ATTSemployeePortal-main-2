@@ -311,12 +311,11 @@ export default function MechanicEquipmentLogs() {
                 {/* Content */}
                 <div className="relative px-4 py-4 md:px-7 md:py-6">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-2 flex-wrap hover:scale-105">
                       <motion.div 
                         initial={{ opacity: 0, scale: 0.8 }} 
                         animate={{ opacity: 1, scale: 1 }} 
                         transition={{ duration: 0.4, delay: 0.2 }}
-                        whileHover={{ scale: 1.05 }}
                         className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 border border-orange-400/50 shadow-lg shadow-orange-500/30"
                       >
                         <motion.div animate={{ rotate: [0, 15, -15, 0] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}>
@@ -470,7 +469,7 @@ export default function MechanicEquipmentLogs() {
                       initial={{ scale: 0 }}
                       animate={{ scale: [1, 1.2, 1] }}
                       transition={{ duration: 1, repeat: Infinity }}
-                      className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-rose-500 to-red-600 rounded-full flex items-center justify-center text-[10px] font-black text-white shadow-lg shadow-rose-500/50 border-2 border-white/20"
+                      className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-rose-500 to-red-600 rounded-full flex items-center justify-center text-[10px] font-black text-white shadow-lg shadow-rose-500/50 border-2 border-white/20 hover:scale-[1.03]"
                     >
                       {tab.badge}
                     </motion.span>
@@ -483,7 +482,6 @@ export default function MechanicEquipmentLogs() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.4 }}
-                whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => setShowFilters(!showFilters)}
                 className={`inline-flex items-center gap-2 px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 border-2 ${

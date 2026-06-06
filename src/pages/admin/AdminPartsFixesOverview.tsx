@@ -315,9 +315,8 @@ function AdminAiInsightsPanel({
             </div>
           </div>
           
-          <div className="flex items-center gap-2 sm:gap-3 self-end sm:self-auto">
+          <div className="flex items-center gap-2 sm:gap-3 self-end sm:self-auto hover:scale-105">
             <motion.button
-              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={(e) => {
                 e.stopPropagation();
@@ -598,14 +597,13 @@ function AdminAiInsightsPanel({
                 )}
                 
                 {/* Premium Source Breakdown */}
-                <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                <div className="grid grid-cols-3 gap-2 sm:gap-3 hover:scale-[1.02]">
                   {Object.entries(SOURCE_CONFIG).map(([source, config], index) => (
                     <motion.div
                       key={source}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.3 + index * 0.1 }}
-                      whileHover={{ scale: 1.02 }}
                       className={`rounded-lg sm:rounded-xl border ${config.bgColor} p-2.5 sm:p-4 flex flex-col sm:flex-row items-center gap-2 sm:gap-4 transition-all hover:shadow-lg`}
                     >
                       <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl border ${config.bgColor} flex items-center justify-center`}>

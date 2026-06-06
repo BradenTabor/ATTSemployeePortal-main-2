@@ -65,10 +65,9 @@ export function PaginationControls({
       </div>
 
       {/* Right: Navigation Buttons */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 hover:scale-105">
         <motion.button
           type="button"
-          whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           disabled={currentPage === 1 || loading}
           onClick={onPreviousClick}
@@ -81,12 +80,11 @@ export function PaginationControls({
 
         <div className="px-4 py-2 rounded-lg text-sm font-medium bg-white/5 border border-white/10 text-gray-300 min-w-[100px] text-center">
           Page <span className="font-semibold text-white">{currentPage}</span> of{" "}
-          <span className="font-semibold text-white">{totalPages}</span>
+          <span className="font-semibold text-white hover:scale-105">{totalPages}</span>
         </div>
 
         <motion.button
           type="button"
-          whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           disabled={currentPage >= totalPages || loading}
           onClick={onNextClick}

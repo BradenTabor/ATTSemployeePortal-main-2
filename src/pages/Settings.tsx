@@ -301,13 +301,12 @@ function ContactTemplatesSection() {
     <SettingsSection
       title="Contact Templates"
       subtitle="Quick-fill emergency contacts in JSA forms"
-      icon={<Users className="w-5 h-5 text-emerald-400" />}
+      icon={<Users className="w-5 h-5 text-emerald-400 hover:scale-105" />}
       badge={templates.length}
       action={
         !showAddForm && (
           <motion.button
             onClick={() => setShowAddForm(true)}
-            whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg bg-emerald-600/80 text-white text-[10px] sm:text-xs font-semibold hover:bg-emerald-500 transition-colors"
           >
@@ -564,13 +563,12 @@ function SavedLocationsSection() {
     <SettingsSection
       title="Saved Locations"
       subtitle="Quick-select work sites with auto-fill"
-      icon={<MapPin className="w-5 h-5 text-emerald-400" />}
+      icon={<MapPin className="w-5 h-5 text-emerald-400 hover:scale-105" />}
       badge={locations.length}
       action={
         !showAddForm && (
           <motion.button
             onClick={() => setShowAddForm(true)}
-            whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg bg-emerald-600/80 text-white text-[10px] sm:text-xs font-semibold hover:bg-emerald-500 transition-colors"
           >
@@ -848,12 +846,11 @@ function PreferencesSection() {
     <SettingsSection
       title="Form Preferences"
       subtitle="Customize your form experience"
-      icon={<Sliders className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />}
+      icon={<Sliders className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400 hover:scale-105" />}
       action={
         <motion.button
           type="button"
           onClick={resetToDefaults}
-          whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           aria-label="Reset form preferences to defaults"
           className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg border border-white/10 bg-white/5 text-white/70 text-[10px] sm:text-xs font-medium hover:bg-white/10 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"

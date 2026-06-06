@@ -733,7 +733,7 @@ function TimelineSection({ data }: TimelineSectionProps) {
       </div>
 
       {/* Summary Stats - Compact on mobile */}
-      <div className="grid grid-cols-3 gap-1.5 sm:gap-3 mb-2 sm:mb-4">
+      <div className="grid grid-cols-3 gap-1.5 sm:gap-3 mb-2 sm:mb-4 hover:scale-[1.02]">
         <motion.div 
           className={cn(
             "rounded-md sm:rounded-xl p-1 sm:p-2.5 border transition-all cursor-pointer",
@@ -742,13 +742,12 @@ function TimelineSection({ data }: TimelineSectionProps) {
               : "bg-white/5 border-white/10"
           )}
           onClick={() => setActiveMetric(activeMetric === 'submissions' ? 'all' : 'submissions')}
-          whileHover={{ scale: 1.02 }}
         >
           <div className="flex items-center gap-0.5 sm:gap-1 mb-0.5">
             <div className="w-1 sm:w-2 h-1 sm:h-2 rounded-full bg-emerald-400" />
             <span className="text-[7px] sm:text-[9px] text-white/50 uppercase">Subs</span>
           </div>
-          <p className="text-sm sm:text-lg font-bold text-white tabular-nums">{totals.submissions}</p>
+          <p className="text-sm sm:text-lg font-bold text-white tabular-nums hover:scale-[1.02]">{totals.submissions}</p>
         </motion.div>
         <motion.div 
           className={cn(
@@ -758,13 +757,12 @@ function TimelineSection({ data }: TimelineSectionProps) {
               : "bg-white/5 border-white/10"
           )}
           onClick={() => setActiveMetric(activeMetric === 'views' ? 'all' : 'views')}
-          whileHover={{ scale: 1.02 }}
         >
           <div className="flex items-center gap-0.5 sm:gap-1 mb-0.5">
             <div className="w-1 sm:w-2 h-1 sm:h-2 rounded-full bg-blue-400" />
             <span className="text-[7px] sm:text-[9px] text-white/50 uppercase">Views</span>
           </div>
-          <p className="text-sm sm:text-lg font-bold text-white tabular-nums">{totals.views}</p>
+          <p className="text-sm sm:text-lg font-bold text-white tabular-nums hover:scale-[1.02]">{totals.views}</p>
         </motion.div>
         <motion.div 
           className={cn(
@@ -774,7 +772,6 @@ function TimelineSection({ data }: TimelineSectionProps) {
               : "bg-white/5 border-white/10"
           )}
           onClick={() => setActiveMetric(activeMetric === 'errors' ? 'all' : 'errors')}
-          whileHover={{ scale: 1.02 }}
         >
           <div className="flex items-center gap-0.5 sm:gap-1 mb-0.5">
             <div className="w-1 sm:w-2 h-1 sm:h-2 rounded-full bg-red-400" />

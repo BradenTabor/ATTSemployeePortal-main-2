@@ -758,14 +758,13 @@ function JobCreationFormComponent({
           type="button"
           onClick={onCancel}
           disabled={submitting}
-          className="w-full sm:w-auto px-4 py-2.5 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl border border-white/20 text-white/80 text-xs sm:text-sm font-semibold hover:bg-white/5 transition-colors disabled:opacity-50 min-h-[44px]"
+          className="w-full sm:w-auto px-4 py-2.5 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl border border-white/20 text-white/80 text-xs sm:text-sm font-semibold hover:bg-white/5 transition-colors disabled:opacity-50 min-h-[44px] hover:scale-[1.02]"
         >
           Cancel
         </button>
         <motion.button
           type="submit"
           disabled={submitting}
-          whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           className={cn(
             'w-full sm:w-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-4 py-2.5 sm:px-6 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all min-h-[44px]',

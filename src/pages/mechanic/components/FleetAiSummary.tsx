@@ -406,8 +406,7 @@ export default function FleetAiSummary() {
               <div className="grid grid-cols-3 gap-2">
                 {/* Overdue */}
                 <motion.div 
-                  className="relative rounded-lg sm:rounded-xl overflow-hidden"
-                  whileHover={{ scale: 1.02 }}
+                  className="relative rounded-lg sm:rounded-xl overflow-hidden hover:scale-[1.02]"
                   whileTap={{ scale: 0.98 }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-red-500 to-rose-600" />
@@ -420,8 +419,7 @@ export default function FleetAiSummary() {
 
                 {/* Due Soon */}
                 <motion.div 
-                  className="relative rounded-lg sm:rounded-xl overflow-hidden"
-                  whileHover={{ scale: 1.02 }}
+                  className="relative rounded-lg sm:rounded-xl overflow-hidden hover:scale-[1.02]"
                   whileTap={{ scale: 0.98 }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-600" />
@@ -434,8 +432,7 @@ export default function FleetAiSummary() {
 
                 {/* Healthy */}
                 <motion.div 
-                  className="relative rounded-lg sm:rounded-xl overflow-hidden"
-                  whileHover={{ scale: 1.02 }}
+                  className="relative rounded-lg sm:rounded-xl overflow-hidden hover:scale-[1.02]"
                   whileTap={{ scale: 0.98 }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 to-green-600" />

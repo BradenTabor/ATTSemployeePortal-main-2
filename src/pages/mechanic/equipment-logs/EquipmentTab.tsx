@@ -354,9 +354,8 @@ export function EquipmentTab({
                 </motion.button>
                 
                 {/* Export Dropdown */}
-                <div className="relative group">
+                <div className="relative group hover:scale-[1.02]">
                   <motion.button
-                    whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     disabled={isExporting || filteredEquipmentInspections.length === 0}
                     className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 border border-blue-400/50 text-white text-xs font-bold hover:shadow-lg hover:shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
@@ -480,7 +479,7 @@ export function EquipmentTab({
                       <Wrench className="w-9 h-9 text-white" />
                     </motion.div>
                     <p className="text-base font-bold text-white mb-1">No equipment found</p>
-                    <p className="text-sm text-gray-400">Try adjusting your filters</p>
+                    <p className="text-sm text-gray-400 hover:scale-[1.3]">Try adjusting your filters</p>
                   </motion.div>
                 ) : (
                   filteredEquipmentInspections.map((inspection, index) => {
@@ -503,7 +502,6 @@ export function EquipmentTab({
                         }`}
                       >
                         <motion.div 
-                          whileHover={{ scale: 1.3 }}
                           className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${hasFailures ? "bg-rose-400" : "bg-orange-400"}`} 
                         />
                         <div className="flex-1 min-w-0">
@@ -605,11 +603,10 @@ export function EquipmentTab({
                                 animate={{ scale: 1 }}
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/20 border border-orange-400/30 rounded-full text-xs font-semibold text-orange-300 shadow-lg shadow-orange-500/10"
                               >
-                                <Wrench className="w-3.5 h-3.5" />Fixed
+                                <Wrench className="w-3.5 h-3.5 hover:scale-105" />Fixed
                               </motion.span>
                             )}
                             <motion.span 
-                              whileHover={{ scale: 1.05 }}
                               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg ${
                                 inspectionHasFailures(selectedEquipment) 
                                   ? "bg-rose-500/20 text-rose-300 border border-rose-500/30 shadow-rose-500/10" 
@@ -748,9 +745,8 @@ export function EquipmentTab({
                         {/* Parts */}
                         <div>
                           <div className="flex items-center justify-between mb-2">
-                            <label className="text-[10px] uppercase tracking-wider text-orange-300/50 font-medium">Parts Used (Optional)</label>
+                            <label className="text-[10px] uppercase tracking-wider text-orange-300/50 font-medium hover:scale-105">Parts Used (Optional)</label>
                             <motion.button 
-                              whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
                               type="button" 
                               onClick={handleAddEquipmentPart} 
@@ -773,10 +769,9 @@ export function EquipmentTab({
                                     <div className="flex-1 grid grid-cols-3 gap-2">
                                       <input type="text" placeholder="Part name" value={part.part_name} onChange={(e) => handleEquipmentPartChange(index, { ...part, part_name: e.target.value })} className="col-span-2 sm:col-span-1 bg-black/40 border border-orange-500/20 text-white text-xs rounded-lg px-3 py-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 transition-all placeholder:text-white/25" />
                                       <input type="number" placeholder="Qty" min={1} value={part.quantity || ""} onChange={(e) => handleEquipmentPartChange(index, { ...part, quantity: parseInt(e.target.value) || 1 })} className="bg-black/40 border border-orange-500/20 text-white text-xs rounded-lg px-3 py-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 transition-all placeholder:text-white/25" />
-                                      <input type="text" placeholder="Part #" value={part.part_number || ""} onChange={(e) => handleEquipmentPartChange(index, { ...part, part_number: e.target.value })} className="bg-black/40 border border-orange-500/20 text-white text-xs rounded-lg px-3 py-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 transition-all placeholder:text-white/25" />
+                                      <input type="text" placeholder="Part #" value={part.part_number || ""} onChange={(e) => handleEquipmentPartChange(index, { ...part, part_number: e.target.value })} className="bg-black/40 border border-orange-500/20 text-white text-xs rounded-lg px-3 py-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 transition-all placeholder:text-white/25 hover:scale-110" />
                                     </div>
                                     <motion.button 
-                                      whileHover={{ scale: 1.1 }}
                                       whileTap={{ scale: 0.9 }}
                                       type="button" 
                                       onClick={() => handleEquipmentPartRemove(index)} 

@@ -80,7 +80,7 @@ const ErrorState = function ErrorState({ message, onRetry }: ErrorStateProps) {
           onClick={onRetry}
           className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-medium hover:bg-red-500/20 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 min-h-[44px]"
         >
-          <RefreshCw className="w-3.5 h-3.5" />
+          <RefreshCw className="w-3.5 h-3.5 hover:scale-[1.01]" />
           Try Again
         </button>
       )}
@@ -105,7 +105,6 @@ const NavigableJobCard = function NavigableJobCard({ job }: NavigableJobCardProp
 
   return (
     <motion.div
-      whileHover={{ scale: 1.01 }}
       whileTap={{ scale: 0.99 }}
       onClick={handleClick}
       className="cursor-pointer"

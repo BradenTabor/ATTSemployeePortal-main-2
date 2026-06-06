@@ -586,7 +586,7 @@ export function AdminJSAContent() {
             className="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
           >
             {/* Status Filter Buttons - Scrollable on mobile */}
-            <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 sm:pb-0 -mx-2 px-2 sm:mx-0 sm:px-0 scrollbar-thin scrollbar-thumb-[#f4c979]/20">
+            <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 sm:pb-0 -mx-2 px-2 sm:mx-0 sm:px-0 scrollbar-thin scrollbar-thumb-[#f4c979]/20 hover:scale-[1.02]">
               {statusFilters.map((filter) => {
                 const isActive = statusFilter === filter.value;
                 const count =
@@ -598,7 +598,6 @@ export function AdminJSAContent() {
                     key={filter.value}
                     type="button"
                     onClick={() => setStatusFilter(filter.value as "all" | "draft" | "completed")}
-                    whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     className={`inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-semibold transition-all duration-200 min-h-[40px] sm:min-h-[44px] flex-shrink-0 ${
                       isActive
@@ -622,9 +621,8 @@ export function AdminJSAContent() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-2 flex-shrink-0 hover:scale-[1.02]">
               <motion.button
-                whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setShowFilters(!showFilters)}
                 className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium bg-[#0c0a08]/70 border border-[#f6dcb2]/20 text-[#f8e5bb]/80 hover:border-[#f4c979]/40 hover:text-white active:bg-[#f4c979]/10 transition-all min-h-[44px]"
@@ -636,9 +634,8 @@ export function AdminJSAContent() {
               </motion.button>
 
               {/* Export Dropdown */}
-              <div className="relative group">
+              <div className="relative group hover:scale-[1.02]">
                 <motion.button
-                  whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   disabled={isExporting}
                   className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium bg-[#0c0a08]/70 border border-[#f6dcb2]/20 text-[#f8e5bb]/80 hover:border-[#f4c979]/40 hover:text-white active:bg-[#f4c979]/10 transition-all disabled:opacity-50 min-h-[40px] sm:min-h-[44px]"

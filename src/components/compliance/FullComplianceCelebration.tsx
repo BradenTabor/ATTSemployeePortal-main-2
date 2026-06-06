@@ -435,11 +435,10 @@ export function FullComplianceCelebration({
             {/* Continue button */}
             <motion.button
               onClick={handleContinue}
-              className="flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold rounded-xl transition-all shadow-xl shadow-emerald-900/40 active:scale-[0.98]"
+              className="flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold rounded-xl transition-all shadow-xl shadow-emerald-900/40 active:scale-[0.98] hover:scale-[1.03]"
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1.3 }}
-              whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
             >
               Return to Dashboard

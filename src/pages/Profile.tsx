@@ -696,10 +696,9 @@ export default function Profile() {
             >
               <div className="flex items-center gap-3">
                 <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0" />
-                <p className="text-sm text-red-300">{error}</p>
+                <p className="text-sm text-red-300 hover:scale-105">{error}</p>
                 <motion.button
                   onClick={fetchProfile}
-                  whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/20 border border-red-500/30 text-red-300 text-xs font-medium hover:bg-red-500/30 transition-colors"
                 >

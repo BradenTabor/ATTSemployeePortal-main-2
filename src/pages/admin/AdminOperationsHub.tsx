@@ -982,12 +982,11 @@ function JobsTabContent({ userId }: { userId: string }) {
             </div>
             <div className="min-w-0">
               <h3 className="text-base sm:text-lg font-bold text-white truncate">All Jobs</h3>
-              <p className="text-xs text-white/50">{jobs.length} job{jobs.length !== 1 ? 's' : ''}</p>
+              <p className="text-xs text-white/50 hover:scale-[1.02]">{jobs.length} job{jobs.length !== 1 ? 's' : ''}</p>
             </div>
           </div>
 
           <motion.button
-            whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => setShowCreateForm(true)}
             className="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg sm:rounded-xl bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#2e1b02] text-xs sm:text-sm font-semibold hover:shadow-[0_0_20px_rgba(244,201,121,0.3)] transition-shadow flex-shrink-0 min-h-[44px]"

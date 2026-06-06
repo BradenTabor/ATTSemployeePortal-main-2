@@ -542,7 +542,7 @@ const ProgressDots = memo(function ProgressDots({
   enableAnimations,
 }: ProgressDotsProps) {
   return (
-    <div className="flex items-center justify-center gap-1.5 xs:gap-2 sm:gap-2.5">
+    <div className="flex items-center justify-center gap-1.5 xs:gap-2 sm:gap-2.5 hover:scale-110">
       {Array.from({ length: total }).map((_, index) => {
         const isActive = index === current;
         const featureAccent = (features[index]?.accentColor || 'emerald') as AccentColor;
@@ -552,7 +552,6 @@ const ProgressDots = memo(function ProgressDots({
           <motion.button
             key={index}
             onClick={() => onSelect(index)}
-            whileHover={{ scale: 1.15 }}
             whileTap={{ scale: 0.9 }}
             animate={isActive && enableAnimations ? {
               scale: [1, 1.08, 1],
@@ -816,10 +815,9 @@ function WhatsNewOnboardingComponent() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={handlePrev}
-                  className="absolute left-1 xs:left-2 sm:left-6 top-1/2 -translate-y-1/2 p-2 sm:p-3 rounded-full bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all z-20 hidden sm:flex"
+                  className="absolute left-1 xs:left-2 sm:left-6 top-1/2 -translate-y-1/2 p-2 sm:p-3 rounded-full bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all z-20 hidden sm:flex hover:scale-110"
                   aria-label="Previous feature"
                 >
                   <ChevronLeft className="w-4 h-4 sm:w-6 sm:h-6" />
@@ -833,10 +831,9 @@ function WhatsNewOnboardingComponent() {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
-                  whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={handleNext}
-                  className="absolute right-1 xs:right-2 sm:right-6 top-1/2 -translate-y-1/2 p-2 sm:p-3 rounded-full bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all z-20 hidden sm:flex"
+                  className="absolute right-1 xs:right-2 sm:right-6 top-1/2 -translate-y-1/2 p-2 sm:p-3 rounded-full bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-all z-20 hidden sm:flex hover:scale-110"
                   aria-label="Next feature"
                 >
                   <ChevronRight className="w-4 h-4 sm:w-6 sm:h-6" />
@@ -871,13 +868,12 @@ function WhatsNewOnboardingComponent() {
                   background="rgba(16, 185, 129, 0.9)"
                   className="min-w-[160px] sm:min-w-[200px] text-sm sm:text-base py-2.5 sm:py-3"
                 >
-                  <Check className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
+                  <Check className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2 hover:scale-[1.02]" />
                   Get Started
                 </ShimmerButton>
               ) : (
                 <motion.button
                   onClick={handleNext}
-                  whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   className="flex items-center justify-center gap-1.5 sm:gap-2 px-5 sm:px-8 py-2.5 sm:py-4 rounded-lg sm:rounded-xl bg-white/10 border border-white/20 hover:bg-white/15 text-white font-medium text-sm sm:text-base transition-all"
                 >

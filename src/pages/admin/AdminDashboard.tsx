@@ -176,11 +176,10 @@ function ContactRequestModalContent({
               {request.message}
             </p>
           </div>
-          <div className="flex justify-end">
+          <div className="flex justify-end hover:scale-[1.02]">
             <motion.button
               type="button"
               onClick={onClose}
-              whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
               className="inline-flex items-center justify-center gap-2 rounded-xl border border-transparent bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] px-4 py-2 text-sm font-semibold text-[#2e1b02] shadow-[0_6px_16px_rgba(244,201,121,0.2)] transition"
             >
@@ -530,12 +529,11 @@ export default function AdminDashboard() {
             variants={itemVariants}
             initial="hidden"
             animate="visible"
-            className="flex justify-center"
+            className="flex justify-center hover:scale-[1.03]"
           >
             <motion.button
               type="button"
               onClick={() => setShowAllNavCards(prev => !prev)}
-              whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#f4c979]/25 text-[#f8e5bb]/70 text-xs sm:text-sm font-medium transition-colors hover:text-[#f8e5bb] hover:border-[#f4c979]/40 hover:bg-white/[0.03]"
             >
@@ -588,7 +586,7 @@ export default function AdminDashboard() {
             <h3 className="text-sm sm:text-lg md:text-xl font-bold tracking-tight text-white">
               {isEditMode ? "Edit Announcement" : "Create Announcement"}
             </h3>
-            <p className="hidden sm:block text-xs sm:text-sm text-[#f8e5bb]/60 mt-0.5 leading-relaxed max-w-lg">
+            <p className="hidden sm:block text-xs sm:text-sm text-[#f8e5bb]/60 mt-0.5 leading-relaxed max-w-lg hover:scale-[1.02]">
               {isEditMode
                 ? "Update the details below and save your changes."
                 : "Publish news that appears instantly on the announcements page."}
@@ -598,7 +596,6 @@ export default function AdminDashboard() {
             type="button"
             onClick={() => setComposerOpen(true)}
             disabled={composerOpen}
-            whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
             className="inline-flex items-center justify-center whitespace-nowrap rounded-xl border border-transparent bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] px-3 sm:px-5 py-2 text-xs sm:text-sm font-semibold text-[#332308] shadow-[0_8px_20px_rgba(0,0,0,0.3)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c0b09] disabled:cursor-not-allowed disabled:opacity-60 min-h-[44px]"
             aria-expanded={composerOpen ? "true" : "false"}
@@ -686,11 +683,10 @@ export default function AdminDashboard() {
                 )}
               </div>
 
-              <div className="flex gap-2 pt-1">
+              <div className="flex gap-2 pt-1 hover:scale-[1.01]">
                 <motion.button
                   type="submit"
                   disabled={!isValid || submitting || (isEditMode && updateAnnouncement.isPending)}
-                  whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.98 }}
                   className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#2e1b02] text-sm font-semibold transition border border-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#050301] disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px]"
                 >
@@ -740,7 +736,7 @@ export default function AdminDashboard() {
             ) : !announcements || announcements.length === 0 ? (
               <p className="text-xs text-[#f8e5bb]/50">No announcements yet.</p>
             ) : (
-              <div className="space-y-1.5 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-2 lg:grid-cols-3 max-h-[50vh] overflow-y-auto pr-1 -mr-1 scrollbar-thin scrollbar-thumb-[#f4c979]/15 scrollbar-track-transparent">
+              <div className="space-y-1.5 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-2 lg:grid-cols-3 max-h-[50vh] overflow-y-auto pr-1 -mr-1 scrollbar-thin scrollbar-thumb-[#f4c979]/15 scrollbar-track-transparent hover:scale-[1.01]">
                 {announcements.map((announcement) => {
                   const isEditing = editingAnnouncement?.id === announcement.id;
                   const authorDisplay = announcement.author.includes('@') 
@@ -755,7 +751,6 @@ export default function AdminDashboard() {
                           ? "border-[#f4c979]/40 bg-[#f4c979]/8 ring-1 ring-[#f4c979]/25"
                           : "border-white/8 bg-black/20 hover:border-[#f4c979]/25 hover:bg-black/30"
                       }`}
-                      whileHover={{ scale: 1.01 }}
                       whileTap={{ scale: 0.99 }}
                     >
                       <div className="flex items-center p-2 sm:p-2.5 gap-2">
