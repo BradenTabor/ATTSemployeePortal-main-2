@@ -1,5 +1,7 @@
 # My Points page (§8)
 
+> **Consolidated docs:** [admin-runbook.md](./admin-runbook.md) · [architecture.md](./architecture.md)
+
 Read-only employee view at `/my-points` — wallet, raffle standing, earning breakdown, briefing streak, recent ledger activity, and hub links to the Rewards Store and Ways to Earn.
 
 ## Data sources (reuse, no duplicate balance paths)

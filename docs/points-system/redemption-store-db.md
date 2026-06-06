@@ -1,5 +1,7 @@
 # Redemption store — DB layer (increment 1)
 
+> **Consolidated docs:** [admin-runbook.md](./admin-runbook.md) · [architecture.md](./architecture.md)
+
 Factual reference for developer/admin docs. Placeholder catalog seeded; confirm items/costs with client before launch.
 
 ## Tables

@@ -1,5 +1,7 @@
 # Reward Catalog Management (Admin)
 
+> **Consolidated docs:** [admin-runbook.md](./admin-runbook.md) · [architecture.md](./architecture.md)
+
 Admin CRUD for `reward_catalog` — lets ATTS set real store items, prices, stock, and images without a migration.
 
 ## Route

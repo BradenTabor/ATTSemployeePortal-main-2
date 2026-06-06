@@ -1,5 +1,7 @@
 # Redemption notifications
 
+> **Consolidated docs:** [admin-runbook.md](./admin-runbook.md) · [architecture.md](./architecture.md)
+
 Server-built push/in-app notifications for the redemption state machine. Closes the UX loop: employees see status on **My Points**, admins get queued when someone redeems, recipients hear about fulfill/deny.
 
 ## Why DB-side (not `admin-create-notification`)
