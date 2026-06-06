@@ -107,4 +107,30 @@ export const glass = {
     "rounded-xl border border-[#f6dcb2]/15 " +
     "bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] " +
     "shadow-[0_1px_2px_rgba(0,0,0,0.3)]",
+
+  /** Foreman dashboard — blue-tinted card with role accent border.
+   *  Consolidates the freestyle `from-[#0a1628] ... to-[#020408]` foreman panels. */
+  cardBlue:
+    "rounded-2xl border border-[#bfdbfe]/20 " +
+    "bg-gradient-to-br from-[#0a1628] via-[#0a1020] to-[#020408] " +
+    "shadow-[0_1px_3px_rgba(0,0,0,0.5),0_4px_16px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(191,219,254,0.06)]",
+
+  /** Foreman — inner panels and stat blocks (deeper blue base) */
+  subtleBlue:
+    "rounded-xl border border-[#bfdbfe]/15 " +
+    "bg-gradient-to-br from-[#0a1628] via-[#060d18] to-[#020408] " +
+    "shadow-[0_1px_2px_rgba(0,0,0,0.3)]",
+
+  /** Mechanic dashboard — ember-tinted card (orange accent border).
+   *  Consolidates freestyle `from-[#1f0f09] via-[#150906] to-[#0a0504]` mechanic panels. */
+  cardEmber:
+    "rounded-2xl border border-orange-500/20 " +
+    "bg-gradient-to-br from-[#1f0f09] via-[#150906] to-[#0a0504] " +
+    "shadow-[0_1px_3px_rgba(0,0,0,0.5),0_4px_16px_rgba(127,53,11,0.2),inset_0_1px_0_rgba(251,146,60,0.06)]",
+
+  /** Mechanic — nav cards, compact panels, inner surfaces */
+  subtleEmber:
+    "rounded-xl border border-orange-500/20 " +
+    "bg-gradient-to-br from-[#1a0c08] via-[#120504] to-[#0f0705] " +
+    "shadow-[0_1px_2px_rgba(0,0,0,0.3)]",
 } as const;
