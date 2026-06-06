@@ -302,6 +302,7 @@ export const queryKeys = {
   redemption: {
     all: ['redemption'] as const,
     catalog: ['redemption', 'catalog'] as const,
+    adminCatalog: ['redemption', 'admin-catalog'] as const,
     userHistory: (userId: string) => ['redemption', 'history', userId] as const,
     adminQueue: (statusFilter?: string) =>
       ['redemption', 'admin-queue', statusFilter ?? 'all'] as const,

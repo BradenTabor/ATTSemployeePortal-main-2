@@ -83,4 +83,5 @@ export const AdminSafetyRewardsPage = lazy(() => import("@/pages/admin/AdminSafe
 export const AdminRedemptionFulfillment = lazy(
   () => import("@/pages/admin/AdminRedemptionFulfillment"),
 );
+export const AdminRewardCatalog = lazy(() => import("@/pages/admin/AdminRewardCatalog"));
 export const SafetyBriefingGuard = lazy(() => import("@/components/SafetyBriefingGuard"));

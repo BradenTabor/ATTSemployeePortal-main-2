@@ -78,6 +78,7 @@ import {
   MyPointsPage,
   AdminSafetyRewardsPage,
   AdminRedemptionFulfillment,
+  AdminRewardCatalog,
   SafetyBriefingGuard,
 } from "@/routes/lazyImports";
 
@@ -805,6 +806,17 @@ export function AnimatedRoutes() {
                 <PageWrapper>
                   <ProtectedRoute requiredRole="admin">
                     <AdminRedemptionFulfillment />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            <Route
+              path="/admin/reward-catalog"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminRewardCatalog />
                   </ProtectedRoute>
                 </PageWrapper>
               }

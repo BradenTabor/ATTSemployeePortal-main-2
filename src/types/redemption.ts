@@ -20,6 +20,21 @@ export interface RewardCatalogItem {
   updated_at: string;
 }
 
+/** Admin catalog row includes redemption count for delete-guard UX. */
+export interface AdminCatalogItem extends RewardCatalogItem {
+  redemption_count: number;
+}
+
+export const CATALOG_CATEGORIES = ['apparel', 'gear', 'gift_card', 'other'] as const;
+export type CatalogCategory = (typeof CATALOG_CATEGORIES)[number];
+
+export const CATALOG_CATEGORY_LABELS: Record<CatalogCategory, string> = {
+  apparel: 'Apparel',
+  gear: 'Gear',
+  gift_card: 'Gift Card',
+  other: 'Other',
+};
+
 export interface RedemptionRecord {
   id: string;
   user_id: string;

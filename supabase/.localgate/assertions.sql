@@ -1235,4 +1235,75 @@ BEGIN
   RAISE NOTICE 'OK: get_user_points_by_source — sum reconciles to balance; non-admin cross-user denied.';
 END $$;
 
+-- ---- Increment-specific checks: 20260606150000 (catalog delete RESTRICT + storage admin-only) ----
+DO $$
+DECLARE
+  missing text := '';
+  c_admin   uuid := '00000000-0000-0000-0000-00000000cc03';
+  c_user    uuid := '00000000-0000-0000-0000-00000000cc01';
+  c_unused  uuid := '00000000-0000-0000-0000-00000000ce01';
+  c_used    uuid := '00000000-0000-0000-0000-00000000ce02';
+  v_raised  boolean;
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'redemptions_item_id_fkey'
+      AND confdeltype = 'r'
+  ) THEN
+    missing := missing || E'\n  - redemptions_item_id_fkey ON DELETE RESTRICT is missing';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'storage' AND tablename = 'objects'
+      AND policyname = 'Admins can upload reward images'
+      AND cmd = 'INSERT'
+  ) THEN
+    missing := missing || E'\n  - storage policy Admins can upload reward images is missing';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM pg_policies p
+    WHERE p.schemaname = 'storage' AND p.tablename = 'objects'
+      AND p.cmd IN ('INSERT', 'UPDATE', 'DELETE')
+      AND (p.qual LIKE '%safety-rewards%' OR p.with_check LIKE '%safety-rewards%')
+      AND NOT (COALESCE(p.qual, '') LIKE '%is_admin%' OR COALESCE(p.with_check, '') LIKE '%is_admin%')
+  ) THEN
+    missing := missing || E'\n  - safety-rewards bucket has non-admin write policy';
+  END IF;
+
+  IF missing <> '' THEN
+    RAISE EXCEPTION E'GATE FAILED — catalog management objects (20260606150000) not correct:%', missing;
+  END IF;
+
+  INSERT INTO public.reward_catalog (id, name, point_cost, is_active, sort_order)
+  VALUES
+    (c_unused, 'Gate Unused Item', 10, false, 9990),
+    (c_used,   'Gate Used Item',   10, false, 9991)
+  ON CONFLICT (id) DO NOTHING;
+
+  INSERT INTO public.redemptions (user_id, item_id, point_cost, status, request_id)
+  VALUES (c_user, c_used, 10, 'pending', '00000000-0000-0000-0000-0000000ce101')
+  ON CONFLICT DO NOTHING;
+
+  PERFORM set_config('request.jwt.claim.sub', c_admin::text, true);
+
+  DELETE FROM public.reward_catalog WHERE id = c_unused;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'GATE FAILED — admin could not delete unused catalog item';
+  END IF;
+
+  v_raised := false;
+  BEGIN
+    DELETE FROM public.reward_catalog WHERE id = c_used;
+  EXCEPTION WHEN foreign_key_violation THEN
+    v_raised := true;
+  END;
+  IF NOT v_raised THEN
+    RAISE EXCEPTION 'GATE FAILED — delete catalog item with redemptions was allowed';
+  END IF;
+
+  RAISE NOTICE 'OK: catalog delete RESTRICT — unused delete allowed; referenced delete blocked; safety-rewards admin-only write policies present.';
+END $$;
+
 ROLLBACK;

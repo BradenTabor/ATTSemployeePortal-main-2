@@ -205,6 +205,14 @@ export const ADMIN_CORE_NAV_CARDS: AdminNavCardConfig[] = [
     variant: "gold",
     iconAsImage: true,
   },
+  {
+    title: "Reward Catalog",
+    description: "Create and manage redemption store items, prices, and images.",
+    icon: <img loading="lazy" src="/assets/safety-rewards.webp" alt="" className="w-full h-full object-contain" />,
+    to: "/admin/reward-catalog",
+    variant: "gold",
+    iconAsImage: true,
+  },
 ];
 
 /** Role dashboard links so admin can navigate the entire app from Admin. */
