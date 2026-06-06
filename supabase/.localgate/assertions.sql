@@ -501,4 +501,284 @@ BEGIN
   RAISE NOTICE 'OK: admin-create-notification edge function unchanged (admin JWT gate remains in supabase/functions/admin-create-notification/index.ts).';
 END $$;
 
+-- ---- Increment-specific checks: 20260606023824 (earning sources phase 2) ----
+DO $$
+DECLARE
+  missing text := '';
+  v_indexdef text;
+BEGIN
+  IF to_regclass('public.point_rules') IS NULL THEN
+    missing := missing || E'\n  - table public.point_rules is missing';
+  END IF;
+  IF to_regprocedure('public.get_point_rule(public.point_source,text)') IS NULL THEN
+    missing := missing || E'\n  - function public.get_point_rule(point_source,text) is missing';
+  END IF;
+  IF to_regprocedure('public.insert_point_transaction(uuid,integer,public.point_source,uuid,text,text,boolean)') IS NULL THEN
+    missing := missing || E'\n  - function public.insert_point_transaction(...) is missing';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_award_near_miss_base_points') THEN
+    missing := missing || E'\n  - trigger trg_award_near_miss_base_points is missing';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_award_near_miss_corrective_bonus') THEN
+    missing := missing || E'\n  - trigger trg_award_near_miss_corrective_bonus is missing';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_award_certification_points') THEN
+    missing := missing || E'\n  - trigger trg_award_certification_points is missing';
+  END IF;
+
+  -- Index must use NULLS NOT DISTINCT (not plain NULLS DISTINCT extension).
+  SELECT indexdef INTO v_indexdef
+  FROM pg_indexes
+  WHERE schemaname = 'public' AND indexname = 'uq_point_tx_source_ref';
+  IF v_indexdef IS NULL THEN
+    missing := missing || E'\n  - index uq_point_tx_source_ref is missing';
+  ELSIF position('nulls not distinct' IN lower(v_indexdef)) = 0 THEN
+    missing := missing || E'\n  - uq_point_tx_source_ref must use NULLS NOT DISTINCT (got: ' || v_indexdef || ')';
+  ELSIF position('category' IN v_indexdef) = 0 THEN
+    missing := missing || E'\n  - uq_point_tx_source_ref must include category column';
+  END IF;
+
+  IF missing <> '' THEN
+    RAISE EXCEPTION E'GATE FAILED — earning sources objects (20260606023824) not correct:%', missing;
+  END IF;
+  RAISE NOTICE 'OK: point_rules/helpers/triggers present; uq_point_tx_source_ref uses NULLS NOT DISTINCT + category.';
+END $$;
+
+-- (2) Behavioral enforcement matrix — earning sources phase 2.
+DO $$
+DECLARE
+  c_reporter  uuid := '00000000-0000-0000-0000-00000000bb01';
+  c_admin     uuid := '00000000-0000-0000-0000-00000000bb02';
+  c_cert_user uuid := '00000000-0000-0000-0000-00000000bb03';
+  c_ann       uuid := '00000000-0000-0000-0000-00000000bb10';
+  c_ref       uuid := '00000000-0000-0000-0000-00000000bb11';
+  c_inc1      uuid;
+  c_inc2      uuid;
+  c_inc3      uuid;
+  c_inc_null  uuid;
+  c_capa1     uuid;
+  c_capa2     uuid;
+  c_cert_type uuid := '00000000-0000-0000-0000-00000000bb40';
+  c_attempt1  uuid := '00000000-0000-0000-0000-00000000bb20';
+  c_attempt2  uuid := '00000000-0000-0000-0000-00000000bb21';
+  c_attempt3  uuid := '00000000-0000-0000-0000-00000000bb22';
+  c_cert_rec  uuid := '00000000-0000-0000-0000-00000000bb30';
+  c_exp_rec   uuid := '00000000-0000-0000-0000-00000000bb31';
+  v_count     integer;
+  v_bal       integer;
+  v_raf       integer;
+  v_year      integer;
+  v_month     integer;
+  v_amount    integer;
+BEGIN
+  -- Prod baseline safety_audit_log_insert references user_id on safety_incidents
+  -- (invalid column); disable audit triggers so gate tests exercise earning triggers only.
+  ALTER TABLE public.safety_incidents DISABLE TRIGGER trigger_safety_audit_incident;
+  ALTER TABLE public.corrective_actions DISABLE TRIGGER trigger_safety_audit_corrective_actions;
+  ALTER TABLE public.certification_records DISABLE TRIGGER trigger_safety_audit_cert_records;
+  ALTER TABLE public.certification_records DISABLE TRIGGER trigger_refresh_completion_stats_on_record_insert;
+
+  INSERT INTO auth.users (id, aud, role, email) VALUES
+    (c_reporter , 'authenticated', 'authenticated', 'gate-es-reporter@example.invalid'),
+    (c_admin    , 'authenticated', 'authenticated', 'gate-es-admin@example.invalid'),
+    (c_cert_user, 'authenticated', 'authenticated', 'gate-es-cert@example.invalid');
+
+  UPDATE public.app_users SET role = 'admin' WHERE user_id = c_admin;
+
+  v_year  := EXTRACT(YEAR  FROM (now() AT TIME ZONE 'America/Chicago'))::integer;
+  v_month := EXTRACT(MONTH FROM (now() AT TIME ZONE 'America/Chicago'))::integer;
+
+  -- ---- INDEX REGRESSION GUARD: NULL-category rows still dedupe ----------------
+  PERFORM public.insert_point_transaction(
+    c_reporter, 5, 'announcement_claim', c_ref, 'announcement_rewards', NULL, true);
+  PERFORM public.insert_point_transaction(
+    c_reporter, 5, 'announcement_claim', c_ref, 'announcement_rewards', NULL, true);
+  SELECT count(*) INTO v_count
+  FROM public.point_transactions
+  WHERE source = 'announcement_claim' AND reference_id = c_ref AND category IS NULL;
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED — index regression: duplicate announcement_claim (category NULL) produced % rows (expected 1)', v_count;
+  END IF;
+
+  PERFORM public.insert_point_transaction(
+    c_reporter, 3, 'compliance_form', c_ref, 'compliance_rewards', NULL, true);
+  PERFORM public.insert_point_transaction(
+    c_reporter, 3, 'compliance_form', c_ref, 'compliance_rewards', NULL, true);
+  SELECT count(*) INTO v_count
+  FROM public.point_transactions
+  WHERE source = 'compliance_form' AND reference_id = c_ref AND category IS NULL;
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED — index regression: duplicate compliance_form (category NULL) produced % rows (expected 1)', v_count;
+  END IF;
+  RAISE NOTICE 'OK: index regression guard — NULL-category announcement_claim/compliance_form still dedupe to one row.';
+
+  -- ---- Near-miss base: +10 to reporter; cap=2 suppresses third ----------------
+  INSERT INTO public.safety_incidents (incident_date, severity, incident_type, description, reported_by)
+    VALUES (CURRENT_DATE, 'near_miss', 'other', 'gate nm 1', c_reporter) RETURNING id INTO c_inc1;
+  INSERT INTO public.safety_incidents (incident_date, severity, incident_type, description, reported_by)
+    VALUES (CURRENT_DATE, 'near_miss', 'other', 'gate nm 2', c_reporter) RETURNING id INTO c_inc2;
+  INSERT INTO public.safety_incidents (incident_date, severity, incident_type, description, reported_by)
+    VALUES (CURRENT_DATE, 'near_miss', 'other', 'gate nm 3', c_reporter) RETURNING id INTO c_inc3;
+
+  SELECT count(*) INTO v_count
+  FROM public.point_transactions
+  WHERE user_id = c_reporter AND source = 'near_miss_report' AND category = 'base';
+  IF v_count <> 2 THEN
+    RAISE EXCEPTION 'GATE FAILED — near-miss cap: expected 2 base awards, got %', v_count;
+  END IF;
+  SELECT count(*) INTO v_count
+  FROM public.point_transactions
+  WHERE source = 'near_miss_report' AND category = 'base' AND reference_id = c_inc3;
+  IF v_count <> 0 THEN
+    RAISE EXCEPTION 'GATE FAILED — near-miss cap: third filing (%) should not award points', c_inc3;
+  END IF;
+
+  -- reported_by NULL → skip gracefully (incident still inserts)
+  INSERT INTO public.safety_incidents (incident_date, severity, incident_type, description, reported_by)
+    VALUES (CURRENT_DATE, 'near_miss', 'other', 'gate nm null reporter', NULL) RETURNING id INTO c_inc_null;
+  SELECT count(*) INTO v_count
+  FROM public.point_transactions
+  WHERE source = 'near_miss_report' AND category = 'base' AND reference_id = c_inc_null;
+  IF v_count <> 0 THEN
+    RAISE EXCEPTION 'GATE FAILED — near-miss with NULL reported_by should not create ledger row';
+  END IF;
+
+  -- ---- Corrective bonus: +15 once per incident ------------------------------
+  INSERT INTO public.corrective_actions (incident_id, description, action_type, assigned_by, due_date, status)
+    VALUES (c_inc1, 'fix hazard A', 'immediate', c_admin, CURRENT_DATE + 7, 'open')
+    RETURNING id INTO c_capa1;
+  UPDATE public.corrective_actions SET status = 'verified', verified_by = c_admin, verified_at = now()
+    WHERE id = c_capa1;
+
+  SELECT count(*) INTO v_count
+  FROM public.point_transactions
+  WHERE user_id = c_reporter AND source = 'near_miss_report' AND category = 'corrective_bonus';
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED — corrective bonus: expected 1 row, got %', v_count;
+  END IF;
+
+  INSERT INTO public.corrective_actions (incident_id, description, action_type, assigned_by, due_date, status)
+    VALUES (c_inc1, 'fix hazard B', 'short_term', c_admin, CURRENT_DATE + 14, 'open')
+    RETURNING id INTO c_capa2;
+  UPDATE public.corrective_actions SET status = 'verified', verified_by = c_admin, verified_at = now()
+    WHERE id = c_capa2;
+  SELECT count(*) INTO v_count
+  FROM public.point_transactions
+  WHERE user_id = c_reporter AND source = 'near_miss_report' AND category = 'corrective_bonus';
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED — second verified CAPA on same incident produced % bonus rows (expected 1)', v_count;
+  END IF;
+
+  -- ---- Certification: pass + early renewal coexist (written-only path) --------
+  INSERT INTO public.certification_types (id, name, slug, has_written_test, has_practical_eval, passing_score, validity_months)
+    VALUES (c_cert_type, 'Gate Written Only', 'gate-written-only', true, false, 80, 12);
+
+  INSERT INTO public.certification_attempts (id, user_id, certification_type_id, attempt_number, status, passed, score_percentage)
+    VALUES (c_attempt1, c_cert_user, c_cert_type, 1, 'graded', true, 90.00);
+
+  INSERT INTO public.certification_records (
+    id, user_id, certification_type_id, written_attempt_id, written_passed_at,
+    status, expires_at, certified_at
+  ) VALUES (
+    c_cert_rec, c_cert_user, c_cert_type, c_attempt1, now(),
+    'active', now() + interval '6 months', now()
+  );
+
+  SELECT count(*) INTO v_count
+  FROM public.point_transactions
+  WHERE user_id = c_cert_user AND source = 'certification' AND category = 'pass'
+    AND reference_id = c_attempt1;
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED — cert pass: expected 1 pass row for attempt %, got %', c_attempt1, v_count;
+  END IF;
+
+  INSERT INTO public.certification_attempts (id, user_id, certification_type_id, attempt_number, status, passed, score_percentage)
+    VALUES (c_attempt2, c_cert_user, c_cert_type, 2, 'graded', true, 92.00);
+
+  UPDATE public.certification_records
+  SET written_attempt_id = c_attempt2, expires_at = now() + interval '12 months'
+  WHERE id = c_cert_rec;
+
+  SELECT count(*) INTO v_count
+  FROM public.point_transactions
+  WHERE user_id = c_cert_user AND source = 'certification' AND category = 'early_renewal'
+    AND reference_id = c_attempt2;
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED — early renewal: expected 1 early_renewal row, got %', v_count;
+  END IF;
+  SELECT count(*) INTO v_count
+  FROM public.point_transactions
+  WHERE user_id = c_cert_user AND source = 'certification' AND category = 'pass';
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED — pass and early_renewal should coexist; pass count = %', v_count;
+  END IF;
+
+  -- ---- Expired-then-recert: pass only, no early bonus -----------------------
+  -- Prior record is still active; expire it, then insert a fresh active record.
+  UPDATE public.certification_records SET status = 'expired' WHERE id = c_cert_rec;
+
+  INSERT INTO public.certification_attempts (id, user_id, certification_type_id, attempt_number, status, passed, score_percentage)
+    VALUES (c_attempt3, c_cert_user, c_cert_type, 3, 'graded', true, 88.00);
+
+  INSERT INTO public.certification_records (
+    id, user_id, certification_type_id, written_attempt_id, written_passed_at,
+    status, expires_at, certified_at
+  ) VALUES (
+    c_exp_rec, c_cert_user, c_cert_type, c_attempt3, now(),
+    'active', now() + interval '12 months', now()
+  );
+
+  SELECT count(*) INTO v_count
+  FROM public.point_transactions
+  WHERE user_id = c_cert_user AND source = 'certification' AND category = 'pass'
+    AND reference_id = c_attempt3;
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED — expired-then-recert: expected 1 pass row, got %', v_count;
+  END IF;
+  SELECT count(*) INTO v_count
+  FROM public.point_transactions
+  WHERE user_id = c_cert_user AND source = 'certification' AND category = 'early_renewal'
+    AND reference_id = c_attempt3;
+  IF v_count <> 0 THEN
+    RAISE EXCEPTION 'GATE FAILED — expired-then-recert must NOT award early_renewal (got %)', v_count;
+  END IF;
+
+  -- ---- Inactive rule → skip award -------------------------------------------
+  UPDATE public.point_rules SET is_active = false
+  WHERE source = 'near_miss_report' AND rule_key = 'base_amount';
+  v_amount := public.get_point_rule('near_miss_report', 'base_amount');
+  IF v_amount IS NOT NULL THEN
+    RAISE EXCEPTION 'GATE FAILED — get_point_rule should return NULL for inactive rule';
+  END IF;
+  INSERT INTO public.safety_incidents (incident_date, severity, incident_type, description, reported_by)
+    VALUES (CURRENT_DATE, 'near_miss', 'other', 'gate inactive rule', c_reporter);
+  SELECT count(*) INTO v_count
+  FROM public.point_transactions
+  WHERE user_id = c_reporter AND source = 'near_miss_report' AND category = 'base';
+  IF v_count <> 2 THEN
+    RAISE EXCEPTION 'GATE FAILED — inactive base_amount rule should not add a third base row (count=%)', v_count;
+  END IF;
+  UPDATE public.point_rules SET is_active = true
+  WHERE source = 'near_miss_report' AND rule_key = 'base_amount';
+
+  -- ---- Balance / raffle reflect awards --------------------------------------
+  v_bal := public.get_user_point_balance(c_reporter);
+  -- 2 base (20) + 1 corrective (15) = 35 from reporter near-miss path
+  IF v_bal < 35 THEN
+    RAISE EXCEPTION 'GATE FAILED — reporter balance % (expected >= 35 from near-miss awards)', v_bal;
+  END IF;
+  v_raf := public.get_user_raffle_entries(c_reporter, v_year, v_month);
+  IF v_raf < 35 THEN
+    RAISE EXCEPTION 'GATE FAILED — reporter raffle entries % (expected >= 35)', v_raf;
+  END IF;
+
+  v_bal := public.get_user_point_balance(c_cert_user);
+  -- pass 20 + early 10 + expired recert pass 20 = 50
+  IF v_bal <> 50 THEN
+    RAISE EXCEPTION 'GATE FAILED — cert user balance % (expected 50)', v_bal;
+  END IF;
+
+  RAISE NOTICE 'OK: earning sources matrix — near-miss cap/corrective bonus/cert pass+renewal/index regression/inactive rule/balance all pass.';
+END $$;
+
 ROLLBACK;
