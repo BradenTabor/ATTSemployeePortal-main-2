@@ -1306,4 +1306,204 @@ BEGIN
   RAISE NOTICE 'OK: catalog delete RESTRICT — unused delete allowed; referenced delete blocked; safety-rewards admin-only write policies present.';
 END $$;
 
+-- ---- Increment-specific checks: 20260606160000 (redemption notifications) ----
+DO $$
+DECLARE
+  missing text := '';
+  v_def   text;
+BEGIN
+  IF to_regprocedure('public._notify_redemption_pending_admins(uuid)') IS NULL THEN
+    missing := missing || E'\n  - function public._notify_redemption_pending_admins(uuid) is missing';
+  END IF;
+  IF to_regprocedure('public._notify_redemption_fulfilled(uuid,uuid)') IS NULL THEN
+    missing := missing || E'\n  - function public._notify_redemption_fulfilled(uuid,uuid) is missing';
+  END IF;
+  IF to_regprocedure('public._notify_redemption_denied(uuid,uuid)') IS NULL THEN
+    missing := missing || E'\n  - function public._notify_redemption_denied(uuid,uuid) is missing';
+  END IF;
+
+  v_def := pg_get_functiondef('public.redeem_reward(uuid,uuid)'::regprocedure);
+  IF position('_notify_redemption_pending_admins' IN v_def) = 0 THEN
+    missing := missing || E'\n  - redeem_reward does not call _notify_redemption_pending_admins';
+  END IF;
+  IF position('EXCEPTION' IN v_def) = 0 OR position('WHEN OTHERS' IN v_def) = 0 THEN
+    missing := missing || E'\n  - redeem_reward missing best-effort EXCEPTION handler around notify';
+  END IF;
+
+  v_def := pg_get_functiondef('public.fulfill_redemption(uuid,text)'::regprocedure);
+  IF position('_notify_redemption_fulfilled' IN v_def) = 0 THEN
+    missing := missing || E'\n  - fulfill_redemption does not call _notify_redemption_fulfilled';
+  END IF;
+
+  v_def := pg_get_functiondef('public.deny_redemption(uuid,text)'::regprocedure);
+  IF position('_notify_redemption_denied' IN v_def) = 0 THEN
+    missing := missing || E'\n  - deny_redemption does not call _notify_redemption_denied';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger
+    WHERE tgname = 'notification_events_dispatch_on_insert'
+      AND tgrelid = 'public.notification_events'::regclass
+  ) THEN
+    missing := missing || E'\n  - trigger notification_events_dispatch_on_insert missing on notification_events';
+  END IF;
+
+  IF missing <> '' THEN
+    RAISE EXCEPTION E'GATE FAILED — redemption notifications (20260606160000) not correct:%', missing;
+  END IF;
+  RAISE NOTICE 'OK: redemption notification helpers + RPC hooks + dispatch trigger present.';
+END $$;
+
+DO $$
+DECLARE
+  c_user      uuid := '00000000-0000-0000-0000-00000000dd01';
+  c_admin     uuid := '00000000-0000-0000-0000-00000000dd02';
+  c_item      uuid := 'a1000001-0000-4000-8000-000000000001';
+  v_redemption uuid;
+  v_redemption2 uuid;
+  v_count     integer;
+  v_status    text;
+  v_req_new   uuid := '00000000-0000-0000-0000-0000000d0001';
+  v_req_idem  uuid := '00000000-0000-0000-0000-0000000d0002';
+  v_req_ful   uuid := '00000000-0000-0000-0000-0000000d0003';
+  v_req_deny  uuid := '00000000-0000-0000-0000-0000000d0004';
+  v_req_cancel uuid := '00000000-0000-0000-0000-0000000d0005';
+  v_bal_before integer;
+BEGIN
+  INSERT INTO auth.users (id, aud, role, email) VALUES
+    (c_user , 'authenticated', 'authenticated', 'gate-rn-user@example.invalid'),
+    (c_admin, 'authenticated', 'authenticated', 'gate-rn-admin@example.invalid')
+  ON CONFLICT (id) DO NOTHING;
+
+  UPDATE public.app_users SET role = 'admin', full_name = 'Gate Admin'
+  WHERE user_id = c_admin;
+  UPDATE public.app_users SET full_name = 'Gate Redeemer'
+  WHERE user_id = c_user;
+
+  INSERT INTO public.point_transactions (user_id, amount, source, reason, counts_toward_raffle)
+  VALUES (c_user, 500, 'adjustment', 'gate redemption notify seed', true)
+  ON CONFLICT DO NOTHING;
+
+  -- ---- redeem (new pending) -> one admin role notification ----------------
+  PERFORM set_config('request.jwt.claim.sub', c_user::text, true);
+  SELECT public.redeem_reward(c_item, v_req_new) INTO v_redemption;
+
+  SELECT count(*) INTO v_count
+  FROM public.notification_events
+  WHERE entity_type = 'redemption_pending' AND entity_id = v_redemption;
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED — redeem did not create exactly one admin pending notify (got %)', v_count;
+  END IF;
+
+  SELECT count(*) INTO v_count
+  FROM public.notification_events
+  WHERE entity_type = 'redemption_pending' AND entity_id = v_redemption
+    AND target_type = 'role' AND target_ref = 'admin' AND category = 'admin_notice';
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED — admin pending notify wrong target/category (count=%)', v_count;
+  END IF;
+
+  IF position('pending fulfillment' IN (
+    SELECT title FROM public.notification_events
+    WHERE entity_type = 'redemption_pending' AND entity_id = v_redemption LIMIT 1
+  )) = 0 THEN
+    RAISE EXCEPTION 'GATE FAILED — admin pending notify title missing pending fulfillment copy';
+  END IF;
+
+  -- ---- idempotent redeem retry -> no second admin notify ------------------
+  SELECT public.redeem_reward(c_item, v_req_new) INTO v_redemption2;
+  IF v_redemption <> v_redemption2 THEN
+    RAISE EXCEPTION 'GATE FAILED — idempotent redeem returned different ids';
+  END IF;
+  SELECT count(*) INTO v_count
+  FROM public.notification_events
+  WHERE entity_type = 'redemption_pending' AND entity_id = v_redemption;
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED — idempotent redeem produced % admin notifies (expected 1)', v_count;
+  END IF;
+
+  -- ---- fulfill -> one recipient notify ------------------------------------
+  PERFORM set_config('request.jwt.claim.sub', c_user::text, true);
+  SELECT public.redeem_reward(c_item, v_req_ful) INTO v_redemption;
+  PERFORM set_config('request.jwt.claim.sub', c_admin::text, true);
+  PERFORM public.fulfill_redemption(v_redemption, 'gate fulfill notify');
+
+  SELECT count(*) INTO v_count
+  FROM public.notification_events
+  WHERE entity_type = 'redemption_fulfilled' AND entity_id = v_redemption;
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED — fulfill did not create exactly one recipient notify (got %)', v_count;
+  END IF;
+
+  SELECT count(*) INTO v_count
+  FROM public.notification_events
+  WHERE entity_type = 'redemption_fulfilled' AND entity_id = v_redemption
+    AND target_type = 'user' AND target_ref = c_user::text;
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED — fulfill notify not targeted to recipient user';
+  END IF;
+
+  -- ---- deny -> one recipient notify with refund mention -------------------
+  PERFORM set_config('request.jwt.claim.sub', c_user::text, true);
+  SELECT public.redeem_reward(c_item, v_req_deny) INTO v_redemption;
+  PERFORM set_config('request.jwt.claim.sub', c_admin::text, true);
+  PERFORM public.deny_redemption(v_redemption, 'gate deny notify');
+
+  SELECT count(*) INTO v_count
+  FROM public.notification_events
+  WHERE entity_type = 'redemption_denied' AND entity_id = v_redemption;
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED — deny did not create exactly one recipient notify (got %)', v_count;
+  END IF;
+
+  IF position('refunded' IN lower((
+    SELECT body FROM public.notification_events
+    WHERE entity_type = 'redemption_denied' AND entity_id = v_redemption LIMIT 1
+  ))) = 0 THEN
+    RAISE EXCEPTION 'GATE FAILED — deny notify body missing refund mention';
+  END IF;
+
+  -- ---- cancel -> no notification ------------------------------------------
+  PERFORM set_config('request.jwt.claim.sub', c_user::text, true);
+  SELECT public.redeem_reward(c_item, v_req_cancel) INTO v_redemption;
+  v_count := (SELECT count(*) FROM public.notification_events WHERE entity_id = v_redemption);
+  PERFORM public.cancel_redemption(v_redemption);
+  SELECT count(*) INTO v_count
+  FROM public.notification_events
+  WHERE entity_id = v_redemption
+    AND entity_type IN ('redemption_fulfilled', 'redemption_denied');
+  IF v_count <> 0 THEN
+    RAISE EXCEPTION 'GATE FAILED — cancel created fulfill/deny recipient notify (count=%)', v_count;
+  END IF;
+
+  -- ---- notify failure does not roll back fulfill --------------------------
+  PERFORM set_config('request.jwt.claim.sub', c_user::text, true);
+  SELECT public.redeem_reward(c_item, v_req_idem) INTO v_redemption;
+
+  CREATE OR REPLACE FUNCTION public._notify_redemption_fulfilled(p_redemption_id uuid, p_actor uuid)
+  RETURNS uuid
+  LANGUAGE plpgsql
+  SECURITY DEFINER
+  SET search_path = public
+  AS $stub$
+  BEGIN
+    RAISE EXCEPTION 'gate simulated notify failure';
+  END;
+  $stub$;
+
+  PERFORM set_config('request.jwt.claim.sub', c_admin::text, true);
+  v_bal_before := public.get_user_point_balance(c_user);
+  PERFORM public.fulfill_redemption(v_redemption, 'gate notify fail isolation');
+
+  SELECT status::text INTO v_status FROM public.redemptions WHERE id = v_redemption;
+  IF v_status <> 'fulfilled' THEN
+    RAISE EXCEPTION 'GATE FAILED — fulfill rolled back when notify failed (status=%)', v_status;
+  END IF;
+  IF public.get_user_point_balance(c_user) <> v_bal_before THEN
+    RAISE EXCEPTION 'GATE FAILED — fulfill balance changed when notify failed';
+  END IF;
+
+  RAISE NOTICE 'OK: redemption notifications — admin pending/fulfill/deny/cancel/idempotent-redeem/notify-failure-isolation all pass.';
+END $$;
+
 ROLLBACK;

@@ -11,8 +11,9 @@ Read-only employee view at `/my-points` — wallet, raffle standing, earning bre
 | Briefing streak | `useUserMonthlyEntries` (`currentStreak`, `nextMilestone`) | same as entries |
 | Breakdown by source | `usePointsBySource` → `get_user_points_by_source` | `queryKeys.points.bySource(userId)` |
 | Activity feed | `usePointTransactions` (RLS SELECT on own rows) | `queryKeys.points.transactions(userId)` |
+| Pending redemptions | `useUserRedemptions` filtered to `status=pending` | `queryKeys.redemption.userHistory(userId)` |
 
-Redemption history (`useUserRedemptions`) is **not** on My Points v1 — activity feed covers redemption/adjustment ledger rows.
+Redemption **history** with cancel actions remains on the Rewards Store; My Points shows pending requests read-only only.
 
 ## `get_user_points_by_source`
 

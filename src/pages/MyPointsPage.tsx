@@ -11,6 +11,8 @@ import {
   Ticket,
   History,
   PieChart,
+  Gift,
+  Clock,
 } from 'lucide-react';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import { useDashboardCardTheme } from '@/contexts/dashboardCardTheme';
@@ -18,6 +20,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTotalPoints } from '@/hooks/useAnnouncementRewards';
 import { useUserMonthlyEntries, useTotalMonthlyEntries } from '@/hooks/safetyRewards';
 import { usePointsBySource, usePointTransactions } from '@/hooks/points';
+import { useUserRedemptions } from '@/hooks/redemption';
+import { REDEMPTION_STATUS_LABELS } from '@/lib/redemptionCopy';
 import {
   groupPointsByBreakdown,
   sumPointsBySource,
@@ -42,6 +46,12 @@ export default function MyPointsPage() {
   const { data: balance = 0, isLoading: balanceLoading } = useTotalPoints();
   const { data: bySource = [], isLoading: breakdownLoading } = usePointsBySource();
   const { data: transactions = [], isLoading: activityLoading } = usePointTransactions();
+  const { data: redemptions = [], isLoading: redemptionsLoading } = useUserRedemptions();
+
+  const pendingRedemptions = useMemo(
+    () => redemptions.filter((r) => r.status === 'pending'),
+    [redemptions],
+  );
   const { data: entries, isLoading: entriesLoading } = useUserMonthlyEntries(
     user?.id,
     now.year,
@@ -103,6 +113,64 @@ export default function MyPointsPage() {
             </div>
           </div>
         </motion.section>
+
+        {/* Pending redemptions — pairs ledger hold with request status */}
+        {(redemptionsLoading || pendingRedemptions.length > 0) && (
+          <motion.section
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.08 }}
+            aria-labelledby="pending-redemptions-heading"
+            className={cardClass}
+            data-testid="my-points-pending-redemptions"
+          >
+            <div className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Clock className="w-4 h-4 text-amber-400" aria-hidden />
+                <h2 id="pending-redemptions-heading" className="text-sm font-semibold text-white">
+                  Pending redemptions
+                </h2>
+              </div>
+              {redemptionsLoading ? (
+                <div className="space-y-2">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="h-14 bg-white/[0.03] rounded animate-pulse" />
+                  ))}
+                </div>
+              ) : (
+                <ul className="space-y-2" data-testid="my-points-pending-list">
+                  {pendingRedemptions.map((row) => (
+                    <li
+                      key={row.id}
+                      className={`${subtleClass} p-3 flex items-start gap-3`}
+                      data-testid={`pending-redemption-${row.id}`}
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-[#f4c979]/10 flex items-center justify-center shrink-0">
+                        <Gift className="w-4 h-4 text-[#f4c979]" aria-hidden />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-sm font-medium text-white truncate">{row.item_name}</p>
+                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full border text-amber-300 bg-amber-500/10 border-amber-500/25">
+                            {REDEMPTION_STATUS_LABELS[row.status]}
+                          </span>
+                        </div>
+                        <p className="text-xs text-white/40 mt-1 tabular-nums">
+                          {row.point_cost} pts · Requested{' '}
+                          {new Date(row.requested_at).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            timeZone: 'America/Chicago',
+                          })}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </motion.section>
+        )}
 
         {/* 2. Raffle entries + odds */}
         <motion.section

@@ -92,6 +92,28 @@ vi.mock('@/hooks/points', () => ({
   }),
 }));
 
+vi.mock('@/hooks/redemption', () => ({
+  useUserRedemptions: () => ({
+    data: [
+      {
+        id: 'red-pending-1',
+        user_id: USER_ID,
+        item_id: 'item-1',
+        point_cost: 75,
+        status: 'pending',
+        request_id: 'req-1',
+        requested_at: '2026-06-02T12:00:00Z',
+        decided_by: null,
+        decided_at: null,
+        fulfillment_note: null,
+        item_name: 'ATTS Cap',
+        item_image_url: null,
+      },
+    ],
+    isLoading: false,
+  }),
+}));
+
 describe('MyPointsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -151,5 +173,17 @@ describe('MyPointsPage', () => {
       'href',
       '/safety-rewards#ways-to-earn-heading',
     );
+  });
+
+  it('renders pending redemptions when user has a pending request', async () => {
+    renderWithProviders(<MyPointsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('my-points-pending-redemptions')).toBeInTheDocument();
+    });
+
+    expect(screen.getByTestId('pending-redemption-red-pending-1')).toHaveTextContent('ATTS Cap');
+    expect(screen.getByTestId('pending-redemption-red-pending-1')).toHaveTextContent('75 pts');
+    expect(screen.getByTestId('pending-redemption-red-pending-1')).toHaveTextContent('Pending');
   });
 });
