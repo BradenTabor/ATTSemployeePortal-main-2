@@ -1,5 +1,6 @@
+import { Link } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, ChevronRight } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useDashboardCardTheme } from '../../contexts/dashboardCardTheme';
 import {
@@ -94,6 +95,16 @@ export default function WaysToEarn({ className }: WaysToEarnProps) {
             </div>
           );
         })}
+      </div>
+
+      <div className="px-4 sm:px-5 pb-4 sm:pb-5 border-t border-[#f6dcb2]/10">
+        <Link
+          to="/my-points"
+          className="flex items-center justify-between gap-2 py-2 text-xs sm:text-sm text-[#f6dcb2]/70 hover:text-[#f6dcb2] transition-colors"
+        >
+          <span>View your points balance & activity</span>
+          <ChevronRight className="w-4 h-4 shrink-0" aria-hidden />
+        </Link>
       </div>
     </motion.section>
   );

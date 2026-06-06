@@ -307,6 +307,13 @@ export const queryKeys = {
       ['redemption', 'admin-queue', statusFilter ?? 'all'] as const,
   },
 
+  // My Points (employee wallet + activity)
+  points: {
+    all: ['points'] as const,
+    bySource: (userId: string) => ['points', 'by-source', userId] as const,
+    transactions: (userId: string) => ['points', 'transactions', userId] as const,
+  },
+
   // Safety Rewards (monthly raffle)
   safetyRewards: {
     reward: (year: number, month: number) =>

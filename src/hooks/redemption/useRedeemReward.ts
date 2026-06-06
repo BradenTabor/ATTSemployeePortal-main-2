@@ -33,6 +33,8 @@ export function useRedeemReward() {
       if (user?.id) {
         queryClient.invalidateQueries({ queryKey: rewardsQueryKeys.totalPoints(user.id) });
         queryClient.invalidateQueries({ queryKey: queryKeys.redemption.userHistory(user.id) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.points.bySource(user.id) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.points.transactions(user.id) });
       }
       queryClient.invalidateQueries({ queryKey: queryKeys.redemption.catalog });
     },

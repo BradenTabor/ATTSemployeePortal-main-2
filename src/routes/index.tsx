@@ -75,6 +75,7 @@ import {
   SafetyBriefingPage,
   SafetyRewardsPage,
   RewardsStorePage,
+  MyPointsPage,
   AdminSafetyRewardsPage,
   AdminRedemptionFulfillment,
   SafetyBriefingGuard,
@@ -177,6 +178,18 @@ export function AnimatedRoutes() {
                 <PageWrapper>
                   <ProtectedRoute>
                     <RewardsStorePage />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            {/* My Points — employee wallet + activity (read-only) */}
+            <Route
+              path="/my-points"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute>
+                    <MyPointsPage />
                   </ProtectedRoute>
                 </PageWrapper>
               }

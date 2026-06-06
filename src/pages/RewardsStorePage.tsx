@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, CheckCircle2, Trophy } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Trophy, ChevronRight } from 'lucide-react';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import { useDashboardCardTheme } from '@/contexts/dashboardCardTheme';
 import { useTotalPoints } from '@/hooks/useAnnouncementRewards';
@@ -89,6 +89,13 @@ export default function RewardsStorePage() {
     <DashboardLayout title="Rewards Store">
       <div className="space-y-5 pb-8 max-w-2xl mx-auto">
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+          <Link
+            to="/my-points"
+            className="inline-flex items-center gap-1.5 text-xs text-[#f4c979]/70 hover:text-[#f4c979] transition-colors mb-3"
+          >
+            View My Points
+            <ChevronRight className="w-3.5 h-3.5" aria-hidden />
+          </Link>
           <Link
             to="/safety-rewards"
             className="inline-flex items-center gap-1.5 text-xs text-white/50 hover:text-white/80 transition-colors mb-3"

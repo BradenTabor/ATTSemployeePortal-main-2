@@ -66,11 +66,17 @@ describe('redemption mutation invalidations', () => {
       queryKey: queryKeys.redemption.userHistory(USER_ID),
     });
     expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: queryKeys.points.bySource(USER_ID),
+    });
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: queryKeys.points.transactions(USER_ID),
+    });
+    expect(invalidateSpy).toHaveBeenCalledWith({
       queryKey: queryKeys.redemption.catalog,
     });
   });
 
-  it('useCancelRedemption onSuccess invalidates totalPoints and user history', async () => {
+  it('useCancelRedemption onSuccess invalidates totalPoints, user history, and points queries', async () => {
     const { result } = renderHook(() => useCancelRedemption(), {
       wrapper: createWrapper(queryClient),
     });
@@ -86,6 +92,12 @@ describe('redemption mutation invalidations', () => {
     });
     expect(invalidateSpy).toHaveBeenCalledWith({
       queryKey: queryKeys.redemption.userHistory(USER_ID),
+    });
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: queryKeys.points.bySource(USER_ID),
+    });
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: queryKeys.points.transactions(USER_ID),
     });
     expect(invalidateSpy).toHaveBeenCalledWith({
       queryKey: queryKeys.redemption.catalog,

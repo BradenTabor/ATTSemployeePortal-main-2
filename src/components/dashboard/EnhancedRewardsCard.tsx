@@ -1031,6 +1031,21 @@ function EnhancedRewardsCardComponent({
 
         {/* Safety Rewards link */}
         <Link
+          to="/my-points"
+          className={`
+            mt-2.5 sm:mt-3 flex items-center justify-between gap-2
+            px-2.5 py-2 sm:px-3 sm:py-2.5 rounded-lg
+            ${currentLevel.bgColor} border ${currentLevel.borderColor}
+            backdrop-blur-sm text-white/90 hover:text-white
+            transition-all duration-200 hover:border-opacity-50
+          `}
+        >
+          <span className="text-[11px] sm:text-xs font-medium">
+            My Points
+          </span>
+          <ChevronRight className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${currentLevel.color}`} />
+        </Link>
+        <Link
           to="/safety-rewards"
           className={`
             mt-2.5 sm:mt-3 flex items-center justify-between gap-2

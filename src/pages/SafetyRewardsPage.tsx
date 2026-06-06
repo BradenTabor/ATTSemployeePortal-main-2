@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Trophy, Flame, PartyPopper, Users, Gift, ChevronRight, ShoppingBag } from 'lucide-react';
+import { Trophy, Flame, PartyPopper, Users, Gift, ChevronRight, ShoppingBag, Wallet } from 'lucide-react';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { useAuth } from '../contexts/AuthContext';
 import { isFieldRole } from '../config/safetyBriefing';
@@ -88,12 +88,28 @@ function SafetyRewardsPage() {
           </p>
         </motion.div>
 
-        {/* Rewards Store link */}
+        {/* My Points + Rewards Store links */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
+          className="space-y-3"
         >
+          <Link
+            to="/my-points"
+            className={`${cardClass} flex items-center justify-between gap-3 p-4 hover:border-emerald-500/30 transition-colors`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center">
+                <Wallet className="w-5 h-5 text-emerald-400" aria-hidden />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">My Points</p>
+                <p className="text-xs text-white/50">Wallet, breakdown, and activity</p>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-emerald-400/60" aria-hidden />
+          </Link>
           <Link
             to="/rewards-store"
             className={`${cardClass} flex items-center justify-between gap-3 p-4 hover:border-[#f4c979]/30 transition-colors`}
