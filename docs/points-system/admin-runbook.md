@@ -143,7 +143,7 @@ Prize images use the shared **`safety-rewards`** storage bucket (same as catalog
 | Category | apparel, gear, gift_card, other |
 | Sort order | Lower numbers appear first |
 | Active | Inactive items hidden from `/rewards-store` |
-| Image | Optional; uploaded to `safety-rewards` bucket under `catalog/` |
+| Image | Optional; uploaded to `safety-rewards` bucket under `catalog/`. Use **transparent or dark backgrounds** — white/light product photos break the dark store surface and look patchy next to other items. |
 
 **Deactivate vs delete**
 

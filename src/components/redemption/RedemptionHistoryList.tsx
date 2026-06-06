@@ -1,6 +1,7 @@
 import { memo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Gift, XCircle } from 'lucide-react';
+import { glass } from '@/lib/glass';
 import type { RedemptionWithItem } from '@/types/redemption';
 import {
   REDEMPTION_STATUS_LABELS,
@@ -42,13 +43,17 @@ export const RedemptionHistoryList = memo(function RedemptionHistoryList({
 
   if (redemptions.length === 0) {
     return (
-      <div className="rounded-xl border border-white/10 bg-white/[0.03] p-8 text-center">
-        <Clock className="w-10 h-10 text-white/20 mx-auto mb-3" aria-hidden />
-        <p className="text-white/60 text-sm">No redemption requests yet.</p>
-        <p className="text-white/40 text-xs mt-1">Your requests and their status will appear here.</p>
+      <div className={`${glass.subtle} p-8 text-center`}>
+        <Clock className="w-10 h-10 text-white/30 mx-auto mb-3" aria-hidden />
+        <p className="text-white/70 text-sm font-medium">No redemption requests yet.</p>
+        <p className="text-white/50 text-xs mt-1 leading-relaxed">
+          Your requests and their status will appear here.
+        </p>
       </div>
     );
   }
+
+  const rowEnter = { duration: 0.2 };
 
   return (
     <>
@@ -58,12 +63,12 @@ export const RedemptionHistoryList = memo(function RedemptionHistoryList({
             key={row.id}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.03 }}
-            className="rounded-xl border border-white/10 bg-white/[0.03] p-4"
+            transition={{ ...rowEnter, delay: Math.min(index * 0.03, 0.15) }}
+            className={`${glass.card} rounded-xl p-4`}
             data-testid={`redemption-row-${row.id}`}
           >
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#f4c979]/10 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-[#f4c979]/15 border border-[#f4c979]/20 flex items-center justify-center flex-shrink-0">
                 <Gift className="w-5 h-5 text-[#f4c979]" aria-hidden />
               </div>
               <div className="flex-1 min-w-0">
@@ -76,10 +81,10 @@ export const RedemptionHistoryList = memo(function RedemptionHistoryList({
                     {REDEMPTION_STATUS_LABELS[row.status]}
                   </span>
                 </div>
-                <p className="text-xs text-white/50 mt-1" data-testid={`redemption-meaning-${row.id}`}>
+                <p className="text-xs text-white/60 mt-1 leading-relaxed" data-testid={`redemption-meaning-${row.id}`}>
                   {REDEMPTION_STATUS_MEANINGS[row.status]}
                 </p>
-                <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-white/40">
+                <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-white/50">
                   <span>{row.point_cost} pts</span>
                   <span>Requested {formatDate(row.requested_at)}</span>
                   {row.decided_at && (
@@ -92,7 +97,7 @@ export const RedemptionHistoryList = memo(function RedemptionHistoryList({
                   type="button"
                   onClick={() => setCancelTarget(row)}
                   disabled={cancelLoading}
-                  className="flex-shrink-0 px-2.5 py-1.5 text-xs font-medium text-red-300 border border-red-500/25 rounded-lg hover:bg-red-500/10 transition-colors disabled:opacity-50"
+                  className="flex-shrink-0 px-2.5 py-1.5 text-xs font-medium text-red-300 border border-red-500/25 rounded-lg hover:bg-red-500/10 transition-colors duration-200 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
                   data-testid={`cancel-redemption-${row.id}`}
                 >
                   <XCircle className="w-3.5 h-3.5 inline mr-1" aria-hidden />
@@ -105,9 +110,9 @@ export const RedemptionHistoryList = memo(function RedemptionHistoryList({
       </ul>
 
       {cancelError && (
-        <p className="mt-3 text-sm text-red-300" role="alert">
-          {cancelError}
-        </p>
+        <div className="mt-3 rounded-xl border border-red-500/25 bg-red-950/40 p-3" role="alert">
+          <p className="text-sm text-red-200">{cancelError}</p>
+        </div>
       )}
 
       <RedemptionConfirmDialog

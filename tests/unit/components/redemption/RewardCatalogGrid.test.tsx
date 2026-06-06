@@ -44,4 +44,28 @@ describe('RewardCatalogGrid', () => {
 
     expect(screen.getByRole('button', { name: /out of stock/i })).toBeDisabled();
   });
+
+  it('uses identical card styling regardless of affordability (affordance is on the CTA only)', () => {
+    const affordable: RewardCatalogItem = {
+      ...baseItem,
+      id: 'a1000001-0000-4000-8000-000000000002',
+      name: 'Cheap Item',
+      point_cost: 50,
+    };
+    const expensive: RewardCatalogItem = {
+      ...baseItem,
+      id: 'a1000001-0000-4000-8000-000000000003',
+      name: 'Pricey Item',
+      point_cost: 500,
+    };
+    const { container } = renderWithProviders(
+      <RewardCatalogGrid items={[affordable, expensive]} balance={100} onRedeem={vi.fn()} />,
+    );
+
+    const articles = container.querySelectorAll('article');
+    expect(articles).toHaveLength(2);
+    expect(articles[0]?.className).toBe(articles[1]?.className);
+    expect(screen.getByRole('button', { name: /^redeem$/i })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: /400 more points needed/i })).toBeDisabled();
+  });
 });
