@@ -23,6 +23,7 @@ export const AdminUsersHub = lazy(() => import("@/pages/admin/AdminUsersHub"));
 export const AdminJSA = lazy(() => import("@/pages/admin/AdminJSA"));
 export const AdminJobProgress = lazy(() => import("@/pages/admin/AdminJobProgress"));
 export const AdminRewards = lazy(() => import("@/pages/admin/AdminRewards"));
+export const ManualAwardsHub = lazy(() => import("@/pages/admin/ManualAwardsHub"));
 export const AdminPartsFixesOverview = lazy(() => import("@/pages/admin/AdminPartsFixesOverview"));
 export const AdminTelemetry = lazy(() => import("@/pages/admin/AdminTelemetry"));
 export const AdminOperationsHub = lazy(() => import("@/pages/admin/AdminOperationsHub"));

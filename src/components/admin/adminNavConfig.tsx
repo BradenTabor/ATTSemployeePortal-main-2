@@ -189,6 +189,14 @@ export const ADMIN_CORE_NAV_CARDS: AdminNavCardConfig[] = [
     variant: "gold",
     iconAsImage: true,
   },
+  {
+    title: "Manual Point Awards",
+    description: "Grant awarders, audit manual awards, and review caps.",
+    icon: <img loading="lazy" src="/assets/safety-rewards.webp" alt="" className="w-full h-full object-contain" />,
+    to: "/admin/manual-awards",
+    variant: "gold",
+    iconAsImage: true,
+  },
 ];
 
 /** Role dashboard links so admin can navigate the entire app from Admin. */

@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Star, Calendar, Trophy, Clock, FileText } from 'lucide-react';
+import { X, Star, Calendar, Trophy, Clock, FileText, Gift } from 'lucide-react';
 import type { GroupedUserReward, UserClaimDetail } from '../../hooks/queries/useAdminRewards';
 import { useModalOverlay } from '../../hooks/useModalOverlay';
 
@@ -9,6 +9,7 @@ interface UserRewardsDetailModalProps {
   user: GroupedUserReward | null;
   isOpen: boolean;
   onClose: () => void;
+  onAwardPoints?: () => void;
 }
 
 // Format date for display
@@ -79,7 +80,7 @@ const ClaimRow = memo(({ claim, index }: { claim: UserClaimDetail; index: number
 
 ClaimRow.displayName = 'ClaimRow';
 
-function UserRewardsDetailModalComponent({ user, isOpen, onClose }: UserRewardsDetailModalProps) {
+function UserRewardsDetailModalComponent({ user, isOpen, onClose, onAwardPoints }: UserRewardsDetailModalProps) {
   const { modalRef, zIndex } = useModalOverlay({ isOpen, onClose, zIndex: 100 });
 
   if (!isOpen || !user) return null;
@@ -180,7 +181,20 @@ function UserRewardsDetailModalComponent({ user, isOpen, onClose }: UserRewardsD
             </div>
 
             {/* Footer */}
-            <div className="relative flex-shrink-0 p-4 pt-3 border-t border-[#f6dcb2]/10">
+            <div className="relative flex-shrink-0 p-4 pt-3 border-t border-[#f6dcb2]/10 space-y-3">
+              {onAwardPoints && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onAwardPoints();
+                  }}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#f4c979]/15 border border-[#f4c979]/35 text-sm font-semibold text-[#fef3d1] hover:bg-[#f4c979]/25 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400"
+                >
+                  <Gift className="w-4 h-4" aria-hidden />
+                  Award Points
+                </button>
+              )}
               <div className="flex items-center justify-between text-xs text-[#c7b696]">
                 <span>
                   First claim: {user.first_claim_at ? formatDate(user.first_claim_at) : '—'}

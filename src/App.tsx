@@ -12,6 +12,7 @@ import { createIDBPersister, shouldDehydrateQuery, PERSISTER_MAX_AGE_MS } from "
 import { OfflineQueueProvider } from "./contexts/OfflineQueueContext";
 import { RewardCelebrationProvider } from "./contexts/RewardCelebrationContext";
 import { RewardPointsCelebration } from "./components/rewards/RewardPointsCelebration";
+import { ManualAwardsGlobalEntry } from "./components/manual-awards/ManualAwardsShell";
 import { OfflineSyncIndicator } from "./components/OfflineSyncIndicator";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { AnimatedRoutes } from "@/routes";
@@ -67,6 +68,7 @@ export default function App() {
               </Suspense>
             </Router>
             <RewardPointsCelebration />
+            <ManualAwardsGlobalEntry />
           </RewardCelebrationProvider>
         </OfflineQueueProvider>
         {/* Corner toasts for non-form notifications */}

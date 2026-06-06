@@ -1,4 +1,5 @@
 import { useState, useMemo, memo, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Trophy,
@@ -10,6 +11,7 @@ import {
   TrendingUp,
   Gift,
   ChevronRight,
+  ScrollText,
 } from "lucide-react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useAuth } from "../../contexts/AuthContext";
@@ -22,6 +24,8 @@ import {
   type GroupedUserReward,
 } from "../../hooks/queries/useAdminRewards";
 import { UserRewardsDetailModal } from "../../components/admin/UserRewardsDetailModal";
+import { AwardPointsModal } from "../../components/admin/manual-awards/AwardPointsModal";
+import { useManualAwardsModal } from "../../hooks/useManualAwardsModal";
 
 // User card component - shows consolidated user info
 interface UserRewardCardProps {
@@ -167,6 +171,13 @@ const StatCard = ({ icon, label, value, subtext }: StatCardProps) => (
 
 function AdminRewards() {
   const { role: currentUserRole } = useAuth();
+  const {
+    canAward,
+    isOpen: awardModalOpen,
+    initialRecipient,
+    openAwardModal,
+    closeAwardModal,
+  } = useManualAwardsModal();
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
 
@@ -221,6 +232,18 @@ function AdminRewards() {
     // Delay clearing selectedUser to allow exit animation
     setTimeout(() => setSelectedUser(null), 200);
   }, []);
+
+  const handleAwardFromUser = useCallback(
+    (user: GroupedUserReward) => {
+      openAwardModal({
+        user_id: user.user_id,
+        full_name: user.full_name,
+        email: user.email ?? '',
+        role: '',
+      });
+    },
+    [openAwardModal]
+  );
 
   if (currentUserRole !== "admin") {
     return (
@@ -346,6 +369,25 @@ function AdminRewards() {
                     >
                       Track reward claims from Safety AI announcements
                     </motion.p>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {canAward && (
+                        <button
+                          type="button"
+                          onClick={() => openAwardModal()}
+                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#f4c979]/20 border border-[#f4c979]/40 text-xs font-semibold text-[#fef3d1] hover:bg-[#f4c979]/30 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400"
+                        >
+                          <Gift className="w-3.5 h-3.5" aria-hidden />
+                          Award Points
+                        </button>
+                      )}
+                      <Link
+                        to="/admin/manual-awards"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/15 text-xs font-semibold text-[#c7b696] hover:text-[#fef3d1] hover:border-[#f4c979]/30 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400"
+                      >
+                        <ScrollText className="w-3.5 h-3.5" aria-hidden />
+                        Grants &amp; Audit
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -527,6 +569,16 @@ function AdminRewards() {
         user={selectedUser}
         isOpen={isModalOpen}
         onClose={closeModal}
+        onAwardPoints={
+          canAward && selectedUser
+            ? () => handleAwardFromUser(selectedUser)
+            : undefined
+        }
+      />
+      <AwardPointsModal
+        isOpen={awardModalOpen}
+        onClose={closeAwardModal}
+        initialRecipient={initialRecipient}
       />
     </DashboardLayout>
   );

@@ -36,6 +36,7 @@ import {
   AdminJSA,
   AdminJobProgress,
   AdminRewards,
+  ManualAwardsHub,
   AdminPartsFixesOverview,
   AdminTelemetry,
   AdminOperationsHub,
@@ -766,6 +767,17 @@ export function AnimatedRoutes() {
                 <PageWrapper>
                   <ProtectedRoute requiredRole="admin">
                     <AdminRewards />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            <Route
+              path="/admin/manual-awards"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute requiredRole="admin">
+                    <ManualAwardsHub />
                   </ProtectedRoute>
                 </PageWrapper>
               }

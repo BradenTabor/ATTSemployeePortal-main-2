@@ -272,6 +272,17 @@ export const queryKeys = {
     detail: (key: string) => ['app-settings', key] as const,
   },
 
+  // Manual point awards (award_points RPC + admin grant management)
+  manualAwards: {
+    all: ['manual-awards'] as const,
+    canAward: (userId: string) => ['manual-awards', 'can-award', userId] as const,
+    ownGrant: (userId: string) => ['manual-awards', 'own-grant', userId] as const,
+    budgetHint: (userId: string) => ['manual-awards', 'budget-hint', userId] as const,
+    grants: () => ['manual-awards', 'grants'] as const,
+    auditLog: (filters?: Record<string, unknown>) =>
+      ['manual-awards', 'audit-log', filters] as const,
+  },
+
   // Team Contacts (employee directory)
   teamContacts: {
     all: ['team-contacts'] as const,
