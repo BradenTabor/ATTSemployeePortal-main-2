@@ -66,3 +66,8 @@ tests/e2e-report/data/
 
 # Export baseline data from local testing
 tests/PERFORMANCE_BASELINES.local.md
+
+# Local validation gate — prod-derived artifacts only (contain hardcoded JWTs in DDL)
+supabase/.localgate/prod_schema.sql
+supabase/.localgate/prod_roles.sql
+supabase/.localgate/prod_applied_versions.txt
