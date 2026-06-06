@@ -7,7 +7,53 @@ Effort: file count. Status: PENDING | COMPLETE | NEEDS-REVIEW | DISMISSED.
 > **Source of truth for counts:** `npm run fd:audit` (scripts/fd-audit.mjs). The auditor
 > excludes design-system-sanctioned patterns (modal `bg-black/* backdrop-blur-sm`,
 > skeleton `animate-pulse`, the `glass.ts`/`animations.ts` source files) that a raw
-> `rg` over-counts. Counts below are auditor counts, refreshed 2026-06-05.
+> `rg` over-counts. Counts below are auditor counts, refreshed 2026-06-06.
+
+## Triage snapshot (2026-06-06)
+
+**Auditor on `main` today:** surface 362/99 · gradientSurface 149/61 · focusRing 280/78 · hoverScale 77/33 · hardZ 84/66 · layoutRhythm 26/17 · longMotion 420/136 · **TOTAL 1398**.
+
+Most rows FD-001–FD-421 were imported as COMPLETE via `ff2755c` (backlog + tooling from stash) but the **code for that pass is not on `main`** — it lives in `stash@{0}` (`frontend-design-wip`). Treat those rows as **STALE** until the stash merges or work is re-applied. Exceptions verified on `main` are listed below.
+
+### Verified COMPLETE on main (post-import)
+
+| ID | Sev | Summary | Commit / evidence | Status |
+|----|-----|---------|-------------------|--------|
+| FD-423 | MED | Rewards Store page-bundle (redemption `glass.*`, `Z.modal`, WalletHero parity) | `e4202cf`, `ad60af9` | COMPLETE |
+| FD-424 | MED | My Points page-bundle (section hierarchy, branded empty/loading, 0 fd violations) | `63b34ab`, `ad60af9` | COMPLETE |
+| FD-425 | MED | Shared `WalletHero` + restore `glass.cardGold`/`glass.subtleGold` | `ad60af9` | COMPLETE |
+| FD-426 | MED | Duplicate H1 fix — `DashboardLayout.pageHeading` + sr-only H1 default | `0dc91bc` | COMPLETE |
+| FD-427 | MED | fd-* audit tooling version-controlled on main (`fd:audit`, `fd:page`, codemods) | `ff2755c` | COMPLETE |
+
+### OPEN (real next work on main)
+
+| ID | Sev | Summary | Current status |
+|----|-----|---------|----------------|
+| FD-500 | HIGH | focusRing repo-wide re-drain (280 hits/78 files) — FD-130 STALE on main | Unstarted; run `npm run fd:audit -- --fix --category focusRing` |
+| FD-501 | MED | longMotion top files: TextEffect, AdminJSA, AdminRewards, MechanicEquipmentLogs (10 hits each) | Unstarted; session 20 "Next" still valid |
+| FD-502 | MED | surface top file: IncidentLoggingModal (27 hits) | Unstarted; FD-110 STALE on main |
+| FD-503 | MED | gradientSurface top file: ForemanDailyReports (10 hits) | Unstarted; FD-320 STALE on main |
+| FD-504 | MED | FD-422 WhatsNewOnboarding glass/`Z.modal`/200ms pass — marked COMPLETE in notes but **not on main** | Open; code in stash only |
+| FD-505 | LOW | Merge or selectively apply `stash@{0}` (`frontend-design-wip`) to reconcile FD-001–421 STALE rows | Blocked on stash review |
+
+### STALE (documented COMPLETE, not on main)
+
+- **FD-001–FD-421** (except FD-423/424 above): backlog imported `ff2755c`; implementation in `stash@{0}` only. NotFound still bare (FD-001), AdminUsers still freestyle gold (FD-303/317), focusRing/surface/hardZ "drained to 0" claims do not match main.
+- **Duplicate IDs in table below** (FD-413×2, FD-324×2, FD-325×2): historical collision; ignore lower duplicate rows.
+- **Session 22 loop note** ("fd scripts absent"): **resolved** by `ff2755c`.
+- **Session 23 loop notes 1–2** (cardGold absent, Rewards hex wallet): **resolved** by `ad60af9`.
+
+### Points-system future work (not in this backlog)
+
+Cross-checked `docs/points-system/architecture.md` §Future work — **none of these are tracked in `docs/cursor-agents/backlog.md` or here:**
+
+1. Manual awards `counts_toward_raffle` not entering briefing-based drawing pool (ledger consolidation deferred)
+2. Crew streak wave 2 (product decisions + ADR first)
+3. Consolidate earning config (`app_settings.reward_points_config` → `point_rules`, raffle path unification)
+
+These belong in a **points/product backlog**, not the frontend-design queue.
+
+---
 
 | ID | Sev | Summary | Target(s) | Effort | Status |
 |----|-----|---------|-----------|--------|--------|
@@ -106,6 +152,9 @@ Effort: file count. Status: PENDING | COMPLETE | NEEDS-REVIEW | DISMISSED.
 | FD-422 | HIGH | WhatsNewOnboarding refresh: WHATS_NEW_FEATURES v1.1.0 slides (offline forms, rewards, certs, tree felling); glass.* surfaces, Z.modal, 200ms UI motion, focus-visible rings | WhatsNewOnboarding.tsx, appVersion.ts | 2 | COMPLETE |
 | FD-423 | MED | Rewards Store page bundle: layout hierarchy, wallet hero parity with My Points, glass.* surfaces on catalog/history/modals, Z.toast/Z.modal stacks, styled loading/empty/error states | RewardsStorePage.tsx, src/components/redemption/* (5 files) | 6 | COMPLETE |
 | FD-424 | MED | My Points page pass: section hierarchy (wallet/holds, monthly grid, ledger group, hub links), tokenized wallet gradient (amber/stone, no hex), branded empty states, glass.subtle skeletons, 200ms motion, focus-visible hub links | src/pages/MyPointsPage.tsx | 1 | COMPLETE |
+| FD-425 | MED | Shared WalletHero + restore glass.cardGold/subtleGold for My Points + Rewards Store wallet parity | src/components/points/WalletHero.tsx, src/lib/glass.ts | 3 | COMPLETE |
+| FD-426 | MED | Duplicate page headings — DashboardLayout.pageHeading opt-in; decorative title + sr-only H1 default | src/layouts/DashboardLayout.tsx + 52 pages | 53 | COMPLETE |
+| FD-427 | MED | Version-control fd-* audit tooling on main (fd-audit, fd-page, codemods, directives) | scripts/fd-*.mjs, scripts/fd-*.ts, directives/ | 11 | COMPLETE |
 
 ## Notes
 
@@ -115,10 +164,10 @@ Effort: file count. Status: PENDING | COMPLETE | NEEDS-REVIEW | DISMISSED.
 - **Before:** `fd:page` bundle 2 violations (MyPointsPage 1× gradientSurface + DashboardLayout 1× hardZ); flat card stack, gray text empty states, `bg-white/[0.03]` pulse skeletons.
 - **After:** MyPointsPage.tsx `fd:audit --file` = **0** violations; bundle residual 1 (DashboardLayout hardZ, out of scope).
 - Verify: typecheck PASS, eslint PASS, build PASS, MyPointsPage unit tests 5/5 PASS.
-- **Loop notes (NOT applied):**
-  1. `glass.cardGold`/`glass.subtleGold` referenced in FD-301 backlog but absent from `src/lib/glass.ts` — wallet hero used Tailwind amber/stone tokens instead; consider restoring gold tokens for employee wallet parity.
-  2. Rewards Store wallet hero still uses arbitrary hex gradient (`from-[#14110d]`) — My Points now tokenized; next paired pass should align both surfaces to the same constant (shared `walletHeroClass` in a future allowed primitive).
-  3. `fd:page` bundle violation count includes layout shell hits (DashboardLayout) — report page-file count separately in agent summaries to avoid false "still failing" reads.
+- **Loop notes — resolved in follow-up commits:**
+  1. ~~`glass.cardGold`/`glass.subtleGold` absent~~ → **FD-425 COMPLETE** (`ad60af9`).
+  2. ~~Rewards Store wallet hex gradient divergent~~ → **FD-425 COMPLETE** (`WalletHero` shared).
+  3. `fd:page` bundle violation count includes layout shell hits (DashboardLayout) — report page-file count separately in agent summaries to avoid false "still failing" reads. *(Still valid process note.)*
 
 ### 2026-06-06 (session 22) — Rewards Store page-bundle design pass
 - **FD-423 COMPLETE** — Scoped visual pass on `/rewards-store` + redemption components (no hook/logic changes).
@@ -130,7 +179,7 @@ Effort: file count. Status: PENDING | COMPLETE | NEEDS-REVIEW | DISMISSED.
 - **Before:** Flat `bg-white/[0.03]` panels, stacked nav links, minimal balance card, raw error text, hardcoded `z-[9998/9999]`, muddy catalog image gradients.
 - **After:** Consistent ATTS solid-surface system, gold wallet identity matching My Points, grouped navigation, accessible focus rings, tokenized z-index, polished empty/loading/error states.
 - Verify: typecheck PASS, eslint PASS, redemption unit tests 7/7 PASS.
-- **Loop note (NOT applied):** `scripts/fd-page.mjs` / `npm run fd:audit` referenced in directive are absent from this workspace — page-bundle audits had to be manual. Replenish tooling or document fallback `rg` patterns for agents without the scripts.
+- **Loop note — resolved:** ~~`scripts/fd-page.mjs` / `npm run fd:audit` absent~~ → **FD-427 COMPLETE** (`ff2755c`).
 
 ### 2026-06-06 (session 21) — What's New onboarding content + design pass
 - **FD-422 COMPLETE** — Carousel content updated for v1.1.0 (offline safety forms, safety rewards,
