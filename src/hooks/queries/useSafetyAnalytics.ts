@@ -176,6 +176,7 @@ export function useSafetyAnalytics(period: Period = 'month', leaderboardLimit: n
         announcementData,
         usersData,
         trendData,
+        ledgerByUser,
       ] = await Promise.all([
         fetchComplianceLeaderboardRPC(start, end, leaderboardLimit)
           .catch((error) => { logger.warn('[useSafetyAnalytics] Compliance leaderboard fetch failed, continuing with empty data', error); return [] as ComplianceLeaderboardEntry[]; }),
@@ -187,6 +188,8 @@ export function useSafetyAnalytics(period: Period = 'month', leaderboardLimit: n
           .catch((error) => { logger.warn('[useSafetyAnalytics] Users data fetch failed, continuing with empty data', error); return [] as UserRecord[]; }),
         fetchTrendData(period)
           .catch((error) => { logger.warn('[useSafetyAnalytics] Trend data fetch failed, continuing with empty data', error); return [] as SafetyTrendData[]; }),
+        fetchLedgerByUser(start, end)
+          .catch((error) => { logger.warn('[useSafetyAnalytics] Ledger fetch failed, continuing with empty data', error); return new Map<string, number>(); }),
       ]);
       
       // Build unified leaderboard combining RPC data with announcement data
@@ -195,7 +198,8 @@ export function useSafetyAnalytics(period: Period = 'month', leaderboardLimit: n
         leaderboard = await buildUnifiedLeaderboardFromRPC(
           complianceLeaderboard,
           announcementData,
-          leaderboardLimit
+          leaderboardLimit,
+          ledgerByUser
         );
       } catch (error) {
         logger.warn('[useSafetyAnalytics] Leaderboard build failed, continuing with empty data', error);
@@ -205,7 +209,8 @@ export function useSafetyAnalytics(period: Period = 'month', leaderboardLimit: n
       const stats = calculateStats(
         complianceData,
         announcementData,
-        usersData
+        usersData,
+        ledgerByUser
       );
       
       // Calculate form breakdown
@@ -330,6 +335,41 @@ async function fetchAnnouncementData(start: string | null, end: string | null): 
   }
 }
 
+/**
+ * Aggregate the points ledger (point_transactions) by user within [start, end].
+ * This is the single source of truth for a user's total points — it includes
+ * compliance points, announcement claims, and any future earning sources.
+ * Admin RLS on point_transactions allows reading all rows here.
+ * created_at is bounded by the selected period; for 'all' (null start/end)
+ * the full ledger balance is returned, matching get_user_point_balance.
+ */
+async function fetchLedgerByUser(start: string | null, end: string | null): Promise<Map<string, number>> {
+  try {
+    let query = supabase
+      .from('point_transactions')
+      .select('user_id, amount, created_at');
+
+    if (start) query = query.gte('created_at', `${start}T00:00:00`);
+    if (end) query = query.lte('created_at', `${end}T23:59:59`);
+
+    const { data, error } = await query;
+
+    if (error) {
+      logger.warn('[useSafetyAnalytics] point_transactions query failed', error);
+      return new Map();
+    }
+
+    const map = new Map<string, number>();
+    (data || []).forEach((r: { user_id: string; amount: number }) => {
+      map.set(r.user_id, (map.get(r.user_id) ?? 0) + r.amount);
+    });
+    return map;
+  } catch (error) {
+    logger.warn('[useSafetyAnalytics] point_transactions exception', error);
+    return new Map();
+  }
+}
+
 interface UserRecord {
   user_id: string;
   full_name: string | null;
@@ -427,7 +467,8 @@ async function fetchTrendData(period: Period): Promise<SafetyTrendData[]> {
 async function buildUnifiedLeaderboardFromRPC(
   complianceLeaderboard: ComplianceLeaderboardEntry[],
   announcementData: AnnouncementRecord[],
-  limit: number
+  limit: number,
+  ledgerByUser: Map<string, number>
 ): Promise<UnifiedLeaderboardEntry[]> {
   // Aggregate announcement data by user
   const announcementByUser = new Map<string, {
@@ -533,7 +574,11 @@ async function buildUnifiedLeaderboardFromRPC(
       compliance_rate: Math.round(complianceRate),
       announcement_points: announcementPoints,
       announcements_claimed: announcementsClaimed,
-      total_points: compliancePoints + announcementPoints,
+      // Single source of truth: the ledger balance for the period. The
+      // compliance/announcement figures above remain as informational
+      // breakdowns. Falls back to the breakdown sum only if the ledger
+      // read returned nothing for this user.
+      total_points: ledgerByUser.get(userId) ?? (compliancePoints + announcementPoints),
       safety_score: safetyScore,
       current_streak: currentStreak,
       longest_streak: longestStreak,
@@ -557,16 +602,24 @@ async function buildUnifiedLeaderboardFromRPC(
 function calculateStats(
   complianceData: ComplianceRecord[],
   announcementData: AnnouncementRecord[],
-  usersData: UserRecord[]
+  usersData: UserRecord[],
+  ledgerByUser: Map<string, number>
 ): SafetyAnalyticsStats {
   // Get unique user IDs with any activity
   const activeUserIds = new Set<string>();
   complianceData.forEach(r => activeUserIds.add(r.user_id));
   announcementData.forEach(r => activeUserIds.add(r.user_id));
   
-  // Calculate totals
+  // Calculate totals. Compliance/announcement remain informational breakdowns;
+  // the combined total is taken from the ledger (single source of truth).
   const totalCompliancePoints = complianceData.reduce((sum, r) => sum + r.points_awarded, 0);
   const totalAnnouncementPoints = announcementData.reduce((sum, r) => sum + r.points_awarded, 0);
+  let ledgerTotal = 0;
+  ledgerByUser.forEach((amount) => { ledgerTotal += amount; });
+  // Fall back to the breakdown sum only if the ledger read returned nothing.
+  const totalCombinedPoints = ledgerByUser.size > 0
+    ? ledgerTotal
+    : totalCompliancePoints + totalAnnouncementPoints;
   
   // Calculate compliance metrics from full compliance data (not capped leaderboard)
   const uniqueComplianceDays = new Set(complianceData.map(r => `${r.user_id}-${r.date_for}`));
@@ -607,7 +660,7 @@ function calculateStats(
     active_users: activeUserIds.size,
     total_compliance_points: totalCompliancePoints,
     total_announcement_points: totalAnnouncementPoints,
-    total_combined_points: totalCompliancePoints + totalAnnouncementPoints,
+    total_combined_points: totalCombinedPoints,
     avg_compliance_rate: Math.round(avgComplianceRate),
     full_compliance_users: fullComplianceUsers,
     total_compliance_days: uniqueComplianceDays.size,
@@ -720,6 +773,12 @@ export function useUserSafetyDetail(userId: string, period: Period = 'month') {
       if (start) announcementQuery = announcementQuery.gte('claimed_at', `${start}T00:00:00`);
       if (end) announcementQuery = announcementQuery.lte('claimed_at', `${end}T23:59:59`);
 
+      // Ledger balance for this user/period (single source of truth for total_points).
+      const ledgerByUser = await fetchLedgerByUser(start, end).catch((error) => {
+        logger.warn('[useUserSafetyDetail] Ledger fetch failed, continuing with breakdown sum', error);
+        return new Map<string, number>();
+      });
+
       const [{ data: complianceData }, { data: announcementData }] = await Promise.all([
         complianceQuery,
         announcementQuery,
@@ -728,6 +787,8 @@ export function useUserSafetyDetail(userId: string, period: Period = 'month') {
       // Calculate metrics
       const compliancePoints = (complianceData || []).reduce((sum, r) => sum + (r.points_awarded || 0), 0);
       const announcementPoints = (announcementData || []).reduce((sum, r) => sum + (r.points_awarded || 0), 0);
+      // total_points comes from the ledger; compliance/announcement stay as breakdowns.
+      const ledgerTotalPoints = ledgerByUser.get(userId) ?? (compliancePoints + announcementPoints);
       const complianceDays = complianceData?.length || 0;
       const fullComplianceDays = (complianceData || []).filter((r) => asFormArray(r.forms_completed).length === 3).length;
       const complianceRate = complianceDays > 0 ? Math.round((fullComplianceDays / complianceDays) * 100) : 0;
@@ -779,7 +840,7 @@ export function useUserSafetyDetail(userId: string, period: Period = 'month') {
         role: userData.role,
         compliance_points: compliancePoints,
         announcement_points: announcementPoints,
-        total_points: compliancePoints + announcementPoints,
+        total_points: ledgerTotalPoints,
         safety_score: safetyScore,
         compliance_days: complianceDays,
         full_compliance_days: fullComplianceDays,

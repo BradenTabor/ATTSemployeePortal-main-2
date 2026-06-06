@@ -213,9 +213,10 @@ export function useTotalPoints() {
     queryFn: async () => {
       if (!user?.id) return 0;
       
-      // Use the database function for accurate count
+      // Single source of truth: the points ledger (announcement claims + compliance
+      // forms + any future sources). Replaces the announcement-only get_user_total_points.
       const { data, error } = await supabase
-        .rpc('get_user_total_points', { target_user_id: user.id });
+        .rpc('get_user_point_balance', { target_user_id: user.id });
       
       if (error) {
         logger.error('Failed to fetch total points:', error);

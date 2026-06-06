@@ -210,8 +210,28 @@ export function useAdminRewards(params: AdminRewardsQueryParams) {
         email: userMap.get(record.user_id)?.email ?? null,
       }));
 
-      // Calculate total points from this result set
-      const pagePoints = rewards.reduce((sum, r) => sum + r.points_awarded, 0);
+      // total_points reflects the ledger balances (single source of truth) of the
+      // distinct users present in this page, rather than a sum of announcement
+      // claim amounts. Keeps this in agreement with get_user_point_balance.
+      let pagePoints = rewards.reduce((sum, r) => sum + r.points_awarded, 0);
+      const { data: ledgerRows, error: ledgerError } = await supabase
+        .from('point_transactions')
+        .select('user_id, amount')
+        .in('user_id', userIds);
+      if (ledgerError) {
+        // Loud on purpose: totalPoints falls back to the announcement-only sum,
+        // which understates totals (ignores compliance points) — the exact
+        // regression the ledger cutover exists to prevent. Never degrade silently.
+        logger.error(
+          '[useAdminRewards] Ledger read failed — totalPoints will fall back to announcement-only (understated) numbers:',
+          ledgerError
+        );
+      } else {
+        pagePoints = (ledgerRows || []).reduce(
+          (sum: number, r: { amount: number }) => sum + r.amount,
+          0
+        );
+      }
 
       return {
         rewards,
@@ -241,10 +261,13 @@ export function useAdminRewardsStats() {
         throw new Error('Failed to load rewards statistics');
       }
 
-      // Get total points using RPC function if available, or sum manually
+      // Total points = the ledger (point_transactions), the single source of truth.
+      // This now includes compliance points, not just announcement claims, so this
+      // figure agrees with each user's get_user_point_balance. Admin RLS on
+      // point_transactions allows reading all rows here.
       const { data: pointsData, error: pointsError } = await supabase
-        .from('announcement_rewards')
-        .select('points_awarded');
+        .from('point_transactions')
+        .select('amount');
 
       if (pointsError) {
         logger.error('Failed to fetch total points:', pointsError);
@@ -252,7 +275,7 @@ export function useAdminRewardsStats() {
       }
 
       const totalPoints = (pointsData || []).reduce(
-        (sum: number, r: { points_awarded: number }) => sum + r.points_awarded,
+        (sum: number, r: { amount: number }) => sum + r.amount,
         0
       );
 
@@ -334,6 +357,32 @@ export function useAdminRewardsGrouped(params: GroupedRewardsQueryParams) {
       const userIds = [...new Set(rewardsData.map(r => r.user_id))];
       const announcementIds = [...new Set(rewardsData.map(r => r.announcement_id))];
 
+      // Step 3b: Fetch each user's ledger balance (single source of truth).
+      // Per-user total_points is derived from point_transactions so it equals
+      // get_user_point_balance — including compliance points, not announcement
+      // claims alone. Admin RLS allows reading all ledger rows here.
+      const ledgerByUser = new Map<string, number>();
+      {
+        const { data: ledgerRows, error: ledgerError } = await supabase
+          .from('point_transactions')
+          .select('user_id, amount')
+          .in('user_id', userIds);
+        if (ledgerError) {
+          // Loud on purpose: the per-user total_points below will fall back to the
+          // announcement-only sum, which UNDERSTATES totals (ignores compliance
+          // points). That is exactly the regression the ledger cutover prevents,
+          // so a silent degrade is unacceptable — surface it.
+          logger.error(
+            '[useAdminRewardsGrouped] Ledger read failed — total_points will fall back to announcement-only (understated) numbers:',
+            ledgerError
+          );
+        } else {
+          (ledgerRows || []).forEach((row: { user_id: string; amount: number }) => {
+            ledgerByUser.set(row.user_id, (ledgerByUser.get(row.user_id) ?? 0) + row.amount);
+          });
+        }
+      }
+
       // Step 4: Fetch user details
       const { data: usersData, error: usersError } = await supabase
         .from('user_profiles')
@@ -407,7 +456,9 @@ export function useAdminRewardsGrouped(params: GroupedRewardsQueryParams) {
             user_id: userId,
             full_name: userInfo?.full_name ?? null,
             email: userInfo?.email ?? null,
-            total_points: data.total_points,
+            // Ledger balance (single source of truth); falls back to the
+            // announcement-claim sum only if the ledger read failed.
+            total_points: ledgerByUser.get(userId) ?? data.total_points,
             claim_count: sortedClaims.length,
             first_claim_at: sortedClaims[sortedClaims.length - 1]?.claimed_at ?? '',
             last_claim_at: sortedClaims[0]?.claimed_at ?? '',

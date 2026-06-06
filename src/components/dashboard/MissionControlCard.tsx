@@ -750,15 +750,21 @@ function MissionControlCardComponent({ onComplianceChange }: MissionControlCardP
     if (!user?.id) return;
     
     try {
-      const { data, error } = await supabase
-        .from('announcement_rewards')
-        .select('points_awarded')
-        .eq('user_id', user.id);
+      // Displayed total = ledger balance (single source of truth). Claim count
+      // stays sourced from announcement_rewards (it counts announcement claims).
+      const [balanceResult, claimsResult] = await Promise.all([
+        supabase.rpc('get_user_point_balance', { target_user_id: user.id }),
+        supabase
+          .from('announcement_rewards')
+          .select('points_awarded')
+          .eq('user_id', user.id),
+      ]);
 
-      if (error) throw error;
+      if (balanceResult.error) throw balanceResult.error;
+      if (claimsResult.error) throw claimsResult.error;
 
-      const totalPoints = data?.reduce((sum, r) => sum + (r.points_awarded || 1), 0) ?? 0;
-      const claimsCount = data?.length ?? 0;
+      const totalPoints = (balanceResult.data as number) ?? 0;
+      const claimsCount = claimsResult.data?.length ?? 0;
 
       setRewards({
         totalPoints,
