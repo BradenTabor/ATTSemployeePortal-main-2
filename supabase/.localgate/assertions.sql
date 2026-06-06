@@ -1047,6 +1047,34 @@ BEGIN
     RAISE EXCEPTION 'GATE FAILED — second deny changed balance';
   END IF;
 
+  -- ---- deny AGAIN: stock must not increment twice (restore gated on refund INSERT) ----
+  SELECT stock_qty INTO v_count FROM public.reward_catalog WHERE id = c_item_hood;
+  IF v_count <> v_stock + 1 THEN
+    RAISE EXCEPTION 'GATE FAILED — second deny changed stock to % (expected % unchanged)', v_count, v_stock + 1;
+  END IF;
+
+  -- ---- unlimited (NULL stock): deny and cancel are no-ops on stock_qty ----
+  PERFORM set_config('request.jwt.claim.sub', c_user::text, true);
+  SELECT stock_qty INTO v_stock FROM public.reward_catalog WHERE id = c_item_cap;
+  IF v_stock IS NOT NULL THEN
+    RAISE EXCEPTION 'GATE FAILED — cap fixture should have NULL stock_qty for unlimited test';
+  END IF;
+  SELECT public.redeem_reward(c_item_cap, '00000000-0000-0000-0000-0000000c0008') INTO v_redemption;
+  PERFORM set_config('request.jwt.claim.sub', c_admin::text, true);
+  PERFORM public.deny_redemption(v_redemption, 'gate unlimited deny');
+  SELECT stock_qty INTO v_count FROM public.reward_catalog WHERE id = c_item_cap;
+  IF v_count IS NOT NULL THEN
+    RAISE EXCEPTION 'GATE FAILED — deny on unlimited item set stock_qty to % (expected NULL)', v_count;
+  END IF;
+
+  PERFORM set_config('request.jwt.claim.sub', c_user::text, true);
+  SELECT public.redeem_reward(c_item_cap, '00000000-0000-0000-0000-0000000c0009') INTO v_redemption;
+  PERFORM public.cancel_redemption(v_redemption);
+  SELECT stock_qty INTO v_count FROM public.reward_catalog WHERE id = c_item_cap;
+  IF v_count IS NOT NULL THEN
+    RAISE EXCEPTION 'GATE FAILED — cancel on unlimited item set stock_qty to % (expected NULL)', v_count;
+  END IF;
+
   -- ---- cancel own pending (cap redemption) -> refund + stock N/A (unlimited) ----
   PERFORM set_config('request.jwt.claim.sub', c_user::text, true);
   v_bal_before := public.get_user_point_balance(c_user);
@@ -1147,7 +1175,7 @@ BEGIN
     RAISE EXCEPTION 'GATE FAILED — raffle entries changed % -> % (redemption/refund must not count)', v_raf_before, v_raf_after;
   END IF;
 
-  RAISE NOTICE 'OK: redemption store matrix — redeem/hold/stock/idempotency/deny/cancel/fulfill/permissions/raffle all pass.';
+  RAISE NOTICE 'OK: redemption store matrix — redeem/hold/stock/idempotency/deny/cancel/fulfill/permissions/raffle/stock-restore-idempotency/null-stock all pass.';
 END $$;
 
 ROLLBACK;

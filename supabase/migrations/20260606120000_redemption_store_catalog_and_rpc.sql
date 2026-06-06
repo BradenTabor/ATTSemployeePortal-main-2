@@ -243,6 +243,8 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
+DECLARE
+  v_refund_id uuid;
 BEGIN
   INSERT INTO public.point_transactions
     (user_id, amount, source, reference_id, reference_table, counts_toward_raffle, reason)
@@ -251,13 +253,18 @@ BEGIN
      p_redemption.id, 'redemptions', false, p_reason)
   ON CONFLICT (reference_id)
     WHERE source = 'adjustment' AND reference_table = 'redemptions'
-  DO NOTHING;
+  DO NOTHING
+  RETURNING id INTO v_refund_id;
 
-  UPDATE public.reward_catalog rc
-  SET stock_qty = rc.stock_qty + 1,
-      updated_at = now()
-  WHERE rc.id = p_redemption.item_id
-    AND rc.stock_qty IS NOT NULL;
+  -- Restore stock only when a new refund row was written (same gate as ledger idempotency).
+  -- Unlimited items (stock_qty IS NULL) are skipped — no NULL arithmetic.
+  IF v_refund_id IS NOT NULL THEN
+    UPDATE public.reward_catalog rc
+    SET stock_qty = rc.stock_qty + 1,
+        updated_at = now()
+    WHERE rc.id = p_redemption.item_id
+      AND rc.stock_qty IS NOT NULL;
+  END IF;
 END;
 $$;
 
