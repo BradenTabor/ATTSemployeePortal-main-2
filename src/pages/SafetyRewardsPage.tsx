@@ -11,6 +11,7 @@ import {
   useTotalMonthlyEntries,
 } from '../hooks/safetyRewards';
 import MonthlyCalendarGrid from '../components/safety-rewards/MonthlyCalendarGrid';
+import WaysToEarn from '../components/safety-rewards/WaysToEarn';
 import { useDashboardCardTheme } from '../contexts/dashboardCardTheme';
 
 const MONTHS = [
@@ -243,6 +244,9 @@ function SafetyRewardsPage() {
             )}
           </motion.div>
         )}
+
+        {/* Ways to Earn — static reference (no live point_rules fetch) */}
+        <WaysToEarn />
 
         {/* Calendar Grid */}
         {isField && (
