@@ -105,8 +105,20 @@ Effort: file count. Status: PENDING | COMPLETE | NEEDS-REVIEW | DISMISSED.
 | FD-421 | MED | longMotion batch start: auditor allows `repeat: Infinity` ambient loops + precomputed particle durations; UI transitions capped 0.2s on AdminPartsFixesOverview (24→0) + WhatsNewOnboarding (11→0) | (2 files) + fd-audit.mjs | 3 | COMPLETE |
 | FD-422 | HIGH | WhatsNewOnboarding refresh: WHATS_NEW_FEATURES v1.1.0 slides (offline forms, rewards, certs, tree felling); glass.* surfaces, Z.modal, 200ms UI motion, focus-visible rings | WhatsNewOnboarding.tsx, appVersion.ts | 2 | COMPLETE |
 | FD-423 | MED | Rewards Store page bundle: layout hierarchy, wallet hero parity with My Points, glass.* surfaces on catalog/history/modals, Z.toast/Z.modal stacks, styled loading/empty/error states | RewardsStorePage.tsx, src/components/redemption/* (5 files) | 6 | COMPLETE |
+| FD-424 | MED | My Points page pass: section hierarchy (wallet/holds, monthly grid, ledger group, hub links), tokenized wallet gradient (amber/stone, no hex), branded empty states, glass.subtle skeletons, 200ms motion, focus-visible hub links | src/pages/MyPointsPage.tsx | 1 | COMPLETE |
 
 ## Notes
+
+### 2026-06-06 (session 23) — My Points page-bundle design pass
+- **FD-424 COMPLETE** — Single-file visual pass on `/my-points` (no hooks/logic; breakdown reconcile preserved).
+  - **Iter 1:** Wallet hero hex gradient → `border-amber-400/20 bg-gradient-to-br from-amber-950/80 via-stone-950 to-stone-950`; `#f4c979` accents → `amber-300/400`; `space-y-6` rhythm; grouped sections ("This month" 2-col raffle+streak, "Your ledger" breakdown+activity, "Go further" hub links); branded empty states (PieChart/History icons in `glass.subtle` panels); loading skeletons → `glass.subtle`; motion `pageEnter` 200ms; hub links `focus-visible:outline-emerald-400`.
+- **Before:** `fd:page` bundle 2 violations (MyPointsPage 1× gradientSurface + DashboardLayout 1× hardZ); flat card stack, gray text empty states, `bg-white/[0.03]` pulse skeletons.
+- **After:** MyPointsPage.tsx `fd:audit --file` = **0** violations; bundle residual 1 (DashboardLayout hardZ, out of scope).
+- Verify: typecheck PASS, eslint PASS, build PASS, MyPointsPage unit tests 5/5 PASS.
+- **Loop notes (NOT applied):**
+  1. `glass.cardGold`/`glass.subtleGold` referenced in FD-301 backlog but absent from `src/lib/glass.ts` — wallet hero used Tailwind amber/stone tokens instead; consider restoring gold tokens for employee wallet parity.
+  2. Rewards Store wallet hero still uses arbitrary hex gradient (`from-[#14110d]`) — My Points now tokenized; next paired pass should align both surfaces to the same constant (shared `walletHeroClass` in a future allowed primitive).
+  3. `fd:page` bundle violation count includes layout shell hits (DashboardLayout) — report page-file count separately in agent summaries to avoid false "still failing" reads.
 
 ### 2026-06-06 (session 22) — Rewards Store page-bundle design pass
 - **FD-423 COMPLETE** — Scoped visual pass on `/rewards-store` + redemption components (no hook/logic changes).
