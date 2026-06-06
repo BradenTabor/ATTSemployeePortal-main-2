@@ -139,8 +139,6 @@ export interface AwardPointsInput {
   category: ManualAwardCategory;
   reason: string;
   requestId: string;
-  recipientName?: string | null;
-  awarderName?: string | null;
 }
 
 export function useAwardPoints() {
@@ -165,13 +163,7 @@ export function useAwardPoints() {
       return data as string;
     },
     onSuccess: async (_txId, input) => {
-      await sendManualAwardNotification({
-        recipientId: input.recipientId,
-        amount: input.amount,
-        category: input.category,
-        reason: input.reason,
-        awarderName: input.awarderName,
-      });
+      await sendManualAwardNotification(input.requestId);
 
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.manualAwards.all }),

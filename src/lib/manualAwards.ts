@@ -1,10 +1,5 @@
 import { supabase } from './supabaseClient';
 import { logger } from './logger';
-import {
-  MANUAL_AWARD_CATEGORY_LABELS,
-  type ManualAwardCategory,
-} from '../types/manualAwards';
-import type { CreateNotificationRequest } from '../types/notifications';
 
 /** Map Postgres award_points exceptions to user-facing copy (DB remains authoritative). */
 export function mapAwardPointsError(raw: string): string {
@@ -58,47 +53,16 @@ export function getChicagoMonthStartIso(): string {
 
 /**
  * Notify recipient after a successful award. Failure is logged only — award is not rolled back.
- * Note: admin-create-notification requires admin role; granted non-admins will get 403 (expected).
+ * Content is server-built from the ledger row via notify_manual_award_recipient(request_id).
  */
-export async function sendManualAwardNotification(params: {
-  recipientId: string;
-  amount: number;
-  category: ManualAwardCategory;
-  reason: string;
-  awarderName?: string | null;
-}): Promise<void> {
-  const { recipientId, amount, category, reason, awarderName } = params;
-  const categoryLabel = MANUAL_AWARD_CATEGORY_LABELS[category];
-
-  const payload: CreateNotificationRequest = {
-    category: 'admin_notice',
-    severity: 'medium',
-    target_type: 'user',
-    target_ref: recipientId,
-    title: `You received ${amount} safety reward point${amount === 1 ? '' : 's'}!`,
-    body: [
-      awarderName ? `${awarderName} awarded you ${amount} points.` : `You were awarded ${amount} points.`,
-      `Category: ${categoryLabel}.`,
-      reason ? `Reason: ${reason}` : undefined,
-    ]
-      .filter(Boolean)
-      .join(' '),
-    url: '/safety-rewards',
-    entity_type: 'manual_award',
-  };
-
+export async function sendManualAwardNotification(requestId: string): Promise<void> {
   try {
-    const { data, error } = await supabase.functions.invoke('admin-create-notification', {
-      body: payload,
+    const { error } = await supabase.rpc('notify_manual_award_recipient', {
+      p_request_id: requestId,
     });
 
     if (error) {
-      logger.error('[manualAwards] Notification invoke failed after successful award:', error);
-      return;
-    }
-
-    if (data && typeof data === 'object' && 'success' in data && data.success === false) {
-      logger.error('[manualAwards] Notification rejected after successful award:', data);
+      logger.error('[manualAwards] Notification RPC failed after successful award:', error);
     }
   } catch (err) {
     logger.error('[manualAwards] Notification exception after successful award:', err);

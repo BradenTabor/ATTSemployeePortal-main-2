@@ -33,7 +33,7 @@ export function AwardPointsModal({
   onClose,
   initialRecipient = null,
 }: AwardPointsModalProps) {
-  const { user, role, fullName } = useAuth();
+  const { user, role } = useAuth();
   const isAdmin = role === 'admin';
   const requestIdRef = useRef<string | null>(null);
   const { modalRef } = useModalOverlay({ isOpen, onClose, zIndex: Z.modal });
@@ -110,8 +110,6 @@ export function AwardPointsModal({
         category,
         reason: reason.trim(),
         requestId: requestIdRef.current,
-        recipientName: recipient.full_name,
-        awarderName: fullName,
       });
       setAwardedAmount(parsedAmount);
       setPhase('success');
