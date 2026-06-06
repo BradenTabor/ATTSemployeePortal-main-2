@@ -2,18 +2,17 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  Trophy,
   Flame,
   ChevronRight,
   ShoppingBag,
   Sparkles,
-  Wallet,
   Ticket,
   History,
   PieChart,
   Gift,
   Clock,
 } from 'lucide-react';
+import { WalletHero } from '@/components/points/WalletHero';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import { useDashboardCardTheme } from '@/contexts/dashboardCardTheme';
 import { glass } from '@/lib/glass';
@@ -36,10 +35,6 @@ const MONTHS = [
 ];
 
 const pageEnter = { duration: 0.2 };
-
-/** Wallet hero shell — tokenized gold gradient (parity with Rewards Store identity, no arbitrary hex). */
-const walletHeroClass =
-  'p-5 border-amber-400/20 bg-gradient-to-br from-amber-950/80 via-stone-950 to-stone-950';
 
 export default function MyPointsPage() {
   const { user } = useAuth();
@@ -96,35 +91,13 @@ export default function MyPointsPage() {
 
         {/* Wallet + holds */}
         <div className="space-y-4">
-          <motion.section
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ ...pageEnter, delay: 0.05 }}
-            aria-labelledby="wallet-heading"
-            className={`${cardClass} ${walletHeroClass}`}
-            data-testid="my-points-balance"
-          >
-            <div className="flex items-start gap-3">
-              <div className="w-11 h-11 rounded-xl bg-amber-400/15 flex items-center justify-center shrink-0">
-                <Wallet className="w-5 h-5 text-amber-300" aria-hidden />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h2 id="wallet-heading" className="text-xs text-white/50 uppercase tracking-wider">
-                  Your balance
-                </h2>
-                {balanceLoading ? (
-                  <div className={`h-10 w-28 rounded-lg animate-pulse mt-1 ${glass.subtle}`} />
-                ) : (
-                  <p className="text-4xl font-bold text-amber-300 flex items-center gap-2 mt-0.5 tabular-nums">
-                    <Trophy className="w-8 h-8 text-amber-400" aria-hidden />
-                    {balance}
-                    <span className="text-lg font-semibold text-amber-400/70">pts</span>
-                  </p>
-                )}
-                <p className="text-xs text-white/50 mt-1">Spendable points from your safety ledger.</p>
-              </div>
-            </div>
-          </motion.section>
+          <WalletHero
+            balance={balance}
+            isLoading={balanceLoading}
+            headingId="wallet-heading"
+            testId="my-points-balance"
+            subtitle="Spendable points from your safety ledger."
+          />
 
           {(redemptionsLoading || pendingRedemptions.length > 0) && (
             <motion.section

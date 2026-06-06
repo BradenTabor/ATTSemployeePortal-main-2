@@ -95,4 +95,16 @@ export const glass = {
     "rounded-xl border border-purple-500/20 " +
     "bg-gradient-to-br from-purple-950/35 to-[#0d0a17] " +
     "shadow-[0_1px_2px_rgba(0,0,0,0.3)]",
+
+  /** Admin / rewards — gold-tinted card with warm accent border */
+  cardGold:
+    "rounded-2xl border border-[#f6dcb2]/20 " +
+    "bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] " +
+    "shadow-[0_1px_3px_rgba(0,0,0,0.5),0_4px_16px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(246,220,178,0.06)]",
+
+  /** Admin — inner panels, stat blocks, table sections (lighter warm gold base) */
+  subtleGold:
+    "rounded-xl border border-[#f6dcb2]/15 " +
+    "bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] " +
+    "shadow-[0_1px_2px_rgba(0,0,0,0.3)]",
 } as const;

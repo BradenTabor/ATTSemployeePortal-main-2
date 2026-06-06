@@ -1,9 +1,9 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, CheckCircle2, Trophy, ChevronRight, Wallet } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ChevronRight } from 'lucide-react';
+import { WalletHero } from '@/components/points/WalletHero';
 import DashboardLayout from '@/layouts/DashboardLayout';
-import { useDashboardCardTheme } from '@/contexts/dashboardCardTheme';
 import { glass } from '@/lib/glass';
 import { Z } from '@/lib/zIndex';
 import { useTotalPoints } from '@/hooks/useAnnouncementRewards';
@@ -22,7 +22,6 @@ import {
 import type { RewardCatalogItem } from '@/types/redemption';
 
 export default function RewardsStorePage() {
-  const { cardClass } = useDashboardCardTheme();
   const { data: balance = 0, isLoading: balanceLoading } = useTotalPoints();
   const { data: catalog = [], isLoading: catalogLoading, error: catalogError } = useRewardCatalog();
   const { data: redemptions = [], isLoading: historyLoading } = useUserRedemptions();
@@ -122,36 +121,14 @@ export default function RewardsStorePage() {
           </p>
         </motion.header>
 
-        {/* Balance banner — aligned with My Points wallet hero */}
-        <motion.section
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ ...pageEnter, delay: 0.05 }}
-          aria-labelledby="store-balance-heading"
-          className={`${cardClass} p-5 border-[#f4c979]/20 bg-gradient-to-br from-[#14110d]/80 via-[#0b0906] to-[#050403]`}
-          data-testid="rewards-store-balance"
-        >
-          <div className="flex items-start gap-3">
-            <div className="w-11 h-11 rounded-xl bg-[#f4c979]/15 flex items-center justify-center shrink-0">
-              <Wallet className="w-5 h-5 text-[#f4c979]" aria-hidden />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h2 id="store-balance-heading" className="text-xs text-white/50 uppercase tracking-wider">
-                Your balance
-              </h2>
-              {balanceLoading ? (
-                <div className="h-10 w-28 bg-gray-800 rounded-lg animate-pulse mt-1" />
-              ) : (
-                <p className="text-3xl font-bold text-[#f4c979] flex items-center gap-2 mt-0.5 tabular-nums">
-                  <Trophy className="w-7 h-7 text-amber-400" aria-hidden />
-                  {balance}
-                  <span className="text-base font-semibold text-amber-400/70">pts</span>
-                </p>
-              )}
-              <p className="text-xs text-white/40 mt-1">Available to redeem in the catalog below.</p>
-            </div>
-          </div>
-        </motion.section>
+        <WalletHero
+          balance={balance}
+          isLoading={balanceLoading}
+          headingId="store-balance-heading"
+          testId="rewards-store-balance"
+          subtitle="Available to redeem in the catalog below."
+          size="md"
+        />
 
         <RedemptionHowItWorks />
 
