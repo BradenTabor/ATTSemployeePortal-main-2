@@ -305,7 +305,7 @@ export default function RequestTimeOff() {
                 value={formData.fullName}
                 onChange={handleChange}
                 required
-                className="w-full rounded-xl sm:rounded-2xl px-3 py-2.5 text-base sm:text-sm bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-green-600 transition-all"
+                className="w-full rounded-xl sm:rounded-2xl px-3 py-2.5 text-base sm:text-sm bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600 transition-all"
                 placeholder="Your full name"
               />
             </div>
@@ -321,7 +321,7 @@ export default function RequestTimeOff() {
                 onChange={handleChange}
                 required
                 readOnly
-                className="w-full rounded-xl sm:rounded-2xl px-3 py-2.5 text-base sm:text-sm bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-green-600 transition-all"
+                className="w-full rounded-xl sm:rounded-2xl px-3 py-2.5 text-base sm:text-sm bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600 transition-all"
                 placeholder="you@atts.com"
               />
             </div>
@@ -336,7 +336,7 @@ export default function RequestTimeOff() {
                 value={formData.phoneNumber}
                 onChange={handleChange}
                 required
-                className="w-full rounded-xl sm:rounded-2xl px-3 py-2.5 text-base sm:text-sm bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-green-600 transition-all"
+                className="w-full rounded-xl sm:rounded-2xl px-3 py-2.5 text-base sm:text-sm bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600 transition-all"
                 placeholder="(555) 123-4567"
               />
             </div>
@@ -452,7 +452,7 @@ export default function RequestTimeOff() {
                 onChange={handleChange}
                 rows={2}
                 required
-                className="w-full rounded-xl sm:rounded-2xl px-3 py-2.5 text-base bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-green-600 resize-none transition-all"
+                className="w-full rounded-xl sm:rounded-2xl px-3 py-2.5 text-base bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600 resize-none transition-all"
                 placeholder="Why you need time off"
               />
             </div>
@@ -465,7 +465,7 @@ export default function RequestTimeOff() {
                 value={formData.notes}
                 onChange={handleChange}
                 rows={2}
-                className="w-full rounded-xl sm:rounded-2xl px-3 py-2.5 text-base bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-green-600 resize-none transition-all"
+                className="w-full rounded-xl sm:rounded-2xl px-3 py-2.5 text-base bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600 resize-none transition-all"
                 placeholder="Extra details"
               />
             </div>

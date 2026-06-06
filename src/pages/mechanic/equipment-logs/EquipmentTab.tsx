@@ -296,7 +296,7 @@ export function EquipmentTab({
                 <select 
                   value={equipmentStatus} 
                   onChange={(e) => { setEquipmentStatus(e.target.value as typeof equipmentStatus); setEquipmentPage(1); }} 
-                  className="w-full sm:w-auto bg-gray-950 border-2 border-gray-700 rounded-xl px-4 py-3 pr-12 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 appearance-none cursor-pointer transition-all hover:border-amber-500/50"
+                  className="w-full sm:w-auto bg-gray-950 border-2 border-gray-700 rounded-xl px-4 py-3 pr-12 text-sm font-semibold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 appearance-none cursor-pointer transition-all hover:border-amber-500/50"
                 >
                   <option value="attention">🔴 Needs Attention</option>
                   <option value="all">📋 All Inspections</option>
@@ -310,7 +310,7 @@ export function EquipmentTab({
                 <select 
                   value={equipmentType} 
                   onChange={(e) => { setEquipmentType(e.target.value); setEquipmentPage(1); }} 
-                  className="w-full sm:w-auto bg-gray-950 border-2 border-gray-700 rounded-xl px-4 py-3 pr-12 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 appearance-none cursor-pointer transition-all hover:border-amber-500/50"
+                  className="w-full sm:w-auto bg-gray-950 border-2 border-gray-700 rounded-xl px-4 py-3 pr-12 text-sm font-semibold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 appearance-none cursor-pointer transition-all hover:border-amber-500/50"
                 >
                   <option value="">All Equipment Types</option>
                   {EQUIPMENT_TYPE_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
@@ -325,7 +325,7 @@ export function EquipmentTab({
                   value={equipmentSearch} 
                   onChange={(e) => { setEquipmentSearch(e.target.value); setEquipmentPage(1); }} 
                   placeholder="Search equipment # or operator..." 
-                  className="w-full bg-gray-950 border-2 border-gray-700 rounded-xl pl-11 pr-11 py-3 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all" 
+                  className="w-full bg-gray-950 border-2 border-gray-700 rounded-xl pl-11 pr-11 py-3 text-sm text-white placeholder:text-gray-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:border-amber-500/50 transition-all" 
                 />
                 {equipmentSearch && (
                   <motion.button 
@@ -733,7 +733,7 @@ export function EquipmentTab({
                         {/* Fix Description */}
                         <div>
                           <label className="block text-[10px] uppercase tracking-wider text-orange-300/50 mb-1.5 font-medium">Fix Applied *</label>
-                          <textarea value={equipmentMechanicNotes} onChange={(e) => setEquipmentMechanicNotes(e.target.value)} rows={2} placeholder="What was done? E.g., Replaced fuel filter..." className="w-full bg-black/40 border border-orange-500/20 text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/40 focus:border-orange-500/40 transition-all resize-none placeholder:text-white/25" />
+                          <textarea value={equipmentMechanicNotes} onChange={(e) => setEquipmentMechanicNotes(e.target.value)} rows={2} placeholder="What was done? E.g., Replaced fuel filter..." className="w-full bg-black/40 border border-orange-500/20 text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 focus-visible:border-orange-500/40 transition-all resize-none placeholder:text-white/25" />
                         </div>
                         
                         {/* Cost */}
@@ -741,7 +741,7 @@ export function EquipmentTab({
                           <label className="block text-[10px] uppercase tracking-wider text-orange-300/50 mb-1.5 font-medium">Cost (Optional)</label>
                           <div className="relative">
                             <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-400/50" />
-                            <input type="number" step="0.01" min="0" value={equipmentUpdateCost} onChange={(e) => setEquipmentUpdateCost(e.target.value)} placeholder="0.00" className="w-full bg-black/40 border border-orange-500/20 text-white text-sm rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500/40 focus:border-orange-500/40 transition-all placeholder:text-white/25" />
+                            <input type="number" step="0.01" min="0" value={equipmentUpdateCost} onChange={(e) => setEquipmentUpdateCost(e.target.value)} placeholder="0.00" className="w-full bg-black/40 border border-orange-500/20 text-white text-sm rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 focus-visible:border-orange-500/40 transition-all placeholder:text-white/25" />
                           </div>
                         </div>
                         
@@ -771,9 +771,9 @@ export function EquipmentTab({
                                     className="flex gap-2 items-start"
                                   >
                                     <div className="flex-1 grid grid-cols-3 gap-2">
-                                      <input type="text" placeholder="Part name" value={part.part_name} onChange={(e) => handleEquipmentPartChange(index, { ...part, part_name: e.target.value })} className="col-span-2 sm:col-span-1 bg-black/40 border border-orange-500/20 text-white text-xs rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500/40 transition-all placeholder:text-white/25" />
-                                      <input type="number" placeholder="Qty" min={1} value={part.quantity || ""} onChange={(e) => handleEquipmentPartChange(index, { ...part, quantity: parseInt(e.target.value) || 1 })} className="bg-black/40 border border-orange-500/20 text-white text-xs rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500/40 transition-all placeholder:text-white/25" />
-                                      <input type="text" placeholder="Part #" value={part.part_number || ""} onChange={(e) => handleEquipmentPartChange(index, { ...part, part_number: e.target.value })} className="bg-black/40 border border-orange-500/20 text-white text-xs rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500/40 transition-all placeholder:text-white/25" />
+                                      <input type="text" placeholder="Part name" value={part.part_name} onChange={(e) => handleEquipmentPartChange(index, { ...part, part_name: e.target.value })} className="col-span-2 sm:col-span-1 bg-black/40 border border-orange-500/20 text-white text-xs rounded-lg px-3 py-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 transition-all placeholder:text-white/25" />
+                                      <input type="number" placeholder="Qty" min={1} value={part.quantity || ""} onChange={(e) => handleEquipmentPartChange(index, { ...part, quantity: parseInt(e.target.value) || 1 })} className="bg-black/40 border border-orange-500/20 text-white text-xs rounded-lg px-3 py-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 transition-all placeholder:text-white/25" />
+                                      <input type="text" placeholder="Part #" value={part.part_number || ""} onChange={(e) => handleEquipmentPartChange(index, { ...part, part_number: e.target.value })} className="bg-black/40 border border-orange-500/20 text-white text-xs rounded-lg px-3 py-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 transition-all placeholder:text-white/25" />
                                     </div>
                                     <motion.button 
                                       whileHover={{ scale: 1.1 }}

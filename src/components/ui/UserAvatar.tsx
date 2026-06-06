@@ -120,7 +120,7 @@ const InitialsAvatar = memo(function InitialsAvatar({
       className={`
         relative ${config.container} rounded-full flex items-center justify-center
         border-2 border-emerald-400/40 overflow-hidden
-        ${onClick ? 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-400/50 focus:ring-offset-2 focus:ring-offset-transparent' : ''}
+        ${onClick ? 'cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent' : ''}
       `}
       style={{
         background: 'linear-gradient(145deg, rgba(4, 40, 28, 0.95) 0%, rgba(2, 25, 18, 0.98) 100%)',
@@ -186,7 +186,7 @@ const ImageAvatar = memo(function ImageAvatar({
       className={`
         relative ${config.container} rounded-full overflow-hidden
         border-2 border-emerald-400/40
-        ${onClick ? 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-400/50 focus:ring-offset-2 focus:ring-offset-transparent' : ''}
+        ${onClick ? 'cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent' : ''}
       `}
       style={{
         boxShadow: '0 0 20px rgba(16, 185, 129, 0.2)',

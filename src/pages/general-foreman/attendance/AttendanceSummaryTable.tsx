@@ -129,7 +129,7 @@ export default function AttendanceSummaryTable({ rows, isLoading }: AttendanceSu
             placeholder="Search by name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-8 py-2 text-sm bg-white/[0.03] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:outline-none focus:border-[#c084fc]/40"
+            className="w-full pl-9 pr-8 py-2 text-sm bg-white/[0.03] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:outline-none focus-visible:border-[#c084fc]/40"
           />
           {searchQuery && (
             <button
@@ -145,7 +145,7 @@ export default function AttendanceSummaryTable({ rows, isLoading }: AttendanceSu
         <select
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value)}
-          className="px-3 py-2 text-sm bg-white/[0.03] border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#c084fc]/40"
+          className="px-3 py-2 text-sm bg-white/[0.03] border border-white/10 rounded-xl text-white focus:outline-none focus-visible:border-[#c084fc]/40"
         >
           <option value="all">All Roles</option>
           {roleOptions.filter((r) => r !== 'all').map((r) => (

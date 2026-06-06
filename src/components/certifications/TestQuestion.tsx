@@ -38,7 +38,7 @@ export function TestQuestion({
           onChange={(e) => onChange(e.target.value)}
           placeholder="Type your answer here..."
           rows={4}
-          className="w-full rounded-lg border border-white/10 bg-gray-800 px-3 py-2.5 text-sm text-white placeholder-white/40 transition-all duration-150 focus:border-emerald-500/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-950"
+          className="w-full rounded-lg border border-white/10 bg-gray-800 px-3 py-2.5 text-sm text-white placeholder-white/40 transition-all duration-150 focus-visible:border-emerald-500/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-950"
         />
       ) : (
         <div className="space-y-2">
@@ -57,7 +57,7 @@ export function TestQuestion({
                 value={k}
                 checked={value === k}
                 onChange={() => onChange(k)}
-                className="h-4 w-4 border-white/20 text-emerald-500 focus:ring-emerald-500/50"
+                className="h-4 w-4 border-white/20 text-emerald-500 focus-visible:ring-emerald-500/50"
               />
               <span className="font-medium">{options[k]}</span>
             </label>

@@ -296,7 +296,7 @@ export function PendingReviewCard({ review, onBeforeSubmit, onSubmitError, bulkS
               onChange={() => bulkSelect.onToggle()}
               aria-label="Select for bulk pass"
               data-testid="pending-review-bulk-select"
-              className="h-4 w-4 rounded border-white/30 bg-white/5 text-emerald-500 focus:ring-2 focus:ring-emerald-400/50"
+              className="h-4 w-4 rounded border-white/30 bg-white/5 text-emerald-500 focus-visible:ring-2 focus-visible:ring-emerald-400/50"
             />
           </label>
         )}
@@ -419,7 +419,7 @@ export function PendingReviewCard({ review, onBeforeSubmit, onSubmitError, bulkS
                       placeholder="Optional notes..."
                       value={grades[answer.question_id]?.admin_notes ?? ""}
                       onChange={(e) => handleNotes(answer.question_id, e.target.value)}
-                      className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500/50 focus:outline-none"
+                      className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-white placeholder-gray-500 focus-visible:border-emerald-500/50 focus:outline-none"
                       aria-label="Admin notes for this response"
                     />
                   </>

@@ -264,7 +264,7 @@ function JsaPhotoSection({ paths }: { paths: string[] }) {
             ref={lightboxCloseRef}
             type="button"
             onClick={closeLightbox}
-            className="absolute top-4 right-4 p-2 rounded-full bg-black/60 text-white/80 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/60"
+            className="absolute top-4 right-4 p-2 rounded-full bg-black/60 text-white/80 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
             aria-label="Close photo"
           >
             <X className="w-5 h-5" />
@@ -273,7 +273,7 @@ function JsaPhotoSection({ paths }: { paths: string[] }) {
             src={expandedUrl}
             alt="Paper JSA page (full size)"
             tabIndex={0}
-            className="max-w-full max-h-full object-contain rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
+            className="max-w-full max-h-full object-contain rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60"
             onClick={(e) => e.stopPropagation()}
           />
         </div>

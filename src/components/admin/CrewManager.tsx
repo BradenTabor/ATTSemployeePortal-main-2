@@ -147,7 +147,7 @@ function CrewFormModal({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g., Crew A, North Team"
-                  className="w-full px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-base sm:text-sm placeholder:text-white/30 focus:outline-none focus:border-[#f4c979]/40"
+                  className="w-full px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-base sm:text-sm placeholder:text-white/30 focus:outline-none focus-visible:border-[#f4c979]/40"
                 />
               </div>
 
@@ -159,7 +159,7 @@ function CrewFormModal({
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Optional description..."
                   rows={2}
-                  className="w-full px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-base placeholder:text-white/30 focus:outline-none focus:border-[#f4c979]/40 resize-none"
+                  className="w-full px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-base placeholder:text-white/30 focus:outline-none focus-visible:border-[#f4c979]/40 resize-none"
                 />
               </div>
 

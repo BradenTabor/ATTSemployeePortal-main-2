@@ -643,7 +643,7 @@ export default function AdminDashboard() {
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="e.g. New safety protocols"
-                    className="w-full bg-[#050402]/80 border border-[#f6dcb2]/15 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-[#f4c979]/50 focus:ring-offset-2 focus:ring-offset-[#030201] min-h-[44px]"
+                    className="w-full bg-[#050402]/80 border border-[#f6dcb2]/15 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#030201] min-h-[44px]"
                   />
                 </div>
 
@@ -656,7 +656,7 @@ export default function AdminDashboard() {
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="Share the details your team should know..."
                     rows={3}
-                    className="w-full bg-[#050402]/80 border border-[#f6dcb2]/15 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-[#f4c979]/50 focus:ring-offset-2 focus:ring-offset-[#030201] resize-none"
+                    className="w-full bg-[#050402]/80 border border-[#f6dcb2]/15 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#030201] resize-none"
                   />
                 </div>
               </div>

@@ -57,12 +57,12 @@ export function SectionA({
             className={cn(
               "w-full rounded-xl bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900",
               "border px-4 py-3 text-base text-white font-medium",
-              "focus:outline-none focus:ring-2 transition-all",
+              "focus:outline-none focus-visible:ring-2 transition-all",
               shouldShowError('truckNumber' as keyof DVIRFormState) && getFieldError('truckNumber' as keyof DVIRFormState)
-                ? "border-rose-500/50 focus:ring-rose-400/50"
+                ? "border-rose-500/50 focus-visible:ring-rose-400/50"
                 : form.truckNumber 
-                  ? "border-emerald-500/40 focus:ring-emerald-400/50"
-                  : "border-gray-700 focus:ring-emerald-400/50"
+                  ? "border-emerald-500/40 focus-visible:ring-emerald-400/50"
+                  : "border-gray-700 focus-visible:ring-emerald-400/50"
             )}
             title="Select truck number"
             aria-required="true"
@@ -134,7 +134,7 @@ export function SectionA({
             id="chipperNumber"
             value={form.chipperNumber}
             onChange={(e) => setForm((prev) => ({ ...prev, chipperNumber: e.target.value }))}
-            className="w-full rounded-xl bg-black/70 border border-gray-700 px-3 py-2.5 text-base text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all"
+            className="w-full rounded-xl bg-black/70 border border-gray-700 px-3 py-2.5 text-base text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 transition-all"
             title="Select chipper number"
           >
             <option value="">Select Chipper Number</option>
@@ -155,7 +155,7 @@ export function SectionA({
             id="trailerNumber"
             value={form.trailerNumber}
             onChange={(e) => setForm((prev) => ({ ...prev, trailerNumber: e.target.value }))}
-            className="w-full rounded-xl bg-black/70 border border-gray-700 px-3 py-2.5 text-base text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all"
+            className="w-full rounded-xl bg-black/70 border border-gray-700 px-3 py-2.5 text-base text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 transition-all"
             title="Select trailer number"
           >
             <option value="">Select Trailer Number</option>
@@ -176,7 +176,7 @@ export function SectionA({
             value={form.truckGvwr}
             onChange={(e) => setForm((prev) => ({ ...prev, truckGvwr: e.target.value }))}
             placeholder="e.g., 26,000 lbs"
-            className="w-full rounded-xl bg-black/70 border border-gray-700 px-3 py-2.5 text-base text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all"
+            className="w-full rounded-xl bg-black/70 border border-gray-700 px-3 py-2.5 text-base text-white placeholder:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 transition-all"
           />
         </div>
 
@@ -189,7 +189,7 @@ export function SectionA({
             value={form.trailerChipperGvwr}
             onChange={(e) => setForm((prev) => ({ ...prev, trailerChipperGvwr: e.target.value }))}
             placeholder="e.g., 14,000 lbs"
-            className="w-full rounded-xl bg-black/70 border border-gray-700 px-3 py-2.5 text-base text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-400/50 transition-all"
+            className="w-full rounded-xl bg-black/70 border border-gray-700 px-3 py-2.5 text-base text-white placeholder:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 transition-all"
           />
         </div>
       </div>
@@ -245,10 +245,10 @@ export function SectionA({
             placeholder="Enter full name"
             className={cn(
               "w-full rounded-md bg-black/70 border px-3 py-2 text-base text-white",
-              "focus:outline-none focus:ring-2 transition-all",
+              "focus:outline-none focus-visible:ring-2 transition-all",
               shouldShowError('driversName' as keyof DVIRFormState) && getFieldError('driversName' as keyof DVIRFormState)
-                ? "border-rose-500/50 focus:ring-rose-400/50"
-                : "border-gray-700 focus:ring-emerald-400/50"
+                ? "border-rose-500/50 focus-visible:ring-rose-400/50"
+                : "border-gray-700 focus-visible:ring-emerald-400/50"
             )}
             aria-required="true"
             aria-invalid={shouldShowError('driversName' as keyof DVIRFormState) && !!getFieldError('driversName' as keyof DVIRFormState)}
@@ -384,7 +384,7 @@ export function SectionA({
           helperText="Required for DOT compliance"
           containerClassName="text-white"
           labelClassName="text-xs tracking-wide text-gray-300"
-          className="bg-black/70 border-gray-700 focus:ring-emerald-400/50"
+          className="bg-black/70 border-gray-700 focus-visible:ring-emerald-400/50"
         />
 
         <div>

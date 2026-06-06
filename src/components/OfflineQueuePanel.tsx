@@ -458,14 +458,14 @@ export function OfflineQueuePanel({ open, onClose }: OfflineQueuePanelProps) {
                       ref={discardCancelRef}
                       type="button"
                       onClick={cancelDiscard}
-                      className="px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:bg-white/10 border border-white/10 focus:outline-none focus:ring-2 focus:ring-white/40 focus:ring-offset-2 focus:ring-offset-[#0a0f0d]"
+                      className="px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:bg-white/10 border border-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
                     >
                       Cancel
                     </button>
                     <button
                       type="button"
                       onClick={() => void confirmDiscard()}
-                      className="px-3 py-2 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 focus:ring-offset-[#0a0f0d]"
+                      className="px-3 py-2 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
                     >
                       Discard
                     </button>

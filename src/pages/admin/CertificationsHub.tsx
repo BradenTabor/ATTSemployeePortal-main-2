@@ -506,7 +506,7 @@ export default function CertificationsHub() {
                             onChange={handleSelectAll}
                             aria-label="Select all approval-only"
                             data-testid="pending-review-select-all"
-                            className="h-4 w-4 rounded border-white/30 bg-white/5 text-emerald-500 focus:ring-2 focus:ring-emerald-400/50"
+                            className="h-4 w-4 rounded border-white/30 bg-white/5 text-emerald-500 focus-visible:ring-2 focus-visible:ring-emerald-400/50"
                           />
                           Select all
                         </label>

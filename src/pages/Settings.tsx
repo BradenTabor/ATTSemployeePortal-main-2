@@ -333,7 +333,7 @@ function ContactTemplatesSection() {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Template name (e.g., Morning Crew)"
-                className="w-full rounded-md sm:rounded-lg border border-white/10 bg-black/50 px-2.5 sm:px-3 py-2 text-xs sm:text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
+                className="w-full rounded-md sm:rounded-lg border border-white/10 bg-black/50 px-2.5 sm:px-3 py-2 text-xs sm:text-sm text-white placeholder:text-gray-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500/50"
               />
               
               <div className="grid gap-2 sm:gap-3 grid-cols-2">
@@ -342,28 +342,28 @@ function ContactTemplatesSection() {
                   value={formData.oc_contact}
                   onChange={(e) => setFormData({ ...formData, oc_contact: e.target.value })}
                   placeholder="OC Contact"
-                  className="w-full rounded-md sm:rounded-lg border border-white/10 bg-black/50 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
+                  className="w-full rounded-md sm:rounded-lg border border-white/10 bg-black/50 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white placeholder:text-gray-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500/50"
                 />
                 <input
                   type="text"
                   value={formData.doc_contact}
                   onChange={(e) => setFormData({ ...formData, doc_contact: e.target.value })}
                   placeholder="DOC Contact"
-                  className="w-full rounded-md sm:rounded-lg border border-white/10 bg-black/50 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
+                  className="w-full rounded-md sm:rounded-lg border border-white/10 bg-black/50 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white placeholder:text-gray-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500/50"
                 />
                 <input
                   type="text"
                   value={formData.gf_contact}
                   onChange={(e) => setFormData({ ...formData, gf_contact: e.target.value })}
                   placeholder="GF Contact"
-                  className="w-full rounded-md sm:rounded-lg border border-white/10 bg-black/50 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
+                  className="w-full rounded-md sm:rounded-lg border border-white/10 bg-black/50 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white placeholder:text-gray-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500/50"
                 />
                 <input
                   type="text"
                   value={formData.safety_contact}
                   onChange={(e) => setFormData({ ...formData, safety_contact: e.target.value })}
                   placeholder="Safety Contact"
-                  className="w-full rounded-md sm:rounded-lg border border-white/10 bg-black/50 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
+                  className="w-full rounded-md sm:rounded-lg border border-white/10 bg-black/50 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white placeholder:text-gray-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500/50"
                 />
               </div>
 
@@ -596,14 +596,14 @@ function SavedLocationsSection() {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Location name (e.g., Downtown Site)"
-                className="w-full rounded-md sm:rounded-lg border border-white/10 bg-black/50 px-2.5 sm:px-3 py-2 text-xs sm:text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
+                className="w-full rounded-md sm:rounded-lg border border-white/10 bg-black/50 px-2.5 sm:px-3 py-2 text-xs sm:text-sm text-white placeholder:text-gray-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500/50"
               />
               <input
                 type="text"
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 placeholder="Address"
-                className="w-full rounded-md sm:rounded-lg border border-white/10 bg-black/50 px-2.5 sm:px-3 py-2 text-xs sm:text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
+                className="w-full rounded-md sm:rounded-lg border border-white/10 bg-black/50 px-2.5 sm:px-3 py-2 text-xs sm:text-sm text-white placeholder:text-gray-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500/50"
               />
               
               <div className="grid gap-2 sm:gap-3 grid-cols-2 sm:grid-cols-3">
@@ -612,21 +612,21 @@ function SavedLocationsSection() {
                   value={formData.nearest_hospital}
                   onChange={(e) => setFormData({ ...formData, nearest_hospital: e.target.value })}
                   placeholder="Nearest Hospital"
-                  className="w-full rounded-md sm:rounded-lg border border-white/10 bg-black/50 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
+                  className="w-full rounded-md sm:rounded-lg border border-white/10 bg-black/50 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white placeholder:text-gray-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500/50"
                 />
                 <input
                   type="text"
                   value={formData.nearest_clinic}
                   onChange={(e) => setFormData({ ...formData, nearest_clinic: e.target.value })}
                   placeholder="Nearest Clinic"
-                  className="w-full rounded-md sm:rounded-lg border border-white/10 bg-black/50 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
+                  className="w-full rounded-md sm:rounded-lg border border-white/10 bg-black/50 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white placeholder:text-gray-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500/50"
                 />
                 <input
                   type="text"
                   value={formData.circuit_number}
                   onChange={(e) => setFormData({ ...formData, circuit_number: e.target.value })}
                   placeholder="Circuit #"
-                  className="w-full rounded-md sm:rounded-lg border border-white/10 bg-black/50 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 col-span-2 sm:col-span-1"
+                  className="w-full rounded-md sm:rounded-lg border border-white/10 bg-black/50 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white placeholder:text-gray-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500/50 col-span-2 sm:col-span-1"
                 />
               </div>
 

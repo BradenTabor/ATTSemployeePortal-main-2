@@ -655,7 +655,7 @@ function SafetyAnalyticsDashboard() {
                             placeholder="Search users..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-8 pr-3 py-2 rounded-lg bg-white/5 border border-white/10 text-xs text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
+                            className="w-full pl-8 pr-3 py-2 rounded-lg bg-white/5 border border-white/10 text-xs text-white placeholder:text-white/30 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/30"
                           />
                         </div>
                       </motion.div>

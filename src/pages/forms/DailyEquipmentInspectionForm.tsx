@@ -894,10 +894,10 @@ export default function DailyEquipmentInspectionForm() {
                   placeholder="Operator name"
                   className={cn(
                     "w-full rounded-xl border bg-white/[0.03] px-3 py-2 text-sm text-white placeholder:text-white/40",
-                    "focus:outline-none focus:ring-2 transition-all",
+                    "focus:outline-none focus-visible:ring-2 transition-all",
                     shouldShowError('submittedBy' as EquipmentFormFieldKey) && getFieldError('submittedBy' as EquipmentFormFieldKey)
-                      ? "border-rose-500/50 focus:ring-rose-400/50"
-                      : "border-white/10 focus:ring-emerald-400/60"
+                      ? "border-rose-500/50 focus-visible:ring-rose-400/50"
+                      : "border-white/10 focus-visible:ring-emerald-400/60"
                   )}
                   aria-invalid={shouldShowError('submittedBy' as EquipmentFormFieldKey) && !!getFieldError('submittedBy' as EquipmentFormFieldKey)}
                   aria-describedby={shouldShowError('submittedBy' as EquipmentFormFieldKey) && getFieldError('submittedBy' as EquipmentFormFieldKey) ? "submittedBy-error" : undefined}
@@ -933,10 +933,10 @@ export default function DailyEquipmentInspectionForm() {
                   aria-label="Equipment type"
                   className={cn(
                     "w-full rounded-xl border bg-white/[0.03] px-2 py-2 text-sm text-white",
-                    "focus:outline-none focus:ring-2 transition-all",
+                    "focus:outline-none focus-visible:ring-2 transition-all",
                     shouldShowError('equipmentType' as EquipmentFormFieldKey) && getFieldError('equipmentType' as EquipmentFormFieldKey)
-                      ? "border-rose-500/50 focus:ring-rose-400/50"
-                      : "border-white/10 focus:ring-emerald-400/60"
+                      ? "border-rose-500/50 focus-visible:ring-rose-400/50"
+                      : "border-white/10 focus-visible:ring-emerald-400/60"
                   )}
                   aria-invalid={shouldShowError('equipmentType' as EquipmentFormFieldKey) && !!getFieldError('equipmentType' as EquipmentFormFieldKey)}
                   aria-describedby={shouldShowError('equipmentType' as EquipmentFormFieldKey) && getFieldError('equipmentType' as EquipmentFormFieldKey) ? "equipmentType-error" : undefined}
@@ -980,10 +980,10 @@ export default function DailyEquipmentInspectionForm() {
                   aria-label="Equipment number"
                   className={cn(
                     "w-full rounded-xl border bg-white/[0.03] px-2 py-2 text-sm text-white",
-                    "focus:outline-none focus:ring-2 transition-all disabled:opacity-40",
+                    "focus:outline-none focus-visible:ring-2 transition-all disabled:opacity-40",
                     shouldShowError('equipmentNumber' as EquipmentFormFieldKey) && getFieldError('equipmentNumber' as EquipmentFormFieldKey)
-                      ? "border-rose-500/50 focus:ring-rose-400/50"
-                      : "border-white/10 focus:ring-emerald-400/60"
+                      ? "border-rose-500/50 focus-visible:ring-rose-400/50"
+                      : "border-white/10 focus-visible:ring-emerald-400/60"
                   )}
                   aria-invalid={shouldShowError('equipmentNumber' as EquipmentFormFieldKey) && !!getFieldError('equipmentNumber' as EquipmentFormFieldKey)}
                   aria-describedby={shouldShowError('equipmentNumber' as EquipmentFormFieldKey) && getFieldError('equipmentNumber' as EquipmentFormFieldKey) ? "equipmentNumber-error" : undefined}
@@ -1014,7 +1014,7 @@ export default function DailyEquipmentInspectionForm() {
                 helperText="Today"
                 containerClassName="text-white"
                 labelClassName="text-[10px] uppercase tracking-[0.25em] text-white/60 mb-1"
-                className="rounded-xl border border-white/10 bg-white/[0.03] text-white placeholder:text-white/40 focus:ring-emerald-400/60 focus:border-emerald-400/60"
+                className="rounded-xl border border-white/10 bg-white/[0.03] text-white placeholder:text-white/40 focus-visible:ring-emerald-400/60 focus-visible:border-emerald-400/60"
               />
 
               <div>
@@ -1034,7 +1034,7 @@ export default function DailyEquipmentInspectionForm() {
                   aria-describedby="template-help"
                   disabled={!form.equipmentType}
                   className={cn(
-                    "w-full rounded-xl border border-white/10 bg-white/[0.03] px-2 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/60",
+                    "w-full rounded-xl border border-white/10 bg-white/[0.03] px-2 py-2 text-sm text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60",
                     !form.equipmentType && "opacity-50 cursor-not-allowed"
                   )}
                 >
@@ -1102,7 +1102,7 @@ export default function DailyEquipmentInspectionForm() {
               <button
                 type="button"
                 onClick={handleMarkAllGeneralPass}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-[10px] font-medium hover:bg-emerald-500/20 transition-all touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-[10px] font-medium hover:bg-emerald-500/20 transition-all touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
                 All Pass
@@ -1110,7 +1110,7 @@ export default function DailyEquipmentInspectionForm() {
               <button
                 type="button"
                 onClick={handleMarkAllGeneralFail}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-300 text-[10px] font-medium hover:bg-rose-500/20 transition-all touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-300 text-[10px] font-medium hover:bg-rose-500/20 transition-all touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
               >
                 <XCircle className="w-3.5 h-3.5" />
                 All Fail
@@ -1119,7 +1119,7 @@ export default function DailyEquipmentInspectionForm() {
                 type="button"
                 onClick={handleClearGeneralChecklist}
                 disabled={generalCompleteCount === 0}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-white/60 text-[10px] font-medium hover:bg-white/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:focus-visible:ring-0"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-white/60 text-[10px] font-medium hover:bg-white/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 disabled:focus-visible:ring-0"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 Clear
@@ -1139,7 +1139,7 @@ export default function DailyEquipmentInspectionForm() {
                         type="button"
                         onClick={() => handleChecklistChange("general", item.id, "P")}
                         aria-label={`Mark ${item.label} as Pass${value === "P" ? " - currently selected" : ""}`}
-                        className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
+                        className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 ${
                           value === "P"
                             ? "border-emerald-400 bg-emerald-500/20 text-emerald-100"
                             : "border-white/10 bg-white/5 text-white/60"
@@ -1151,7 +1151,7 @@ export default function DailyEquipmentInspectionForm() {
                         type="button"
                         onClick={() => handleChecklistChange("general", item.id, "F")}
                         aria-label={`Mark ${item.label} as Fail${value === "F" ? " - currently selected" : ""}`}
-                        className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
+                        className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 ${
                           value === "F"
                             ? "border-rose-400 bg-rose-500/20 text-rose-100"
                             : "border-white/10 bg-white/5 text-white/60"
@@ -1163,7 +1163,7 @@ export default function DailyEquipmentInspectionForm() {
                         type="button"
                         onClick={() => handleChecklistChange("general", item.id, "N/A")}
                         aria-label={`Mark ${item.label} as Not Applicable${value === "N/A" ? " - currently selected" : ""}`}
-                        className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
+                        className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 ${
                           value === "N/A"
                             ? "border-amber-400 bg-amber-500/20 text-amber-100"
                             : "border-white/10 bg-white/5 text-white/60"
@@ -1237,7 +1237,7 @@ export default function DailyEquipmentInspectionForm() {
                   <button
                     type="button"
                     onClick={handleMarkAllSpecificPass}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-[10px] font-medium hover:bg-emerald-500/20 transition-all touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-[10px] font-medium hover:bg-emerald-500/20 transition-all touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
                   >
                     <CheckCheck className="w-3.5 h-3.5" />
                     All Pass
@@ -1245,7 +1245,7 @@ export default function DailyEquipmentInspectionForm() {
                   <button
                     type="button"
                     onClick={handleMarkAllSpecificFail}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-300 text-[10px] font-medium hover:bg-rose-500/20 transition-all touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-300 text-[10px] font-medium hover:bg-rose-500/20 transition-all touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
                   >
                     <XCircle className="w-3.5 h-3.5" />
                     All Fail
@@ -1254,7 +1254,7 @@ export default function DailyEquipmentInspectionForm() {
                     type="button"
                     onClick={handleClearSpecificChecklist}
                     disabled={specificCompleteCount === 0}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-white/60 text-[10px] font-medium hover:bg-white/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:focus-visible:ring-0"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-white/60 text-[10px] font-medium hover:bg-white/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 disabled:focus-visible:ring-0"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                     Clear
@@ -1274,7 +1274,7 @@ export default function DailyEquipmentInspectionForm() {
                           type="button"
                           onClick={() => handleChecklistChange("specific", item.id, "P")}
                           aria-label={`Mark ${item.label} as Pass${value === "P" ? " - currently selected" : ""}`}
-                          className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
+                          className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 ${
                             value === "P"
                               ? "border-emerald-400 bg-emerald-500/20 text-emerald-100"
                               : "border-white/10 bg-white/5 text-white/60"
@@ -1286,7 +1286,7 @@ export default function DailyEquipmentInspectionForm() {
                           type="button"
                           onClick={() => handleChecklistChange("specific", item.id, "F")}
                           aria-label={`Mark ${item.label} as Fail${value === "F" ? " - currently selected" : ""}`}
-                          className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
+                          className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 ${
                             value === "F"
                               ? "border-rose-400 bg-rose-500/20 text-rose-100"
                               : "border-white/10 bg-white/5 text-white/60"
@@ -1298,7 +1298,7 @@ export default function DailyEquipmentInspectionForm() {
                           type="button"
                           onClick={() => handleChecklistChange("specific", item.id, "N/A")}
                           aria-label={`Mark ${item.label} as Not Applicable${value === "N/A" ? " - currently selected" : ""}`}
-                          className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
+                          className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 ${
                             value === "N/A"
                               ? "border-amber-400 bg-amber-500/20 text-amber-100"
                               : "border-white/10 bg-white/5 text-white/60"
@@ -1409,7 +1409,7 @@ export default function DailyEquipmentInspectionForm() {
                         <button
                           type="button"
                           onClick={() => photoRefs[photo.key].current?.click()}
-                          className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity touch-manipulation focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                          className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity touch-manipulation focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
                           aria-label={`Retake ${photo.label} photo`}
                         >
                           <span className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 text-white">
@@ -1424,7 +1424,7 @@ export default function DailyEquipmentInspectionForm() {
                         type="button"
                         onClick={() => photoRefs[photo.key].current?.click()}
                         aria-label={`Capture ${photo.label} photo${photo.required ? " (required)" : ""}`}
-                        className="w-full aspect-[4/3] flex flex-col items-center justify-center gap-2 p-3 text-center transition hover:bg-white/[0.03] touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                        className="w-full aspect-[4/3] flex flex-col items-center justify-center gap-2 p-3 text-center transition hover:bg-white/[0.03] touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
                       >
                         <span className={`inline-flex items-center justify-center rounded-xl border p-3 ${
                           photo.required 
@@ -1464,7 +1464,7 @@ export default function DailyEquipmentInspectionForm() {
               value={form.notes}
               onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
               rows={2}
-              className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
+              className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60"
               placeholder="Describe deficiencies, damage, or follow-ups..."
             />
             

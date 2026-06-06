@@ -264,7 +264,7 @@ export const ChecklistQuickActions = ({ onMarkAllPass, onMarkAllFail, onClearAll
         type="button"
         onClick={onClearAll}
         disabled={checkedCount === 0}
-        className="flex-1 xs:flex-none flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2.5 sm:py-2.5 text-[10px] sm:text-[10px] font-medium text-gray-400 hover:text-white active:text-white bg-white/5 hover:bg-white/10 active:bg-white/15 border border-white/10 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:opacity-40 disabled:cursor-not-allowed disabled:focus-visible:ring-0 min-h-[44px]"
+        className="flex-1 xs:flex-none flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-2.5 sm:py-2.5 text-[10px] sm:text-[10px] font-medium text-gray-400 hover:text-white active:text-white bg-white/5 hover:bg-white/10 active:bg-white/15 border border-white/10 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 disabled:opacity-40 disabled:cursor-not-allowed disabled:focus-visible:ring-0 min-h-[44px]"
       >
         <RotateCcw className="w-3 h-3" />
         <span>Clear</span>
@@ -465,7 +465,7 @@ export const UploadTile = ({ label, description, required, status, onClick }: Up
   <button
     type="button"
     onClick={onClick}
-    className="group flex items-center justify-between gap-2 sm:gap-4 rounded-xl sm:rounded-2xl border border-white/5 bg-white/[0.04] px-3 sm:px-4 py-3 text-left transition-all hover:border-emerald-400/40 hover:bg-white/[0.07] active:bg-white/[0.1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black min-h-[60px] sm:min-h-[64px]"
+    className="group flex items-center justify-between gap-2 sm:gap-4 rounded-xl sm:rounded-2xl border border-white/5 bg-white/[0.04] px-3 sm:px-4 py-3 text-left transition-all hover:border-emerald-400/40 hover:bg-white/[0.07] active:bg-white/[0.1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 min-h-[60px] sm:min-h-[64px]"
   >
     <div className="flex items-center gap-2 sm:gap-3 min-w-0">
       <span className="inline-flex items-center justify-center rounded-xl sm:rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-2 sm:p-2.5 text-emerald-200 flex-shrink-0">

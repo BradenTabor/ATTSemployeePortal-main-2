@@ -978,7 +978,7 @@ function AdminUserActivity({ embedded = false }: AdminUserActivityProps) {
                 placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-lg sm:rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 pl-9 sm:pl-11 pr-3 sm:pr-4 py-2 sm:py-3 text-xs sm:text-sm text-[#fdf4db] placeholder:text-[#bfa984] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 min-h-[40px] sm:min-h-[48px]"
+                className="w-full rounded-lg sm:rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 pl-9 sm:pl-11 pr-3 sm:pr-4 py-2 sm:py-3 text-xs sm:text-sm text-[#fdf4db] placeholder:text-[#bfa984] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60 min-h-[40px] sm:min-h-[48px]"
               />
             </div>
 
@@ -988,7 +988,7 @@ function AdminUserActivity({ embedded = false }: AdminUserActivityProps) {
               <select
                 value={statusFilter || ""}
                 onChange={(e) => setStatusFilter(e.target.value || null)}
-                className="w-[90px] sm:w-auto rounded-lg sm:rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 pl-8 sm:pl-11 pr-2 sm:pr-10 py-2 sm:py-3 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 appearance-none cursor-pointer min-h-[40px] sm:min-h-[48px]"
+                className="w-[90px] sm:w-auto rounded-lg sm:rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 pl-8 sm:pl-11 pr-2 sm:pr-10 py-2 sm:py-3 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60 appearance-none cursor-pointer min-h-[40px] sm:min-h-[48px]"
               >
                 <option value="">All</option>
                 <option value="active">Active</option>

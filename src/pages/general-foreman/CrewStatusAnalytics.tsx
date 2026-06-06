@@ -581,14 +581,14 @@ export default function CrewStatusAnalytics() {
                       type="date"
                       value={customStart}
                       onChange={(e) => setCustomStart(e.target.value)}
-                      className="flex-1 min-w-[130px] rounded-lg bg-[#050402]/70 border border-[#c084fc]/20 px-3 py-1.5 text-xs text-[#f3e8ff] focus:outline-none focus:ring-1 focus:ring-[#c084fc]/60 [color-scheme:dark]"
+                      className="flex-1 min-w-[130px] rounded-lg bg-[#050402]/70 border border-[#c084fc]/20 px-3 py-1.5 text-xs text-[#f3e8ff] focus:outline-none focus-visible:ring-1 focus-visible:ring-[#c084fc]/60 [color-scheme:dark]"
                       placeholder="Start"
                     />
                     <input
                       type="date"
                       value={customEnd}
                       onChange={(e) => setCustomEnd(e.target.value)}
-                      className="flex-1 min-w-[130px] rounded-lg bg-[#050402]/70 border border-[#c084fc]/20 px-3 py-1.5 text-xs text-[#f3e8ff] focus:outline-none focus:ring-1 focus:ring-[#c084fc]/60 [color-scheme:dark]"
+                      className="flex-1 min-w-[130px] rounded-lg bg-[#050402]/70 border border-[#c084fc]/20 px-3 py-1.5 text-xs text-[#f3e8ff] focus:outline-none focus-visible:ring-1 focus-visible:ring-[#c084fc]/60 [color-scheme:dark]"
                       placeholder="End"
                     />
                   </div>

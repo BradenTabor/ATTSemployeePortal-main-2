@@ -775,7 +775,7 @@ export default function MechanicDVIRCenter() {
                         setSearchQuery(e.target.value);
                         setCurrentPage(1);
                       }}
-                      className="w-full min-w-0 bg-black/30 border border-white/10 rounded-md sm:rounded-lg pl-7 sm:pl-8 pr-7 sm:pr-8 py-1.5 sm:py-2 text-xs sm:text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-[#ff9350]/50 focus:border-[#ff9350]/30 transition-all"
+                      className="w-full min-w-0 bg-black/30 border border-white/10 rounded-md sm:rounded-lg pl-7 sm:pl-8 pr-7 sm:pr-8 py-1.5 sm:py-2 text-xs sm:text-sm text-white placeholder:text-white/30 focus:outline-none focus-visible:ring-1 focus-visible:ring-[#ff9350]/50 focus-visible:border-[#ff9350]/30 transition-all"
                     />
                     {searchQuery && (
                       <button
@@ -1172,7 +1172,7 @@ export default function MechanicDVIRCenter() {
                                     value={updateTruckNumber}
                                     onChange={(e) => setUpdateTruckNumber(e.target.value)}
                                     placeholder="e.g., 101"
-                                    className="w-full min-w-0 bg-black/30 border border-white/10 text-white text-xs sm:text-sm rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all min-h-[36px] sm:min-h-[40px]"
+                                    className="w-full min-w-0 bg-black/30 border border-white/10 text-white text-xs sm:text-sm rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/50 transition-all min-h-[36px] sm:min-h-[40px]"
                                   />
                                 </div>
                                 <DateField
@@ -1194,7 +1194,7 @@ export default function MechanicDVIRCenter() {
                                   onChange={(e) => setUpdateDeficiencyCorrected(e.target.value)}
                                   placeholder="What was done? E.g., Replaced brake pads..."
                                   rows={2}
-                                  className="w-full min-w-0 bg-black/30 border border-white/10 text-white text-xs sm:text-sm rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all resize-none"
+                                  className="w-full min-w-0 bg-black/30 border border-white/10 text-white text-xs sm:text-sm rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/50 transition-all resize-none"
                                 />
                               </div>
 
@@ -1210,7 +1210,7 @@ export default function MechanicDVIRCenter() {
                                     value={updateCost}
                                     onChange={(e) => setUpdateCost(e.target.value)}
                                     placeholder="0.00"
-                                    className="w-full bg-black/30 border border-white/10 text-white text-xs sm:text-sm rounded-md sm:rounded-lg pl-8 sm:pl-9 pr-2 sm:pr-3 py-1.5 sm:py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all min-h-[36px] sm:min-h-[40px]"
+                                    className="w-full bg-black/30 border border-white/10 text-white text-xs sm:text-sm rounded-md sm:rounded-lg pl-8 sm:pl-9 pr-2 sm:pr-3 py-1.5 sm:py-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/50 transition-all min-h-[36px] sm:min-h-[40px]"
                                   />
                                 </div>
                               </div>
@@ -1241,7 +1241,7 @@ export default function MechanicDVIRCenter() {
                                             placeholder="Part name"
                                             value={part.part_name}
                                             onChange={(e) => handlePartChange(index, { ...part, part_name: e.target.value })}
-                                            className="col-span-2 sm:col-span-1 min-w-0 bg-black/30 border border-white/10 text-white text-[11px] sm:text-xs rounded-md sm:rounded-lg px-2 sm:px-2.5 py-1.5 sm:py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all min-h-[32px] sm:min-h-[36px]"
+                                            className="col-span-2 sm:col-span-1 min-w-0 bg-black/30 border border-white/10 text-white text-[11px] sm:text-xs rounded-md sm:rounded-lg px-2 sm:px-2.5 py-1.5 sm:py-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/50 transition-all min-h-[32px] sm:min-h-[36px]"
                                           />
                                           <input
                                             type="number"
@@ -1249,14 +1249,14 @@ export default function MechanicDVIRCenter() {
                                             min={1}
                                             value={part.quantity || ""}
                                             onChange={(e) => handlePartChange(index, { ...part, quantity: parseInt(e.target.value) || 1 })}
-                                            className="min-w-0 bg-black/30 border border-white/10 text-white text-[11px] sm:text-xs rounded-md sm:rounded-lg px-2 sm:px-2.5 py-1.5 sm:py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all min-h-[32px] sm:min-h-[36px]"
+                                            className="min-w-0 bg-black/30 border border-white/10 text-white text-[11px] sm:text-xs rounded-md sm:rounded-lg px-2 sm:px-2.5 py-1.5 sm:py-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/50 transition-all min-h-[32px] sm:min-h-[36px]"
                                           />
                                           <input
                                             type="text"
                                             placeholder="Part #"
                                             value={part.part_number || ""}
                                             onChange={(e) => handlePartChange(index, { ...part, part_number: e.target.value })}
-                                            className="min-w-0 bg-black/30 border border-white/10 text-white text-[11px] sm:text-xs rounded-md sm:rounded-lg px-2 sm:px-2.5 py-1.5 sm:py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all min-h-[32px] sm:min-h-[36px]"
+                                            className="min-w-0 bg-black/30 border border-white/10 text-white text-[11px] sm:text-xs rounded-md sm:rounded-lg px-2 sm:px-2.5 py-1.5 sm:py-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/50 transition-all min-h-[32px] sm:min-h-[36px]"
                                           />
                                         </div>
                                         <button
@@ -1287,7 +1287,7 @@ export default function MechanicDVIRCenter() {
                                   onChange={(e) => setUpdateRemarks(e.target.value)}
                                   rows={2}
                                   placeholder="Any additional details..."
-                                  className="w-full min-w-0 bg-black/30 border border-white/10 text-white text-xs sm:text-sm rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all resize-none"
+                                  className="w-full min-w-0 bg-black/30 border border-white/10 text-white text-xs sm:text-sm rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/50 transition-all resize-none"
                                 />
                               </div>
 

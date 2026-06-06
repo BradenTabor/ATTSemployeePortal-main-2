@@ -48,7 +48,7 @@ export function SearchBar({
           className={cn(
             "w-full rounded-xl border border-white/10 bg-black/60 backdrop-blur-sm",
             "pl-12 pr-12 py-3.5 text-base sm:text-sm text-white placeholder:text-gray-500",
-            "focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/30",
+            "focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500/30",
             "transition-all duration-200",
             "min-h-[48px]", // Touch-friendly height
             disabled && "opacity-50 cursor-not-allowed"
@@ -86,7 +86,7 @@ export function SearchBar({
           "flex items-center gap-2 px-4 py-3 rounded-xl w-full sm:w-auto",
           "text-sm text-emerald-400 hover:text-emerald-300",
           "hover:bg-emerald-500/10 active:bg-emerald-500/20 transition-all duration-200",
-          "focus:outline-none focus:ring-2 focus:ring-emerald-500/30",
+          "focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30",
           "min-h-[44px] justify-center sm:justify-start",
           (disabled || isGettingLocation) && "opacity-50 cursor-not-allowed"
         )}

@@ -83,14 +83,14 @@ function JobMilestoneEditorComponent({
                         value={milestone.title}
                         onChange={(e) => updateMilestone(index, { title: e.target.value })}
                         disabled={disabled}
-                        className="flex-1 min-w-0 bg-[#050402]/80 border border-[#f6dcb2]/20 rounded-lg sm:rounded-xl px-2.5 py-2 sm:px-3 sm:py-2 text-white text-xs sm:text-sm placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60"
+                        className="flex-1 min-w-0 bg-[#050402]/80 border border-[#f6dcb2]/20 rounded-lg sm:rounded-xl px-2.5 py-2 sm:px-3 sm:py-2 text-white text-xs sm:text-sm placeholder:text-white/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60"
                       />
                       <input
                         type="date"
                         value={milestone.target_date}
                         onChange={(e) => updateMilestone(index, { target_date: e.target.value })}
                         disabled={disabled}
-                        className="w-full sm:w-36 min-w-0 bg-[#050402]/80 border border-[#f6dcb2]/20 rounded-lg sm:rounded-xl px-2.5 py-2 sm:px-3 sm:py-2 text-white text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 [color-scheme:dark]"
+                        className="w-full sm:w-36 min-w-0 bg-[#050402]/80 border border-[#f6dcb2]/20 rounded-lg sm:rounded-xl px-2.5 py-2 sm:px-3 sm:py-2 text-white text-xs sm:text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60 [color-scheme:dark]"
                       />
                     </div>
 
@@ -100,7 +100,7 @@ function JobMilestoneEditorComponent({
                       onChange={(e) => updateMilestone(index, { description: e.target.value })}
                       disabled={disabled}
                       rows={2}
-                      className="w-full bg-[#050402]/80 border border-[#f6dcb2]/20 rounded-lg sm:rounded-xl px-2.5 py-2 sm:px-3 sm:py-2 text-white text-xs sm:text-sm placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 resize-none min-h-[2.5rem]"
+                      className="w-full bg-[#050402]/80 border border-[#f6dcb2]/20 rounded-lg sm:rounded-xl px-2.5 py-2 sm:px-3 sm:py-2 text-white text-xs sm:text-sm placeholder:text-white/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60 resize-none min-h-[2.5rem]"
                     />
                   </div>
 

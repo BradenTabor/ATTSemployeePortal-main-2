@@ -706,7 +706,7 @@ export function AdminJSAContent() {
                         placeholder="Location, circuit, notes..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full rounded-xl sm:rounded-2xl bg-[#050402]/70 border border-[#f4c979]/25 pl-8 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#fdf4db] placeholder:text-[#bfa984] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 min-h-[40px] sm:min-h-[44px]"
+                        className="w-full rounded-xl sm:rounded-2xl bg-[#050402]/70 border border-[#f4c979]/25 pl-8 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#fdf4db] placeholder:text-[#bfa984] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60 min-h-[40px] sm:min-h-[44px]"
                       />
                     </div>
 
@@ -718,7 +718,7 @@ export function AdminJSAContent() {
                         onChange={(e) => setUserFilter(e.target.value)}
                         aria-label="Filter by user"
                         title="Filter by user"
-                        className="w-full rounded-xl sm:rounded-2xl bg-[#050402]/70 border border-[#f4c979]/25 pl-8 sm:pl-10 pr-8 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 appearance-none cursor-pointer min-h-[40px] sm:min-h-[44px]"
+                        className="w-full rounded-xl sm:rounded-2xl bg-[#050402]/70 border border-[#f4c979]/25 pl-8 sm:pl-10 pr-8 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60 appearance-none cursor-pointer min-h-[40px] sm:min-h-[44px]"
                       >
                         <option value="">All Users</option>
                         {allUsers.map((user) => (
@@ -738,7 +738,7 @@ export function AdminJSAContent() {
                         onChange={(e) => setTypeFilter(e.target.value as "all" | "digital" | "paper")}
                         aria-label="Filter by submission type"
                         title="Filter by type"
-                        className="w-full rounded-xl sm:rounded-2xl bg-[#050402]/70 border border-[#f4c979]/25 pl-8 sm:pl-10 pr-8 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 appearance-none cursor-pointer min-h-[40px] sm:min-h-[44px]"
+                        className="w-full rounded-xl sm:rounded-2xl bg-[#050402]/70 border border-[#f4c979]/25 pl-8 sm:pl-10 pr-8 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60 appearance-none cursor-pointer min-h-[40px] sm:min-h-[44px]"
                       >
                         {TYPE_FILTERS.map((f) => (
                           <option key={f.value} value={f.value}>
@@ -759,7 +759,7 @@ export function AdminJSAContent() {
                           value={dateFilter}
                           onChange={(e) => setDateFilter(e.target.value)}
                           title="Start date"
-                          className="w-full rounded-xl sm:rounded-2xl bg-[#050402]/70 border border-[#f4c979]/25 pl-8 sm:pl-10 pr-2 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 [color-scheme:dark] min-h-[40px] sm:min-h-[44px]"
+                          className="w-full rounded-xl sm:rounded-2xl bg-[#050402]/70 border border-[#f4c979]/25 pl-8 sm:pl-10 pr-2 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60 [color-scheme:dark] min-h-[40px] sm:min-h-[44px]"
                         />
                       </div>
 
@@ -771,7 +771,7 @@ export function AdminJSAContent() {
                           value={dateEndFilter}
                           onChange={(e) => setDateEndFilter(e.target.value)}
                           title="End date"
-                          className="w-full rounded-xl sm:rounded-2xl bg-[#050402]/70 border border-[#f4c979]/25 pl-8 sm:pl-10 pr-2 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 [color-scheme:dark] min-h-[40px] sm:min-h-[44px]"
+                          className="w-full rounded-xl sm:rounded-2xl bg-[#050402]/70 border border-[#f4c979]/25 pl-8 sm:pl-10 pr-2 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60 [color-scheme:dark] min-h-[40px] sm:min-h-[44px]"
                         />
                       </div>
                     </div>
@@ -784,7 +784,7 @@ export function AdminJSAContent() {
                         placeholder="Signer name…"
                         value={signatureFilter}
                         onChange={(e) => setSignatureFilter(e.target.value)}
-                        className="w-full rounded-xl sm:rounded-2xl bg-[#050402]/70 border border-[#f4c979]/25 pl-8 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#fdf4db] placeholder:text-[#bfa984] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 min-h-[40px] sm:min-h-[44px]"
+                        className="w-full rounded-xl sm:rounded-2xl bg-[#050402]/70 border border-[#f4c979]/25 pl-8 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#fdf4db] placeholder:text-[#bfa984] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60 min-h-[40px] sm:min-h-[44px]"
                       />
                     </div>
                   </div>
@@ -996,7 +996,7 @@ export function AdminJSAContent() {
                               onChange={(e) => setPageSize(Number(e.target.value))}
                               aria-label="Items per page"
                               title="Items per page"
-                              className="rounded-lg bg-[#050402]/70 border border-[#f4c979]/25 px-2 py-1 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60"
+                              className="rounded-lg bg-[#050402]/70 border border-[#f4c979]/25 px-2 py-1 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60"
                             >
                               {PAGE_SIZE_OPTIONS.map((size) => (
                                 <option key={size} value={size}>
@@ -1051,7 +1051,7 @@ export function AdminJSAContent() {
                               onBlur={handleJumpToPage}
                               aria-label="Jump to page"
                               title="Jump to page"
-                              className="w-10 sm:w-12 rounded-md sm:rounded-lg bg-[#050402]/70 border border-[#f4c979]/25 px-1 sm:px-2 py-1 text-xs sm:text-sm text-[#fdf4db] text-center focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 min-h-[36px] sm:min-h-[40px]"
+                              className="w-10 sm:w-12 rounded-md sm:rounded-lg bg-[#050402]/70 border border-[#f4c979]/25 px-1 sm:px-2 py-1 text-xs sm:text-sm text-[#fdf4db] text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60 min-h-[36px] sm:min-h-[40px]"
                             />
                             <span className="text-[10px] sm:text-sm text-[#c7b696]">/ {totalPages}</span>
                           </div>

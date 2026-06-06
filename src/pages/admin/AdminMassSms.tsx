@@ -177,7 +177,7 @@ function AdminMassSms() {
                 value={pickerSearch}
                 onChange={(e) => setPickerSearch(e.target.value)}
                 placeholder="Search by name or email…"
-                className="w-full pl-9 pr-3 py-2 rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 text-sm text-[#fdf4db] placeholder:text-[#8a7a5c] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60"
+                className="w-full pl-9 pr-3 py-2 rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 text-sm text-[#fdf4db] placeholder:text-[#8a7a5c] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60"
               />
             </div>
           </div>
@@ -284,7 +284,7 @@ function AdminMassSms() {
             value={confirmInput}
             onChange={(e) => setConfirmInput(e.target.value)}
             placeholder={String(countWithPhone)}
-            className="w-full rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-3 py-2.5 text-sm text-[#fdf4db] placeholder:text-[#8a7a5c] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 mb-4"
+            className="w-full rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-3 py-2.5 text-sm text-[#fdf4db] placeholder:text-[#8a7a5c] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60 mb-4"
             aria-label="Type recipient count to confirm"
           />
           <div className="flex gap-2 justify-end">
@@ -479,7 +479,7 @@ function AdminMassSms() {
             placeholder="Enter your message…"
             rows={4}
             maxLength={MAX_MESSAGE_LENGTH}
-            className="w-full min-w-0 rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-3 sm:px-4 py-2 sm:py-3 text-sm text-[#fdf4db] placeholder:text-[#8a7a5c] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 resize-y mb-2"
+            className="w-full min-w-0 rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-3 sm:px-4 py-2 sm:py-3 text-sm text-[#fdf4db] placeholder:text-[#8a7a5c] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60 resize-y mb-2"
             aria-describedby="mass-sms-char-desc"
           />
           <p id="mass-sms-char-desc" className="text-xs text-[#8a7a5c] mb-2">

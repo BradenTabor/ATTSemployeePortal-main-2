@@ -211,7 +211,7 @@ function CrewOversightJobListComponent({
               placeholder="Search jobs..."
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="w-full rounded-xl bg-[#0a0513]/70 border border-[#c084fc]/25 pl-9 pr-3 py-2.5 text-xs sm:text-sm text-[#f3e8ff] placeholder:text-[#c084fc]/50 focus:outline-none focus:ring-2 focus:ring-[#c084fc]/60"
+              className="w-full rounded-xl bg-[#0a0513]/70 border border-[#c084fc]/25 pl-9 pr-3 py-2.5 text-xs sm:text-sm text-[#f3e8ff] placeholder:text-[#c084fc]/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c084fc]/60"
             />
           </div>
 
@@ -221,7 +221,7 @@ function CrewOversightJobListComponent({
             <select
               value={statusFilter}
               onChange={(e) => handleStatusChange(e.target.value as JobStatus | 'all')}
-              className="w-full rounded-xl bg-[#0a0513]/70 border border-[#c084fc]/25 pl-9 pr-3 py-2.5 text-xs sm:text-sm text-[#f3e8ff] focus:outline-none focus:ring-2 focus:ring-[#c084fc]/60 appearance-none cursor-pointer"
+              className="w-full rounded-xl bg-[#0a0513]/70 border border-[#c084fc]/25 pl-9 pr-3 py-2.5 text-xs sm:text-sm text-[#f3e8ff] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c084fc]/60 appearance-none cursor-pointer"
             >
               {STATUS_OPTIONS.map(option => (
                 <option key={option.value} value={option.value}>
@@ -237,7 +237,7 @@ function CrewOversightJobListComponent({
             <select
               value={trackingFilter}
               onChange={(e) => handleTrackingChange(e.target.value as TrackingType | 'all')}
-              className="w-full rounded-xl bg-[#0a0513]/70 border border-[#c084fc]/25 pl-9 pr-3 py-2.5 text-xs sm:text-sm text-[#f3e8ff] focus:outline-none focus:ring-2 focus:ring-[#c084fc]/60 appearance-none cursor-pointer"
+              className="w-full rounded-xl bg-[#0a0513]/70 border border-[#c084fc]/25 pl-9 pr-3 py-2.5 text-xs sm:text-sm text-[#f3e8ff] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c084fc]/60 appearance-none cursor-pointer"
             >
               {TRACKING_OPTIONS.map(option => (
                 <option key={option.value} value={option.value}>

@@ -24,7 +24,7 @@ interface JobProgressUpdateFormProps {
 
 // Compact emerald-themed input styling
 const baseInput =
-  'w-full bg-[#020d09]/80 border border-emerald-500/25 rounded-lg px-3 py-2.5 text-white text-sm placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-emerald-400/50 focus:border-emerald-400/40 disabled:opacity-50 disabled:cursor-not-allowed min-h-[42px] touch-manipulation transition-all';
+  'w-full bg-[#020d09]/80 border border-emerald-500/25 rounded-lg px-3 py-2.5 text-white text-sm placeholder:text-white/40 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-400/50 focus-visible:border-emerald-400/40 disabled:opacity-50 disabled:cursor-not-allowed min-h-[42px] touch-manipulation transition-all';
 
 const labelClass =
   'text-[10px] uppercase tracking-widest text-emerald-300/60 flex items-center gap-1.5 mb-1 font-medium';

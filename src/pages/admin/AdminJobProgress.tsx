@@ -617,14 +617,14 @@ export default function AdminJobProgress() {
                           type="date"
                           value={customStart}
                           onChange={(e) => setCustomStart(e.target.value)}
-                          className="flex-1 min-w-[130px] rounded-lg bg-[#050402]/70 border border-[#f4c979]/20 px-3 py-1.5 text-xs text-[#fdf4db] focus:outline-none focus:ring-1 focus:ring-[#f4c979]/60 [color-scheme:dark]"
+                          className="flex-1 min-w-[130px] rounded-lg bg-[#050402]/70 border border-[#f4c979]/20 px-3 py-1.5 text-xs text-[#fdf4db] focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/60 [color-scheme:dark]"
                           placeholder="Start"
                         />
                         <input
                           type="date"
                           value={customEnd}
                           onChange={(e) => setCustomEnd(e.target.value)}
-                          className="flex-1 min-w-[130px] rounded-lg bg-[#050402]/70 border border-[#f4c979]/20 px-3 py-1.5 text-xs text-[#fdf4db] focus:outline-none focus:ring-1 focus:ring-[#f4c979]/60 [color-scheme:dark]"
+                          className="flex-1 min-w-[130px] rounded-lg bg-[#050402]/70 border border-[#f4c979]/20 px-3 py-1.5 text-xs text-[#fdf4db] focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/60 [color-scheme:dark]"
                           placeholder="End"
                         />
                       </div>

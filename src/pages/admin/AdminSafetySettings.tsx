@@ -330,7 +330,7 @@ function NumberInput({
           }}
           min={min}
           max={max}
-          className="w-24 rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-[#f4c979]/60"
+          className="w-24 rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/60"
         />
         {suffix && <span className="text-xs text-white/40">{suffix}</span>}
       </div>
@@ -353,7 +353,7 @@ function HourPicker({
       <select
         value={value}
         onChange={(e) => onChange(parseInt(e.target.value, 10))}
-        className="rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#f4c979]/60"
+        className="rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/60"
       >
         {HOUR_OPTIONS.map((h) => (
           <option key={h} value={h} className="bg-[#1a1a1a] text-white">
@@ -534,7 +534,7 @@ function AnnouncementsTab() {
             maxLength={2000}
             rows={4}
             placeholder="e.g. Focus on heat safety during summer months, always mention hydration breaks..."
-            className="w-full rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-[#f4c979]/60 resize-y"
+            className="w-full rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/60 resize-y"
           />
           <div className="flex items-center justify-between mt-1">
             <div>
@@ -655,7 +655,7 @@ function BriefingsTab() {
                         : [...config.required_roles, key],
                     })
                   }
-                  className="rounded border-white/20 bg-white/[0.05] text-[#f4c979] focus:ring-[#f4c979]/60"
+                  className="rounded border-white/20 bg-white/[0.05] text-[#f4c979] focus-visible:ring-[#f4c979]/60"
                 />
                 <span className="text-sm text-white/80">{label}</span>
               </label>
@@ -721,7 +721,7 @@ function BriefingsTab() {
             }
           }}
           rows={16}
-          className="w-full rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-xs font-mono text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-[#f4c979]/60 resize-y"
+          className="w-full rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-xs font-mono text-white placeholder-white/30 focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/60 resize-y"
           spellCheck={false}
         />
       </SectionCard>
@@ -734,7 +734,7 @@ function BriefingsTab() {
               value={config.tree_service_standard_text}
               onChange={(e) => patch({ tree_service_standard_text: e.target.value })}
               rows={5}
-              className="w-full rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#f4c979]/60 resize-y"
+              className="w-full rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/60 resize-y"
             />
           </div>
           <div>
@@ -743,7 +743,7 @@ function BriefingsTab() {
               value={config.personalized_fallback_text}
               onChange={(e) => patch({ personalized_fallback_text: e.target.value })}
               rows={2}
-              className="w-full rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#f4c979]/60 resize-y"
+              className="w-full rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/60 resize-y"
             />
           </div>
           <div>
@@ -752,7 +752,7 @@ function BriefingsTab() {
               value={config.safety_tips.join("\n")}
               onChange={(e) => patch({ safety_tips: e.target.value.split("\n").filter((s) => s.trim().length > 0) })}
               rows={6}
-              className="w-full rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#f4c979]/60 resize-y"
+              className="w-full rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/60 resize-y"
             />
             <p className="text-xs text-white/30 text-right mt-1">{config.safety_tips.length} tips</p>
           </div>
@@ -867,7 +867,7 @@ function RewardsTab() {
             type="date"
             value={newOverrideDate}
             onChange={(e) => setNewOverrideDate(e.target.value)}
-            className="rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#f4c979]/60"
+            className="rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/60"
           />
           <button
             type="button"

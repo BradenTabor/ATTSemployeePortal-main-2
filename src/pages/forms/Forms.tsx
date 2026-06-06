@@ -403,7 +403,7 @@ const SearchBar = ({ value, onChange, totalCount, filteredCount }: SearchBarProp
           onChange={(event) => onChange(event.target.value)}
           placeholder="Search forms..."
           aria-label="Search forms"
-          className="w-full rounded-xl sm:rounded-2xl bg-black/50 border border-white/10 pl-10 sm:pl-11 pr-3 sm:pr-4 py-3 min-h-[48px] text-base sm:text-sm text-white placeholder:text-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60 focus:border-transparent transition-all shadow-inner touch-manipulation"
+          className="w-full rounded-xl sm:rounded-2xl bg-black/50 border border-white/10 pl-10 sm:pl-11 pr-3 sm:pr-4 py-3 min-h-[48px] text-base sm:text-sm text-white placeholder:text-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60 focus-visible:border-transparent transition-all shadow-inner touch-manipulation"
         />
       </label>
       <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] sm:text-xs text-white/60">

@@ -247,7 +247,7 @@ function ManageAccessModal({
               onChange={(e) => onUserSearchChange(e.target.value)}
               placeholder="Search by name or email..."
               aria-label="Search users to grant access"
-              className="mb-2 w-full min-h-[44px] rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-emerald-500/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+              className="mb-2 w-full min-h-[44px] rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus-visible:border-emerald-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30"
             />
             <ul className={`max-h-48 overflow-y-auto space-y-1 rounded-xl p-2 ${glass.subtle}`}>
               {usersToShow.slice(0, 20).map((u) => (

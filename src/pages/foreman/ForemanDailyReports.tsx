@@ -72,7 +72,7 @@ const PAGE_SIZE = 6;
 
 // Blue theme input styling
 const baseInput =
-  "w-full bg-[#020810]/80 border border-[#3b82f6]/25 rounded-lg px-3 py-2.5 text-white text-sm placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-[#3b82f6]/50 focus:border-[#3b82f6]/40 disabled:opacity-50 disabled:cursor-not-allowed min-h-[42px] touch-manipulation transition-all";
+  "w-full bg-[#020810]/80 border border-[#3b82f6]/25 rounded-lg px-3 py-2.5 text-white text-sm placeholder:text-white/40 focus:outline-none focus-visible:ring-1 focus-visible:ring-[#3b82f6]/50 focus-visible:border-[#3b82f6]/40 disabled:opacity-50 disabled:cursor-not-allowed min-h-[42px] touch-manipulation transition-all";
 
 const labelClass =
   "text-[10px] uppercase tracking-widest text-[#bfdbfe]/60 flex items-center gap-1.5 mb-1 font-medium";

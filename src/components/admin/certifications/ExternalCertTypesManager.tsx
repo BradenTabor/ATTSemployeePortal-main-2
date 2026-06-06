@@ -126,7 +126,7 @@ function TypeFormModal({
               onBlur={() => {
                 if (!editing) onChange({ slug: slugify(form.name) });
               }}
-              className="w-full min-h-[44px] rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-emerald-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
+              className="w-full min-h-[44px] rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus-visible:border-emerald-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
               placeholder="e.g. CDL Class A"
             />
           </div>
@@ -145,7 +145,7 @@ function TypeFormModal({
                 required
                 value={form.slug}
                 onChange={(e) => onChange({ slug: slugify(e.target.value) })}
-                className="w-full min-h-[44px] rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm text-white/60 placeholder:text-gray-500 focus:border-emerald-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
+                className="w-full min-h-[44px] rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm text-white/60 placeholder:text-gray-500 focus-visible:border-emerald-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
                 placeholder="auto-generated-from-name"
               />
             </div>
@@ -163,7 +163,7 @@ function TypeFormModal({
               rows={3}
               value={form.description}
               onChange={(e) => onChange({ description: e.target.value })}
-              className="w-full rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-emerald-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
+              className="w-full rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus-visible:border-emerald-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
               placeholder="Optional description…"
             />
           </div>
@@ -181,7 +181,7 @@ function TypeFormModal({
               onChange={(e) =>
                 onChange({ category: e.target.value as ExternalCertCategory })
               }
-              className="w-full min-h-[44px] rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm text-white focus:border-emerald-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
+              className="w-full min-h-[44px] rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm text-white focus-visible:border-emerald-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
             >
               {CATEGORY_ENTRIES.map(([value, label]) => (
                 <option key={value} value={value}>
@@ -204,7 +204,7 @@ function TypeFormModal({
               min={1}
               value={form.validity_months}
               onChange={(e) => onChange({ validity_months: e.target.value })}
-              className="w-full min-h-[44px] rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-emerald-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
+              className="w-full min-h-[44px] rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus-visible:border-emerald-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
               placeholder="Leave blank for no expiry"
             />
           </div>

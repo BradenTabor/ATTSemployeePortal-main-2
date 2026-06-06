@@ -157,7 +157,7 @@ export function DVIRTab({
                     key={id}
                     type="button"
                     onClick={() => { onStatusChange(id); onPageChange(1); }}
-                    className={`flex-1 inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 py-2.5 sm:px-4 sm:py-3 rounded-md sm:rounded-lg text-[11px] sm:text-xs font-semibold transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black/80 min-h-[44px] ${
+                    className={`flex-1 inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 py-2.5 sm:px-4 sm:py-3 rounded-md sm:rounded-lg text-[11px] sm:text-xs font-semibold transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900/80 min-h-[44px] ${
                       status === id
                         ? `bg-gradient-to-r ${activeColor} text-white shadow-lg`
                         : "text-white/60 hover:text-white hover:bg-white/5"
@@ -177,14 +177,14 @@ export function DVIRTab({
                   placeholder="Search truck # or driver name…"
                   value={search}
                   onChange={(e) => { onSearchChange(e.target.value); onPageChange(1); }}
-                  className="w-full bg-black/40 border border-purple-500/20 rounded-lg sm:rounded-xl pl-9 sm:pl-10 pr-9 sm:pr-10 py-2.5 sm:py-3 text-xs sm:text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/40 transition-colors min-h-[44px]"
+                  className="w-full bg-black/40 border border-purple-500/20 rounded-lg sm:rounded-xl pl-9 sm:pl-10 pr-9 sm:pr-10 py-2.5 sm:py-3 text-xs sm:text-sm text-white placeholder:text-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/50 focus-visible:border-purple-500/40 transition-colors min-h-[44px]"
                   aria-label="Search by truck number or driver name"
                 />
                 {search && (
                   <button
                     type="button"
                     onClick={() => { onSearchChange(""); onPageChange(1); }}
-                    className="absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 p-1 sm:p-1.5 rounded-md sm:rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black/80"
+                    className="absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 p-1 sm:p-1.5 rounded-md sm:rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900/80"
                     aria-label="Clear search"
                   >
                     <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" aria-hidden />
@@ -195,7 +195,7 @@ export function DVIRTab({
                 type="button"
                 onClick={onRefresh}
                 disabled={loading}
-                className="p-2.5 sm:p-3 rounded-lg sm:rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 hover:bg-purple-500/20 disabled:opacity-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black/80 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                className="p-2.5 sm:p-3 rounded-lg sm:rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 hover:bg-purple-500/20 disabled:opacity-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900/80 min-h-[44px] min-w-[44px] flex items-center justify-center"
                 title="Refresh data"
                 aria-label="Refresh DVIR reports"
               >

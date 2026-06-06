@@ -166,7 +166,7 @@ const MobileUserCard = ({
               value={pendingRole}
               onChange={(e) => onRoleChange(e.target.value)}
               disabled={savingRole}
-              className="w-full rounded-lg sm:rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-2.5 sm:px-3 py-2 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 min-h-[40px] sm:min-h-[44px]"
+              className="w-full rounded-lg sm:rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-2.5 sm:px-3 py-2 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60 min-h-[40px] sm:min-h-[44px]"
             >
               <option value="employee">Employee</option>
               <option value="admin">Admin</option>
@@ -400,7 +400,7 @@ const ExperienceEditModal = ({ user, isOpen, onClose, onSave, saving }: Experien
                   type="date"
                   value={hireDate}
                   onChange={(e) => setHireDate(e.target.value)}
-                  className="w-full rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-4 py-3 text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60"
+                  className="w-full rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-4 py-3 text-sm text-[#fdf4db] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60"
                 />
                 {hireDate && (
                   <p className="mt-1.5 text-xs text-[#c7b696]">
@@ -417,7 +417,7 @@ const ExperienceEditModal = ({ user, isOpen, onClose, onSave, saving }: Experien
                 <select
                   value={experienceLevel}
                   onChange={(e) => setExperienceLevel(e.target.value as 'apprentice' | 'journeyman' | 'expert' | '')}
-                  className="w-full rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-4 py-3 text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60"
+                  className="w-full rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-4 py-3 text-sm text-[#fdf4db] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60"
                 >
                   <option value="">Not Set</option>
                   <option value="apprentice">Apprentice (&lt;1 year)</option>
@@ -536,7 +536,7 @@ const ManagerEditModal = ({
                     value={managerId}
                     onChange={(e) => setManagerId(e.target.value)}
                     disabled={saving}
-                    className="w-full rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-4 py-3 text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60"
+                    className="w-full rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-4 py-3 text-sm text-[#fdf4db] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60"
                   >
                     <option value="">No manager</option>
                     {options.map((u) => (
@@ -636,7 +636,7 @@ const BlockUserModal = ({
               onChange={(e) => setReason(e.target.value)}
               placeholder="e.g. Policy violation, Suspicious activity..."
               rows={3}
-              className="w-full rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-4 py-3 text-sm text-[#fdf4db] placeholder:text-[#8a7a5c] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 resize-none"
+              className="w-full rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-4 py-3 text-sm text-[#fdf4db] placeholder:text-[#8a7a5c] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60 resize-none"
             />
           </div>
           <div className="flex gap-3 mt-6">
@@ -733,7 +733,7 @@ const DeleteUserModal = ({
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="e.g. GDPR deletion request, Spam account..."
                 rows={2}
-                className="w-full rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-4 py-3 text-sm text-[#fdf4db] placeholder:text-[#8a7a5c] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 resize-none"
+                className="w-full rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-4 py-3 text-sm text-[#fdf4db] placeholder:text-[#8a7a5c] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60 resize-none"
               />
             </div>
             <div>
@@ -752,7 +752,7 @@ const DeleteUserModal = ({
                 value={confirmPhrase}
                 onChange={(e) => setConfirmPhrase(e.target.value)}
                 placeholder={DELETE_CONFIRM_PHRASE}
-                className="w-full rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-4 py-3 text-sm text-[#fdf4db] placeholder:text-[#8a7a5c] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60"
+                className="w-full rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-4 py-3 text-sm text-[#fdf4db] placeholder:text-[#8a7a5c] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60"
                 spellCheck={false}
               />
             </div>
@@ -1368,7 +1368,7 @@ function AdminUsers({ embedded = false }: AdminUsersProps) {
                     setSearchQuery(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full rounded-xl sm:rounded-2xl bg-[#050402]/70 border border-[#f4c979]/20 pl-9 sm:pl-11 pr-3 sm:pr-4 py-2.5 sm:py-3 text-xs sm:text-sm text-[#fdf4db] placeholder:text-[#bfa984] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 min-h-[42px] sm:min-h-[48px]"
+                  className="w-full rounded-xl sm:rounded-2xl bg-[#050402]/70 border border-[#f4c979]/20 pl-9 sm:pl-11 pr-3 sm:pr-4 py-2.5 sm:py-3 text-xs sm:text-sm text-[#fdf4db] placeholder:text-[#bfa984] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60 min-h-[42px] sm:min-h-[48px]"
                 />
               </div>
               <div className="relative">
@@ -1379,7 +1379,7 @@ function AdminUsers({ embedded = false }: AdminUsersProps) {
                     setRoleFilter(e.target.value || null);
                     setCurrentPage(1);
                   }}
-                  className="w-full rounded-xl sm:rounded-2xl bg-[#050402]/70 border border-[#f4c979]/20 pl-9 sm:pl-11 pr-8 sm:pr-4 py-2.5 sm:py-3 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 appearance-none cursor-pointer min-h-[42px] sm:min-h-[48px]"
+                  className="w-full rounded-xl sm:rounded-2xl bg-[#050402]/70 border border-[#f4c979]/20 pl-9 sm:pl-11 pr-8 sm:pr-4 py-2.5 sm:py-3 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60 appearance-none cursor-pointer min-h-[42px] sm:min-h-[48px]"
                 >
                   <option value="">All Roles</option>
                   <option value="employee">Employee</option>
@@ -1587,7 +1587,7 @@ function AdminUsers({ embedded = false }: AdminUsersProps) {
                                   value={pendingRole}
                                   onChange={(e) => setPendingRole(e.target.value)}
                                   disabled={savingRole}
-                                  className="rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-3 py-1.5 text-xs text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60"
+                                  className="rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-3 py-1.5 text-xs text-[#fdf4db] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60"
                                 >
                                   <option value="employee">Employee</option>
                                   <option value="admin">Admin</option>

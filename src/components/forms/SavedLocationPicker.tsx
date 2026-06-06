@@ -132,7 +132,7 @@ function SaveLocationModal({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g., Downtown Site, Highway 65 Job"
-                className="w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2.5 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
+                className="w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2.5 text-sm text-white placeholder:text-gray-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500/50"
                 autoFocus
               />
               <p className="mt-1 text-[10px] text-gray-500">

@@ -130,7 +130,7 @@ export function LocationPickerModal({
                   className={cn(
                     "p-3 -mr-1 rounded-xl text-gray-400 hover:text-white",
                     "hover:bg-white/10 active:bg-white/20 transition-colors",
-                    "focus:outline-none focus:ring-2 focus:ring-emerald-500/30",
+                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30",
                     "min-w-[44px] min-h-[44px] flex items-center justify-center"
                   )}
                   aria-label="Close modal"
@@ -219,7 +219,7 @@ export function LocationPickerModal({
                     "flex-1 sm:flex-none px-4 py-3 sm:py-2 rounded-xl sm:rounded-lg text-sm font-medium",
                     "text-gray-300 hover:text-white",
                     "hover:bg-white/10 active:bg-white/20 transition-colors",
-                    "focus:outline-none focus:ring-2 focus:ring-white/20",
+                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20",
                     "min-h-[44px]"
                   )}
                 >
@@ -233,7 +233,7 @@ export function LocationPickerModal({
                     "flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-3 sm:py-2 rounded-xl sm:rounded-lg text-sm font-medium",
                     "bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white",
                     "transition-colors",
-                    "focus:outline-none focus:ring-2 focus:ring-emerald-500/50",
+                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50",
                     "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-emerald-600",
                     "min-h-[44px]"
                   )}

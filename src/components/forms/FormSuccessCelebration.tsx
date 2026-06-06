@@ -502,7 +502,7 @@ export function FormSuccessCelebration({
                 }
                 text-white font-semibold rounded-xl transition-all 
                 ${hasRemaining ? 'shadow-lg' : 'shadow-lg shadow-emerald-900/30'} 
-                active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black
+                active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900
               `}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}

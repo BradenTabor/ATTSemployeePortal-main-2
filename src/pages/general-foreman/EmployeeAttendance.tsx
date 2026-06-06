@@ -334,7 +334,7 @@ export default function EmployeeAttendance() {
                 placeholder="Search by name..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-8 py-2 sm:py-2.5 text-sm bg-white/[0.03] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:outline-none focus:border-[#c084fc]/40 transition-colors"
+                className="w-full pl-9 pr-8 py-2 sm:py-2.5 text-sm bg-white/[0.03] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:outline-none focus-visible:border-[#c084fc]/40 transition-colors"
               />
               {searchQuery && (
                 <button
@@ -352,7 +352,7 @@ export default function EmployeeAttendance() {
               <select
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value as RoleFilter)}
-                className="flex-1 px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm bg-white/[0.03] border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#c084fc]/40 transition-colors appearance-none cursor-pointer"
+                className="flex-1 px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm bg-white/[0.03] border border-white/10 rounded-xl text-white focus:outline-none focus-visible:border-[#c084fc]/40 transition-colors appearance-none cursor-pointer"
               >
                 <option value="all">All Roles</option>
                 <option value="employee">Employee</option>
@@ -364,7 +364,7 @@ export default function EmployeeAttendance() {
                 onChange={(e) =>
                   setStatusFilter(e.target.value as StatusFilter)
                 }
-                className="flex-1 px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm bg-white/[0.03] border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#c084fc]/40 transition-colors appearance-none cursor-pointer"
+                className="flex-1 px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm bg-white/[0.03] border border-white/10 rounded-xl text-white focus:outline-none focus-visible:border-[#c084fc]/40 transition-colors appearance-none cursor-pointer"
               >
                 <option value="all">All Statuses</option>
                 <option value="present">Present</option>
@@ -420,7 +420,7 @@ export default function EmployeeAttendance() {
                     type="checkbox"
                     checked={allSelected}
                     onChange={handleSelectAll}
-                    className="w-4 h-4 rounded border-white/20 bg-white/[0.04] text-purple-500 focus:ring-purple-500/30 focus:ring-offset-0 cursor-pointer"
+                    className="w-4 h-4 rounded border-white/20 bg-white/[0.04] text-purple-500 focus-visible:ring-purple-500/30 focus-visible:ring-offset-0 cursor-pointer"
                   />
                   <span className="text-[11px] sm:text-xs text-gray-400 select-none">
                     {allSelected
@@ -587,7 +587,7 @@ function EmployeeRow({
           type="checkbox"
           checked={isSelected}
           onChange={onToggleSelect}
-          className="w-4 h-4 rounded border-white/20 bg-white/[0.04] text-purple-500 focus:ring-purple-500/30 focus:ring-offset-0 cursor-pointer flex-shrink-0"
+          className="w-4 h-4 rounded border-white/20 bg-white/[0.04] text-purple-500 focus-visible:ring-purple-500/30 focus-visible:ring-offset-0 cursor-pointer flex-shrink-0"
         />
 
         <UserAvatar

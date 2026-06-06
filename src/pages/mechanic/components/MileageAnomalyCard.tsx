@@ -180,7 +180,7 @@ export default function MileageAnomalyCard({ anomaly, onResolve }: MileageAnomal
                     onChange={(e) => setResolutionNotes(e.target.value)}
                     placeholder="Explain why this reading is valid or how it was corrected..."
                     rows={2}
-                    className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all resize-none"
+                    className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg pl-9 pr-3 py-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/50 transition-all resize-none"
                   />
                 </div>
               </div>

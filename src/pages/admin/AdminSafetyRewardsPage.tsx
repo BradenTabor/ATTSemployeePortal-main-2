@@ -289,7 +289,7 @@ function EditModal({ year, month, existing, onClose }: EditModalProps) {
               type="text"
               value={form.grand_prize_name}
               onChange={(e) => handleField('grand_prize_name', e.target.value)}
-              className="mt-1 w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#f6dcb2]/40"
+              className="mt-1 w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus-visible:border-[#f6dcb2]/40"
               placeholder="e.g. $100 Gift Card"
             />
           </label>
@@ -300,7 +300,7 @@ function EditModal({ year, month, existing, onClose }: EditModalProps) {
               value={form.grand_prize_description}
               onChange={(e) => handleField('grand_prize_description', e.target.value)}
               rows={2}
-              className="mt-1 w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#f6dcb2]/40 resize-none"
+              className="mt-1 w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus-visible:border-[#f6dcb2]/40 resize-none"
               placeholder="Optional description"
             />
           </label>
@@ -368,14 +368,14 @@ function EditModal({ year, month, existing, onClose }: EditModalProps) {
                 type="text"
                 value={form.runner_up_1_name}
                 onChange={(e) => handleField('runner_up_1_name', e.target.value)}
-                className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#f6dcb2]/40"
+                className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus-visible:border-[#f6dcb2]/40"
                 placeholder="Prize name"
               />
               <textarea
                 value={form.runner_up_1_description}
                 onChange={(e) => handleField('runner_up_1_description', e.target.value)}
                 rows={2}
-                className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#f6dcb2]/40 resize-none"
+                className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus-visible:border-[#f6dcb2]/40 resize-none"
                 placeholder="Optional description"
               />
               <button
@@ -424,14 +424,14 @@ function EditModal({ year, month, existing, onClose }: EditModalProps) {
                   type="text"
                   value={form.runner_up_2_name}
                   onChange={(e) => handleField('runner_up_2_name', e.target.value)}
-                  className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#f6dcb2]/40"
+                  className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus-visible:border-[#f6dcb2]/40"
                   placeholder="Prize name"
                 />
                 <textarea
                   value={form.runner_up_2_description}
                   onChange={(e) => handleField('runner_up_2_description', e.target.value)}
                   rows={2}
-                  className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#f6dcb2]/40 resize-none"
+                  className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus-visible:border-[#f6dcb2]/40 resize-none"
                   placeholder="Optional description"
                 />
                 <button
@@ -549,7 +549,7 @@ function DrawModal({ year, month, isRedraw, onClose }: DrawModalProps) {
               type="text"
               value={confirmText}
               onChange={(e) => setConfirmText(e.target.value)}
-              className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-amber-500/40"
+              className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus-visible:border-amber-500/40"
               placeholder="REDRAW"
             />
           </div>

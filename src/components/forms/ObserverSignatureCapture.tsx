@@ -150,10 +150,10 @@ export function ObserverSignatureCapture({
                     }}
                     placeholder="Enter observer's full name"
                     className={cn(
-                      "w-full rounded-lg border bg-black/50 pl-10 pr-3 py-3 text-base text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 transition-all min-h-[44px]",
+                      "w-full rounded-lg border bg-black/50 pl-10 pr-3 py-3 text-base text-white placeholder:text-gray-500 focus:outline-none focus-visible:ring-1 transition-all min-h-[44px]",
                       errors.name
-                        ? "border-red-500/50 focus:ring-red-500/50"
-                        : "border-white/10 focus:ring-emerald-500/50"
+                        ? "border-red-500/50 focus-visible:ring-red-500/50"
+                        : "border-white/10 focus-visible:ring-emerald-500/50"
                     )}
                     maxLength={100}
                   />
@@ -173,7 +173,7 @@ export function ObserverSignatureCapture({
                   <select
                     value={role}
                     onChange={(e) => setRole(e.target.value)}
-                    className="w-full rounded-lg border border-white/10 bg-black/50 pl-10 pr-3 py-3 text-base text-white focus:outline-none focus:ring-1 focus:ring-emerald-500/50 transition-all appearance-none min-h-[44px]"
+                    className="w-full rounded-lg border border-white/10 bg-black/50 pl-10 pr-3 py-3 text-base text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500/50 transition-all appearance-none min-h-[44px]"
                   >
                     {ROLE_OPTIONS.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -200,10 +200,10 @@ export function ObserverSignatureCapture({
                     }}
                     placeholder="Type observer's signature"
                     className={cn(
-                      "w-full rounded-lg border bg-black/50 pl-10 pr-3 py-3 text-base text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 transition-all min-h-[44px]",
+                      "w-full rounded-lg border bg-black/50 pl-10 pr-3 py-3 text-base text-white placeholder:text-gray-500 focus:outline-none focus-visible:ring-1 transition-all min-h-[44px]",
                       errors.signature
-                        ? "border-red-500/50 focus:ring-red-500/50"
-                        : "border-white/10 focus:ring-emerald-500/50"
+                        ? "border-red-500/50 focus-visible:ring-red-500/50"
+                        : "border-white/10 focus-visible:ring-emerald-500/50"
                     )}
                     style={{ fontFamily: "Caveat, cursive" }}
                   />

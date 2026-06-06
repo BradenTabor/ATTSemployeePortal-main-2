@@ -991,7 +991,7 @@ export function AdminRTOContent() {
                     setSearchQuery(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full rounded-lg sm:rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#fdf4db] placeholder:text-[#bfa984] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/50 focus:border-[#f4c979]/50 transition-all min-h-[40px] sm:min-h-[44px]"
+                  className="w-full rounded-lg sm:rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#fdf4db] placeholder:text-[#bfa984] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:border-[#f4c979]/50 transition-all min-h-[40px] sm:min-h-[44px]"
                 />
               </div>
 
@@ -1008,7 +1008,7 @@ export function AdminRTOContent() {
                       setStatusFilter(e.target.value || null);
                       setCurrentPage(1);
                     }}
-                    className="w-full rounded-lg sm:rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 pl-9 sm:pl-10 pr-6 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/50 appearance-none cursor-pointer min-h-[40px] sm:min-h-[44px]"
+                    className="w-full rounded-lg sm:rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 pl-9 sm:pl-10 pr-6 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 appearance-none cursor-pointer min-h-[40px] sm:min-h-[44px]"
                   >
                     <option value="">All Status</option>
                     <option value="Pending">Pending</option>
@@ -1028,7 +1028,7 @@ export function AdminRTOContent() {
                       setMonthFilter(e.target.value || null);
                       setCurrentPage(1);
                     }}
-                    className="w-full rounded-lg sm:rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 pl-9 sm:pl-10 pr-6 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/50 appearance-none cursor-pointer min-h-[40px] sm:min-h-[44px]"
+                    className="w-full rounded-lg sm:rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 pl-9 sm:pl-10 pr-6 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 appearance-none cursor-pointer min-h-[40px] sm:min-h-[44px]"
                   >
                     <option value="">All Months</option>
                     {monthOptions.map((option) => (
@@ -1221,7 +1221,7 @@ export function AdminRTOContent() {
                 placeholder="Reason for denial (optional)"
                 maxLength={200}
                 rows={3}
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-red-400/40 resize-none"
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/40 resize-none"
               />
               <p className="text-right text-[0.65rem] text-white/30 mt-1 mb-4">
                 {denyReason.length}/200

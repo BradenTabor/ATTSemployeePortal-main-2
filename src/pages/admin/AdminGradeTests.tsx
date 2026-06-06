@@ -215,7 +215,7 @@ function ReviewCard({ review }: { review: PendingReview }) {
                     placeholder="Optional notes..."
                     value={grades[answer.question_id]?.admin_notes ?? ""}
                     onChange={(e) => handleNotes(answer.question_id, e.target.value)}
-                    className="w-full rounded-lg border border-white/10 bg-gray-800 px-3 py-1.5 text-sm text-white placeholder-gray-500 focus:border-amber-500/50 focus:outline-none"
+                    className="w-full rounded-lg border border-white/10 bg-gray-800 px-3 py-1.5 text-sm text-white placeholder-gray-500 focus-visible:border-amber-500/50 focus:outline-none"
                   />
                 </div>
               </div>

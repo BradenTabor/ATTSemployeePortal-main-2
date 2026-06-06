@@ -388,7 +388,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                           onChange={(e) => setFormData(prev => ({ ...prev, incident_date: e.target.value }))}
                           max={new Date().toISOString().split('T')[0]}
                           required
-                          className="w-full px-2.5 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200"
+                          className="w-full px-2.5 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus-visible:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200"
                         />
                       </div>
                       {/* Time */}
@@ -399,7 +399,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                           value={formData.incident_time || ''}
                           onChange={(e) => setFormData(prev => ({ ...prev, incident_time: e.target.value || null }))}
                           required={isOshaRecordable}
-                          className="w-full px-2.5 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200"
+                          className="w-full px-2.5 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus-visible:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200"
                         />
                       </div>
                       {/* Work Site - Full Width */}
@@ -411,7 +411,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                           value={formData.work_site_id || ""}
                           onChange={(e) => handleWorkSiteChange(e.target.value)}
                           required={isOshaRecordable}
-                          className="w-full px-2.5 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200"
+                          className="w-full px-2.5 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus-visible:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200"
                         >
                           <option value="">Select site</option>
                           {workSites.map((site) => (
@@ -446,7 +446,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                               crew_id: job?.crew_id ?? prev.crew_id,
                             }));
                           }}
-                          className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200"
+                          className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus-visible:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200"
                         >
                           <option value="">None</option>
                           {jobs.map((job) => (
@@ -464,7 +464,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                           onChange={(e) =>
                             setFormData((prev) => ({ ...prev, crew_id: e.target.value || null }))
                           }
-                          className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200"
+                          className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus-visible:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200"
                         >
                           <option value="">None</option>
                           {crews.map((crew) => (
@@ -479,7 +479,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                           onChange={(e) =>
                             setFormData((prev) => ({ ...prev, supervisor_id: e.target.value || null }))
                           }
-                          className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200"
+                          className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus-visible:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200"
                         >
                           <option value="">None</option>
                           {employees
@@ -599,7 +599,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                           placeholder="What happened?"
                           rows={2}
                           required
-                          className="w-full px-2 py-1.5 pr-10 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 resize-none placeholder:text-white/30"
+                          className="w-full px-2 py-1.5 pr-10 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus-visible:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 resize-none placeholder:text-white/30"
                         />
                         <div className="absolute right-1.5 top-1.5">
                           <VoiceInputButton
@@ -607,7 +607,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                             currentValue={formData.description}
                             appendMode={true}
                             size="sm"
-                            className="bg-red-500/10 hover:bg-red-500/20 focus:ring-red-500/40 !p-1"
+                            className="bg-red-500/10 hover:bg-red-500/20 focus-visible:ring-red-500/40 !p-1"
                           />
                         </div>
                       </div>
@@ -624,7 +624,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                             onChange={(e) => setFormData(prev => ({ ...prev, what_doing_before: e.target.value }))}
                             placeholder="e.g., Climbing ladder"
                             required={isOshaRecordable}
-                            className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 placeholder:text-white/25"
+                            className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus-visible:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 placeholder:text-white/25"
                           />
                         </div>
                         <div>
@@ -635,7 +635,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                             onChange={(e) => setFormData(prev => ({ ...prev, object_substance_harmed: e.target.value }))}
                             placeholder="e.g., Chainsaw, branch, floor"
                             required={isOshaRecordable}
-                            className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 placeholder:text-white/25"
+                            className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus-visible:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 placeholder:text-white/25"
                           />
                         </div>
                       </>
@@ -715,7 +715,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                             value={formData.physician_name || ''}
                             onChange={(e) => setFormData(prev => ({ ...prev, physician_name: e.target.value || null }))}
                             placeholder="Dr. Name"
-                            className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 placeholder:text-white/25"
+                            className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus-visible:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 placeholder:text-white/25"
                           />
                         </div>
                         <div>
@@ -725,7 +725,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                             value={formData.treatment_facility || ''}
                             onChange={(e) => setFormData(prev => ({ ...prev, treatment_facility: e.target.value || null }))}
                             placeholder="Hospital"
-                            className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 placeholder:text-white/25"
+                            className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus-visible:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 placeholder:text-white/25"
                           />
                         </div>
                       </div>
@@ -756,7 +756,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                               days_away_from_work: e.target.value ? parseInt(e.target.value) : null 
                             }))}
                             placeholder="0"
-                            className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-sm focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 placeholder:text-white/25"
+                            className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-sm focus:outline-none focus-visible:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 placeholder:text-white/25"
                           />
                           <p className="mt-1 text-xs text-white/40">Calendar days (exclude day of injury)</p>
                         </div>
@@ -773,7 +773,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                               days_restricted_duty: e.target.value ? parseInt(e.target.value) : null 
                             }))}
                             placeholder="0"
-                            className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-sm focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 placeholder:text-white/25"
+                            className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-sm focus:outline-none focus-visible:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 placeholder:text-white/25"
                           />
                           <p className="mt-1 text-xs text-white/40">Days on light/modified duty</p>
                         </div>
@@ -802,7 +802,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                             onChange={(e) => setFormData(prev => ({ ...prev, employee_job_title: e.target.value || null }))}
                             placeholder="e.g., Tree Trimmer, Equipment Operator"
                             required={isOshaRecordable}
-                            className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-sm focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 placeholder:text-white/25"
+                            className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-sm focus:outline-none focus-visible:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 placeholder:text-white/25"
                           />
                         </div>
                         <div>
@@ -813,7 +813,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                             type="time"
                             value={formData.time_began_work || ''}
                             onChange={(e) => setFormData(prev => ({ ...prev, time_began_work: e.target.value || null }))}
-                            className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-sm focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200"
+                            className="w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-sm focus:outline-none focus-visible:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200"
                           />
                         </div>
                       </div>
@@ -890,7 +890,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                                 value={demographics.employee_street_address}
                                 onChange={(e) => setDemographics((p) => ({ ...p, employee_street_address: e.target.value }))}
                                 placeholder="123 Main St"
-                                className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 placeholder:text-white/25"
+                                className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus-visible:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 placeholder:text-white/25"
                               />
                             </div>
                             <div>
@@ -901,7 +901,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                                 value={demographics.employee_city}
                                 onChange={(e) => setDemographics((p) => ({ ...p, employee_city: e.target.value }))}
                                 placeholder="City"
-                                className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 placeholder:text-white/25"
+                                className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus-visible:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 placeholder:text-white/25"
                               />
                             </div>
                             <div>
@@ -910,7 +910,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                                 autoComplete="address-level1"
                                 value={demographics.employee_state}
                                 onChange={(e) => setDemographics((p) => ({ ...p, employee_state: e.target.value }))}
-                                className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200"
+                                className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus-visible:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200"
                               >
                                 <option value="">Select</option>
                                 {US_STATES.map((s) => (
@@ -926,7 +926,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                                 value={demographics.employee_zip}
                                 onChange={(e) => setDemographics((p) => ({ ...p, employee_zip: e.target.value }))}
                                 placeholder="ZIP"
-                                className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 placeholder:text-white/25"
+                                className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus-visible:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200 placeholder:text-white/25"
                               />
                             </div>
                             <div>
@@ -936,7 +936,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                                 autoComplete="bday"
                                 value={demographics.employee_date_of_birth}
                                 onChange={(e) => setDemographics((p) => ({ ...p, employee_date_of_birth: e.target.value }))}
-                                className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200"
+                                className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus-visible:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200"
                               />
                             </div>
                             <div>
@@ -965,7 +965,7 @@ export default function IncidentLoggingModal({ isOpen, onClose }: IncidentLoggin
                                 type="date"
                                 value={demographics.date_of_death}
                                 onChange={(e) => setDemographics((p) => ({ ...p, date_of_death: e.target.value }))}
-                                className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200"
+                                className="w-full px-2 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-xs focus:outline-none focus-visible:border-red-500/30 focus:bg-white/[0.06] transition-all duration-200"
                               />
                             </div>
                           )}

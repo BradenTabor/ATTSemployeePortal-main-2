@@ -72,7 +72,7 @@ export default function EmergencyActionPlan() {
         {/* Skip-link: 911 is first Tab stop */}
         <a
           href="tel:911"
-          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:bg-red-600 focus:text-white focus:p-4 focus:rounded-lg focus:ring-2 focus:ring-white"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:bg-red-600 focus:text-white focus:p-4 focus:rounded-lg focus-visible:ring-2 focus-visible:ring-white"
           aria-label="Skip to Call 911 emergency services immediately"
         >
           Skip to Call 911

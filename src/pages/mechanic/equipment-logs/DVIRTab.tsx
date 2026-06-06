@@ -378,7 +378,7 @@ export function DVIRTab({
                   placeholder="Search truck # or driver name..."
                   value={dvirSearch}
                   onChange={(e) => { setDvirSearch(e.target.value); setDvirPage(1); }}
-                  className="w-full bg-gray-950 border-2 border-gray-800 rounded-xl pl-11 pr-11 py-2.5 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500/50 transition-all"
+                  className="w-full bg-gray-950 border-2 border-gray-800 rounded-xl pl-11 pr-11 py-2.5 text-sm text-white placeholder:text-gray-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50 focus-visible:border-orange-500/50 transition-all"
                 />
                 {dvirSearch && (
                   <motion.button 
@@ -906,18 +906,18 @@ export function DVIRTab({
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <label className="block text-xs uppercase tracking-wider text-orange-300 mb-2 font-bold">Truck #</label>
-                            <input value={dvirUpdateTruckNumber} onChange={(e) => setDvirUpdateTruckNumber(e.target.value)} placeholder="e.g., 101" className="w-full bg-gray-950 border-2 border-gray-700 text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500/50 transition-all placeholder:text-gray-600" />
+                            <input value={dvirUpdateTruckNumber} onChange={(e) => setDvirUpdateTruckNumber(e.target.value)} placeholder="e.g., 101" className="w-full bg-gray-950 border-2 border-gray-700 text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50 focus-visible:border-orange-500/50 transition-all placeholder:text-gray-600" />
                           </div>
                           <div>
                             <label className="block text-xs uppercase tracking-wider text-orange-300 mb-2 font-bold">Date</label>
-                            <input type="date" value={dvirUpdateDate} onChange={(e) => setDvirUpdateDate(e.target.value)} className="w-full bg-gray-950 border-2 border-gray-700 text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500/50 transition-all [color-scheme:dark]" />
+                            <input type="date" value={dvirUpdateDate} onChange={(e) => setDvirUpdateDate(e.target.value)} className="w-full bg-gray-950 border-2 border-gray-700 text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50 focus-visible:border-orange-500/50 transition-all [color-scheme:dark]" />
                           </div>
                         </div>
                         
                         {/* Fix Description */}
                         <div>
                           <label className="block text-xs uppercase tracking-wider text-orange-300 mb-2 font-bold">Fix Applied <span className="text-rose-400">*</span></label>
-                          <textarea value={dvirUpdateDeficiency} onChange={(e) => setDvirUpdateDeficiency(e.target.value)} rows={2} placeholder="What was done? E.g., Replaced brake pads..." className="w-full bg-gray-950 border-2 border-gray-700 text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500/50 transition-all resize-none placeholder:text-gray-600" />
+                          <textarea value={dvirUpdateDeficiency} onChange={(e) => setDvirUpdateDeficiency(e.target.value)} rows={2} placeholder="What was done? E.g., Replaced brake pads..." className="w-full bg-gray-950 border-2 border-gray-700 text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50 focus-visible:border-orange-500/50 transition-all resize-none placeholder:text-gray-600" />
                         </div>
                         
                         {/* Cost */}
@@ -925,7 +925,7 @@ export function DVIRTab({
                           <label className="block text-xs uppercase tracking-wider text-orange-300 mb-2 font-bold">Repair Cost <span className="text-gray-500">(Optional)</span></label>
                           <div className="relative">
                             <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-orange-400" />
-                            <input type="number" step="0.01" min="0" value={dvirUpdateCost} onChange={(e) => setDvirUpdateCost(e.target.value)} placeholder="0.00" className="w-full bg-gray-950 border-2 border-gray-700 text-white text-sm rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500/50 transition-all placeholder:text-gray-600" />
+                            <input type="number" step="0.01" min="0" value={dvirUpdateCost} onChange={(e) => setDvirUpdateCost(e.target.value)} placeholder="0.00" className="w-full bg-gray-950 border-2 border-gray-700 text-white text-sm rounded-xl pl-12 pr-4 py-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50 focus-visible:border-orange-500/50 transition-all placeholder:text-gray-600" />
                           </div>
                         </div>
                         
@@ -955,9 +955,9 @@ export function DVIRTab({
                                     className="flex gap-3 items-start p-3 rounded-xl bg-gray-900 border-2 border-gray-700"
                                   >
                                     <div className="flex-1 grid grid-cols-3 gap-2">
-                                      <input type="text" placeholder="Part name" value={part.part_name} onChange={(e) => handleDvirPartChange(index, { ...part, part_name: e.target.value })} className="col-span-2 sm:col-span-1 bg-gray-950 border-2 border-gray-700 text-white text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all placeholder:text-gray-600" />
-                                      <input type="number" placeholder="Qty" min={1} value={part.quantity || ""} onChange={(e) => handleDvirPartChange(index, { ...part, quantity: parseInt(e.target.value) || 1 })} className="bg-gray-950 border-2 border-gray-700 text-white text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all placeholder:text-gray-600" />
-                                      <input type="text" placeholder="Part #" value={part.part_number || ""} onChange={(e) => handleDvirPartChange(index, { ...part, part_number: e.target.value })} className="bg-gray-950 border-2 border-gray-700 text-white text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all placeholder:text-gray-600" />
+                                      <input type="text" placeholder="Part name" value={part.part_name} onChange={(e) => handleDvirPartChange(index, { ...part, part_name: e.target.value })} className="col-span-2 sm:col-span-1 bg-gray-950 border-2 border-gray-700 text-white text-sm rounded-lg px-3 py-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50 transition-all placeholder:text-gray-600" />
+                                      <input type="number" placeholder="Qty" min={1} value={part.quantity || ""} onChange={(e) => handleDvirPartChange(index, { ...part, quantity: parseInt(e.target.value) || 1 })} className="bg-gray-950 border-2 border-gray-700 text-white text-sm rounded-lg px-3 py-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50 transition-all placeholder:text-gray-600" />
+                                      <input type="text" placeholder="Part #" value={part.part_number || ""} onChange={(e) => handleDvirPartChange(index, { ...part, part_number: e.target.value })} className="bg-gray-950 border-2 border-gray-700 text-white text-sm rounded-lg px-3 py-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50 transition-all placeholder:text-gray-600" />
                                     </div>
                                     <motion.button 
                                       whileHover={{ scale: 1.15 }}
@@ -987,7 +987,7 @@ export function DVIRTab({
                         {/* Remarks */}
                         <div>
                           <label className="block text-xs uppercase tracking-wider text-orange-300 mb-2 font-bold">Additional Notes <span className="text-gray-500">(Optional)</span></label>
-                          <textarea value={dvirUpdateRemarks} onChange={(e) => setDvirUpdateRemarks(e.target.value)} rows={2} placeholder="Any additional details..." className="w-full bg-gray-950 border-2 border-gray-700 text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500/50 transition-all resize-none placeholder:text-gray-600" />
+                          <textarea value={dvirUpdateRemarks} onChange={(e) => setDvirUpdateRemarks(e.target.value)} rows={2} placeholder="Any additional details..." className="w-full bg-gray-950 border-2 border-gray-700 text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50 focus-visible:border-orange-500/50 transition-all resize-none placeholder:text-gray-600" />
                         </div>
                         
                         {/* Save Message */}

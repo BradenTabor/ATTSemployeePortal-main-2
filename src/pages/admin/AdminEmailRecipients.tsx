@@ -437,7 +437,7 @@ function AdminEmailRecipients() {
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-                className="flex-1 min-w-0 rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-3 sm:px-4 py-2 sm:py-2.5 text-sm text-[#fdf4db] placeholder:text-[#8a7a5c] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60"
+                className="flex-1 min-w-0 rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-3 sm:px-4 py-2 sm:py-2.5 text-sm text-[#fdf4db] placeholder:text-[#8a7a5c] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60"
               />
               <button
                 onClick={handleAdd}
@@ -484,7 +484,7 @@ function AdminEmailRecipients() {
                 onChange={(e) => setBulkText(e.target.value)}
                 rows={3}
                 placeholder="a@example.com, b@example.com"
-                className="w-full min-w-0 rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-3 sm:px-4 py-2 sm:py-3 text-sm text-[#fdf4db] placeholder:text-[#8a7a5c] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 resize-none"
+                className="w-full min-w-0 rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-3 sm:px-4 py-2 sm:py-3 text-sm text-[#fdf4db] placeholder:text-[#8a7a5c] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60 resize-none"
               />
               <div className="flex gap-2 mt-2 flex-wrap">
                 <button

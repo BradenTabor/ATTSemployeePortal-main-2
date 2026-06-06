@@ -366,7 +366,7 @@ const LevelBadge = memo(function LevelBadge({
           relative w-14 h-14 sm:w-[72px] sm:h-[72px] md:w-20 md:h-20 rounded-xl sm:rounded-2xl
           ${level.bgColor} backdrop-blur-sm
           border-2 ${level.borderColor}
-          ring-2 ${level.ringColor} ring-offset-1 ring-offset-black/50
+          ring-2 ${level.ringColor} ring-offset-1 ring-offset-gray-900/50
           overflow-hidden
         `}
         initial={{ scale: 0.9, opacity: 0 }}

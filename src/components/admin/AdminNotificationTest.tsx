@@ -196,7 +196,7 @@ function AdminNotificationTestComponent() {
             placeholder="Enter notification title..."
             required
             maxLength={100}
-            className="w-full px-4 py-3 rounded-xl bg-[#1a1814]/80 border border-[#f4c979]/30 text-[#fff6dd] placeholder-[#f8e5bb]/40 focus:outline-none focus:ring-2 focus:ring-[#f4c979]/50 focus:border-[#f4c979]/60 transition-all"
+            className="w-full px-4 py-3 rounded-xl bg-[#1a1814]/80 border border-[#f4c979]/30 text-[#fff6dd] placeholder-[#f8e5bb]/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:border-[#f4c979]/60 transition-all"
           />
         </div>
 
@@ -215,7 +215,7 @@ function AdminNotificationTestComponent() {
             placeholder="Enter notification message..."
             rows={3}
             maxLength={500}
-            className="w-full px-4 py-3 rounded-xl bg-[#1a1814]/80 border border-[#f4c979]/30 text-[#fff6dd] placeholder-[#f8e5bb]/40 focus:outline-none focus:ring-2 focus:ring-[#f4c979]/50 focus:border-[#f4c979]/60 transition-all resize-none"
+            className="w-full px-4 py-3 rounded-xl bg-[#1a1814]/80 border border-[#f4c979]/30 text-[#fff6dd] placeholder-[#f8e5bb]/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:border-[#f4c979]/60 transition-all resize-none"
           />
         </div>
 
@@ -233,7 +233,7 @@ function AdminNotificationTestComponent() {
               id="notification-category"
               value={formState.category}
               onChange={(e) => updateField('category', e.target.value as NotificationCategory)}
-              className="w-full px-4 py-3 rounded-xl bg-[#1a1814]/80 border border-[#f4c979]/30 text-[#fff6dd] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/50 focus:border-[#f4c979]/60 transition-all appearance-none cursor-pointer"
+              className="w-full px-4 py-3 rounded-xl bg-[#1a1814]/80 border border-[#f4c979]/30 text-[#fff6dd] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:border-[#f4c979]/60 transition-all appearance-none cursor-pointer"
             >
               {NOTIFICATION_CATEGORIES.map(cat => (
                 <option key={cat.value} value={cat.value}>
@@ -255,7 +255,7 @@ function AdminNotificationTestComponent() {
               id="notification-severity"
               value={formState.severity}
               onChange={(e) => updateField('severity', e.target.value as NotificationSeverity)}
-              className="w-full px-4 py-3 rounded-xl bg-[#1a1814]/80 border border-[#f4c979]/30 text-[#fff6dd] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/50 focus:border-[#f4c979]/60 transition-all appearance-none cursor-pointer"
+              className="w-full px-4 py-3 rounded-xl bg-[#1a1814]/80 border border-[#f4c979]/30 text-[#fff6dd] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:border-[#f4c979]/60 transition-all appearance-none cursor-pointer"
             >
               {NOTIFICATION_SEVERITIES.map(sev => (
                 <option key={sev.value} value={sev.value}>
@@ -312,7 +312,7 @@ function AdminNotificationTestComponent() {
               value={formState.targetRef}
               onChange={(e) => updateField('targetRef', e.target.value)}
               required
-              className="w-full px-4 py-3 rounded-xl bg-[#1a1814]/80 border border-[#f4c979]/30 text-[#fff6dd] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/50 focus:border-[#f4c979]/60 transition-all appearance-none cursor-pointer"
+              className="w-full px-4 py-3 rounded-xl bg-[#1a1814]/80 border border-[#f4c979]/30 text-[#fff6dd] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:border-[#f4c979]/60 transition-all appearance-none cursor-pointer"
             >
               <option value="">Choose a role...</option>
               {TARGETABLE_ROLES.map(role => (
@@ -344,7 +344,7 @@ function AdminNotificationTestComponent() {
               onChange={(e) => updateField('targetRef', e.target.value)}
               placeholder="Enter job UUID..."
               required
-              className="w-full px-4 py-3 rounded-xl bg-[#1a1814]/80 border border-[#f4c979]/30 text-[#fff6dd] placeholder-[#f8e5bb]/40 focus:outline-none focus:ring-2 focus:ring-[#f4c979]/50 focus:border-[#f4c979]/60 transition-all"
+              className="w-full px-4 py-3 rounded-xl bg-[#1a1814]/80 border border-[#f4c979]/30 text-[#fff6dd] placeholder-[#f8e5bb]/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:border-[#f4c979]/60 transition-all"
             />
             <p className="text-xs text-[#f8e5bb]/50">
               Enter the UUID of the job whose crew should receive this notification
@@ -386,7 +386,7 @@ function AdminNotificationTestComponent() {
         <button
           type="submit"
           disabled={loading || !formState.title.trim()}
-          className="w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold text-[#0c0b09] bg-gradient-to-r from-[#f4c979] via-[#f8e5bb] to-[#f4c979] hover:from-[#f8e5bb] hover:via-[#fff6dd] hover:to-[#f8e5bb] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/50 focus:ring-offset-2 focus:ring-offset-[#0c0b09] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-[#f4c979]/20 hover:shadow-[#f4c979]/30"
+          className="w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold text-[#0c0b09] bg-gradient-to-r from-[#f4c979] via-[#f8e5bb] to-[#f4c979] hover:from-[#f8e5bb] hover:via-[#fff6dd] hover:to-[#f8e5bb] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c0b09] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-[#f4c979]/20 hover:shadow-[#f4c979]/30"
         >
           {loading ? (
             <>

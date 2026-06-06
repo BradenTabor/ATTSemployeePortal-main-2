@@ -234,7 +234,7 @@ function ReviewCard({ review }: { review: PendingReview }) {
                   placeholder="Optional notes..."
                   value={grades[answer.question_id]?.admin_notes ?? ""}
                   onChange={(e) => handleNotes(answer.question_id, e.target.value)}
-                  className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-white placeholder-gray-500 focus:border-emerald-500/50 focus:outline-none"
+                  className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-white placeholder-gray-500 focus-visible:border-emerald-500/50 focus:outline-none"
                 />
               </div>
             ))}
@@ -438,7 +438,7 @@ function ManageAccessModal({
               onChange={(e) => onUserSearchChange(e.target.value)}
               placeholder="Search by name or email..."
               aria-label="Search users to grant access"
-              className="mb-2 w-full min-h-[44px] rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-emerald-500/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+              className="mb-2 w-full min-h-[44px] rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus-visible:border-emerald-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30"
             />
             <ul className="max-h-48 overflow-y-auto space-y-1 rounded-lg border border-white/10 bg-black/20 p-2">
               {usersToShow.slice(0, 20).map((u) => (

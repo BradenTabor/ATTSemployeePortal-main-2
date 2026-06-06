@@ -426,14 +426,14 @@ export function StepReview({
                   ref={completeConfirmCancelRef}
                   type="button"
                   onClick={handleCompleteCancel}
-                  className="px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:bg-white/10 border border-white/10 focus:outline-none focus:ring-2 focus:ring-white/40 focus:ring-offset-2 focus:ring-offset-gray-900"
+                  className="px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:bg-white/10 border border-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={handleCompleteConfirm}
-                  className="px-3 py-2 rounded-lg text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-gray-900"
+                  className="px-3 py-2 rounded-lg text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
                 >
                   Mark completed
                 </button>
@@ -730,7 +730,7 @@ export function StepReview({
             value={form.notes}
             onChange={(e) => onInputChange("notes", e.target.value)}
             placeholder="Additional observations..."
-            className="w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-base text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 resize-none"
+            className="w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-base text-white placeholder:text-gray-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500/50 resize-none"
           />
         </div>
 
@@ -755,12 +755,12 @@ export function StepReview({
               onBlur={() => onFieldBlur?.("employeeSignature")}
               placeholder="Type your full name"
               className={cn(
-                "w-full rounded-lg border bg-black/50 pl-10 pr-3 py-3 text-base text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 transition-all",
+                "w-full rounded-lg border bg-black/50 pl-10 pr-3 py-3 text-base text-white placeholder:text-gray-500 focus:outline-none focus-visible:ring-1 transition-all",
                 errors?.employeeSignature
-                  ? "border-rose-500/50 focus:ring-rose-500/50"
+                  ? "border-rose-500/50 focus-visible:ring-rose-500/50"
                   : form.employeeSignature.trim()
-                  ? "border-emerald-500/40 focus:ring-emerald-500/50"
-                  : "border-white/10 focus:ring-emerald-500/50"
+                  ? "border-emerald-500/40 focus-visible:ring-emerald-500/50"
+                  : "border-white/10 focus-visible:ring-emerald-500/50"
               )}
               style={{ fontFamily: "'Caveat', cursive" }}
               aria-invalid={!!errors?.employeeSignature}

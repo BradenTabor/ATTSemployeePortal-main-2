@@ -247,7 +247,7 @@ export default function BulkMaintenanceScheduler({
               value={scheduledDate}
               onChange={(e) => setScheduledDate(e.target.value)}
               min={new Date().toISOString().split('T')[0]}
-              className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#ff9350]/50 transition-all [color-scheme:dark]"
+              className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-[#ff9350]/50 transition-all [color-scheme:dark]"
             />
           </div>
           
@@ -342,7 +342,7 @@ export default function BulkMaintenanceScheduler({
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Any special instructions..."
               rows={2}
-              className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#ff9350]/50 transition-all resize-none"
+              className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-[#ff9350]/50 transition-all resize-none"
             />
           </div>
           

@@ -96,7 +96,7 @@ export function ValidatedSubmitButton({
           'relative inline-flex items-center justify-center gap-2',
           'px-6 py-3 rounded-xl font-semibold transition-all',
           'min-h-[44px]', // Touch target
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900',
           hasErrors
             ? 'bg-gray-700 text-gray-400 cursor-not-allowed focus-visible:ring-gray-500'
             : loading

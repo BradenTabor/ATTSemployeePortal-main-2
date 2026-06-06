@@ -554,7 +554,7 @@ export default function TreeFellingJSAForm() {
                       name="lean_magnitude"
                       checked={treeData.lean_magnitude === m}
                       onChange={() => updateTree("lean_magnitude", m)}
-                      className="rounded border-white/20 text-emerald-500 focus:ring-emerald-500"
+                      className="rounded border-white/20 text-emerald-500 focus-visible:ring-emerald-500"
                     />
                     <span className="text-sm text-white capitalize">{m}</span>
                   </label>
@@ -637,7 +637,7 @@ export default function TreeFellingJSAForm() {
                     updateTree("retreat_path_cleared", e.target.checked);
                     handleFieldBlur("retreat_path_cleared");
                   }}
-                  className="rounded border-white/20 text-emerald-500 focus:ring-emerald-500"
+                  className="rounded border-white/20 text-emerald-500 focus-visible:ring-emerald-500"
                   aria-label="Retreat path cleared"
                 />
                 <span className="text-sm text-white">Retreat path has been cleared of obstacles.</span>
@@ -667,7 +667,7 @@ export default function TreeFellingJSAForm() {
                     updateTree("drop_zone_cleared", e.target.checked);
                     handleFieldBlur("drop_zone_cleared");
                   }}
-                  className="rounded border-white/20 text-emerald-500 focus:ring-emerald-500"
+                  className="rounded border-white/20 text-emerald-500 focus-visible:ring-emerald-500"
                   aria-label="Drop zone cleared"
                 />
                 <span className="text-sm text-white">Drop zone has been cleared of personnel and obstacles.</span>
@@ -799,7 +799,7 @@ export default function TreeFellingJSAForm() {
                         setEquipmentChecklist(key, e.target.checked);
                         handleFieldBlur(errKey);
                       }}
-                      className="rounded border-white/20 text-emerald-500 focus:ring-emerald-500"
+                      className="rounded border-white/20 text-emerald-500 focus-visible:ring-emerald-500"
                       aria-label={label}
                     />
                     <span className="text-sm text-white">{label}</span>
@@ -896,7 +896,7 @@ export default function TreeFellingJSAForm() {
             type="button"
             onClick={() => handleSubmit(true)}
             disabled={submitting || isLoading}
-            className="rounded-lg bg-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-white/20 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+            className="rounded-lg bg-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-white/20 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
             aria-label="Save draft"
           >
             Save draft
@@ -905,14 +905,14 @@ export default function TreeFellingJSAForm() {
             type="button"
             onClick={() => handleSubmit(false)}
             disabled={submitting || isLoading}
-            className="rounded-lg bg-amber-500/20 px-4 py-2 text-sm font-medium text-amber-400 hover:bg-amber-500/30 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+            className="rounded-lg bg-amber-500/20 px-4 py-2 text-sm font-medium text-amber-400 hover:bg-amber-500/30 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
             aria-label={isEditMode ? "Update Tree Felling JSA" : "Submit Tree Felling JSA"}
           >
             {isEditMode ? "Update" : "Submit"}
           </button>
           <Link
             to="/forms"
-            className="rounded-lg border border-white/20 px-4 py-2 text-sm text-gray-300 hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+            className="rounded-lg border border-white/20 px-4 py-2 text-sm text-gray-300 hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
             aria-label="Back to Forms"
           >
             Back to Forms

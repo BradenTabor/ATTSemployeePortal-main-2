@@ -1465,10 +1465,10 @@ export default function DailyJSAForm() {
                     onBlur={() => handleFieldBlur("workLocation")}
                     placeholder="Street, city, project"
                     className={cn(
-                      "w-full rounded-lg border bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2",
+                      "w-full rounded-lg border bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus-visible:ring-2",
                       allErrors.workLocation
-                        ? "border-rose-500/50 focus:ring-rose-500/50"
-                        : "border-white/10 focus:ring-emerald-500/50"
+                        ? "border-rose-500/50 focus-visible:ring-rose-500/50"
+                        : "border-white/10 focus-visible:ring-emerald-500/50"
                     )}
                     aria-invalid={!!allErrors.workLocation}
                   />
@@ -1500,10 +1500,10 @@ export default function DailyJSAForm() {
                     onBlur={() => handleFieldBlur("employeeSignature")}
                     placeholder="Type your full name"
                     className={cn(
-                      "w-full rounded-lg border bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2",
+                      "w-full rounded-lg border bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus-visible:ring-2",
                       allErrors.employeeSignature
-                        ? "border-rose-500/50 focus:ring-rose-500/50"
-                        : "border-white/10 focus:ring-emerald-500/50"
+                        ? "border-rose-500/50 focus-visible:ring-rose-500/50"
+                        : "border-white/10 focus-visible:ring-emerald-500/50"
                     )}
                     aria-invalid={!!allErrors.employeeSignature}
                   />
@@ -1522,7 +1522,7 @@ export default function DailyJSAForm() {
                     onChange={(e) => handleInputChange("notes", e.target.value)}
                     placeholder="e.g. Crew: Smith, Jones"
                     rows={2}
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
                   />
                 </div>
               </div>

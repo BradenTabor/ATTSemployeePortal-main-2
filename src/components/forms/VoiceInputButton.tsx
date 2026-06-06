@@ -252,11 +252,11 @@ export function VoiceInputButton({
       onClick={handleClick}
       disabled={disabled}
       className={`
-        rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1
+        rounded-lg transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1
         ${sizeClasses[size]}
         ${isListening 
           ? 'bg-red-500/20 ring-2 ring-red-400/50 animate-pulse' 
-          : 'bg-amber-500/10 hover:bg-amber-500/20 focus:ring-amber-500/40'
+          : 'bg-amber-500/10 hover:bg-amber-500/20 focus-visible:ring-amber-500/40'
         }
         ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
         min-w-[44px] min-h-[44px] flex items-center justify-center

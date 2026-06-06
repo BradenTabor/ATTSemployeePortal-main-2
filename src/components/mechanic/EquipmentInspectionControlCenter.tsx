@@ -523,7 +523,7 @@ export function EquipmentInspectionControlCenter({
                   setStatusFilter(e.target.value as typeof statusFilter);
                   setCurrentPage(1);
                 }}
-                className="w-full sm:w-auto bg-black/30 border border-white/10 rounded-lg px-3 py-2 pr-8 text-sm text-white focus:outline-none focus:ring-1 focus:ring-amber-500/50 appearance-none cursor-pointer transition-all"
+                className="w-full sm:w-auto bg-black/30 border border-white/10 rounded-lg px-3 py-2 pr-8 text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/50 appearance-none cursor-pointer transition-all"
               >
                 <option value="attention">Needs Attention</option>
                 <option value="all">All Inspections</option>
@@ -540,7 +540,7 @@ export function EquipmentInspectionControlCenter({
                   setTypeFilter(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full sm:w-auto bg-black/30 border border-white/10 rounded-lg px-3 py-2 pr-8 text-sm text-white focus:outline-none focus:ring-1 focus:ring-amber-500/50 appearance-none cursor-pointer transition-all"
+                className="w-full sm:w-auto bg-black/30 border border-white/10 rounded-lg px-3 py-2 pr-8 text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/50 appearance-none cursor-pointer transition-all"
               >
                 <option value="">All Types</option>
                 {EQUIPMENT_TYPE_OPTIONS.map((option) => (
@@ -562,7 +562,7 @@ export function EquipmentInspectionControlCenter({
                   setCurrentPage(1);
                 }}
                 placeholder="Search equipment or operator..."
-                className="w-full bg-black/30 border border-white/10 rounded-lg pl-8 pr-8 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all"
+                className="w-full bg-black/30 border border-white/10 rounded-lg pl-8 pr-8 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/50 transition-all"
               />
               {search && (
                 <button
@@ -918,7 +918,7 @@ export function EquipmentInspectionControlCenter({
                           onChange={(e) => setMechanicNotes(e.target.value)}
                           rows={2}
                           placeholder="Describe the fix, parts used, or follow-up needed..."
-                          className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all resize-none"
+                          className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/50 transition-all resize-none"
                         />
 
                         <AnimatePresence>

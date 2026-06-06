@@ -30,7 +30,7 @@ const variantStyles = {
     border: "border-emerald-500/20",
     text: "text-emerald-400",
     glow: "shadow-emerald-500/20",
-    ring: "focus:ring-emerald-500/50",
+    ring: "focus-visible:ring-emerald-500/50",
   },
   amber: {
     active: "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30",
@@ -38,7 +38,7 @@ const variantStyles = {
     border: "border-amber-500/20",
     text: "text-amber-400",
     glow: "shadow-amber-500/20",
-    ring: "focus:ring-amber-500/50",
+    ring: "focus-visible:ring-amber-500/50",
   },
   purple: {
     active: "bg-gradient-to-r from-purple-500 to-violet-500 text-white shadow-lg shadow-purple-500/30",
@@ -46,7 +46,7 @@ const variantStyles = {
     border: "border-purple-500/20",
     text: "text-purple-400",
     glow: "shadow-purple-500/20",
-    ring: "focus:ring-purple-500/50",
+    ring: "focus-visible:ring-purple-500/50",
   },
 };
 
@@ -161,7 +161,7 @@ export const AdvancedPagination = memo(function AdvancedPagination({
               value={pageSize}
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
               className={`bg-black/30 border ${styles.border} rounded-lg px-2 py-1.5 text-xs text-white/80 
-                focus:outline-none focus:ring-1 ${styles.ring} appearance-none cursor-pointer 
+                focus:outline-none focus-visible:ring-1 ${styles.ring} appearance-none cursor-pointer 
                 transition-all hover:bg-white/5 min-w-[60px]`}
             >
               {pageSizeOptions.map((size) => (
@@ -318,7 +318,7 @@ export const AdvancedPagination = memo(function AdvancedPagination({
                   placeholder={`1 - ${totalPages}`}
                   autoFocus
                   className={`w-24 bg-black/50 border ${styles.border} rounded-lg px-3 py-2 text-sm text-white 
-                    focus:outline-none focus:ring-1 ${styles.ring} transition-all`}
+                    focus:outline-none focus-visible:ring-1 ${styles.ring} transition-all`}
                 />
                 <button
                   type="submit"

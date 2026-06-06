@@ -86,7 +86,7 @@ export function StepSafetyPpe({
           value={form.jobsOther}
           onChange={(e) => onInputChange("jobsOther", e.target.value)}
           placeholder="Other job type..."
-          className="w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2.5 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
+          className="w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2.5 text-sm text-white placeholder:text-gray-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500/50"
         />
       </div>
 

@@ -492,7 +492,7 @@ export default function GeneralForemanSafetyCompliance() {
                   placeholder="Location, circuit, notes..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full rounded-2xl bg-[#0a0513]/70 border border-[#c084fc]/25 pl-10 pr-4 py-2.5 text-sm text-[#f3e8ff] placeholder:text-[#a78bfa]/60 focus:outline-none focus:ring-2 focus:ring-[#c084fc]/60"
+                  className="w-full rounded-2xl bg-[#0a0513]/70 border border-[#c084fc]/25 pl-10 pr-4 py-2.5 text-sm text-[#f3e8ff] placeholder:text-[#a78bfa]/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c084fc]/60"
                 />
               </div>
 
@@ -503,7 +503,7 @@ export default function GeneralForemanSafetyCompliance() {
                   type="date"
                   value={dateFilter}
                   onChange={(e) => setDateFilter(e.target.value)}
-                  className="w-full rounded-2xl bg-[#0a0513]/70 border border-[#c084fc]/25 pl-10 pr-4 py-2.5 text-sm text-[#f3e8ff] focus:outline-none focus:ring-2 focus:ring-[#c084fc]/60 [color-scheme:dark]"
+                  className="w-full rounded-2xl bg-[#0a0513]/70 border border-[#c084fc]/25 pl-10 pr-4 py-2.5 text-sm text-[#f3e8ff] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c084fc]/60 [color-scheme:dark]"
                 />
               </div>
 
@@ -515,7 +515,7 @@ export default function GeneralForemanSafetyCompliance() {
                   placeholder="Filter by signer name…"
                   value={signatureFilter}
                   onChange={(e) => setSignatureFilter(e.target.value)}
-                  className="w-full rounded-2xl bg-[#0a0513]/70 border border-[#c084fc]/25 pl-10 pr-4 py-2.5 text-sm text-[#f3e8ff] placeholder:text-[#a78bfa]/60 focus:outline-none focus:ring-2 focus:ring-[#c084fc]/60"
+                  className="w-full rounded-2xl bg-[#0a0513]/70 border border-[#c084fc]/25 pl-10 pr-4 py-2.5 text-sm text-[#f3e8ff] placeholder:text-[#a78bfa]/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c084fc]/60"
                 />
               </div>
 

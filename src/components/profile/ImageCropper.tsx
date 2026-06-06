@@ -313,7 +313,7 @@ export default function ImageCropper({
             onClick={onCancel}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-400/50"
+            className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
             aria-label="Close cropper"
           >
             <X className="w-5 h-5 text-white/70" />
@@ -414,7 +414,7 @@ export default function ImageCropper({
             onClick={handleReset}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-emerald-300/70 hover:text-emerald-300 bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/20 hover:border-emerald-500/40 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-400/50 order-2 sm:order-1"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-emerald-300/70 hover:text-emerald-300 bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/20 hover:border-emerald-500/40 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 order-2 sm:order-1"
             aria-label="Reset crop to center"
           >
             <RotateCcw className="w-4 h-4" />
@@ -428,7 +428,7 @@ export default function ImageCropper({
               onClick={onCancel}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="flex-1 sm:flex-none px-6 py-3 rounded-xl text-sm font-semibold text-white/70 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all focus:outline-none focus:ring-2 focus:ring-white/20"
+              className="flex-1 sm:flex-none px-6 py-3 rounded-xl text-sm font-semibold text-white/70 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
             >
               Cancel
             </motion.button>
@@ -439,7 +439,7 @@ export default function ImageCropper({
               disabled={isProcessing || !completedCrop || !imageLoaded}
               whileHover={{ scale: isProcessing ? 1 : 1.02 }}
               whileTap={{ scale: isProcessing ? 1 : 0.98 }}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all focus:outline-none focus:ring-2 focus:ring-emerald-400/50"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
               style={{
                 background: isProcessing 
                   ? 'linear-gradient(135deg, #047857 0%, #065f46 100%)'

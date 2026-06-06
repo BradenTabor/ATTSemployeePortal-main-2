@@ -515,7 +515,7 @@ const SearchBar = ({ value, onChange, onClear, visibleCount, totalCount }: Searc
           placeholder="Search by title, message, or author..."
           aria-label="Search announcements"
           className={cn(
-            "w-full rounded-xl bg-[#020d09] border border-emerald-500/20 pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-white/35 focus:border-emerald-400/50 focus:ring-1 focus:ring-emerald-400/30 outline-none transition",
+            "w-full rounded-xl bg-[#020d09] border border-emerald-500/20 pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-white/35 focus-visible:border-emerald-400/50 focus-visible:ring-1 focus-visible:ring-emerald-400/30 outline-none transition",
             FOCUS_RING
           )}
         />

@@ -185,7 +185,7 @@ function JobCrewSelectorComponent({
         className={cn(
           'w-full flex items-center justify-between px-4 py-3 rounded-2xl border text-left transition-all',
           'bg-[#050402]/80 border-[#f6dcb2]/20 text-white',
-          'focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60',
+          'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60',
           disabled && 'opacity-50 cursor-not-allowed',
           isOpen && 'ring-2 ring-[#f4c979]/60'
         )}
@@ -229,7 +229,7 @@ function JobCrewSelectorComponent({
                   placeholder="Search by name or email..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 rounded-xl bg-[#050402] border border-[#f6dcb2]/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-[#f4c979]/40"
+                  className="w-full pl-9 pr-4 py-2 rounded-xl bg-[#050402] border border-[#f6dcb2]/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus-visible:border-[#f4c979]/40"
                   aria-label="Search crew members"
                 />
               </div>

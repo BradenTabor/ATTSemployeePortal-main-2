@@ -1001,7 +1001,7 @@ function FilterBar({ filters, onFiltersChange, onClear }: FilterBarProps) {
             placeholder="Search asset #, description..."
             value={filters.search || ''}
             onChange={(e) => onFiltersChange({ ...filters, search: e.target.value })}
-            className="w-full bg-black/30 border border-white/10 rounded-md sm:rounded-lg pl-8 pr-3 py-2 text-xs sm:text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-[#f4c979]/50 transition-all"
+            className="w-full bg-black/30 border border-white/10 rounded-md sm:rounded-lg pl-8 pr-3 py-2 text-xs sm:text-sm text-white placeholder:text-white/30 focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/50 transition-all"
           />
         </div>
         
@@ -1011,7 +1011,7 @@ function FilterBar({ filters, onFiltersChange, onClear }: FilterBarProps) {
           <select
             value={filters.asset_type || 'all'}
             onChange={(e) => onFiltersChange({ ...filters, asset_type: e.target.value as AssetType | 'all' })}
-            className="flex-1 min-w-[100px] bg-black/30 border border-white/10 rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#f4c979]/50"
+            className="flex-1 min-w-[100px] bg-black/30 border border-white/10 rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/50"
           >
             <option value="all">All Assets</option>
             <option value="truck">Trucks</option>
@@ -1024,7 +1024,7 @@ function FilterBar({ filters, onFiltersChange, onClear }: FilterBarProps) {
           <select
             value={filters.source || 'all'}
             onChange={(e) => onFiltersChange({ ...filters, source: e.target.value as FixSource | 'all' })}
-            className="flex-1 min-w-[100px] bg-black/30 border border-white/10 rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#f4c979]/50"
+            className="flex-1 min-w-[100px] bg-black/30 border border-white/10 rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/50"
           >
             <option value="all">All Sources</option>
             <option value="repairs_log">Repair Logs</option>
@@ -1071,7 +1071,7 @@ function FilterBar({ filters, onFiltersChange, onClear }: FilterBarProps) {
                   type="date"
                   value={filters.date_from || ''}
                   onChange={(e) => onFiltersChange({ ...filters, date_from: e.target.value })}
-                  className="w-full bg-black/30 border border-white/10 rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#f4c979]/50 [color-scheme:dark]"
+                  className="w-full bg-black/30 border border-white/10 rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/50 [color-scheme:dark]"
                 />
               </div>
               <div>
@@ -1080,7 +1080,7 @@ function FilterBar({ filters, onFiltersChange, onClear }: FilterBarProps) {
                   type="date"
                   value={filters.date_to || ''}
                   onChange={(e) => onFiltersChange({ ...filters, date_to: e.target.value })}
-                  className="w-full bg-black/30 border border-white/10 rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#f4c979]/50 [color-scheme:dark]"
+                  className="w-full bg-black/30 border border-white/10 rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/50 [color-scheme:dark]"
                 />
               </div>
               <div>
@@ -1091,7 +1091,7 @@ function FilterBar({ filters, onFiltersChange, onClear }: FilterBarProps) {
                   placeholder="$0"
                   value={filters.cost_min || ''}
                   onChange={(e) => onFiltersChange({ ...filters, cost_min: e.target.value ? Number(e.target.value) : undefined })}
-                  className="w-full bg-black/30 border border-white/10 rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#f4c979]/50"
+                  className="w-full bg-black/30 border border-white/10 rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/50"
                 />
               </div>
               <div>
@@ -1102,7 +1102,7 @@ function FilterBar({ filters, onFiltersChange, onClear }: FilterBarProps) {
                   placeholder="$∞"
                   value={filters.cost_max || ''}
                   onChange={(e) => onFiltersChange({ ...filters, cost_max: e.target.value ? Number(e.target.value) : undefined })}
-                  className="w-full bg-black/30 border border-white/10 rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#f4c979]/50"
+                  className="w-full bg-black/30 border border-white/10 rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/50"
                 />
               </div>
             </div>

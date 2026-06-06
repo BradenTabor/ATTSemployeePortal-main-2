@@ -532,7 +532,7 @@ function SiteFormModal({
               value={form.name}
               onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
               placeholder="e.g., Dallas Main Yard"
-              className="w-full px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-[#f4c979]/40"
+              className="w-full px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus-visible:border-[#f4c979]/40"
             />
           </div>
 
@@ -552,7 +552,7 @@ function SiteFormModal({
                   onChange={(e) => handleAddressChange(e.target.value)}
                   onFocus={() => predictions.length > 0 && setShowPredictions(true)}
                   placeholder="Start typing to search..."
-                  className="w-full px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-[#f4c979]/40 pr-10"
+                  className="w-full px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus-visible:border-[#f4c979]/40 pr-10"
                 />
                 {isSearching && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -683,7 +683,7 @@ function SiteFormModal({
                 value={form.latitude}
                 onChange={(e) => setForm(prev => ({ ...prev, latitude: e.target.value }))}
                 placeholder="32.7767"
-                className="w-full px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-[#f4c979]/40 font-mono"
+                className="w-full px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus-visible:border-[#f4c979]/40 font-mono"
               />
             </div>
             <div>
@@ -693,7 +693,7 @@ function SiteFormModal({
                 value={form.longitude}
                 onChange={(e) => setForm(prev => ({ ...prev, longitude: e.target.value }))}
                 placeholder="-96.7970"
-                className="w-full px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-[#f4c979]/40 font-mono"
+                className="w-full px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus-visible:border-[#f4c979]/40 font-mono"
               />
             </div>
           </div>
@@ -930,7 +930,7 @@ export default function AdminWorkSites() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search sites..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-[#f4c979]/40"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus-visible:border-[#f4c979]/40"
             />
           </div>
           

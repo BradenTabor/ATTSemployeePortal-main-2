@@ -356,7 +356,7 @@ export function StepSpans({
                           value={span.location}
                           onChange={(e) => onSpanChange(globalIndex, "location", e.target.value)}
                           placeholder="e.g., Pole 42, Main St & 5th"
-                          className="w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2.5 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
+                          className="w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2.5 text-sm text-white placeholder:text-gray-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500/50"
                         />
                       </div>
                       <div>
@@ -370,7 +370,7 @@ export function StepSpans({
                             onChange={(e) => onSpanChange(globalIndex, "initials", e.target.value.toUpperCase())}
                             placeholder="ABC"
                             maxLength={4}
-                            className="w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2.5 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 uppercase"
+                            className="w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2.5 text-sm text-white placeholder:text-gray-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500/50 uppercase"
                           />
                           {userInitials && !span.initials && (
                             <button
@@ -428,7 +428,7 @@ export function StepSpans({
                         value={span.hazards}
                         onChange={(e) => onSpanChange(globalIndex, "hazards", e.target.value)}
                         placeholder="Describe hazards for this span..."
-                        className="w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-amber-500/50 resize-none"
+                        className="w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/50 resize-none"
                       />
                     </div>
 
@@ -475,7 +475,7 @@ export function StepSpans({
                         value={span.mitigation}
                         onChange={(e) => onSpanChange(globalIndex, "mitigation", e.target.value)}
                         placeholder="Describe mitigation steps..."
-                        className="w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 resize-none"
+                        className="w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500/50 resize-none"
                       />
                     </div>
                   </div>

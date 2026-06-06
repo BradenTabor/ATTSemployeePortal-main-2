@@ -112,7 +112,7 @@ export default function AttendanceSummaryView() {
                 value={customStart}
                 onChange={(e) => setCustomStart(e.target.value)}
                 max={customEnd}
-                className="px-3 py-2 rounded-xl text-sm bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-[#c084fc]/40"
+                className="px-3 py-2 rounded-xl text-sm bg-white/[0.03] border border-white/10 text-white focus:outline-none focus-visible:border-[#c084fc]/40"
               />
               <span className="text-gray-500">–</span>
               <input
@@ -121,7 +121,7 @@ export default function AttendanceSummaryView() {
                 onChange={(e) => setCustomEnd(e.target.value)}
                 min={customStart}
                 max={today}
-                className="px-3 py-2 rounded-xl text-sm bg-white/[0.03] border border-white/10 text-white focus:outline-none focus:border-[#c084fc]/40"
+                className="px-3 py-2 rounded-xl text-sm bg-white/[0.03] border border-white/10 text-white focus:outline-none focus-visible:border-[#c084fc]/40"
               />
             </div>
           )}

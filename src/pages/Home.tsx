@@ -177,7 +177,7 @@ export default function Home() {
   };
 
   // Liquid Glass input styles
-  const inputStyles = "w-full px-4 py-3.5 rounded-2xl bg-white/[0.03] text-white placeholder-white/30 border border-white/[0.08] focus:border-emerald-400/50 focus:bg-white/[0.06] focus:ring-1 focus:ring-emerald-400/20 outline-none transition-all duration-300 backdrop-blur-sm";
+  const inputStyles = "w-full px-4 py-3.5 rounded-2xl bg-white/[0.03] text-white placeholder-white/30 border border-white/[0.08] focus-visible:border-emerald-400/50 focus:bg-white/[0.06] focus-visible:ring-1 focus-visible:ring-emerald-400/20 outline-none transition-all duration-300 backdrop-blur-sm";
   const labelStyles = "text-[11px] font-medium uppercase tracking-[0.2em] text-white/40";
 
   return (

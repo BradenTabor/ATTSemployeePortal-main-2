@@ -154,7 +154,7 @@ export function ResultsList({
             onClick={() => onSelectLocation(location)}
             className={cn(
               "w-full text-left p-3 sm:p-3 rounded-xl sm:rounded-lg transition-all duration-200",
-              "focus:outline-none focus:ring-2 focus:ring-emerald-500/30",
+              "focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30",
               "hover:bg-white/5 active:bg-white/10",
               "min-h-[56px]", // Touch-friendly minimum height
               isSelected

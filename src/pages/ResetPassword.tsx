@@ -136,7 +136,7 @@ export default function ResetPassword() {
   };
 
   // Liquid Glass input styles (matching Home.tsx)
-  const inputStyles = "w-full px-4 py-3.5 rounded-2xl bg-white/[0.03] text-white placeholder-white/30 border border-white/[0.08] focus:border-emerald-400/50 focus:bg-white/[0.06] focus:ring-1 focus:ring-emerald-400/20 outline-none transition-all duration-300 backdrop-blur-sm";
+  const inputStyles = "w-full px-4 py-3.5 rounded-2xl bg-white/[0.03] text-white placeholder-white/30 border border-white/[0.08] focus-visible:border-emerald-400/50 focus:bg-white/[0.06] focus-visible:ring-1 focus-visible:ring-emerald-400/20 outline-none transition-all duration-300 backdrop-blur-sm";
   const labelStyles = "text-[11px] font-medium uppercase tracking-[0.2em] text-white/40";
 
   return (
@@ -283,7 +283,7 @@ export default function ResetPassword() {
                             type="submit"
                             disabled={loading}
                             aria-label={loading ? "Sending reset link" : "Send password reset link"}
-                            className="group w-full bg-gradient-to-r from-emerald-500/90 to-emerald-600/90 hover:from-emerald-400 hover:to-emerald-500 text-white font-semibold py-3.5 px-6 rounded-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-900/30 hover:shadow-emerald-500/25 flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                            className="group w-full bg-gradient-to-r from-emerald-500/90 to-emerald-600/90 hover:from-emerald-400 hover:to-emerald-500 text-white font-semibold py-3.5 px-6 rounded-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-900/30 hover:shadow-emerald-500/25 flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
                           >
                             {loading ? (
                               <span className="flex items-center gap-2">

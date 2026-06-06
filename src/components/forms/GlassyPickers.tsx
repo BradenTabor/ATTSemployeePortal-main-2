@@ -15,7 +15,7 @@ type PickerVariant = "emerald" | "ember" | "gold";
 const VARIANT_STYLES = {
   emerald: {
     iconColor: "text-emerald-300",
-    focusRing: "focus:ring-emerald-400/70",
+    focusRing: "focus-visible:ring-emerald-400/70",
     shadow: "shadow-[0_0_20px_rgba(16,185,129,0.15)]",
     background: "radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 1) 0%, rgba(21, 96, 60, 1) 100%)",
     helperHighlight: "text-emerald-200",
@@ -25,7 +25,7 @@ const VARIANT_STYLES = {
   },
   ember: {
     iconColor: "text-amber-400",
-    focusRing: "focus:ring-amber-500/50",
+    focusRing: "focus-visible:ring-amber-500/50",
     shadow: "shadow-[0_0_20px_rgba(245,158,11,0.12)]",
     background: "linear-gradient(135deg, rgba(10, 5, 2, 1) 0%, rgba(80, 40, 15, 1) 50%, rgba(40, 20, 5, 1) 100%)",
     helperHighlight: "text-amber-300",
@@ -35,7 +35,7 @@ const VARIANT_STYLES = {
   },
   gold: {
     iconColor: "text-[#f4c979]",
-    focusRing: "focus:ring-[#f4c979]/60",
+    focusRing: "focus-visible:ring-[#f4c979]/60",
     shadow: "shadow-[0_0_20px_rgba(244,201,121,0.15)]",
     background: "radial-gradient(ellipse at 30% 30%, rgba(27, 25, 20, 0.95) 0%, rgba(12, 10, 8, 1) 60%, rgba(7, 6, 5, 1) 100%)",
     helperHighlight: "text-[#f6dcb2]",
@@ -122,7 +122,7 @@ const BasePicker = forwardRef<HTMLInputElement, InternalPickerProps>(
             type={pickerType}
             onChange={handleChange}
             className={cn(
-              "w-full rounded-xl sm:rounded-2xl border px-9 sm:px-12 py-2 sm:py-3 text-xs sm:text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:border-transparent transition-all [color-scheme:dark]",
+              "w-full rounded-xl sm:rounded-2xl border px-9 sm:px-12 py-2 sm:py-3 text-xs sm:text-sm text-white placeholder:text-gray-500 focus:outline-none focus-visible:ring-2 focus-visible:border-transparent transition-all [color-scheme:dark]",
               theme.border,
               theme.hoverBorder,
               theme.focusRing,

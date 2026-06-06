@@ -121,7 +121,7 @@ function SaveTemplateModal({ isOpen, onClose, onSave, isSaving }: SaveTemplateMo
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g., Morning Crew, Night Shift"
-                className="w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2.5 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
+                className="w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2.5 text-sm text-white placeholder:text-gray-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500/50"
                 autoFocus
               />
             </div>
@@ -131,7 +131,7 @@ function SaveTemplateModal({ isOpen, onClose, onSave, isSaving }: SaveTemplateMo
                 type="checkbox"
                 checked={makeDefault}
                 onChange={(e) => setMakeDefault(e.target.checked)}
-                className="w-4 h-4 rounded border-white/20 bg-black/50 text-emerald-500 focus:ring-emerald-500/50"
+                className="w-4 h-4 rounded border-white/20 bg-black/50 text-emerald-500 focus-visible:ring-emerald-500/50"
               />
               <div>
                 <p className="text-sm font-medium text-white">Set as default</p>

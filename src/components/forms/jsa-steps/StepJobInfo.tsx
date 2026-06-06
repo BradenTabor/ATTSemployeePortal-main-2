@@ -123,13 +123,13 @@ function InputField({
           placeholder={placeholder}
           required={required}
           className={cn(
-            "w-full rounded-lg border bg-black/50 px-2.5 py-2 sm:px-3 sm:py-2.5 text-base sm:text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 transition-all",
+            "w-full rounded-lg border bg-black/50 px-2.5 py-2 sm:px-3 sm:py-2.5 text-base sm:text-sm text-white placeholder:text-gray-500 focus:outline-none focus-visible:ring-1 transition-all",
             Icon ? "pl-8 sm:pl-9" : "",
             hasError
-              ? "border-rose-500/50 focus:ring-rose-500/50 focus:border-rose-500/50"
+              ? "border-rose-500/50 focus-visible:ring-rose-500/50 focus-visible:border-rose-500/50"
               : isFilled && showCheckmark
-              ? "pr-8 sm:pr-9 border-emerald-500/30 focus:ring-emerald-500/50 focus:border-emerald-500/30"
-              : "border-white/10 focus:ring-emerald-500/50 focus:border-emerald-500/30"
+              ? "pr-8 sm:pr-9 border-emerald-500/30 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500/30"
+              : "border-white/10 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500/30"
           )}
           aria-invalid={hasError}
           aria-describedby={hasError && fieldId ? `${fieldId}-error` : undefined}

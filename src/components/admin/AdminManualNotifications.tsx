@@ -251,7 +251,7 @@ function AdminManualNotificationsComponent() {
             placeholder="Enter a clear, concise title..."
             required
             maxLength={100}
-            className="w-full px-4 py-3.5 rounded-2xl bg-[#0c0a08]/80 border border-[#f4c979]/25 text-[#fff6dd] placeholder-[#f8e5bb]/35 focus:outline-none focus:ring-2 focus:ring-[#f4c979]/50 focus:border-[#f4c979]/50 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]"
+            className="w-full px-4 py-3.5 rounded-2xl bg-[#0c0a08]/80 border border-[#f4c979]/25 text-[#fff6dd] placeholder-[#f8e5bb]/35 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:border-[#f4c979]/50 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]"
           />
           <p className="text-[10px] text-[#f8e5bb]/40 pl-1">
             {formState.title.length}/100 characters
@@ -274,7 +274,7 @@ function AdminManualNotificationsComponent() {
             placeholder="Add additional details or context..."
             rows={3}
             maxLength={500}
-            className="w-full px-4 py-3.5 rounded-2xl bg-[#0c0a08]/80 border border-[#f4c979]/25 text-[#fff6dd] placeholder-[#f8e5bb]/35 focus:outline-none focus:ring-2 focus:ring-[#f4c979]/50 focus:border-[#f4c979]/50 transition-all resize-none shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]"
+            className="w-full px-4 py-3.5 rounded-2xl bg-[#0c0a08]/80 border border-[#f4c979]/25 text-[#fff6dd] placeholder-[#f8e5bb]/35 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:border-[#f4c979]/50 transition-all resize-none shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]"
           />
           <p className="text-[10px] text-[#f8e5bb]/40 pl-1">
             {formState.body.length}/500 characters
@@ -421,7 +421,7 @@ function AdminManualNotificationsComponent() {
                 onChange={(e) => updateField('targetRef', e.target.value)}
                 placeholder="Enter job UUID..."
                 required
-                className="w-full px-4 py-3 rounded-xl bg-[#0c0a08]/80 border border-[#f4c979]/25 text-[#fff6dd] placeholder-[#f8e5bb]/35 focus:outline-none focus:ring-2 focus:ring-[#f4c979]/50 focus:border-[#f4c979]/50 transition-all"
+                className="w-full px-4 py-3 rounded-xl bg-[#0c0a08]/80 border border-[#f4c979]/25 text-[#fff6dd] placeholder-[#f8e5bb]/35 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:border-[#f4c979]/50 transition-all"
               />
               <p className="text-xs text-[#f8e5bb]/40 pl-1">
                 All crew members assigned to this job will receive the notification
@@ -486,7 +486,7 @@ function AdminManualNotificationsComponent() {
           disabled={loading || !formState.title.trim()}
           whileHover={{ scale: loading ? 1 : 1.01 }}
           whileTap={{ scale: loading ? 1 : 0.99 }}
-          className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-bold text-[#0c0b09] bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] hover:from-[#fff6dd] hover:via-[#f8e5bb] hover:to-[#f4c979] focus:outline-none focus:ring-2 focus:ring-[#f4c979]/60 focus:ring-offset-2 focus:ring-offset-[#0c0b09] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_15px_40px_rgba(244,201,121,0.25)] hover:shadow-[0_20px_50px_rgba(244,201,121,0.35)]"
+          className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-bold text-[#0c0b09] bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] hover:from-[#fff6dd] hover:via-[#f8e5bb] hover:to-[#f4c979] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c0b09] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_15px_40px_rgba(244,201,121,0.25)] hover:shadow-[0_20px_50px_rgba(244,201,121,0.35)]"
         >
           {loading ? (
             <>
