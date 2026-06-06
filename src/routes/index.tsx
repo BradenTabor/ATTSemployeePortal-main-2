@@ -74,7 +74,9 @@ import {
   CertificateVerification,
   SafetyBriefingPage,
   SafetyRewardsPage,
+  RewardsStorePage,
   AdminSafetyRewardsPage,
+  AdminRedemptionFulfillment,
   SafetyBriefingGuard,
 } from "@/routes/lazyImports";
 
@@ -163,6 +165,18 @@ export function AnimatedRoutes() {
                 <PageWrapper>
                   <ProtectedRoute>
                     <SafetyRewardsPage />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            {/* Rewards Store — spend points on catalog items */}
+            <Route
+              path="/rewards-store"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute>
+                    <RewardsStorePage />
                   </ProtectedRoute>
                 </PageWrapper>
               }
@@ -767,6 +781,17 @@ export function AnimatedRoutes() {
                 <PageWrapper>
                   <ProtectedRoute requiredRole="admin">
                     <AdminRewards />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            <Route
+              path="/admin/redemption-fulfillment"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminRedemptionFulfillment />
                   </ProtectedRoute>
                 </PageWrapper>
               }

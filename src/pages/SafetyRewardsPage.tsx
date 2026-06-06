@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Trophy, Flame, PartyPopper, Users, Gift } from 'lucide-react';
+import { Trophy, Flame, PartyPopper, Users, Gift, ChevronRight, ShoppingBag } from 'lucide-react';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { useAuth } from '../contexts/AuthContext';
 import { isFieldRole } from '../config/safetyBriefing';
@@ -85,6 +86,29 @@ function SafetyRewardsPage() {
           <p className="text-sm text-white/50 mt-1">
             {MONTHS[now.month - 1]} {now.year}
           </p>
+        </motion.div>
+
+        {/* Rewards Store link */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+        >
+          <Link
+            to="/rewards-store"
+            className={`${cardClass} flex items-center justify-between gap-3 p-4 hover:border-[#f4c979]/30 transition-colors`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#f4c979]/15 flex items-center justify-center">
+                <ShoppingBag className="w-5 h-5 text-[#f4c979]" aria-hidden />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">Rewards Store</p>
+                <p className="text-xs text-white/50">Spend points on gear and gift cards</p>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-[#f4c979]/60" aria-hidden />
+          </Link>
         </motion.div>
 
         {/* Prize Display Card */}

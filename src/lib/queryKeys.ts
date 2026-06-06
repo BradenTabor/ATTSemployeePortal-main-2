@@ -298,6 +298,15 @@ export const queryKeys = {
     latestEquipment: () => ['inspectionReadiness', 'latestEquipment'] as const,
   },
 
+  // Redemption store (catalog + fulfillment)
+  redemption: {
+    all: ['redemption'] as const,
+    catalog: ['redemption', 'catalog'] as const,
+    userHistory: (userId: string) => ['redemption', 'history', userId] as const,
+    adminQueue: (statusFilter?: string) =>
+      ['redemption', 'admin-queue', statusFilter ?? 'all'] as const,
+  },
+
   // Safety Rewards (monthly raffle)
   safetyRewards: {
     reward: (year: number, month: number) =>

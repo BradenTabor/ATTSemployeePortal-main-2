@@ -197,6 +197,14 @@ export const ADMIN_CORE_NAV_CARDS: AdminNavCardConfig[] = [
     variant: "gold",
     iconAsImage: true,
   },
+  {
+    title: "Redemption Fulfillment",
+    description: "Fulfill or deny employee reward store requests.",
+    icon: <img loading="lazy" src="/assets/safety-rewards.webp" alt="" className="w-full h-full object-contain" />,
+    to: "/admin/redemption-fulfillment",
+    variant: "gold",
+    iconAsImage: true,
+  },
 ];
 
 /** Role dashboard links so admin can navigate the entire app from Admin. */

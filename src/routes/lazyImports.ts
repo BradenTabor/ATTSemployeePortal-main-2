@@ -77,5 +77,9 @@ export const NotFound = lazy(() => import("@/pages/NotFound"));
 export const CertificateVerification = lazy(() => import("@/pages/CertificateVerification"));
 export const SafetyBriefingPage = lazy(() => import("@/pages/SafetyBriefingPage"));
 export const SafetyRewardsPage = lazy(() => import("@/pages/SafetyRewardsPage"));
+export const RewardsStorePage = lazy(() => import("@/pages/RewardsStorePage"));
 export const AdminSafetyRewardsPage = lazy(() => import("@/pages/admin/AdminSafetyRewardsPage"));
+export const AdminRedemptionFulfillment = lazy(
+  () => import("@/pages/admin/AdminRedemptionFulfillment"),
+);
 export const SafetyBriefingGuard = lazy(() => import("@/components/SafetyBriefingGuard"));
