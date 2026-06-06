@@ -18,7 +18,7 @@ export default function MechanicEquipmentCenter() {
 
   if (unauthorized) {
     return (
-      <DashboardLayout title="Equipment Inspection Center">
+      <DashboardLayout title="Equipment Inspection Center" pageHeading>
         <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
           <div className="text-center">
             <Shield className="w-16 h-16 text-red-400 mx-auto mb-4" />
@@ -31,7 +31,7 @@ export default function MechanicEquipmentCenter() {
   }
 
   return (
-    <DashboardLayout title="Equipment Inspection Center">
+    <DashboardLayout title="Equipment Inspection Center" pageHeading>
       <div className="w-full min-h-screen bg-gradient-to-br from-[#1a0804] via-[#0f0402] to-[#0a0201]">
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pb-4 pt-4 sm:pt-6">
           {/* Premium Glass Header - Ember Theme */}

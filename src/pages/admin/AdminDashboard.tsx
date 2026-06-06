@@ -996,7 +996,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <DashboardLayout title="Admin Panel">
+    <DashboardLayout title="Admin Panel" pageHeading>
       <>
         <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 md:px-6 pb-4 pt-2 sm:pt-4 md:pt-6">
           {/* Premium Animated Welcome Section with Glass Backdrop - Gold Theme */}

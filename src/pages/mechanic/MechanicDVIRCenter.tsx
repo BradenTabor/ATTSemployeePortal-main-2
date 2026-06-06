@@ -658,7 +658,7 @@ export default function MechanicDVIRCenter() {
 
   if (unauthorized) {
     return (
-      <DashboardLayout title="Mechanic DVIR Center">
+      <DashboardLayout title="Mechanic DVIR Center" pageHeading>
         <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
           <div className="text-center">
             <Shield className="w-16 h-16 text-red-400 mx-auto mb-4" />
@@ -671,7 +671,7 @@ export default function MechanicDVIRCenter() {
   }
 
   return (
-    <DashboardLayout title="Mechanic DVIR Center">
+    <DashboardLayout title="Mechanic DVIR Center" pageHeading>
       <div className="w-full min-h-screen bg-gradient-to-br from-[#1a0804] via-[#0f0402] to-[#0a0201] overflow-x-hidden">
         <div className="w-full max-w-7xl mx-auto px-2.5 sm:px-4 md:px-6 pb-3 pt-3 sm:pb-4 sm:pt-4 md:pt-6">
           {/* Premium Glass Header - Ember Theme (compressed on mobile) */}

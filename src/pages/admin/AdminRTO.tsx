@@ -1258,7 +1258,7 @@ export function AdminRTOContent() {
 
 export default function AdminRTO() {
   return (
-    <DashboardLayout title="RTO Management">
+    <DashboardLayout title="RTO Management" pageHeading>
       <AdminRTOContent />
     </DashboardLayout>
   );

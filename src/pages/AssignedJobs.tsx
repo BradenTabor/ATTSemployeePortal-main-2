@@ -894,7 +894,7 @@ function AssignedJobs() {
   const enableAnimations = !caps.prefersReducedMotion && !caps.isMobile;
 
   return (
-    <DashboardLayout title="My Jobs">
+    <DashboardLayout title="My Jobs" pageHeading>
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pb-4 pt-4 sm:pt-6">
         {/* Premium Glass Header - Emerald Theme */}
         <div className="mb-5 md:mb-6">

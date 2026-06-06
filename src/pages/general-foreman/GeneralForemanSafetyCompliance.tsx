@@ -350,7 +350,7 @@ export default function GeneralForemanSafetyCompliance() {
 
   if (!hasAccess) {
     return (
-      <DashboardLayout title="Safety Compliance">
+      <DashboardLayout title="Safety Compliance" pageHeading>
         <div className="min-h-[60vh] flex items-center justify-center">
           <div className="text-center">
             <div className="w-20 h-20 rounded-full bg-[#c084fc]/10 flex items-center justify-center mx-auto mb-4">
@@ -379,7 +379,7 @@ export default function GeneralForemanSafetyCompliance() {
   };
 
   return (
-    <DashboardLayout title="Safety Compliance">
+    <DashboardLayout title="Safety Compliance" pageHeading>
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pb-4 pt-4 sm:pt-6">
         {/* Compact header — solid premium surface */}
         <header className="mb-4 sm:mb-5">

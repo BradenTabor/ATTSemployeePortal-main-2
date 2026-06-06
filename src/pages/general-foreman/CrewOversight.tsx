@@ -67,7 +67,7 @@ function CrewOversight() {
   // Access denied for unauthorized users
   if (!isAuthorized) {
     return (
-      <DashboardLayout title="Crew Oversight">
+      <DashboardLayout title="Crew Oversight" pageHeading>
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
             <div className="w-20 h-20 rounded-full bg-[#c084fc]/10 flex items-center justify-center mx-auto mb-4">
@@ -84,7 +84,7 @@ function CrewOversight() {
   }
 
   return (
-    <DashboardLayout title="Crew Oversight">
+    <DashboardLayout title="Crew Oversight" pageHeading>
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pb-4 pt-4 sm:pt-6">
         {/* Compact header — solid premium surface */}
         <header className="mb-4 sm:mb-6">

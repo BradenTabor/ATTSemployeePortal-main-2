@@ -187,7 +187,7 @@ export default function Resources() {
   const motionInitial = prefersReducedMotion ? false : "hidden";
 
   return (
-    <DashboardLayout title="Resources">
+    <DashboardLayout title="Resources" pageHeading>
       {/* Scroll-linked ambient gradient orb */}
       {!prefersReducedMotion && (
         <motion.div

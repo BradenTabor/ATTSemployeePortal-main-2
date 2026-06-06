@@ -782,7 +782,7 @@ export default function DailyEquipmentInspectionForm() {
   }, [defaultSubmitterName, form.submittedBy]);
 
   return (
-    <DashboardLayout title="Daily Equipment Inspection">
+    <DashboardLayout title="Daily Equipment Inspection" pageHeading>
       <div className="max-w-5xl mx-auto px-3 sm:px-4 pb-10 space-y-4 sm:space-y-5">
         {/* Offline indicator */}
         <OfflineFormIndicator offlineCapable={true} />

@@ -558,7 +558,7 @@ export default function Forms() {
   let cardCounter = 0;
 
   return (
-    <DashboardLayout title="Company Forms">
+    <DashboardLayout title="Company Forms" pageHeading>
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pb-4 pt-4 sm:pt-6">
         {openCriticalTrucks.length > 0 && (
           <div className="mb-4 rounded-xl border border-red-500/50 bg-red-500/15 px-4 py-3 flex items-center gap-2" role="alert">

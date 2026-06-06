@@ -105,7 +105,9 @@ describe('DVIRForm Component Integration', () => {
     
     // Check for key form elements
     await waitFor(() => {
-      expect(screen.getByText(/Daily Vehicle Inspection/i)).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: /Daily Vehicle Inspection/i }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -113,9 +115,13 @@ describe('DVIRForm Component Integration', () => {
     // Render and wait for async updates (profile fetch, etc.) to settle to avoid act() warnings
     renderWithProviders(<DVIRForm />);
     await waitFor(() => {
-      expect(screen.getByText(/Daily Vehicle Inspection/i)).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: /Daily Vehicle Inspection/i }),
+      ).toBeInTheDocument();
     });
     // Form should be visible; validation-on-submit would require userEvent.click(submit) + waitFor
-    expect(screen.getByText(/Daily Vehicle Inspection/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 1, name: /Daily Vehicle Inspection/i }),
+    ).toBeInTheDocument();
   });
 });

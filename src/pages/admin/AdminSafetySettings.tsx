@@ -942,7 +942,7 @@ function AdminSafetySettings() {
   }, []);
 
   return (
-    <DashboardLayout title="Safety Settings">
+    <DashboardLayout title="Safety Settings" pageHeading>
       <div className="max-w-4xl mx-auto space-y-6 pb-8">
         {/* Premium header */}
         <motion.div

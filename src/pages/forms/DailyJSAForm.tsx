@@ -1332,7 +1332,7 @@ export default function DailyJSAForm() {
   }, [navigate, role]);
 
   return (
-    <DashboardLayout title="Daily JSA" hideHeader>
+    <DashboardLayout title="Daily JSA" hideHeader pageHeading>
       <div
         className="fixed inset-0 flex flex-col"
         style={{

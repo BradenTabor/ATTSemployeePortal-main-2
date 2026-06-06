@@ -353,7 +353,7 @@ function AdminEmailRecipients() {
   const tabId = (key: ListKey) => `email-recipients-tab-${key}`;
 
   return (
-    <DashboardLayout title="Email Recipients">
+    <DashboardLayout title="Email Recipients" pageHeading>
       {/* pb-20: clear space above fixed ReturnButton/FAB on small screens */}
       <div className="w-full max-w-4xl mx-auto px-3 sm:px-6 pb-20 sm:pb-8 pt-2 sm:pt-6">
         {/* Page header: match Admin Users / dashboard card feel */}

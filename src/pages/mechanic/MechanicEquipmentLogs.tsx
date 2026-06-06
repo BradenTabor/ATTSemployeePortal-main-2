@@ -241,7 +241,7 @@ export default function MechanicEquipmentLogs() {
 
   if (!hasAccess) {
     return (
-      <DashboardLayout title="Fleet & Equipment Center">
+      <DashboardLayout title="Fleet & Equipment Center" pageHeading>
         <div className="min-h-[60vh] flex items-center justify-center">
           <div className="text-center">
             <div className="w-20 h-20 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
@@ -260,7 +260,7 @@ export default function MechanicEquipmentLogs() {
   // ==========================================================================
 
   return (
-    <DashboardLayout title="Fleet & Equipment Center">
+    <DashboardLayout title="Fleet & Equipment Center" pageHeading>
       {/* Custom CSS for animated gradients */}
       <style>{animationStyles}</style>
       

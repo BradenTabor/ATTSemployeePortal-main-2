@@ -1091,7 +1091,7 @@ function AdminOperationsHub() {
 
   if (!isAdmin) {
     return (
-      <DashboardLayout title="Operations Hub">
+      <DashboardLayout title="Operations Hub" pageHeading>
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
             <Shield className="w-16 h-16 text-red-400 mx-auto mb-4" />
@@ -1104,7 +1104,7 @@ function AdminOperationsHub() {
   }
 
   return (
-    <DashboardLayout title="Operations Hub">
+    <DashboardLayout title="Operations Hub" pageHeading>
       <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 pb-3 pt-3 sm:pt-6">
         {/* Premium Header — compressed on mobile for small screens */}
         <div className="mb-3 sm:mb-5 md:mb-6">

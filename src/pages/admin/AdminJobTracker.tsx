@@ -133,7 +133,7 @@ function AdminJobTracker() {
   // Access denied for non-admins
   if (!isAdmin) {
     return (
-      <DashboardLayout title="Job Tracker">
+      <DashboardLayout title="Job Tracker" pageHeading>
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
             <Shield className="w-16 h-16 text-red-400 mx-auto mb-4" />
@@ -148,7 +148,7 @@ function AdminJobTracker() {
   }
 
   return (
-    <DashboardLayout title="Job Progress Tracker">
+    <DashboardLayout title="Job Progress Tracker" pageHeading>
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pb-4 pt-4 sm:pt-6">
         {/* Premium Glass Header - Gold Theme */}
         <div className="mb-5 md:mb-6">

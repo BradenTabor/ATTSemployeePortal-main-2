@@ -74,7 +74,7 @@ function SafetyRewardsPage() {
   }, [entries]);
 
   return (
-    <DashboardLayout title="Safety Rewards">
+    <DashboardLayout title="Safety Rewards" pageHeading>
       <div className="space-y-5 pb-8 max-w-2xl mx-auto">
         {/* Header */}
         <motion.div

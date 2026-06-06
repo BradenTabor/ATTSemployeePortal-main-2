@@ -68,7 +68,7 @@ export default function AdminRedemptionFulfillment() {
   }
 
   return (
-    <DashboardLayout title="Redemption Fulfillment">
+    <DashboardLayout title="Redemption Fulfillment" pageHeading>
       <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 pb-8 pt-4 sm:pt-6">
         <motion.div
           initial={{ opacity: 0, y: -10 }}

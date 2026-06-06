@@ -544,7 +544,7 @@ export default function ManualAwardsHub() {
 
   if (role !== 'admin') {
     return (
-      <DashboardLayout title="Manual Awards">
+      <DashboardLayout title="Manual Awards" pageHeading>
         <div className="flex flex-col items-center justify-center min-h-[50vh] text-center px-4">
           <Shield className="w-16 h-16 text-red-400 mb-4" aria-hidden />
           <h2 className="text-2xl font-bold text-white mb-2">Access Denied</h2>
@@ -555,7 +555,7 @@ export default function ManualAwardsHub() {
   }
 
   return (
-    <DashboardLayout title="Manual Awards">
+    <DashboardLayout title="Manual Awards" pageHeading>
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pb-8 pt-4">
         <motion.div
           initial={{ opacity: 0, y: -8 }}

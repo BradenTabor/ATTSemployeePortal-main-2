@@ -258,7 +258,7 @@ function AdminRewards() {
   }
 
   return (
-    <DashboardLayout title="Safety Rewards">
+    <DashboardLayout title="Safety Rewards" pageHeading>
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pb-4 pt-4 sm:pt-6">
         {/* Premium Glass Header - Gold Theme */}
         <div className="mb-5 md:mb-6">

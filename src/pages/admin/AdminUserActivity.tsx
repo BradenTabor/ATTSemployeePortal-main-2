@@ -1170,7 +1170,7 @@ function AdminUserActivity({ embedded = false }: AdminUserActivityProps) {
   );
 
   if (embedded) return inner;
-  return <DashboardLayout title="User Activity">{inner}</DashboardLayout>;
+  return <DashboardLayout title="User Activity" pageHeading>{inner}</DashboardLayout>;
 }
 
 export default memo(AdminUserActivity);

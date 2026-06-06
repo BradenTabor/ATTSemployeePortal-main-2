@@ -50,7 +50,7 @@ export default function ResourceDocView() {
   // ─── Invalid section/slug ─────────────────────────────────────────
   if (!section || !slug || !(section in DOC_CONFIGS)) {
     return (
-      <DashboardLayout title="Document Not Found">
+      <DashboardLayout title="Document Not Found" pageHeading>
         <div className="mx-auto max-w-2xl px-4 space-y-6">
           <Link
             to="/resources"
@@ -84,7 +84,7 @@ export default function ResourceDocView() {
   // ─── Entry or markdown not found ──────────────────────────────────
   if (!entry || !markdown) {
     return (
-      <DashboardLayout title="Document Not Found">
+      <DashboardLayout title="Document Not Found" pageHeading>
         <div className="mx-auto max-w-2xl px-4 space-y-6">
           <Link
             to="/resources"
@@ -117,7 +117,7 @@ export default function ResourceDocView() {
   const hasAccess = !needsCertAccess || allowedCertSlugs.has(trainingEntry!.certificationSlug!);
   if (needsCertAccess && !hasAccess) {
     return (
-      <DashboardLayout title="Access restricted">
+      <DashboardLayout title="Access restricted" pageHeading>
         <div className="mx-auto max-w-2xl px-4 space-y-6">
           <Link
             to="/resources"
@@ -149,7 +149,7 @@ export default function ResourceDocView() {
 
   // ─── Document view ────────────────────────────────────────────────
   return (
-    <DashboardLayout title={entry.title}>
+    <DashboardLayout title={entry.title} pageHeading>
       <motion.div className="mx-auto max-w-2xl space-y-6 sm:space-y-8 px-4" {...motionProps}>
         {/* Back nav */}
         <Link

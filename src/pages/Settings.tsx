@@ -913,7 +913,7 @@ export default function Settings() {
   const enableAnimations = !capsData.prefersReducedMotion && !capsData.isLowEnd;
 
   return (
-    <DashboardLayout title="Settings">
+    <DashboardLayout title="Settings" pageHeading>
       <div className="w-full max-w-4xl mx-auto px-3 sm:px-6 pb-6 pt-3 sm:pt-6">
         {/* Compact Hero Header */}
         <motion.div

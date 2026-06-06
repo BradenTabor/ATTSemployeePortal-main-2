@@ -1790,7 +1790,7 @@ function AdminUsers({ embedded = false }: AdminUsersProps) {
   );
 
   if (embedded) return inner;
-  return <DashboardLayout title="User Management">{inner}</DashboardLayout>;
+  return <DashboardLayout title="User Management" pageHeading>{inner}</DashboardLayout>;
 }
 
 export default memo(AdminUsers);

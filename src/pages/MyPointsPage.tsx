@@ -74,7 +74,7 @@ export default function MyPointsPage() {
   );
 
   return (
-    <DashboardLayout title="My Points">
+    <DashboardLayout title="My Points" pageHeading>
       <div className="space-y-5 pb-8 max-w-2xl mx-auto" data-testid="my-points-page">
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="text-2xl font-bold text-white">My Points</h1>

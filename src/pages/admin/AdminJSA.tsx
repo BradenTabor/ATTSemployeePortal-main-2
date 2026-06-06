@@ -1140,7 +1140,7 @@ export function AdminJSAContent() {
 
 export default function AdminJSA() {
   return (
-    <DashboardLayout title="Daily JSA Oversight">
+    <DashboardLayout title="Daily JSA Oversight" pageHeading>
       <AdminJSAContent />
     </DashboardLayout>
   );

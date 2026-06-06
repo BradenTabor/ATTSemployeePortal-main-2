@@ -27,7 +27,7 @@ export default function WorkerQualifications() {
 
   if (role !== 'admin' && role !== 'safety_officer') {
     return (
-      <DashboardLayout title="Worker Qualifications">
+      <DashboardLayout title="Worker Qualifications" pageHeading>
         <div className="flex items-center justify-center min-h-[50vh]">
           <p className="text-red-400">Access Denied — admin or safety officer role required.</p>
         </div>
@@ -57,7 +57,7 @@ export default function WorkerQualifications() {
   };
 
   return (
-    <DashboardLayout title="Worker Qualifications">
+    <DashboardLayout title="Worker Qualifications" pageHeading>
       <div className="mx-auto max-w-5xl space-y-6">
         <div className="relative overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-gray-900 via-gray-900/95 to-gray-950 px-4 py-4 shadow-lg shadow-black/25 before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent before:pointer-events-none">
           <h1 className="text-xl sm:text-2xl font-bold text-white">

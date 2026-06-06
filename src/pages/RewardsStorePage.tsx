@@ -90,7 +90,7 @@ export default function RewardsStorePage() {
   const pageEnter = { duration: 0.2 };
 
   return (
-    <DashboardLayout title="Rewards Store">
+    <DashboardLayout title="Rewards Store" pageHeading>
       <div className="space-y-6 pb-8 max-w-2xl mx-auto">
         <motion.header
           initial={{ opacity: 0, y: -10 }}

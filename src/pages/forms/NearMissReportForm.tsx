@@ -285,7 +285,7 @@ export default function NearMissReportForm() {
   const labelClass = 'block text-sm font-medium text-white/80 mb-2';
 
   return (
-    <DashboardLayout>
+    <DashboardLayout pageHeading>
       <DraftRecoveryModal
         isOpen={showDraftModal}
         draft={draftData}

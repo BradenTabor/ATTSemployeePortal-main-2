@@ -505,7 +505,7 @@ function SafetyAnalyticsDashboard() {
     currentUserRole === "admin" || currentUserRole === "safety_officer";
   if (!canAccess) {
     return (
-      <DashboardLayout title="Safety Analytics">
+      <DashboardLayout title="Safety Analytics" pageHeading>
         <div className="min-h-[50vh] flex items-center justify-center">
           <div className="text-center">
             <Shield className="w-12 h-12 text-red-400 mx-auto mb-3" />
@@ -518,7 +518,7 @@ function SafetyAnalyticsDashboard() {
   }
   
   return (
-    <DashboardLayout title="Safety Analytics">
+    <DashboardLayout title="Safety Analytics" pageHeading>
       <div className="w-full max-w-6xl mx-auto px-3 sm:px-4 pb-4">
         {/* Compact Header */}
         <div className="mb-4">

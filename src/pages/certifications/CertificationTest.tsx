@@ -168,7 +168,7 @@ export default function CertificationTest() {
   // ─── Cert not found / loading ─────────────────────────────────────
   if (!cert) {
     return (
-      <DashboardLayout title="Certification Test">
+      <DashboardLayout title="Certification Test" pageHeading>
         <div className="mx-auto max-w-2xl px-4">
           {types === undefined ? (
             <div className="space-y-4">
@@ -191,7 +191,7 @@ export default function CertificationTest() {
   // ─── Test results ─────────────────────────────────────────────────
   if (result) {
     return (
-      <DashboardLayout title="Test Results">
+      <DashboardLayout title="Test Results" pageHeading>
         <TestResults result={result} certName={cert.name} />
       </DashboardLayout>
     );
@@ -202,7 +202,7 @@ export default function CertificationTest() {
     const showStartBlock = !inProgress && !!canStart;
 
     return (
-      <DashboardLayout title={`${cert.name} — Start Test`}>
+      <DashboardLayout title={`${cert.name} — Start Test`} pageHeading>
         <motion.div className="mx-auto max-w-2xl space-y-6 sm:space-y-8 px-4" {...motionProps}>
           {/* Back nav */}
           <Link
@@ -303,7 +303,7 @@ export default function CertificationTest() {
   // ─── Questions loading / empty ────────────────────────────────────
   if (questionsLoading || !questions?.length) {
     return (
-      <DashboardLayout title={cert.name}>
+      <DashboardLayout title={cert.name} pageHeading>
         <div className="mx-auto max-w-lg space-y-4 px-4">
           {questionsLoading ? (
             <>
@@ -331,7 +331,7 @@ export default function CertificationTest() {
   const q = sortedQuestions[currentIndex];
   if (!q) {
     return (
-      <DashboardLayout title={cert.name}>
+      <DashboardLayout title={cert.name} pageHeading>
         <div className="mx-auto max-w-lg px-4">
           <div className="rounded-xl border border-red-500/20 bg-gray-900 px-4 py-3">
             <div className="flex items-center gap-2.5">
@@ -345,7 +345,7 @@ export default function CertificationTest() {
   }
 
   return (
-    <DashboardLayout title={cert.name}>
+    <DashboardLayout title={cert.name} pageHeading>
       <motion.div className="mx-auto max-w-lg space-y-4 px-4" {...motionProps}>
         {/* Cert name + progress */}
         <div className="space-y-2">

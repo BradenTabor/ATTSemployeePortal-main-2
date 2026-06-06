@@ -83,7 +83,7 @@ export default function TeamContacts() {
   }, [contacts, roleFilter, search]);
 
   return (
-    <DashboardLayout title="Team Contacts">
+    <DashboardLayout title="Team Contacts" pageHeading>
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pb-4 pt-4 sm:pt-6">
         {/* Glass Header */}
         <div className="mb-5 md:mb-6">

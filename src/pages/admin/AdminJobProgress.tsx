@@ -427,7 +427,7 @@ export default function AdminJobProgress() {
 
   if (!isAdmin) {
     return (
-      <DashboardLayout title="Job Progress Analytics">
+      <DashboardLayout title="Job Progress Analytics" pageHeading>
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center text-white/80">
             <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-3" />
@@ -449,7 +449,7 @@ export default function AdminJobProgress() {
     ) : null;
 
   return (
-    <DashboardLayout title="Job Progress Analytics">
+    <DashboardLayout title="Job Progress Analytics" pageHeading>
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pb-4 pt-4 sm:pt-6">
         {/* Premium Glass Header - Gold Theme */}
         <div className="mb-5 md:mb-6">

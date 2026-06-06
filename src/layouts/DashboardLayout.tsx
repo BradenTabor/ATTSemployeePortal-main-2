@@ -15,9 +15,16 @@ interface DashboardLayoutProps {
   title?: string;
   children: ReactNode;
   hideHeader?: boolean;
+  /** When true, the page renders the visible document <h1>; layout shows logo only (no duplicate title). */
+  pageHeading?: boolean;
 }
 
-export default function DashboardLayout({ title, children, hideHeader = false }: DashboardLayoutProps) {
+export default function DashboardLayout({
+  title,
+  children,
+  hideHeader = false,
+  pageHeading = false,
+}: DashboardLayoutProps) {
   const capabilities = getDeviceCapabilities();
   const { isLowEnd, isMobile, prefersReducedMotion } = capabilities;
 
@@ -175,8 +182,9 @@ export default function DashboardLayout({ title, children, hideHeader = false }:
               fetchpriority="high"
               className="w-[100px] sm:w-40 md:w-48 object-contain drop-shadow-lg flex-shrink-0 relative z-[15]"
             />
-            {title && (
-              <h1
+            {title && !pageHeading && (
+              <p
+                aria-hidden="true"
                 className="text-lg sm:text-2xl md:text-3xl font-bold tracking-wide text-transparent bg-clip-text gradient-animated leading-tight"
                 style={{
                   backgroundSize: "200% 200%",
@@ -186,12 +194,15 @@ export default function DashboardLayout({ title, children, hideHeader = false }:
                 }}
               >
                 {title}
-              </h1>
+              </p>
             )}
           </header>
         )}
 
         <main className="flex flex-col items-center justify-start w-full pb-8">
+          {title && !pageHeading && (
+            <h1 className="sr-only">{title}</h1>
+          )}
           {children}
         </main>
       </div>

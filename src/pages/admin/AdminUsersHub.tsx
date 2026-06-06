@@ -54,7 +54,7 @@ export default function AdminUsersHub() {
   }
 
   return (
-    <DashboardLayout title="Users & Activity">
+    <DashboardLayout title="Users & Activity" pageHeading>
       <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 pb-4 pt-3 sm:pt-6 space-y-4 sm:space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
           <div>

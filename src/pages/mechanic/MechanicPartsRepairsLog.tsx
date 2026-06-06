@@ -425,7 +425,7 @@ export default function MechanicPartsRepairsLog() {
   // Access check
   if (!hasAccess) {
     return (
-      <DashboardLayout title="Parts & Repairs Log">
+      <DashboardLayout title="Parts & Repairs Log" pageHeading>
         <div className="min-h-[60vh] flex items-center justify-center">
           <div className="text-center">
             <div className="w-20 h-20 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
@@ -440,7 +440,7 @@ export default function MechanicPartsRepairsLog() {
   }
   
   return (
-    <DashboardLayout title="Parts & Repairs Log">
+    <DashboardLayout title="Parts & Repairs Log" pageHeading>
       <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 pb-3 sm:pb-4 pt-2 sm:pt-6">
         {/* Premium Glass Header - Ember Theme */}
         <div className="mb-3 sm:mb-5 md:mb-6">

@@ -1385,7 +1385,7 @@ export function AdminPartsFixesContent() {
 
 export default function AdminPartsFixesOverview() {
   return (
-    <DashboardLayout title="Parts & Fixes Overview">
+    <DashboardLayout title="Parts & Fixes Overview" pageHeading>
       <AdminPartsFixesContent />
     </DashboardLayout>
   );

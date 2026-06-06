@@ -140,7 +140,9 @@ describe('DVIR Form Submission Integration', () => {
   it('should render DVIR form with required fields', async () => {
     renderWithProviders(<DVIRForm />);
     await waitFor(() => {
-      expect(screen.getByText(/Daily Vehicle Inspection/i)).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: /Daily Vehicle Inspection/i }),
+      ).toBeInTheDocument();
     });
   }, 10_000);
 
@@ -148,7 +150,9 @@ describe('DVIR Form Submission Integration', () => {
     renderWithProviders(<DVIRForm />);
 
     await waitFor(() => {
-      expect(screen.getByText(/Daily Vehicle Inspection/i)).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: /Daily Vehicle Inspection/i }),
+      ).toBeInTheDocument();
     });
 
     await waitFor(() => {
@@ -163,7 +167,9 @@ describe('DVIR Form Submission Integration', () => {
     const user = userEvent.setup();
     renderWithProviders(<DVIRForm />);
     await waitFor(() => {
-      expect(screen.getByText(/Daily Vehicle Inspection/i)).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: /Daily Vehicle Inspection/i }),
+      ).toBeInTheDocument();
     });
     const fileInput = document.querySelector<HTMLInputElement>('input[type="file"]');
     expect(fileInput).toBeTruthy();
@@ -181,7 +187,9 @@ describe('DVIR Form Submission Integration', () => {
     const user = userEvent.setup();
     renderWithProviders(<DVIRForm />);
     await waitFor(() => {
-      expect(screen.getByText(/Daily Vehicle Inspection/i)).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: /Daily Vehicle Inspection/i }),
+      ).toBeInTheDocument();
     });
     const truckSelect = screen.getByRole('combobox', { name: /truck/i });
     await user.selectOptions(truckSelect, 'B132');

@@ -261,7 +261,7 @@ export default function MechanicDashboard() {
   // Unauthorized check
   if (unauthorized) {
     return (
-      <DashboardLayout title="Mechanic Panel">
+      <DashboardLayout title="Mechanic Panel" pageHeading>
         <div className="max-w-xl mx-auto mt-10 text-center text-sm text-gray-300">
           You do not have permission to view the mechanic panel.
         </div>
@@ -270,7 +270,7 @@ export default function MechanicDashboard() {
   }
 
   return (
-    <DashboardLayout title="Mechanic Panel">
+    <DashboardLayout title="Mechanic Panel" pageHeading>
       <div className="w-full max-w-2xl mx-auto px-3 sm:px-4 pb-6 pt-2 sm:pt-4">
         
         {/* ============ COMPACT HERO HEADER ============ */}

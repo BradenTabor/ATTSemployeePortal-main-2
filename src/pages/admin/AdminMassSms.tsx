@@ -312,7 +312,7 @@ function AdminMassSms() {
     );
 
   return (
-    <DashboardLayout title="Mass SMS">
+    <DashboardLayout title="Mass SMS" pageHeading>
       <div className="w-full max-w-2xl mx-auto px-3 sm:px-6 pb-20 sm:pb-8 pt-2 sm:pt-6">
         <motion.div
           initial={{ opacity: 0, y: 8 }}

@@ -147,7 +147,7 @@ export default function OSHA300ASummaryPage() {
   }, [showCertifyModal, closeCertifyModal]);
 
   return (
-    <DashboardLayout title="OSHA 300A Annual Summary">
+    <DashboardLayout title="OSHA 300A Annual Summary" pageHeading>
       <div className="max-w-3xl mx-auto pb-20">
         <Link
           to="/safety-officer-dashboard"

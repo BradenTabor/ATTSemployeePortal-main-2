@@ -84,7 +84,7 @@ export default function AdminRewardCatalog() {
   }
 
   return (
-    <DashboardLayout title="Reward Catalog">
+    <DashboardLayout title="Reward Catalog" pageHeading>
       <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 pb-8 pt-4 sm:pt-6">
         <motion.div
           initial={{ opacity: 0, y: -10 }}

@@ -1293,7 +1293,7 @@ export default function AdminTelemetry() {
   const hasData = data && data.summary.total_events > 0;
 
   return (
-    <DashboardLayout title="Telemetry Dashboard">
+    <DashboardLayout title="Telemetry Dashboard" pageHeading>
       <div className="w-full max-w-7xl mx-auto px-2.5 sm:px-4 overflow-x-hidden space-y-1.5 sm:space-y-5">
         {/* Compact Header */}
         <motion.div

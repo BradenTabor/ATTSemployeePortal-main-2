@@ -664,7 +664,7 @@ export default function Announcements() {
   // Hero config - compact with inline badge
 
   return (
-    <DashboardLayout title="Announcements">
+    <DashboardLayout title="Announcements" pageHeading>
       <div
         className="w-full max-w-7xl mx-auto px-4 sm:px-6 pb-4 pt-4 sm:pt-6 min-w-0 overflow-x-hidden"
         data-testid="announcements"

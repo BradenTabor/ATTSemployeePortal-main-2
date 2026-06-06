@@ -511,7 +511,7 @@ export default function Profile() {
   // Loading state with premium animation
   if (loading) {
     return (
-      <DashboardLayout title="My Profile">
+      <DashboardLayout title="My Profile" pageHeading>
         <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 pb-4 pt-4 sm:pt-6">
           <div className="flex flex-col items-center justify-center py-24">
             <motion.div
@@ -552,7 +552,7 @@ export default function Profile() {
   }
 
   return (
-    <DashboardLayout title="My Profile">
+    <DashboardLayout title="My Profile" pageHeading>
       <div className="w-full max-w-4xl mx-auto px-3 sm:px-6 pb-4 pt-3 sm:pt-6">
         {/* ================================================================ */}
         {/* COMPACT HERO HEADER */}

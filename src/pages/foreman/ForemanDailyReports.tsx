@@ -1023,7 +1023,7 @@ export default function ForemanDailyReports() {
   // Access control
   if (role !== "foreman" && role !== "admin") {
     return (
-      <DashboardLayout title="Access Denied">
+      <DashboardLayout title="Access Denied" pageHeading>
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <div className="w-20 h-20 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto mb-4">
@@ -1050,7 +1050,7 @@ export default function ForemanDailyReports() {
   ];
 
   return (
-    <DashboardLayout title="Daily Reports">
+    <DashboardLayout title="Daily Reports" pageHeading>
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pb-4 pt-4 sm:pt-6">
         {/* Premium Glass Header - Blue Theme */}
         <div className="mb-5 md:mb-6">

@@ -625,7 +625,7 @@ function AdminSafetyRewardsPage() {
   );
 
   return (
-    <DashboardLayout title="Safety Rewards Management">
+    <DashboardLayout title="Safety Rewards Management" pageHeading>
       <div className="space-y-6 pb-8">
         {/* Header */}
         <motion.div
