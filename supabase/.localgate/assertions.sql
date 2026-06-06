@@ -781,4 +781,373 @@ BEGIN
   RAISE NOTICE 'OK: earning sources matrix — near-miss cap/corrective bonus/cert pass+renewal/index regression/inactive rule/balance all pass.';
 END $$;
 
+-- ---- Increment-specific checks: 20260606120000 (redemption store increment 1) ----
+DO $$
+DECLARE
+  missing text := '';
+BEGIN
+  IF to_regclass('public.reward_catalog') IS NULL THEN
+    missing := missing || E'\n  - table public.reward_catalog is missing';
+  END IF;
+  IF to_regclass('public.redemptions') IS NULL THEN
+    missing := missing || E'\n  - table public.redemptions is missing';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'redemption_status'
+                 AND typnamespace = 'public'::regnamespace) THEN
+    missing := missing || E'\n  - enum public.redemption_status is missing';
+  END IF;
+  IF to_regclass('public.uq_redemptions_user_request') IS NULL THEN
+    missing := missing || E'\n  - index uq_redemptions_user_request is missing';
+  END IF;
+  IF to_regclass('public.uq_point_tx_redemption_hold') IS NULL THEN
+    missing := missing || E'\n  - index uq_point_tx_redemption_hold is missing';
+  END IF;
+  IF to_regclass('public.uq_point_tx_redemption_refund') IS NULL THEN
+    missing := missing || E'\n  - index uq_point_tx_redemption_refund is missing';
+  END IF;
+  IF to_regprocedure('public.redeem_reward(uuid,uuid)') IS NULL THEN
+    missing := missing || E'\n  - function public.redeem_reward(uuid,uuid) is missing';
+  END IF;
+  IF to_regprocedure('public.fulfill_redemption(uuid,text)') IS NULL THEN
+    missing := missing || E'\n  - function public.fulfill_redemption(uuid,text) is missing';
+  END IF;
+  IF to_regprocedure('public.deny_redemption(uuid,text)') IS NULL THEN
+    missing := missing || E'\n  - function public.deny_redemption(uuid,text) is missing';
+  END IF;
+  IF to_regprocedure('public.cancel_redemption(uuid)') IS NULL THEN
+    missing := missing || E'\n  - function public.cancel_redemption(uuid) is missing';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies
+                 WHERE schemaname='public' AND tablename='reward_catalog'
+                   AND policyname='Authenticated read active catalog items') THEN
+    missing := missing || E'\n  - RLS select policy on reward_catalog is missing';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies
+                 WHERE schemaname='public' AND tablename='redemptions'
+                   AND policyname='Users read own redemptions') THEN
+    missing := missing || E'\n  - RLS select policy on redemptions is missing';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname='public' AND tablename='redemptions'
+      AND cmd IN ('INSERT','UPDATE','ALL')
+      AND (roles && ARRAY['authenticated','anon','public']::name[])
+  ) THEN
+    missing := missing || E'\n  - redemptions has a user-facing INSERT/UPDATE/ALL policy (must NOT exist)';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname='public' AND tablename='point_transactions'
+      AND cmd IN ('INSERT','ALL')
+      AND (roles && ARRAY['authenticated','anon','public']::name[])
+  ) THEN
+    missing := missing || E'\n  - point_transactions has a user-facing INSERT/ALL policy (must NOT exist)';
+  END IF;
+
+  IF missing <> '' THEN
+    RAISE EXCEPTION E'GATE FAILED — redemption store objects (20260606120000) not correct:%', missing;
+  END IF;
+  RAISE NOTICE 'OK: redemption store table/enum/indexes/functions/policies present; no user-write on redemptions/point_transactions.';
+END $$;
+
+-- (2) Behavioral enforcement matrix — redemption store increment 1.
+DO $$
+DECLARE
+  c_user      uuid := '00000000-0000-0000-0000-00000000cc01';
+  c_user2     uuid := '00000000-0000-0000-0000-00000000cc02';
+  c_admin     uuid := '00000000-0000-0000-0000-00000000cc03';
+  c_item_cap  uuid := 'a1000001-0000-4000-8000-000000000001';
+  c_item_hood uuid := 'a1000001-0000-4000-8000-000000000006';
+  c_item_gift uuid := 'a1000001-0000-4000-8000-000000000007';
+  c_item_inact uuid := '00000000-0000-0000-0000-00000000cd01';
+  c_item_oos  uuid := '00000000-0000-0000-0000-00000000cd02';
+  v_redemption uuid;
+  v_redemption2 uuid;
+  v_redemption_fulfill uuid;
+  v_raised    boolean;
+  v_count     integer;
+  v_status    text;
+  v_bal_before integer; v_bal_after integer;
+  v_stock     integer;
+  v_raf_before integer; v_raf_after integer;
+  v_year      integer;
+  v_month     integer;
+  v_req_hood  uuid := '00000000-0000-0000-0000-0000000c0001';
+  v_req_cap   uuid := '00000000-0000-0000-0000-0000000c0002';
+  v_req_cap2  uuid := '00000000-0000-0000-0000-0000000c0003';
+  v_req_race1 uuid := '00000000-0000-0000-0000-0000000c0004';
+  v_req_race2 uuid := '00000000-0000-0000-0000-0000000c0005';
+  v_req_fulfill uuid := '00000000-0000-0000-0000-0000000c0006';
+BEGIN
+  INSERT INTO auth.users (id, aud, role, email) VALUES
+    (c_user , 'authenticated', 'authenticated', 'gate-rd-user@example.invalid'),
+    (c_user2, 'authenticated', 'authenticated', 'gate-rd-user2@example.invalid'),
+    (c_admin, 'authenticated', 'authenticated', 'gate-rd-admin@example.invalid');
+
+  UPDATE public.app_users SET role = 'admin' WHERE user_id = c_admin;
+
+  INSERT INTO public.reward_catalog (id, name, point_cost, stock_qty, category, is_active, sort_order)
+  VALUES
+    (c_item_inact, 'Gate Inactive Item', 50, NULL, 'test', false, 999),
+    (c_item_oos , 'Gate OOS Item', 50, 0, 'test', true, 998);
+
+  INSERT INTO public.point_transactions (user_id, amount, source, reason, counts_toward_raffle)
+  VALUES
+    (c_user , 800, 'adjustment', 'gate redemption seed', true),
+    (c_user2, 500, 'adjustment', 'gate redemption seed', true);
+
+  v_year  := EXTRACT(YEAR  FROM (now() AT TIME ZONE 'America/Chicago'))::integer;
+  v_month := EXTRACT(MONTH FROM (now() AT TIME ZONE 'America/Chicago'))::integer;
+  v_raf_before := public.get_user_raffle_entries(c_user, v_year, v_month);
+
+  -- ---- redeem sufficient balance -> pending + hold; balance drops; stock if tracked ----
+  PERFORM set_config('request.jwt.claim.sub', c_user::text, true);
+  SELECT stock_qty INTO v_stock FROM public.reward_catalog WHERE id = c_item_hood;
+  v_bal_before := public.get_user_point_balance(c_user);
+  SELECT public.redeem_reward(c_item_hood, v_req_hood) INTO v_redemption;
+
+  SELECT count(*) INTO v_count FROM public.redemptions
+   WHERE id = v_redemption AND user_id = c_user AND status = 'pending' AND point_cost = 400;
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED — redeem did not create pending redemption (count=%)', v_count;
+  END IF;
+
+  SELECT count(*) INTO v_count FROM public.point_transactions
+   WHERE user_id = c_user AND source = 'redemption' AND reference_id = v_redemption
+     AND amount = -400 AND counts_toward_raffle = false;
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED — redeem did not create exactly one hold row (count=%)', v_count;
+  END IF;
+
+  v_bal_after := public.get_user_point_balance(c_user);
+  IF v_bal_after <> v_bal_before - 400 THEN
+    RAISE EXCEPTION 'GATE FAILED — balance % -> % (expected drop of 400)', v_bal_before, v_bal_after;
+  END IF;
+
+  SELECT stock_qty INTO v_count FROM public.reward_catalog WHERE id = c_item_hood;
+  IF v_count <> v_stock - 1 THEN
+    RAISE EXCEPTION 'GATE FAILED — hoodie stock % (expected %)', v_count, v_stock - 1;
+  END IF;
+
+  -- ---- insufficient balance -> RAISE, no new redemption/hold ----
+  -- After hoodie (400) user has 400 pts; $50 gift card costs 500.
+  PERFORM set_config('request.jwt.claim.sub', c_user::text, true);
+  v_raised := false;
+  BEGIN
+    PERFORM public.redeem_reward(c_item_gift, v_req_cap2);
+  EXCEPTION WHEN others THEN
+    v_raised := true;
+    IF SQLERRM NOT LIKE '%Insufficient balance%' THEN
+      RAISE EXCEPTION 'GATE FAILED — insufficient-balance wrong error: %', SQLERRM;
+    END IF;
+  END;
+  IF NOT v_raised THEN RAISE EXCEPTION 'GATE FAILED — insufficient balance was allowed'; END IF;
+  SELECT count(*) INTO v_count FROM public.redemptions WHERE request_id = v_req_cap2;
+  IF v_count <> 0 THEN RAISE EXCEPTION 'GATE FAILED — insufficient balance created a redemption row'; END IF;
+
+  -- ---- inactive item -> RAISE ----
+  v_raised := false;
+  BEGIN
+    PERFORM public.redeem_reward(c_item_inact, gen_random_uuid());
+  EXCEPTION WHEN others THEN
+    v_raised := true;
+    IF SQLERRM NOT LIKE '%not available%' THEN
+      RAISE EXCEPTION 'GATE FAILED — inactive-item wrong error: %', SQLERRM;
+    END IF;
+  END;
+  IF NOT v_raised THEN RAISE EXCEPTION 'GATE FAILED — inactive item redeem was allowed'; END IF;
+
+  -- ---- out of stock (stock_qty 0) -> RAISE ----
+  v_raised := false;
+  BEGIN
+    PERFORM public.redeem_reward(c_item_oos, gen_random_uuid());
+  EXCEPTION WHEN others THEN
+    v_raised := true;
+    IF SQLERRM NOT LIKE '%Out of stock%' THEN
+      RAISE EXCEPTION 'GATE FAILED — out-of-stock wrong error: %', SQLERRM;
+    END IF;
+  END;
+  IF NOT v_raised THEN RAISE EXCEPTION 'GATE FAILED — out-of-stock redeem was allowed'; END IF;
+
+  -- ---- double redeem same p_request_id -> one redemption, balance drops once ----
+  PERFORM set_config('request.jwt.claim.sub', c_user::text, true);
+  v_bal_before := public.get_user_point_balance(c_user);
+  SELECT public.redeem_reward(c_item_cap, v_req_cap) INTO v_redemption2;
+  SELECT public.redeem_reward(c_item_cap, v_req_cap) INTO v_redemption;
+  IF v_redemption IS NULL OR v_redemption2 IS NULL OR v_redemption <> v_redemption2 THEN
+    RAISE EXCEPTION 'GATE FAILED — idempotent redeem returned different ids (% vs %)', v_redemption, v_redemption2;
+  END IF;
+  SELECT count(*) INTO v_count FROM public.redemptions WHERE request_id = v_req_cap AND user_id = c_user;
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED — idempotent redeem produced % rows (expected 1)', v_count;
+  END IF;
+  v_bal_after := public.get_user_point_balance(c_user);
+  IF v_bal_after <> v_bal_before - 75 THEN
+    RAISE EXCEPTION 'GATE FAILED — idempotent redeem balance drop % (expected 75)', v_bal_before - v_bal_after;
+  END IF;
+
+  -- ---- STOCK RACE: last unit — first succeeds, second RAISES out-of-stock ----
+  UPDATE public.reward_catalog SET stock_qty = 1 WHERE id = c_item_hood;
+  PERFORM set_config('request.jwt.claim.sub', c_user2::text, true);
+  SELECT public.redeem_reward(c_item_hood, v_req_race1) INTO v_redemption;
+  v_raised := false;
+  BEGIN
+    PERFORM public.redeem_reward(c_item_hood, v_req_race2);
+  EXCEPTION WHEN others THEN
+    v_raised := true;
+    IF SQLERRM NOT LIKE '%Out of stock%' THEN
+      RAISE EXCEPTION 'GATE FAILED — stock-race second redeem wrong error: %', SQLERRM;
+    END IF;
+  END;
+  IF NOT v_raised THEN RAISE EXCEPTION 'GATE FAILED — stock race allowed two redeems of last unit'; END IF;
+  SELECT count(*) INTO v_count FROM public.redemptions
+   WHERE item_id = c_item_hood AND user_id = c_user2 AND status = 'pending';
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED — stock race: expected 1 pending redemption for user2, got %', v_count;
+  END IF;
+  SELECT stock_qty INTO v_count FROM public.reward_catalog WHERE id = c_item_hood;
+  IF v_count <> 0 THEN
+    RAISE EXCEPTION 'GATE FAILED — stock race: hoodie stock % (expected 0)', v_count;
+  END IF;
+
+  -- ---- deny pending -> denied + refund + balance restored + stock restored ----
+  PERFORM set_config('request.jwt.claim.sub', c_admin::text, true);
+  v_bal_before := public.get_user_point_balance(c_user2);
+  SELECT stock_qty INTO v_stock FROM public.reward_catalog WHERE id = c_item_hood;
+  PERFORM public.deny_redemption(v_redemption, 'gate deny test');
+
+  SELECT status::text INTO v_status FROM public.redemptions WHERE id = v_redemption;
+  IF v_status <> 'denied' THEN
+    RAISE EXCEPTION 'GATE FAILED — deny did not set status denied (got %)', v_status;
+  END IF;
+  SELECT count(*) INTO v_count FROM public.point_transactions
+   WHERE source = 'adjustment' AND reference_id = v_redemption
+     AND amount = 400 AND counts_toward_raffle = false;
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED — deny refund row count % (expected 1)', v_count;
+  END IF;
+  v_bal_after := public.get_user_point_balance(c_user2);
+  IF v_bal_after <> v_bal_before + 400 THEN
+    RAISE EXCEPTION 'GATE FAILED — deny balance restore % -> %', v_bal_before, v_bal_after;
+  END IF;
+  SELECT stock_qty INTO v_count FROM public.reward_catalog WHERE id = c_item_hood;
+  IF v_count <> v_stock + 1 THEN
+    RAISE EXCEPTION 'GATE FAILED — deny stock restore % (expected %)', v_count, v_stock + 1;
+  END IF;
+
+  -- ---- deny AGAIN -> idempotent, no second refund ----
+  v_bal_before := public.get_user_point_balance(c_user2);
+  PERFORM public.deny_redemption(v_redemption, 'gate deny again');
+  SELECT count(*) INTO v_count FROM public.point_transactions
+   WHERE source = 'adjustment' AND reference_id = v_redemption;
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED — second deny produced % refund rows (expected 1)', v_count;
+  END IF;
+  IF public.get_user_point_balance(c_user2) <> v_bal_before THEN
+    RAISE EXCEPTION 'GATE FAILED — second deny changed balance';
+  END IF;
+
+  -- ---- cancel own pending (cap redemption) -> refund + stock N/A (unlimited) ----
+  PERFORM set_config('request.jwt.claim.sub', c_user::text, true);
+  v_bal_before := public.get_user_point_balance(c_user);
+  PERFORM public.cancel_redemption(v_redemption2);
+  SELECT count(*) INTO v_count FROM public.point_transactions
+   WHERE source = 'adjustment' AND reference_id = v_redemption2 AND amount = 75;
+  IF v_count <> 1 THEN RAISE EXCEPTION 'GATE FAILED — cancel did not write refund row'; END IF;
+  IF public.get_user_point_balance(c_user) <> v_bal_before + 75 THEN
+    RAISE EXCEPTION 'GATE FAILED — cancel did not restore balance';
+  END IF;
+
+  -- ---- cancel another user's redemption -> RAISE ----
+  PERFORM set_config('request.jwt.claim.sub', c_user::text, true);
+  SELECT public.redeem_reward(c_item_cap, v_req_fulfill) INTO v_redemption_fulfill;
+  PERFORM set_config('request.jwt.claim.sub', c_user2::text, true);
+  v_raised := false;
+  BEGIN
+    PERFORM public.cancel_redemption(v_redemption_fulfill);
+  EXCEPTION WHEN others THEN
+    v_raised := true;
+    IF SQLERRM NOT LIKE '%Not permitted to cancel%' THEN
+      RAISE EXCEPTION 'GATE FAILED — cancel-other-user wrong error: %', SQLERRM;
+    END IF;
+  END;
+  IF NOT v_raised THEN RAISE EXCEPTION 'GATE FAILED — user canceled another user redemption'; END IF;
+
+  -- ---- cancel non-pending -> RAISE ----
+  PERFORM set_config('request.jwt.claim.sub', c_user::text, true);
+  v_raised := false;
+  BEGIN
+    PERFORM public.cancel_redemption(v_redemption2);
+  EXCEPTION WHEN others THEN
+    v_raised := true;
+    IF SQLERRM NOT LIKE '%Invalid transition%' AND SQLERRM NOT LIKE '%cannot cancel%' THEN
+      RAISE EXCEPTION 'GATE FAILED — cancel-non-pending wrong error: %', SQLERRM;
+    END IF;
+  END;
+  IF NOT v_raised THEN RAISE EXCEPTION 'GATE FAILED — cancel non-pending was allowed'; END IF;
+
+  -- ---- fulfill pending -> fulfilled, no refund, balance stays reduced ----
+  PERFORM set_config('request.jwt.claim.sub', c_admin::text, true);
+  v_bal_before := public.get_user_point_balance(c_user);
+  PERFORM public.fulfill_redemption(v_redemption_fulfill, 'shipped');
+  SELECT status::text INTO v_status FROM public.redemptions WHERE id = v_redemption_fulfill;
+  IF v_status <> 'fulfilled' THEN
+    RAISE EXCEPTION 'GATE FAILED — fulfill status % (expected fulfilled)', v_status;
+  END IF;
+  SELECT count(*) INTO v_count FROM public.point_transactions
+   WHERE source = 'adjustment' AND reference_id = v_redemption_fulfill;
+  IF v_count <> 0 THEN
+    RAISE EXCEPTION 'GATE FAILED — fulfill wrote a refund row';
+  END IF;
+  IF public.get_user_point_balance(c_user) <> v_bal_before THEN
+    RAISE EXCEPTION 'GATE FAILED — fulfill changed balance (hold should remain final)';
+  END IF;
+
+  -- ---- fulfill denied/canceled -> RAISE ----
+  v_raised := false;
+  BEGIN
+    PERFORM public.fulfill_redemption(v_redemption2);
+  EXCEPTION WHEN others THEN
+    v_raised := true;
+    IF SQLERRM NOT LIKE '%Invalid transition%' THEN
+      RAISE EXCEPTION 'GATE FAILED — fulfill-invalid wrong error: %', SQLERRM;
+    END IF;
+  END;
+  IF NOT v_raised THEN RAISE EXCEPTION 'GATE FAILED — fulfill on canceled/denied was allowed'; END IF;
+
+  -- ---- non-admin fulfill/deny -> RAISE ----
+  PERFORM set_config('request.jwt.claim.sub', c_user2::text, true);
+  SELECT public.redeem_reward(c_item_cap, '00000000-0000-0000-0000-0000000c0007') INTO v_redemption;
+  PERFORM set_config('request.jwt.claim.sub', c_user::text, true);
+  v_raised := false;
+  BEGIN
+    PERFORM public.fulfill_redemption(v_redemption, 'nope');
+  EXCEPTION WHEN others THEN
+    v_raised := true;
+    IF SQLERRM NOT LIKE '%Not permitted to fulfill%' THEN
+      RAISE EXCEPTION 'GATE FAILED — non-admin fulfill wrong error: %', SQLERRM;
+    END IF;
+  END;
+  IF NOT v_raised THEN RAISE EXCEPTION 'GATE FAILED — non-admin fulfill was allowed'; END IF;
+
+  v_raised := false;
+  BEGIN
+    PERFORM public.deny_redemption(v_redemption, 'nope');
+  EXCEPTION WHEN others THEN
+    v_raised := true;
+    IF SQLERRM NOT LIKE '%Not permitted to deny%' THEN
+      RAISE EXCEPTION 'GATE FAILED — non-admin deny wrong error: %', SQLERRM;
+    END IF;
+  END;
+  IF NOT v_raised THEN RAISE EXCEPTION 'GATE FAILED — non-admin deny was allowed'; END IF;
+
+  -- ---- RAFFLE INVARIANT: redemption + refund do not change raffle entries ----
+  v_raf_after := public.get_user_raffle_entries(c_user, v_year, v_month);
+  IF v_raf_after <> v_raf_before THEN
+    RAISE EXCEPTION 'GATE FAILED — raffle entries changed % -> % (redemption/refund must not count)', v_raf_before, v_raf_after;
+  END IF;
+
+  RAISE NOTICE 'OK: redemption store matrix — redeem/hold/stock/idempotency/deny/cancel/fulfill/permissions/raffle all pass.';
+END $$;
+
 ROLLBACK;
