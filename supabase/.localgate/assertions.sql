@@ -1178,4 +1178,61 @@ BEGIN
   RAISE NOTICE 'OK: redemption store matrix — redeem/hold/stock/idempotency/deny/cancel/fulfill/permissions/raffle/stock-restore-idempotency/null-stock all pass.';
 END $$;
 
+-- ---- Increment-specific checks: 20260606140000 (get_user_points_by_source) ----
+DO $$
+DECLARE
+  missing text := '';
+  c_user   uuid := '00000000-0000-0000-0000-0000000a0001';
+  c_other  uuid := '00000000-0000-0000-0000-0000000a0002';
+  v_bal    integer;
+  v_sum    integer;
+  v_raised boolean;
+BEGIN
+  IF to_regprocedure('public.get_user_points_by_source(uuid)') IS NULL THEN
+    missing := missing || E'\n  - function public.get_user_points_by_source(uuid) is missing';
+  END IF;
+
+  IF missing <> '' THEN
+    RAISE EXCEPTION E'GATE FAILED — get_user_points_by_source objects (20260606140000) not correct:%', missing;
+  END IF;
+
+  INSERT INTO auth.users (id, aud, role, email) VALUES
+    (c_user,  'authenticated', 'authenticated', 'gate-by-source-user@example.invalid'),
+    (c_other, 'authenticated', 'authenticated', 'gate-by-source-other@example.invalid')
+  ON CONFLICT (id) DO NOTHING;
+
+  INSERT INTO public.point_transactions (user_id, amount, source, counts_toward_raffle)
+  VALUES
+    (c_user, 10, 'announcement_claim', true),
+    (c_user, 5,  'compliance_form', true),
+    (c_user, -3, 'redemption', false);
+
+  PERFORM set_config('request.jwt.claim.sub', c_user::text, true);
+
+  SELECT COALESCE(SUM(total), 0) INTO v_sum
+  FROM public.get_user_points_by_source(c_user);
+
+  v_bal := public.get_user_point_balance(c_user);
+
+  IF v_sum <> v_bal THEN
+    RAISE EXCEPTION 'GATE FAILED — get_user_points_by_source sum % <> balance %', v_sum, v_bal;
+  END IF;
+
+  -- Non-admin cannot query another user's breakdown
+  v_raised := false;
+  BEGIN
+    PERFORM count(*) FROM public.get_user_points_by_source(c_other);
+  EXCEPTION WHEN others THEN
+    v_raised := true;
+    IF SQLERRM NOT LIKE '%Not permitted%' THEN
+      RAISE EXCEPTION 'GATE FAILED — cross-user by-source wrong error: %', SQLERRM;
+    END IF;
+  END;
+  IF NOT v_raised THEN
+    RAISE EXCEPTION 'GATE FAILED — non-admin read another user by-source was allowed';
+  END IF;
+
+  RAISE NOTICE 'OK: get_user_points_by_source — sum reconciles to balance; non-admin cross-user denied.';
+END $$;
+
 ROLLBACK;
