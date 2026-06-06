@@ -12,6 +12,7 @@ import { useUsersQuery } from '../../hooks/queries/useUsersQuery';
 import type { CorrectiveAction, ActionType, ActionStatus } from '../../types/correctiveAction';
 import { toast } from '../../lib/toast';
 import { cn } from '../../lib/utils';
+import { Z } from "@/lib/zIndex";
 
 const ACTION_TYPES: ActionType[] = ['immediate', 'short_term', 'long_term', 'systemic'];
 interface CorrectiveActionFormProps {
@@ -124,8 +125,8 @@ export default function CorrectiveActionForm({ incidentId, action, onClose, onSu
   };
 
   const content = (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
+    <div style={{ zIndex: Z.modal }}
+      className="fixed inset-0 flex items-center justify-center p-4 bg-black/60"
       role="dialog"
       aria-modal="true"
       aria-labelledby="capa-form-title"

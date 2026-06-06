@@ -13,6 +13,7 @@ import {
   type UpsertRewardInput,
 } from '../../hooks/safetyRewards';
 import { createPortal } from 'react-dom';
+import { Z } from "@/lib/zIndex";
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -253,7 +254,7 @@ function EditModal({ year, month, existing, onClose }: EditModalProps) {
   const isSaving = upsertMutation.isPending;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+    <div style={{ zIndex: Z.modal }} className="fixed inset-0 flex items-center justify-center p-4">
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
@@ -512,7 +513,7 @@ function DrawModal({ year, month, isRedraw, onClose }: DrawModalProps) {
   }, [year, month, isRedraw, confirmText, drawMutation, onClose]);
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+    <div style={{ zIndex: Z.modal }} className="fixed inset-0 flex items-center justify-center p-4">
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}

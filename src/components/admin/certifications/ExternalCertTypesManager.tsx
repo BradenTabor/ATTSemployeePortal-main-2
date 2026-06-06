@@ -14,6 +14,7 @@ import type {
 import { EXTERNAL_CERT_CATEGORY_LABELS } from '../../../types/externalCertification';
 import { glass } from '../../../lib/glass';
 import { toast } from '../../../lib/toast';
+import { Z } from "@/lib/zIndex";
 
 interface FormState {
   name: string;
@@ -71,8 +72,8 @@ function TypeFormModal({
   }, [onClose]);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
+    <div style={{ zIndex: Z.modal }}
+      className="fixed inset-0 flex items-center justify-center p-4 bg-black/60"
       role="dialog"
       aria-modal="true"
       aria-labelledby="ext-cert-type-modal-title"

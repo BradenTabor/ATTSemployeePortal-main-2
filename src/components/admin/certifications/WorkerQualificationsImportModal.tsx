@@ -8,6 +8,7 @@ import type {
 } from "../../../types/electricalQualification";
 import { QUALIFICATION_LABELS } from "../../../types/electricalQualification";
 import { toast } from "../../../lib/toast";
+import { Z } from "@/lib/zIndex";
 
 const LEVELS: ElectricalQualificationLevel[] = [
   "unqualified",
@@ -172,8 +173,8 @@ export function WorkerQualificationsImportModal({
   const failCount = results?.filter((r) => r.status === "rejected").length ?? 0;
 
   const content = (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+    <div style={{ zIndex: Z.modal }}
+      className="fixed inset-0 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="import-csv-title"

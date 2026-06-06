@@ -34,6 +34,7 @@ import { TextEffect } from "../../components/ui/TextEffect";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import TableSkeleton from "../../components/skeletons/TableSkeleton";
 import { useGoogleMaps, darkMapStyles } from "../../hooks/useGoogleMaps";
+import { Z } from "@/lib/zIndex";
 
 interface WorkSite {
   id: string;
@@ -486,11 +487,11 @@ function SiteFormModal({
   }, []);
 
   return (
-    <motion.div
+    <motion.div style={{ zIndex: Z.modal }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center px-4 py-4 bg-black/70 backdrop-blur-sm overflow-y-auto"
+      className="fixed inset-0 flex items-center justify-center px-4 py-4 bg-black/70 backdrop-blur-sm overflow-y-auto"
       onClick={onClose}
     >
       <motion.div
@@ -563,11 +564,11 @@ function SiteFormModal({
                 {/* Predictions dropdown */}
                 <AnimatePresence>
                   {showPredictions && predictions.length > 0 && (
-                    <motion.div
+                    <motion.div style={{ zIndex: Z.dropdown }}
                       initial={{ opacity: 0, y: -5 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -5 }}
-                      className="absolute z-50 top-full left-0 right-0 mt-1 rounded-xl border border-[#f4c979]/20 bg-[#14110d] shadow-xl overflow-hidden"
+                      className="absolute top-full left-0 right-0 mt-1 rounded-xl border border-[#f4c979]/20 bg-[#14110d] shadow-xl overflow-hidden"
                     >
                       {predictions.map((prediction) => (
                         <button

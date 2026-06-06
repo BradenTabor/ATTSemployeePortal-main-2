@@ -16,6 +16,7 @@ import { TextEffect } from "../../components/ui/TextEffect";
 import { getDeviceCapabilities } from "../../lib/mobilePerf";
 import { UserAvatar } from "../../components/ui/UserAvatar";
 import { differenceInMonths } from "date-fns";
+import { Z } from "@/lib/zIndex";
 
 interface AppUser {
   id: string;
@@ -351,13 +352,13 @@ const ExperienceEditModal = ({ user, isOpen, onClose, onSave, saving }: Experien
   const content = (
     <AnimatePresence>
       {isOpen && (
-      <motion.div
+      <motion.div style={{ zIndex: Z.modal }}
         key="experience-modal"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 flex items-center justify-center p-4"
         onClick={onClose}
       >
         <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
@@ -487,13 +488,13 @@ const ManagerEditModal = ({
   const content = (
     <AnimatePresence>
       {isOpen && (
-      <motion.div
+      <motion.div style={{ zIndex: Z.modal }}
         key="manager-modal"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 flex items-center justify-center p-4"
         onClick={onClose}
       >
         <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
@@ -594,13 +595,13 @@ const BlockUserModal = ({
   const content = (
     <AnimatePresence>
       {isOpen && (
-      <motion.div
+      <motion.div style={{ zIndex: Z.modal }}
         key="block-modal"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 flex items-center justify-center p-4"
         onClick={onClose}
       >
         <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
@@ -690,13 +691,13 @@ const DeleteUserModal = ({
   const content = (
     <AnimatePresence>
       {isOpen && (
-      <motion.div
+      <motion.div style={{ zIndex: Z.modal }}
         key="delete-modal"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 flex items-center justify-center p-4"
         onClick={onClose}
       >
         <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />

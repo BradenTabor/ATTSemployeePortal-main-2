@@ -42,6 +42,7 @@ import { toast } from '../lib/toast';
 import { trackDashboardAction } from '../lib/telemetry';
 import { supabase } from '../lib/supabaseClient';
 import { getVideoUrl } from '../lib/videoCdn';
+import { Z } from "@/lib/zIndex";
 
 const FOCUS_RING =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c0a08]';
@@ -965,11 +966,11 @@ export default function SafetyBriefingPage() {
       {/* ─── Success overlay ─── */}
       {showSuccessOverlay &&
         createPortal(
-          <motion.div
+          <motion.div style={{ zIndex: Z.modal }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/90 backdrop-blur-lg flex flex-col items-center justify-center p-6 z-[100]"
+            className="fixed inset-0 bg-black/90 backdrop-blur-lg flex flex-col items-center justify-center p-6"
             role="alertdialog"
             aria-labelledby="briefing-success-title"
           >

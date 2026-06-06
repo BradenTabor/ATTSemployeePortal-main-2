@@ -26,6 +26,7 @@ import { JsaUserSelector } from "../JsaUserSelector";
 import type { ObserverSignature, SharedUser } from "../../../pages/forms/DailyJSAForm";
 import { supabase } from "../../../lib/supabaseClient";
 import { SIGNED_URL_EXPIRY } from "../../../hooks/jsa/useJSAPhotoUpload";
+import { Z } from "@/lib/zIndex";
 
 type ConditionState = "good" | "needs_replaced";
 
@@ -390,7 +391,7 @@ export function StepReview({
       {/* Accessible confirm dialog: Mark JSA as completed (replaces window.confirm) */}
       <AnimatePresence>
         {showCompleteConfirm && (
-          <motion.div
+          <motion.div style={{ zIndex: Z.modal }}
             role="alertdialog"
             aria-labelledby="step-review-complete-title"
             aria-describedby="step-review-complete-desc"
@@ -398,7 +399,7 @@ export function StepReview({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+            className="fixed inset-0 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
             onClick={(e) => e.target === e.currentTarget && handleCompleteCancel()}
             onKeyDown={(e) => {
               if (e.key === "Escape") {

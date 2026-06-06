@@ -31,6 +31,7 @@ import type {
   JsaSpan,
 } from "../../pages/forms/DailyJSAForm";
 import { SIGNED_URL_EXPIRY } from "../../hooks/jsa/useJSAPhotoUpload";
+import { Z } from "@/lib/zIndex";
 
 const PPE_ITEMS = [
   { key: "hard_hats", label: "Hard hats" },
@@ -237,11 +238,11 @@ function JsaPhotoSection({ paths }: { paths: string[] }) {
       </div>
 
       {expandedUrl && (
-        <div
+        <div style={{ zIndex: Z.modal }}
           role="dialog"
           aria-modal="true"
           aria-label="Paper JSA photo (full size)"
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+          className="fixed inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
           onClick={(e) => e.target === e.currentTarget && closeLightbox()}
           onKeyDown={(e) => {
             if (e.key !== "Tab") return;

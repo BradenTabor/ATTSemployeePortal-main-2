@@ -15,6 +15,7 @@ import {
 import { logger } from '../../lib/logger';
 import { FormSuccessCelebration } from '../forms/FormSuccessCelebration';
 import './JobProgressUpdateForm.css';
+import { Z } from "@/lib/zIndex";
 
 interface JobProgressUpdateFormProps {
   job: JobProgressTracker;
@@ -186,11 +187,11 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
       
       <AnimatePresence>
       {!showCelebration && (
-      <motion.div
+      <motion.div style={{ zIndex: Z.modal }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm"
+        className="fixed inset-0 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm"
         onClick={(e) => e.target === e.currentTarget && onCancel()}
       >
         <motion.div

@@ -17,6 +17,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Download, RefreshCw, Shield, Zap, TreePine } from 'lucide-react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { APP_VERSION } from '../../lib/appVersion';
+import { Z } from "@/lib/zIndex";
 
 interface RequiredUpdatePromptProps {
   /** Whether to require update (can't dismiss) - default true */
@@ -147,11 +148,11 @@ function RequiredUpdatePromptComponent({ required = true, testMode = false }: Re
 
   return (
     <AnimatePresence>
-      <motion.div
+      <motion.div style={{ zIndex: Z.modal }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[100] flex items-center justify-center"
+        className="fixed inset-0 flex items-center justify-center"
         role="dialog"
         aria-modal="true"
         aria-label={required ? "Update Required" : "Update Available"}

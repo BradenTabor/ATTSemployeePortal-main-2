@@ -1,11 +1,12 @@
 import { memo } from "react";
 import logo from "../assets/ATTS_Logo-removebg-preview.png";
+import { Z } from "@/lib/zIndex";
 
 function LoadingScreenComponent() {
   return (
     <div
-      className="fixed inset-0 flex flex-col items-center justify-center z-50 overflow-hidden"
-      style={{
+      className="fixed inset-0 flex flex-col items-center justify-center overflow-hidden"
+      style={{ zIndex: Z.modal,
         background:
           "linear-gradient(180deg, #041b14 0%, #03120c 50%, #010604 100%)",
       }}

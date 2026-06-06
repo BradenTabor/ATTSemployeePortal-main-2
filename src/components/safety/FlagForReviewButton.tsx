@@ -9,6 +9,7 @@ import { Flag, Loader2 } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "../../lib/toast";
+import { Z } from "@/lib/zIndex";
 
 export type SafetyFlagFormType = "jsa" | "dvir" | "equipment" | "incident" | "near_miss";
 
@@ -85,8 +86,8 @@ export default function FlagForReviewButton({
 
       {open &&
         createPortal(
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
+          <div style={{ zIndex: Z.modal }}
+            className="fixed inset-0 flex items-center justify-center p-4 bg-black/60"
             role="dialog"
             aria-modal="true"
             aria-labelledby="flag-dialog-title"

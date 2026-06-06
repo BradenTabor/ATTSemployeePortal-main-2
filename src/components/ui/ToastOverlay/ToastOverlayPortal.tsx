@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ToastOverlayCard } from './ToastOverlayCard';
 import { type ToastState, ANIMATION_DURATION } from './types';
+import { Z } from "@/lib/zIndex";
 
 interface ToastOverlayPortalProps {
   state: ToastState;
@@ -168,8 +169,8 @@ export function ToastOverlayPortal({
           exit="hidden"
           variants={backdropVariants}
           transition={{ duration: prefersReducedMotion ? 0 : ANIMATION_DURATION.enter / 1000 }}
-          className="fixed inset-0 z-[9999] flex items-center justify-center"
-          style={{
+          className="fixed inset-0 flex items-center justify-center"
+          style={{ zIndex: Z.modal,
             // Use dvh for proper mobile viewport handling
             minHeight: '100dvh',
             // Safe area insets for iOS

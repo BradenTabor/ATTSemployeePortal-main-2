@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "../assets/ATTS_Logo-removebg-preview.png";
+import { Z } from "@/lib/zIndex";
 
 interface SessionOverlayProps {
   isLoading: boolean;
@@ -296,8 +297,8 @@ export default function SessionOverlay({ isLoading, playSound = false }: Session
       {isLoading && (
         <motion.div
           key="session-overlay"
-          className="fixed inset-0 flex flex-col items-center justify-center z-[100]"
-          style={{
+          className="fixed inset-0 flex flex-col items-center justify-center"
+          style={{ zIndex: Z.modal,
             background: `linear-gradient(180deg, ${colors.background.start} 0%, ${colors.background.mid} 50%, ${colors.background.end} 100%)`,
           }}
           variants={containerVariants}

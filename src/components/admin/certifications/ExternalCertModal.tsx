@@ -14,6 +14,7 @@ import type {
   WorkerExternalCertification,
   ExternalCertificationType,
 } from '../../../types/externalCertification';
+import { Z } from "@/lib/zIndex";
 
 interface ExternalCertModalProps {
   mode: 'assign' | 'edit';
@@ -138,8 +139,8 @@ export function ExternalCertModal({
   }
 
   const modal = (
-    <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4"
+    <div style={{ zIndex: Z.modal }}
+      className="fixed inset-0 flex items-center justify-center bg-black/60 p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}

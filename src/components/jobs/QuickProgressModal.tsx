@@ -6,6 +6,7 @@ import { calculateSpanProgress, getSpanProgressColors } from '../../lib/jobProgr
 import { JobProgressUpdateForm } from './JobProgressUpdateForm';
 import { useCanViewJobProgress } from '../../hooks/useCanViewJobProgress';
 import type { JobProgressTracker } from '../../types/jobs';
+import { Z } from "@/lib/zIndex";
 
 interface QuickProgressModalProps {
   jobs: JobProgressTracker[];
@@ -65,11 +66,11 @@ function QuickProgressModalComponent({
   // Show job selection
   return (
     <AnimatePresence>
-      <motion.div
+      <motion.div style={{ zIndex: Z.modal }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm"
+        className="fixed inset-0 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm"
         onClick={handleClose}
       >
         <motion.div

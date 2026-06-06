@@ -5,6 +5,7 @@ import { AlertTriangle, Check, Gift, X } from 'lucide-react';
 import type { AdminRedemptionRow, RedemptionStatus } from '@/types/redemption';
 import { REDEMPTION_STATUS_LABELS } from '@/lib/redemptionCopy';
 import { glass } from '@/lib/glass';
+import { Z } from "@/lib/zIndex";
 
 interface AdminActionNoteDialogProps {
   isOpen: boolean;
@@ -34,8 +35,8 @@ function AdminActionNoteDialog({
   return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <motion.div
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+        <motion.div style={{ zIndex: Z.modal }}
+          className="fixed inset-0 flex items-center justify-center p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

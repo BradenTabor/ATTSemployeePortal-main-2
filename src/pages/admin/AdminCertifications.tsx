@@ -21,6 +21,7 @@ import attsLogoStamped from "../../assets/ATTS_Logo_stamped.png";
 import { getDeviceCapabilities } from "../../lib/mobilePerf";
 import { toast } from "../../lib/toast";
 import { createNotificationSilent } from "../../lib/pushNotifications";
+import { Z } from "@/lib/zIndex";
 
 const SECTION_TITLE_STYLE = {
   backgroundImage:
@@ -347,8 +348,8 @@ function ManageAccessModal({
   }, [onClose]);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+    <div style={{ zIndex: Z.modal }}
+      className="fixed inset-0 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="manage-access-title"

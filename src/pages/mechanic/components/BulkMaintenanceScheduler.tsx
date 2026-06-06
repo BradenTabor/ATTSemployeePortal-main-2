@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import type { VehicleMaintenanceInfo } from '../types/maintenance.types';
 import { formatMileage, getUrgencyConfig, MAINTENANCE_TYPE_CONFIG } from '../utils/maintenanceConstants';
+import { Z } from "@/lib/zIndex";
 
 // =============================================================================
 // TYPES
@@ -154,11 +155,11 @@ export default function BulkMaintenanceScheduler({
   };
   
   return (
-    <motion.div
+    <motion.div style={{ zIndex: Z.modal }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
       onClick={onClose}
     >
       <motion.div

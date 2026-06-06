@@ -24,6 +24,7 @@ import { useCrews, useCrewDetails, type Crew, type CrewFormData } from '../../ho
 import { useCrewMembers } from '../../hooks/jobs';
 import { CrewMemberSelector } from './CrewMemberSelector';
 import { toast } from '../../lib/toast';
+import { Z } from "@/lib/zIndex";
 
 interface CrewManagerProps {
   userId: string;
@@ -94,11 +95,11 @@ function CrewFormModal({
   const loading = usersLoading;
 
   return (
-    <motion.div
+    <motion.div style={{ zIndex: Z.modal }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[9999] flex items-center justify-center px-4 py-4 bg-black/70 backdrop-blur-sm overflow-hidden"
+      className="fixed inset-0 flex items-center justify-center px-4 py-4 bg-black/70 backdrop-blur-sm overflow-hidden"
       onClick={onClose}
       role="dialog"
       aria-modal="true"

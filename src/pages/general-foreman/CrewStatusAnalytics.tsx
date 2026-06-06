@@ -35,6 +35,7 @@ import {
   subMonths,
   subWeeks,
 } from 'date-fns';
+import { Z } from "@/lib/zIndex";
 
 type DateRangeOption = 'last7' | 'last30' | 'month' | 'custom';
 
@@ -611,11 +612,11 @@ export default function CrewStatusAnalytics() {
                   </button>
                   <AnimatePresence>
                     {jobDropdownOpen && (
-                      <motion.div
+                      <motion.div style={{ zIndex: Z.dropdown }}
                         initial={{ opacity: 0, y: -5 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -5 }}
-                        className="absolute z-50 top-full left-0 right-0 mt-1 rounded-lg bg-[#0a0806] border border-[#c084fc]/30 shadow-2xl max-h-48 overflow-y-auto"
+                        className="absolute top-full left-0 right-0 mt-1 rounded-lg bg-[#0a0806] border border-[#c084fc]/30 shadow-2xl max-h-48 overflow-y-auto"
                       >
                         {jobOptions.length === 0 ? (
                           <p className="px-3 py-2 text-xs text-white/40">No jobs available</p>

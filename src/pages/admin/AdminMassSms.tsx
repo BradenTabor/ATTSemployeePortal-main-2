@@ -6,6 +6,7 @@ import { useSendMassSms } from "../../hooks/admin/useSendMassSms";
 import { useAuth } from "../../contexts/AuthContext";
 import { createPortal } from "react-dom";
 import { supabase } from "../../lib/supabaseClient";
+import { Z } from "@/lib/zIndex";
 
 const MAX_MESSAGE_LENGTH = 480;
 
@@ -143,8 +144,8 @@ function AdminMassSms() {
 
   const pickerModal = pickerOpen
     ? createPortal(
-      <div
-        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      <div style={{ zIndex: Z.modal }}
+        className="fixed inset-0 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
         role="dialog"
         aria-modal="true"
         aria-labelledby="sms-picker-title"
@@ -243,8 +244,8 @@ function AdminMassSms() {
 
   const confirmModal = confirmOpen &&
     createPortal(
-      <div
-        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      <div style={{ zIndex: Z.modal }}
+        className="fixed inset-0 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
         role="dialog"
         aria-modal="true"
         aria-labelledby="mass-sms-confirm-title"

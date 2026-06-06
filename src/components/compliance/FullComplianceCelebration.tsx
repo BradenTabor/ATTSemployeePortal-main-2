@@ -31,6 +31,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { getRoleDashboard } from '../../lib/navigation';
+import { Z } from "@/lib/zIndex";
 
 interface FullComplianceCelebrationProps {
   /** Whether to show the celebration */
@@ -260,8 +261,8 @@ export function FullComplianceCelebration({
   const content = (
     <AnimatePresence>
       {isVisible && (
-        <motion.div
-          className="fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden"
+        <motion.div style={{ zIndex: Z.modal }}
+          className="fixed inset-0 flex items-center justify-center overflow-hidden"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

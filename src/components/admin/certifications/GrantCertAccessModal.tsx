@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import { glass } from "../../../lib/glass";
 import { toast } from "../../../lib/toast";
 import { useCertificationTypes, useGrantCertificationAccess } from "../../../hooks/useCertifications";
+import { Z } from "@/lib/zIndex";
 
 interface GrantCertAccessModalProps {
   workerId: string;
@@ -52,8 +53,8 @@ export function GrantCertAccessModal({
   };
 
   return createPortal(
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
+    <div style={{ zIndex: Z.modal }}
+      className="fixed inset-0 flex items-center justify-center p-4 bg-black/60"
       role="dialog"
       aria-modal="true"
       aria-labelledby="grant-cert-access-title"

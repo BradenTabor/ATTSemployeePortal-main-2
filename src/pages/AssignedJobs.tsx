@@ -42,6 +42,7 @@ import { StackedJobCard } from '../components/jobs/StackedJobCard';
 import { QuickProgressModal } from '../components/jobs/QuickProgressModal';
 import { useCanViewJobProgress } from '../hooks/useCanViewJobProgress';
 import type { JobProgressTracker, JOB_STATUS_CONFIG, JobGroup } from '../types/jobs';
+import { Z } from "@/lib/zIndex";
 
 // ============================================================================
 // CONSTANTS
@@ -459,8 +460,8 @@ const JobDetailPanel = memo(function JobDetailPanel({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-md"
-      style={{ 
+      className="fixed inset-0 bg-black/85 backdrop-blur-md"
+      style={{ zIndex: Z.modal, 
         position: 'fixed',
         top: 0,
         left: 0,

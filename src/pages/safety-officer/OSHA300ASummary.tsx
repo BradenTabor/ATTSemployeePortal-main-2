@@ -16,6 +16,7 @@ import { logger } from '../../lib/logger';
 import { toZonedTime } from 'date-fns-tz';
 import { exportOsha300Csv, exportOSHA300AITA, exportOSHA300ITA } from '../../lib/osha300Export';
 import type { OSHA300ASummary as SummaryType } from '../../types/osha300a';
+import { Z } from "@/lib/zIndex";
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 6 }, (_, i) => CURRENT_YEAR - 1 - i);
@@ -315,8 +316,8 @@ export default function OSHA300ASummaryPage() {
         {showCertifyModal &&
           typeof document !== 'undefined' &&
           createPortal(
-            <div
-              className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70"
+            <div style={{ zIndex: Z.modal }}
+              className="fixed inset-0 flex items-center justify-center p-4 bg-black/70"
               role="dialog"
               aria-modal="true"
               aria-labelledby="certify-modal-title"

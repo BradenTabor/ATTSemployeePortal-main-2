@@ -2,6 +2,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle } from 'lucide-react';
 import { glass } from '../../../lib/glass';
+import { Z } from "@/lib/zIndex";
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -25,8 +26,8 @@ export default function ConfirmDialog({
   return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <motion.div
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+        <motion.div style={{ zIndex: Z.modal }}
+          className="fixed inset-0 flex items-center justify-center p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

@@ -34,6 +34,7 @@ import {
   Sparkles,
   AlertTriangle,
 } from 'lucide-react';
+import { Z } from "@/lib/zIndex";
 
 interface FormStats {
   hazardsCount?: number;
@@ -269,8 +270,8 @@ export function FormSuccessCelebration({
       {isVisible && (
         <ConfettiController>
           {(showConfetti) => (
-            <motion.div
-              className="fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden"
+            <motion.div style={{ zIndex: Z.modal }}
+              className="fixed inset-0 flex items-center justify-center overflow-hidden"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}

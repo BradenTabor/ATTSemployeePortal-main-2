@@ -17,6 +17,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Gift, Sparkles, ArrowRight } from 'lucide-react';
 import { useRewardCelebration } from '../../contexts/RewardCelebrationContext';
 import { getDeviceCapabilities } from '../../lib/mobilePerf';
+import { Z } from "@/lib/zIndex";
 
 const CONFETTI_COLORS = [
   '#10b981',
@@ -152,8 +153,8 @@ export function RewardPointsCelebration() {
 
   const content = (
     <AnimatePresence>
-      <motion.div
-        className="fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden"
+      <motion.div style={{ zIndex: Z.modal }}
+        className="fixed inset-0 flex items-center justify-center overflow-hidden"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}

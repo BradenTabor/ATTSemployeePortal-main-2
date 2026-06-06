@@ -31,6 +31,7 @@ import { downloadCertificatePDF } from "../../certifications/certificatePDFDownl
 import { supabase } from "../../../lib/supabaseClient";
 import { ExternalCertTypesManager } from "./ExternalCertTypesManager";
 import { glass } from "../../../lib/glass";
+import { Z } from "@/lib/zIndex";
 
 const SECTION_TITLE_STYLE = {
   backgroundImage:
@@ -134,8 +135,8 @@ function ManageAccessModal({
   }, [onClose]);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
+    <div style={{ zIndex: Z.modal }}
+      className="fixed inset-0 flex items-center justify-center p-4 bg-black/60"
       role="dialog"
       aria-modal="true"
       aria-labelledby="manage-access-title"

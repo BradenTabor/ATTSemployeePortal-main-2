@@ -5,6 +5,7 @@ import {
   type AdminCatalogItem,
   type CatalogCategory,
 } from '@/types/redemption';
+import { Z } from "@/lib/zIndex";
 
 interface AdminCatalogTableProps {
   items: AdminCatalogItem[];
@@ -237,8 +238,8 @@ function DeleteConfirmDialog({
   const blocked = item.redemption_count > 0;
 
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70"
+    <div style={{ zIndex: Z.modal }}
+      className="fixed inset-0 flex items-center justify-center p-4 bg-black/70"
       role="presentation"
       data-testid="catalog-delete-dialog"
     >
