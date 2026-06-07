@@ -16,7 +16,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { calculateStreakBonuses } from '../_shared/streakCalculation.ts';
+import { buildUserEntriesFromLedger } from '../_shared/raffleLedgerEntries.ts';
 import { sendGmailEmail } from '../_shared/gmail.ts';
 
 const corsHeaders = {
@@ -296,36 +296,29 @@ serve(async (req: Request) => {
         .eq('id', existing.id);
     }
 
-    // ── Gather entries ───────────────────────────────────────────────────
+    // ── Gather entries (ledger-native; same predicate as get_user_raffle_entries) ─
     const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
     const endMonth = month === 12 ? 1 : month + 1;
     const endYear = month === 12 ? year + 1 : year;
     const endDate = `${endYear}-${String(endMonth).padStart(2, '0')}-01`;
 
-    const [claimsRes, announcementsRes] = await Promise.all([
-      supabase
-        .from('announcement_rewards')
-        .select('user_id, claimed_at')
-        .gte('claimed_at', startDate)
-        .lt('claimed_at', endDate)
-        .order('claimed_at', { ascending: true }),
-      supabase
-        .from('announcements')
-        .select('date')
-        .gte('date', startDate)
-        .lt('date', endDate)
-        .order('date', { ascending: true }),
-    ]);
+    const { data: ledgerRows, error: ledgerErr } = await supabase
+      .from('point_transactions')
+      .select('user_id, amount, counts_toward_raffle, created_at')
+      .eq('counts_toward_raffle', true)
+      .gt('amount', 0)
+      .gte('created_at', startDate)
+      .lt('created_at', endDate);
 
-    if (claimsRes.error) throw claimsRes.error;
-    if (announcementsRes.error) throw announcementsRes.error;
+    if (ledgerErr) throw ledgerErr;
 
-    const claims = claimsRes.data ?? [];
-    const announcementDates = Array.from(
-      new Set((announcementsRes.data ?? []).map((a) => a.date)),
-    ).sort();
+    const {
+      userEntries,
+      grandTotalEntries,
+      totalParticipants,
+    } = buildUserEntriesFromLedger(ledgerRows ?? [], year, month);
 
-    if (claims.length === 0) {
+    if (grandTotalEntries === 0) {
       const drawingRow = {
         reward_id: reward.id,
         month,
@@ -366,35 +359,6 @@ serve(async (req: Request) => {
         emailSent,
         emailError: emailError ?? undefined,
       });
-    }
-
-    // Group claims by user
-    const userClaims = new Map<string, string[]>();
-    for (const claim of claims) {
-      const d = new Date(claim.claimed_at);
-      const chicago = new Date(
-        d.toLocaleString('en-US', { timeZone: 'America/Chicago' }),
-      );
-      const dateStr = `${chicago.getFullYear()}-${String(chicago.getMonth() + 1).padStart(2, '0')}-${String(chicago.getDate()).padStart(2, '0')}`;
-
-      const existing = userClaims.get(claim.user_id);
-      if (existing) {
-        if (!existing.includes(dateStr)) existing.push(dateStr);
-      } else {
-        userClaims.set(claim.user_id, [dateStr]);
-      }
-    }
-
-    // Calculate entries per user
-    const userEntries = new Map<string, number>();
-    let grandTotalEntries = 0;
-
-    for (const [userId, claimedDates] of userClaims) {
-      claimedDates.sort();
-      const streakResult = calculateStreakBonuses(claimedDates, announcementDates);
-      const total = claimedDates.length + streakResult.totalBonus;
-      userEntries.set(userId, total);
-      grandTotalEntries += total;
     }
 
     // ── Build weighted pool and draw ─────────────────────────────────────
@@ -442,7 +406,7 @@ serve(async (req: Request) => {
       runner_up_1_winner_id: runnerUp1WinnerId,
       runner_up_2_winner_id: runnerUp2WinnerId,
       total_entries: grandTotalEntries,
-      total_participants: userClaims.size,
+      total_participants: totalParticipants,
       drawn_by: callerUserId,
     };
 
@@ -496,7 +460,7 @@ serve(async (req: Request) => {
           runnerUp1Name: runnerUp1WinnerId ? (nameMap.get(runnerUp1WinnerId) ?? 'Unknown') : null,
           runnerUp2Name: runnerUp2WinnerId ? (nameMap.get(runnerUp2WinnerId) ?? 'Unknown') : null,
         },
-        grandTotalEntries, userClaims.size, force, false
+        grandTotalEntries, totalParticipants, force, false
       );
       const emailResult = await sendWinnersEmailAndLog(supabase, recipients, subject, textBody, htmlBody);
       emailSent = emailResult.success;
@@ -513,7 +477,7 @@ serve(async (req: Request) => {
         runnerUp2: winnerInfo(runnerUp2WinnerId),
       },
       totalEntries: grandTotalEntries,
-      totalParticipants: userClaims.size,
+      totalParticipants,
       emailSent,
       emailError: emailError ?? undefined,
     });

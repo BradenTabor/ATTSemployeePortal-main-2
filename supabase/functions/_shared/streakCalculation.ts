@@ -1,5 +1,7 @@
-// KEEP IN SYNC: supabase/functions/_shared/streakCalculation.ts <-> src/lib/streakCalculation.ts
-// This is the canonical source. Copy changes to the frontend mirror.
+// KEEP IN SYNC:
+// - src/lib/streakCalculation.ts (TS mirror for frontend display)
+// - public.compute_streak_milestones / compute_streak_bonus_total (authoritative SQL writer)
+// TS calculateStreakBonuses is display-only post Option A cutover — not raffle odds or drawing.
 
 export const STREAK_BONUSES = [
   { consecutiveDays: 5, bonusEntries: 2 },

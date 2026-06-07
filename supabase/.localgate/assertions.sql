@@ -1506,4 +1506,374 @@ BEGIN
   RAISE NOTICE 'OK: redemption notifications — admin pending/fulfill/deny/cancel/idempotent-redeem/notify-failure-isolation all pass.';
 END $$;
 
+-- ---- Increment-specific checks: 20260606170000 (Option A raffle ledger cutover) ----
+DO $$
+DECLARE
+  missing text := '';
+  v_def   text;
+  -- Fixture users
+  c_f1    uuid := '00000000-0000-0000-0000-0000000f0001';
+  c_f6    uuid := '00000000-0000-0000-0000-0000000f0006';
+  c_split uuid := '00000000-0000-0000-0000-0000000f0007';
+  c_u1    uuid := '00000000-0000-0000-0000-0000000f0010';
+  c_u2    uuid := '00000000-0000-0000-0000-0000000f0011';
+  -- Fixture helpers
+  v_ann   date[];
+  v_claim date[];
+  v_total integer;
+  v_rows  integer;
+  v_year  int := 2026;
+  v_month int := 6;
+  v_bal   integer;
+  v_raf   integer;
+  v_streak integer;
+  v_pool  bigint;
+  v_sum_users bigint;
+  v_wallet_sum integer;
+  v_raf_sum integer;
+  v_raf_bd integer;
+  v_pct   numeric;
+  v_share_sum numeric := 0;
+  r       record;
+  v_chicago_now timestamp;
+  v_dry_year int;
+  v_dry_month int;
+  v_old   integer;
+  v_new   integer;
+  v_claimed date[];
+  v_ann_dry date[];
+BEGIN
+  -- Presence checks
+  IF to_regprocedure('public.point_tx_matches_raffle_month(boolean,integer,timestamp with time zone,integer,integer)') IS NULL THEN
+    missing := missing || E'\n  - point_tx_matches_raffle_month is missing';
+  END IF;
+  IF to_regprocedure('public.compute_streak_bonus_total(date[],date[])') IS NULL THEN
+    missing := missing || E'\n  - compute_streak_bonus_total is missing';
+  END IF;
+  IF to_regprocedure('public.sync_streak_bonuses_for_user(uuid,timestamp with time zone)') IS NULL THEN
+    missing := missing || E'\n  - sync_streak_bonuses_for_user is missing';
+  END IF;
+  IF to_regprocedure('public.get_user_raffle_entries_by_source(uuid,integer,integer)') IS NULL THEN
+    missing := missing || E'\n  - get_user_raffle_entries_by_source is missing';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_indexes WHERE indexname = 'uq_point_tx_streak_bonus'
+  ) THEN
+    missing := missing || E'\n  - uq_point_tx_streak_bonus index is missing';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'trg_sync_streak_bonus_to_ledger'
+  ) THEN
+    missing := missing || E'\n  - trg_sync_streak_bonus_to_ledger is missing';
+  END IF;
+
+  IF missing <> '' THEN
+    RAISE EXCEPTION E'GATE FAILED — Option A objects (20260606170000) not present:%', missing;
+  END IF;
+
+  -- Constants (necessary, not sufficient)
+  IF public.streak_bonus_amount('consecutive_5') <> 2
+     OR public.streak_bonus_amount('consecutive_10') <> 5
+     OR public.streak_bonus_amount('full_month') <> 15 THEN
+    RAISE EXCEPTION 'GATE FAILED — streak_bonus_amount constants != 2/5/15 (KEEP IN SYNC STREAK_BONUSES)';
+  END IF;
+
+  -- §5 STRUCTURAL: shared predicate in all raffle total functions
+  v_def := pg_get_functiondef('public.get_user_raffle_entries(uuid,integer,integer)'::regprocedure);
+  IF position('point_tx_matches_raffle_month' IN v_def) = 0 THEN
+    RAISE EXCEPTION 'GATE FAILED — get_user_raffle_entries does not call point_tx_matches_raffle_month';
+  END IF;
+  v_def := pg_get_functiondef('public.get_monthly_raffle_stats(integer,integer)'::regprocedure);
+  IF position('point_tx_matches_raffle_month' IN v_def) = 0 THEN
+    RAISE EXCEPTION 'GATE FAILED — get_monthly_raffle_stats does not call point_tx_matches_raffle_month';
+  END IF;
+  v_def := pg_get_functiondef('public.get_user_raffle_entries_by_source(uuid,integer,integer)'::regprocedure);
+  IF position('point_tx_matches_raffle_month' IN v_def) = 0 THEN
+    RAISE EXCEPTION 'GATE FAILED — get_user_raffle_entries_by_source does not call point_tx_matches_raffle_month';
+  END IF;
+  v_def := pg_get_functiondef('public.get_user_point_balance(uuid)'::regprocedure);
+  IF position('streak_bonus' IN v_def) = 0 OR position('source <>' IN v_def) = 0 THEN
+    RAISE EXCEPTION 'GATE FAILED — get_user_point_balance does not exclude streak_bonus';
+  END IF;
+  v_def := pg_get_functiondef('public.get_user_points_by_source(uuid)'::regprocedure);
+  IF position('streak_bonus' IN v_def) = 0 OR position('source <>' IN v_def) = 0 THEN
+    RAISE EXCEPTION 'GATE FAILED — get_user_points_by_source does not exclude streak_bonus';
+  END IF;
+
+  RAISE NOTICE 'OK: §5 structural — point_tx_matches_raffle_month referenced by raffle RPCs; wallet RPCs exclude streak_bonus';
+
+  -- §2 behavioral fixtures F1–F5 (TS-verified expected totals)
+  -- F1: exactly 5-day milestone, NOT full month (6 ann days, claim 5) → 2
+  v_ann := ARRAY(SELECT d::date FROM generate_series('2026-06-01'::date, '2026-06-06'::date, '1 day'::interval) d);
+  v_claim := ARRAY(SELECT d::date FROM generate_series('2026-06-01'::date, '2026-06-05'::date, '1 day'::interval) d);
+  v_total := public.compute_streak_bonus_total(v_claim, v_ann);
+  IF v_total <> 2 THEN
+    RAISE EXCEPTION 'GATE FAILED §2 F1: expected 2 got %', v_total;
+  END IF;
+
+  -- F2: 5-streak, gap day 6, 4-streak tail (ann 1-10; claim 1-5, skip 6, 7-10) → 2
+  v_ann := ARRAY(SELECT d::date FROM generate_series('2026-06-01'::date, '2026-06-10'::date, '1 day'::interval) d);
+  v_claim := ARRAY(SELECT d::date FROM generate_series('2026-06-01'::date, '2026-06-05'::date, '1 day'::interval) d)
+          || ARRAY(SELECT d::date FROM generate_series('2026-06-07'::date, '2026-06-10'::date, '1 day'::interval) d);
+  v_total := public.compute_streak_bonus_total(v_claim, v_ann);
+  IF v_total <> 2 THEN
+    RAISE EXCEPTION 'GATE FAILED §2 F2: expected 2 got %', v_total;
+  END IF;
+
+  -- F3: 10-day milestones without full month (11 ann days, claim 10) → 7
+  v_ann := ARRAY(SELECT d::date FROM generate_series('2026-06-01'::date, '2026-06-11'::date, '1 day'::interval) d);
+  v_claim := ARRAY(SELECT d::date FROM generate_series('2026-06-01'::date, '2026-06-10'::date, '1 day'::interval) d);
+  v_total := public.compute_streak_bonus_total(v_claim, v_ann);
+  IF v_total <> 7 THEN
+    RAISE EXCEPTION 'GATE FAILED §2 F3: expected 7 got %', v_total;
+  END IF;
+
+  -- F4: full month 20 days → 22
+  v_ann := ARRAY(SELECT d::date FROM generate_series('2026-06-01'::date, '2026-06-20'::date, '1 day'::interval) d);
+  v_claim := v_ann;
+  v_total := public.compute_streak_bonus_total(v_claim, v_ann);
+  IF v_total <> 22 THEN
+    RAISE EXCEPTION 'GATE FAILED §2 F4: expected 22 got %', v_total;
+  END IF;
+
+  -- F5: four announcement days all claimed — full month (+15), streak 4 only (no 5-day bonus)
+  v_ann := ARRAY['2026-06-01'::date, '2026-06-02'::date, '2026-06-03'::date, '2026-06-04'::date];
+  v_claim := v_ann;
+  v_total := public.compute_streak_bonus_total(v_claim, v_ann);
+  IF v_total <> 15 THEN
+    RAISE EXCEPTION 'GATE FAILED §2 F5: expected 15 got %', v_total;
+  END IF;
+
+  -- F6 adversarial: 5-streak, gap, 4-streak — 5-day milestone only once
+  v_ann := ARRAY(SELECT d::date FROM generate_series('2026-06-01'::date, '2026-06-10'::date, '1 day'::interval) d);
+  v_claim := ARRAY(SELECT d::date FROM generate_series('2026-06-01'::date, '2026-06-05'::date, '1 day'::interval) d)
+          || ARRAY(SELECT d::date FROM generate_series('2026-06-07'::date, '2026-06-10'::date, '1 day'::interval) d);
+  v_total := public.compute_streak_bonus_total(v_claim, v_ann);
+  IF v_total <> 2 THEN
+    RAISE EXCEPTION 'GATE FAILED §2 F6a: ragged streak expected 2 got %', v_total;
+  END IF;
+
+  -- F6b: Chicago date mapping — claim UTC near month boundary still counts as Jan 31
+  v_ann := ARRAY['2026-01-31'::date];
+  v_claim := ARRAY['2026-01-31'::date];
+  v_total := public.compute_streak_bonus_total(v_claim, v_ann);
+  IF v_total <> 15 THEN
+    RAISE EXCEPTION 'GATE FAILED §2 F6b month-edge full-month: expected 15 got %', v_total;
+  END IF;
+
+  -- F6c: DST spring week — 5 consecutive of 6 ann days (claim 5, not full month) → 2
+  v_ann := ARRAY(SELECT d::date FROM generate_series('2026-03-07'::date, '2026-03-12'::date, '1 day'::interval) d);
+  v_claim := ARRAY(SELECT d::date FROM generate_series('2026-03-07'::date, '2026-03-11'::date, '1 day'::interval) d);
+  v_total := public.compute_streak_bonus_total(v_claim, v_ann);
+  IF v_total <> 2 THEN
+    RAISE EXCEPTION 'GATE FAILED §2 F6c DST week clean-5: expected 2 got %', v_total;
+  END IF;
+
+  RAISE NOTICE 'OK: §2 behavioral fixtures F1–F6 (compute_streak_bonus_total matches TS semantics)';
+
+  -- Gate inserts use historical claim timestamps — bypass claim-window / latest-announcement BEFORE triggers.
+  ALTER TABLE public.announcement_rewards DISABLE TRIGGER trigger_reward_claim_window;
+  ALTER TABLE public.announcement_rewards DISABLE TRIGGER enforce_latest_announcement_claim;
+
+  -- §2 writer integration + §1 dedup + §3 idempotency (uses DB rows + sync)
+  INSERT INTO auth.users (id, aud, role, email) VALUES
+    (c_f1, 'authenticated', 'authenticated', 'gate-streak-f1@example.invalid'),
+    (c_f6, 'authenticated', 'authenticated', 'gate-streak-f6@example.invalid'),
+    (c_split, 'authenticated', 'authenticated', 'gate-streak-split@example.invalid'),
+    (c_u1, 'authenticated', 'authenticated', 'gate-raffle-u1@example.invalid'),
+    (c_u2, 'authenticated', 'authenticated', 'gate-raffle-u2@example.invalid')
+  ON CONFLICT (id) DO NOTHING;
+
+  -- F6 sync + §1/§3 integration (isolated month 2099-06 — no prod announcement collision)
+  INSERT INTO public.announcements (id, title, message, date)
+  SELECT gen_random_uuid(), 'Gate ann ' || d::text, 'body', d::date
+  FROM generate_series('2099-06-01'::date, '2099-06-10'::date, '1 day'::interval) d;
+
+  INSERT INTO public.announcement_rewards (user_id, announcement_id, points_awarded, claimed_at)
+  SELECT c_f6, a.id, 1, (a.date::text || ' 12:00:00')::timestamp AT TIME ZONE 'America/Chicago'
+  FROM public.announcements a
+  WHERE a.date >= '2099-06-01' AND a.date <= '2099-06-10'
+    AND a.date IN (
+      SELECT d::date FROM generate_series('2099-06-01'::date, '2099-06-05'::date, '1 day'::interval) d
+      UNION SELECT d::date FROM generate_series('2099-06-07'::date, '2099-06-10'::date, '1 day'::interval) d
+    )
+    AND NOT EXISTS (
+      SELECT 1 FROM public.announcement_rewards ar
+      WHERE ar.user_id = c_f6 AND ar.announcement_id = a.id
+    );
+
+  PERFORM public.sync_streak_bonuses_for_user(c_f6, '2099-06-10 12:00:00'::timestamptz AT TIME ZONE 'America/Chicago');
+
+  SELECT count(*) INTO v_rows
+  FROM public.point_transactions
+  WHERE user_id = c_f6 AND source = 'streak_bonus' AND category = 'consecutive_5:2099-06';
+  IF v_rows <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED §2 F6 sync: expected 1 consecutive_5:2099-06 row, got %', v_rows;
+  END IF;
+
+  -- §1: same milestone two months → two rows (6 ann days per month, claim 5 — no full month)
+  INSERT INTO public.announcements (id, title, message, date)
+  SELECT gen_random_uuid(), 'Gate ann split jun ' || d::text, 'body', d::date
+  FROM generate_series('2099-06-01'::date, '2099-06-06'::date, '1 day'::interval) d;
+
+  INSERT INTO public.announcement_rewards (user_id, announcement_id, points_awarded, claimed_at)
+  SELECT c_split, a.id, 1, (a.date::text || ' 12:00:00')::timestamp AT TIME ZONE 'America/Chicago'
+  FROM public.announcements a
+  WHERE a.date BETWEEN '2099-06-01' AND '2099-06-05'
+    AND NOT EXISTS (SELECT 1 FROM public.announcement_rewards ar WHERE ar.user_id = c_split AND ar.announcement_id = a.id);
+
+  PERFORM public.sync_streak_bonuses_for_user(c_split, '2099-06-05 12:00:00'::timestamptz AT TIME ZONE 'America/Chicago');
+
+  INSERT INTO public.announcements (id, title, message, date)
+  SELECT gen_random_uuid(), 'Gate ann split jul ' || d::text, 'body', d::date
+  FROM generate_series('2099-07-01'::date, '2099-07-06'::date, '1 day'::interval) d;
+
+  INSERT INTO public.announcement_rewards (user_id, announcement_id, points_awarded, claimed_at)
+  SELECT c_split, a.id, 1, (a.date::text || ' 12:00:00')::timestamp AT TIME ZONE 'America/Chicago'
+  FROM public.announcements a
+  WHERE a.date BETWEEN '2099-07-01' AND '2099-07-05'
+    AND NOT EXISTS (SELECT 1 FROM public.announcement_rewards ar WHERE ar.user_id = c_split AND ar.announcement_id = a.id);
+
+  PERFORM public.sync_streak_bonuses_for_user(c_split, '2099-07-05 12:00:00'::timestamptz AT TIME ZONE 'America/Chicago');
+
+  SELECT count(*) INTO v_rows
+  FROM public.point_transactions
+  WHERE user_id = c_split AND source = 'streak_bonus' AND category LIKE 'consecutive_5:%';
+  IF v_rows <> 2 THEN
+    RAISE EXCEPTION 'GATE FAILED §1: expected 2 consecutive_5 rows across months, got %', v_rows;
+  END IF;
+
+  -- §3 idempotency
+  PERFORM public.sync_streak_bonuses_for_user(c_split, '2099-07-05 12:00:00'::timestamptz AT TIME ZONE 'America/Chicago');
+  SELECT count(*) INTO v_rows
+  FROM public.point_transactions
+  WHERE user_id = c_split AND source = 'streak_bonus' AND category LIKE 'consecutive_5:%';
+  IF v_rows <> 2 THEN
+    RAISE EXCEPTION 'GATE FAILED §3 idempotency: consecutive_5 row count changed (now %)', v_rows;
+  END IF;
+
+  RAISE NOTICE 'OK: §1 dedup spans months; §3 idempotent sync';
+
+  -- §4 wallet vs raffle split (month 2099-08 — isolated)
+  INSERT INTO public.point_transactions (user_id, amount, source, counts_toward_raffle, category, created_at)
+  VALUES
+    (c_u1, 3, 'announcement_claim', true, NULL, '2099-08-15 12:00:00'::timestamptz AT TIME ZONE 'America/Chicago'),
+    (c_u1, 2, 'streak_bonus', true, 'consecutive_5:2099-08', '2099-08-05 12:00:00'::timestamptz AT TIME ZONE 'America/Chicago');
+
+  v_bal := public.get_user_point_balance(c_u1);
+  v_raf := public.get_user_raffle_entries(c_u1, 2099, 8);
+  SELECT COALESCE(SUM(amount), 0) INTO v_streak
+  FROM public.point_transactions
+  WHERE user_id = c_u1 AND source = 'streak_bonus'
+    AND EXTRACT(YEAR FROM (created_at AT TIME ZONE 'America/Chicago')) = 2099
+    AND EXTRACT(MONTH FROM (created_at AT TIME ZONE 'America/Chicago')) = 8;
+
+  IF v_raf - v_bal <> v_streak THEN
+    RAISE EXCEPTION 'GATE FAILED §4: raffle % - wallet % != streak %', v_raf, v_bal, v_streak;
+  END IF;
+
+  RAISE NOTICE 'OK: §4 wallet excludes streak; raffle includes streak (delta=%)', v_streak;
+
+  -- §5 value — pool total equals sum of per-user entries (month 2099-08)
+  INSERT INTO public.point_transactions (user_id, amount, source, counts_toward_raffle, created_at)
+  VALUES
+    (c_u2, 4, 'announcement_claim', true, '2099-08-12 12:00:00'::timestamptz AT TIME ZONE 'America/Chicago');
+
+  SELECT total_claim_count INTO v_pool FROM public.get_monthly_raffle_stats(2099, 8) LIMIT 1;
+  SELECT COALESCE(SUM(public.get_user_raffle_entries(u.uid, 2099, 8)), 0) INTO v_sum_users
+  FROM (VALUES (c_u1), (c_u2)) AS u(uid);
+
+  IF v_pool IS DISTINCT FROM v_sum_users THEN
+    RAISE EXCEPTION 'GATE FAILED §5 value: pool % != sum user entries %', v_pool, v_sum_users;
+  END IF;
+
+  RAISE NOTICE 'OK: §5 value — get_monthly_raffle_stats.total_claim_count = sum(get_user_raffle_entries)';
+
+  -- §6 breakdown reconciliation
+  PERFORM set_config('request.jwt.claim.sub', c_u1::text, true);
+  SELECT COALESCE(SUM(total), 0) INTO v_wallet_sum FROM public.get_user_points_by_source(c_u1);
+  IF v_wallet_sum <> v_bal THEN
+    RAISE EXCEPTION 'GATE FAILED §6 wallet breakdown sum % != balance %', v_wallet_sum, v_bal;
+  END IF;
+
+  SELECT COALESCE(SUM(total), 0) INTO v_raf_bd
+  FROM public.get_user_raffle_entries_by_source(c_u1, 2099, 8);
+  IF v_raf_bd <> v_raf THEN
+    RAISE EXCEPTION 'GATE FAILED §6 raffle breakdown sum % != raffle entries %', v_raf_bd, v_raf;
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM public.get_user_points_by_source(c_u1) WHERE source = 'streak_bonus') THEN
+    RAISE EXCEPTION 'GATE FAILED §6 wallet breakdown must not include streak_bonus';
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM public.get_user_raffle_entries_by_source(c_u1, 2099, 8) WHERE source = 'streak_bonus') THEN
+    RAISE EXCEPTION 'GATE FAILED §6 raffle breakdown must include streak_bonus';
+  END IF;
+
+  RAISE NOTICE 'OK: §6 wallet breakdown reconciles to balance (%); raffle breakdown to entries (%)', v_wallet_sum, v_raf_bd;
+
+  -- §7 pool share bounds (2099-08 fixture users)
+  FOR r IN SELECT u.uid FROM (VALUES (c_u1), (c_u2)) AS u(uid) LOOP
+    v_raf := public.get_user_raffle_entries(r.uid, 2099, 8);
+    IF v_pool > 0 AND v_raf > 0 THEN
+      v_pct := (v_raf::numeric / v_pool::numeric) * 100;
+      IF v_pct > 100.0001 THEN
+        RAISE EXCEPTION 'GATE FAILED §7: user % share % > 100', r.uid, v_pct;
+      END IF;
+      v_share_sum := v_share_sum + v_pct;
+    END IF;
+  END LOOP;
+  IF v_share_sum > 100.0001 THEN
+    RAISE EXCEPTION 'GATE FAILED §7: sum of shares % > 100', v_share_sum;
+  END IF;
+
+  RAISE NOTICE 'OK: §7 no user share > 100%%; sum shares = %', round(v_share_sum, 2);
+
+  -- §8 dry-run: last completed Chicago month (per-user old vs new)
+  v_chicago_now := now() AT TIME ZONE 'America/Chicago';
+  v_dry_month := EXTRACT(MONTH FROM v_chicago_now)::int - 1;
+  v_dry_year := EXTRACT(YEAR FROM v_chicago_now)::int;
+  IF v_dry_month < 1 THEN
+    v_dry_month := 12;
+    v_dry_year := v_dry_year - 1;
+  END IF;
+
+  RAISE NOTICE '§8 DRY-RUN: completed month %-% (old=claims+SQL streak, new=ledger raffle entries)', v_dry_year, v_dry_month;
+
+  FOR r IN
+    SELECT DISTINCT ar.user_id
+    FROM public.announcement_rewards ar
+    WHERE EXTRACT(YEAR FROM (ar.claimed_at AT TIME ZONE 'America/Chicago')) = v_dry_year
+      AND EXTRACT(MONTH FROM (ar.claimed_at AT TIME ZONE 'America/Chicago')) = v_dry_month
+  LOOP
+    SELECT COALESCE(array_agg(sub.d ORDER BY sub.d), ARRAY[]::date[])
+    INTO v_claimed
+    FROM (
+      SELECT DISTINCT (ar.claimed_at AT TIME ZONE 'America/Chicago')::date AS d
+      FROM public.announcement_rewards ar
+      WHERE ar.user_id = r.user_id
+        AND EXTRACT(YEAR FROM (ar.claimed_at AT TIME ZONE 'America/Chicago')) = v_dry_year
+        AND EXTRACT(MONTH FROM (ar.claimed_at AT TIME ZONE 'America/Chicago')) = v_dry_month
+    ) sub;
+
+    SELECT COALESCE(array_agg(a.date ORDER BY a.date), ARRAY[]::date[])
+    INTO v_ann_dry
+    FROM public.announcements a
+    WHERE EXTRACT(YEAR FROM a.date) = v_dry_year
+      AND EXTRACT(MONTH FROM a.date) = v_dry_month;
+
+    v_old := COALESCE(array_length(v_claimed, 1), 0)
+           + public.compute_streak_bonus_total(v_claimed, v_ann_dry);
+    v_new := public.get_user_raffle_entries(r.user_id, v_dry_year, v_dry_month);
+
+    RAISE NOTICE '§8 user=% old_path=% new_ledger=% delta=%',
+      r.user_id, v_old, v_new, v_new - v_old;
+  END LOOP;
+
+  RAISE NOTICE 'OK: Option A gate §1–§8 pass (20260607002956)';
+
+  ALTER TABLE public.announcement_rewards ENABLE TRIGGER trigger_reward_claim_window;
+  ALTER TABLE public.announcement_rewards ENABLE TRIGGER enforce_latest_announcement_claim;
+END $$;
+
 ROLLBACK;

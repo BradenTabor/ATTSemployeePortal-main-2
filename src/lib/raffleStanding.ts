@@ -20,17 +20,21 @@ export function computeRaffleStanding({
   totalPoolEntries,
   totalParticipants,
 }: RaffleStandingInput): RaffleStanding {
+  const clampedUserEntries =
+    totalPoolEntries > 0 ? Math.min(userEntries, totalPoolEntries) : userEntries;
+  const clampedPool = Math.max(totalPoolEntries, clampedUserEntries);
+
   const entriesLabel =
-    userEntries === 1
+    clampedUserEntries === 1
       ? '1 entry this month'
-      : `${userEntries} entries this month`;
+      : `${clampedUserEntries} entries this month`;
 
   let oddsLabel: string | null = null;
-  if (totalPoolEntries > 0 && userEntries > 0) {
-    const pct = (userEntries / totalPoolEntries) * 100;
-    oddsLabel = `You have ${userEntries} of ${totalPoolEntries} total entries (${pct < 0.1 && pct > 0 ? '<0.1' : pct.toFixed(1)}% share)`;
-  } else if (userEntries > 0) {
-    oddsLabel = `You have ${userEntries} ${userEntries === 1 ? 'entry' : 'entries'} so far`;
+  if (clampedPool > 0 && clampedUserEntries > 0) {
+    const pct = Math.min(100, (clampedUserEntries / clampedPool) * 100);
+    oddsLabel = `You have ${clampedUserEntries} of ${clampedPool} total entries (${pct < 0.1 && pct > 0 ? '<0.1' : pct.toFixed(1)}% share)`;
+  } else if (clampedUserEntries > 0) {
+    oddsLabel = `You have ${clampedUserEntries} ${clampedUserEntries === 1 ? 'entry' : 'entries'} so far`;
   }
 
   let participantsLabel: string | null = null;

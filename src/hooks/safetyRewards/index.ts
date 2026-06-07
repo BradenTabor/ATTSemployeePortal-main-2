@@ -6,6 +6,7 @@ export {
   type DrawingWinner,
 } from './useMonthlyDrawing';
 export { useUserMonthlyEntries, type UserMonthlyEntries } from './useUserMonthlyEntries';
+export { useUserRaffleEntries } from './useUserRaffleEntries';
 export {
   useTotalMonthlyEntries,
   type MonthlyRaffleStats,

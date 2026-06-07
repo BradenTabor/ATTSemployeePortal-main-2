@@ -18,7 +18,7 @@ import { useDashboardCardTheme } from '@/contexts/dashboardCardTheme';
 import { glass } from '@/lib/glass';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTotalPoints } from '@/hooks/useAnnouncementRewards';
-import { useUserMonthlyEntries, useTotalMonthlyEntries } from '@/hooks/safetyRewards';
+import { useUserMonthlyEntries, useUserRaffleEntries, useTotalMonthlyEntries } from '@/hooks/safetyRewards';
 import { usePointsBySource, usePointTransactions } from '@/hooks/points';
 import { useUserRedemptions } from '@/hooks/redemption';
 import { REDEMPTION_STATUS_LABELS } from '@/lib/redemptionCopy';
@@ -54,7 +54,12 @@ export default function MyPointsPage() {
     () => redemptions.filter((r) => r.status === 'pending'),
     [redemptions],
   );
-  const { data: entries, isLoading: entriesLoading } = useUserMonthlyEntries(
+  const { data: entries } = useUserMonthlyEntries(
+    user?.id,
+    now.year,
+    now.month,
+  );
+  const { data: raffleEntries = 0, isLoading: raffleEntriesLoading } = useUserRaffleEntries(
     user?.id,
     now.year,
     now.month,
@@ -68,11 +73,11 @@ export default function MyPointsPage() {
   const raffleStanding = useMemo(
     () =>
       computeRaffleStanding({
-        userEntries: entries?.totalEntries ?? 0,
+        userEntries: raffleEntries,
         totalPoolEntries: stats?.totalClaims ?? 0,
         totalParticipants: stats?.totalParticipants ?? 0,
       }),
-    [entries?.totalEntries, stats?.totalClaims, stats?.totalParticipants],
+    [raffleEntries, stats?.totalClaims, stats?.totalParticipants],
   );
 
   return (
@@ -188,7 +193,7 @@ export default function MyPointsPage() {
                     {MONTHS[now.month - 1]} raffle
                   </h3>
                 </div>
-                {entriesLoading ? (
+                {raffleEntriesLoading ? (
                   <div
                     className={`h-16 rounded-xl animate-pulse ${glass.subtle}`}
                     aria-busy="true"
@@ -197,7 +202,7 @@ export default function MyPointsPage() {
                 ) : (
                   <>
                     <p className="text-3xl font-bold text-emerald-400 tabular-nums">
-                      {entries?.totalEntries ?? 0}
+                      {raffleEntries}
                     </p>
                     <p className="text-xs text-white/50 mt-1">{raffleStanding.entriesLabel}</p>
                     {entries && entries.totalBonus > 0 && (

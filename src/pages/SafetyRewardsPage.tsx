@@ -9,6 +9,7 @@ import {
   useMonthlyReward,
   useMonthlyDrawing,
   useUserMonthlyEntries,
+  useUserRaffleEntries,
   useTotalMonthlyEntries,
 } from '../hooks/safetyRewards';
 import MonthlyCalendarGrid from '../components/safety-rewards/MonthlyCalendarGrid';
@@ -39,6 +40,11 @@ function SafetyRewardsPage() {
   const { data: reward, isLoading: rewardLoading } = useMonthlyReward(now.year, now.month);
   const { data: drawing } = useMonthlyDrawing(now.year, now.month);
   const { data: entries, isLoading: entriesLoading } = useUserMonthlyEntries(
+    user?.id,
+    now.year,
+    now.month,
+  );
+  const { data: raffleEntries = 0, isLoading: raffleEntriesLoading } = useUserRaffleEntries(
     user?.id,
     now.year,
     now.month,
@@ -211,7 +217,7 @@ function SafetyRewardsPage() {
             transition={{ delay: 0.2 }}
             className={cardClass}
           >
-            {entriesLoading ? (
+            {entriesLoading || raffleEntriesLoading ? (
               <div className="p-4 animate-pulse">
                 <div className="h-12 w-20 bg-white/5 rounded mx-auto mb-2" />
                 <div className="h-4 w-40 bg-white/5 rounded mx-auto" />
@@ -221,7 +227,7 @@ function SafetyRewardsPage() {
                 <div className="text-center mb-3">
                   <p className="text-xs text-white/40 mb-1">Your entries this month</p>
                   <p className="text-4xl font-bold text-emerald-400">
-                    {entries.totalEntries}
+                    {raffleEntries}
                   </p>
                   <p className="text-xs text-white/40 mt-1">
                     {entries.baseEntries} daily claim{entries.baseEntries !== 1 ? 's' : ''}

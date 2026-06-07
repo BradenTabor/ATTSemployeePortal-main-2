@@ -323,6 +323,8 @@ export const queryKeys = {
       ['safety-rewards', 'drawing', year, month] as const,
     userEntries: (userId: string, year: number, month: number) =>
       ['safety-rewards', 'user-entries', userId, year, month] as const,
+    userRaffleEntries: (userId: string, year: number, month: number) =>
+      ['safety-rewards', 'user-raffle-entries', userId, year, month] as const,
     totalEntries: (year: number, month: number) =>
       ['safety-rewards', 'total-entries', year, month] as const,
     allRewards: ['safety-rewards', 'all'] as const,

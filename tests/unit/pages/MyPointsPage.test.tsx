@@ -47,6 +47,10 @@ vi.mock('@/hooks/safetyRewards', () => ({
     },
     isLoading: false,
   }),
+  useUserRaffleEntries: () => ({
+    data: 8,
+    isLoading: false,
+  }),
   useTotalMonthlyEntries: () => ({
     data: { totalParticipants: 42, totalClaims: 200 },
     isLoading: false,
