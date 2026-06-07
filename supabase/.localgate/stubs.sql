@@ -85,3 +85,27 @@ CREATE SCHEMA IF NOT EXISTS supabase_functions;
 -- only needs a zero-arg function returning trigger to resolve.
 CREATE OR REPLACE FUNCTION supabase_functions.http_request()
 RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NEW; END $$;
+
+-- storage (Supabase Storage) ------------------------------------------------
+-- Prod baseline dump is auth+public only; migrations before prod HEAD are not
+-- re-applied. Policies below are verbatim from prod (applied via
+-- 20260309000000_create_safety_rewards_tables.sql lines 168-194). Gate
+-- assertion 20260606150000 checks policyname = 'Admins can upload reward images'.
+CREATE SCHEMA IF NOT EXISTS storage;
+
+CREATE TABLE IF NOT EXISTS storage.buckets (
+  id     text PRIMARY KEY,
+  name   text NOT NULL,
+  public boolean DEFAULT false
+);
+
+CREATE TABLE IF NOT EXISTS storage.objects (
+  id        uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  bucket_id text REFERENCES storage.buckets(id)
+);
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('safety-rewards', 'safety-rewards', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Policies load in storage_baseline.sql AFTER prod_schema (they call public.is_admin()).

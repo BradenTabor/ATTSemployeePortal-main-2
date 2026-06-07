@@ -34,6 +34,7 @@ export PGHOST PGPORT
 ROLES_SQL="$GATE_DIR/prod_roles.sql"
 SCHEMA_SQL="$GATE_DIR/prod_schema.sql"
 STUBS_SQL="$GATE_DIR/stubs.sql"
+STORAGE_BASELINE_SQL="$GATE_DIR/storage_baseline.sql"
 APPLIED="$GATE_DIR/prod_applied_versions.txt"
 VERIFY_SQL="$GATE_DIR/verify.sql"
 ASSERTIONS_SQL="$GATE_DIR/assertions.sql"
@@ -41,7 +42,7 @@ ASSERTIONS_SQL="$GATE_DIR/assertions.sql"
 for f in "$PSQL"; do
   [ -x "$f" ] || { echo "FATAL: psql not found/executable at $f (set PG_BIN)"; exit 1; }
 done
-for f in "$ROLES_SQL" "$SCHEMA_SQL" "$STUBS_SQL" "$APPLIED" "$VERIFY_SQL" "$ASSERTIONS_SQL"; do
+for f in "$ROLES_SQL" "$SCHEMA_SQL" "$STUBS_SQL" "$STORAGE_BASELINE_SQL" "$APPLIED" "$VERIFY_SQL" "$ASSERTIONS_SQL"; do
   [ -f "$f" ] || { echo "FATAL: missing gate artifact $f (run ./refresh.sh first)"; exit 1; }
 done
 
@@ -66,6 +67,9 @@ echo "==> [3/5] Loading managed-schema stubs, then prod baseline schema (auth + 
 # else (ownership, grants, objects) loads as-is.
 sed '/^CREATE SCHEMA public;$/d' "$SCHEMA_SQL" \
   | "$PSQL" -d "$GATE_DB" -v ON_ERROR_STOP=1 -q -f -
+
+echo "==> [3b/5] Loading storage baseline (20260309000000 safety-rewards policies; requires is_admin)"
+"$PSQL" -d "$GATE_DB" -v ON_ERROR_STOP=1 -q -f "$STORAGE_BASELINE_SQL"
 
 echo "==> [4/5] Applying local migrations newer than prod HEAD"
 HEAD="$(sort "$APPLIED" | tail -1)"
