@@ -104,7 +104,7 @@ export default function RewardsStorePage() {
               to="/my-points"
               className="inline-flex items-center gap-1.5 text-xs text-[#f4c979]/80 hover:text-[#f4c979] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400 rounded"
             >
-              View My Points
+              View My Progress
               <ChevronRight className="w-3.5 h-3.5" aria-hidden />
             </Link>
             <Link

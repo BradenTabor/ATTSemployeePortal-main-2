@@ -110,7 +110,7 @@ function SafetyRewardsPage() {
                 <Wallet className="w-5 h-5 text-emerald-400" aria-hidden />
               </div>
               <div>
-                <p className="text-sm font-semibold text-white">My Points</p>
+                <p className="text-sm font-semibold text-white">My Progress</p>
                 <p className="text-xs text-white/50">Wallet, breakdown, and activity</p>
               </div>
             </div>

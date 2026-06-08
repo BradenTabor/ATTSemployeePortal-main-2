@@ -11,8 +11,16 @@ import {
   PieChart,
   Gift,
   Clock,
+  TreePine,
 } from 'lucide-react';
 import { WalletHero } from '@/components/points/WalletHero';
+import {
+  BadgeCase,
+  RecognitionFeed,
+  StandingsPanel,
+  TierProgressBar,
+  WeeklyStreakPanel,
+} from '@/components/gamification';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import { useDashboardCardTheme } from '@/contexts/dashboardCardTheme';
 import { glass } from '@/lib/glass';
@@ -21,6 +29,7 @@ import { useTotalPoints } from '@/hooks/useAnnouncementRewards';
 import { useUserMonthlyEntries, useUserRaffleEntries, useTotalMonthlyEntries } from '@/hooks/safetyRewards';
 import { usePointsBySource, usePointTransactions } from '@/hooks/points';
 import { useUserRedemptions } from '@/hooks/redemption';
+import { useBadgeProgress, useUserLevel, useWeeklyStreak } from '@/hooks/gamification';
 import { REDEMPTION_STATUS_LABELS } from '@/lib/redemptionCopy';
 import {
   groupPointsByBreakdown,
@@ -28,6 +37,7 @@ import {
   formatActivityLine,
 } from '@/lib/pointLabels';
 import { computeRaffleStanding } from '@/lib/raffleStanding';
+import { formatTierLabel, getTierTheme, GROWTH_TEXTURE_STYLE } from '@/lib/gamification/tiers';
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -46,6 +56,9 @@ export default function MyPointsPage() {
   }, []);
 
   const { data: balance = 0, isLoading: balanceLoading } = useTotalPoints();
+  const { data: level, isLoading: levelLoading } = useUserLevel(user?.id);
+  const { data: weeklyStreak, isLoading: weeklyStreakLoading } = useWeeklyStreak(user?.id);
+  const { data: badgeProgress = [], isLoading: badgeProgressLoading } = useBadgeProgress(user?.id);
   const { data: bySource = [], isLoading: breakdownLoading } = usePointsBySource();
   const { data: transactions = [], isLoading: activityLoading } = usePointTransactions();
   const { data: redemptions = [], isLoading: redemptionsLoading } = useUserRedemptions();
@@ -80,21 +93,23 @@ export default function MyPointsPage() {
     [raffleEntries, stats?.totalClaims, stats?.totalParticipants],
   );
 
+  const tierTheme = level ? getTierTheme(level.tierKey) : getTierTheme('sapling');
+
   return (
-    <DashboardLayout title="My Points" pageHeading>
-      <div className="space-y-6 pb-8 max-w-2xl mx-auto" data-testid="my-points-page">
+    <DashboardLayout title="My Progress" pageHeading>
+      <div className="space-y-6 pb-8 max-w-2xl mx-auto" data-testid="my-progress-page">
         <motion.header
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={pageEnter}
         >
-          <h1 className="text-2xl font-bold text-white">My Points</h1>
+          <h1 className="text-2xl font-bold text-white">My Progress</h1>
           <p className="text-sm text-white/60 mt-1">
-            Your wallet, earning breakdown, and recent activity.
+            Wallet, tier ladder, badges, and crew recognition — one hub.
           </p>
         </motion.header>
 
-        {/* Wallet + holds */}
+        {/* Wallet anchor */}
         <div className="space-y-4">
           <WalletHero
             balance={balance}
@@ -162,11 +177,76 @@ export default function MyPointsPage() {
           )}
         </div>
 
-        {/* Monthly rewards — raffle + streak grouped */}
+        {/* Progression — lifetime tier ladder */}
+        <motion.section
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ ...pageEnter, delay: 0.09 }}
+          aria-labelledby="progression-heading"
+          className={cardClass}
+          data-testid="my-progress-progression"
+          style={{
+            ...GROWTH_TEXTURE_STYLE,
+            backgroundColor: 'rgba(8, 12, 10, 0.85)',
+          }}
+        >
+          <div className="p-4">
+            <div className="mb-3 flex items-center gap-2">
+              <TreePine className={`h-4 w-4 ${tierTheme.accentClass}`} aria-hidden />
+              <h2 id="progression-heading" className="text-sm font-semibold text-white">
+                Tier progression
+              </h2>
+            </div>
+            {levelLoading || !level ? (
+              <div className={`h-20 animate-pulse rounded-xl ${glass.subtle}`} aria-busy="true" />
+            ) : (
+              <>
+                <p className={`text-lg font-bold ${tierTheme.accentClass}`}>
+                  {formatTierLabel(level.tierName, level.subLevelLabel)}
+                </p>
+                <p className="mt-0.5 text-xs text-white/50">
+                  {level.lifetimeEarned} lifetime earned · ladder runs on points you keep, not wallet spend
+                </p>
+                <TierProgressBar level={level} className="mt-3" />
+              </>
+            )}
+          </div>
+        </motion.section>
+
+        {/* Badge case + weekly streak */}
         <motion.section
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ ...pageEnter, delay: 0.1 }}
+          className="space-y-4"
+          aria-labelledby="badges-heading"
+        >
+          <div>
+            <h2 id="badges-heading" className="text-lg font-semibold text-white">
+              Badge case
+            </h2>
+            <p className="text-xs text-white/50 mt-0.5">Progress toward the next prestige tier</p>
+          </div>
+          <BadgeCase items={badgeProgress} isLoading={badgeProgressLoading} />
+          <WeeklyStreakPanel streak={weeklyStreak} isLoading={weeklyStreakLoading} />
+        </motion.section>
+
+        {/* Recognition + standings */}
+        <motion.section
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ ...pageEnter, delay: 0.12 }}
+          className={`${cardClass} p-4 space-y-6`}
+        >
+          <RecognitionFeed limit={15} />
+          <StandingsPanel limit={10} />
+        </motion.section>
+
+        {/* Monthly rewards — raffle + briefing streak grouped */}
+        <motion.section
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ ...pageEnter, delay: 0.14 }}
           aria-labelledby="monthly-heading"
           className="space-y-3"
         >
@@ -223,7 +303,7 @@ export default function MyPointsPage() {
             </section>
 
             {entries && entries.currentStreak > 0 && (
-              <section className={cardClass} data-testid="my-points-streak">
+              <section className={cardClass} data-testid="my-points-briefing-streak">
                 <div className={`${subtleClass} p-4 h-full flex flex-col justify-center`}>
                   <div className="flex items-center gap-2">
                     <Flame className="w-4 h-4 text-orange-400" aria-hidden />
