@@ -9,6 +9,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useUserAssignedJobs } from '../hooks/jobs';
 import { useProfileDiscoveryToast } from '../hooks/useProfileDiscoveryToast';
+import { useGamificationWelcomeOnMount } from '@/hooks/gamification/useGamificationWelcomeOnMount';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { PERSISTENCE_KEYS } from '../lib/persistence';
 import {
@@ -398,6 +399,7 @@ function Dashboard() {
 
   // Show one-time discovery toast for Profile/Settings pages
   useProfileDiscoveryToast({ delay: 4000, duration: 10000 });
+  useGamificationWelcomeOnMount();
 
   // Dashboard success metrics: track view on mount
   useEffect(() => {

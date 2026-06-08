@@ -11,7 +11,9 @@ import { queryClient } from "./lib/queryClient";
 import { createIDBPersister, shouldDehydrateQuery, PERSISTER_MAX_AGE_MS } from "./lib/queryPersister";
 import { OfflineQueueProvider } from "./contexts/OfflineQueueContext";
 import { RewardCelebrationProvider } from "./contexts/RewardCelebrationContext";
+import { GamificationCelebrationProvider } from "./contexts/GamificationCelebrationContext";
 import { RewardPointsCelebration } from "./components/rewards/RewardPointsCelebration";
+import { GamificationCelebration } from "./components/gamification/GamificationCelebration";
 import { ManualAwardsGlobalEntry } from "./components/manual-awards/ManualAwardsShell";
 import { OfflineSyncIndicator } from "./components/OfflineSyncIndicator";
 import { SpeedInsights } from "@vercel/speed-insights/react";
@@ -59,6 +61,7 @@ export default function App() {
       <ToastOverlayProvider>
         <OfflineQueueProvider>
           <RewardCelebrationProvider>
+            <GamificationCelebrationProvider>
             <OfflineSyncIndicator />
             <Router>
               <AnimatedRoutes />
@@ -68,7 +71,9 @@ export default function App() {
               </Suspense>
             </Router>
             <RewardPointsCelebration />
+            <GamificationCelebration />
             <ManualAwardsGlobalEntry />
+            </GamificationCelebrationProvider>
           </RewardCelebrationProvider>
         </OfflineQueueProvider>
         {/* Corner toasts for non-form notifications */}
