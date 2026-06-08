@@ -1,11 +1,11 @@
--- Source: prod HEAD 20260608181348
+-- Source: prod HEAD 20260608194206
 -- Capture date: 2026-06-08
 -- Regenerated only at a deliberate re-baseline — see docs/CONVENTIONS.md (re-baseline runbook).
 --
 -- PostgreSQL database dump
 --
 
-\restrict lV1aoxTxdpDauJmAbp1OlQgdQWordc7y2dRdwybq2AKz9R8qcMsl6S2sgt9es8w
+\restrict iHUW8tMKXmK07bZdshM6YwYOEVEm5MwQWgqXH8g1dQ8znQHqfOPXDSVAkapIf2O
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.10 (Homebrew)
@@ -41,6 +41,25 @@ old_timber	tenure	Old Timber	Ten years with ATTS.	{"type": "tenure_years", "min_
 
 
 --
+-- Data for Name: challenges; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.challenges (challenge_key, title, description, condition_spec, cadence, challenge_type, reward_spec, is_active, sort_order, created_at) FROM stdin;
+compliance_sprint	Compliance Sprint	All your safety forms in on time this week	{"type": "compliance_full_day_in_week"}	weekly	auto	{"points": 30, "counts_toward_raffle": true}	t	10	2026-06-08 19:26:30.408207+00
+near_miss_week	Near-Miss Week	Report a near-miss that gets marked actionable	{"type": "near_miss_actionable", "signal": "corrective_bonus"}	weekly	auto	{"points": 30, "counts_toward_raffle": true}	t	20	2026-06-08 19:26:30.408207+00
+cert_or_training	Cert or Training	Knock out a training/cert step this week	{"type": "earn_source", "source": "certification"}	weekly	auto	{"points": 30, "counts_toward_raffle": true}	t	30	2026-06-08 19:26:30.408207+00
+\.
+
+
+--
+-- Data for Name: campaigns; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.campaigns (campaign_key, challenge_key, title, starts_at, ends_at, multiplier, is_active, created_by, created_at) FROM stdin;
+\.
+
+
+--
 -- Data for Name: gamification_settings; Type: TABLE DATA; Schema: public; Owner: -
 --
 
@@ -53,6 +72,11 @@ sharp_eye_prestige_counts	[3, 10, 25]	Sharp Eye B/S/G — actionable near-miss c
 cert_stacked_prestige_counts	[3, 5, 10]	Stacked badge B/S/G — distinct active certification types	2026-06-08 15:48:19.595828+00	\N
 competition_eligible_roles	["employee", "foreman", "general_foreman", "mechanic"]	Field roles eligible for standings	2026-06-08 15:48:19.595828+00	\N
 feed_worthy_tier_promotions	["major_tier_only"]	Recognition feed emits major tier promotions only	2026-06-08 15:48:19.595828+00	\N
+phase2_enabled	false	Master Phase 2 kill switch — all challenge/season writers no-op when false	2026-06-08 19:04:01.753245+00	\N
+seasons_enabled	false	Season lifecycle, scoring, and finale recognition — off until kickoff	2026-06-08 19:04:01.753245+00	\N
+challenges_enabled	false	Challenge eval + payout writers — off until kickoff (Gate 2+)	2026-06-08 19:04:01.753245+00	\N
+weekly_auto_challenge_pool	["compliance_sprint", "near_miss_week", "cert_or_training"]	Ordered auto-rotating weekly challenge pool (Chicago ISO weeks)	2026-06-08 19:26:30.480084+00	\N
+weekly_auto_challenge_active	null	Current auto-pool selection {week_start, challenge_key} — set by rotate_weekly_auto_challenge	2026-06-08 19:26:30.480084+00	\N
 \.
 
 
@@ -117,8 +141,17 @@ a1000001-0000-4000-8000-000000000001	ATTS Cap	Branded ATTS cap	https://emqqxfzah
 
 
 --
+-- Data for Name: seasons; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+COPY public.seasons (season_key, name, theme, start_at, end_at, status, most_improved_enabled, finalized_at, sort_order, is_active, created_at) FROM stdin;
+season_1_placeholder	Founding Season	generic	2099-01-01 06:00:00+00	2099-04-01 05:00:00+00	draft	f	\N	1	t	2026-06-08 19:04:01.753245+00
+\.
+
+
+--
 -- PostgreSQL database dump complete
 --
 
-\unrestrict lV1aoxTxdpDauJmAbp1OlQgdQWordc7y2dRdwybq2AKz9R8qcMsl6S2sgt9es8w
+\unrestrict iHUW8tMKXmK07bZdshM6YwYOEVEm5MwQWgqXH8g1dQ8znQHqfOPXDSVAkapIf2O
 

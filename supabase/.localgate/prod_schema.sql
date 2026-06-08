@@ -1,11 +1,11 @@
--- Source: prod HEAD 20260608181348
+-- Source: prod HEAD 20260608194206
 -- Capture date: 2026-06-08
 -- Regenerated only at a deliberate re-baseline — see docs/CONVENTIONS.md (re-baseline runbook).
 --
 -- PostgreSQL database dump
 --
 
-\restrict bPmiPrVuXf7kdyj7Na8hTh2NHe1MyHlTeViXSlXRQbdZW8G1BG0sQJk5YCc16Ke
+\restrict fBvrUcXZoLb3pegfSBM8DzuhmqGZczNiwM9Kr7T30fjIFek4P36p2nI9l3FGeFq
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.10 (Homebrew)
@@ -163,6 +163,31 @@ CREATE TYPE auth.one_time_token_type AS ENUM (
 ALTER TYPE auth.one_time_token_type OWNER TO supabase_auth_admin;
 
 --
+-- Name: challenge_cadence; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.challenge_cadence AS ENUM (
+    'weekly',
+    'season',
+    'custom'
+);
+
+
+ALTER TYPE public.challenge_cadence OWNER TO postgres;
+
+--
+-- Name: challenge_type; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.challenge_type AS ENUM (
+    'auto',
+    'campaign'
+);
+
+
+ALTER TYPE public.challenge_type OWNER TO postgres;
+
+--
 -- Name: email_list_key; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -191,7 +216,9 @@ CREATE TYPE public.point_source AS ENUM (
     'certification',
     'manual_award',
     'redemption',
-    'adjustment'
+    'adjustment',
+    'challenge_reward',
+    'campaign_multiplier_bonus'
 );
 
 
@@ -205,7 +232,9 @@ CREATE TYPE public.recognition_event_type AS ENUM (
     'tier_promotion',
     'badge_awarded',
     'tenure_milestone',
-    'streak_milestone'
+    'streak_milestone',
+    'season_podium',
+    'season_most_improved'
 );
 
 
@@ -225,6 +254,20 @@ CREATE TYPE public.redemption_status AS ENUM (
 
 
 ALTER TYPE public.redemption_status OWNER TO postgres;
+
+--
+-- Name: season_status; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.season_status AS ENUM (
+    'draft',
+    'scheduled',
+    'active',
+    'closed'
+);
+
+
+ALTER TYPE public.season_status OWNER TO postgres;
 
 --
 -- Name: email(); Type: FUNCTION; Schema: auth; Owner: supabase_auth_admin
@@ -723,6 +766,50 @@ $$;
 ALTER FUNCTION public.app_settings_touch_updated_at() OWNER TO postgres;
 
 --
+-- Name: are_challenges_enabled(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.are_challenges_enabled() RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+  SELECT public.is_phase2_master_enabled()
+     AND public.gamification_setting_bool('challenges_enabled');
+$$;
+
+
+ALTER FUNCTION public.are_challenges_enabled() OWNER TO postgres;
+
+--
+-- Name: FUNCTION are_challenges_enabled(); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.are_challenges_enabled() IS 'Challenge eval + payout writers — no-op when false (Gate 2+).';
+
+
+--
+-- Name: are_seasons_enabled(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.are_seasons_enabled() RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+  SELECT public.is_phase2_master_enabled()
+     AND public.gamification_setting_bool('seasons_enabled');
+$$;
+
+
+ALTER FUNCTION public.are_seasons_enabled() OWNER TO postgres;
+
+--
+-- Name: FUNCTION are_seasons_enabled(); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.are_seasons_enabled() IS 'Season lifecycle, scoring RPCs, and finale — no-op when false.';
+
+
+--
 -- Name: assert_hire_dates_for_baseline(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -909,6 +996,142 @@ $$;
 
 
 ALTER FUNCTION public.award_certification_points() OWNER TO postgres;
+
+--
+-- Name: award_challenge_completion(uuid, uuid); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.award_challenge_completion(p_user_id uuid, p_completion_id uuid) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_row          public.challenge_completions;
+  v_challenge    public.challenges;
+  v_campaign     public.campaigns;
+  v_base_points  int;
+  v_bonus_points int;
+  v_counts       boolean;
+  v_base_cat     text;
+  v_base_tx      uuid;
+  v_bonus_tx     uuid;
+BEGIN
+  IF NOT public.are_challenges_enabled() THEN
+    RETURN;
+  END IF;
+
+  SELECT *
+  INTO v_row
+  FROM public.challenge_completions cc
+  WHERE cc.id = p_completion_id
+    AND cc.user_id = p_user_id
+  FOR UPDATE;
+
+  IF v_row IS NULL OR v_row.base_tx_id IS NOT NULL THEN
+    RETURN;
+  END IF;
+
+  SELECT *
+  INTO v_challenge
+  FROM public.challenges c
+  WHERE c.challenge_key = v_row.challenge_key
+    AND c.is_active;
+
+  IF v_challenge IS NULL THEN
+    RETURN;
+  END IF;
+
+  v_base_points := GREATEST(COALESCE((v_challenge.reward_spec->>'points')::int, 0), 0);
+  v_counts := COALESCE((v_challenge.reward_spec->>'counts_toward_raffle')::boolean, true);
+  v_base_cat := v_row.challenge_key || ':' || v_row.window_key;
+
+  IF v_base_points > 0 THEN
+    INSERT INTO public.point_transactions (
+      user_id, amount, source, reference_id, reference_table,
+      category, counts_toward_raffle
+    ) VALUES (
+      p_user_id,
+      v_base_points,
+      'challenge_reward',
+      p_completion_id,
+      'challenge_completions',
+      v_base_cat,
+      v_counts
+    )
+    ON CONFLICT (source, reference_id, category)
+      WHERE reference_id IS NOT NULL
+        AND source IN ('challenge_reward', 'campaign_multiplier_bonus')
+    DO NOTHING
+    RETURNING id INTO v_base_tx;
+
+    IF v_base_tx IS NULL THEN
+      SELECT pt.id
+      INTO v_base_tx
+      FROM public.point_transactions pt
+      WHERE pt.source = 'challenge_reward'
+        AND pt.reference_id = p_completion_id
+        AND pt.category = v_base_cat;
+    END IF;
+  END IF;
+
+  IF v_row.campaign_key IS NOT NULL THEN
+    SELECT *
+    INTO v_campaign
+    FROM public.campaigns cam
+    WHERE cam.campaign_key = v_row.campaign_key
+      AND cam.is_active;
+
+    IF v_campaign IS NOT NULL AND v_campaign.multiplier > 1.00 AND v_base_points > 0 THEN
+      v_bonus_points := floor(v_base_points * (v_campaign.multiplier - 1.00))::int;
+
+      IF v_bonus_points > 0 THEN
+        INSERT INTO public.point_transactions (
+          user_id, amount, source, reference_id, reference_table,
+          category, counts_toward_raffle
+        ) VALUES (
+          p_user_id,
+          v_bonus_points,
+          'campaign_multiplier_bonus',
+          p_completion_id,
+          'challenge_completions',
+          'multiplier:' || v_row.campaign_key,
+          v_counts
+        )
+        ON CONFLICT (source, reference_id, category)
+          WHERE reference_id IS NOT NULL
+            AND source IN ('challenge_reward', 'campaign_multiplier_bonus')
+        DO NOTHING
+        RETURNING id INTO v_bonus_tx;
+
+        IF v_bonus_tx IS NULL THEN
+          SELECT pt.id
+          INTO v_bonus_tx
+          FROM public.point_transactions pt
+          WHERE pt.source = 'campaign_multiplier_bonus'
+            AND pt.reference_id = p_completion_id
+            AND pt.category = 'multiplier:' || v_row.campaign_key;
+        END IF;
+      END IF;
+    END IF;
+  END IF;
+
+  UPDATE public.challenge_completions cc
+  SET
+    base_tx_id = v_base_tx,
+    multiplier_tx_id = v_bonus_tx
+  WHERE cc.id = p_completion_id;
+END;
+$$;
+
+
+ALTER FUNCTION public.award_challenge_completion(p_user_id uuid, p_completion_id uuid) OWNER TO postgres;
+
+--
+-- Name: FUNCTION award_challenge_completion(p_user_id uuid, p_completion_id uuid); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.award_challenge_completion(p_user_id uuid, p_completion_id uuid) IS 'Writes challenge_reward base row + optional campaign_multiplier_bonus row. D5 dedicated writer.';
+
 
 --
 -- Name: award_near_miss_base_points(); Type: FUNCTION; Schema: public; Owner: postgres
@@ -1726,6 +1949,76 @@ $$;
 ALTER FUNCTION public.certification_audit_log_on_revoke() OWNER TO postgres;
 
 --
+-- Name: challenge_condition_met(uuid, text, jsonb, text, timestamp with time zone, public.point_source, text, uuid, text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.challenge_condition_met(p_user_id uuid, p_challenge_key text, p_condition_spec jsonb, p_trigger text, p_activity_at timestamp with time zone, p_source public.point_source DEFAULT NULL::public.point_source, p_category text DEFAULT NULL::text, p_reference_id uuid DEFAULT NULL::uuid, p_reference_table text DEFAULT NULL::text) RETURNS boolean
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_type       text;
+  v_week_start date;
+BEGIN
+  v_type := p_condition_spec->>'type';
+  v_week_start := public.chicago_iso_week_start(p_activity_at);
+
+  CASE v_type
+    WHEN 'compliance_full_day_in_week' THEN
+      IF p_trigger <> 'ledger'
+         OR p_source IS DISTINCT FROM 'compliance_form'::public.point_source THEN
+        RETURN false;
+      END IF;
+
+      IF p_reference_table = 'compliance_rewards' AND p_reference_id IS NOT NULL THEN
+        RETURN EXISTS (
+          SELECT 1
+          FROM public.compliance_rewards cr
+          WHERE cr.id = p_reference_id
+            AND cr.user_id = p_user_id
+            AND COALESCE(array_length(cr.forms_completed, 1), 0) >= 3
+            AND public.chicago_iso_week_start(cr.awarded_at) = v_week_start
+        );
+      END IF;
+
+      RETURN EXISTS (
+        SELECT 1
+        FROM public.compliance_rewards cr
+        WHERE cr.user_id = p_user_id
+          AND COALESCE(array_length(cr.forms_completed, 1), 0) >= 3
+          AND public.chicago_iso_week_start(cr.awarded_at) = v_week_start
+          AND cr.awarded_at <= p_activity_at + interval '1 second'
+      );
+
+    WHEN 'near_miss_actionable' THEN
+      RETURN p_trigger = 'ledger'
+         AND p_source = 'near_miss_report'::public.point_source
+         AND p_category = 'corrective_bonus';
+
+    WHEN 'earn_source' THEN
+      RETURN p_trigger = 'ledger'
+         AND p_source::text = COALESCE(p_condition_spec->>'source', '');
+
+    WHEN 'briefing_completion' THEN
+      RETURN p_trigger = 'briefing';
+
+    ELSE
+      RETURN false;
+  END CASE;
+END;
+$$;
+
+
+ALTER FUNCTION public.challenge_condition_met(p_user_id uuid, p_challenge_key text, p_condition_spec jsonb, p_trigger text, p_activity_at timestamp with time zone, p_source public.point_source, p_category text, p_reference_id uuid, p_reference_table text) OWNER TO postgres;
+
+--
+-- Name: FUNCTION challenge_condition_met(p_user_id uuid, p_challenge_key text, p_condition_spec jsonb, p_trigger text, p_activity_at timestamp with time zone, p_source public.point_source, p_category text, p_reference_id uuid, p_reference_table text); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.challenge_condition_met(p_user_id uuid, p_challenge_key text, p_condition_spec jsonb, p_trigger text, p_activity_at timestamp with time zone, p_source public.point_source, p_category text, p_reference_id uuid, p_reference_table text) IS 'Evaluates a challenge condition_spec against a qualifying activity event.';
+
+
+--
 -- Name: check_latest_announcement_claim(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2529,6 +2822,305 @@ COMMENT ON FUNCTION public.evaluate_user_badges(p_user_id uuid, p_trigger text) 
 
 
 --
+-- Name: evaluate_user_challenges_from_briefing(uuid, uuid, timestamp with time zone); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.evaluate_user_challenges_from_briefing(p_user_id uuid, p_briefing_id uuid, p_activity_at timestamp with time zone DEFAULT now()) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_active record;
+  v_challenge public.challenges;
+BEGIN
+  IF NOT public.are_challenges_enabled() THEN
+    RETURN;
+  END IF;
+
+  IF p_user_id IS NULL THEN
+    RETURN;
+  END IF;
+
+  SELECT *
+  INTO v_active
+  FROM public.get_active_challenge_for_activity(p_activity_at)
+  LIMIT 1;
+
+  IF v_active.challenge_key IS NULL THEN
+    RETURN;
+  END IF;
+
+  SELECT *
+  INTO v_challenge
+  FROM public.challenges c
+  WHERE c.challenge_key = v_active.challenge_key
+    AND c.is_active;
+
+  IF v_challenge IS NULL THEN
+    RETURN;
+  END IF;
+
+  IF NOT public.challenge_condition_met(
+    p_user_id,
+    v_challenge.challenge_key,
+    v_challenge.condition_spec,
+    'briefing',
+    p_activity_at,
+    NULL, NULL, p_briefing_id, 'safety_briefing_answers'
+  ) THEN
+    RETURN;
+  END IF;
+
+  PERFORM public.try_record_challenge_completion(
+    p_user_id,
+    v_active.challenge_key,
+    v_active.window_key,
+    v_active.campaign_key,
+    p_activity_at
+  );
+END;
+$$;
+
+
+ALTER FUNCTION public.evaluate_user_challenges_from_briefing(p_user_id uuid, p_briefing_id uuid, p_activity_at timestamp with time zone) OWNER TO postgres;
+
+--
+-- Name: FUNCTION evaluate_user_challenges_from_briefing(p_user_id uuid, p_briefing_id uuid, p_activity_at timestamp with time zone); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.evaluate_user_challenges_from_briefing(p_user_id uuid, p_briefing_id uuid, p_activity_at timestamp with time zone) IS 'Flag-gated challenge eval on safety briefing completion.';
+
+
+--
+-- Name: evaluate_user_challenges_from_ledger(uuid, public.point_source, text, uuid, text, timestamp with time zone); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.evaluate_user_challenges_from_ledger(p_user_id uuid, p_source public.point_source, p_category text, p_reference_id uuid, p_reference_table text, p_activity_at timestamp with time zone DEFAULT now()) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_active record;
+  v_challenge public.challenges;
+BEGIN
+  IF NOT public.are_challenges_enabled() THEN
+    RETURN;
+  END IF;
+
+  IF p_user_id IS NULL THEN
+    RETURN;
+  END IF;
+
+  IF p_source IN (
+    'streak_bonus', 'redemption', 'adjustment',
+    'challenge_reward', 'campaign_multiplier_bonus'
+  ) THEN
+    RETURN;
+  END IF;
+
+  IF p_source NOT IN (
+    'announcement_claim', 'compliance_form', 'near_miss_report',
+    'certification', 'manual_award'
+  ) THEN
+    RETURN;
+  END IF;
+
+  SELECT *
+  INTO v_active
+  FROM public.get_active_challenge_for_activity(p_activity_at)
+  LIMIT 1;
+
+  IF v_active.challenge_key IS NULL THEN
+    RETURN;
+  END IF;
+
+  SELECT *
+  INTO v_challenge
+  FROM public.challenges c
+  WHERE c.challenge_key = v_active.challenge_key
+    AND c.is_active;
+
+  IF v_challenge IS NULL THEN
+    RETURN;
+  END IF;
+
+  IF NOT public.challenge_condition_met(
+    p_user_id,
+    v_challenge.challenge_key,
+    v_challenge.condition_spec,
+    'ledger',
+    p_activity_at,
+    p_source,
+    p_category,
+    p_reference_id,
+    p_reference_table
+  ) THEN
+    RETURN;
+  END IF;
+
+  PERFORM public.try_record_challenge_completion(
+    p_user_id,
+    v_active.challenge_key,
+    v_active.window_key,
+    v_active.campaign_key,
+    p_activity_at
+  );
+END;
+$$;
+
+
+ALTER FUNCTION public.evaluate_user_challenges_from_ledger(p_user_id uuid, p_source public.point_source, p_category text, p_reference_id uuid, p_reference_table text, p_activity_at timestamp with time zone) OWNER TO postgres;
+
+--
+-- Name: FUNCTION evaluate_user_challenges_from_ledger(p_user_id uuid, p_source public.point_source, p_category text, p_reference_id uuid, p_reference_table text, p_activity_at timestamp with time zone); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.evaluate_user_challenges_from_ledger(p_user_id uuid, p_source public.point_source, p_category text, p_reference_id uuid, p_reference_table text, p_activity_at timestamp with time zone) IS 'Flag-gated challenge eval on meaningful ledger earns (excludes streak_bonus/redemption/adjustment).';
+
+
+--
+-- Name: finalize_season(text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.finalize_season(p_season_key text) RETURNS jsonb
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_season record;
+  v_winner record;
+  v_rank int := 0;
+  v_payload jsonb;
+  v_result jsonb := jsonb_build_object(
+    'season_key', p_season_key,
+    'status', 'skipped',
+    'podium_emitted', 0,
+    'most_improved_emitted', false
+  );
+BEGIN
+  IF NOT public.are_seasons_enabled() THEN
+    v_result := v_result || jsonb_build_object('reason', 'seasons_disabled');
+    RETURN v_result;
+  END IF;
+
+  SELECT *
+  INTO v_season
+  FROM public.seasons s
+  WHERE s.season_key = p_season_key
+  FOR UPDATE;
+
+  IF v_season IS NULL THEN
+    RAISE EXCEPTION 'finalize_season: unknown season_key=%', p_season_key;
+  END IF;
+
+  IF v_season.status <> 'closed' THEN
+    v_result := v_result || jsonb_build_object('reason', 'season_not_closed');
+    RETURN v_result;
+  END IF;
+
+  IF v_season.finalized_at IS NOT NULL THEN
+    v_result := v_result || jsonb_build_object(
+      'status', 'already_finalized',
+      'reason', 'idempotent_noop',
+      'finalized_at', v_season.finalized_at
+    );
+    RETURN v_result;
+  END IF;
+
+  -- Podium top 3 among competition-eligible users
+  FOR v_winner IN
+    SELECT ranked.user_id, ranked.season_score, ranked.rank
+    FROM (
+      SELECT
+        au.user_id,
+        public.get_user_season_score(au.user_id, p_season_key) AS season_score,
+        row_number() OVER (
+          ORDER BY public.get_user_season_score(au.user_id, p_season_key) DESC, au.user_id ASC
+        ) AS rank
+      FROM public.app_users au
+      WHERE public.is_competition_eligible(au.user_id)
+    ) ranked
+    WHERE ranked.season_score > 0
+      AND ranked.rank <= 3
+    ORDER BY ranked.rank
+  LOOP
+    v_payload := jsonb_build_object(
+      'season_key', p_season_key,
+      'rank', v_winner.rank,
+      'season_score', v_winner.season_score
+    );
+
+    PERFORM public.emit_recognition_event(
+      'season_podium',
+      v_winner.user_id,
+      v_payload,
+      'season_podium:' || p_season_key || ':' || v_winner.rank::text || ':' || v_winner.user_id::text
+    );
+
+    v_rank := v_rank + 1;
+  END LOOP;
+
+  -- Most Improved — only when explicitly enabled (deferred for Season 1 — D7)
+  IF v_season.most_improved_enabled THEN
+    SELECT ranked.user_id, ranked.improvement_delta, ranked.season_score, ranked.baseline_score
+    INTO v_winner
+    FROM (
+      SELECT
+        au.user_id,
+        public.get_user_season_improvement_delta(au.user_id, p_season_key) AS improvement_delta,
+        public.get_user_season_score(au.user_id, p_season_key) AS season_score,
+        public.get_user_season_baseline_score(au.user_id, p_season_key) AS baseline_score
+      FROM public.app_users au
+      WHERE public.is_competition_eligible(au.user_id)
+    ) ranked
+    WHERE ranked.improvement_delta > 0
+      AND ranked.season_score > 0
+    ORDER BY ranked.improvement_delta DESC, ranked.user_id ASC
+    LIMIT 1;
+
+    IF v_winner.user_id IS NOT NULL THEN
+      v_payload := jsonb_build_object(
+        'season_key', p_season_key,
+        'delta', v_winner.improvement_delta,
+        'current_score', v_winner.season_score,
+        'baseline_score', v_winner.baseline_score
+      );
+
+      PERFORM public.emit_recognition_event(
+        'season_most_improved',
+        v_winner.user_id,
+        v_payload,
+        'season_most_improved:' || p_season_key || ':' || v_winner.user_id::text
+      );
+
+      v_result := v_result || jsonb_build_object('most_improved_emitted', true);
+    END IF;
+  END IF;
+
+  UPDATE public.seasons
+  SET finalized_at = now()
+  WHERE season_key = p_season_key;
+
+  v_result := v_result || jsonb_build_object(
+    'status', 'finalized',
+    'podium_emitted', v_rank
+  );
+
+  RETURN v_result;
+END;
+$$;
+
+
+ALTER FUNCTION public.finalize_season(p_season_key text) OWNER TO postgres;
+
+--
+-- Name: FUNCTION finalize_season(p_season_key text); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.finalize_season(p_season_key text) IS 'Season finale recognition — podium top 3; Most Improved when most_improved_enabled. Idempotent via finalized_at.';
+
+
+--
 -- Name: fulfill_redemption(uuid, text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2560,6 +3152,113 @@ COMMENT ON FUNCTION public.fulfill_redemption(p_redemption_id uuid, p_note text)
 
 
 --
+-- Name: gamification_earning_sources(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.gamification_earning_sources() RETURNS text[]
+    LANGUAGE sql IMMUTABLE PARALLEL SAFE
+    SET search_path TO 'public'
+    AS $$
+  SELECT ARRAY[
+    'announcement_claim',
+    'compliance_form',
+    'streak_bonus',
+    'near_miss_report',
+    'certification',
+    'manual_award',
+    'challenge_reward',
+    'campaign_multiplier_bonus'
+  ]::text[];
+$$;
+
+
+ALTER FUNCTION public.gamification_earning_sources() OWNER TO postgres;
+
+--
+-- Name: FUNCTION gamification_earning_sources(); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.gamification_earning_sources() IS 'Positive earning sources for season score and lifetime level progression. Keep in sync.';
+
+
+--
+-- Name: gamification_setting_bool(text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.gamification_setting_bool(p_key text) RETURNS boolean
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_value jsonb;
+BEGIN
+  SELECT gs.value
+  INTO v_value
+  FROM public.gamification_settings gs
+  WHERE gs.key = p_key;
+
+  IF v_value IS NULL THEN
+    RETURN false;
+  END IF;
+
+  IF jsonb_typeof(v_value) = 'boolean' THEN
+    RETURN (v_value #>> '{}')::boolean;
+  END IF;
+
+  IF jsonb_typeof(v_value) = 'string' THEN
+    RETURN lower(trim(both '"' from v_value::text)) IN ('true', '1', 'yes');
+  END IF;
+
+  RETURN false;
+END;
+$$;
+
+
+ALTER FUNCTION public.gamification_setting_bool(p_key text) OWNER TO postgres;
+
+--
+-- Name: FUNCTION gamification_setting_bool(p_key text); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.gamification_setting_bool(p_key text) IS 'Reads a boolean gamification_settings flag; false when missing or non-boolean.';
+
+
+--
+-- Name: gamification_setting_text_array(text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.gamification_setting_text_array(p_key text) RETURNS text[]
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_value jsonb;
+  v_result text[] := ARRAY[]::text[];
+  v_elem jsonb;
+BEGIN
+  SELECT gs.value INTO v_value
+  FROM public.gamification_settings gs
+  WHERE gs.key = p_key;
+
+  IF v_value IS NULL OR jsonb_typeof(v_value) <> 'array' THEN
+    RETURN v_result;
+  END IF;
+
+  FOR v_elem IN SELECT jsonb_array_elements(v_value)
+  LOOP
+    IF jsonb_typeof(v_elem) = 'string' THEN
+      v_result := array_append(v_result, trim(both '"' from v_elem::text));
+    END IF;
+  END LOOP;
+
+  RETURN v_result;
+END;
+$$;
+
+
+ALTER FUNCTION public.gamification_setting_text_array(p_key text) OWNER TO postgres;
+
+--
 -- Name: generate_certification_verification_code(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2581,6 +3280,106 @@ ALTER FUNCTION public.generate_certification_verification_code() OWNER TO postgr
 --
 
 COMMENT ON FUNCTION public.generate_certification_verification_code() IS 'Returns an 8-character random alphanumeric string for certification_records.verification_code.';
+
+
+--
+-- Name: get_active_challenge_for_activity(timestamp with time zone); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.get_active_challenge_for_activity(p_activity_at timestamp with time zone DEFAULT now()) RETURNS TABLE(challenge_key text, window_key text, campaign_key text, multiplier numeric)
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_week_start   date;
+  v_week_end     timestamptz;
+  v_auto         text;
+  v_campaign_key text;
+  v_c_challenge  text;
+  v_multiplier   numeric;
+BEGIN
+  IF NOT public.are_challenges_enabled() THEN
+    RETURN;
+  END IF;
+
+  v_week_start := public.chicago_iso_week_start(p_activity_at);
+  v_week_end := (v_week_start + 7)::timestamptz;
+
+  SELECT c.campaign_key, c.challenge_key, c.multiplier
+  INTO v_campaign_key, v_c_challenge, v_multiplier
+  FROM public.campaigns c
+  WHERE c.is_active
+    AND p_activity_at >= c.starts_at
+    AND p_activity_at < c.ends_at
+    AND c.starts_at < v_week_end
+    AND c.ends_at > v_week_start::timestamptz
+  ORDER BY c.starts_at ASC, c.campaign_key ASC
+  LIMIT 1;
+
+  IF v_campaign_key IS NOT NULL THEN
+    challenge_key := v_c_challenge;
+    window_key := 'C:' || v_campaign_key;
+    campaign_key := v_campaign_key;
+    multiplier := v_multiplier;
+    RETURN NEXT;
+    RETURN;
+  END IF;
+
+  v_auto := public.resolve_auto_weekly_challenge(v_week_start);
+  IF v_auto IS NULL THEN
+    RETURN;
+  END IF;
+
+  challenge_key := v_auto;
+  window_key := public.weekly_challenge_window_key(v_week_start);
+  campaign_key := NULL;
+  multiplier := 1.00;
+  RETURN NEXT;
+END;
+$$;
+
+
+ALTER FUNCTION public.get_active_challenge_for_activity(p_activity_at timestamp with time zone) OWNER TO postgres;
+
+--
+-- Name: FUNCTION get_active_challenge_for_activity(p_activity_at timestamp with time zone); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.get_active_challenge_for_activity(p_activity_at timestamp with time zone) IS 'Active challenge for an activity instant. Campaign overlapping Chicago week wins over auto-pool (D10).';
+
+
+--
+-- Name: get_active_season(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.get_active_season() RETURNS TABLE(season_key text, name text, theme text, start_at timestamp with time zone, end_at timestamp with time zone, status public.season_status, most_improved_enabled boolean)
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+  SELECT
+    s.season_key,
+    s.name,
+    s.theme,
+    s.start_at,
+    s.end_at,
+    s.status,
+    s.most_improved_enabled
+  FROM public.seasons s
+  WHERE public.are_seasons_enabled()
+    AND s.status = 'active'
+    AND s.is_active
+  ORDER BY s.start_at ASC
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION public.get_active_season() OWNER TO postgres;
+
+--
+-- Name: FUNCTION get_active_season(); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.get_active_season() IS 'Returns the current active season row, or empty when seasons flag off / none active.';
 
 
 --
@@ -3343,6 +4142,149 @@ ALTER FUNCTION public.get_gamification_admin_metrics(p_start_date date, p_end_da
 --
 
 COMMENT ON FUNCTION public.get_gamification_admin_metrics(p_start_date date, p_end_date date) IS 'Admin gamification dashboard metrics. Long-tail activation degrades when baseline cohort is empty. Standings use is_competition_eligible.';
+
+
+--
+-- Name: get_gamification_phase2_admin_flags(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.get_gamification_phase2_admin_flags() RETURNS jsonb
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+  SELECT jsonb_build_object(
+    'phase2_enabled', public.is_phase2_master_enabled(),
+    'seasons_enabled', public.are_seasons_enabled(),
+    'challenges_enabled', public.are_challenges_enabled(),
+    'is_program_admin', public.is_gamification_program_admin()
+  );
+$$;
+
+
+ALTER FUNCTION public.get_gamification_phase2_admin_flags() OWNER TO postgres;
+
+--
+-- Name: FUNCTION get_gamification_phase2_admin_flags(); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.get_gamification_phase2_admin_flags() IS 'Phase 2 flag snapshot for program-admin UI badges.';
+
+
+--
+-- Name: get_gamification_program_owner_user_id(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.get_gamification_program_owner_user_id() RETURNS uuid
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_value jsonb;
+  v_text  text;
+BEGIN
+  SELECT gs.value
+  INTO v_value
+  FROM public.gamification_settings gs
+  WHERE gs.key = 'program_owner_user_id';
+
+  IF v_value IS NULL OR v_value = 'null'::jsonb THEN
+    RETURN NULL;
+  END IF;
+
+  IF jsonb_typeof(v_value) = 'string' THEN
+    v_text := trim(both '"' from v_value::text);
+  ELSE
+    v_text := v_value #>> '{}';
+  END IF;
+
+  IF v_text IS NULL OR v_text = '' OR lower(v_text) = 'null' THEN
+    RETURN NULL;
+  END IF;
+
+  RETURN v_text::uuid;
+EXCEPTION
+  WHEN invalid_text_representation THEN
+    RETURN NULL;
+END;
+$$;
+
+
+ALTER FUNCTION public.get_gamification_program_owner_user_id() OWNER TO postgres;
+
+--
+-- Name: FUNCTION get_gamification_program_owner_user_id(); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.get_gamification_program_owner_user_id() IS 'Configured gamification program owner UUID from gamification_settings.';
+
+
+--
+-- Name: get_gamification_season_standings(text, integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.get_gamification_season_standings(p_season_key text, p_limit integer DEFAULT 10) RETURNS jsonb
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_limit int;
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  IF NOT public.are_seasons_enabled() THEN
+    RETURN '[]'::jsonb;
+  END IF;
+
+  IF p_season_key IS NULL OR btrim(p_season_key) = '' THEN
+    RETURN '[]'::jsonb;
+  END IF;
+
+  v_limit := LEAST(GREATEST(COALESCE(p_limit, 10), 1), 25);
+
+  RETURN COALESCE(
+    (
+      SELECT jsonb_agg(row_data ORDER BY (row_data->>'season_score')::int DESC, row_data->>'user_id')
+      FROM (
+        SELECT jsonb_build_object(
+          'user_id', ranked.user_id,
+          'full_name', au.full_name,
+          'avatar_url', au.avatar_url,
+          'season_score', ranked.season_score,
+          'tier_key', gl.tier_key,
+          'tier_name', gl.tier_name,
+          'tier_order', gl.tier_order,
+          'sub_level', gl.sub_level,
+          'sub_level_label', gl.sub_level_label
+        ) AS row_data
+        FROM (
+          SELECT
+            eligible.user_id,
+            public.get_user_season_score(eligible.user_id, p_season_key) AS season_score
+          FROM public.app_users eligible
+          WHERE public.is_competition_eligible(eligible.user_id)
+        ) ranked
+        JOIN public.app_users au ON au.user_id = ranked.user_id
+        JOIN LATERAL public.get_user_level(ranked.user_id) gl ON true
+        WHERE ranked.season_score > 0
+        ORDER BY ranked.season_score DESC, ranked.user_id ASC
+        LIMIT v_limit
+      ) top_rows
+    ),
+    '[]'::jsonb
+  );
+END;
+$$;
+
+
+ALTER FUNCTION public.get_gamification_season_standings(p_season_key text, p_limit integer) OWNER TO postgres;
+
+--
+-- Name: FUNCTION get_gamification_season_standings(p_season_key text, p_limit integer); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.get_gamification_season_standings(p_season_key text, p_limit integer) IS 'Player-facing top season standings (Track A). Eligible field roles only; capped at 25. Returns [] when seasons flag off.';
 
 
 --
@@ -4508,22 +5450,22 @@ CREATE FUNCTION public.get_user_lifetime_earned(target_user_id uuid DEFAULT auth
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
-  SELECT COALESCE(SUM(amount), 0)::integer
-  FROM public.point_transactions
-  WHERE user_id = target_user_id
-    AND amount > 0
-    AND source IN (
-      'announcement_claim',
-      'compliance_form',
-      'streak_bonus',
-      'near_miss_report',
-      'certification',
-      'manual_award'
-    );
+  SELECT COALESCE(SUM(pt.amount), 0)::integer
+  FROM public.point_transactions pt
+  WHERE pt.user_id = target_user_id
+    AND pt.amount > 0
+    AND pt.source::text = ANY (public.gamification_earning_sources());
 $$;
 
 
 ALTER FUNCTION public.get_user_lifetime_earned(target_user_id uuid) OWNER TO postgres;
+
+--
+-- Name: FUNCTION get_user_lifetime_earned(target_user_id uuid); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.get_user_lifetime_earned(target_user_id uuid) IS 'Lifetime earned points for level progression. Includes streak_bonus and Phase 2 challenge sources; excludes redemption and adjustment.';
+
 
 --
 -- Name: get_user_point_balance(uuid); Type: FUNCTION; Schema: public; Owner: postgres
@@ -4696,6 +5638,122 @@ ALTER FUNCTION public.get_user_raffle_entries_by_source(target_user_id uuid, p_y
 --
 
 COMMENT ON FUNCTION public.get_user_raffle_entries_by_source(target_user_id uuid, p_year integer, p_month integer) IS 'Raffle-eligible ledger breakdown for a Chicago month (includes streak_bonus). SUM(total) reconciles to get_user_raffle_entries.';
+
+
+--
+-- Name: get_user_season_baseline_score(uuid, text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.get_user_season_baseline_score(p_user_id uuid, p_season_key text) RETURNS integer
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_season_start timestamptz;
+  v_season_end   timestamptz;
+  v_season_days  numeric;
+  v_prior_avg    numeric;
+  v_cohort       int;
+BEGIN
+  SELECT s.start_at, s.end_at
+  INTO v_season_start, v_season_end
+  FROM public.seasons s
+  WHERE s.season_key = p_season_key;
+
+  IF v_season_start IS NULL THEN
+    RETURN 0;
+  END IF;
+
+  v_season_days := GREATEST(
+    EXTRACT(EPOCH FROM (v_season_end - v_season_start)) / 86400.0,
+    1
+  );
+
+  SELECT AVG(public.get_user_season_score(p_user_id, s.season_key))
+  INTO v_prior_avg
+  FROM public.seasons s
+  WHERE s.status = 'closed'
+    AND s.season_key <> p_season_key
+    AND s.end_at <= v_season_start;
+
+  IF v_prior_avg IS NOT NULL THEN
+    RETURN round(v_prior_avg)::integer;
+  END IF;
+
+  SELECT gbc.prior_90d_earn
+  INTO v_cohort
+  FROM public.gamification_baseline_cohort gbc
+  WHERE gbc.user_id = p_user_id;
+
+  IF v_cohort IS NOT NULL THEN
+    RETURN round(v_cohort * v_season_days / 90.0)::integer;
+  END IF;
+
+  RETURN 0;
+END;
+$$;
+
+
+ALTER FUNCTION public.get_user_season_baseline_score(p_user_id uuid, p_season_key text) OWNER TO postgres;
+
+--
+-- Name: FUNCTION get_user_season_baseline_score(p_user_id uuid, p_season_key text); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.get_user_season_baseline_score(p_user_id uuid, p_season_key text) IS 'Personal baseline for Most Improved: mean prior closed seasons, else prorated cohort earn.';
+
+
+--
+-- Name: get_user_season_improvement_delta(uuid, text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.get_user_season_improvement_delta(p_user_id uuid, p_season_key text) RETURNS integer
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+  SELECT public.get_user_season_score(p_user_id, p_season_key)
+       - public.get_user_season_baseline_score(p_user_id, p_season_key);
+$$;
+
+
+ALTER FUNCTION public.get_user_season_improvement_delta(p_user_id uuid, p_season_key text) OWNER TO postgres;
+
+--
+-- Name: FUNCTION get_user_season_improvement_delta(p_user_id uuid, p_season_key text); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.get_user_season_improvement_delta(p_user_id uuid, p_season_key text) IS 'Track B personal growth delta = current season score minus personal baseline.';
+
+
+--
+-- Name: get_user_season_score(uuid, text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.get_user_season_score(p_user_id uuid, p_season_key text) RETURNS integer
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+  SELECT CASE
+    WHEN NOT public.are_seasons_enabled() THEN 0
+    ELSE COALESCE((
+      SELECT SUM(pt.amount)::integer
+      FROM public.point_transactions pt
+      INNER JOIN public.seasons s ON s.season_key = p_season_key
+      WHERE pt.user_id = p_user_id
+        AND public.point_tx_in_season_window(pt.amount, pt.created_at, s.start_at, s.end_at)
+        AND pt.source::text = ANY (public.gamification_earning_sources())
+    ), 0)
+  END;
+$$;
+
+
+ALTER FUNCTION public.get_user_season_score(p_user_id uuid, p_season_key text) OWNER TO postgres;
+
+--
+-- Name: FUNCTION get_user_season_score(p_user_id uuid, p_season_key text); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.get_user_season_score(p_user_id uuid, p_season_key text) IS 'Raw season engagement score (Track A). Returns 0 when seasons flag off. No raffle filter.';
 
 
 --
@@ -5171,6 +6229,27 @@ COMMENT ON FUNCTION public.is_mechanic() IS 'Returns true if the current authent
 
 
 --
+-- Name: is_phase2_master_enabled(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.is_phase2_master_enabled() RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+  SELECT public.gamification_setting_bool('phase2_enabled');
+$$;
+
+
+ALTER FUNCTION public.is_phase2_master_enabled() OWNER TO postgres;
+
+--
+-- Name: FUNCTION is_phase2_master_enabled(); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.is_phase2_master_enabled() IS 'Master Phase 2 guard — all Phase 2 paths require this true.';
+
+
+--
 -- Name: is_reward_claim_window(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -5234,6 +6313,144 @@ ALTER FUNCTION public.is_supervisor() OWNER TO postgres;
 --
 
 COMMENT ON FUNCTION public.is_supervisor() IS 'Returns true if the current authenticated user has a supervisory role (admin, general_foreman, foreman, or safety_officer). Uses SECURITY DEFINER to bypass RLS and prevent infinite recursion.';
+
+
+--
+-- Name: list_gamification_program_campaigns(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.list_gamification_program_campaigns() RETURNS jsonb
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+BEGIN
+  IF NOT public.is_gamification_program_admin() THEN
+    RAISE EXCEPTION 'Gamification program admin access required';
+  END IF;
+
+  RETURN COALESCE(
+    (
+      SELECT jsonb_agg(
+        jsonb_build_object(
+          'campaign_key', cam.campaign_key,
+          'challenge_key', cam.challenge_key,
+          'title', cam.title,
+          'starts_at', cam.starts_at,
+          'ends_at', cam.ends_at,
+          'multiplier', cam.multiplier,
+          'is_active', cam.is_active,
+          'created_by', cam.created_by,
+          'created_at', cam.created_at
+        )
+        ORDER BY cam.starts_at ASC, cam.campaign_key ASC
+      )
+      FROM public.campaigns cam
+    ),
+    '[]'::jsonb
+  );
+END;
+$$;
+
+
+ALTER FUNCTION public.list_gamification_program_campaigns() OWNER TO postgres;
+
+--
+-- Name: FUNCTION list_gamification_program_campaigns(); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.list_gamification_program_campaigns() IS 'Program-admin campaign list including staged (is_active=false) rows.';
+
+
+--
+-- Name: list_gamification_program_challenges(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.list_gamification_program_challenges() RETURNS jsonb
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+BEGIN
+  IF NOT public.is_gamification_program_admin() THEN
+    RAISE EXCEPTION 'Gamification program admin access required';
+  END IF;
+
+  RETURN COALESCE(
+    (
+      SELECT jsonb_agg(
+        jsonb_build_object(
+          'challenge_key', c.challenge_key,
+          'title', c.title,
+          'description', c.description,
+          'cadence', c.cadence,
+          'challenge_type', c.challenge_type,
+          'is_active', c.is_active,
+          'sort_order', c.sort_order
+        )
+        ORDER BY c.sort_order ASC, c.challenge_key ASC
+      )
+      FROM public.challenges c
+    ),
+    '[]'::jsonb
+  );
+END;
+$$;
+
+
+ALTER FUNCTION public.list_gamification_program_challenges() OWNER TO postgres;
+
+--
+-- Name: FUNCTION list_gamification_program_challenges(); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.list_gamification_program_challenges() IS 'Challenge catalog for campaign FK picker.';
+
+
+--
+-- Name: list_gamification_program_seasons(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.list_gamification_program_seasons() RETURNS jsonb
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+BEGIN
+  IF NOT public.is_gamification_program_admin() THEN
+    RAISE EXCEPTION 'Gamification program admin access required';
+  END IF;
+
+  RETURN COALESCE(
+    (
+      SELECT jsonb_agg(
+        jsonb_build_object(
+          'season_key', s.season_key,
+          'name', s.name,
+          'theme', s.theme,
+          'start_at', s.start_at,
+          'end_at', s.end_at,
+          'status', s.status,
+          'most_improved_enabled', s.most_improved_enabled,
+          'finalized_at', s.finalized_at,
+          'sort_order', s.sort_order,
+          'is_active', s.is_active,
+          'created_at', s.created_at
+        )
+        ORDER BY s.sort_order ASC, s.start_at ASC, s.season_key ASC
+      )
+      FROM public.seasons s
+    ),
+    '[]'::jsonb
+  );
+END;
+$$;
+
+
+ALTER FUNCTION public.list_gamification_program_seasons() OWNER TO postgres;
+
+--
+-- Name: FUNCTION list_gamification_program_seasons(); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.list_gamification_program_seasons() IS 'Program-admin season list for setup UI. Readable while Phase 2 is dark.';
 
 
 --
@@ -5729,6 +6946,145 @@ COMMENT ON FUNCTION public.notify_manual_award_recipient(p_request_id uuid) IS '
 
 
 --
+-- Name: nudge_program_owner_season_needs_campaign(text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.nudge_program_owner_season_needs_campaign(p_season_key text DEFAULT NULL::text) RETURNS jsonb
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_owner       uuid;
+  v_season      record;
+  v_event_id    uuid;
+  v_dedupe_id   uuid;
+  v_title       text;
+  v_body        text;
+BEGIN
+  IF NOT public.is_phase2_master_enabled() THEN
+    RETURN jsonb_build_object('status', 'skipped', 'reason', 'phase2_dark');
+  END IF;
+
+  v_owner := public.get_gamification_program_owner_user_id();
+  IF v_owner IS NULL THEN
+    RETURN jsonb_build_object('status', 'skipped', 'reason', 'owner_not_configured');
+  END IF;
+
+  SELECT s.season_key, s.name, s.start_at, s.end_at, s.status
+  INTO v_season
+  FROM public.seasons s
+  WHERE s.is_active
+    AND s.status IN ('scheduled', 'active')
+    AND (p_season_key IS NULL OR s.season_key = p_season_key)
+    AND NOT public.season_has_active_campaign(s.season_key)
+  ORDER BY s.start_at ASC
+  LIMIT 1;
+
+  IF v_season.season_key IS NULL THEN
+    RETURN jsonb_build_object('status', 'skipped', 'reason', 'no_season_needs_campaign');
+  END IF;
+
+  v_dedupe_id := (
+    substr(md5('gamification_season_nudge:' || v_season.season_key), 1, 8) || '-' ||
+    substr(md5('gamification_season_nudge:' || v_season.season_key), 9, 4) || '-' ||
+    '4' || substr(md5('gamification_season_nudge:' || v_season.season_key), 13, 3) || '-' ||
+    substr(md5('gamification_season_nudge:' || v_season.season_key), 16, 4) || '-' ||
+    substr(md5('gamification_season_nudge:' || v_season.season_key), 20, 12)
+  )::uuid;
+
+  SELECT ne.id
+  INTO v_event_id
+  FROM public.notification_events ne
+  WHERE ne.entity_type = 'gamification_season_nudge'
+    AND ne.entity_id = v_dedupe_id;
+
+  IF v_event_id IS NOT NULL THEN
+    RETURN jsonb_build_object(
+      'status', 'skipped',
+      'reason', 'already_nudged',
+      'season_key', v_season.season_key,
+      'owner_user_id', v_owner
+    );
+  END IF;
+
+  v_title := format('Season needs campaign: %s', v_season.name);
+  v_body := format(
+    'Season "%s" (%s) is %s but has no activated campaign overlapping %s – %s. Stage a campaign in Program Admin before kickoff.',
+    v_season.name,
+    v_season.season_key,
+    v_season.status,
+    to_char(v_season.start_at AT TIME ZONE 'America/Chicago', 'Mon DD, YYYY'),
+    to_char(v_season.end_at AT TIME ZONE 'America/Chicago', 'Mon DD, YYYY')
+  );
+
+  INSERT INTO public.notification_events (
+    category,
+    severity,
+    target_type,
+    target_ref,
+    title,
+    body,
+    url,
+    actor_user_id,
+    entity_type,
+    entity_id
+  ) VALUES (
+    'admin_notice',
+    'medium',
+    'user',
+    v_owner::text,
+    v_title,
+    v_body,
+    '/admin/telemetry',
+    NULL,
+    'gamification_season_nudge',
+    v_dedupe_id
+  )
+  RETURNING id INTO v_event_id;
+
+  RETURN jsonb_build_object(
+    'status', 'sent',
+    'season_key', v_season.season_key,
+    'owner_user_id', v_owner,
+    'notification_event_id', v_event_id
+  );
+END;
+$$;
+
+
+ALTER FUNCTION public.nudge_program_owner_season_needs_campaign(p_season_key text) OWNER TO postgres;
+
+--
+-- Name: FUNCTION nudge_program_owner_season_needs_campaign(p_season_key text); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.nudge_program_owner_season_needs_campaign(p_season_key text) IS 'Notify program_owner_user_id when a scheduled/active season lacks an activated campaign. No-ops while phase2_enabled is false.';
+
+
+--
+-- Name: point_tx_in_season_window(integer, timestamp with time zone, timestamp with time zone, timestamp with time zone); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.point_tx_in_season_window(p_amount integer, p_created_at timestamp with time zone, p_start_at timestamp with time zone, p_end_at timestamp with time zone) RETURNS boolean
+    LANGUAGE sql IMMUTABLE PARALLEL SAFE
+    SET search_path TO 'public'
+    AS $$
+  SELECT p_amount > 0
+     AND p_created_at >= p_start_at
+     AND p_created_at < p_end_at;
+$$;
+
+
+ALTER FUNCTION public.point_tx_in_season_window(p_amount integer, p_created_at timestamp with time zone, p_start_at timestamp with time zone, p_end_at timestamp with time zone) OWNER TO postgres;
+
+--
+-- Name: FUNCTION point_tx_in_season_window(p_amount integer, p_created_at timestamp with time zone, p_start_at timestamp with time zone, p_end_at timestamp with time zone); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.point_tx_in_season_window(p_amount integer, p_created_at timestamp with time zone, p_start_at timestamp with time zone, p_end_at timestamp with time zone) IS 'Positive-only [start_at, end_at) season window predicate. Does NOT filter counts_toward_raffle.';
+
+
+--
 -- Name: point_tx_matches_raffle_month(boolean, integer, timestamp with time zone, integer, integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -5805,6 +7161,97 @@ $$;
 
 
 ALTER FUNCTION public.prevent_jsa_user_id_change() OWNER TO postgres;
+
+--
+-- Name: process_gamification_program_owner_nudges(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.process_gamification_program_owner_nudges() RETURNS jsonb
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_result jsonb;
+BEGIN
+  IF NOT public.is_phase2_master_enabled() THEN
+    RETURN jsonb_build_object('status', 'skipped', 'reason', 'phase2_dark');
+  END IF;
+
+  v_result := public.nudge_program_owner_season_needs_campaign(NULL);
+  RETURN v_result;
+END;
+$$;
+
+
+ALTER FUNCTION public.process_gamification_program_owner_nudges() OWNER TO postgres;
+
+--
+-- Name: FUNCTION process_gamification_program_owner_nudges(); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.process_gamification_program_owner_nudges() IS 'Cron entrypoint for season-needs-campaign owner nudge. No-ops while Phase 2 master flag is off.';
+
+
+--
+-- Name: process_gamification_season_lifecycle(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.process_gamification_season_lifecycle() RETURNS jsonb
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_now timestamptz := now();
+  v_activated int := 0;
+  v_closed int := 0;
+  v_finalized jsonb := '[]'::jsonb;
+  v_row record;
+  v_fin jsonb;
+BEGIN
+  IF NOT public.are_seasons_enabled() THEN
+    RETURN jsonb_build_object('status', 'skipped', 'reason', 'seasons_disabled');
+  END IF;
+
+  UPDATE public.seasons s
+  SET status = 'active'
+  WHERE s.status = 'scheduled'
+    AND s.is_active
+    AND v_now >= s.start_at
+    AND v_now < s.end_at;
+
+  GET DIAGNOSTICS v_activated = ROW_COUNT;
+
+  FOR v_row IN
+    UPDATE public.seasons s
+    SET status = 'closed'
+    WHERE s.status = 'active'
+      AND s.is_active
+      AND v_now >= s.end_at
+    RETURNING s.season_key
+  LOOP
+    v_closed := v_closed + 1;
+    v_fin := public.finalize_season(v_row.season_key);
+    v_finalized := v_finalized || jsonb_build_array(v_fin);
+  END LOOP;
+
+  RETURN jsonb_build_object(
+    'status', 'ok',
+    'activated', v_activated,
+    'closed', v_closed,
+    'finalize_results', v_finalized
+  );
+END;
+$$;
+
+
+ALTER FUNCTION public.process_gamification_season_lifecycle() OWNER TO postgres;
+
+--
+-- Name: FUNCTION process_gamification_season_lifecycle(); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.process_gamification_season_lifecycle() IS 'Daily cron: promote scheduled→active, active→closed, call finalize_season once per close.';
+
 
 --
 -- Name: queue_asset_cost_refresh(); Type: FUNCTION; Schema: public; Owner: postgres
@@ -6138,6 +7585,136 @@ COMMENT ON FUNCTION public.refresh_user_streak(p_user_id uuid, p_as_of timestamp
 
 
 --
+-- Name: resolve_auto_weekly_challenge(date); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.resolve_auto_weekly_challenge(p_week_start date) RETURNS text
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_active   jsonb;
+  v_pool     text[];
+  v_idx      int;
+  v_len      int;
+BEGIN
+  SELECT gs.value
+  INTO v_active
+  FROM public.gamification_settings gs
+  WHERE gs.key = 'weekly_auto_challenge_active';
+
+  IF v_active IS NOT NULL
+     AND jsonb_typeof(v_active) = 'object'
+     AND (v_active->>'week_start')::date = p_week_start
+     AND NULLIF(v_active->>'challenge_key', '') IS NOT NULL THEN
+    RETURN v_active->>'challenge_key';
+  END IF;
+
+  v_pool := public.gamification_setting_text_array('weekly_auto_challenge_pool');
+  v_len := COALESCE(array_length(v_pool, 1), 0);
+  IF v_len = 0 THEN
+    RETURN NULL;
+  END IF;
+
+  v_idx := (
+    (extract(epoch FROM (p_week_start::timestamp AT TIME ZONE 'UTC'))::bigint / 604800)
+  )::int % v_len;
+
+  IF v_idx < 0 THEN
+    v_idx := v_idx + v_len;
+  END IF;
+
+  RETURN v_pool[v_idx + 1];
+END;
+$$;
+
+
+ALTER FUNCTION public.resolve_auto_weekly_challenge(p_week_start date) OWNER TO postgres;
+
+--
+-- Name: FUNCTION resolve_auto_weekly_challenge(p_week_start date); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.resolve_auto_weekly_challenge(p_week_start date) IS 'Picks auto-pool challenge for a Chicago week (persisted active row or deterministic rotation).';
+
+
+--
+-- Name: rotate_weekly_auto_challenge(timestamp with time zone); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.rotate_weekly_auto_challenge(p_as_of timestamp with time zone DEFAULT now()) RETURNS jsonb
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_week_start   date;
+  v_challenge    text;
+  v_active       jsonb;
+  v_prev_count   int;
+BEGIN
+  IF NOT public.are_challenges_enabled() THEN
+    RETURN jsonb_build_object('status', 'skipped', 'reason', 'challenges_disabled');
+  END IF;
+
+  v_week_start := public.chicago_iso_week_start(p_as_of);
+
+  SELECT gs.value
+  INTO v_active
+  FROM public.gamification_settings gs
+  WHERE gs.key = 'weekly_auto_challenge_active';
+
+  IF v_active IS NOT NULL
+     AND jsonb_typeof(v_active) = 'object'
+     AND (v_active->>'week_start')::date = v_week_start THEN
+    RETURN jsonb_build_object(
+      'status', 'already_rotated',
+      'week_start', v_week_start,
+      'challenge_key', v_active->>'challenge_key'
+    );
+  END IF;
+
+  SELECT count(*)::int
+  INTO v_prev_count
+  FROM public.challenge_completions cc
+  WHERE cc.window_key = public.weekly_challenge_window_key(v_week_start);
+
+  v_challenge := public.resolve_auto_weekly_challenge(v_week_start);
+
+  IF v_challenge IS NULL THEN
+    RETURN jsonb_build_object(
+      'status', 'skipped',
+      'reason', 'empty_pool',
+      'week_start', v_week_start
+    );
+  END IF;
+
+  UPDATE public.gamification_settings
+  SET value = jsonb_build_object(
+    'week_start', v_week_start,
+    'challenge_key', v_challenge
+  )
+  WHERE key = 'weekly_auto_challenge_active';
+
+  RETURN jsonb_build_object(
+    'status', 'rotated',
+    'week_start', v_week_start,
+    'challenge_key', v_challenge,
+    'prior_completions_in_window', v_prev_count
+  );
+END;
+$$;
+
+
+ALTER FUNCTION public.rotate_weekly_auto_challenge(p_as_of timestamp with time zone) OWNER TO postgres;
+
+--
+-- Name: FUNCTION rotate_weekly_auto_challenge(p_as_of timestamp with time zone); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.rotate_weekly_auto_challenge(p_as_of timestamp with time zone) IS 'Weekly cron: persist auto-pool selection for chicago_iso_week_start. True no-op when flag off.';
+
+
+--
 -- Name: run_data_retention(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -6425,6 +8002,34 @@ COMMENT ON FUNCTION public.save_setting_and_update_cron(p_setting_key text, p_se
 
 
 --
+-- Name: season_has_active_campaign(text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.season_has_active_campaign(p_season_key text) RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.seasons s
+    INNER JOIN public.campaigns cam ON cam.is_active
+      AND cam.starts_at < s.end_at
+      AND cam.ends_at > s.start_at
+    WHERE s.season_key = p_season_key
+  );
+$$;
+
+
+ALTER FUNCTION public.season_has_active_campaign(p_season_key text) OWNER TO postgres;
+
+--
+-- Name: FUNCTION season_has_active_campaign(p_season_key text); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.season_has_active_campaign(p_season_key text) IS 'True when an activated campaign window overlaps the season window.';
+
+
+--
 -- Name: set_certification_grading_started(uuid); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -6499,6 +8104,107 @@ ALTER FUNCTION public.set_dvir_report_date() OWNER TO postgres;
 --
 
 COMMENT ON FUNCTION public.set_dvir_report_date() IS 'Auto-sets report_date from created_at in America/Chicago timezone if not provided.';
+
+
+--
+-- Name: set_gamification_campaign_active(text, boolean); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.set_gamification_campaign_active(p_campaign_key text, p_is_active boolean) RETURNS jsonb
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+BEGIN
+  IF NOT public.is_gamification_program_admin() THEN
+    RAISE EXCEPTION 'Gamification program admin access required';
+  END IF;
+
+  UPDATE public.campaigns cam
+  SET is_active = COALESCE(p_is_active, false)
+  WHERE cam.campaign_key = p_campaign_key;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Unknown campaign_key=%', p_campaign_key;
+  END IF;
+
+  RETURN jsonb_build_object(
+    'status', 'ok',
+    'campaign_key', p_campaign_key,
+    'is_active', p_is_active
+  );
+END;
+$$;
+
+
+ALTER FUNCTION public.set_gamification_campaign_active(p_campaign_key text, p_is_active boolean) OWNER TO postgres;
+
+--
+-- Name: FUNCTION set_gamification_campaign_active(p_campaign_key text, p_is_active boolean); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.set_gamification_campaign_active(p_campaign_key text, p_is_active boolean) IS 'Activate/deactivate a staged campaign. Payout writers still require phase2_enabled + challenges_enabled.';
+
+
+--
+-- Name: set_gamification_season_status(text, public.season_status); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.set_gamification_season_status(p_season_key text, p_status public.season_status) RETURNS jsonb
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_row public.seasons;
+BEGIN
+  IF NOT public.is_gamification_program_admin() THEN
+    RAISE EXCEPTION 'Gamification program admin access required';
+  END IF;
+
+  SELECT * INTO v_row
+  FROM public.seasons s
+  WHERE s.season_key = p_season_key
+  FOR UPDATE;
+
+  IF v_row IS NULL THEN
+    RAISE EXCEPTION 'Unknown season_key=%', p_season_key;
+  END IF;
+
+  IF p_status = 'scheduled' THEN
+    IF v_row.status NOT IN ('draft', 'scheduled') THEN
+      RAISE EXCEPTION 'Cannot schedule season % from status %', p_season_key, v_row.status;
+    END IF;
+  ELSIF p_status = 'closed' THEN
+    IF v_row.status NOT IN ('draft', 'scheduled', 'active') THEN
+      RAISE EXCEPTION 'Cannot close season % from status %', p_season_key, v_row.status;
+    END IF;
+  ELSIF p_status = 'draft' THEN
+    IF v_row.status NOT IN ('draft', 'scheduled') THEN
+      RAISE EXCEPTION 'Cannot revert season % to draft from status %', p_season_key, v_row.status;
+    END IF;
+  ELSIF p_status = 'active' THEN
+    RAISE EXCEPTION 'Manual active transition is not supported; lifecycle cron promotes scheduled seasons';
+  END IF;
+
+  UPDATE public.seasons
+  SET status = p_status
+  WHERE season_key = p_season_key;
+
+  RETURN jsonb_build_object(
+    'status', 'ok',
+    'season_key', p_season_key,
+    'season_status', p_status
+  );
+END;
+$$;
+
+
+ALTER FUNCTION public.set_gamification_season_status(p_season_key text, p_status public.season_status) OWNER TO postgres;
+
+--
+-- Name: FUNCTION set_gamification_season_status(p_season_key text, p_status public.season_status); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.set_gamification_season_status(p_season_key text, p_status public.season_status) IS 'Program-admin open (schedule) / close controls. Cron still drives scheduled→active and active→closed.';
 
 
 --
@@ -7262,6 +8968,76 @@ $$;
 ALTER FUNCTION public.trg_evaluate_badges_on_point_transaction() OWNER TO postgres;
 
 --
+-- Name: trg_evaluate_challenges_on_briefing(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.trg_evaluate_challenges_on_briefing() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+BEGIN
+  IF NOT public.are_challenges_enabled() THEN
+    RETURN NEW;
+  END IF;
+
+  BEGIN
+    PERFORM public.evaluate_user_challenges_from_briefing(
+      NEW.user_id,
+      NEW.id,
+      COALESCE(NEW.completed_at, now())
+    );
+  EXCEPTION
+    WHEN OTHERS THEN
+      RAISE WARNING 'challenge eval briefing failed for user %: %', NEW.user_id, SQLERRM;
+  END;
+
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.trg_evaluate_challenges_on_briefing() OWNER TO postgres;
+
+--
+-- Name: trg_evaluate_challenges_on_point_tx(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.trg_evaluate_challenges_on_point_tx() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+BEGIN
+  IF NOT public.are_challenges_enabled() THEN
+    RETURN NEW;
+  END IF;
+
+  IF NEW.amount IS NULL OR NEW.amount <= 0 THEN
+    RETURN NEW;
+  END IF;
+
+  BEGIN
+    PERFORM public.evaluate_user_challenges_from_ledger(
+      NEW.user_id,
+      NEW.source,
+      NEW.category,
+      NEW.reference_id,
+      NEW.reference_table,
+      NEW.created_at
+    );
+  EXCEPTION
+    WHEN OTHERS THEN
+      RAISE WARNING 'challenge eval ledger failed for user % source %: %',
+        NEW.user_id, NEW.source, SQLERRM;
+  END;
+
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.trg_evaluate_challenges_on_point_tx() OWNER TO postgres;
+
+--
 -- Name: trg_record_weekly_streak_on_briefing(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -7363,6 +9139,47 @@ CREATE FUNCTION public.trigger_safety_announcement() RETURNS trigger
 
 
 ALTER FUNCTION public.trigger_safety_announcement() OWNER TO postgres;
+
+--
+-- Name: try_record_challenge_completion(uuid, text, text, text, timestamp with time zone); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.try_record_challenge_completion(p_user_id uuid, p_challenge_key text, p_window_key text, p_campaign_key text DEFAULT NULL::text, p_completed_at timestamp with time zone DEFAULT now()) RETURNS uuid
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_id uuid;
+BEGIN
+  IF NOT public.are_challenges_enabled() THEN
+    RETURN NULL;
+  END IF;
+
+  INSERT INTO public.challenge_completions (
+    user_id, challenge_key, window_key, campaign_key, completed_at
+  ) VALUES (
+    p_user_id, p_challenge_key, p_window_key, p_campaign_key, p_completed_at
+  )
+  ON CONFLICT (user_id, challenge_key, window_key) DO NOTHING
+  RETURNING id INTO v_id;
+
+  IF v_id IS NOT NULL THEN
+    PERFORM public.award_challenge_completion(p_user_id, v_id);
+  END IF;
+
+  RETURN v_id;
+END;
+$$;
+
+
+ALTER FUNCTION public.try_record_challenge_completion(p_user_id uuid, p_challenge_key text, p_window_key text, p_campaign_key text, p_completed_at timestamp with time zone) OWNER TO postgres;
+
+--
+-- Name: FUNCTION try_record_challenge_completion(p_user_id uuid, p_challenge_key text, p_window_key text, p_campaign_key text, p_completed_at timestamp with time zone); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.try_record_challenge_completion(p_user_id uuid, p_challenge_key text, p_window_key text, p_campaign_key text, p_completed_at timestamp with time zone) IS 'Idempotent completion insert + payout. UNIQUE (user_id, challenge_key, window_key) prevents double-pay.';
+
 
 --
 -- Name: update_crews_updated_at(); Type: FUNCTION; Schema: public; Owner: postgres
@@ -7685,6 +9502,153 @@ $$;
 ALTER FUNCTION public.update_work_sites_updated_at() OWNER TO postgres;
 
 --
+-- Name: upsert_gamification_campaign(text, text, timestamp with time zone, timestamp with time zone, text, numeric); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.upsert_gamification_campaign(p_campaign_key text, p_challenge_key text, p_starts_at timestamp with time zone, p_ends_at timestamp with time zone, p_title text DEFAULT NULL::text, p_multiplier numeric DEFAULT 1.00) RETURNS jsonb
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_exists boolean;
+BEGIN
+  IF NOT public.is_gamification_program_admin() THEN
+    RAISE EXCEPTION 'Gamification program admin access required';
+  END IF;
+
+  IF p_campaign_key IS NULL OR btrim(p_campaign_key) = '' THEN
+    RAISE EXCEPTION 'campaign_key is required';
+  END IF;
+  IF p_challenge_key IS NULL OR btrim(p_challenge_key) = '' THEN
+    RAISE EXCEPTION 'challenge_key is required';
+  END IF;
+  IF p_multiplier IS NULL OR p_multiplier < 1.00 THEN
+    RAISE EXCEPTION 'multiplier must be >= 1.00';
+  END IF;
+  IF p_ends_at <= p_starts_at THEN
+    RAISE EXCEPTION 'ends_at must be after starts_at';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.challenges c WHERE c.challenge_key = p_challenge_key
+  ) THEN
+    RAISE EXCEPTION 'Unknown challenge_key=%', p_challenge_key;
+  END IF;
+
+  SELECT EXISTS (
+    SELECT 1 FROM public.campaigns cam WHERE cam.campaign_key = p_campaign_key
+  ) INTO v_exists;
+
+  IF v_exists THEN
+    UPDATE public.campaigns cam
+    SET
+      challenge_key = p_challenge_key,
+      title = p_title,
+      starts_at = p_starts_at,
+      ends_at = p_ends_at,
+      multiplier = p_multiplier
+    WHERE cam.campaign_key = p_campaign_key;
+  ELSE
+    INSERT INTO public.campaigns (
+      campaign_key, challenge_key, title, starts_at, ends_at,
+      multiplier, is_active, created_by
+    ) VALUES (
+      p_campaign_key, p_challenge_key, p_title, p_starts_at, p_ends_at,
+      p_multiplier, false, auth.uid()
+    );
+  END IF;
+
+  RETURN jsonb_build_object(
+    'status', 'ok',
+    'campaign_key', p_campaign_key,
+    'is_active', COALESCE((SELECT cam.is_active FROM public.campaigns cam WHERE cam.campaign_key = p_campaign_key), false),
+    'staged', NOT COALESCE((SELECT cam.is_active FROM public.campaigns cam WHERE cam.campaign_key = p_campaign_key), false)
+  );
+END;
+$$;
+
+
+ALTER FUNCTION public.upsert_gamification_campaign(p_campaign_key text, p_challenge_key text, p_starts_at timestamp with time zone, p_ends_at timestamp with time zone, p_title text, p_multiplier numeric) OWNER TO postgres;
+
+--
+-- Name: FUNCTION upsert_gamification_campaign(p_campaign_key text, p_challenge_key text, p_starts_at timestamp with time zone, p_ends_at timestamp with time zone, p_title text, p_multiplier numeric); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.upsert_gamification_campaign(p_campaign_key text, p_challenge_key text, p_starts_at timestamp with time zone, p_ends_at timestamp with time zone, p_title text, p_multiplier numeric) IS 'Create/update campaigns. New rows are staged (is_active=false) until explicitly activated.';
+
+
+--
+-- Name: upsert_gamification_season(text, text, timestamp with time zone, timestamp with time zone, text, boolean, integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.upsert_gamification_season(p_season_key text, p_name text, p_start_at timestamp with time zone, p_end_at timestamp with time zone, p_theme text DEFAULT NULL::text, p_most_improved_enabled boolean DEFAULT false, p_sort_order integer DEFAULT 0) RETURNS jsonb
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_existing public.season_status;
+  v_status   public.season_status := 'draft';
+BEGIN
+  IF NOT public.is_gamification_program_admin() THEN
+    RAISE EXCEPTION 'Gamification program admin access required';
+  END IF;
+
+  IF p_season_key IS NULL OR btrim(p_season_key) = '' THEN
+    RAISE EXCEPTION 'season_key is required';
+  END IF;
+  IF p_name IS NULL OR btrim(p_name) = '' THEN
+    RAISE EXCEPTION 'name is required';
+  END IF;
+  IF p_end_at <= p_start_at THEN
+    RAISE EXCEPTION 'end_at must be after start_at';
+  END IF;
+
+  SELECT s.status
+  INTO v_existing
+  FROM public.seasons s
+  WHERE s.season_key = p_season_key;
+
+  IF v_existing IS NOT NULL THEN
+    v_status := v_existing;
+    IF v_status IN ('active', 'closed') THEN
+      RAISE EXCEPTION 'Cannot edit season % while status is %', p_season_key, v_status;
+    END IF;
+  END IF;
+
+  INSERT INTO public.seasons (
+    season_key, name, theme, start_at, end_at, status,
+    most_improved_enabled, sort_order, is_active
+  ) VALUES (
+    p_season_key, p_name, p_theme, p_start_at, p_end_at, v_status,
+    COALESCE(p_most_improved_enabled, false), COALESCE(p_sort_order, 0), true
+  )
+  ON CONFLICT (season_key) DO UPDATE SET
+    name = EXCLUDED.name,
+    theme = EXCLUDED.theme,
+    start_at = EXCLUDED.start_at,
+    end_at = EXCLUDED.end_at,
+    most_improved_enabled = EXCLUDED.most_improved_enabled,
+    sort_order = EXCLUDED.sort_order;
+
+  RETURN jsonb_build_object(
+    'status', 'ok',
+    'season_key', p_season_key,
+    'season_status', v_status
+  );
+END;
+$$;
+
+
+ALTER FUNCTION public.upsert_gamification_season(p_season_key text, p_name text, p_start_at timestamp with time zone, p_end_at timestamp with time zone, p_theme text, p_most_improved_enabled boolean, p_sort_order integer) OWNER TO postgres;
+
+--
+-- Name: FUNCTION upsert_gamification_season(p_season_key text, p_name text, p_start_at timestamp with time zone, p_end_at timestamp with time zone, p_theme text, p_most_improved_enabled boolean, p_sort_order integer); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.upsert_gamification_season(p_season_key text, p_name text, p_start_at timestamp with time zone, p_end_at timestamp with time zone, p_theme text, p_most_improved_enabled boolean, p_sort_order integer) IS 'Create/update draft or scheduled seasons. Active/closed seasons are immutable.';
+
+
+--
 -- Name: user_has_certification_access(uuid, uuid); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -7869,6 +9833,27 @@ $$;
 
 
 ALTER FUNCTION public.week_has_meaningful_streak_activity(p_user_id uuid, p_week_start date) OWNER TO postgres;
+
+--
+-- Name: weekly_challenge_window_key(date); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.weekly_challenge_window_key(p_week_start date) RETURNS text
+    LANGUAGE sql IMMUTABLE PARALLEL SAFE
+    SET search_path TO 'public'
+    AS $$
+  SELECT 'W:' || p_week_start::text;
+$$;
+
+
+ALTER FUNCTION public.weekly_challenge_window_key(p_week_start date) OWNER TO postgres;
+
+--
+-- Name: FUNCTION weekly_challenge_window_key(p_week_start date); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.weekly_challenge_window_key(p_week_start date) IS 'Canonical weekly challenge window key anchored to chicago_iso_week_start Monday.';
+
 
 --
 -- Name: welcome_gamification(); Type: FUNCTION; Schema: public; Owner: postgres
@@ -9201,6 +11186,41 @@ CREATE TABLE public.badges (
 ALTER TABLE public.badges OWNER TO postgres;
 
 --
+-- Name: campaigns; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.campaigns (
+    campaign_key text NOT NULL,
+    challenge_key text NOT NULL,
+    title text,
+    starts_at timestamp with time zone NOT NULL,
+    ends_at timestamp with time zone NOT NULL,
+    multiplier numeric(4,2) DEFAULT 1.00 NOT NULL,
+    is_active boolean DEFAULT false NOT NULL,
+    created_by uuid,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT campaigns_multiplier_check CHECK ((multiplier >= 1.00)),
+    CONSTRAINT campaigns_window_valid CHECK ((ends_at > starts_at))
+);
+
+
+ALTER TABLE public.campaigns OWNER TO postgres;
+
+--
+-- Name: TABLE campaigns; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON TABLE public.campaigns IS 'Scheduled challenge instances with optional multiplier. Overrides auto-pool when overlapping (D10).';
+
+
+--
+-- Name: COLUMN campaigns.is_active; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.campaigns.is_active IS 'Staged campaigns stay false until program admin activates after kickoff prep. Payout writers also require phase2 flags.';
+
+
+--
 -- Name: certification_access_grants; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -9423,6 +11443,58 @@ ALTER TABLE public.certification_questions OWNER TO postgres;
 --
 
 COMMENT ON TABLE public.certification_questions IS 'Question bank per certification. Access only via RPCs (no direct SELECT) to avoid answer leakage.';
+
+
+--
+-- Name: challenge_completions; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.challenge_completions (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    challenge_key text NOT NULL,
+    window_key text NOT NULL,
+    campaign_key text,
+    completed_at timestamp with time zone DEFAULT now() NOT NULL,
+    base_tx_id uuid,
+    multiplier_tx_id uuid
+);
+
+
+ALTER TABLE public.challenge_completions OWNER TO postgres;
+
+--
+-- Name: TABLE challenge_completions; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON TABLE public.challenge_completions IS 'One completion per user/challenge/window. base_tx_id + multiplier_tx_id store payout ledger rows.';
+
+
+--
+-- Name: challenges; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.challenges (
+    challenge_key text NOT NULL,
+    title text NOT NULL,
+    description text,
+    condition_spec jsonb DEFAULT '{}'::jsonb NOT NULL,
+    cadence public.challenge_cadence DEFAULT 'weekly'::public.challenge_cadence NOT NULL,
+    challenge_type public.challenge_type DEFAULT 'auto'::public.challenge_type NOT NULL,
+    reward_spec jsonb DEFAULT '{"points": 25, "counts_toward_raffle": true}'::jsonb NOT NULL,
+    is_active boolean DEFAULT true NOT NULL,
+    sort_order integer DEFAULT 0 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.challenges OWNER TO postgres;
+
+--
+-- Name: TABLE challenges; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON TABLE public.challenges IS 'Challenge definitions. Phase 2 — inert until gamification_settings.challenges_enabled is true.';
 
 
 --
@@ -11518,6 +13590,49 @@ COMMENT ON VIEW public.scheduled_cron_jobs IS 'View of scheduled cron jobs for m
 
 
 --
+-- Name: seasons; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.seasons (
+    season_key text NOT NULL,
+    name text NOT NULL,
+    theme text,
+    start_at timestamp with time zone NOT NULL,
+    end_at timestamp with time zone NOT NULL,
+    status public.season_status DEFAULT 'draft'::public.season_status NOT NULL,
+    most_improved_enabled boolean DEFAULT false NOT NULL,
+    finalized_at timestamp with time zone,
+    sort_order integer DEFAULT 0 NOT NULL,
+    is_active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT seasons_window_valid CHECK ((end_at > start_at))
+);
+
+
+ALTER TABLE public.seasons OWNER TO postgres;
+
+--
+-- Name: TABLE seasons; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON TABLE public.seasons IS 'Competitive season windows. Phase 2 — inert until gamification_settings.seasons_enabled is true.';
+
+
+--
+-- Name: COLUMN seasons.most_improved_enabled; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.seasons.most_improved_enabled IS 'When false (Season 1 default), finale emits podium only — no season_most_improved recognition.';
+
+
+--
+-- Name: COLUMN seasons.finalized_at; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.seasons.finalized_at IS 'Set once by finalize_season; guards idempotent re-invocation on cron retry.';
+
+
+--
 -- Name: sms_escalation_recipients; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -12458,6 +14573,14 @@ ALTER TABLE ONLY public.badges
 
 
 --
+-- Name: campaigns campaigns_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.campaigns
+    ADD CONSTRAINT campaigns_pkey PRIMARY KEY (campaign_key);
+
+
+--
 -- Name: certification_access_grants certification_access_grants_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -12559,6 +14682,30 @@ ALTER TABLE ONLY public.certification_types
 
 ALTER TABLE ONLY public.certification_types
     ADD CONSTRAINT certification_types_slug_key UNIQUE (slug);
+
+
+--
+-- Name: challenge_completions challenge_completions_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.challenge_completions
+    ADD CONSTRAINT challenge_completions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: challenge_completions challenge_completions_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.challenge_completions
+    ADD CONSTRAINT challenge_completions_unique UNIQUE (user_id, challenge_key, window_key);
+
+
+--
+-- Name: challenges challenges_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.challenges
+    ADD CONSTRAINT challenges_pkey PRIMARY KEY (challenge_key);
 
 
 --
@@ -13167,6 +15314,14 @@ ALTER TABLE ONLY public.safety_flags
 
 ALTER TABLE ONLY public.safety_incidents
     ADD CONSTRAINT safety_incidents_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: seasons seasons_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.seasons
+    ADD CONSTRAINT seasons_pkey PRIMARY KEY (season_key);
 
 
 --
@@ -14035,6 +16190,13 @@ CREATE INDEX idx_briefing_items_question ON public.safety_briefing_answer_items 
 
 
 --
+-- Name: idx_campaigns_active_window; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_campaigns_active_window ON public.campaigns USING btree (is_active, starts_at, ends_at);
+
+
+--
 -- Name: idx_cert_access_grants_cert_id; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -14200,6 +16362,13 @@ CREATE UNIQUE INDEX idx_certification_records_verification_code ON public.certif
 --
 
 CREATE INDEX idx_certification_records_written_attempt_id ON public.certification_records USING btree (written_attempt_id);
+
+
+--
+-- Name: idx_challenge_completions_user; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_challenge_completions_user ON public.challenge_completions USING btree (user_id, completed_at DESC);
 
 
 --
@@ -15330,6 +17499,13 @@ CREATE INDEX idx_schedules_truck ON public.maintenance_schedules USING btree (tr
 
 
 --
+-- Name: idx_seasons_status_window; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_seasons_status_window ON public.seasons USING btree (status, start_at, end_at);
+
+
+--
 -- Name: idx_sms_escalation_recipients_tier_active; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -15593,6 +17769,13 @@ CREATE UNIQUE INDEX idx_work_sites_unique_coords ON public.work_sites USING btre
 --
 
 CREATE UNIQUE INDEX uq_active_grant_per_user ON public.point_awarder_grants USING btree (user_id) WHERE (revoked_at IS NULL);
+
+
+--
+-- Name: uq_point_tx_challenge_refs; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX uq_point_tx_challenge_refs ON public.point_transactions USING btree (source, reference_id, category) NULLS NOT DISTINCT WHERE ((reference_id IS NOT NULL) AND (source = ANY (ARRAY['challenge_reward'::public.point_source, 'campaign_multiplier_bonus'::public.point_source])));
 
 
 --
@@ -15866,6 +18049,20 @@ CREATE TRIGGER trg_daily_attendance_updated_at BEFORE UPDATE ON public.daily_att
 --
 
 CREATE TRIGGER trg_evaluate_badges_point_tx AFTER INSERT ON public.point_transactions FOR EACH ROW EXECUTE FUNCTION public.trg_evaluate_badges_on_point_transaction();
+
+
+--
+-- Name: safety_briefing_answers trg_evaluate_challenges_briefing; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_evaluate_challenges_briefing AFTER INSERT ON public.safety_briefing_answers FOR EACH ROW EXECUTE FUNCTION public.trg_evaluate_challenges_on_briefing();
+
+
+--
+-- Name: point_transactions trg_evaluate_challenges_point_tx; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_evaluate_challenges_point_tx AFTER INSERT ON public.point_transactions FOR EACH ROW EXECUTE FUNCTION public.trg_evaluate_challenges_on_point_tx();
 
 
 --
@@ -16434,6 +18631,22 @@ ALTER TABLE ONLY public.attendance_summaries
 
 
 --
+-- Name: campaigns campaigns_challenge_key_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.campaigns
+    ADD CONSTRAINT campaigns_challenge_key_fkey FOREIGN KEY (challenge_key) REFERENCES public.challenges(challenge_key);
+
+
+--
+-- Name: campaigns campaigns_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.campaigns
+    ADD CONSTRAINT campaigns_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id);
+
+
+--
 -- Name: certification_access_grants certification_access_grants_certification_type_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -16583,6 +18796,46 @@ ALTER TABLE ONLY public.certification_records
 
 ALTER TABLE ONLY public.certification_records
     ADD CONSTRAINT certification_records_written_attempt_id_fkey FOREIGN KEY (written_attempt_id) REFERENCES public.certification_attempts(id);
+
+
+--
+-- Name: challenge_completions challenge_completions_base_tx_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.challenge_completions
+    ADD CONSTRAINT challenge_completions_base_tx_id_fkey FOREIGN KEY (base_tx_id) REFERENCES public.point_transactions(id);
+
+
+--
+-- Name: challenge_completions challenge_completions_campaign_key_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.challenge_completions
+    ADD CONSTRAINT challenge_completions_campaign_key_fkey FOREIGN KEY (campaign_key) REFERENCES public.campaigns(campaign_key);
+
+
+--
+-- Name: challenge_completions challenge_completions_challenge_key_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.challenge_completions
+    ADD CONSTRAINT challenge_completions_challenge_key_fkey FOREIGN KEY (challenge_key) REFERENCES public.challenges(challenge_key);
+
+
+--
+-- Name: challenge_completions challenge_completions_multiplier_tx_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.challenge_completions
+    ADD CONSTRAINT challenge_completions_multiplier_tx_id_fkey FOREIGN KEY (multiplier_tx_id) REFERENCES public.point_transactions(id);
+
+
+--
+-- Name: challenge_completions challenge_completions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.challenge_completions
+    ADD CONSTRAINT challenge_completions_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
 
 
 --
@@ -17689,6 +19942,13 @@ CREATE POLICY "Admins manage catalog update" ON public.reward_catalog FOR UPDATE
 
 
 --
+-- Name: challenges Admins manage challenges; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Admins manage challenges" ON public.challenges TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+
+--
 -- Name: level_tiers Admins manage level tiers; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17700,6 +19960,13 @@ CREATE POLICY "Admins manage level tiers" ON public.level_tiers TO authenticated
 --
 
 CREATE POLICY "Admins manage point rules" ON public.point_rules TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+
+--
+-- Name: challenge_completions Admins read all challenge completions; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Admins read all challenge completions" ON public.challenge_completions FOR SELECT TO authenticated USING (public.is_admin());
 
 
 --
@@ -17745,6 +20012,20 @@ CREATE POLICY "Authenticated read badges" ON public.badges FOR SELECT TO authent
 
 
 --
+-- Name: campaigns Authenticated read campaigns; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Authenticated read campaigns" ON public.campaigns FOR SELECT TO authenticated USING (true);
+
+
+--
+-- Name: challenges Authenticated read challenges; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Authenticated read challenges" ON public.challenges FOR SELECT TO authenticated USING (true);
+
+
+--
 -- Name: gamification_settings Authenticated read gamification settings; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17770,6 +20051,13 @@ CREATE POLICY "Authenticated read point rules" ON public.point_rules FOR SELECT 
 --
 
 CREATE POLICY "Authenticated read recognition feed" ON public.recognition_feed FOR SELECT TO authenticated USING (true);
+
+
+--
+-- Name: seasons Authenticated read seasons; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Authenticated read seasons" ON public.seasons FOR SELECT TO authenticated USING (true);
 
 
 --
@@ -17847,6 +20135,20 @@ CREATE POLICY "Preferences service role" ON public.notification_preferences TO s
 
 
 --
+-- Name: campaigns Program admins manage campaigns; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Program admins manage campaigns" ON public.campaigns TO authenticated USING (public.is_gamification_program_admin()) WITH CHECK (public.is_gamification_program_admin());
+
+
+--
+-- Name: seasons Program admins manage seasons; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Program admins manage seasons" ON public.seasons TO authenticated USING (public.is_gamification_program_admin()) WITH CHECK (public.is_gamification_program_admin());
+
+
+--
 -- Name: gamification_baseline_cohort Program admins read gamification baseline cohort; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17909,6 +20211,27 @@ CREATE POLICY "Service role full access briefing answers" ON public.safety_brief
 --
 
 CREATE POLICY "Service role full access briefing items" ON public.safety_briefing_answer_items TO service_role USING (true) WITH CHECK (true);
+
+
+--
+-- Name: campaigns Service role full access campaigns; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Service role full access campaigns" ON public.campaigns TO service_role USING (true) WITH CHECK (true);
+
+
+--
+-- Name: challenge_completions Service role full access challenge completions; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Service role full access challenge completions" ON public.challenge_completions TO service_role USING (true) WITH CHECK (true);
+
+
+--
+-- Name: challenges Service role full access challenges; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Service role full access challenges" ON public.challenges TO service_role USING (true) WITH CHECK (true);
 
 
 --
@@ -17979,6 +20302,13 @@ CREATE POLICY "Service role full access reward catalog" ON public.reward_catalog
 --
 
 CREATE POLICY "Service role full access rewards" ON public.monthly_safety_rewards TO service_role USING (true) WITH CHECK (true);
+
+
+--
+-- Name: seasons Service role full access seasons; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Service role full access seasons" ON public.seasons TO service_role USING (true) WITH CHECK (true);
 
 
 --
@@ -18130,6 +20460,13 @@ CREATE POLICY "Users read own awarder grant" ON public.point_awarder_grants FOR 
 --
 
 CREATE POLICY "Users read own badges" ON public.user_badges FOR SELECT TO authenticated USING ((user_id = auth.uid()));
+
+
+--
+-- Name: challenge_completions Users read own challenge completions; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Users read own challenge completions" ON public.challenge_completions FOR SELECT TO authenticated USING ((user_id = auth.uid()));
 
 
 --
@@ -18388,6 +20725,12 @@ CREATE POLICY auto_tuning_config_service_all ON public.auto_tuning_config TO ser
 ALTER TABLE public.badges ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: campaigns; Type: ROW SECURITY; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.campaigns ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: certification_access_grants cert_access_grants_admin_delete; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -18564,6 +20907,18 @@ ALTER TABLE public.certification_records ENABLE ROW LEVEL SECURITY;
 --
 
 ALTER TABLE public.certification_types ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: challenge_completions; Type: ROW SECURITY; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.challenge_completions ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: challenges; Type: ROW SECURITY; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.challenges ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: company_calendar; Type: ROW SECURITY; Schema: public; Owner: postgres
@@ -19724,6 +22079,12 @@ CREATE POLICY schedules_update ON public.maintenance_schedules FOR UPDATE TO aut
 
 
 --
+-- Name: seasons; Type: ROW SECURITY; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.seasons ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: sms_escalation_recipients; Type: ROW SECURITY; Schema: public; Owner: postgres
 --
 
@@ -20113,6 +22474,24 @@ GRANT ALL ON FUNCTION public.app_settings_touch_updated_at() TO service_role;
 
 
 --
+-- Name: FUNCTION are_challenges_enabled(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.are_challenges_enabled() TO anon;
+GRANT ALL ON FUNCTION public.are_challenges_enabled() TO authenticated;
+GRANT ALL ON FUNCTION public.are_challenges_enabled() TO service_role;
+
+
+--
+-- Name: FUNCTION are_seasons_enabled(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.are_seasons_enabled() TO anon;
+GRANT ALL ON FUNCTION public.are_seasons_enabled() TO authenticated;
+GRANT ALL ON FUNCTION public.are_seasons_enabled() TO service_role;
+
+
+--
 -- Name: FUNCTION assert_hire_dates_for_baseline(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -20147,6 +22526,16 @@ GRANT ALL ON FUNCTION public.award_badge(p_user_id uuid, p_badge_key text, p_pre
 GRANT ALL ON FUNCTION public.award_certification_points() TO anon;
 GRANT ALL ON FUNCTION public.award_certification_points() TO authenticated;
 GRANT ALL ON FUNCTION public.award_certification_points() TO service_role;
+
+
+--
+-- Name: FUNCTION award_challenge_completion(p_user_id uuid, p_completion_id uuid); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION public.award_challenge_completion(p_user_id uuid, p_completion_id uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.award_challenge_completion(p_user_id uuid, p_completion_id uuid) TO anon;
+GRANT ALL ON FUNCTION public.award_challenge_completion(p_user_id uuid, p_completion_id uuid) TO authenticated;
+GRANT ALL ON FUNCTION public.award_challenge_completion(p_user_id uuid, p_completion_id uuid) TO service_role;
 
 
 --
@@ -20273,6 +22662,15 @@ GRANT ALL ON FUNCTION public.certification_audit_log_on_qualification_change() T
 GRANT ALL ON FUNCTION public.certification_audit_log_on_revoke() TO anon;
 GRANT ALL ON FUNCTION public.certification_audit_log_on_revoke() TO authenticated;
 GRANT ALL ON FUNCTION public.certification_audit_log_on_revoke() TO service_role;
+
+
+--
+-- Name: FUNCTION challenge_condition_met(p_user_id uuid, p_challenge_key text, p_condition_spec jsonb, p_trigger text, p_activity_at timestamp with time zone, p_source public.point_source, p_category text, p_reference_id uuid, p_reference_table text); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.challenge_condition_met(p_user_id uuid, p_challenge_key text, p_condition_spec jsonb, p_trigger text, p_activity_at timestamp with time zone, p_source public.point_source, p_category text, p_reference_id uuid, p_reference_table text) TO anon;
+GRANT ALL ON FUNCTION public.challenge_condition_met(p_user_id uuid, p_challenge_key text, p_condition_spec jsonb, p_trigger text, p_activity_at timestamp with time zone, p_source public.point_source, p_category text, p_reference_id uuid, p_reference_table text) TO authenticated;
+GRANT ALL ON FUNCTION public.challenge_condition_met(p_user_id uuid, p_challenge_key text, p_condition_spec jsonb, p_trigger text, p_activity_at timestamp with time zone, p_source public.point_source, p_category text, p_reference_id uuid, p_reference_table text) TO service_role;
 
 
 --
@@ -20467,6 +22865,34 @@ GRANT ALL ON FUNCTION public.evaluate_user_badges(p_user_id uuid, p_trigger text
 
 
 --
+-- Name: FUNCTION evaluate_user_challenges_from_briefing(p_user_id uuid, p_briefing_id uuid, p_activity_at timestamp with time zone); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.evaluate_user_challenges_from_briefing(p_user_id uuid, p_briefing_id uuid, p_activity_at timestamp with time zone) TO anon;
+GRANT ALL ON FUNCTION public.evaluate_user_challenges_from_briefing(p_user_id uuid, p_briefing_id uuid, p_activity_at timestamp with time zone) TO authenticated;
+GRANT ALL ON FUNCTION public.evaluate_user_challenges_from_briefing(p_user_id uuid, p_briefing_id uuid, p_activity_at timestamp with time zone) TO service_role;
+
+
+--
+-- Name: FUNCTION evaluate_user_challenges_from_ledger(p_user_id uuid, p_source public.point_source, p_category text, p_reference_id uuid, p_reference_table text, p_activity_at timestamp with time zone); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.evaluate_user_challenges_from_ledger(p_user_id uuid, p_source public.point_source, p_category text, p_reference_id uuid, p_reference_table text, p_activity_at timestamp with time zone) TO anon;
+GRANT ALL ON FUNCTION public.evaluate_user_challenges_from_ledger(p_user_id uuid, p_source public.point_source, p_category text, p_reference_id uuid, p_reference_table text, p_activity_at timestamp with time zone) TO authenticated;
+GRANT ALL ON FUNCTION public.evaluate_user_challenges_from_ledger(p_user_id uuid, p_source public.point_source, p_category text, p_reference_id uuid, p_reference_table text, p_activity_at timestamp with time zone) TO service_role;
+
+
+--
+-- Name: FUNCTION finalize_season(p_season_key text); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION public.finalize_season(p_season_key text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.finalize_season(p_season_key text) TO anon;
+GRANT ALL ON FUNCTION public.finalize_season(p_season_key text) TO authenticated;
+GRANT ALL ON FUNCTION public.finalize_season(p_season_key text) TO service_role;
+
+
+--
 -- Name: FUNCTION fulfill_redemption(p_redemption_id uuid, p_note text); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -20476,12 +22902,57 @@ GRANT ALL ON FUNCTION public.fulfill_redemption(p_redemption_id uuid, p_note tex
 
 
 --
+-- Name: FUNCTION gamification_earning_sources(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.gamification_earning_sources() TO anon;
+GRANT ALL ON FUNCTION public.gamification_earning_sources() TO authenticated;
+GRANT ALL ON FUNCTION public.gamification_earning_sources() TO service_role;
+
+
+--
+-- Name: FUNCTION gamification_setting_bool(p_key text); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.gamification_setting_bool(p_key text) TO anon;
+GRANT ALL ON FUNCTION public.gamification_setting_bool(p_key text) TO authenticated;
+GRANT ALL ON FUNCTION public.gamification_setting_bool(p_key text) TO service_role;
+
+
+--
+-- Name: FUNCTION gamification_setting_text_array(p_key text); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.gamification_setting_text_array(p_key text) TO anon;
+GRANT ALL ON FUNCTION public.gamification_setting_text_array(p_key text) TO authenticated;
+GRANT ALL ON FUNCTION public.gamification_setting_text_array(p_key text) TO service_role;
+
+
+--
 -- Name: FUNCTION generate_certification_verification_code(); Type: ACL; Schema: public; Owner: postgres
 --
 
 GRANT ALL ON FUNCTION public.generate_certification_verification_code() TO anon;
 GRANT ALL ON FUNCTION public.generate_certification_verification_code() TO authenticated;
 GRANT ALL ON FUNCTION public.generate_certification_verification_code() TO service_role;
+
+
+--
+-- Name: FUNCTION get_active_challenge_for_activity(p_activity_at timestamp with time zone); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.get_active_challenge_for_activity(p_activity_at timestamp with time zone) TO anon;
+GRANT ALL ON FUNCTION public.get_active_challenge_for_activity(p_activity_at timestamp with time zone) TO authenticated;
+GRANT ALL ON FUNCTION public.get_active_challenge_for_activity(p_activity_at timestamp with time zone) TO service_role;
+
+
+--
+-- Name: FUNCTION get_active_season(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.get_active_season() TO anon;
+GRANT ALL ON FUNCTION public.get_active_season() TO authenticated;
+GRANT ALL ON FUNCTION public.get_active_season() TO service_role;
 
 
 --
@@ -20563,6 +23034,33 @@ GRANT ALL ON FUNCTION public.get_compliance_summary_by_day(p_date_from date, p_d
 GRANT ALL ON FUNCTION public.get_gamification_admin_metrics(p_start_date date, p_end_date date) TO anon;
 GRANT ALL ON FUNCTION public.get_gamification_admin_metrics(p_start_date date, p_end_date date) TO authenticated;
 GRANT ALL ON FUNCTION public.get_gamification_admin_metrics(p_start_date date, p_end_date date) TO service_role;
+
+
+--
+-- Name: FUNCTION get_gamification_phase2_admin_flags(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.get_gamification_phase2_admin_flags() TO anon;
+GRANT ALL ON FUNCTION public.get_gamification_phase2_admin_flags() TO authenticated;
+GRANT ALL ON FUNCTION public.get_gamification_phase2_admin_flags() TO service_role;
+
+
+--
+-- Name: FUNCTION get_gamification_program_owner_user_id(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.get_gamification_program_owner_user_id() TO anon;
+GRANT ALL ON FUNCTION public.get_gamification_program_owner_user_id() TO authenticated;
+GRANT ALL ON FUNCTION public.get_gamification_program_owner_user_id() TO service_role;
+
+
+--
+-- Name: FUNCTION get_gamification_season_standings(p_season_key text, p_limit integer); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.get_gamification_season_standings(p_season_key text, p_limit integer) TO anon;
+GRANT ALL ON FUNCTION public.get_gamification_season_standings(p_season_key text, p_limit integer) TO authenticated;
+GRANT ALL ON FUNCTION public.get_gamification_season_standings(p_season_key text, p_limit integer) TO service_role;
 
 
 --
@@ -20809,6 +23307,33 @@ GRANT ALL ON FUNCTION public.get_user_raffle_entries_by_source(target_user_id uu
 
 
 --
+-- Name: FUNCTION get_user_season_baseline_score(p_user_id uuid, p_season_key text); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.get_user_season_baseline_score(p_user_id uuid, p_season_key text) TO anon;
+GRANT ALL ON FUNCTION public.get_user_season_baseline_score(p_user_id uuid, p_season_key text) TO authenticated;
+GRANT ALL ON FUNCTION public.get_user_season_baseline_score(p_user_id uuid, p_season_key text) TO service_role;
+
+
+--
+-- Name: FUNCTION get_user_season_improvement_delta(p_user_id uuid, p_season_key text); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.get_user_season_improvement_delta(p_user_id uuid, p_season_key text) TO anon;
+GRANT ALL ON FUNCTION public.get_user_season_improvement_delta(p_user_id uuid, p_season_key text) TO authenticated;
+GRANT ALL ON FUNCTION public.get_user_season_improvement_delta(p_user_id uuid, p_season_key text) TO service_role;
+
+
+--
+-- Name: FUNCTION get_user_season_score(p_user_id uuid, p_season_key text); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.get_user_season_score(p_user_id uuid, p_season_key text) TO anon;
+GRANT ALL ON FUNCTION public.get_user_season_score(p_user_id uuid, p_season_key text) TO authenticated;
+GRANT ALL ON FUNCTION public.get_user_season_score(p_user_id uuid, p_season_key text) TO service_role;
+
+
+--
 -- Name: FUNCTION get_user_total_points(target_user_id uuid); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -20936,6 +23461,15 @@ GRANT ALL ON FUNCTION public.is_mechanic() TO service_role;
 
 
 --
+-- Name: FUNCTION is_phase2_master_enabled(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.is_phase2_master_enabled() TO anon;
+GRANT ALL ON FUNCTION public.is_phase2_master_enabled() TO authenticated;
+GRANT ALL ON FUNCTION public.is_phase2_master_enabled() TO service_role;
+
+
+--
 -- Name: FUNCTION is_reward_claim_window(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -20951,6 +23485,33 @@ GRANT ALL ON FUNCTION public.is_reward_claim_window() TO service_role;
 GRANT ALL ON FUNCTION public.is_supervisor() TO anon;
 GRANT ALL ON FUNCTION public.is_supervisor() TO authenticated;
 GRANT ALL ON FUNCTION public.is_supervisor() TO service_role;
+
+
+--
+-- Name: FUNCTION list_gamification_program_campaigns(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.list_gamification_program_campaigns() TO anon;
+GRANT ALL ON FUNCTION public.list_gamification_program_campaigns() TO authenticated;
+GRANT ALL ON FUNCTION public.list_gamification_program_campaigns() TO service_role;
+
+
+--
+-- Name: FUNCTION list_gamification_program_challenges(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.list_gamification_program_challenges() TO anon;
+GRANT ALL ON FUNCTION public.list_gamification_program_challenges() TO authenticated;
+GRANT ALL ON FUNCTION public.list_gamification_program_challenges() TO service_role;
+
+
+--
+-- Name: FUNCTION list_gamification_program_seasons(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.list_gamification_program_seasons() TO anon;
+GRANT ALL ON FUNCTION public.list_gamification_program_seasons() TO authenticated;
+GRANT ALL ON FUNCTION public.list_gamification_program_seasons() TO service_role;
 
 
 --
@@ -21028,6 +23589,25 @@ GRANT ALL ON FUNCTION public.notify_manual_award_recipient(p_request_id uuid) TO
 
 
 --
+-- Name: FUNCTION nudge_program_owner_season_needs_campaign(p_season_key text); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION public.nudge_program_owner_season_needs_campaign(p_season_key text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.nudge_program_owner_season_needs_campaign(p_season_key text) TO anon;
+GRANT ALL ON FUNCTION public.nudge_program_owner_season_needs_campaign(p_season_key text) TO authenticated;
+GRANT ALL ON FUNCTION public.nudge_program_owner_season_needs_campaign(p_season_key text) TO service_role;
+
+
+--
+-- Name: FUNCTION point_tx_in_season_window(p_amount integer, p_created_at timestamp with time zone, p_start_at timestamp with time zone, p_end_at timestamp with time zone); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.point_tx_in_season_window(p_amount integer, p_created_at timestamp with time zone, p_start_at timestamp with time zone, p_end_at timestamp with time zone) TO anon;
+GRANT ALL ON FUNCTION public.point_tx_in_season_window(p_amount integer, p_created_at timestamp with time zone, p_start_at timestamp with time zone, p_end_at timestamp with time zone) TO authenticated;
+GRANT ALL ON FUNCTION public.point_tx_in_season_window(p_amount integer, p_created_at timestamp with time zone, p_start_at timestamp with time zone, p_end_at timestamp with time zone) TO service_role;
+
+
+--
 -- Name: FUNCTION point_tx_matches_raffle_month(p_counts_toward_raffle boolean, p_amount integer, p_created_at timestamp with time zone, p_year integer, p_month integer); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -21061,6 +23641,26 @@ GRANT ALL ON FUNCTION public.prevent_equipment_user_id_change() TO service_role;
 GRANT ALL ON FUNCTION public.prevent_jsa_user_id_change() TO anon;
 GRANT ALL ON FUNCTION public.prevent_jsa_user_id_change() TO authenticated;
 GRANT ALL ON FUNCTION public.prevent_jsa_user_id_change() TO service_role;
+
+
+--
+-- Name: FUNCTION process_gamification_program_owner_nudges(); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION public.process_gamification_program_owner_nudges() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.process_gamification_program_owner_nudges() TO anon;
+GRANT ALL ON FUNCTION public.process_gamification_program_owner_nudges() TO authenticated;
+GRANT ALL ON FUNCTION public.process_gamification_program_owner_nudges() TO service_role;
+
+
+--
+-- Name: FUNCTION process_gamification_season_lifecycle(); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION public.process_gamification_season_lifecycle() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.process_gamification_season_lifecycle() TO anon;
+GRANT ALL ON FUNCTION public.process_gamification_season_lifecycle() TO authenticated;
+GRANT ALL ON FUNCTION public.process_gamification_season_lifecycle() TO service_role;
 
 
 --
@@ -21118,6 +23718,25 @@ GRANT ALL ON FUNCTION public.refresh_user_streak(p_user_id uuid, p_as_of timesta
 
 
 --
+-- Name: FUNCTION resolve_auto_weekly_challenge(p_week_start date); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.resolve_auto_weekly_challenge(p_week_start date) TO anon;
+GRANT ALL ON FUNCTION public.resolve_auto_weekly_challenge(p_week_start date) TO authenticated;
+GRANT ALL ON FUNCTION public.resolve_auto_weekly_challenge(p_week_start date) TO service_role;
+
+
+--
+-- Name: FUNCTION rotate_weekly_auto_challenge(p_as_of timestamp with time zone); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION public.rotate_weekly_auto_challenge(p_as_of timestamp with time zone) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.rotate_weekly_auto_challenge(p_as_of timestamp with time zone) TO anon;
+GRANT ALL ON FUNCTION public.rotate_weekly_auto_challenge(p_as_of timestamp with time zone) TO authenticated;
+GRANT ALL ON FUNCTION public.rotate_weekly_auto_challenge(p_as_of timestamp with time zone) TO service_role;
+
+
+--
 -- Name: FUNCTION run_data_retention(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -21154,6 +23773,15 @@ GRANT ALL ON FUNCTION public.save_setting_and_update_cron(p_setting_key text, p_
 
 
 --
+-- Name: FUNCTION season_has_active_campaign(p_season_key text); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.season_has_active_campaign(p_season_key text) TO anon;
+GRANT ALL ON FUNCTION public.season_has_active_campaign(p_season_key text) TO authenticated;
+GRANT ALL ON FUNCTION public.season_has_active_campaign(p_season_key text) TO service_role;
+
+
+--
 -- Name: FUNCTION set_certification_grading_started(p_attempt_id uuid); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -21178,6 +23806,24 @@ GRANT ALL ON FUNCTION public.set_daily_attendance_updated_at() TO service_role;
 GRANT ALL ON FUNCTION public.set_dvir_report_date() TO anon;
 GRANT ALL ON FUNCTION public.set_dvir_report_date() TO authenticated;
 GRANT ALL ON FUNCTION public.set_dvir_report_date() TO service_role;
+
+
+--
+-- Name: FUNCTION set_gamification_campaign_active(p_campaign_key text, p_is_active boolean); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.set_gamification_campaign_active(p_campaign_key text, p_is_active boolean) TO anon;
+GRANT ALL ON FUNCTION public.set_gamification_campaign_active(p_campaign_key text, p_is_active boolean) TO authenticated;
+GRANT ALL ON FUNCTION public.set_gamification_campaign_active(p_campaign_key text, p_is_active boolean) TO service_role;
+
+
+--
+-- Name: FUNCTION set_gamification_season_status(p_season_key text, p_status public.season_status); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.set_gamification_season_status(p_season_key text, p_status public.season_status) TO anon;
+GRANT ALL ON FUNCTION public.set_gamification_season_status(p_season_key text, p_status public.season_status) TO authenticated;
+GRANT ALL ON FUNCTION public.set_gamification_season_status(p_season_key text, p_status public.season_status) TO service_role;
 
 
 --
@@ -21307,6 +23953,24 @@ GRANT ALL ON FUNCTION public.trg_evaluate_badges_on_point_transaction() TO servi
 
 
 --
+-- Name: FUNCTION trg_evaluate_challenges_on_briefing(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.trg_evaluate_challenges_on_briefing() TO anon;
+GRANT ALL ON FUNCTION public.trg_evaluate_challenges_on_briefing() TO authenticated;
+GRANT ALL ON FUNCTION public.trg_evaluate_challenges_on_briefing() TO service_role;
+
+
+--
+-- Name: FUNCTION trg_evaluate_challenges_on_point_tx(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.trg_evaluate_challenges_on_point_tx() TO anon;
+GRANT ALL ON FUNCTION public.trg_evaluate_challenges_on_point_tx() TO authenticated;
+GRANT ALL ON FUNCTION public.trg_evaluate_challenges_on_point_tx() TO service_role;
+
+
+--
 -- Name: FUNCTION trg_record_weekly_streak_on_briefing(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -21340,6 +24004,16 @@ GRANT ALL ON FUNCTION public.trg_sync_streak_bonus_to_ledger() TO service_role;
 GRANT ALL ON FUNCTION public.trigger_safety_announcement() TO anon;
 GRANT ALL ON FUNCTION public.trigger_safety_announcement() TO authenticated;
 GRANT ALL ON FUNCTION public.trigger_safety_announcement() TO service_role;
+
+
+--
+-- Name: FUNCTION try_record_challenge_completion(p_user_id uuid, p_challenge_key text, p_window_key text, p_campaign_key text, p_completed_at timestamp with time zone); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION public.try_record_challenge_completion(p_user_id uuid, p_challenge_key text, p_window_key text, p_campaign_key text, p_completed_at timestamp with time zone) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.try_record_challenge_completion(p_user_id uuid, p_challenge_key text, p_window_key text, p_campaign_key text, p_completed_at timestamp with time zone) TO anon;
+GRANT ALL ON FUNCTION public.try_record_challenge_completion(p_user_id uuid, p_challenge_key text, p_window_key text, p_campaign_key text, p_completed_at timestamp with time zone) TO authenticated;
+GRANT ALL ON FUNCTION public.try_record_challenge_completion(p_user_id uuid, p_challenge_key text, p_window_key text, p_campaign_key text, p_completed_at timestamp with time zone) TO service_role;
 
 
 --
@@ -21451,6 +24125,24 @@ GRANT ALL ON FUNCTION public.update_work_sites_updated_at() TO service_role;
 
 
 --
+-- Name: FUNCTION upsert_gamification_campaign(p_campaign_key text, p_challenge_key text, p_starts_at timestamp with time zone, p_ends_at timestamp with time zone, p_title text, p_multiplier numeric); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.upsert_gamification_campaign(p_campaign_key text, p_challenge_key text, p_starts_at timestamp with time zone, p_ends_at timestamp with time zone, p_title text, p_multiplier numeric) TO anon;
+GRANT ALL ON FUNCTION public.upsert_gamification_campaign(p_campaign_key text, p_challenge_key text, p_starts_at timestamp with time zone, p_ends_at timestamp with time zone, p_title text, p_multiplier numeric) TO authenticated;
+GRANT ALL ON FUNCTION public.upsert_gamification_campaign(p_campaign_key text, p_challenge_key text, p_starts_at timestamp with time zone, p_ends_at timestamp with time zone, p_title text, p_multiplier numeric) TO service_role;
+
+
+--
+-- Name: FUNCTION upsert_gamification_season(p_season_key text, p_name text, p_start_at timestamp with time zone, p_end_at timestamp with time zone, p_theme text, p_most_improved_enabled boolean, p_sort_order integer); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.upsert_gamification_season(p_season_key text, p_name text, p_start_at timestamp with time zone, p_end_at timestamp with time zone, p_theme text, p_most_improved_enabled boolean, p_sort_order integer) TO anon;
+GRANT ALL ON FUNCTION public.upsert_gamification_season(p_season_key text, p_name text, p_start_at timestamp with time zone, p_end_at timestamp with time zone, p_theme text, p_most_improved_enabled boolean, p_sort_order integer) TO authenticated;
+GRANT ALL ON FUNCTION public.upsert_gamification_season(p_season_key text, p_name text, p_start_at timestamp with time zone, p_end_at timestamp with time zone, p_theme text, p_most_improved_enabled boolean, p_sort_order integer) TO service_role;
+
+
+--
 -- Name: FUNCTION user_has_certification_access(p_user_id uuid, p_certification_type_id uuid); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -21493,6 +24185,15 @@ GRANT ALL ON FUNCTION public.verify_gamification_workforce_levels() TO service_r
 GRANT ALL ON FUNCTION public.week_has_meaningful_streak_activity(p_user_id uuid, p_week_start date) TO anon;
 GRANT ALL ON FUNCTION public.week_has_meaningful_streak_activity(p_user_id uuid, p_week_start date) TO authenticated;
 GRANT ALL ON FUNCTION public.week_has_meaningful_streak_activity(p_user_id uuid, p_week_start date) TO service_role;
+
+
+--
+-- Name: FUNCTION weekly_challenge_window_key(p_week_start date); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.weekly_challenge_window_key(p_week_start date) TO anon;
+GRANT ALL ON FUNCTION public.weekly_challenge_window_key(p_week_start date) TO authenticated;
+GRANT ALL ON FUNCTION public.weekly_challenge_window_key(p_week_start date) TO service_role;
 
 
 --
@@ -21846,6 +24547,15 @@ GRANT ALL ON TABLE public.badges TO service_role;
 
 
 --
+-- Name: TABLE campaigns; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.campaigns TO anon;
+GRANT ALL ON TABLE public.campaigns TO authenticated;
+GRANT ALL ON TABLE public.campaigns TO service_role;
+
+
+--
 -- Name: TABLE certification_access_grants; Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -21897,6 +24607,24 @@ GRANT ALL ON TABLE public.certification_expiration_notifications TO service_role
 GRANT ALL ON TABLE public.certification_questions TO anon;
 GRANT ALL ON TABLE public.certification_questions TO authenticated;
 GRANT ALL ON TABLE public.certification_questions TO service_role;
+
+
+--
+-- Name: TABLE challenge_completions; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.challenge_completions TO anon;
+GRANT ALL ON TABLE public.challenge_completions TO authenticated;
+GRANT ALL ON TABLE public.challenge_completions TO service_role;
+
+
+--
+-- Name: TABLE challenges; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.challenges TO anon;
+GRANT ALL ON TABLE public.challenges TO authenticated;
+GRANT ALL ON TABLE public.challenges TO service_role;
 
 
 --
@@ -22422,6 +25150,15 @@ GRANT ALL ON TABLE public.scheduled_cron_jobs TO service_role;
 
 
 --
+-- Name: TABLE seasons; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.seasons TO anon;
+GRANT ALL ON TABLE public.seasons TO authenticated;
+GRANT ALL ON TABLE public.seasons TO service_role;
+
+
+--
 -- Name: TABLE sms_escalation_recipients; Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -22679,5 +25416,5 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON T
 -- PostgreSQL database dump complete
 --
 
-\unrestrict bPmiPrVuXf7kdyj7Na8hTh2NHe1MyHlTeViXSlXRQbdZW8G1BG0sQJk5YCc16Ke
+\unrestrict fBvrUcXZoLb3pegfSBM8DzuhmqGZczNiwM9Kr7T30fjIFek4P36p2nI9l3FGeFq
 
