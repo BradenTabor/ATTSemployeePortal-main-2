@@ -1,11 +1,11 @@
--- Source: prod HEAD 20260608021312
+-- Source: prod HEAD 20260608181348
 -- Capture date: 2026-06-08
 -- Regenerated only at a deliberate re-baseline — see docs/CONVENTIONS.md (re-baseline runbook).
 --
 -- PostgreSQL database dump
 --
 
-\restrict 3qs4Ao4SPmTg4RurpbXmspPfVCaVV8PN5AfY1cRb315ro4SElp4jK3sf2anP7ae
+\restrict bPmiPrVuXf7kdyj7Na8hTh2NHe1MyHlTeViXSlXRQbdZW8G1BG0sQJk5YCc16Ke
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.10 (Homebrew)
@@ -196,6 +196,20 @@ CREATE TYPE public.point_source AS ENUM (
 
 
 ALTER TYPE public.point_source OWNER TO postgres;
+
+--
+-- Name: recognition_event_type; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.recognition_event_type AS ENUM (
+    'tier_promotion',
+    'badge_awarded',
+    'tenure_milestone',
+    'streak_milestone'
+);
+
+
+ALTER TYPE public.recognition_event_type OWNER TO postgres;
 
 --
 -- Name: redemption_status; Type: TYPE; Schema: public; Owner: postgres
@@ -709,6 +723,59 @@ $$;
 ALTER FUNCTION public.app_settings_touch_updated_at() OWNER TO postgres;
 
 --
+-- Name: assert_hire_dates_for_baseline(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.assert_hire_dates_for_baseline() RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_missing jsonb;
+  v_count int;
+BEGIN
+  SELECT COALESCE(
+    (
+      SELECT jsonb_agg(
+        jsonb_build_object(
+          'user_id', au.user_id,
+          'full_name', au.full_name,
+          'email', u.email,
+          'role', au.role
+        )
+        ORDER BY au.full_name NULLS LAST, u.email
+      )
+      FROM public.app_users au
+      JOIN auth.users u ON u.id = au.user_id
+      WHERE au.hire_date IS NULL
+        AND NOT public.is_gamification_test_account(u.email)
+    ),
+    '[]'::jsonb
+  )
+  INTO v_missing;
+
+  v_count := jsonb_array_length(v_missing);
+
+  IF v_count > 0 THEN
+    RAISE EXCEPTION
+      'hire_date precondition failed: % real user(s) missing hire_date: %',
+      v_count,
+      v_missing::text;
+  END IF;
+END;
+$$;
+
+
+ALTER FUNCTION public.assert_hire_dates_for_baseline() OWNER TO postgres;
+
+--
+-- Name: FUNCTION assert_hire_dates_for_baseline(); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.assert_hire_dates_for_baseline() IS 'Raises when any non-test user lacks hire_date. Required before baseline capture.';
+
+
+--
 -- Name: audit_app_settings(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -724,6 +791,52 @@ $$;
 
 
 ALTER FUNCTION public.audit_app_settings() OWNER TO postgres;
+
+--
+-- Name: award_badge(uuid, text, integer, uuid, text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.award_badge(p_user_id uuid, p_badge_key text, p_prestige_tier integer DEFAULT 1, p_reference_id uuid DEFAULT NULL::uuid, p_reference_table text DEFAULT NULL::text) RETURNS uuid
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_id uuid;
+BEGIN
+  IF p_user_id IS NULL OR p_badge_key IS NULL THEN
+    RETURN NULL;
+  END IF;
+
+  IF p_prestige_tier IS NULL OR p_prestige_tier NOT BETWEEN 1 AND 3 THEN
+    RAISE EXCEPTION 'award_badge: prestige_tier must be 1–3, got %', p_prestige_tier;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.badges b
+    WHERE b.badge_key = p_badge_key
+      AND b.is_active
+      AND p_prestige_tier <= b.prestige_max
+  ) THEN
+    RETURN NULL;
+  END IF;
+
+  INSERT INTO public.user_badges
+    (user_id, badge_key, prestige_tier, reference_id, reference_table)
+  VALUES
+    (p_user_id, p_badge_key, p_prestige_tier, p_reference_id, p_reference_table)
+  ON CONFLICT (user_id, badge_key, prestige_tier) DO NOTHING
+  RETURNING id INTO v_id;
+
+  IF v_id IS NOT NULL THEN
+    PERFORM public.maybe_emit_badge_recognition(p_user_id, p_badge_key, p_prestige_tier);
+  END IF;
+
+  RETURN v_id;
+END;
+$$;
+
+
+ALTER FUNCTION public.award_badge(p_user_id uuid, p_badge_key text, p_prestige_tier integer, p_reference_id uuid, p_reference_table text) OWNER TO postgres;
 
 --
 -- Name: award_certification_points(); Type: FUNCTION; Schema: public; Owner: postgres
@@ -782,6 +895,13 @@ BEGIN
     v_category,
     true
   );
+
+  BEGIN
+    PERFORM public.evaluate_user_badges(NEW.user_id, 'cert_active');
+  EXCEPTION
+    WHEN OTHERS THEN
+      RAISE WARNING 'badge eval cert_active failed for user %: %', NEW.user_id, SQLERRM;
+  END;
 
   RETURN NEW;
 END;
@@ -956,8 +1076,12 @@ BEGIN
     RAISE EXCEPTION 'Cannot award points to yourself';
   END IF;
 
-  IF p_amount IS NULL OR p_amount <= 0 THEN
-    RAISE EXCEPTION 'Amount must be positive';
+  IF p_amount IS NULL OR p_amount = 0 THEN
+    RAISE EXCEPTION 'Amount must be non-zero';
+  END IF;
+
+  IF p_amount < 0 AND NOT public.is_admin() THEN
+    RAISE EXCEPTION 'Only admins may deduct points';
   END IF;
 
   IF v_reason = '' THEN
@@ -980,7 +1104,7 @@ BEGIN
     RETURN v_tx_id;
   END IF;
 
-  IF NOT public.is_admin() THEN
+  IF NOT public.is_admin() AND p_amount > 0 THEN
     SELECT * INTO v_grant
     FROM public.point_awarder_grants g
     WHERE g.user_id = v_actor
@@ -1035,7 +1159,7 @@ ALTER FUNCTION public.award_points(p_recipient uuid, p_amount integer, p_categor
 -- Name: FUNCTION award_points(p_recipient uuid, p_amount integer, p_category text, p_reason text, p_request_id uuid); Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON FUNCTION public.award_points(p_recipient uuid, p_amount integer, p_category text, p_reason text, p_request_id uuid) IS 'Manual point award entry point. Self-gating (permission, recipient, self, amount, reason, category, cap/budget for non-admins) and idempotent on p_request_id. Writes a manual_award ledger row (counts_toward_raffle = true) and returns its tx id.';
+COMMENT ON FUNCTION public.award_points(p_recipient uuid, p_amount integer, p_category text, p_reason text, p_request_id uuid) IS 'Manual point award entry point. Self-gating (permission, recipient, self, amount, reason, category, cap/budget for non-admins) and idempotent on p_request_id. Admins may pass negative amounts to deduct points. Writes a manual_award ledger row (counts_toward_raffle = true) and returns its tx id.';
 
 
 --
@@ -1440,6 +1564,115 @@ COMMENT ON FUNCTION public.cancel_redemption(p_redemption_id uuid) IS 'User (own
 
 
 --
+-- Name: capture_gamification_baseline_cohort(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.capture_gamification_baseline_cohort() RETURNS jsonb
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_capture_date date := (now() AT TIME ZONE 'America/Chicago')::date;
+  v_window_start date := v_capture_date - 90;
+  v_existing int;
+  v_inserted int;
+  v_missing jsonb;
+BEGIN
+  IF NOT public.is_gamification_program_admin() THEN
+    RAISE EXCEPTION 'Gamification program admin access required';
+  END IF;
+
+  SELECT count(*)::int
+  INTO v_existing
+  FROM public.gamification_baseline_cohort;
+
+  IF v_existing > 0 THEN
+    RAISE EXCEPTION
+      'baseline cohort already captured (% user(s) on file). Re-baseline is not supported in Phase 1.',
+      v_existing;
+  END IF;
+
+  PERFORM public.assert_hire_dates_for_baseline();
+
+  WITH earn AS (
+    SELECT
+      pt.user_id,
+      COALESCE(SUM(pt.amount), 0)::int AS prior_90d_earn
+    FROM public.point_transactions pt
+    WHERE pt.amount > 0
+      AND pt.source IN (
+        'announcement_claim', 'compliance_form', 'streak_bonus',
+        'near_miss_report', 'certification', 'manual_award'
+      )
+      AND (pt.created_at AT TIME ZONE 'America/Chicago')::date >= v_window_start
+      AND (pt.created_at AT TIME ZONE 'America/Chicago')::date < v_capture_date
+    GROUP BY pt.user_id
+  ),
+  days AS (
+    SELECT
+      pt.user_id,
+      count(DISTINCT (pt.created_at AT TIME ZONE 'America/Chicago')::date)::int AS prior_90d_active_days
+    FROM public.point_transactions pt
+    WHERE pt.amount > 0
+      AND pt.source IN (
+        'announcement_claim', 'compliance_form', 'streak_bonus',
+        'near_miss_report', 'certification', 'manual_award'
+      )
+      AND (pt.created_at AT TIME ZONE 'America/Chicago')::date >= v_window_start
+      AND (pt.created_at AT TIME ZONE 'America/Chicago')::date < v_capture_date
+    GROUP BY pt.user_id
+  ),
+  cohort AS (
+    SELECT
+      au.user_id,
+      COALESCE(earn.prior_90d_earn, 0)::int AS prior_90d_earn,
+      COALESCE(days.prior_90d_active_days, 0)::int AS prior_90d_active_days
+    FROM public.app_users au
+    JOIN auth.users u ON u.id = au.user_id
+    LEFT JOIN earn ON earn.user_id = au.user_id
+    LEFT JOIN days ON days.user_id = au.user_id
+    WHERE public.is_competition_eligible(au.user_id)
+      AND NOT public.is_gamification_test_account(u.email)
+      AND COALESCE(days.prior_90d_active_days, 0) <= 2
+  ),
+  ins AS (
+    INSERT INTO public.gamification_baseline_cohort
+      (user_id, captured_at, snapshot_reason, prior_90d_earn, prior_90d_active_days)
+    SELECT
+      c.user_id,
+      now(),
+      'pre_launch_90d_rarely_active',
+      c.prior_90d_earn,
+      c.prior_90d_active_days
+    FROM cohort c
+    RETURNING 1
+  )
+  SELECT count(*)::int INTO v_inserted FROM ins;
+
+  SELECT public.get_real_users_missing_hire_date() INTO v_missing;
+
+  RETURN jsonb_build_object(
+    'status', 'captured',
+    'cohort_size', v_inserted,
+    'capture_date', v_capture_date,
+    'window_start', v_window_start,
+    'missing_hire_dates', v_missing,
+    'missing_hire_date_count', jsonb_array_length(v_missing)
+  );
+END;
+$$;
+
+
+ALTER FUNCTION public.capture_gamification_baseline_cohort() OWNER TO postgres;
+
+--
+-- Name: FUNCTION capture_gamification_baseline_cohort(); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.capture_gamification_baseline_cohort() IS 'One-time pre-launch baseline snapshot. Asserts hire_date precondition; refuses if already captured.';
+
+
+--
 -- Name: certification_audit_log_on_qualification_change(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1558,6 +1791,26 @@ $$;
 
 
 ALTER FUNCTION public.check_reward_claim_window() OWNER TO postgres;
+
+--
+-- Name: chicago_iso_week_start(timestamp with time zone); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.chicago_iso_week_start(p_ts timestamp with time zone) RETURNS date
+    LANGUAGE sql IMMUTABLE PARALLEL SAFE
+    AS $$
+  SELECT (date_trunc('week', (p_ts AT TIME ZONE 'America/Chicago')::timestamp))::date;
+$$;
+
+
+ALTER FUNCTION public.chicago_iso_week_start(p_ts timestamp with time zone) OWNER TO postgres;
+
+--
+-- Name: FUNCTION chicago_iso_week_start(p_ts timestamp with time zone); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.chicago_iso_week_start(p_ts timestamp with time zone) IS 'ISO week start (Monday) for a timestamptz in America/Chicago. Gate 3 weekly streak boundary.';
+
 
 --
 -- Name: claim_payroll_reminder_sms_log(date, integer); Type: FUNCTION; Schema: public; Owner: postgres
@@ -1967,6 +2220,46 @@ COMMENT ON FUNCTION public.deny_redemption(p_redemption_id uuid, p_note text) IS
 
 
 --
+-- Name: emit_recognition_event(public.recognition_event_type, uuid, jsonb, text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.emit_recognition_event(p_event_type public.recognition_event_type, p_subject_user_id uuid, p_payload jsonb, p_dedupe_key text) RETURNS uuid
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_id uuid;
+BEGIN
+  IF p_subject_user_id IS NULL OR p_dedupe_key IS NULL OR btrim(p_dedupe_key) = '' THEN
+    RETURN NULL;
+  END IF;
+
+  IF p_payload IS NULL OR p_payload = 'null'::jsonb THEN
+    RETURN NULL;
+  END IF;
+
+  INSERT INTO public.recognition_feed
+    (event_type, subject_user_id, payload, dedupe_key)
+  VALUES
+    (p_event_type, p_subject_user_id, p_payload, p_dedupe_key)
+  ON CONFLICT (dedupe_key) DO NOTHING
+  RETURNING id INTO v_id;
+
+  RETURN v_id;
+END;
+$$;
+
+
+ALTER FUNCTION public.emit_recognition_event(p_event_type public.recognition_event_type, p_subject_user_id uuid, p_payload jsonb, p_dedupe_key text) OWNER TO postgres;
+
+--
+-- Name: FUNCTION emit_recognition_event(p_event_type public.recognition_event_type, p_subject_user_id uuid, p_payload jsonb, p_dedupe_key text); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.emit_recognition_event(p_event_type public.recognition_event_type, p_subject_user_id uuid, p_payload jsonb, p_dedupe_key text) IS 'Idempotent recognition feed insert. Positive-only curated events; dedupe_key prevents re-evaluation duplicates.';
+
+
+--
 -- Name: ensure_single_default_contact_template(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1988,6 +2281,252 @@ $$;
 
 
 ALTER FUNCTION public.ensure_single_default_contact_template() OWNER TO postgres;
+
+--
+-- Name: streak_state; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.streak_state (
+    user_id uuid NOT NULL,
+    current_streak_weeks integer DEFAULT 0 NOT NULL,
+    longest_streak integer DEFAULT 0 NOT NULL,
+    last_active_week date,
+    freezes_remaining integer DEFAULT 1 NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.streak_state OWNER TO postgres;
+
+--
+-- Name: ensure_streak_state(uuid); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.ensure_streak_state(p_user_id uuid) RETURNS public.streak_state
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_row   public.streak_state;
+  v_freeze int;
+BEGIN
+  SELECT * INTO v_row FROM public.streak_state WHERE user_id = p_user_id;
+  IF FOUND THEN
+    RETURN v_row;
+  END IF;
+
+  SELECT COALESCE((gs.value)::int, 1)
+  INTO v_freeze
+  FROM public.gamification_settings gs
+  WHERE gs.key = 'streak_freezes_per_user';
+
+  INSERT INTO public.streak_state (user_id, freezes_remaining)
+  VALUES (p_user_id, COALESCE(v_freeze, 1))
+  RETURNING * INTO v_row;
+
+  RETURN v_row;
+END;
+$$;
+
+
+ALTER FUNCTION public.ensure_streak_state(p_user_id uuid) OWNER TO postgres;
+
+--
+-- Name: evaluate_tenure_badges_cron(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.evaluate_tenure_badges_cron() RETURNS jsonb
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_null_hire int;
+  v_processed int := 0;
+  r record;
+BEGIN
+  SELECT count(*)::int
+  INTO v_null_hire
+  FROM public.app_users au
+  WHERE au.hire_date IS NULL;
+
+  FOR r IN
+    SELECT au.user_id
+    FROM public.app_users au
+    WHERE au.hire_date IS NOT NULL
+  LOOP
+    PERFORM public.evaluate_user_badges(r.user_id, 'tenure');
+    v_processed := v_processed + 1;
+  END LOOP;
+
+  RETURN jsonb_build_object(
+    'processed_with_hire_date', v_processed,
+    'null_hire_date_count', v_null_hire,
+    'evaluated_at', now()
+  );
+END;
+$$;
+
+
+ALTER FUNCTION public.evaluate_tenure_badges_cron() OWNER TO postgres;
+
+--
+-- Name: FUNCTION evaluate_tenure_badges_cron(); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.evaluate_tenure_badges_cron() IS 'Daily tenure badge evaluation. Skips NULL hire_date; returns NULL count for admin backfill tracking.';
+
+
+--
+-- Name: evaluate_user_badges(uuid, text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.evaluate_user_badges(p_user_id uuid, p_trigger text DEFAULT 'all'::text) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_actionable_count   int;
+  v_distinct_certs     int;
+  v_has_redemption     boolean;
+  v_streak_weeks       int;
+  v_tenure_years       int;
+  v_tier_order         int;
+  v_sharp_thresholds   jsonb;
+  v_stacked_thresholds jsonb;
+  v_streak_thresholds  jsonb;
+  v_threshold          int;
+  v_tier               int;
+BEGIN
+  IF p_user_id IS NULL THEN
+    RETURN;
+  END IF;
+
+  SELECT value INTO v_sharp_thresholds
+  FROM public.gamification_settings WHERE key = 'sharp_eye_prestige_counts';
+  SELECT value INTO v_stacked_thresholds
+  FROM public.gamification_settings WHERE key = 'cert_stacked_prestige_counts';
+  SELECT value INTO v_streak_thresholds
+  FROM public.gamification_settings WHERE key = 'streak_milestone_weeks';
+
+  -- Sharp Eye — actionable near-misses via corrective_bonus per incident (Gate 0 resolution)
+  IF p_trigger IN ('all', 'near_miss_actionable') THEN
+    SELECT count(DISTINCT ca.incident_id)::int
+    INTO v_actionable_count
+    FROM public.point_transactions pt
+    JOIN public.corrective_actions ca ON ca.id = pt.reference_id
+    JOIN public.safety_incidents si ON si.id = ca.incident_id
+    WHERE pt.user_id = p_user_id
+      AND pt.source = 'near_miss_report'
+      AND pt.category = 'corrective_bonus'
+      AND pt.amount > 0
+      AND si.severity = 'near_miss';
+
+    IF v_sharp_thresholds IS NOT NULL AND jsonb_typeof(v_sharp_thresholds) = 'array' THEN
+      FOR v_tier IN 1..LEAST(jsonb_array_length(v_sharp_thresholds), 3) LOOP
+        v_threshold := (v_sharp_thresholds->>(v_tier - 1))::int;
+        IF v_actionable_count >= v_threshold THEN
+          PERFORM public.award_badge(p_user_id, 'sharp_eye', v_tier);
+        END IF;
+      END LOOP;
+    END IF;
+  END IF;
+
+  -- Certified + Stacked — active certification types
+  IF p_trigger IN ('all', 'cert_active') THEN
+    SELECT count(DISTINCT cr.certification_type_id)::int
+    INTO v_distinct_certs
+    FROM public.certification_records cr
+    WHERE cr.user_id = p_user_id
+      AND cr.status = 'active';
+
+    IF v_distinct_certs >= 1 THEN
+      PERFORM public.award_badge(p_user_id, 'certified', 1);
+    END IF;
+
+    IF v_stacked_thresholds IS NOT NULL AND jsonb_typeof(v_stacked_thresholds) = 'array' THEN
+      FOR v_tier IN 1..LEAST(jsonb_array_length(v_stacked_thresholds), 3) LOOP
+        v_threshold := (v_stacked_thresholds->>(v_tier - 1))::int;
+        IF v_distinct_certs >= v_threshold THEN
+          PERFORM public.award_badge(p_user_id, 'stacked', v_tier);
+        END IF;
+      END LOOP;
+    END IF;
+  END IF;
+
+  -- Cashed In — first redemption
+  IF p_trigger IN ('all', 'redemption') THEN
+    SELECT EXISTS (
+      SELECT 1 FROM public.redemptions r WHERE r.user_id = p_user_id
+    ) INTO v_has_redemption;
+
+    IF v_has_redemption THEN
+      PERFORM public.award_badge(p_user_id, 'cashed_in', 1);
+    END IF;
+  END IF;
+
+  -- On the Board — first major tier (tier_order >= 2)
+  IF p_trigger IN ('all', 'tier_up') THEN
+    SELECT gl.tier_order
+    INTO v_tier_order
+    FROM public.get_user_level(p_user_id) gl;
+
+    IF COALESCE(v_tier_order, 1) >= 2 THEN
+      PERFORM public.award_badge(p_user_id, 'on_the_board', 1);
+    END IF;
+  END IF;
+
+  -- Lit — streak week milestones (streak engine populates streak_state in Gate 3)
+  IF p_trigger IN ('all', 'streak') THEN
+    SELECT ss.current_streak_weeks
+    INTO v_streak_weeks
+    FROM public.streak_state ss
+    WHERE ss.user_id = p_user_id;
+
+    v_streak_weeks := COALESCE(v_streak_weeks, 0);
+
+    IF v_streak_thresholds IS NOT NULL AND jsonb_typeof(v_streak_thresholds) = 'array' THEN
+      FOR v_tier IN 1..LEAST(jsonb_array_length(v_streak_thresholds), 3) LOOP
+        v_threshold := (v_streak_thresholds->>(v_tier - 1))::int;
+        IF v_streak_weeks >= v_threshold THEN
+          PERFORM public.award_badge(p_user_id, 'lit', v_tier);
+        END IF;
+      END LOOP;
+    END IF;
+  END IF;
+
+  -- Tenure — skip NULL hire_date gracefully
+  IF p_trigger IN ('all', 'tenure') THEN
+    SELECT
+      EXTRACT(YEAR FROM age(current_date, au.hire_date))::int
+    INTO v_tenure_years
+    FROM public.app_users au
+    WHERE au.user_id = p_user_id
+      AND au.hire_date IS NOT NULL;
+
+    IF v_tenure_years IS NOT NULL THEN
+      IF v_tenure_years >= 1 THEN
+        PERFORM public.award_badge(p_user_id, 'one_ring', 1);
+      END IF;
+      IF v_tenure_years >= 5 THEN
+        PERFORM public.award_badge(p_user_id, 'five_rings', 1);
+      END IF;
+      IF v_tenure_years >= 10 THEN
+        PERFORM public.award_badge(p_user_id, 'old_timber', 1);
+      END IF;
+    END IF;
+  END IF;
+END;
+$$;
+
+
+ALTER FUNCTION public.evaluate_user_badges(p_user_id uuid, p_trigger text) OWNER TO postgres;
+
+--
+-- Name: FUNCTION evaluate_user_badges(p_user_id uuid, p_trigger text); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.evaluate_user_badges(p_user_id uuid, p_trigger text) IS 'Evaluates and idempotently awards eligible badges for a user. Trigger: all|first_visit|tier_up|near_miss_actionable|cert_active|redemption|streak|tenure.';
+
 
 --
 -- Name: fulfill_redemption(uuid, text); Type: FUNCTION; Schema: public; Owner: postgres
@@ -2514,6 +3053,349 @@ COMMENT ON FUNCTION public.get_compliance_summary_by_day(p_date_from date, p_dat
 
 
 --
+-- Name: get_gamification_admin_metrics(date, date); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.get_gamification_admin_metrics(p_start_date date DEFAULT (CURRENT_DATE - 30), p_end_date date DEFAULT CURRENT_DATE) RETURNS jsonb
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_start timestamptz;
+  v_end   timestamptz;
+  v_prior_start date;
+  v_prior_end   date;
+  v_span_days   int;
+  v_long_tail   jsonb;
+  v_cohort_size int;
+  v_activated   int;
+  v_ledger_lifetime int;
+  v_ledger_period int;
+  v_metrics_period int;
+  v_anomaly_count int;
+  v_missing_hire jsonb;
+  v_result jsonb;
+BEGIN
+  IF NOT public.is_gamification_program_admin() THEN
+    RAISE EXCEPTION 'Gamification program admin access required';
+  END IF;
+
+  IF p_start_date IS NULL OR p_end_date IS NULL OR p_end_date < p_start_date THEN
+    RAISE EXCEPTION 'Invalid date range';
+  END IF;
+
+  v_start := p_start_date::timestamptz;
+  v_end := (p_end_date + 1)::timestamptz;
+  v_span_days := (p_end_date - p_start_date) + 1;
+  v_prior_end := p_start_date - 1;
+  v_prior_start := v_prior_end - (v_span_days - 1);
+
+  SELECT public.get_real_users_missing_hire_date() INTO v_missing_hire;
+
+  SELECT count(*)::int
+  INTO v_cohort_size
+  FROM public.gamification_baseline_cohort;
+
+  IF v_cohort_size = 0 THEN
+    v_long_tail := jsonb_build_object(
+      'status', 'baseline_not_captured',
+      'message', 'baseline not yet captured',
+      'cohort_size', 0,
+      'activated_count', null,
+      'activation_rate_pct', null
+    );
+  ELSE
+    SELECT count(*)::int
+    INTO v_activated
+    FROM public.gamification_baseline_cohort gbc
+    WHERE public.get_user_lifetime_earned(gbc.user_id) > gbc.prior_90d_earn
+       OR EXISTS (
+         SELECT 1
+         FROM public.point_transactions pt
+         WHERE pt.user_id = gbc.user_id
+           AND pt.amount > 0
+           AND pt.created_at >= gbc.captured_at
+           AND pt.source IN (
+             'announcement_claim', 'compliance_form', 'streak_bonus',
+             'near_miss_report', 'certification', 'manual_award'
+           )
+       );
+
+    v_long_tail := jsonb_build_object(
+      'status', 'ready',
+      'message', null,
+      'cohort_size', v_cohort_size,
+      'activated_count', v_activated,
+      'activation_rate_pct', round((v_activated::numeric / v_cohort_size::numeric) * 100, 2)
+    );
+  END IF;
+
+  SELECT COALESCE(SUM(public.get_user_lifetime_earned(au.user_id)), 0)::int
+  INTO v_ledger_lifetime
+  FROM public.app_users au;
+
+  SELECT COALESCE(SUM(pt.amount), 0)::int
+  INTO v_ledger_period
+  FROM public.point_transactions pt
+  WHERE pt.amount > 0
+    AND pt.created_at >= v_start
+    AND pt.created_at < v_end
+    AND pt.source IN (
+      'announcement_claim', 'compliance_form', 'streak_bonus',
+      'near_miss_report', 'certification', 'manual_award'
+    );
+
+  SELECT COALESCE(SUM(pt.amount), 0)::int
+  INTO v_metrics_period
+  FROM public.point_transactions pt
+  WHERE pt.amount > 0
+    AND pt.created_at >= v_start
+    AND pt.created_at < v_end
+    AND pt.source IN (
+      'announcement_claim', 'compliance_form', 'streak_bonus',
+      'near_miss_report', 'certification', 'manual_award'
+    );
+
+  SELECT count(*)::int
+  INTO v_anomaly_count
+  FROM (
+    SELECT pt.user_id
+    FROM public.point_transactions pt
+    WHERE pt.amount > 0
+      AND pt.created_at >= v_start
+      AND pt.created_at < v_end
+      AND pt.source IN (
+        'announcement_claim', 'compliance_form', 'streak_bonus',
+        'near_miss_report', 'certification', 'manual_award'
+      )
+    GROUP BY pt.user_id
+    HAVING SUM(pt.amount) > (
+      SELECT COALESCE(avg(sub.total) + 3 * stddev_pop(sub.total), 0)
+      FROM (
+        SELECT pt2.user_id, SUM(pt2.amount)::numeric AS total
+        FROM public.point_transactions pt2
+        WHERE pt2.amount > 0
+          AND pt2.created_at >= v_start
+          AND pt2.created_at < v_end
+          AND pt2.source IN (
+            'announcement_claim', 'compliance_form', 'streak_bonus',
+            'near_miss_report', 'certification', 'manual_award'
+          )
+        GROUP BY pt2.user_id
+      ) sub
+    )
+  ) flagged;
+
+  v_result := jsonb_build_object(
+    'period', jsonb_build_object(
+      'start_date', p_start_date,
+      'end_date', p_end_date,
+      'days', v_span_days
+    ),
+    'hire_date_precondition', jsonb_build_object(
+      'missing_count', jsonb_array_length(v_missing_hire),
+      'missing_users', v_missing_hire
+    ),
+    'long_tail_activation', v_long_tail,
+    'engagement', jsonb_build_object(
+      'unique_session_users', (
+        SELECT count(DISTINCT uas.user_id)::int
+        FROM public.user_activity_sessions uas
+        WHERE uas.started_at >= v_start
+          AND uas.started_at < v_end
+      ),
+      'active_user_days', (
+        SELECT count(*)::int
+        FROM (
+          SELECT DISTINCT pt.user_id, (pt.created_at AT TIME ZONE 'America/Chicago')::date AS d
+          FROM public.point_transactions pt
+          WHERE pt.amount > 0
+            AND pt.created_at >= v_start
+            AND pt.created_at < v_end
+            AND pt.source IN (
+              'announcement_claim', 'compliance_form', 'streak_bonus',
+              'near_miss_report', 'certification', 'manual_award'
+            )
+        ) days
+      ),
+      'active_user_weeks', (
+        SELECT count(*)::int
+        FROM (
+          SELECT DISTINCT swa.user_id, swa.week_start
+          FROM public.streak_week_activity swa
+          WHERE swa.week_start >= p_start_date
+            AND swa.week_start <= p_end_date
+            AND swa.activity_source NOT IN ('manual_freeze', 'rto_auto_protect')
+        ) weeks
+      )
+    ),
+    'target_behaviors', jsonb_build_object(
+      'compliance_forms', jsonb_build_object(
+        'count', (
+          SELECT count(*)::int FROM public.point_transactions pt
+          WHERE pt.source = 'compliance_form' AND pt.amount > 0
+            AND pt.created_at >= v_start AND pt.created_at < v_end
+        ),
+        'prior_period_count', (
+          SELECT count(*)::int FROM public.point_transactions pt
+          WHERE pt.source = 'compliance_form' AND pt.amount > 0
+            AND pt.created_at >= v_prior_start::timestamptz
+            AND pt.created_at < (v_prior_end + 1)::timestamptz
+        )
+      ),
+      'near_miss_reports', jsonb_build_object(
+        'count', (
+          SELECT count(*)::int FROM public.point_transactions pt
+          WHERE pt.source = 'near_miss_report' AND pt.amount > 0
+            AND pt.created_at >= v_start AND pt.created_at < v_end
+        ),
+        'prior_period_count', (
+          SELECT count(*)::int FROM public.point_transactions pt
+          WHERE pt.source = 'near_miss_report' AND pt.amount > 0
+            AND pt.created_at >= v_prior_start::timestamptz
+            AND pt.created_at < (v_prior_end + 1)::timestamptz
+        )
+      ),
+      'certifications', jsonb_build_object(
+        'count', (
+          SELECT count(*)::int FROM public.point_transactions pt
+          WHERE pt.source = 'certification' AND pt.amount > 0
+            AND pt.created_at >= v_start AND pt.created_at < v_end
+        ),
+        'prior_period_count', (
+          SELECT count(*)::int FROM public.point_transactions pt
+          WHERE pt.source = 'certification' AND pt.amount > 0
+            AND pt.created_at >= v_prior_start::timestamptz
+            AND pt.created_at < (v_prior_end + 1)::timestamptz
+        )
+      )
+    ),
+    'redemption_cost', jsonb_build_object(
+      'total_points_redeemed', (
+        SELECT COALESCE(SUM(-pt.amount), 0)::int
+        FROM public.point_transactions pt
+        WHERE pt.source = 'redemption'
+          AND pt.amount < 0
+          AND pt.created_at >= v_start
+          AND pt.created_at < v_end
+      ),
+      'redemption_count', (
+        SELECT count(*)::int
+        FROM public.redemptions r
+        WHERE r.requested_at >= v_start AND r.requested_at < v_end
+      ),
+      'prior_period_points_redeemed', (
+        SELECT COALESCE(SUM(-pt.amount), 0)::int
+        FROM public.point_transactions pt
+        WHERE pt.source = 'redemption'
+          AND pt.amount < 0
+          AND pt.created_at >= v_prior_start::timestamptz
+          AND pt.created_at < (v_prior_end + 1)::timestamptz
+      )
+    ),
+    'anomaly_flag', jsonb_build_object(
+      'flagged_user_count', v_anomaly_count,
+      'method', 'period_earnings_above_mean_plus_3_stddev'
+    ),
+    'standings', (
+      SELECT COALESCE(
+        jsonb_agg(
+          jsonb_build_object(
+            'user_id', s.user_id,
+            'lifetime_earned', s.lifetime_earned,
+            'tier_name', s.tier_name,
+            'sub_level_label', s.sub_level_label
+          )
+          ORDER BY s.lifetime_earned DESC, s.user_id
+        ),
+        '[]'::jsonb
+      )
+      FROM (
+        SELECT
+          au.user_id,
+          gl.lifetime_earned,
+          gl.tier_name,
+          gl.sub_level_label
+        FROM public.app_users au
+        JOIN LATERAL public.get_user_level(au.user_id) gl ON true
+        WHERE public.is_competition_eligible(au.user_id)
+        ORDER BY gl.lifetime_earned DESC, au.user_id
+        LIMIT 25
+      ) s
+    ),
+    'ledger_reconciliation', jsonb_build_object(
+      'sum_lifetime_earned_all_users', v_ledger_lifetime,
+      'sum_ledger_positive_earnings_in_period', v_ledger_period,
+      'metrics_period_earnings', v_metrics_period,
+      'period_totals_match', (v_ledger_period = v_metrics_period)
+    )
+  );
+
+  RETURN v_result;
+END;
+$$;
+
+
+ALTER FUNCTION public.get_gamification_admin_metrics(p_start_date date, p_end_date date) OWNER TO postgres;
+
+--
+-- Name: FUNCTION get_gamification_admin_metrics(p_start_date date, p_end_date date); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.get_gamification_admin_metrics(p_start_date date, p_end_date date) IS 'Admin gamification dashboard metrics. Long-tail activation degrades when baseline cohort is empty. Standings use is_competition_eligible.';
+
+
+--
+-- Name: get_gamification_standings(integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.get_gamification_standings(p_limit integer DEFAULT 25) RETURNS jsonb
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_limit int;
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  v_limit := LEAST(GREATEST(COALESCE(p_limit, 25), 1), 50);
+
+  RETURN COALESCE(
+    (
+      SELECT jsonb_agg(row_data ORDER BY (row_data->>'lifetime_earned')::int DESC, row_data->>'user_id')
+      FROM (
+        SELECT jsonb_build_object(
+          'user_id', au.user_id,
+          'full_name', au.full_name,
+          'avatar_url', au.avatar_url,
+          'lifetime_earned', gl.lifetime_earned,
+          'tier_key', gl.tier_key,
+          'tier_name', gl.tier_name,
+          'tier_order', gl.tier_order,
+          'sub_level', gl.sub_level,
+          'sub_level_label', gl.sub_level_label,
+          'current_streak_weeks', COALESCE(ss.current_streak_weeks, 0),
+          'longest_streak', COALESCE(ss.longest_streak, 0)
+        ) AS row_data
+        FROM public.app_users au
+        JOIN LATERAL public.get_user_level(au.user_id) gl ON true
+        LEFT JOIN public.streak_state ss ON ss.user_id = au.user_id
+        WHERE public.is_competition_eligible(au.user_id)
+        ORDER BY gl.lifetime_earned DESC, au.user_id
+        LIMIT v_limit
+      ) ranked
+    ),
+    '[]'::jsonb
+  );
+END;
+$$;
+
+
+ALTER FUNCTION public.get_gamification_standings(p_limit integer) OWNER TO postgres;
+
+--
 -- Name: get_incident_log_osha_300_301(date, date); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2861,6 +3743,147 @@ COMMENT ON FUNCTION public.get_point_rule(p_source public.point_source, p_rule_k
 
 
 --
+-- Name: get_public_gamification_profile(uuid); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.get_public_gamification_profile(p_user_id uuid) RETURNS jsonb
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_user record;
+  v_level record;
+  v_badges jsonb;
+  v_eligible boolean;
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  IF p_user_id IS NULL THEN
+    RETURN NULL;
+  END IF;
+
+  v_eligible := public.is_competition_eligible(p_user_id)
+    OR p_user_id = auth.uid();
+
+  IF NOT v_eligible THEN
+    RETURN jsonb_build_object(
+      'user_id', p_user_id,
+      'eligible', false
+    );
+  END IF;
+
+  SELECT au.user_id, au.full_name, au.avatar_url, au.hire_date
+  INTO v_user
+  FROM public.app_users au
+  WHERE au.user_id = p_user_id;
+
+  IF NOT FOUND THEN
+    RETURN NULL;
+  END IF;
+
+  SELECT * INTO v_level FROM public.get_user_level(p_user_id);
+
+  SELECT COALESCE(
+    jsonb_agg(
+      jsonb_build_object(
+        'badge_key', ub.badge_key,
+        'title', b.title,
+        'category', b.category,
+        'prestige_tier', ub.prestige_tier,
+        'prestige_max', b.prestige_max,
+        'awarded_at', ub.awarded_at,
+        'sort_order', b.sort_order
+      )
+      ORDER BY b.sort_order, ub.prestige_tier DESC
+    ),
+    '[]'::jsonb
+  )
+  INTO v_badges
+  FROM public.user_badges ub
+  JOIN public.badges b ON b.badge_key = ub.badge_key AND b.is_active
+  WHERE ub.user_id = p_user_id;
+
+  RETURN jsonb_build_object(
+    'user_id', v_user.user_id,
+    'eligible', true,
+    'full_name', v_user.full_name,
+    'avatar_url', v_user.avatar_url,
+    'hire_date', v_user.hire_date,
+    'level', jsonb_build_object(
+      'tier_key', v_level.tier_key,
+      'tier_name', v_level.tier_name,
+      'tier_order', v_level.tier_order,
+      'sub_level', v_level.sub_level,
+      'sub_level_label', v_level.sub_level_label,
+      'lifetime_earned', v_level.lifetime_earned,
+      'current_threshold', v_level.current_threshold,
+      'next_threshold', v_level.next_threshold,
+      'progress_pct', v_level.progress_pct
+    ),
+    'weekly_streak', (
+      SELECT jsonb_build_object(
+        'current_streak_weeks', COALESCE(ss.current_streak_weeks, 0),
+        'longest_streak', COALESCE(ss.longest_streak, 0),
+        'freezes_remaining', COALESCE(ss.freezes_remaining, 0)
+      )
+      FROM public.streak_state ss
+      WHERE ss.user_id = p_user_id
+    ),
+    'badges', v_badges
+  );
+END;
+$$;
+
+
+ALTER FUNCTION public.get_public_gamification_profile(p_user_id uuid) OWNER TO postgres;
+
+--
+-- Name: get_real_users_missing_hire_date(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.get_real_users_missing_hire_date() RETURNS jsonb
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+BEGIN
+  IF NOT public.is_gamification_program_admin() THEN
+    RAISE EXCEPTION 'Gamification program admin access required';
+  END IF;
+
+  RETURN COALESCE(
+    (
+      SELECT jsonb_agg(
+        jsonb_build_object(
+          'user_id', au.user_id,
+          'full_name', au.full_name,
+          'email', u.email,
+          'role', au.role
+        )
+        ORDER BY au.full_name NULLS LAST, u.email
+      )
+      FROM public.app_users au
+      JOIN auth.users u ON u.id = au.user_id
+      WHERE au.hire_date IS NULL
+        AND NOT public.is_gamification_test_account(u.email)
+    ),
+    '[]'::jsonb
+  );
+END;
+$$;
+
+
+ALTER FUNCTION public.get_real_users_missing_hire_date() OWNER TO postgres;
+
+--
+-- Name: FUNCTION get_real_users_missing_hire_date(); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.get_real_users_missing_hire_date() IS 'Non-test app_users with NULL hire_date. Gate 6 precondition for baseline capture.';
+
+
+--
 -- Name: get_recent_cron_failures(integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -3024,6 +4047,7 @@ CREATE TABLE public.app_users (
     phone_number text,
     sms_marketing_opt_out boolean DEFAULT false NOT NULL,
     sms_operational_opt_out boolean DEFAULT false NOT NULL,
+    first_gamification_seen_at timestamp with time zone,
     CONSTRAINT app_users_electrical_qualification_level_check CHECK ((electrical_qualification_level = ANY (ARRAY['unqualified'::text, 'line_clearance_tree_trimmer'::text, 'qualified_269'::text]))),
     CONSTRAINT app_users_experience_level_check CHECK ((experience_level = ANY (ARRAY['apprentice'::text, 'journeyman'::text, 'expert'::text]))),
     CONSTRAINT app_users_preferred_language_check CHECK ((preferred_language = ANY (ARRAY['en'::text, 'es'::text]))),
@@ -3131,6 +4155,13 @@ COMMENT ON COLUMN public.app_users.sms_marketing_opt_out IS 'When true, user is 
 --
 
 COMMENT ON COLUMN public.app_users.sms_operational_opt_out IS 'When true, exclude from operational SMS (payroll reminders, etc.). Distinct from sms_marketing_opt_out.';
+
+
+--
+-- Name: COLUMN app_users.first_gamification_seen_at; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.app_users.first_gamification_seen_at IS 'First gamification welcome RPC call; NULL until user sees My Progress welcome.';
 
 
 --
@@ -3401,6 +4432,98 @@ ALTER FUNCTION public.get_user_last_activity() OWNER TO postgres;
 
 COMMENT ON FUNCTION public.get_user_last_activity() IS 'Returns most recent activity timestamp per user from DVIR, JSA, equipment, safety incidents, telemetry. Admin User Activity uses this for offline users last_seen. SECURITY INVOKER.';
 
+
+--
+-- Name: get_user_level(uuid); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.get_user_level(target_user_id uuid DEFAULT auth.uid()) RETURNS TABLE(tier_key text, tier_name text, tier_order integer, sub_level integer, sub_level_label text, lifetime_earned integer, current_threshold integer, next_threshold integer, progress_pct numeric)
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_earned int;
+  v_current record;
+  v_next_threshold int;
+BEGIN
+  v_earned := public.get_user_lifetime_earned(target_user_id);
+
+  SELECT
+    lt.tier_key,
+    lt.tier_name,
+    lt.tier_order,
+    lt.sub_level,
+    lt.sub_level_label,
+    lt.entry_threshold
+  INTO v_current
+  FROM public.level_tiers lt
+  WHERE lt.is_active
+    AND lt.entry_threshold <= v_earned
+  ORDER BY lt.entry_threshold DESC
+  LIMIT 1;
+
+  IF v_current IS NULL THEN
+    RAISE EXCEPTION 'get_user_level: no active level_tiers row for earned=%', v_earned;
+  END IF;
+
+  SELECT lt.entry_threshold
+  INTO v_next_threshold
+  FROM public.level_tiers lt
+  WHERE lt.is_active
+    AND lt.entry_threshold > v_current.entry_threshold
+  ORDER BY lt.entry_threshold ASC
+  LIMIT 1;
+
+  tier_key          := v_current.tier_key;
+  tier_name         := v_current.tier_name;
+  tier_order        := v_current.tier_order;
+  sub_level         := v_current.sub_level;
+  sub_level_label   := v_current.sub_level_label;
+  lifetime_earned   := v_earned;
+  current_threshold := v_current.entry_threshold;
+  next_threshold    := v_next_threshold;
+
+  IF v_next_threshold IS NULL THEN
+    progress_pct := 100.00;
+  ELSE
+    progress_pct := round(
+      ((v_earned - v_current.entry_threshold)::numeric
+        / (v_next_threshold - v_current.entry_threshold)::numeric) * 100,
+      2
+    );
+  END IF;
+
+  RETURN NEXT;
+END;
+$$;
+
+
+ALTER FUNCTION public.get_user_level(target_user_id uuid) OWNER TO postgres;
+
+--
+-- Name: get_user_lifetime_earned(uuid); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.get_user_lifetime_earned(target_user_id uuid DEFAULT auth.uid()) RETURNS integer
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+  SELECT COALESCE(SUM(amount), 0)::integer
+  FROM public.point_transactions
+  WHERE user_id = target_user_id
+    AND amount > 0
+    AND source IN (
+      'announcement_claim',
+      'compliance_form',
+      'streak_bonus',
+      'near_miss_report',
+      'certification',
+      'manual_award'
+    );
+$$;
+
+
+ALTER FUNCTION public.get_user_lifetime_earned(target_user_id uuid) OWNER TO postgres;
 
 --
 -- Name: get_user_point_balance(uuid); Type: FUNCTION; Schema: public; Owner: postgres
@@ -3916,6 +5039,111 @@ $$;
 ALTER FUNCTION public.is_admin_or_safety_or_gf() OWNER TO postgres;
 
 --
+-- Name: is_competition_eligible(uuid); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.is_competition_eligible(target_user_id uuid) RETURNS boolean
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_role text;
+  v_roles jsonb;
+BEGIN
+  IF target_user_id IS NULL THEN
+    RETURN false;
+  END IF;
+
+  SELECT au.role
+  INTO v_role
+  FROM public.app_users au
+  WHERE au.user_id = target_user_id;
+
+  IF v_role IS NULL THEN
+    RETURN false;
+  END IF;
+
+  SELECT gs.value
+  INTO v_roles
+  FROM public.gamification_settings gs
+  WHERE gs.key = 'competition_eligible_roles';
+
+  IF v_roles IS NULL OR jsonb_typeof(v_roles) <> 'array' THEN
+    RETURN v_role IN ('employee', 'foreman', 'general_foreman', 'mechanic');
+  END IF;
+
+  RETURN EXISTS (
+    SELECT 1
+    FROM jsonb_array_elements_text(v_roles) AS r(role)
+    WHERE r.role = v_role
+  );
+END;
+$$;
+
+
+ALTER FUNCTION public.is_competition_eligible(target_user_id uuid) OWNER TO postgres;
+
+--
+-- Name: FUNCTION is_competition_eligible(target_user_id uuid); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.is_competition_eligible(target_user_id uuid) IS 'True when user role is in gamification_settings.competition_eligible_roles (FIELD_ROLES).';
+
+
+--
+-- Name: is_gamification_program_admin(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.is_gamification_program_admin() RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+  SELECT
+    public.is_admin()
+    OR EXISTS (
+      SELECT 1
+      FROM public.app_users au
+      WHERE au.user_id = auth.uid()
+        AND au.role = 'safety_officer'
+    );
+$$;
+
+
+ALTER FUNCTION public.is_gamification_program_admin() OWNER TO postgres;
+
+--
+-- Name: FUNCTION is_gamification_program_admin(); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.is_gamification_program_admin() IS 'Admin or safety_officer — gamification program tools and analytics.';
+
+
+--
+-- Name: is_gamification_test_account(text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.is_gamification_test_account(p_email text) RETURNS boolean
+    LANGUAGE sql IMMUTABLE
+    AS $$
+  SELECT
+    p_email IS NOT NULL
+    AND (
+      lower(p_email) LIKE '%@atts.test'
+      OR lower(p_email) LIKE '%@example.invalid'
+    );
+$$;
+
+
+ALTER FUNCTION public.is_gamification_test_account(p_email text) OWNER TO postgres;
+
+--
+-- Name: FUNCTION is_gamification_test_account(p_email text); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.is_gamification_test_account(p_email text) IS 'True for seeded E2E (@atts.test) and localgate (@example.invalid) accounts.';
+
+
+--
 -- Name: is_mechanic(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -4027,6 +5255,142 @@ $$;
 
 
 ALTER FUNCTION public.mark_idle_sessions() OWNER TO postgres;
+
+--
+-- Name: maybe_emit_badge_recognition(uuid, text, integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.maybe_emit_badge_recognition(p_user_id uuid, p_badge_key text, p_prestige_tier integer) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_badge record;
+  v_event_type public.recognition_event_type;
+  v_dedupe_key text;
+  v_payload jsonb;
+BEGIN
+  IF p_user_id IS NULL OR p_badge_key IS NULL THEN
+    RETURN;
+  END IF;
+
+  IF p_badge_key IN ('first_light', 'cashed_in', 'on_the_board') THEN
+    RETURN;
+  END IF;
+
+  SELECT b.badge_key, b.title, b.category, b.prestige_max, b.is_feed_worthy
+  INTO v_badge
+  FROM public.badges b
+  WHERE b.badge_key = p_badge_key
+    AND b.is_active;
+
+  IF NOT FOUND OR NOT v_badge.is_feed_worthy THEN
+    RETURN;
+  END IF;
+
+  IF p_badge_key IN ('sharp_eye', 'stacked', 'lit') THEN
+    IF p_prestige_tier IS DISTINCT FROM v_badge.prestige_max THEN
+      RETURN;
+    END IF;
+  END IF;
+
+  IF p_badge_key IN ('one_ring', 'five_rings', 'old_timber') THEN
+    v_event_type := 'tenure_milestone';
+    v_dedupe_key := 'tenure_milestone:' || p_user_id::text || ':' || p_badge_key;
+  ELSE
+    v_event_type := 'badge_awarded';
+    v_dedupe_key := 'badge_awarded:' || p_user_id::text || ':' || p_badge_key || ':' || p_prestige_tier::text;
+  END IF;
+
+  v_payload := jsonb_build_object(
+    'badge_key', v_badge.badge_key,
+    'title', v_badge.title,
+    'category', v_badge.category,
+    'prestige_tier', p_prestige_tier
+  );
+
+  PERFORM public.emit_recognition_event(
+    v_event_type,
+    p_user_id,
+    v_payload,
+    v_dedupe_key
+  );
+END;
+$$;
+
+
+ALTER FUNCTION public.maybe_emit_badge_recognition(p_user_id uuid, p_badge_key text, p_prestige_tier integer) OWNER TO postgres;
+
+--
+-- Name: FUNCTION maybe_emit_badge_recognition(p_user_id uuid, p_badge_key text, p_prestige_tier integer); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.maybe_emit_badge_recognition(p_user_id uuid, p_badge_key text, p_prestige_tier integer) IS 'Emits curated badge/tenure recognition feed rows when a new badge award qualifies.';
+
+
+--
+-- Name: maybe_emit_tier_promotion_feed(uuid, integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.maybe_emit_tier_promotion_feed(p_user_id uuid, p_prior_lifetime integer DEFAULT NULL::integer) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_lifetime int;
+  v_prior    int;
+  r          record;
+BEGIN
+  IF p_user_id IS NULL THEN
+    RETURN;
+  END IF;
+
+  v_lifetime := public.get_user_lifetime_earned(p_user_id);
+  v_prior := COALESCE(p_prior_lifetime, v_lifetime);
+
+  FOR r IN
+    SELECT
+      lt.tier_key,
+      lt.tier_name,
+      lt.tier_order,
+      lt.sub_level,
+      lt.sub_level_label,
+      lt.entry_threshold
+    FROM public.level_tiers lt
+    WHERE lt.is_active
+      AND lt.sub_level = 1
+      AND lt.tier_order >= 2
+      AND lt.entry_threshold <= v_lifetime
+      AND lt.entry_threshold > v_prior
+    ORDER BY lt.entry_threshold ASC
+  LOOP
+    PERFORM public.emit_recognition_event(
+      'tier_promotion',
+      p_user_id,
+      jsonb_build_object(
+        'tier_key', r.tier_key,
+        'tier_name', r.tier_name,
+        'tier_order', r.tier_order,
+        'sub_level', r.sub_level,
+        'sub_level_label', r.sub_level_label,
+        'lifetime_earned', v_lifetime,
+        'entry_threshold', r.entry_threshold
+      ),
+      'tier_promotion:' || p_user_id::text || ':' || r.tier_key
+    );
+  END LOOP;
+END;
+$$;
+
+
+ALTER FUNCTION public.maybe_emit_tier_promotion_feed(p_user_id uuid, p_prior_lifetime integer) OWNER TO postgres;
+
+--
+-- Name: FUNCTION maybe_emit_tier_promotion_feed(p_user_id uuid, p_prior_lifetime integer); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.maybe_emit_tier_promotion_feed(p_user_id uuid, p_prior_lifetime integer) IS 'Emits tier_promotion feed rows for newly crossed major tiers (sub_level I only). Idempotent per tier_key.';
+
 
 --
 -- Name: normalize_truck_number(); Type: FUNCTION; Schema: public; Owner: postgres
@@ -4229,6 +5593,7 @@ DECLARE
   v_category_lbl text;
   v_title        text;
   v_body         text;
+  v_abs_amount   integer;
 BEGIN
   IF v_actor IS NULL THEN
     RAISE EXCEPTION 'Not authenticated';
@@ -4278,34 +5643,74 @@ BEGIN
     ELSE COALESCE(v_tx.category, 'Other')
   END;
 
-  v_title := format(
-    'You received %s safety reward point%s!',
-    v_tx.amount,
-    CASE WHEN v_tx.amount = 1 THEN '' ELSE 's' END
-  );
+  v_abs_amount := abs(v_tx.amount);
 
-  v_body := concat_ws(
-    ' ',
-    CASE
-      WHEN v_awarder_name IS NOT NULL THEN
-        format('%s awarded you %s points.', v_awarder_name, v_tx.amount)
-      ELSE
-        format('You were awarded %s points.', v_tx.amount)
-    END,
-    format('Category: %s.', v_category_lbl),
-    CASE
-      WHEN NULLIF(btrim(v_tx.reason), '') IS NOT NULL THEN
-        format('Reason: %s', btrim(v_tx.reason))
-      ELSE NULL
-    END
-  );
+  IF v_tx.amount < 0 THEN
+    v_title := format(
+      '%s safety reward point%s deducted',
+      v_abs_amount,
+      CASE WHEN v_abs_amount = 1 THEN '' ELSE 's' END
+    );
+    v_body := concat_ws(
+      ' ',
+      CASE
+        WHEN v_awarder_name IS NOT NULL THEN
+          format('%s deducted %s point%s.', v_awarder_name, v_abs_amount, CASE WHEN v_abs_amount = 1 THEN '' ELSE 's' END)
+        ELSE
+          format('%s point%s were deducted.', v_abs_amount, CASE WHEN v_abs_amount = 1 THEN '' ELSE 's' END)
+      END,
+      format('Category: %s.', v_category_lbl),
+      CASE
+        WHEN NULLIF(btrim(v_tx.reason), '') IS NOT NULL THEN
+          format('Reason: %s', btrim(v_tx.reason))
+        ELSE NULL
+      END
+    );
+  ELSE
+    v_title := format(
+      'You received %s safety reward point%s!',
+      v_tx.amount,
+      CASE WHEN v_tx.amount = 1 THEN '' ELSE 's' END
+    );
+    v_body := concat_ws(
+      ' ',
+      CASE
+        WHEN v_awarder_name IS NOT NULL THEN
+          format('%s awarded you %s points.', v_awarder_name, v_tx.amount)
+        ELSE
+          format('You were awarded %s points.', v_tx.amount)
+      END,
+      format('Category: %s.', v_category_lbl),
+      CASE
+        WHEN NULLIF(btrim(v_tx.reason), '') IS NOT NULL THEN
+          format('Reason: %s', btrim(v_tx.reason))
+        ELSE NULL
+      END
+    );
+  END IF;
 
   INSERT INTO public.notification_events (
-    category, severity, target_type, target_ref, title, body, url,
-    actor_user_id, entity_type, entity_id
+    category,
+    severity,
+    target_type,
+    target_ref,
+    title,
+    body,
+    url,
+    actor_user_id,
+    entity_type,
+    entity_id
   ) VALUES (
-    'admin_notice', 'medium', 'user', v_tx.user_id::text,
-    v_title, v_body, '/safety-rewards', v_actor, 'manual_award', v_tx.id
+    'admin_notice',
+    'medium',
+    'user',
+    v_tx.user_id::text,
+    v_title,
+    v_body,
+    '/safety-rewards',
+    v_actor,
+    'manual_award',
+    v_tx.id
   )
   RETURNING id INTO v_event_id;
 
@@ -4421,6 +5826,50 @@ $$;
 ALTER FUNCTION public.queue_asset_cost_refresh() OWNER TO postgres;
 
 --
+-- Name: record_streak_activity(uuid, text, uuid, timestamp with time zone); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.record_streak_activity(p_user_id uuid, p_activity_source text, p_reference_id uuid DEFAULT NULL::uuid, p_activity_at timestamp with time zone DEFAULT now()) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_week date;
+BEGIN
+  IF p_user_id IS NULL OR p_activity_source IS NULL OR btrim(p_activity_source) = '' THEN
+    RETURN;
+  END IF;
+
+  v_week := public.chicago_iso_week_start(p_activity_at);
+
+  INSERT INTO public.streak_week_activity
+    (user_id, week_start, activity_source, reference_id, recorded_at)
+  VALUES
+    (p_user_id, v_week, p_activity_source, COALESCE(p_reference_id, gen_random_uuid()), p_activity_at)
+  ON CONFLICT DO NOTHING;
+
+  PERFORM public.refresh_user_streak(p_user_id, p_activity_at);
+
+  BEGIN
+    PERFORM public.evaluate_user_badges(p_user_id, 'streak');
+  EXCEPTION
+    WHEN OTHERS THEN
+      RAISE WARNING 'weekly streak badge eval failed for user %: %', p_user_id, SQLERRM;
+  END;
+END;
+$$;
+
+
+ALTER FUNCTION public.record_streak_activity(p_user_id uuid, p_activity_source text, p_reference_id uuid, p_activity_at timestamp with time zone) OWNER TO postgres;
+
+--
+-- Name: FUNCTION record_streak_activity(p_user_id uuid, p_activity_source text, p_reference_id uuid, p_activity_at timestamp with time zone); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.record_streak_activity(p_user_id uuid, p_activity_source text, p_reference_id uuid, p_activity_at timestamp with time zone) IS 'Records a meaningful weekly action and refreshes streak state. Does not write streak_bonus ledger rows.';
+
+
+--
 -- Name: redeem_reward(uuid, uuid); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -4429,33 +5878,98 @@ CREATE FUNCTION public.redeem_reward(p_item_id uuid, p_request_id uuid) RETURNS 
     SET search_path TO 'public'
     AS $$
 DECLARE
-  v_user uuid := auth.uid(); v_existing uuid; v_item public.reward_catalog; v_balance integer; v_redemption_id uuid;
+  v_user          uuid := auth.uid();
+  v_existing      uuid;
+  v_item          public.reward_catalog;
+  v_balance       integer;
+  v_redemption_id uuid;
 BEGIN
-  IF v_user IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
-  IF p_request_id IS NULL THEN RAISE EXCEPTION 'Request id is required'; END IF;
-  IF NOT EXISTS (SELECT 1 FROM public.app_users au WHERE au.user_id = v_user) THEN RAISE EXCEPTION 'User not found'; END IF;
-  PERFORM pg_advisory_xact_lock(hashtext('redeem_reward:' || v_user::text));
-  SELECT r.id INTO v_existing FROM public.redemptions r WHERE r.user_id = v_user AND r.request_id = p_request_id;
-  IF v_existing IS NOT NULL THEN RETURN v_existing; END IF;
-  SELECT * INTO v_item FROM public.reward_catalog WHERE id = p_item_id FOR UPDATE;
-  IF NOT FOUND THEN RAISE EXCEPTION 'Item not found'; END IF;
-  IF NOT v_item.is_active THEN RAISE EXCEPTION 'Item is not available'; END IF;
-  IF v_item.stock_qty IS NOT NULL THEN
-    UPDATE public.reward_catalog SET stock_qty = stock_qty - 1, updated_at = now() WHERE id = p_item_id AND stock_qty > 0;
-    IF NOT FOUND THEN RAISE EXCEPTION 'Out of stock'; END IF;
+  IF v_user IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
   END IF;
+
+  IF p_request_id IS NULL THEN
+    RAISE EXCEPTION 'Request id is required';
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM public.app_users au WHERE au.user_id = v_user) THEN
+    RAISE EXCEPTION 'User not found';
+  END IF;
+
+  PERFORM pg_advisory_xact_lock(hashtext('redeem_reward:' || v_user::text));
+
+  SELECT r.id INTO v_existing
+  FROM public.redemptions r
+  WHERE r.user_id = v_user AND r.request_id = p_request_id;
+  IF v_existing IS NOT NULL THEN
+    RETURN v_existing;
+  END IF;
+
+  SELECT * INTO v_item
+  FROM public.reward_catalog
+  WHERE id = p_item_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Item not found';
+  END IF;
+
+  IF NOT v_item.is_active THEN
+    RAISE EXCEPTION 'Item is not available';
+  END IF;
+
+  IF v_item.stock_qty IS NOT NULL THEN
+    UPDATE public.reward_catalog
+    SET stock_qty = stock_qty - 1,
+        updated_at = now()
+    WHERE id = p_item_id
+      AND stock_qty > 0;
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'Out of stock';
+    END IF;
+  END IF;
+
   v_balance := public.get_user_point_balance(v_user);
-  IF v_balance < v_item.point_cost THEN RAISE EXCEPTION 'Insufficient balance'; END IF;
-  INSERT INTO public.redemptions (user_id, item_id, point_cost, status, request_id)
-  VALUES (v_user, p_item_id, v_item.point_cost, 'pending', p_request_id) RETURNING id INTO v_redemption_id;
-  INSERT INTO public.point_transactions (user_id, amount, source, reference_id, reference_table, counts_toward_raffle)
-  VALUES (v_user, -v_item.point_cost, 'redemption', v_redemption_id, 'redemptions', false);
-  BEGIN PERFORM public._notify_redemption_pending_admins(v_redemption_id);
-  EXCEPTION WHEN OTHERS THEN RAISE WARNING 'redemption pending admin notify failed: %', SQLERRM; END;
+  IF v_balance < v_item.point_cost THEN
+    RAISE EXCEPTION 'Insufficient balance';
+  END IF;
+
+  INSERT INTO public.redemptions
+    (user_id, item_id, point_cost, status, request_id)
+  VALUES
+    (v_user, p_item_id, v_item.point_cost, 'pending', p_request_id)
+  RETURNING id INTO v_redemption_id;
+
+  INSERT INTO public.point_transactions
+    (user_id, amount, source, reference_id, reference_table, counts_toward_raffle)
+  VALUES
+    (v_user, -v_item.point_cost, 'redemption', v_redemption_id, 'redemptions', false);
+
+  BEGIN
+    PERFORM public._notify_redemption_pending_admins(v_redemption_id);
+  EXCEPTION
+    WHEN OTHERS THEN
+      RAISE WARNING 'redemption pending admin notify failed: %', SQLERRM;
+  END;
+
+  BEGIN
+    PERFORM public.evaluate_user_badges(v_user, 'redemption');
+  EXCEPTION
+    WHEN OTHERS THEN
+      RAISE WARNING 'badge eval redemption failed for user %: %', v_user, SQLERRM;
+  END;
+
   RETURN v_redemption_id;
-EXCEPTION WHEN unique_violation THEN
-  SELECT r.id INTO v_existing FROM public.redemptions r WHERE r.user_id = v_user AND r.request_id = p_request_id;
-  IF v_existing IS NOT NULL THEN RETURN v_existing; END IF; RAISE;
+
+EXCEPTION
+  WHEN unique_violation THEN
+    SELECT r.id INTO v_existing
+    FROM public.redemptions r
+    WHERE r.user_id = v_user AND r.request_id = p_request_id;
+    IF v_existing IS NOT NULL THEN
+      RETURN v_existing;
+    END IF;
+    RAISE;
 END;
 $$;
 
@@ -4514,6 +6028,113 @@ ALTER FUNCTION public.refresh_certification_completion_stats() OWNER TO postgres
 --
 
 COMMENT ON FUNCTION public.refresh_certification_completion_stats() IS 'Trigger function: refreshes certification_completion_stats MV so Supabase Table Editor shows current counts.';
+
+
+--
+-- Name: refresh_user_streak(uuid, timestamp with time zone); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.refresh_user_streak(p_user_id uuid, p_as_of timestamp with time zone DEFAULT now()) RETURNS public.streak_state
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_state          public.streak_state;
+  v_current_week   date;
+  v_anchor_week    date;
+  v_week           date;
+  v_streak         int := 0;
+  v_freezes        int;
+  v_used_freeze    boolean := false;
+  v_last_active    date;
+  v_longest        int;
+BEGIN
+  IF p_user_id IS NULL THEN
+    RETURN NULL;
+  END IF;
+
+  v_state := public.ensure_streak_state(p_user_id);
+  v_freezes := v_state.freezes_remaining;
+  v_current_week := public.chicago_iso_week_start(p_as_of);
+
+  IF public.week_has_meaningful_streak_activity(p_user_id, v_current_week)
+     OR public.user_has_rto_covering_week(p_user_id, v_current_week) THEN
+    v_anchor_week := v_current_week;
+  ELSE
+    v_anchor_week := v_current_week - 7;
+  END IF;
+
+  v_week := v_anchor_week;
+
+  WHILE v_week IS NOT NULL LOOP
+    IF public.week_has_meaningful_streak_activity(p_user_id, v_week)
+       OR public.user_has_rto_covering_week(p_user_id, v_week)
+       OR EXISTS (
+         SELECT 1 FROM public.streak_week_activity swa
+         WHERE swa.user_id = p_user_id
+           AND swa.week_start = v_week
+           AND swa.activity_source = 'manual_freeze'
+       ) THEN
+      v_streak := v_streak + 1;
+      v_week := v_week - 7;
+
+    ELSIF v_freezes > 0
+          AND NOT v_used_freeze
+          AND v_streak > 0
+          AND EXISTS (
+            SELECT 1
+            FROM public.streak_week_activity swa
+            WHERE swa.user_id = p_user_id
+              AND swa.week_start < v_week
+              AND swa.activity_source NOT IN ('manual_freeze', 'rto_auto_protect')
+          ) THEN
+      -- Bridge exactly one gap between newer and older meaningful-active weeks
+      INSERT INTO public.streak_week_activity
+        (user_id, week_start, activity_source, reference_id)
+      VALUES
+        (p_user_id, v_week, 'manual_freeze', '00000000-0000-0000-0000-000000000000'::uuid)
+      ON CONFLICT DO NOTHING;
+
+      v_freezes := v_freezes - 1;
+      v_used_freeze := true;
+      v_streak := v_streak + 1;
+      v_week := v_week - 7;
+
+    ELSE
+      EXIT;
+    END IF;
+  END LOOP;
+
+  SELECT max(swa.week_start)
+  INTO v_last_active
+  FROM public.streak_week_activity swa
+  WHERE swa.user_id = p_user_id
+    AND swa.activity_source NOT IN ('manual_freeze', 'rto_auto_protect');
+
+  v_longest := GREATEST(COALESCE(v_state.longest_streak, 0), v_streak);
+
+  UPDATE public.streak_state
+  SET
+    current_streak_weeks = v_streak,
+    longest_streak       = v_longest,
+    last_active_week     = v_last_active,
+    freezes_remaining    = v_freezes,
+    updated_at           = now()
+  WHERE user_id = p_user_id
+  RETURNING * INTO v_state;
+
+  RETURN v_state;
+END;
+$$;
+
+
+ALTER FUNCTION public.refresh_user_streak(p_user_id uuid, p_as_of timestamp with time zone) OWNER TO postgres;
+
+--
+-- Name: FUNCTION refresh_user_streak(p_user_id uuid, p_as_of timestamp with time zone); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.refresh_user_streak(p_user_id uuid, p_as_of timestamp with time zone) IS 'Recomputes weekly streak (Chicago ISO weeks). One manual freeze bridges a single gap week; RTO-covered weeks auto-protect without consuming freeze. Badge-only — no ledger points.';
 
 
 --
@@ -5574,6 +7195,142 @@ $$;
 ALTER FUNCTION public.sync_streak_bonuses_for_user(p_user_id uuid, p_anchor_claimed_at timestamp with time zone) OWNER TO postgres;
 
 --
+-- Name: trg_emit_tier_promotion_feed_on_earn(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.trg_emit_tier_promotion_feed_on_earn() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_prior int;
+BEGIN
+  IF NEW.amount IS NULL OR NEW.amount <= 0 THEN
+    RETURN NEW;
+  END IF;
+
+  IF NEW.source NOT IN (
+    'announcement_claim',
+    'compliance_form',
+    'streak_bonus',
+    'near_miss_report',
+    'certification',
+    'manual_award'
+  ) THEN
+    RETURN NEW;
+  END IF;
+
+  v_prior := public.get_user_lifetime_earned(NEW.user_id) - NEW.amount;
+
+  BEGIN
+    PERFORM public.maybe_emit_tier_promotion_feed(NEW.user_id, v_prior);
+  EXCEPTION
+    WHEN OTHERS THEN
+      RAISE WARNING 'tier promotion feed failed for user %: %', NEW.user_id, SQLERRM;
+  END;
+
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.trg_emit_tier_promotion_feed_on_earn() OWNER TO postgres;
+
+--
+-- Name: trg_evaluate_badges_on_point_transaction(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.trg_evaluate_badges_on_point_transaction() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+BEGIN
+  IF NEW.source = 'near_miss_report' AND NEW.category = 'corrective_bonus' AND NEW.amount > 0 THEN
+    BEGIN
+      PERFORM public.evaluate_user_badges(NEW.user_id, 'near_miss_actionable');
+    EXCEPTION
+      WHEN OTHERS THEN
+        RAISE WARNING 'badge eval near_miss_actionable failed for user %: %', NEW.user_id, SQLERRM;
+    END;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.trg_evaluate_badges_on_point_transaction() OWNER TO postgres;
+
+--
+-- Name: trg_record_weekly_streak_on_briefing(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.trg_record_weekly_streak_on_briefing() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+BEGIN
+  BEGIN
+    PERFORM public.record_streak_activity(
+      NEW.user_id,
+      'briefing_completion',
+      NEW.id,
+      COALESCE(NEW.completed_at, now())
+    );
+  EXCEPTION
+    WHEN OTHERS THEN
+      RAISE WARNING 'weekly streak briefing record failed for user %: %', NEW.user_id, SQLERRM;
+  END;
+
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.trg_record_weekly_streak_on_briefing() OWNER TO postgres;
+
+--
+-- Name: trg_record_weekly_streak_on_point_tx(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.trg_record_weekly_streak_on_point_tx() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+BEGIN
+  IF NEW.amount IS NULL OR NEW.amount <= 0 THEN
+    RETURN NEW;
+  END IF;
+
+  IF NEW.source IN (
+    'announcement_claim',
+    'compliance_form',
+    'near_miss_report',
+    'certification',
+    'manual_award'
+  ) THEN
+    BEGIN
+      PERFORM public.record_streak_activity(
+        NEW.user_id,
+        NEW.source::text,
+        NEW.id,
+        NEW.created_at
+      );
+    EXCEPTION
+      WHEN OTHERS THEN
+        RAISE WARNING 'weekly streak record failed for user % source %: %',
+          NEW.user_id, NEW.source, SQLERRM;
+    END;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.trg_record_weekly_streak_on_point_tx() OWNER TO postgres;
+
+--
 -- Name: trg_sync_streak_bonus_to_ledger(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -5982,6 +7739,38 @@ COMMENT ON FUNCTION public.user_has_certification_access(p_user_id uuid, p_certi
 
 
 --
+-- Name: user_has_rto_covering_week(uuid, date); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.user_has_rto_covering_week(p_user_id uuid, p_week_start date) RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+  SELECT NOT EXISTS (
+    SELECT 1
+    FROM generate_series(p_week_start, p_week_start + 4, interval '1 day') AS gs(d)
+    WHERE EXTRACT(DOW FROM gs.d) BETWEEN 1 AND 5
+      AND NOT EXISTS (
+        SELECT 1
+        FROM public.rto_requests r
+        WHERE r.user_id = p_user_id
+          AND r.status = 'Approved'
+          AND gs.d::date BETWEEN r.start_date AND r.end_date
+      )
+  );
+$$;
+
+
+ALTER FUNCTION public.user_has_rto_covering_week(p_user_id uuid, p_week_start date) OWNER TO postgres;
+
+--
+-- Name: FUNCTION user_has_rto_covering_week(p_user_id uuid, p_week_start date); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.user_has_rto_covering_week(p_user_id uuid, p_week_start date) IS 'True when every weekday (Mon–Fri) in the Chicago ISO week is covered by an approved RTO. Auto-protects weekly streak without spending manual freeze.';
+
+
+--
 -- Name: validate_recordable_incident(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -6012,6 +7801,160 @@ ALTER FUNCTION public.validate_recordable_incident() OWNER TO postgres;
 --
 
 COMMENT ON FUNCTION public.validate_recordable_incident() IS 'Enforces OSHA 300/301: recordable incidents must have body_parts_affected and what_doing_before.';
+
+
+--
+-- Name: verify_gamification_workforce_levels(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.verify_gamification_workforce_levels() RETURNS jsonb
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  r record;
+  v_users int := 0;
+  v_errors int := 0;
+BEGIN
+  IF NOT public.is_gamification_program_admin() THEN
+    RAISE EXCEPTION 'Gamification program admin access required';
+  END IF;
+
+  FOR r IN SELECT au.user_id FROM public.app_users au LOOP
+    v_users := v_users + 1;
+    BEGIN
+      IF NOT EXISTS (SELECT 1 FROM public.get_user_level(r.user_id) gl) THEN
+        v_errors := v_errors + 1;
+      END IF;
+    EXCEPTION
+      WHEN OTHERS THEN
+        v_errors := v_errors + 1;
+    END;
+  END LOOP;
+
+  RETURN jsonb_build_object(
+    'user_count', v_users,
+    'error_count', v_errors,
+    'status', CASE WHEN v_errors = 0 THEN 'ok' ELSE 'errors' END
+  );
+END;
+$$;
+
+
+ALTER FUNCTION public.verify_gamification_workforce_levels() OWNER TO postgres;
+
+--
+-- Name: FUNCTION verify_gamification_workforce_levels(); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.verify_gamification_workforce_levels() IS 'Retroactive level spot-check across all app_users. Gate 6 launch readiness.';
+
+
+--
+-- Name: week_has_meaningful_streak_activity(uuid, date); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.week_has_meaningful_streak_activity(p_user_id uuid, p_week_start date) RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.streak_week_activity swa
+    WHERE swa.user_id = p_user_id
+      AND swa.week_start = p_week_start
+      AND swa.activity_source NOT IN ('manual_freeze', 'rto_auto_protect')
+  );
+$$;
+
+
+ALTER FUNCTION public.week_has_meaningful_streak_activity(p_user_id uuid, p_week_start date) OWNER TO postgres;
+
+--
+-- Name: welcome_gamification(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.welcome_gamification() RETURNS jsonb
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_user       uuid := auth.uid();
+  v_was_null   boolean;
+  v_level      record;
+  v_badge_rows jsonb;
+BEGIN
+  IF v_user IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM public.app_users au WHERE au.user_id = v_user) THEN
+    RAISE EXCEPTION 'User not found';
+  END IF;
+
+  SELECT (au.first_gamification_seen_at IS NULL)
+  INTO v_was_null
+  FROM public.app_users au
+  WHERE au.user_id = v_user;
+
+  IF v_was_null THEN
+    UPDATE public.app_users
+    SET first_gamification_seen_at = now()
+    WHERE user_id = v_user
+      AND first_gamification_seen_at IS NULL;
+
+    PERFORM public.award_badge(v_user, 'first_light', 1);
+  END IF;
+
+  PERFORM public.evaluate_user_badges(v_user, 'all');
+
+  SELECT * INTO v_level FROM public.get_user_level(v_user);
+
+  SELECT COALESCE(
+    jsonb_agg(
+      jsonb_build_object(
+        'badge_key', ub.badge_key,
+        'prestige_tier', ub.prestige_tier,
+        'awarded_at', ub.awarded_at
+      )
+      ORDER BY ub.awarded_at
+    ),
+    '[]'::jsonb
+  )
+  INTO v_badge_rows
+  FROM public.user_badges ub
+  WHERE ub.user_id = v_user;
+
+  RETURN jsonb_build_object(
+    'first_visit', v_was_null,
+    'first_gamification_seen_at', (
+      SELECT au.first_gamification_seen_at
+      FROM public.app_users au WHERE au.user_id = v_user
+    ),
+    'level', jsonb_build_object(
+      'tier_key', v_level.tier_key,
+      'tier_name', v_level.tier_name,
+      'tier_order', v_level.tier_order,
+      'sub_level', v_level.sub_level,
+      'sub_level_label', v_level.sub_level_label,
+      'lifetime_earned', v_level.lifetime_earned,
+      'current_threshold', v_level.current_threshold,
+      'next_threshold', v_level.next_threshold,
+      'progress_pct', v_level.progress_pct
+    ),
+    'badges', v_badge_rows
+  );
+END;
+$$;
+
+
+ALTER FUNCTION public.welcome_gamification() OWNER TO postgres;
+
+--
+-- Name: FUNCTION welcome_gamification(); Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON FUNCTION public.welcome_gamification() IS 'First-run welcome: stamps first_gamification_seen_at, awards First Light, evaluates badges, returns level + badges.';
 
 
 --
@@ -7237,6 +9180,27 @@ COMMENT ON TABLE public.auto_tuning_config IS 'Singleton configuration for the a
 
 
 --
+-- Name: badges; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.badges (
+    badge_key text NOT NULL,
+    category text NOT NULL,
+    title text NOT NULL,
+    description text NOT NULL,
+    condition_spec jsonb DEFAULT '{}'::jsonb NOT NULL,
+    prestige_max integer DEFAULT 1 NOT NULL,
+    is_feed_worthy boolean DEFAULT false NOT NULL,
+    is_active boolean DEFAULT true NOT NULL,
+    sort_order integer DEFAULT 0 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT badges_prestige_max_check CHECK (((prestige_max >= 1) AND (prestige_max <= 3)))
+);
+
+
+ALTER TABLE public.badges OWNER TO postgres;
+
+--
 -- Name: certification_access_grants; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -8025,6 +9989,45 @@ CREATE TABLE public.external_certification_types (
 ALTER TABLE public.external_certification_types OWNER TO postgres;
 
 --
+-- Name: gamification_baseline_cohort; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.gamification_baseline_cohort (
+    user_id uuid NOT NULL,
+    captured_at timestamp with time zone DEFAULT now() NOT NULL,
+    snapshot_reason text DEFAULT 'pre_launch_90d_rarely_active'::text NOT NULL,
+    prior_90d_earn integer NOT NULL,
+    prior_90d_active_days integer NOT NULL,
+    CONSTRAINT gamification_baseline_cohort_prior_90d_active_days_check CHECK ((prior_90d_active_days >= 0)),
+    CONSTRAINT gamification_baseline_cohort_prior_90d_earn_check CHECK ((prior_90d_earn >= 0))
+);
+
+
+ALTER TABLE public.gamification_baseline_cohort OWNER TO postgres;
+
+--
+-- Name: gamification_settings; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.gamification_settings (
+    key text NOT NULL,
+    value jsonb NOT NULL,
+    description text,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_by uuid
+);
+
+
+ALTER TABLE public.gamification_settings OWNER TO postgres;
+
+--
+-- Name: TABLE gamification_settings; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON TABLE public.gamification_settings IS 'Admin-tunable gamification program configuration (badges, streaks, eligibility).';
+
+
+--
 -- Name: job_crew_assignments; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -8268,6 +10271,34 @@ COMMENT ON COLUMN public.jsa_sharing_audit.shared_user_name IS 'Full name of the
 --
 
 COMMENT ON COLUMN public.jsa_sharing_audit.changed_by IS 'UUID of the user who made the change (typically the JSA owner).';
+
+
+--
+-- Name: level_tiers; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.level_tiers (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    tier_key text NOT NULL,
+    tier_name text NOT NULL,
+    tier_order integer NOT NULL,
+    sub_level integer NOT NULL,
+    sub_level_label text NOT NULL,
+    entry_threshold integer NOT NULL,
+    is_active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT level_tiers_entry_threshold_check CHECK ((entry_threshold >= 0)),
+    CONSTRAINT level_tiers_sub_level_check CHECK (((sub_level >= 1) AND (sub_level <= 3)))
+);
+
+
+ALTER TABLE public.level_tiers OWNER TO postgres;
+
+--
+-- Name: TABLE level_tiers; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON TABLE public.level_tiers IS 'Gamification tier ladder — thresholds on lifetime earned points (tunable without deploy).';
 
 
 --
@@ -8895,6 +10926,22 @@ CREATE TABLE public.push_subscriptions (
 
 
 ALTER TABLE public.push_subscriptions OWNER TO postgres;
+
+--
+-- Name: recognition_feed; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.recognition_feed (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    event_type public.recognition_event_type NOT NULL,
+    subject_user_id uuid NOT NULL,
+    payload jsonb NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    dedupe_key text NOT NULL
+);
+
+
+ALTER TABLE public.recognition_feed OWNER TO postgres;
 
 --
 -- Name: reward_catalog; Type: TABLE; Schema: public; Owner: postgres
@@ -9608,6 +11655,21 @@ COMMENT ON TABLE public.storage_cleanup_queue IS 'Queue for async storage file d
 
 
 --
+-- Name: streak_week_activity; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.streak_week_activity (
+    user_id uuid NOT NULL,
+    week_start date NOT NULL,
+    activity_source text NOT NULL,
+    reference_id uuid NOT NULL,
+    recorded_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.streak_week_activity OWNER TO postgres;
+
+--
 -- Name: telemetry_events; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -9754,6 +11816,24 @@ ALTER VIEW public.user_activity_feed OWNER TO postgres;
 
 COMMENT ON VIEW public.user_activity_feed IS 'Activity sessions with user profile. SECURITY INVOKER so caller RLS applies.';
 
+
+--
+-- Name: user_badges; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.user_badges (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    badge_key text NOT NULL,
+    prestige_tier integer DEFAULT 1 NOT NULL,
+    awarded_at timestamp with time zone DEFAULT now() NOT NULL,
+    reference_id uuid,
+    reference_table text,
+    CONSTRAINT user_badges_prestige_tier_check CHECK (((prestige_tier >= 1) AND (prestige_tier <= 3)))
+);
+
+
+ALTER TABLE public.user_badges OWNER TO postgres;
 
 --
 -- Name: user_contact_templates; Type: TABLE; Schema: public; Owner: postgres
@@ -10370,6 +12450,14 @@ ALTER TABLE ONLY public.auto_tuning_config
 
 
 --
+-- Name: badges badges_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.badges
+    ADD CONSTRAINT badges_pkey PRIMARY KEY (badge_key);
+
+
+--
 -- Name: certification_access_grants certification_access_grants_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -10650,6 +12738,22 @@ ALTER TABLE ONLY public.external_certification_types
 
 
 --
+-- Name: gamification_baseline_cohort gamification_baseline_cohort_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.gamification_baseline_cohort
+    ADD CONSTRAINT gamification_baseline_cohort_pkey PRIMARY KEY (user_id);
+
+
+--
+-- Name: gamification_settings gamification_settings_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.gamification_settings
+    ADD CONSTRAINT gamification_settings_pkey PRIMARY KEY (key);
+
+
+--
 -- Name: job_crew_assignments job_crew_assignments_job_id_user_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -10695,6 +12799,30 @@ ALTER TABLE ONLY public.job_progress_updates
 
 ALTER TABLE ONLY public.jsa_sharing_audit
     ADD CONSTRAINT jsa_sharing_audit_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: level_tiers level_tiers_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.level_tiers
+    ADD CONSTRAINT level_tiers_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: level_tiers level_tiers_threshold_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.level_tiers
+    ADD CONSTRAINT level_tiers_threshold_unique UNIQUE (entry_threshold);
+
+
+--
+-- Name: level_tiers level_tiers_tier_sub_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.level_tiers
+    ADD CONSTRAINT level_tiers_tier_sub_unique UNIQUE (tier_key, sub_level);
 
 
 --
@@ -10922,6 +13050,22 @@ ALTER TABLE ONLY public.push_subscriptions
 
 
 --
+-- Name: recognition_feed recognition_feed_dedupe_key_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.recognition_feed
+    ADD CONSTRAINT recognition_feed_dedupe_key_key UNIQUE (dedupe_key);
+
+
+--
+-- Name: recognition_feed recognition_feed_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.recognition_feed
+    ADD CONSTRAINT recognition_feed_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: redemptions redemptions_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -11050,6 +13194,22 @@ ALTER TABLE ONLY public.storage_cleanup_queue
 
 
 --
+-- Name: streak_state streak_state_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.streak_state
+    ADD CONSTRAINT streak_state_pkey PRIMARY KEY (user_id);
+
+
+--
+-- Name: streak_week_activity streak_week_activity_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.streak_week_activity
+    ADD CONSTRAINT streak_week_activity_pkey PRIMARY KEY (user_id, week_start, activity_source, reference_id);
+
+
+--
 -- Name: telemetry_events telemetry_events_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -11150,6 +13310,22 @@ ALTER TABLE ONLY public.user_absences
 
 ALTER TABLE ONLY public.user_activity_sessions
     ADD CONSTRAINT user_activity_sessions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: user_badges user_badges_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.user_badges
+    ADD CONSTRAINT user_badges_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: user_badges user_badges_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.user_badges
+    ADD CONSTRAINT user_badges_unique UNIQUE (user_id, badge_key, prestige_tier);
 
 
 --
@@ -12657,6 +14833,13 @@ COMMENT ON INDEX public.idx_jsa_user_created IS 'Smart defaults: fast user JSA h
 
 
 --
+-- Name: idx_level_tiers_active_order; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_level_tiers_active_order ON public.level_tiers USING btree (entry_threshold) WHERE is_active;
+
+
+--
 -- Name: idx_maintenance_log_created; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -12857,6 +15040,20 @@ CREATE INDEX idx_push_subscriptions_active ON public.push_subscriptions USING bt
 --
 
 CREATE INDEX idx_push_subscriptions_user ON public.push_subscriptions USING btree (user_id) WHERE (revoked_at IS NULL);
+
+
+--
+-- Name: idx_recognition_feed_created; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_recognition_feed_created ON public.recognition_feed USING btree (created_at DESC);
+
+
+--
+-- Name: idx_recognition_feed_subject; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_recognition_feed_subject ON public.recognition_feed USING btree (subject_user_id, created_at DESC);
 
 
 --
@@ -13161,6 +15358,13 @@ CREATE INDEX idx_storage_cleanup_unprocessed ON public.storage_cleanup_queue USI
 
 
 --
+-- Name: idx_streak_week_activity_user_week; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_streak_week_activity_user_week ON public.streak_week_activity USING btree (user_id, week_start DESC);
+
+
+--
 -- Name: idx_telemetry_events_created_at; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -13256,6 +15460,13 @@ CREATE INDEX idx_user_activity_sessions_status ON public.user_activity_sessions 
 --
 
 CREATE INDEX idx_user_activity_sessions_user_id ON public.user_activity_sessions USING btree (user_id);
+
+
+--
+-- Name: idx_user_badges_user; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_user_badges_user ON public.user_badges USING btree (user_id, awarded_at DESC);
 
 
 --
@@ -13546,10 +15757,24 @@ CREATE TRIGGER set_daily_jsa_updated_at BEFORE UPDATE ON public.daily_jsa FOR EA
 
 
 --
+-- Name: gamification_settings set_gamification_settings_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER set_gamification_settings_updated_at BEFORE UPDATE ON public.gamification_settings FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
 -- Name: monthly_safety_rewards set_monthly_safety_rewards_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
 CREATE TRIGGER set_monthly_safety_rewards_updated_at BEFORE UPDATE ON public.monthly_safety_rewards FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
+-- Name: streak_state set_streak_state_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER set_streak_state_updated_at BEFORE UPDATE ON public.streak_state FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
 
 --
@@ -13637,6 +15862,13 @@ CREATE TRIGGER trg_daily_attendance_updated_at BEFORE UPDATE ON public.daily_att
 
 
 --
+-- Name: point_transactions trg_evaluate_badges_point_tx; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_evaluate_badges_point_tx AFTER INSERT ON public.point_transactions FOR EACH ROW EXECUTE FUNCTION public.trg_evaluate_badges_on_point_transaction();
+
+
+--
 -- Name: mileage_anomalies trg_normalize_anomaly_truck_number; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -13655,6 +15887,13 @@ CREATE TRIGGER trg_normalize_maintenance_truck_number BEFORE INSERT OR UPDATE ON
 --
 
 CREATE TRIGGER trg_normalize_schedule_truck_number BEFORE INSERT OR UPDATE ON public.maintenance_schedules FOR EACH ROW EXECUTE FUNCTION public.normalize_truck_number();
+
+
+--
+-- Name: point_transactions trg_recognition_feed_tier_promotion; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_recognition_feed_tier_promotion AFTER INSERT ON public.point_transactions FOR EACH ROW EXECUTE FUNCTION public.trg_emit_tier_promotion_feed_on_earn();
 
 
 --
@@ -13711,6 +15950,20 @@ CREATE TRIGGER trg_update_schedule_from_dvir AFTER INSERT ON public.dvir_reports
 --
 
 CREATE TRIGGER trg_update_schedule_on_maintenance_log AFTER INSERT ON public.vehicle_maintenance_log FOR EACH ROW EXECUTE FUNCTION public.update_maintenance_schedule_on_log();
+
+
+--
+-- Name: safety_briefing_answers trg_weekly_streak_briefing; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_weekly_streak_briefing AFTER INSERT ON public.safety_briefing_answers FOR EACH ROW EXECUTE FUNCTION public.trg_record_weekly_streak_on_briefing();
+
+
+--
+-- Name: point_transactions trg_weekly_streak_point_tx; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_weekly_streak_point_tx AFTER INSERT ON public.point_transactions FOR EACH ROW EXECUTE FUNCTION public.trg_record_weekly_streak_on_point_tx();
 
 
 --
@@ -14485,6 +16738,22 @@ ALTER TABLE ONLY public.external_certification_types
 
 
 --
+-- Name: gamification_baseline_cohort gamification_baseline_cohort_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.gamification_baseline_cohort
+    ADD CONSTRAINT gamification_baseline_cohort_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: gamification_settings gamification_settings_updated_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.gamification_settings
+    ADD CONSTRAINT gamification_settings_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES auth.users(id);
+
+
+--
 -- Name: job_crew_assignments job_crew_assignments_assigned_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -14765,6 +17034,14 @@ ALTER TABLE ONLY public.push_subscriptions
 
 
 --
+-- Name: recognition_feed recognition_feed_subject_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.recognition_feed
+    ADD CONSTRAINT recognition_feed_subject_user_id_fkey FOREIGN KEY (subject_user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: redemptions redemptions_decided_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -14964,6 +17241,22 @@ ALTER TABLE ONLY public.safety_incidents
 
 
 --
+-- Name: streak_state streak_state_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.streak_state
+    ADD CONSTRAINT streak_state_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: streak_week_activity streak_week_activity_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.streak_week_activity
+    ADD CONSTRAINT streak_week_activity_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: telemetry_events telemetry_events_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -15009,6 +17302,22 @@ ALTER TABLE ONLY public.user_absences
 
 ALTER TABLE ONLY public.user_activity_sessions
     ADD CONSTRAINT user_activity_sessions_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_badges user_badges_badge_key_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.user_badges
+    ADD CONSTRAINT user_badges_badge_key_fkey FOREIGN KEY (badge_key) REFERENCES public.badges(badge_key);
+
+
+--
+-- Name: user_badges user_badges_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.user_badges
+    ADD CONSTRAINT user_badges_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
 
 
 --
@@ -15204,6 +17513,28 @@ ALTER TABLE auth.sso_providers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE auth.users ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: badges Admin and safety officer manage badges; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Admin and safety officer manage badges" ON public.badges TO authenticated USING ((public.is_admin() OR (EXISTS ( SELECT 1
+   FROM public.app_users au
+  WHERE ((au.user_id = auth.uid()) AND (au.role = 'safety_officer'::text)))))) WITH CHECK ((public.is_admin() OR (EXISTS ( SELECT 1
+   FROM public.app_users au
+  WHERE ((au.user_id = auth.uid()) AND (au.role = 'safety_officer'::text))))));
+
+
+--
+-- Name: gamification_settings Admin and safety officer manage gamification settings; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Admin and safety officer manage gamification settings" ON public.gamification_settings TO authenticated USING ((public.is_admin() OR (EXISTS ( SELECT 1
+   FROM public.app_users au
+  WHERE ((au.user_id = auth.uid()) AND (au.role = 'safety_officer'::text)))))) WITH CHECK ((public.is_admin() OR (EXISTS ( SELECT 1
+   FROM public.app_users au
+  WHERE ((au.user_id = auth.uid()) AND (au.role = 'safety_officer'::text))))));
+
+
+--
 -- Name: monthly_reward_drawings Admins can delete drawings; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -15358,10 +17689,38 @@ CREATE POLICY "Admins manage catalog update" ON public.reward_catalog FOR UPDATE
 
 
 --
+-- Name: level_tiers Admins manage level tiers; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Admins manage level tiers" ON public.level_tiers TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+
+--
 -- Name: point_rules Admins manage point rules; Type: POLICY; Schema: public; Owner: postgres
 --
 
 CREATE POLICY "Admins manage point rules" ON public.point_rules TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+
+--
+-- Name: streak_state Admins read all streak state; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Admins read all streak state" ON public.streak_state FOR SELECT TO authenticated USING (public.is_admin());
+
+
+--
+-- Name: streak_week_activity Admins read all streak week activity; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Admins read all streak week activity" ON public.streak_week_activity FOR SELECT TO authenticated USING (public.is_admin());
+
+
+--
+-- Name: user_badges Admins read all user badges; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Admins read all user badges" ON public.user_badges FOR SELECT TO authenticated USING (public.is_admin());
 
 
 --
@@ -15379,10 +17738,38 @@ CREATE POLICY "Authenticated read active catalog items" ON public.reward_catalog
 
 
 --
+-- Name: badges Authenticated read badges; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Authenticated read badges" ON public.badges FOR SELECT TO authenticated USING (true);
+
+
+--
+-- Name: gamification_settings Authenticated read gamification settings; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Authenticated read gamification settings" ON public.gamification_settings FOR SELECT TO authenticated USING (true);
+
+
+--
+-- Name: level_tiers Authenticated read level tiers; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Authenticated read level tiers" ON public.level_tiers FOR SELECT TO authenticated USING (true);
+
+
+--
 -- Name: point_rules Authenticated read point rules; Type: POLICY; Schema: public; Owner: postgres
 --
 
 CREATE POLICY "Authenticated read point rules" ON public.point_rules FOR SELECT TO authenticated USING (true);
+
+
+--
+-- Name: recognition_feed Authenticated read recognition feed; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Authenticated read recognition feed" ON public.recognition_feed FOR SELECT TO authenticated USING (true);
 
 
 --
@@ -15460,6 +17847,13 @@ CREATE POLICY "Preferences service role" ON public.notification_preferences TO s
 
 
 --
+-- Name: gamification_baseline_cohort Program admins read gamification baseline cohort; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Program admins read gamification baseline cohort" ON public.gamification_baseline_cohort FOR SELECT TO authenticated USING (public.is_gamification_program_admin());
+
+
+--
 -- Name: announcement_rewards Rewards insert own; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -15497,6 +17891,13 @@ CREATE POLICY "Service role full access awarder grants" ON public.point_awarder_
 
 
 --
+-- Name: badges Service role full access badges; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Service role full access badges" ON public.badges TO service_role USING (true) WITH CHECK (true);
+
+
+--
 -- Name: safety_briefing_answers Service role full access briefing answers; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -15518,6 +17919,27 @@ CREATE POLICY "Service role full access drawings" ON public.monthly_reward_drawi
 
 
 --
+-- Name: gamification_baseline_cohort Service role full access gamification baseline cohort; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Service role full access gamification baseline cohort" ON public.gamification_baseline_cohort TO service_role USING (true) WITH CHECK (true);
+
+
+--
+-- Name: gamification_settings Service role full access gamification settings; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Service role full access gamification settings" ON public.gamification_settings TO service_role USING (true) WITH CHECK (true);
+
+
+--
+-- Name: level_tiers Service role full access level tiers; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Service role full access level tiers" ON public.level_tiers TO service_role USING (true) WITH CHECK (true);
+
+
+--
 -- Name: point_rules Service role full access point rules; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -15529,6 +17951,13 @@ CREATE POLICY "Service role full access point rules" ON public.point_rules TO se
 --
 
 CREATE POLICY "Service role full access point transactions" ON public.point_transactions TO service_role USING (true) WITH CHECK (true);
+
+
+--
+-- Name: recognition_feed Service role full access recognition feed; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Service role full access recognition feed" ON public.recognition_feed TO service_role USING (true) WITH CHECK (true);
 
 
 --
@@ -15550,6 +17979,27 @@ CREATE POLICY "Service role full access reward catalog" ON public.reward_catalog
 --
 
 CREATE POLICY "Service role full access rewards" ON public.monthly_safety_rewards TO service_role USING (true) WITH CHECK (true);
+
+
+--
+-- Name: streak_state Service role full access streak state; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Service role full access streak state" ON public.streak_state TO service_role USING (true) WITH CHECK (true);
+
+
+--
+-- Name: streak_week_activity Service role full access streak week activity; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Service role full access streak week activity" ON public.streak_week_activity TO service_role USING (true) WITH CHECK (true);
+
+
+--
+-- Name: user_badges Service role full access user badges; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Service role full access user badges" ON public.user_badges TO service_role USING (true) WITH CHECK (true);
 
 
 --
@@ -15676,10 +18126,31 @@ CREATE POLICY "Users read own awarder grant" ON public.point_awarder_grants FOR 
 
 
 --
+-- Name: user_badges Users read own badges; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Users read own badges" ON public.user_badges FOR SELECT TO authenticated USING ((user_id = auth.uid()));
+
+
+--
 -- Name: redemptions Users read own redemptions; Type: POLICY; Schema: public; Owner: postgres
 --
 
 CREATE POLICY "Users read own redemptions" ON public.redemptions FOR SELECT TO authenticated USING (((user_id = auth.uid()) OR public.is_admin()));
+
+
+--
+-- Name: streak_state Users read own streak state; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Users read own streak state" ON public.streak_state FOR SELECT TO authenticated USING ((user_id = auth.uid()));
+
+
+--
+-- Name: streak_week_activity Users read own streak week activity; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Users read own streak week activity" ON public.streak_week_activity FOR SELECT TO authenticated USING ((user_id = auth.uid()));
 
 
 --
@@ -15909,6 +18380,12 @@ CREATE POLICY auto_tuning_config_admin_update ON public.auto_tuning_config FOR U
 
 CREATE POLICY auto_tuning_config_service_all ON public.auto_tuning_config TO service_role WITH CHECK (true);
 
+
+--
+-- Name: badges; Type: ROW SECURITY; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.badges ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: certification_access_grants cert_access_grants_admin_delete; Type: POLICY; Schema: public; Owner: postgres
@@ -16487,6 +18964,18 @@ CREATE POLICY equipment_inspections_select ON public.daily_equipment_inspections
 ALTER TABLE public.external_certification_types ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: gamification_baseline_cohort; Type: ROW SECURITY; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.gamification_baseline_cohort ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: gamification_settings; Type: ROW SECURITY; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.gamification_settings ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: job_crew_assignments; Type: ROW SECURITY; Schema: public; Owner: postgres
 --
 
@@ -16651,6 +19140,12 @@ CREATE POLICY jsa_update_shared ON public.daily_jsa FOR UPDATE TO authenticated 
 
 COMMENT ON POLICY jsa_update_shared ON public.daily_jsa IS 'Delegated users can update JSA content but cannot modify shared_with_users or user_id. Prevents privilege escalation.';
 
+
+--
+-- Name: level_tiers; Type: ROW SECURITY; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.level_tiers ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: vehicle_maintenance_log maintenance_log_delete; Type: POLICY; Schema: public; Owner: postgres
@@ -16960,6 +19455,12 @@ CREATE POLICY progress_updates_update ON public.job_progress_updates FOR UPDATE 
 --
 
 ALTER TABLE public.push_subscriptions ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: recognition_feed; Type: ROW SECURITY; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.recognition_feed ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: redemptions; Type: ROW SECURITY; Schema: public; Owner: postgres
@@ -17285,6 +19786,18 @@ CREATE POLICY storage_cleanup_queue_service_access ON public.storage_cleanup_que
 
 
 --
+-- Name: streak_state; Type: ROW SECURITY; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.streak_state ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: streak_week_activity; Type: ROW SECURITY; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.streak_week_activity ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: telemetry_events telemetry_admin_read; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -17369,6 +19882,12 @@ CREATE POLICY user_absences_service_role ON public.user_absences TO service_role
 --
 
 ALTER TABLE public.user_activity_sessions ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: user_badges; Type: ROW SECURITY; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.user_badges ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: user_contact_templates; Type: ROW SECURITY; Schema: public; Owner: postgres
@@ -17594,12 +20113,31 @@ GRANT ALL ON FUNCTION public.app_settings_touch_updated_at() TO service_role;
 
 
 --
+-- Name: FUNCTION assert_hire_dates_for_baseline(); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION public.assert_hire_dates_for_baseline() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.assert_hire_dates_for_baseline() TO anon;
+GRANT ALL ON FUNCTION public.assert_hire_dates_for_baseline() TO authenticated;
+GRANT ALL ON FUNCTION public.assert_hire_dates_for_baseline() TO service_role;
+
+
+--
 -- Name: FUNCTION audit_app_settings(); Type: ACL; Schema: public; Owner: postgres
 --
 
 GRANT ALL ON FUNCTION public.audit_app_settings() TO anon;
 GRANT ALL ON FUNCTION public.audit_app_settings() TO authenticated;
 GRANT ALL ON FUNCTION public.audit_app_settings() TO service_role;
+
+
+--
+-- Name: FUNCTION award_badge(p_user_id uuid, p_badge_key text, p_prestige_tier integer, p_reference_id uuid, p_reference_table text); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.award_badge(p_user_id uuid, p_badge_key text, p_prestige_tier integer, p_reference_id uuid, p_reference_table text) TO anon;
+GRANT ALL ON FUNCTION public.award_badge(p_user_id uuid, p_badge_key text, p_prestige_tier integer, p_reference_id uuid, p_reference_table text) TO authenticated;
+GRANT ALL ON FUNCTION public.award_badge(p_user_id uuid, p_badge_key text, p_prestige_tier integer, p_reference_id uuid, p_reference_table text) TO service_role;
 
 
 --
@@ -17711,6 +20249,15 @@ GRANT ALL ON FUNCTION public.cancel_redemption(p_redemption_id uuid) TO service_
 
 
 --
+-- Name: FUNCTION capture_gamification_baseline_cohort(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.capture_gamification_baseline_cohort() TO anon;
+GRANT ALL ON FUNCTION public.capture_gamification_baseline_cohort() TO authenticated;
+GRANT ALL ON FUNCTION public.capture_gamification_baseline_cohort() TO service_role;
+
+
+--
 -- Name: FUNCTION certification_audit_log_on_qualification_change(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -17753,6 +20300,15 @@ GRANT ALL ON FUNCTION public.check_min_recipients() TO service_role;
 GRANT ALL ON FUNCTION public.check_reward_claim_window() TO anon;
 GRANT ALL ON FUNCTION public.check_reward_claim_window() TO authenticated;
 GRANT ALL ON FUNCTION public.check_reward_claim_window() TO service_role;
+
+
+--
+-- Name: FUNCTION chicago_iso_week_start(p_ts timestamp with time zone); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.chicago_iso_week_start(p_ts timestamp with time zone) TO anon;
+GRANT ALL ON FUNCTION public.chicago_iso_week_start(p_ts timestamp with time zone) TO authenticated;
+GRANT ALL ON FUNCTION public.chicago_iso_week_start(p_ts timestamp with time zone) TO service_role;
 
 
 --
@@ -17856,12 +20412,58 @@ GRANT ALL ON FUNCTION public.deny_redemption(p_redemption_id uuid, p_note text) 
 
 
 --
+-- Name: FUNCTION emit_recognition_event(p_event_type public.recognition_event_type, p_subject_user_id uuid, p_payload jsonb, p_dedupe_key text); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION public.emit_recognition_event(p_event_type public.recognition_event_type, p_subject_user_id uuid, p_payload jsonb, p_dedupe_key text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.emit_recognition_event(p_event_type public.recognition_event_type, p_subject_user_id uuid, p_payload jsonb, p_dedupe_key text) TO anon;
+GRANT ALL ON FUNCTION public.emit_recognition_event(p_event_type public.recognition_event_type, p_subject_user_id uuid, p_payload jsonb, p_dedupe_key text) TO authenticated;
+GRANT ALL ON FUNCTION public.emit_recognition_event(p_event_type public.recognition_event_type, p_subject_user_id uuid, p_payload jsonb, p_dedupe_key text) TO service_role;
+
+
+--
 -- Name: FUNCTION ensure_single_default_contact_template(); Type: ACL; Schema: public; Owner: postgres
 --
 
 GRANT ALL ON FUNCTION public.ensure_single_default_contact_template() TO anon;
 GRANT ALL ON FUNCTION public.ensure_single_default_contact_template() TO authenticated;
 GRANT ALL ON FUNCTION public.ensure_single_default_contact_template() TO service_role;
+
+
+--
+-- Name: TABLE streak_state; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.streak_state TO anon;
+GRANT ALL ON TABLE public.streak_state TO authenticated;
+GRANT ALL ON TABLE public.streak_state TO service_role;
+
+
+--
+-- Name: FUNCTION ensure_streak_state(p_user_id uuid); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.ensure_streak_state(p_user_id uuid) TO anon;
+GRANT ALL ON FUNCTION public.ensure_streak_state(p_user_id uuid) TO authenticated;
+GRANT ALL ON FUNCTION public.ensure_streak_state(p_user_id uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION evaluate_tenure_badges_cron(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.evaluate_tenure_badges_cron() TO anon;
+GRANT ALL ON FUNCTION public.evaluate_tenure_badges_cron() TO authenticated;
+GRANT ALL ON FUNCTION public.evaluate_tenure_badges_cron() TO service_role;
+
+
+--
+-- Name: FUNCTION evaluate_user_badges(p_user_id uuid, p_trigger text); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.evaluate_user_badges(p_user_id uuid, p_trigger text) TO anon;
+GRANT ALL ON FUNCTION public.evaluate_user_badges(p_user_id uuid, p_trigger text) TO authenticated;
+GRANT ALL ON FUNCTION public.evaluate_user_badges(p_user_id uuid, p_trigger text) TO service_role;
 
 
 --
@@ -17955,6 +20557,24 @@ GRANT ALL ON FUNCTION public.get_compliance_summary_by_day(p_date_from date, p_d
 
 
 --
+-- Name: FUNCTION get_gamification_admin_metrics(p_start_date date, p_end_date date); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.get_gamification_admin_metrics(p_start_date date, p_end_date date) TO anon;
+GRANT ALL ON FUNCTION public.get_gamification_admin_metrics(p_start_date date, p_end_date date) TO authenticated;
+GRANT ALL ON FUNCTION public.get_gamification_admin_metrics(p_start_date date, p_end_date date) TO service_role;
+
+
+--
+-- Name: FUNCTION get_gamification_standings(p_limit integer); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.get_gamification_standings(p_limit integer) TO anon;
+GRANT ALL ON FUNCTION public.get_gamification_standings(p_limit integer) TO authenticated;
+GRANT ALL ON FUNCTION public.get_gamification_standings(p_limit integer) TO service_role;
+
+
+--
 -- Name: FUNCTION get_incident_log_osha_300_301(p_date_from date, p_date_to date); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18024,6 +20644,24 @@ GRANT ALL ON FUNCTION public.get_osha_300a_summary(p_year integer, p_total_emplo
 GRANT ALL ON FUNCTION public.get_point_rule(p_source public.point_source, p_rule_key text) TO anon;
 GRANT ALL ON FUNCTION public.get_point_rule(p_source public.point_source, p_rule_key text) TO authenticated;
 GRANT ALL ON FUNCTION public.get_point_rule(p_source public.point_source, p_rule_key text) TO service_role;
+
+
+--
+-- Name: FUNCTION get_public_gamification_profile(p_user_id uuid); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.get_public_gamification_profile(p_user_id uuid) TO anon;
+GRANT ALL ON FUNCTION public.get_public_gamification_profile(p_user_id uuid) TO authenticated;
+GRANT ALL ON FUNCTION public.get_public_gamification_profile(p_user_id uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION get_real_users_missing_hire_date(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.get_real_users_missing_hire_date() TO anon;
+GRANT ALL ON FUNCTION public.get_real_users_missing_hire_date() TO authenticated;
+GRANT ALL ON FUNCTION public.get_real_users_missing_hire_date() TO service_role;
 
 
 --
@@ -18105,6 +20743,24 @@ GRANT ALL ON FUNCTION public.get_user_compliance_points(p_user_id uuid, p_start_
 GRANT ALL ON FUNCTION public.get_user_last_activity() TO anon;
 GRANT ALL ON FUNCTION public.get_user_last_activity() TO authenticated;
 GRANT ALL ON FUNCTION public.get_user_last_activity() TO service_role;
+
+
+--
+-- Name: FUNCTION get_user_level(target_user_id uuid); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.get_user_level(target_user_id uuid) TO anon;
+GRANT ALL ON FUNCTION public.get_user_level(target_user_id uuid) TO authenticated;
+GRANT ALL ON FUNCTION public.get_user_level(target_user_id uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION get_user_lifetime_earned(target_user_id uuid); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.get_user_lifetime_earned(target_user_id uuid) TO anon;
+GRANT ALL ON FUNCTION public.get_user_lifetime_earned(target_user_id uuid) TO authenticated;
+GRANT ALL ON FUNCTION public.get_user_lifetime_earned(target_user_id uuid) TO service_role;
 
 
 --
@@ -18244,6 +20900,33 @@ GRANT ALL ON FUNCTION public.is_admin_or_safety_or_gf() TO service_role;
 
 
 --
+-- Name: FUNCTION is_competition_eligible(target_user_id uuid); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.is_competition_eligible(target_user_id uuid) TO anon;
+GRANT ALL ON FUNCTION public.is_competition_eligible(target_user_id uuid) TO authenticated;
+GRANT ALL ON FUNCTION public.is_competition_eligible(target_user_id uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION is_gamification_program_admin(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.is_gamification_program_admin() TO anon;
+GRANT ALL ON FUNCTION public.is_gamification_program_admin() TO authenticated;
+GRANT ALL ON FUNCTION public.is_gamification_program_admin() TO service_role;
+
+
+--
+-- Name: FUNCTION is_gamification_test_account(p_email text); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.is_gamification_test_account(p_email text) TO anon;
+GRANT ALL ON FUNCTION public.is_gamification_test_account(p_email text) TO authenticated;
+GRANT ALL ON FUNCTION public.is_gamification_test_account(p_email text) TO service_role;
+
+
+--
 -- Name: FUNCTION is_mechanic(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18277,6 +20960,26 @@ GRANT ALL ON FUNCTION public.is_supervisor() TO service_role;
 GRANT ALL ON FUNCTION public.mark_idle_sessions() TO anon;
 GRANT ALL ON FUNCTION public.mark_idle_sessions() TO authenticated;
 GRANT ALL ON FUNCTION public.mark_idle_sessions() TO service_role;
+
+
+--
+-- Name: FUNCTION maybe_emit_badge_recognition(p_user_id uuid, p_badge_key text, p_prestige_tier integer); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION public.maybe_emit_badge_recognition(p_user_id uuid, p_badge_key text, p_prestige_tier integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.maybe_emit_badge_recognition(p_user_id uuid, p_badge_key text, p_prestige_tier integer) TO anon;
+GRANT ALL ON FUNCTION public.maybe_emit_badge_recognition(p_user_id uuid, p_badge_key text, p_prestige_tier integer) TO authenticated;
+GRANT ALL ON FUNCTION public.maybe_emit_badge_recognition(p_user_id uuid, p_badge_key text, p_prestige_tier integer) TO service_role;
+
+
+--
+-- Name: FUNCTION maybe_emit_tier_promotion_feed(p_user_id uuid, p_prior_lifetime integer); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION public.maybe_emit_tier_promotion_feed(p_user_id uuid, p_prior_lifetime integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.maybe_emit_tier_promotion_feed(p_user_id uuid, p_prior_lifetime integer) TO anon;
+GRANT ALL ON FUNCTION public.maybe_emit_tier_promotion_feed(p_user_id uuid, p_prior_lifetime integer) TO authenticated;
+GRANT ALL ON FUNCTION public.maybe_emit_tier_promotion_feed(p_user_id uuid, p_prior_lifetime integer) TO service_role;
 
 
 --
@@ -18370,6 +21073,15 @@ GRANT ALL ON FUNCTION public.queue_asset_cost_refresh() TO service_role;
 
 
 --
+-- Name: FUNCTION record_streak_activity(p_user_id uuid, p_activity_source text, p_reference_id uuid, p_activity_at timestamp with time zone); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.record_streak_activity(p_user_id uuid, p_activity_source text, p_reference_id uuid, p_activity_at timestamp with time zone) TO anon;
+GRANT ALL ON FUNCTION public.record_streak_activity(p_user_id uuid, p_activity_source text, p_reference_id uuid, p_activity_at timestamp with time zone) TO authenticated;
+GRANT ALL ON FUNCTION public.record_streak_activity(p_user_id uuid, p_activity_source text, p_reference_id uuid, p_activity_at timestamp with time zone) TO service_role;
+
+
+--
 -- Name: FUNCTION redeem_reward(p_item_id uuid, p_request_id uuid); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18394,6 +21106,15 @@ GRANT ALL ON FUNCTION public.refresh_asset_cost_summary() TO service_role;
 GRANT ALL ON FUNCTION public.refresh_certification_completion_stats() TO anon;
 GRANT ALL ON FUNCTION public.refresh_certification_completion_stats() TO authenticated;
 GRANT ALL ON FUNCTION public.refresh_certification_completion_stats() TO service_role;
+
+
+--
+-- Name: FUNCTION refresh_user_streak(p_user_id uuid, p_as_of timestamp with time zone); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.refresh_user_streak(p_user_id uuid, p_as_of timestamp with time zone) TO anon;
+GRANT ALL ON FUNCTION public.refresh_user_streak(p_user_id uuid, p_as_of timestamp with time zone) TO authenticated;
+GRANT ALL ON FUNCTION public.refresh_user_streak(p_user_id uuid, p_as_of timestamp with time zone) TO service_role;
 
 
 --
@@ -18568,6 +21289,42 @@ GRANT ALL ON FUNCTION public.sync_streak_bonuses_for_user(p_user_id uuid, p_anch
 
 
 --
+-- Name: FUNCTION trg_emit_tier_promotion_feed_on_earn(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.trg_emit_tier_promotion_feed_on_earn() TO anon;
+GRANT ALL ON FUNCTION public.trg_emit_tier_promotion_feed_on_earn() TO authenticated;
+GRANT ALL ON FUNCTION public.trg_emit_tier_promotion_feed_on_earn() TO service_role;
+
+
+--
+-- Name: FUNCTION trg_evaluate_badges_on_point_transaction(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.trg_evaluate_badges_on_point_transaction() TO anon;
+GRANT ALL ON FUNCTION public.trg_evaluate_badges_on_point_transaction() TO authenticated;
+GRANT ALL ON FUNCTION public.trg_evaluate_badges_on_point_transaction() TO service_role;
+
+
+--
+-- Name: FUNCTION trg_record_weekly_streak_on_briefing(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.trg_record_weekly_streak_on_briefing() TO anon;
+GRANT ALL ON FUNCTION public.trg_record_weekly_streak_on_briefing() TO authenticated;
+GRANT ALL ON FUNCTION public.trg_record_weekly_streak_on_briefing() TO service_role;
+
+
+--
+-- Name: FUNCTION trg_record_weekly_streak_on_point_tx(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.trg_record_weekly_streak_on_point_tx() TO anon;
+GRANT ALL ON FUNCTION public.trg_record_weekly_streak_on_point_tx() TO authenticated;
+GRANT ALL ON FUNCTION public.trg_record_weekly_streak_on_point_tx() TO service_role;
+
+
+--
 -- Name: FUNCTION trg_sync_streak_bonus_to_ledger(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -18703,12 +21460,48 @@ GRANT ALL ON FUNCTION public.user_has_certification_access(p_user_id uuid, p_cer
 
 
 --
+-- Name: FUNCTION user_has_rto_covering_week(p_user_id uuid, p_week_start date); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.user_has_rto_covering_week(p_user_id uuid, p_week_start date) TO anon;
+GRANT ALL ON FUNCTION public.user_has_rto_covering_week(p_user_id uuid, p_week_start date) TO authenticated;
+GRANT ALL ON FUNCTION public.user_has_rto_covering_week(p_user_id uuid, p_week_start date) TO service_role;
+
+
+--
 -- Name: FUNCTION validate_recordable_incident(); Type: ACL; Schema: public; Owner: postgres
 --
 
 GRANT ALL ON FUNCTION public.validate_recordable_incident() TO anon;
 GRANT ALL ON FUNCTION public.validate_recordable_incident() TO authenticated;
 GRANT ALL ON FUNCTION public.validate_recordable_incident() TO service_role;
+
+
+--
+-- Name: FUNCTION verify_gamification_workforce_levels(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.verify_gamification_workforce_levels() TO anon;
+GRANT ALL ON FUNCTION public.verify_gamification_workforce_levels() TO authenticated;
+GRANT ALL ON FUNCTION public.verify_gamification_workforce_levels() TO service_role;
+
+
+--
+-- Name: FUNCTION week_has_meaningful_streak_activity(p_user_id uuid, p_week_start date); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.week_has_meaningful_streak_activity(p_user_id uuid, p_week_start date) TO anon;
+GRANT ALL ON FUNCTION public.week_has_meaningful_streak_activity(p_user_id uuid, p_week_start date) TO authenticated;
+GRANT ALL ON FUNCTION public.week_has_meaningful_streak_activity(p_user_id uuid, p_week_start date) TO service_role;
+
+
+--
+-- Name: FUNCTION welcome_gamification(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.welcome_gamification() TO anon;
+GRANT ALL ON FUNCTION public.welcome_gamification() TO authenticated;
+GRANT ALL ON FUNCTION public.welcome_gamification() TO service_role;
 
 
 --
@@ -19044,6 +21837,15 @@ GRANT ALL ON TABLE public.auto_tuning_config TO service_role;
 
 
 --
+-- Name: TABLE badges; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.badges TO anon;
+GRANT ALL ON TABLE public.badges TO authenticated;
+GRANT ALL ON TABLE public.badges TO service_role;
+
+
+--
 -- Name: TABLE certification_access_grants; Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -19251,6 +22053,24 @@ GRANT ALL ON TABLE public.external_certification_types TO service_role;
 
 
 --
+-- Name: TABLE gamification_baseline_cohort; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.gamification_baseline_cohort TO anon;
+GRANT ALL ON TABLE public.gamification_baseline_cohort TO authenticated;
+GRANT ALL ON TABLE public.gamification_baseline_cohort TO service_role;
+
+
+--
+-- Name: TABLE gamification_settings; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.gamification_settings TO anon;
+GRANT ALL ON TABLE public.gamification_settings TO authenticated;
+GRANT ALL ON TABLE public.gamification_settings TO service_role;
+
+
+--
 -- Name: TABLE job_crew_assignments; Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -19293,6 +22113,15 @@ GRANT ALL ON TABLE public.job_progress_updates TO service_role;
 GRANT ALL ON TABLE public.jsa_sharing_audit TO anon;
 GRANT ALL ON TABLE public.jsa_sharing_audit TO authenticated;
 GRANT ALL ON TABLE public.jsa_sharing_audit TO service_role;
+
+
+--
+-- Name: TABLE level_tiers; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.level_tiers TO anon;
+GRANT ALL ON TABLE public.level_tiers TO authenticated;
+GRANT ALL ON TABLE public.level_tiers TO service_role;
 
 
 --
@@ -19476,6 +22305,15 @@ GRANT ALL ON TABLE public.push_subscriptions TO service_role;
 
 
 --
+-- Name: TABLE recognition_feed; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.recognition_feed TO anon;
+GRANT ALL ON TABLE public.recognition_feed TO authenticated;
+GRANT ALL ON TABLE public.recognition_feed TO service_role;
+
+
+--
 -- Name: TABLE reward_catalog; Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -19611,6 +22449,15 @@ GRANT ALL ON TABLE public.storage_cleanup_queue TO service_role;
 
 
 --
+-- Name: TABLE streak_week_activity; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.streak_week_activity TO anon;
+GRANT ALL ON TABLE public.streak_week_activity TO authenticated;
+GRANT ALL ON TABLE public.streak_week_activity TO service_role;
+
+
+--
 -- Name: TABLE telemetry_events; Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -19653,6 +22500,15 @@ GRANT ALL ON TABLE public.user_activity_sessions TO service_role;
 GRANT ALL ON TABLE public.user_activity_feed TO anon;
 GRANT ALL ON TABLE public.user_activity_feed TO authenticated;
 GRANT ALL ON TABLE public.user_activity_feed TO service_role;
+
+
+--
+-- Name: TABLE user_badges; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.user_badges TO anon;
+GRANT ALL ON TABLE public.user_badges TO authenticated;
+GRANT ALL ON TABLE public.user_badges TO service_role;
 
 
 --
@@ -19823,5 +22679,5 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON T
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 3qs4Ao4SPmTg4RurpbXmspPfVCaVV8PN5AfY1cRb315ro4SElp4jK3sf2anP7ae
+\unrestrict bPmiPrVuXf7kdyj7Na8hTh2NHe1MyHlTeViXSlXRQbdZW8G1BG0sQJk5YCc16Ke
 

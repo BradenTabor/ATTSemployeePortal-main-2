@@ -48,7 +48,7 @@ Steps: recreate throwaway DB → load roles → stubs + committed baseline schem
 | File | Tracked? | Purpose |
 |------|----------|---------|
 | `run.sh`, `refresh.sh`, `stubs.sql`, `config_tables.txt` | yes | Reproducible gate tooling |
-| `verify.sql`, `assertions.sql`, `baseline_anchor.txt` | yes | Assertion entry point + baseline anchor |
+| `verify.sql`, `config_lock_assertions.sql`, `assertions.sql`, `baseline_anchor.txt` | yes | Assertion entry point + config locks + baseline anchor |
 | `prod_schema.sql`, `prod_config_data.sql` | yes | Committed DR baseline (re-baseline only) |
 | `prod_roles.sql`, `prod_applied_versions.txt` | **no** | Machine-local refresh artifacts |
 
@@ -85,11 +85,17 @@ Failure modes (opposite remediations):
 
 | Home | Pros | Cons |
 |------|------|------|
-| **Manual / pre-re-baseline** (default) | No secrets in CI; runs today with `.env` | Only catches drift when someone runs it |
-| **Scheduled workflow** (`workflow_dispatch` or weekly cron + `SUPABASE_DB_URL` secret) | Unattended tripwire | Requires GitHub secret + IPv6-capable runner or proxy |
+| **Manual / pre-re-baseline** (default, Gate 4) | No secrets in CI; runs today with `.env` | Catches drift when **you** run it before apply/re-baseline; blind to out-of-band prod changes by others |
+| **Scheduled workflow** (near horizon — before gamification track) | Unattended tripwire | Requires `SUPABASE_DB_URL` GitHub secret; see IPv4 note below |
 | **Default `ci.yml` push/PR** | Always on | Needs prod creds on every PR — not recommended |
 
-**Recommendation:** keep `verify_no_drift.sh` as the canonical check; run it manually before re-baselines and before prod applies. Add an optional `.github/workflows/db-drift-check.yml` with `workflow_dispatch` + weekly schedule when you're ready to store `SUPABASE_DB_URL` as a repo secret. Do **not** wire it into the default lint/test CI job (no secrets today).
+**Manual tier (ship now):** run `verify_no_drift.sh` before every prod apply and every re-baseline. This is the minimum; do not treat it as sufficient alone.
+
+**Scheduled tier (build next, not "someday"):** add `.github/workflows/db-drift-check.yml` with `workflow_dispatch` + weekly cron so drift fires unattended — the failure mode the manual tier cannot catch is a prod change that bypasses the ritual entirely.
+
+**IPv4 / pooler constraint (decide when building the workflow):** Supabase direct DB hosts are often IPv6-only. GitHub-hosted runners do **not** reliably have IPv6 egress, so a cron that uses the dashboard connection string may fail at runtime even with valid credentials. Prefer the **IPv4-reachable Supabase pooler** endpoint for drift dumps rather than standing up a self-hosted runner solely for this job. This is a known constraint — not a surprise to discover on the first Monday cron.
+
+Do **not** wire drift checks into the default lint/test CI job (no prod secrets in `ci.yml` today).
 
 ## Version control (extended)
 

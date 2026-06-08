@@ -1876,4 +1876,1079 @@ BEGIN
   ALTER TABLE public.announcement_rewards ENABLE TRIGGER enforce_latest_announcement_claim;
 END $$;
 
+-- ---- Increment-specific checks: 20260608120000 (gamification gate 1) ----------
+DO $$
+DECLARE
+  missing text := '';
+  v_def   text;
+BEGIN
+  IF to_regclass('public.level_tiers') IS NULL THEN
+    missing := missing || E'\n  - table public.level_tiers is missing';
+  END IF;
+  IF to_regclass('public.gamification_settings') IS NULL THEN
+    missing := missing || E'\n  - table public.gamification_settings is missing';
+  END IF;
+  IF to_regclass('public.badges') IS NULL THEN
+    missing := missing || E'\n  - table public.badges is missing';
+  END IF;
+  IF to_regclass('public.user_badges') IS NULL THEN
+    missing := missing || E'\n  - table public.user_badges is missing';
+  END IF;
+  IF to_regclass('public.streak_state') IS NULL THEN
+    missing := missing || E'\n  - table public.streak_state is missing';
+  END IF;
+  IF to_regclass('public.streak_week_activity') IS NULL THEN
+    missing := missing || E'\n  - table public.streak_week_activity is missing';
+  END IF;
+  IF to_regclass('public.recognition_feed') IS NULL THEN
+    missing := missing || E'\n  - table public.recognition_feed is missing';
+  END IF;
+  IF to_regprocedure('public.get_user_lifetime_earned(uuid)') IS NULL THEN
+    missing := missing || E'\n  - function public.get_user_lifetime_earned(uuid) is missing';
+  END IF;
+  IF to_regprocedure('public.get_user_level(uuid)') IS NULL THEN
+    missing := missing || E'\n  - function public.get_user_level(uuid) is missing';
+  END IF;
+
+  IF (SELECT count(*) FROM public.level_tiers WHERE is_active) <> 24 THEN
+    missing := missing || E'\n  - level_tiers seed expected 24 active rows, got '
+      || (SELECT count(*) FROM public.level_tiers WHERE is_active)::text;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.level_tiers
+    WHERE tier_key = 'seedling' AND sub_level = 1 AND entry_threshold = 0
+  ) THEN
+    missing := missing || E'\n  - level_tiers missing Seedling I @ 0';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.level_tiers
+    WHERE tier_key = 'redwood' AND sub_level = 3 AND entry_threshold = 11000
+  ) THEN
+    missing := missing || E'\n  - level_tiers missing Redwood III @ 11000';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.gamification_settings
+    WHERE key = 'streak_milestone_weeks' AND value = '[4, 12, 26]'::jsonb
+  ) THEN
+    missing := missing || E'\n  - gamification_settings streak_milestone_weeks not [4,12,26]';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.gamification_settings
+    WHERE key = 'sharp_eye_prestige_counts' AND value = '[3, 10, 25]'::jsonb
+  ) THEN
+    missing := missing || E'\n  - gamification_settings sharp_eye_prestige_counts not [3,10,25]';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.gamification_settings
+    WHERE key = 'cert_stacked_prestige_counts' AND value = '[3, 5, 10]'::jsonb
+  ) THEN
+    missing := missing || E'\n  - gamification_settings cert_stacked_prestige_counts not [3,5,10]';
+  END IF;
+
+  v_def := pg_get_functiondef('public.get_user_lifetime_earned(uuid)'::regprocedure);
+  IF position('streak_bonus' IN v_def) = 0 THEN
+    missing := missing || E'\n  - get_user_lifetime_earned does not include streak_bonus';
+  END IF;
+  IF position('redemption' IN v_def) = 0 AND position('adjustment' IN v_def) = 0 THEN
+    -- earning-source allowlist must exclude wallet-only sources
+    IF position('manual_award' IN v_def) = 0 THEN
+      missing := missing || E'\n  - get_user_lifetime_earned missing expected earning sources';
+    END IF;
+  END IF;
+  IF position('redemption' IN v_def) > 0 OR position('adjustment' IN v_def) > 0 THEN
+    missing := missing || E'\n  - get_user_lifetime_earned must not reference redemption/adjustment in allowlist';
+  END IF;
+
+  IF missing <> '' THEN
+    RAISE EXCEPTION E'GATE FAILED — gamification gate 1 objects (20260608120000) not correct:%', missing;
+  END IF;
+  RAISE NOTICE 'OK: gamification schema + level functions present; ladder seeded (24 tiers).';
+END $$;
+
+DO $$
+DECLARE
+  c_zero   uuid := '00000000-0000-0000-0000-00000000b101';
+  c_19     uuid := '00000000-0000-0000-0000-00000000b119';
+  c_20     uuid := '00000000-0000-0000-0000-00000000b120';
+  c_35     uuid := '00000000-0000-0000-0000-00000000b135';
+  c_49     uuid := '00000000-0000-0000-0000-00000000b149';
+  c_50     uuid := '00000000-0000-0000-0000-00000000b150';
+  c_redeem uuid := '00000000-0000-0000-0000-00000000b1a1';
+  c_refund uuid := '00000000-0000-0000-0000-00000000b1a2';
+  c_streak uuid := '00000000-0000-0000-0000-00000000b1a3';
+  c_max    uuid := '00000000-0000-0000-0000-00000000b1a4';
+  v_lifetime int;
+  r record;
+BEGIN
+  INSERT INTO auth.users (id, aud, role, email) VALUES
+    (c_zero,   'authenticated', 'authenticated', 'gate-g1-zero@example.invalid'),
+    (c_19,     'authenticated', 'authenticated', 'gate-g1-19@example.invalid'),
+    (c_20,     'authenticated', 'authenticated', 'gate-g1-20@example.invalid'),
+    (c_35,     'authenticated', 'authenticated', 'gate-g1-35@example.invalid'),
+    (c_49,     'authenticated', 'authenticated', 'gate-g1-49@example.invalid'),
+    (c_50,     'authenticated', 'authenticated', 'gate-g1-50@example.invalid'),
+    (c_redeem, 'authenticated', 'authenticated', 'gate-g1-redeem@example.invalid'),
+    (c_refund, 'authenticated', 'authenticated', 'gate-g1-refund@example.invalid'),
+    (c_streak, 'authenticated', 'authenticated', 'gate-g1-streak@example.invalid'),
+    (c_max,    'authenticated', 'authenticated', 'gate-g1-max@example.invalid');
+
+  INSERT INTO public.point_transactions (user_id, amount, source, reason) VALUES
+    (c_19, 19, 'announcement_claim', 'gate g1 boundary'),
+    (c_20, 20, 'announcement_claim', 'gate g1 boundary'),
+    (c_35, 35, 'compliance_form', 'gate g1 boundary'),
+    (c_49, 49, 'announcement_claim', 'gate g1 boundary'),
+    (c_50, 50, 'announcement_claim', 'gate g1 boundary'),
+    (c_redeem, 100, 'announcement_claim', 'gate g1 redeem test'),
+    (c_redeem, -40, 'redemption', 'gate g1 redeem test'),
+    (c_refund, 80, 'announcement_claim', 'gate g1 refund test'),
+    (c_refund, 20, 'adjustment', 'gate g1 refund test'),
+    (c_streak, 7, 'streak_bonus', 'gate g1 streak test'),
+    (c_max, 11000, 'announcement_claim', 'gate g1 max tier');
+
+  -- Zero / empty user stays Seedling I
+  SELECT * INTO r FROM public.get_user_level(c_zero);
+  IF r.tier_key <> 'seedling' OR r.sub_level <> 1 OR r.lifetime_earned <> 0
+     OR r.next_threshold <> 20 OR r.progress_pct <> 0.00 THEN
+    RAISE EXCEPTION 'GATE FAILED g1 boundary zero: % % earned=% next=% pct=%',
+      r.tier_key, r.sub_level_label, r.lifetime_earned, r.next_threshold, r.progress_pct;
+  END IF;
+
+  SELECT * INTO r FROM public.get_user_level(c_19);
+  IF r.tier_key <> 'seedling' OR r.sub_level <> 1 OR r.lifetime_earned <> 19 THEN
+    RAISE EXCEPTION 'GATE FAILED g1 boundary 19: got % % earned=%', r.tier_key, r.sub_level_label, r.lifetime_earned;
+  END IF;
+
+  SELECT * INTO r FROM public.get_user_level(c_20);
+  IF r.tier_key <> 'seedling' OR r.sub_level <> 2 OR r.lifetime_earned <> 20
+     OR r.current_threshold <> 20 OR r.next_threshold <> 35 THEN
+    RAISE EXCEPTION 'GATE FAILED g1 boundary 20: got % % thresh=% next=%',
+      r.tier_key, r.sub_level_label, r.current_threshold, r.next_threshold;
+  END IF;
+
+  SELECT * INTO r FROM public.get_user_level(c_35);
+  IF r.tier_key <> 'seedling' OR r.sub_level <> 3 OR r.lifetime_earned <> 35 THEN
+    RAISE EXCEPTION 'GATE FAILED g1 boundary 35: got % %', r.tier_key, r.sub_level_label;
+  END IF;
+
+  SELECT * INTO r FROM public.get_user_level(c_49);
+  IF r.tier_key <> 'seedling' OR r.sub_level <> 3 OR r.lifetime_earned <> 49 THEN
+    RAISE EXCEPTION 'GATE FAILED g1 boundary 49: got % %', r.tier_key, r.sub_level_label;
+  END IF;
+
+  SELECT * INTO r FROM public.get_user_level(c_50);
+  IF r.tier_key <> 'sapling' OR r.sub_level <> 1 OR r.lifetime_earned <> 50
+     OR r.current_threshold <> 50 THEN
+    RAISE EXCEPTION 'GATE FAILED g1 boundary 50: got % % earned=%', r.tier_key, r.sub_level_label, r.lifetime_earned;
+  END IF;
+
+  v_lifetime := public.get_user_lifetime_earned(c_redeem);
+  IF v_lifetime <> 100 THEN
+    RAISE EXCEPTION 'GATE FAILED g1 redemption: lifetime=% expected 100 (redemption must not reduce)', v_lifetime;
+  END IF;
+
+  v_lifetime := public.get_user_lifetime_earned(c_refund);
+  IF v_lifetime <> 80 THEN
+    RAISE EXCEPTION 'GATE FAILED g1 adjustment refund: lifetime=% expected 80 (adjustment must not inflate)', v_lifetime;
+  END IF;
+
+  v_lifetime := public.get_user_lifetime_earned(c_streak);
+  IF v_lifetime <> 7 THEN
+    RAISE EXCEPTION 'GATE FAILED g1 streak_bonus: lifetime=% expected 7', v_lifetime;
+  END IF;
+
+  SELECT * INTO r FROM public.get_user_level(c_max);
+  IF r.tier_key <> 'redwood' OR r.sub_level <> 3 OR r.lifetime_earned <> 11000
+     OR r.next_threshold IS NOT NULL OR r.progress_pct <> 100.00 THEN
+    RAISE EXCEPTION 'GATE FAILED g1 max tier: % % next=% pct=%',
+      r.tier_key, r.sub_level_label, r.next_threshold, r.progress_pct;
+  END IF;
+
+  RAISE NOTICE 'OK: gamification gate 1 boundary tests — thresholds, redemption/adjustment exclusion, streak_bonus inclusion.';
+END $$;
+
+DO $$
+DECLARE
+  r record;
+  v_users int := 0;
+BEGIN
+  RAISE NOTICE 'GATE 1 retroactive tier distribution (app_users with ledger activity):';
+  FOR r IN
+    SELECT
+      gl.tier_key,
+      gl.tier_name,
+      gl.sub_level_label,
+      gl.tier_order,
+      gl.sub_level,
+      count(*) AS user_count,
+      min(gl.lifetime_earned) AS min_earned,
+      max(gl.lifetime_earned) AS max_earned
+    FROM public.app_users au
+    JOIN LATERAL public.get_user_level(au.user_id) gl ON true
+    WHERE EXISTS (
+      SELECT 1 FROM public.point_transactions pt WHERE pt.user_id = au.user_id
+    )
+    GROUP BY gl.tier_key, gl.tier_name, gl.sub_level_label, gl.tier_order, gl.sub_level
+    ORDER BY gl.tier_order, gl.sub_level
+  LOOP
+    v_users := v_users + r.user_count;
+    RAISE NOTICE '  tier=% % % users=% earned=[%..%]',
+      r.tier_key, r.tier_name, r.sub_level_label, r.user_count, r.min_earned, r.max_earned;
+  END LOOP;
+
+  SELECT count(DISTINCT au.user_id) INTO v_users
+  FROM public.app_users au
+  WHERE EXISTS (SELECT 1 FROM public.point_transactions pt WHERE pt.user_id = au.user_id);
+
+  IF v_users = 0 THEN
+    RAISE NOTICE 'NOTE: retroactive distribution skipped — no app_users with ledger rows in gate DB.';
+  ELSE
+    RAISE NOTICE 'OK: retroactive tier distribution spot-check over % ledger-active users.', v_users;
+  END IF;
+END $$;
+
+-- ---- Increment-specific checks: 20260608140000 (gamification gate 2) ----------
+DO $$
+DECLARE
+  missing text := '';
+BEGIN
+  IF to_regprocedure('public.award_badge(uuid,text,integer,uuid,text)') IS NULL THEN
+    missing := missing || E'\n  - function public.award_badge is missing';
+  END IF;
+  IF to_regprocedure('public.evaluate_user_badges(uuid,text)') IS NULL THEN
+    missing := missing || E'\n  - function public.evaluate_user_badges(uuid,text) is missing';
+  END IF;
+  IF to_regprocedure('public.welcome_gamification()') IS NULL THEN
+    missing := missing || E'\n  - function public.welcome_gamification() is missing';
+  END IF;
+  IF to_regprocedure('public.evaluate_tenure_badges_cron()') IS NULL THEN
+    missing := missing || E'\n  - function public.evaluate_tenure_badges_cron() is missing';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'app_users'
+      AND column_name = 'first_gamification_seen_at'
+  ) THEN
+    missing := missing || E'\n  - app_users.first_gamification_seen_at column missing';
+  END IF;
+
+  IF (SELECT count(*) FROM public.badges WHERE is_active) <> 10 THEN
+    missing := missing || E'\n  - badges seed expected 10 active rows, got '
+      || (SELECT count(*) FROM public.badges WHERE is_active)::text;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM public.badges WHERE badge_key = 'first_light' AND prestige_max = 1) THEN
+    missing := missing || E'\n  - badge first_light missing or wrong prestige_max';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.badges WHERE badge_key = 'sharp_eye' AND prestige_max = 3) THEN
+    missing := missing || E'\n  - badge sharp_eye missing or prestige_max <> 3';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.badges WHERE badge_key = 'stacked' AND prestige_max = 3) THEN
+    missing := missing || E'\n  - badge stacked missing or prestige_max <> 3';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.badges WHERE badge_key = 'on_the_board' AND is_feed_worthy = false) THEN
+    missing := missing || E'\n  - on_the_board must be is_feed_worthy=false (dedupe tier promotion)';
+  END IF;
+
+  IF missing <> '' THEN
+    RAISE EXCEPTION E'GATE FAILED — gamification gate 2 objects (20260608140000) not correct:%', missing;
+  END IF;
+  RAISE NOTICE 'OK: gamification gate 2 schema — badge engine, seeds, welcome RPC, tenure cron.';
+END $$;
+
+DO $$
+DECLARE
+  c_user       uuid := '00000000-0000-0000-0000-00000000d201';
+  c_incident   uuid;
+  c_ca         uuid;
+  c_cert_type  uuid := '00000000-0000-0000-0000-00000000d220';
+  c_attempt    uuid := '00000000-0000-0000-0000-00000000d223';
+  c_cert_rec   uuid := '00000000-0000-0000-0000-00000000d221';
+  c_null_hire  uuid := '00000000-0000-0000-0000-00000000d231';
+  c_tenure     uuid := '00000000-0000-0000-0000-00000000d232';
+  v_id1        uuid;
+  v_id2        uuid;
+  v_count      int;
+  v_null_hire  int;
+  v_result     jsonb;
+  i            int;
+BEGIN
+  ALTER TABLE public.safety_incidents DISABLE TRIGGER trigger_safety_audit_incident;
+  ALTER TABLE public.corrective_actions DISABLE TRIGGER trigger_safety_audit_corrective_actions;
+  ALTER TABLE public.certification_records DISABLE TRIGGER trigger_safety_audit_cert_records;
+  ALTER TABLE public.certification_records DISABLE TRIGGER trigger_refresh_completion_stats_on_record_insert;
+  ALTER TABLE public.point_transactions DISABLE TRIGGER trg_evaluate_badges_point_tx;
+
+  INSERT INTO auth.users (id, aud, role, email) VALUES
+    (c_user,      'authenticated', 'authenticated', 'gate-g2-user@example.invalid'),
+    (c_null_hire, 'authenticated', 'authenticated', 'gate-g2-null-hire@example.invalid'),
+    (c_tenure,    'authenticated', 'authenticated', 'gate-g2-tenure@example.invalid');
+
+  UPDATE public.app_users SET hire_date = current_date - interval '400 days'
+  WHERE user_id = c_user;
+  UPDATE public.app_users SET hire_date = NULL
+  WHERE user_id = c_null_hire;
+  UPDATE public.app_users SET hire_date = current_date - interval '6 years'
+  WHERE user_id = c_tenure;
+
+  -- Idempotency: award_badge twice returns id then NULL
+  v_id1 := public.award_badge(c_user, 'first_light', 1);
+  v_id2 := public.award_badge(c_user, 'first_light', 1);
+  IF v_id1 IS NULL THEN
+    RAISE EXCEPTION 'GATE FAILED g2 idempotency: first award_badge returned NULL';
+  END IF;
+  IF v_id2 IS NOT NULL THEN
+    RAISE EXCEPTION 'GATE FAILED g2 idempotency: second award_badge should return NULL';
+  END IF;
+  SELECT count(*)::int INTO v_count
+  FROM public.user_badges WHERE user_id = c_user AND badge_key = 'first_light';
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED g2 idempotency: expected 1 first_light row, got %', v_count;
+  END IF;
+
+  PERFORM public.evaluate_user_badges(c_user, 'all');
+  PERFORM public.evaluate_user_badges(c_user, 'all');
+  SELECT count(*)::int INTO v_count
+  FROM public.user_badges WHERE user_id = c_user AND badge_key = 'first_light';
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED g2 re-eval idempotency: duplicate first_light rows';
+  END IF;
+
+  -- Sharp Eye via corrective_bonus signal — 3 distinct actionable incidents → bronze only
+  FOR i IN 1..3 LOOP
+    c_incident := ('00000000-0000-0000-0000-00000000d2' || lpad(i::text, 2, '0'))::uuid;
+    c_ca       := ('00000000-0000-0000-0000-00000000d3' || lpad(i::text, 2, '0'))::uuid;
+
+    INSERT INTO public.safety_incidents (id, incident_date, severity, incident_type, description, reported_by)
+    VALUES (c_incident, current_date, 'near_miss', 'other', 'gate g2 sharp eye ' || i, c_user);
+
+    INSERT INTO public.corrective_actions (id, incident_id, description, action_type, status, due_date)
+    VALUES (c_ca, c_incident, 'gate g2 capa ' || i, 'immediate', 'verified', current_date + 7);
+
+    INSERT INTO public.point_transactions
+      (user_id, amount, source, reference_id, reference_table, category, counts_toward_raffle)
+    VALUES
+      (c_user, 15, 'near_miss_report', c_ca, 'corrective_actions', 'corrective_bonus', true);
+  END LOOP;
+
+  ALTER TABLE public.point_transactions ENABLE TRIGGER trg_evaluate_badges_point_tx;
+
+  -- One more insert with trigger enabled to exercise live hook path
+  c_incident := '00000000-0000-0000-0000-00000000d204';
+  c_ca       := '00000000-0000-0000-0000-00000000d304';
+  INSERT INTO public.safety_incidents (id, incident_date, severity, incident_type, description, reported_by)
+  VALUES (c_incident, current_date, 'near_miss', 'other', 'gate g2 sharp eye trigger', c_user);
+  INSERT INTO public.corrective_actions (id, incident_id, description, action_type, status, due_date)
+  VALUES (c_ca, c_incident, 'gate g2 capa trigger', 'immediate', 'verified', current_date + 7);
+  INSERT INTO public.point_transactions
+    (user_id, amount, source, reference_id, reference_table, category, counts_toward_raffle)
+  VALUES
+    (c_user, 15, 'near_miss_report', c_ca, 'corrective_actions', 'corrective_bonus', true);
+
+  SELECT count(*)::int INTO v_count
+  FROM public.user_badges WHERE user_id = c_user AND badge_key = 'sharp_eye' AND prestige_tier = 1;
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED g2 sharp eye: expected bronze at 4 actionable, got tier1=%', v_count;
+  END IF;
+  SELECT count(*)::int INTO v_count
+  FROM public.user_badges WHERE user_id = c_user AND badge_key = 'sharp_eye' AND prestige_tier = 2;
+  IF v_count <> 0 THEN
+    RAISE EXCEPTION 'GATE FAILED g2 prestige order: tier 2 awarded below threshold 10';
+  END IF;
+
+  -- Certified via active cert (written-only path)
+  INSERT INTO public.certification_types (id, name, slug, has_written_test, has_practical_eval, passing_score, validity_months)
+  VALUES (c_cert_type, 'Gate G2 Written Only', 'gate-g2-written-only', true, false, 80, 12);
+
+  INSERT INTO public.certification_attempts (id, user_id, certification_type_id, attempt_number, status, passed, score_percentage)
+  VALUES (c_attempt, c_user, c_cert_type, 1, 'graded', true, 90.00);
+
+  INSERT INTO public.certification_records (
+    id, user_id, certification_type_id, written_attempt_id, written_passed_at,
+    status, expires_at, certified_at
+  ) VALUES (
+    c_cert_rec, c_user, c_cert_type, c_attempt, now(),
+    'active', now() + interval '6 months', now()
+  );
+
+  PERFORM public.evaluate_user_badges(c_user, 'cert_active');
+  IF NOT EXISTS (
+    SELECT 1 FROM public.user_badges WHERE user_id = c_user AND badge_key = 'certified'
+  ) THEN
+    RAISE EXCEPTION 'GATE FAILED g2 certified: badge not awarded after active cert';
+  END IF;
+
+  -- NULL hire_date safety
+  PERFORM public.evaluate_user_badges(c_null_hire, 'tenure');
+  SELECT count(*)::int INTO v_count
+  FROM public.user_badges ub
+  WHERE ub.user_id = c_null_hire AND ub.badge_key IN ('one_ring', 'five_rings', 'old_timber');
+  IF v_count <> 0 THEN
+    RAISE EXCEPTION 'GATE FAILED g2 NULL hire_date: tenure badges awarded without hire_date';
+  END IF;
+
+  PERFORM public.evaluate_user_badges(c_tenure, 'tenure');
+  IF NOT EXISTS (SELECT 1 FROM public.user_badges WHERE user_id = c_tenure AND badge_key = 'one_ring') THEN
+    RAISE EXCEPTION 'GATE FAILED g2 tenure: one_ring not awarded for 6-year hire';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.user_badges WHERE user_id = c_tenure AND badge_key = 'five_rings') THEN
+    RAISE EXCEPTION 'GATE FAILED g2 tenure: five_rings not awarded for 6-year hire';
+  END IF;
+  IF EXISTS (SELECT 1 FROM public.user_badges WHERE user_id = c_tenure AND badge_key = 'old_timber') THEN
+    RAISE EXCEPTION 'GATE FAILED g2 tenure: old_timber wrongly awarded at 6 years';
+  END IF;
+
+  v_result := public.evaluate_tenure_badges_cron();
+  v_null_hire := (v_result->>'null_hire_date_count')::int;
+  IF v_null_hire IS NULL OR v_null_hire < 1 THEN
+    RAISE EXCEPTION 'GATE FAILED g2 tenure cron: null_hire_date_count missing or too low (got %)', v_null_hire;
+  END IF;
+
+  RAISE NOTICE 'OK: gamification gate 2 — idempotency, sharp_eye corrective_bonus signal, prestige order, NULL hire_date safe.';
+  RAISE NOTICE 'GATE 2 null_hire_date_count (gate DB app_users): %', v_null_hire;
+END $$;
+
+-- ---- Increment-specific checks: 20260608160000 (gamification gate 3) ----------
+DO $$
+DECLARE
+  missing text := '';
+BEGIN
+  IF to_regprocedure('public.chicago_iso_week_start(timestamp with time zone)') IS NULL THEN
+    missing := missing || E'\n  - function public.chicago_iso_week_start(timestamptz) is missing';
+  END IF;
+  IF to_regprocedure('public.user_has_rto_covering_week(uuid,date)') IS NULL THEN
+    missing := missing || E'\n  - function public.user_has_rto_covering_week is missing';
+  END IF;
+  IF to_regprocedure('public.record_streak_activity(uuid,text,uuid,timestamp with time zone)') IS NULL THEN
+    missing := missing || E'\n  - function public.record_streak_activity is missing';
+  END IF;
+  IF to_regprocedure('public.refresh_user_streak(uuid,timestamp with time zone)') IS NULL THEN
+    missing := missing || E'\n  - function public.refresh_user_streak is missing';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger t
+    JOIN pg_class c ON c.oid = t.tgrelid
+    WHERE c.relname = 'point_transactions' AND t.tgname = 'trg_weekly_streak_point_tx' AND NOT t.tgisinternal
+  ) THEN
+    missing := missing || E'\n  - trigger trg_weekly_streak_point_tx on point_transactions is missing';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger t
+    JOIN pg_class c ON c.oid = t.tgrelid
+    WHERE c.relname = 'safety_briefing_answers' AND t.tgname = 'trg_weekly_streak_briefing' AND NOT t.tgisinternal
+  ) THEN
+    missing := missing || E'\n  - trigger trg_weekly_streak_briefing on safety_briefing_answers is missing';
+  END IF;
+
+  IF missing <> '' THEN
+    RAISE EXCEPTION E'GATE FAILED — gamification gate 3 objects (20260608160000) not correct:%', missing;
+  END IF;
+  RAISE NOTICE 'OK: gamification gate 3 schema — weekly streak engine functions + triggers present.';
+END $$;
+
+DO $$
+DECLARE
+  c_user       uuid := '00000000-0000-0000-0000-00000000d301';
+  c_break      uuid := '00000000-0000-0000-0000-00000000d302';
+  c_freeze     uuid := '00000000-0000-0000-0000-00000000d303';
+  c_rto        uuid := '00000000-0000-0000-0000-00000000d304';
+  c_briefing   uuid := '00000000-0000-0000-0000-00000000d305';
+  v_week_a     date;
+  v_week_b     date;
+  v_streak     int;
+  v_freezes    int;
+  v_rows       int;
+  v_def        text;
+  r            public.streak_state;
+BEGIN
+  ALTER TABLE public.point_transactions DISABLE TRIGGER trg_weekly_streak_point_tx;
+  ALTER TABLE public.point_transactions DISABLE TRIGGER trg_evaluate_badges_point_tx;
+  ALTER TABLE public.safety_briefing_answers DISABLE TRIGGER trg_weekly_streak_briefing;
+
+  INSERT INTO auth.users (id, aud, role, email) VALUES
+    (c_user,     'authenticated', 'authenticated', 'gate-g3-tz@example.invalid'),
+    (c_break,    'authenticated', 'authenticated', 'gate-g3-break@example.invalid'),
+    (c_freeze,   'authenticated', 'authenticated', 'gate-g3-freeze@example.invalid'),
+    (c_rto,      'authenticated', 'authenticated', 'gate-g3-rto@example.invalid'),
+    (c_briefing, 'authenticated', 'authenticated', 'gate-g3-briefing@example.invalid')
+  ON CONFLICT (id) DO NOTHING;
+
+  -- chicago_iso_week_start: Monday seam (CST winter)
+  v_week_a := public.chicago_iso_week_start('2024-01-08 05:59:00+00'::timestamptz);
+  v_week_b := public.chicago_iso_week_start('2024-01-08 06:01:00+00'::timestamptz);
+  IF v_week_a <> '2024-01-01'::date OR v_week_b <> '2024-01-08'::date THEN
+    RAISE EXCEPTION 'GATE FAILED g3 tz seam: got % and % (expected 2024-01-01 and 2024-01-08)', v_week_a, v_week_b;
+  END IF;
+
+  -- chicago_iso_week_start: DST fall-back week (CST) — Sunday 11:59 PM vs Monday 12:01 AM
+  v_week_a := public.chicago_iso_week_start('2024-11-04 05:59:00+00'::timestamptz);
+  v_week_b := public.chicago_iso_week_start('2024-11-04 06:01:00+00'::timestamptz);
+  IF v_week_a <> '2024-10-28'::date OR v_week_b <> '2024-11-04'::date THEN
+    RAISE EXCEPTION 'GATE FAILED g3 DST seam: got % and % (expected 2024-10-28 and 2024-11-04)', v_week_a, v_week_b;
+  END IF;
+
+  -- Missed week breaks streak (no freeze, no RTO) — active 2099-07-06 + 2099-07-20 weeks; gap 2099-07-13
+  PERFORM public.record_streak_activity(c_break, 'compliance_form', gen_random_uuid(),
+    '2099-07-08 12:00:00'::timestamptz AT TIME ZONE 'America/Chicago');
+  UPDATE public.streak_state SET freezes_remaining = 0 WHERE user_id = c_break;
+  PERFORM public.record_streak_activity(c_break, 'compliance_form', gen_random_uuid(),
+    '2099-07-22 12:00:00'::timestamptz AT TIME ZONE 'America/Chicago');
+  SELECT current_streak_weeks INTO v_streak FROM public.streak_state WHERE user_id = c_break;
+  IF v_streak <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED g3 missed week: expected streak 1 after gap, got %', v_streak;
+  END IF;
+
+  -- Manual freeze consumed exactly once — active 2099-06-01 + 2099-06-15 weeks; gap 2099-06-08 frozen
+  PERFORM public.record_streak_activity(c_freeze, 'announcement_claim', gen_random_uuid(),
+    '2099-06-03 12:00:00'::timestamptz AT TIME ZONE 'America/Chicago');
+  UPDATE public.streak_state SET freezes_remaining = 1 WHERE user_id = c_freeze;
+  PERFORM public.record_streak_activity(c_freeze, 'announcement_claim', gen_random_uuid(),
+    '2099-06-17 12:00:00'::timestamptz AT TIME ZONE 'America/Chicago');
+  SELECT current_streak_weeks, freezes_remaining
+  INTO v_streak, v_freezes
+  FROM public.streak_state WHERE user_id = c_freeze;
+  IF v_streak <> 3 OR v_freezes <> 0 THEN
+    RAISE EXCEPTION 'GATE FAILED g3 freeze: expected streak 3 freezes 0, got streak=% freezes=%', v_streak, v_freezes;
+  END IF;
+  SELECT count(*)::int INTO v_rows
+  FROM public.streak_week_activity
+  WHERE user_id = c_freeze AND activity_source = 'manual_freeze';
+  IF v_rows <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED g3 freeze: expected 1 manual_freeze row, got %', v_rows;
+  END IF;
+
+  -- RTO-covered gap week: no break, manual freeze untouched
+  PERFORM public.record_streak_activity(c_rto, 'compliance_form', gen_random_uuid(),
+    '2099-08-05 12:00:00'::timestamptz AT TIME ZONE 'America/Chicago');
+  INSERT INTO public.rto_requests (
+    id, user_id, full_name, email, start_date, end_date, reason, status
+  ) VALUES (
+    '00000000-0000-0000-0000-00000000d310',
+    c_rto, 'Gate G3 RTO', 'gate-g3-rto@example.invalid',
+    '2099-08-10', '2099-08-14', 'gate g3 rto cover', 'Approved'
+  );
+  PERFORM public.record_streak_activity(c_rto, 'compliance_form', gen_random_uuid(),
+    '2099-08-19 12:00:00'::timestamptz AT TIME ZONE 'America/Chicago');
+  SELECT current_streak_weeks, freezes_remaining
+  INTO v_streak, v_freezes
+  FROM public.streak_state WHERE user_id = c_rto;
+  IF v_streak <> 3 OR v_freezes <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED g3 RTO: expected streak 3 freezes 1, got streak=% freezes=%', v_streak, v_freezes;
+  END IF;
+  IF NOT public.user_has_rto_covering_week(c_rto, '2099-08-10'::date) THEN
+    RAISE EXCEPTION 'GATE FAILED g3 RTO: user_has_rto_covering_week false for covered week';
+  END IF;
+
+  -- Weekly streak writes NO streak_bonus rows
+  SELECT count(*)::int INTO v_rows
+  FROM public.point_transactions
+  WHERE user_id IN (c_break, c_freeze, c_rto) AND source = 'streak_bonus';
+  IF v_rows <> 0 THEN
+    RAISE EXCEPTION 'GATE FAILED g3 raffle-excluded: weekly streak wrote % streak_bonus rows', v_rows;
+  END IF;
+
+  -- Lit badge at 4-week streak (threshold from settings) — consecutive Mondays 2099-05-04 .. 2099-05-25
+  PERFORM public.record_streak_activity(c_user, 'compliance_form', gen_random_uuid(),
+    '2099-05-06 12:00:00'::timestamptz AT TIME ZONE 'America/Chicago');
+  PERFORM public.record_streak_activity(c_user, 'compliance_form', gen_random_uuid(),
+    '2099-05-13 12:00:00'::timestamptz AT TIME ZONE 'America/Chicago');
+  PERFORM public.record_streak_activity(c_user, 'compliance_form', gen_random_uuid(),
+    '2099-05-20 12:00:00'::timestamptz AT TIME ZONE 'America/Chicago');
+  PERFORM public.record_streak_activity(c_user, 'compliance_form', gen_random_uuid(),
+    '2099-05-27 12:00:00'::timestamptz AT TIME ZONE 'America/Chicago');
+  IF NOT EXISTS (
+    SELECT 1 FROM public.user_badges
+    WHERE user_id = c_user AND badge_key = 'lit' AND prestige_tier = 1
+  ) THEN
+    RAISE EXCEPTION 'GATE FAILED g3 Lit: bronze not awarded at 4-week streak';
+  END IF;
+
+  -- Existing briefing streak (sync_streak_bonuses_for_user) left untouched
+  v_def := pg_get_functiondef('public.sync_streak_bonuses_for_user(uuid,timestamp with time zone)'::regprocedure);
+  IF position('streak_bonus' IN v_def) = 0 THEN
+    RAISE EXCEPTION 'GATE FAILED g3 briefing streak: sync_streak_bonuses_for_user no longer writes streak_bonus';
+  END IF;
+
+  ALTER TABLE public.announcement_rewards DISABLE TRIGGER enforce_latest_announcement_claim;
+  ALTER TABLE public.announcement_rewards DISABLE TRIGGER trigger_reward_claim_window;
+
+  INSERT INTO public.announcements (id, title, message, date)
+  VALUES ('00000000-0000-0000-0000-00000000d3a1', 'Gate G3 Briefing', 'body', '2099-05-01');
+
+  INSERT INTO public.announcement_rewards (user_id, announcement_id, points_awarded, claimed_at)
+  VALUES (
+    c_briefing,
+    '00000000-0000-0000-0000-00000000d3a1',
+    1,
+    '2099-05-01 12:00:00'::timestamptz AT TIME ZONE 'America/Chicago'
+  );
+
+  PERFORM public.sync_streak_bonuses_for_user(
+    c_briefing,
+    '2099-05-01 12:00:00'::timestamptz AT TIME ZONE 'America/Chicago'
+  );
+
+  SELECT count(*)::int INTO v_rows
+  FROM public.point_transactions
+  WHERE user_id = c_briefing AND source = 'streak_bonus';
+  IF v_rows < 1 THEN
+    RAISE EXCEPTION 'GATE FAILED g3 briefing streak: sync_streak_bonuses_for_user did not write streak_bonus';
+  END IF;
+
+  ALTER TABLE public.announcement_rewards ENABLE TRIGGER enforce_latest_announcement_claim;
+  ALTER TABLE public.announcement_rewards ENABLE TRIGGER trigger_reward_claim_window;
+
+  RAISE NOTICE 'OK: gamification gate 3 — Chicago week seam, DST, break, freeze-once, RTO protect, no streak_bonus, Lit bronze, briefing streak untouched.';
+END $$;
+
+-- ---- Increment-specific checks: 20260608180000 (gamification gate 4) ----------
+DO $$
+DECLARE
+  missing text := '';
+BEGIN
+  IF to_regclass('public.gamification_baseline_cohort') IS NULL THEN
+    missing := missing || E'\n  - table public.gamification_baseline_cohort is missing';
+  END IF;
+  IF to_regprocedure('public.is_competition_eligible(uuid)') IS NULL THEN
+    missing := missing || E'\n  - function public.is_competition_eligible(uuid) is missing';
+  END IF;
+  IF to_regprocedure('public.emit_recognition_event(recognition_event_type,uuid,jsonb,text)') IS NULL THEN
+    missing := missing || E'\n  - function public.emit_recognition_event is missing';
+  END IF;
+  IF to_regprocedure('public.maybe_emit_badge_recognition(uuid,text,integer)') IS NULL THEN
+    missing := missing || E'\n  - function public.maybe_emit_badge_recognition is missing';
+  END IF;
+  IF to_regprocedure('public.maybe_emit_tier_promotion_feed(uuid,integer)') IS NULL THEN
+    missing := missing || E'\n  - function public.maybe_emit_tier_promotion_feed is missing';
+  END IF;
+  IF to_regprocedure('public.get_gamification_admin_metrics(date,date)') IS NULL THEN
+    missing := missing || E'\n  - function public.get_gamification_admin_metrics is missing';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger t
+    JOIN pg_class c ON c.oid = t.tgrelid
+    WHERE c.relname = 'point_transactions'
+      AND t.tgname = 'trg_recognition_feed_tier_promotion'
+      AND NOT t.tgisinternal
+  ) THEN
+    missing := missing || E'\n  - trigger trg_recognition_feed_tier_promotion on point_transactions is missing';
+  END IF;
+
+  IF missing <> '' THEN
+    RAISE EXCEPTION E'GATE FAILED — gamification gate 4 objects (20260608180000) not correct:%', missing;
+  END IF;
+  RAISE NOTICE 'OK: gamification gate 4 schema — recognition feed emitter, baseline cohort, admin metrics, eligibility.';
+END $$;
+
+DO $$
+DECLARE
+  c_user       uuid := '00000000-0000-0000-0000-00000000d401';
+  c_admin      uuid := '00000000-0000-0000-0000-00000000d402';
+  c_field      uuid := '00000000-0000-0000-0000-00000000d403';
+  c_excluded   uuid := '00000000-0000-0000-0000-00000000d404';
+  v_count      int;
+  v_id1        uuid;
+  v_id2        uuid;
+  v_metrics    jsonb;
+  v_ledger_sum int;
+  v_standings  jsonb;
+BEGIN
+  ALTER TABLE public.point_transactions DISABLE TRIGGER trg_evaluate_badges_point_tx;
+  ALTER TABLE public.point_transactions DISABLE TRIGGER trg_weekly_streak_point_tx;
+  ALTER TABLE public.point_transactions DISABLE TRIGGER trg_recognition_feed_tier_promotion;
+
+  INSERT INTO auth.users (id, aud, role, email) VALUES
+    (c_user,     'authenticated', 'authenticated', 'gate-g4-user@example.invalid'),
+    (c_admin,    'authenticated', 'authenticated', 'gate-g4-admin@example.invalid'),
+    (c_field,    'authenticated', 'authenticated', 'gate-g4-field@example.invalid'),
+    (c_excluded, 'authenticated', 'authenticated', 'gate-g4-excluded@example.invalid')
+  ON CONFLICT (id) DO NOTHING;
+
+  UPDATE public.app_users SET role = 'admin' WHERE user_id = c_admin;
+  UPDATE public.app_users SET role = 'employee' WHERE user_id = c_field;
+  UPDATE public.app_users SET role = 'safety_officer' WHERE user_id = c_excluded;
+
+  -- Excluded badges: First Light, Cashed In — no feed rows
+  PERFORM public.award_badge(c_user, 'first_light', 1);
+  PERFORM public.award_badge(c_user, 'cashed_in', 1);
+  SELECT count(*)::int INTO v_count
+  FROM public.recognition_feed rf
+  WHERE rf.subject_user_id = c_user
+    AND rf.payload->>'badge_key' IN ('first_light', 'cashed_in');
+  IF v_count <> 0 THEN
+    RAISE EXCEPTION 'GATE FAILED g4 excluded badges: expected 0 feed rows, got %', v_count;
+  END IF;
+
+  -- Sharp Eye bronze/silver — no feed; gold — feed
+  PERFORM public.award_badge(c_user, 'sharp_eye', 1);
+  PERFORM public.award_badge(c_user, 'sharp_eye', 2);
+  SELECT count(*)::int INTO v_count
+  FROM public.recognition_feed rf
+  WHERE rf.subject_user_id = c_user AND rf.payload->>'badge_key' = 'sharp_eye';
+  IF v_count <> 0 THEN
+    RAISE EXCEPTION 'GATE FAILED g4 sharp eye sub-max: expected 0 feed rows before gold, got %', v_count;
+  END IF;
+
+  PERFORM public.award_badge(c_user, 'sharp_eye', 3);
+  IF NOT EXISTS (
+    SELECT 1 FROM public.recognition_feed rf
+    WHERE rf.subject_user_id = c_user
+      AND rf.event_type = 'badge_awarded'
+      AND rf.payload->>'badge_key' = 'sharp_eye'
+      AND (rf.payload->>'prestige_tier')::int = 3
+  ) THEN
+    RAISE EXCEPTION 'GATE FAILED g4 sharp eye gold: feed row missing';
+  END IF;
+
+  -- Certified — feed
+  PERFORM public.award_badge(c_user, 'certified', 1);
+  IF NOT EXISTS (
+    SELECT 1 FROM public.recognition_feed rf
+    WHERE rf.subject_user_id = c_user
+      AND rf.event_type = 'badge_awarded'
+      AND rf.payload->>'badge_key' = 'certified'
+  ) THEN
+    RAISE EXCEPTION 'GATE FAILED g4 certified: feed row missing';
+  END IF;
+
+  -- Tenure — tenure_milestone event type
+  PERFORM public.award_badge(c_user, 'one_ring', 1);
+  IF NOT EXISTS (
+    SELECT 1 FROM public.recognition_feed rf
+    WHERE rf.subject_user_id = c_user
+      AND rf.event_type = 'tenure_milestone'
+      AND rf.payload->>'badge_key' = 'one_ring'
+  ) THEN
+    RAISE EXCEPTION 'GATE FAILED g4 tenure: tenure_milestone feed row missing';
+  END IF;
+
+  -- dedupe_key blocks re-emission on re-award attempt
+  v_id1 := public.emit_recognition_event(
+    'badge_awarded', c_user,
+    '{"badge_key":"dedupe_test"}'::jsonb,
+    'gate4_dedupe_test:' || c_user::text
+  );
+  v_id2 := public.emit_recognition_event(
+    'badge_awarded', c_user,
+    '{"badge_key":"dedupe_test"}'::jsonb,
+    'gate4_dedupe_test:' || c_user::text
+  );
+  IF v_id1 IS NULL OR v_id2 IS NOT NULL THEN
+    RAISE EXCEPTION 'GATE FAILED g4 dedupe_key: expected first insert id non-null, second null';
+  END IF;
+  SELECT count(*)::int INTO v_count
+  FROM public.recognition_feed rf WHERE rf.dedupe_key = 'gate4_dedupe_test:' || c_user::text;
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED g4 dedupe_key: expected 1 row, got %', v_count;
+  END IF;
+
+  ALTER TABLE public.point_transactions ENABLE TRIGGER trg_recognition_feed_tier_promotion;
+
+  -- Tier promotion: 49 pts stays Seedling — no feed; 50 → Sapling — exactly one tier_promotion
+  INSERT INTO public.point_transactions (user_id, amount, source, reason)
+  VALUES (c_user, 49, 'announcement_claim', 'gate g4 tier boundary');
+  SELECT count(*)::int INTO v_count
+  FROM public.recognition_feed rf
+  WHERE rf.subject_user_id = c_user AND rf.event_type = 'tier_promotion';
+  IF v_count <> 0 THEN
+    RAISE EXCEPTION 'GATE FAILED g4 tier pre-threshold: expected 0 tier_promotion rows, got %', v_count;
+  END IF;
+
+  INSERT INTO public.point_transactions (user_id, amount, source, reason)
+  VALUES (c_user, 1, 'announcement_claim', 'gate g4 tier boundary cross');
+  SELECT count(*)::int INTO v_count
+  FROM public.recognition_feed rf
+  WHERE rf.subject_user_id = c_user AND rf.event_type = 'tier_promotion';
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED g4 first major tier: expected 1 tier_promotion row, got %', v_count;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.recognition_feed rf
+    WHERE rf.subject_user_id = c_user
+      AND rf.event_type = 'tier_promotion'
+      AND rf.payload->>'tier_key' = 'sapling'
+  ) THEN
+    RAISE EXCEPTION 'GATE FAILED g4 tier promotion payload: expected sapling tier_key';
+  END IF;
+
+  -- On the Board badge + re-eval must not add a second tier_promotion
+  PERFORM public.evaluate_user_badges(c_user, 'tier_up');
+  PERFORM public.maybe_emit_tier_promotion_feed(c_user, public.get_user_lifetime_earned(c_user));
+  SELECT count(*)::int INTO v_count
+  FROM public.recognition_feed rf
+  WHERE rf.subject_user_id = c_user AND rf.event_type = 'tier_promotion';
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED g4 on_the_board dedupe: expected 1 tier_promotion after re-eval, got %', v_count;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.user_badges ub
+    WHERE ub.user_id = c_user AND ub.badge_key = 'on_the_board'
+  ) THEN
+    RAISE EXCEPTION 'GATE FAILED g4 on_the_board: badge not awarded at Sapling';
+  END IF;
+
+  -- Sub-level only promotion (50→85) must not emit another tier_promotion
+  INSERT INTO public.point_transactions (user_id, amount, source, reason)
+  VALUES (c_user, 35, 'announcement_claim', 'gate g4 sub-level only');
+  SELECT count(*)::int INTO v_count
+  FROM public.recognition_feed rf
+  WHERE rf.subject_user_id = c_user AND rf.event_type = 'tier_promotion';
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED g4 sub-level: expected still 1 tier_promotion row, got %', v_count;
+  END IF;
+
+  -- is_competition_eligible filter
+  IF NOT public.is_competition_eligible(c_field) THEN
+    RAISE EXCEPTION 'GATE FAILED g4 eligibility: employee should be competition eligible';
+  END IF;
+  IF public.is_competition_eligible(c_excluded) THEN
+    RAISE EXCEPTION 'GATE FAILED g4 eligibility: safety_officer must be excluded';
+  END IF;
+  IF public.is_competition_eligible(c_admin) THEN
+    RAISE EXCEPTION 'GATE FAILED g4 eligibility: admin must be excluded from standings';
+  END IF;
+
+  -- Seed standings data: field user earns more than excluded safety_officer
+  INSERT INTO public.point_transactions (user_id, amount, source, reason)
+  VALUES
+    (c_field, 200, 'announcement_claim', 'gate g4 standings field'),
+    (c_excluded, 500, 'announcement_claim', 'gate g4 standings excluded');
+
+  PERFORM set_config('request.jwt.claim.sub', c_admin::text, true);
+  v_metrics := public.get_gamification_admin_metrics(current_date - 30, current_date);
+
+  IF (v_metrics->'long_tail_activation'->>'status') <> 'baseline_not_captured' THEN
+    RAISE EXCEPTION 'GATE FAILED g4 long-tail empty cohort: expected baseline_not_captured, got %',
+      v_metrics->'long_tail_activation'->>'status';
+  END IF;
+  IF (v_metrics->'long_tail_activation'->>'message') <> 'baseline not yet captured' THEN
+    RAISE EXCEPTION 'GATE FAILED g4 long-tail message: got %', v_metrics->'long_tail_activation'->>'message';
+  END IF;
+
+  IF (v_metrics->'ledger_reconciliation'->>'period_totals_match')::boolean IS NOT TRUE THEN
+    RAISE EXCEPTION 'GATE FAILED g4 ledger reconciliation: period_totals_match false (metrics=% ledger=%)',
+      v_metrics->'ledger_reconciliation'->>'metrics_period_earnings',
+      v_metrics->'ledger_reconciliation'->>'sum_ledger_positive_earnings_in_period';
+  END IF;
+
+  SELECT COALESCE(SUM(pt.amount), 0)::int
+  INTO v_ledger_sum
+  FROM public.point_transactions pt
+  WHERE pt.amount > 0
+    AND pt.created_at >= (current_date - 30)::timestamptz
+    AND pt.created_at < (current_date + 1)::timestamptz
+    AND pt.source IN (
+      'announcement_claim', 'compliance_form', 'streak_bonus',
+      'near_miss_report', 'certification', 'manual_award'
+    );
+
+  IF (v_metrics->'ledger_reconciliation'->>'sum_ledger_positive_earnings_in_period')::int <> v_ledger_sum THEN
+    RAISE EXCEPTION 'GATE FAILED g4 ledger reconciliation: RPC period sum % <> direct ledger %',
+      v_metrics->'ledger_reconciliation'->>'sum_ledger_positive_earnings_in_period', v_ledger_sum;
+  END IF;
+
+  v_standings := v_metrics->'standings';
+  IF EXISTS (
+    SELECT 1
+    FROM jsonb_array_elements(v_standings) elem
+    WHERE (elem->>'user_id')::uuid = c_excluded
+  ) THEN
+    RAISE EXCEPTION 'GATE FAILED g4 standings: safety_officer must not appear in competition standings';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1
+    FROM jsonb_array_elements(v_standings) elem
+    WHERE (elem->>'user_id')::uuid = c_field
+  ) THEN
+    RAISE EXCEPTION 'GATE FAILED g4 standings: eligible field employee missing from standings';
+  END IF;
+
+  ALTER TABLE public.point_transactions ENABLE TRIGGER trg_evaluate_badges_point_tx;
+  ALTER TABLE public.point_transactions ENABLE TRIGGER trg_weekly_streak_point_tx;
+
+  RAISE NOTICE 'OK: gamification gate 4 — feed curation, dedupe_key, tier/on_the_board dedupe, analytics reconciliation, eligibility, long-tail graceful empty cohort.';
+END $$;
+
+-- ---- Increment-specific checks: 20260608200000 (gamification gate 5) ----------
+DO $$
+DECLARE
+  missing text := '';
+BEGIN
+  IF to_regprocedure('public.get_gamification_standings(integer)') IS NULL THEN
+    missing := missing || E'\n  - function public.get_gamification_standings(integer) is missing';
+  END IF;
+  IF to_regprocedure('public.get_public_gamification_profile(uuid)') IS NULL THEN
+    missing := missing || E'\n  - function public.get_public_gamification_profile(uuid) is missing';
+  END IF;
+
+  IF missing <> '' THEN
+    RAISE EXCEPTION E'GATE FAILED — gamification gate 5 objects (20260608200000) not correct:%', missing;
+  END IF;
+  RAISE NOTICE 'OK: gamification gate 5 schema — standings + public profile RPCs present.';
+END $$;
+
+DO $$
+DECLARE
+  c_field    uuid := '00000000-0000-0000-0000-00000000d501';
+  c_admin    uuid := '00000000-0000-0000-0000-00000000d502';
+  v_standings jsonb;
+  v_profile  jsonb;
+BEGIN
+  INSERT INTO auth.users (id, aud, role, email) VALUES
+    (c_field, 'authenticated', 'authenticated', 'gate-g5-field@example.invalid'),
+    (c_admin, 'authenticated', 'authenticated', 'gate-g5-admin@example.invalid')
+  ON CONFLICT (id) DO NOTHING;
+
+  UPDATE public.app_users SET role = 'employee', hire_date = '2020-01-01' WHERE user_id = c_field;
+  UPDATE public.app_users SET role = 'admin' WHERE user_id = c_admin;
+
+  PERFORM set_config('request.jwt.claim.sub', c_field::text, true);
+  v_standings := public.get_gamification_standings(5);
+  IF jsonb_typeof(v_standings) <> 'array' THEN
+    RAISE EXCEPTION 'GATE FAILED g5 standings: expected json array, got %', jsonb_typeof(v_standings);
+  END IF;
+
+  v_profile := public.get_public_gamification_profile(c_field);
+  IF (v_profile->>'user_id')::uuid IS DISTINCT FROM c_field THEN
+    RAISE EXCEPTION 'GATE FAILED g5 profile: user_id mismatch';
+  END IF;
+  IF (v_profile->>'eligible')::boolean IS NOT TRUE THEN
+    RAISE EXCEPTION 'GATE FAILED g5 profile: field employee should be eligible';
+  END IF;
+
+  RAISE NOTICE 'OK: gamification gate 5 — standings array + public profile for eligible field user.';
+END $$;
+
+-- ---- Increment-specific checks: 20260608220000 (gamification gate 6) ----------
+DO $$
+DECLARE
+  missing text := '';
+BEGIN
+  IF to_regprocedure('public.is_gamification_test_account(text)') IS NULL THEN
+    missing := missing || E'\n  - function public.is_gamification_test_account(text) is missing';
+  END IF;
+  IF to_regprocedure('public.is_gamification_program_admin()') IS NULL THEN
+    missing := missing || E'\n  - function public.is_gamification_program_admin() is missing';
+  END IF;
+  IF to_regprocedure('public.get_real_users_missing_hire_date()') IS NULL THEN
+    missing := missing || E'\n  - function public.get_real_users_missing_hire_date() is missing';
+  END IF;
+  IF to_regprocedure('public.assert_hire_dates_for_baseline()') IS NULL THEN
+    missing := missing || E'\n  - function public.assert_hire_dates_for_baseline() is missing';
+  END IF;
+  IF to_regprocedure('public.capture_gamification_baseline_cohort()') IS NULL THEN
+    missing := missing || E'\n  - function public.capture_gamification_baseline_cohort() is missing';
+  END IF;
+  IF to_regprocedure('public.verify_gamification_workforce_levels()') IS NULL THEN
+    missing := missing || E'\n  - function public.verify_gamification_workforce_levels() is missing';
+  END IF;
+
+  IF missing <> '' THEN
+    RAISE EXCEPTION E'GATE FAILED — gamification gate 6 objects (20260608220000) not correct:%', missing;
+  END IF;
+  RAISE NOTICE 'OK: gamification gate 6 schema — hire_date assert, baseline capture, program admin helpers.';
+END $$;
+
+DO $$
+DECLARE
+  c_field      uuid := '00000000-0000-0000-0000-00000000d601';
+  c_missing    uuid := '00000000-0000-0000-0000-00000000d602';
+  c_test       uuid := '00000000-0000-0000-0000-00000000d603';
+  c_admin      uuid := '00000000-0000-0000-0000-00000000d604';
+  c_safety     uuid := '00000000-0000-0000-0000-00000000d605';
+  v_metrics    jsonb;
+  v_capture    jsonb;
+  v_verify     jsonb;
+  v_missing    jsonb;
+  v_caught     boolean := false;
+BEGIN
+  INSERT INTO auth.users (id, aud, role, email) VALUES
+    (c_field,   'authenticated', 'authenticated', 'gate-g6-field@example.invalid'),
+    (c_missing, 'authenticated', 'authenticated', 'gate-g6-missing-hire@alltts.com'),
+    (c_test,    'authenticated', 'authenticated', 'gate-g6-test@atts.test'),
+    (c_admin,   'authenticated', 'authenticated', 'gate-g6-admin@example.invalid'),
+    (c_safety,  'authenticated', 'authenticated', 'gate-g6-safety@example.invalid')
+  ON CONFLICT (id) DO NOTHING;
+
+  UPDATE public.app_users SET role = 'employee', hire_date = '2019-06-01' WHERE user_id = c_field;
+  UPDATE public.app_users SET role = 'employee', hire_date = NULL WHERE user_id = c_missing;
+  UPDATE public.app_users SET role = 'employee', hire_date = NULL WHERE user_id = c_test;
+  UPDATE public.app_users SET role = 'admin' WHERE user_id = c_admin;
+  UPDATE public.app_users SET role = 'safety_officer' WHERE user_id = c_safety;
+
+  -- Test account with NULL hire_date must not block assertion
+  BEGIN
+    PERFORM public.assert_hire_dates_for_baseline();
+    v_caught := false;
+  EXCEPTION
+    WHEN OTHERS THEN
+      v_caught := true;
+  END;
+  IF NOT v_caught THEN
+    RAISE EXCEPTION 'GATE FAILED g6 hire_date: assert should fail when real user missing hire_date';
+  END IF;
+
+  UPDATE public.app_users SET hire_date = '2021-03-15' WHERE user_id = c_missing;
+  PERFORM public.assert_hire_dates_for_baseline();
+
+  PERFORM set_config('request.jwt.claim.sub', c_admin::text, true);
+  v_missing := public.get_real_users_missing_hire_date();
+  IF jsonb_array_length(v_missing) <> 0 THEN
+    RAISE EXCEPTION 'GATE FAILED g6 hire_date: expected zero missing after backfill, got %', v_missing;
+  END IF;
+
+  -- Capture baseline cohort (one-time)
+  v_capture := public.capture_gamification_baseline_cohort();
+  IF (v_capture->>'status') <> 'captured' THEN
+    RAISE EXCEPTION 'GATE FAILED g6 capture: expected captured status, got %', v_capture->>'status';
+  END IF;
+  IF (v_capture->>'cohort_size')::int < 1 THEN
+    RAISE EXCEPTION 'GATE FAILED g6 capture: expected cohort_size >= 1, got %', v_capture->>'cohort_size';
+  END IF;
+
+  -- Second capture must refuse
+  v_caught := false;
+  BEGIN
+    PERFORM public.capture_gamification_baseline_cohort();
+  EXCEPTION
+    WHEN OTHERS THEN
+      v_caught := true;
+  END;
+  IF NOT v_caught THEN
+    RAISE EXCEPTION 'GATE FAILED g6 capture: second capture should raise';
+  END IF;
+
+  v_metrics := public.get_gamification_admin_metrics(current_date - 30, current_date);
+  IF (v_metrics->'long_tail_activation'->>'status') <> 'ready' THEN
+    RAISE EXCEPTION 'GATE FAILED g6 metrics: expected long_tail ready after capture, got %',
+      v_metrics->'long_tail_activation'->>'status';
+  END IF;
+  IF (v_metrics->'hire_date_precondition'->>'missing_count')::int <> 0 THEN
+    RAISE EXCEPTION 'GATE FAILED g6 metrics: expected missing_count 0, got %',
+      v_metrics->'hire_date_precondition'->>'missing_count';
+  END IF;
+
+  v_verify := public.verify_gamification_workforce_levels();
+  IF (v_verify->>'status') <> 'ok' THEN
+    RAISE EXCEPTION 'GATE FAILED g6 workforce levels: %', v_verify::text;
+  END IF;
+
+  -- safety_officer can read admin metrics
+  PERFORM set_config('request.jwt.claim.sub', c_safety::text, true);
+  IF NOT public.is_gamification_program_admin() THEN
+    RAISE EXCEPTION 'GATE FAILED g6 program admin: safety_officer should be program admin';
+  END IF;
+  v_metrics := public.get_gamification_admin_metrics(current_date - 7, current_date);
+  IF v_metrics IS NULL THEN
+    RAISE EXCEPTION 'GATE FAILED g6 safety_officer metrics: null result';
+  END IF;
+
+  RAISE NOTICE 'OK: gamification gate 6 — hire_date assert, baseline capture once, long-tail ready, workforce levels, safety_officer access.';
+END $$;
+
 ROLLBACK;

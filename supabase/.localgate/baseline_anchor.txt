@@ -1,2 +1,4 @@
 # Prod HEAD at last re-baseline; forward migrations = version > this.
-20260608021312
+# Re-baseline 2026-06-08: Phase 1 gamification (gates 1–6 + award_points) folded into baseline.
+# schema_migrations prod HEAD was 20260608181348 (MCP chunk timestamps); repo file HEAD 20260608220000 — drift clean.
+20260608220000

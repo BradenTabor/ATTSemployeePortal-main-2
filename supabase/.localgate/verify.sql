@@ -5,6 +5,7 @@
 -- =============================================================================
 \set ON_ERROR_STOP on
 
+\ir config_lock_assertions.sql
 \ir assertions.sql
 
 SELECT 'GATE VERIFY PASSED' AS result;

@@ -15,10 +15,12 @@ localgate_schema_normalize_init() {
   [ -f "$INTROSPECT_SQL" ] || { echo "FATAL: missing $INTROSPECT_SQL"; exit 1; }
 }
 
-# Canonicalize known pg_get_constraintdef formatting variants (same semantics).
+# Canonicalize known pg_get_constraintdef / pg function-body formatting variants (same semantics).
 localgate_apply_cosmetic_filters() {
   sed -E \
-    -e "s/(CONSTRAINT\\|public\\.user_signatures\\.user_signatures_signature_type_check\\|c\\|CHECK \\(signature_type::text = ANY \\(ARRAY\\[)'canvas'::character varying(::text)?, 'typed'::character varying(::text)?(\\](::text\\[\\])?|\\]::text\\[\\]))\\)/\\1'canvas'::text,'typed'::text]))/"
+    -e "s/(CONSTRAINT\\|public\\.user_signatures\\.user_signatures_signature_type_check\\|c\\|CHECK \\(signature_type::text = ANY \\(ARRAY\\[)'canvas'::character varying(::text)?, 'typed'::character varying(::text)?(\\](::text\\[\\])?|\\]::text\\[\\]))\\)/\\1'canvas'::text,'typed'::text]))/" \
+    -e 's/\( +/\(/g' \
+    -e 's/, +/,/g'
 }
 
 localgate_dump_normalized_schema() {

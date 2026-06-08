@@ -3,3 +3,6 @@
 # Extend this list when a gate assertion depends on prod-configured values.
 point_rules
 reward_catalog
+level_tiers
+gamification_settings
+badges
