@@ -1,4 +1,75 @@
-# Refactor & Form-Draft Conventions
+# Project Conventions
+
+## Supabase database policy
+
+**Read this before any schema change, prod apply, or SQL Editor session.** The local gate (`.localgate/`) is the only automated check that prod and repo stay aligned; it only works if every change flows through committed migrations.
+
+### Prohibitions (with reasons)
+
+| Do not | Because |
+|--------|---------|
+| **Apply SQL in the Supabase Dashboard SQL Editor** (schema, functions, triggers, policies) | Out-of-band DDL is invisible to `supabase/migrations/`. Live prod diverges from `prod_schema.sql` + forward migrations; `verify_no_drift.sh` reports **PROD-AHEAD** and the gate cannot reproduce prod locally. |
+| **Patch `supabase_migrations.schema_migrations` by hand** | History rows must match files on disk. Manual inserts/reverts hide migrations that were never applied (or mark applied migrations as missing), so `supabase db push` and the baseline anchor lie about prod HEAD. |
+| **Edit config/reference rows directly in prod** (`point_rules`, `reward_catalog`, `app_settings`, tables in `config_tables.txt`) | `prod_config_data.sql` is a point-in-time snapshot loaded at gate time. A direct table edit changes prod but not the committed snapshot — behavioral assertions pass on stale config or fail on fresh config until someone remembers to re-baseline. |
+| **Skip the gate before a prod apply** | `bash supabase/.localgate/run.sh` is the pre-apply proof that baseline + forward migrations + config snapshot behave correctly. Shipping without it repeats the December 2025 drift incident. |
+
+**Allowed:** committed migrations applied via Supabase MCP, `supabase db push`, or the documented apply path — then drift check, then gate.
+
+### Config-table corollary
+
+Tables listed in `supabase/.localgate/config_tables.txt` hold **reference data**, not user activity. Changing amounts, caps, catalog rows, or feature flags is still a **schema/data change** and must ship as a migration (seed `INSERT`/`UPDATE` or additive migration). After prod apply, re-baseline `prod_config_data.sql` at the next deliberate anchor update.
+
+`config_lock_assertions.sql` pins only values that behavioral tests in `assertions.sql` depend on (e.g. near-miss `base_amount` / `base_daily_cap`, redemption catalog fixture IDs). Do not add a lock for every config row — that turns the gate into a brittle change-detector. Lock a value when: *if it were wrong, a behavioral assertion would pass while prod behavior is wrong.*
+
+### Baseline + forward model
+
+We do **not** replay the full migration chain from zero (known ordering bugs). Instead:
+
+1. **Committed baseline** — `prod_schema.sql`, `prod_config_data.sql`, `baseline_anchor.txt` (prod HEAD at last re-baseline).
+2. **Forward migrations** — files in `supabase/migrations/` with version **>** `baseline_anchor.txt`.
+3. **Gate** — rebuild throwaway DB, load baseline, apply forward, run `verify.sql`.
+
+Tooling: [`supabase/.localgate/README.md`](../supabase/.localgate/README.md).
+
+### Re-baseline runbook
+
+Run when prod HEAD moves past the anchor (after applying forward migrations) or when intentionally refreshing the DR snapshot.
+
+1. `bash supabase/.localgate/verify_no_drift.sh` — must be clean (no PROD-AHEAD / REPO-AHEAD).
+2. `bash supabase/.localgate/prove_rebuild.sh` — normalized prod vs rebuild diff must be empty.
+3. `bash supabase/.localgate/refresh.sh` — requires `SUPABASE_DB_URL`; refreshes machine-local roles + verification artifacts.
+4. Copy refreshed dumps into committed baseline: `prod_schema.sql`, `prod_config_data.sql`, update `baseline_anchor.txt` to prod HEAD.
+5. `bash supabase/.localgate/run.sh` — gate must pass on the new anchor (0 forward migrations until the next increment lands).
+6. Commit baseline files + any new forward migrations in one deliberate re-baseline commit.
+
+**Config tables at seed time:** When a migration seeds reference data that gate assertions or behavioral tests depend on (`level_tiers`, `gamification_settings`, `badges`, etc.), add the table to `config_tables.txt` in the **same commit** as the migration — not at re-baseline when a red gate reminds you. A fresh rebuild loads schema from `prod_schema.sql` and meaning from `prod_config_data.sql`; migrations alone do not replay into the snapshot.
+
+**Anchor vs `schema_migrations` HEAD:** The baseline+forward model loads the committed snapshot — it does **not** replay `schema_migrations` history. After MCP apply, prod `schema_migrations` HEAD may lag the repo anchor (e.g. MCP chunk timestamps `…181348` vs repo file `…220000`) while schema and drift checks remain clean. Harmless for gate/drift/MCP workflow; **latent** if someone runs `supabase db push` on a fresh clone (same class of problem as December 2025 version-string drift). We apply via MCP, not `db push`. Do not patch history by hand unless deliberately reconciling for push — log the gap here instead of rediscovering it.
+
+### Pre-apply ritual (manual tier)
+
+Before every prod apply and every re-baseline:
+
+```bash
+bash supabase/.localgate/verify_no_drift.sh   # prod creds in .env
+bash supabase/.localgate/run.sh               # local Postgres 17
+```
+
+The manual tier catches drift when **you** follow the workflow. It does not catch out-of-band prod changes by someone else — that requires the **scheduled tier** (see `.localgate/README.md`).
+
+### Drift guard tiers
+
+| Tier | When | Notes |
+|------|------|-------|
+| **Manual** (ship now) | Before prod apply, before re-baseline | No secrets in CI; uses local `.env` |
+| **Scheduled workflow** (near horizon) | Weekly cron or `workflow_dispatch` | Unattended tripwire; needs `SUPABASE_DB_URL` GitHub secret. Prefer Supabase **IPv4 pooler** connection string — GitHub-hosted runners lack reliable IPv6 egress to the direct DB host. |
+| **Default `ci.yml` PR job** | Not recommended | Would require prod creds on every PR |
+
+Historical incident docs (December 2025): [`docs/archive/december-2025-migration-incident/`](archive/december-2025-migration-incident/).
+
+---
+
+## Refactor & form-draft conventions
 
 Short rules from the `useFormDraftLifecycle` migration (DVIR, Equipment, JSA). Every item points at code that exists today — extend these patterns; do not reinvent parallel lifecycles.
 
