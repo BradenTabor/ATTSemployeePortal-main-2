@@ -1,7 +1,7 @@
 -- =============================================================================
 -- Storage policies baseline — loaded AFTER prod_schema (requires public.is_admin).
 -- Verbatim from prod via 20260309000000_create_safety_rewards_tables.sql lines 172-194.
--- Gate assertion 20260606150000 checks these policy names exist.
+-- Gate assertion 20260606040413 checks these policy names exist.
 -- =============================================================================
 
 DROP POLICY IF EXISTS "Admins can upload reward images" ON storage.objects;

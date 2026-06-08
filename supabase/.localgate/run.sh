@@ -2,8 +2,8 @@
 # =============================================================================
 # ATTS local validation gate.
 #
-# Baselines from PROD's REAL schema (schema-only, no PII), applies only the
-# local migrations that are NEWER than prod HEAD, then runs verification
+# Baselines from PROD's REAL schema + config/reference rows (see config_tables.txt),
+# applies forward migrations (version > baseline_anchor.txt), then runs verification
 # assertions. This is the gate to run BEFORE any remote apply.
 #
 # We do NOT replay the historical migration chain from zero (it is known-broken
@@ -11,8 +11,9 @@
 #
 # Requirements (no Docker, no supabase local stack):
 #   - Local PostgreSQL 17 (matches prod major 17) running on $PGHOST:$PGPORT
-#   - Dump artifacts in this directory (regenerate with ./refresh.sh):
-#       prod_roles.sql, prod_schema.sql, prod_applied_versions.txt
+#   - Dump artifacts in this directory:
+#       prod_roles.sql (local refresh), prod_schema.sql + prod_config_data.sql (committed baseline),
+#       baseline_anchor.txt (committed prod HEAD at last re-baseline)
 #
 # Usage:
 #   bash supabase/.localgate/run.sh
@@ -33,18 +34,22 @@ export PGHOST PGPORT
 
 ROLES_SQL="$GATE_DIR/prod_roles.sql"
 SCHEMA_SQL="$GATE_DIR/prod_schema.sql"
+CONFIG_DATA_SQL="$GATE_DIR/prod_config_data.sql"
 STUBS_SQL="$GATE_DIR/stubs.sql"
 STORAGE_BASELINE_SQL="$GATE_DIR/storage_baseline.sql"
-APPLIED="$GATE_DIR/prod_applied_versions.txt"
+BASELINE_ANCHOR="$GATE_DIR/baseline_anchor.txt"
 VERIFY_SQL="$GATE_DIR/verify.sql"
 ASSERTIONS_SQL="$GATE_DIR/assertions.sql"
 
 for f in "$PSQL"; do
   [ -x "$f" ] || { echo "FATAL: psql not found/executable at $f (set PG_BIN)"; exit 1; }
 done
-for f in "$ROLES_SQL" "$SCHEMA_SQL" "$STUBS_SQL" "$STORAGE_BASELINE_SQL" "$APPLIED" "$VERIFY_SQL" "$ASSERTIONS_SQL"; do
+for f in "$ROLES_SQL" "$SCHEMA_SQL" "$CONFIG_DATA_SQL" "$STUBS_SQL" "$STORAGE_BASELINE_SQL" "$BASELINE_ANCHOR" "$VERIFY_SQL" "$ASSERTIONS_SQL"; do
   [ -f "$f" ] || { echo "FATAL: missing gate artifact $f (run ./refresh.sh first)"; exit 1; }
 done
+
+ANCHOR="$(grep -E '^[0-9]{14}$' "$BASELINE_ANCHOR" | tail -1)"
+[ -n "$ANCHOR" ] || { echo "FATAL: no version in $BASELINE_ANCHOR"; exit 1; }
 
 echo "==> [1/5] (Re)creating throwaway gate database '$GATE_DB' on $PGHOST:$PGPORT"
 "$PSQL" -d postgres -v ON_ERROR_STOP=1 -q \
@@ -68,26 +73,31 @@ echo "==> [3/5] Loading managed-schema stubs, then prod baseline schema (auth + 
 sed '/^CREATE SCHEMA public;$/d' "$SCHEMA_SQL" \
   | "$PSQL" -d "$GATE_DB" -v ON_ERROR_STOP=1 -q -f -
 
+if [ -s "$CONFIG_DATA_SQL" ]; then
+  echo "==> [3a/5] Loading prod config/reference data (config_tables.txt)"
+  "$PSQL" -d "$GATE_DB" -v ON_ERROR_STOP=1 -q -f "$CONFIG_DATA_SQL"
+else
+  echo "==> [3a/5] No prod config data file (empty); behavioral assertions may fail"
+fi
+
 echo "==> [3b/5] Loading storage baseline (20260309000000 safety-rewards policies; requires is_admin)"
 "$PSQL" -d "$GATE_DB" -v ON_ERROR_STOP=1 -q -f "$STORAGE_BASELINE_SQL"
 
-echo "==> [4/5] Applying local migrations newer than prod HEAD"
-HEAD="$(sort "$APPLIED" | tail -1)"
-echo "    prod HEAD = $HEAD"
+echo "==> [4/5] Applying forward migrations (version > baseline anchor $ANCHOR)"
 applied_count=0
 while IFS= read -r file; do
   base="$(basename "$file")"
   ver="$(echo "$base" | sed -E 's/^([0-9]+)_.*/\1/')"
-  if [[ "$ver" > "$HEAD" ]]; then
+  if [[ "$ver" > "$ANCHOR" ]]; then
     echo "    applying $base"
     "$PSQL" -d "$GATE_DB" -v ON_ERROR_STOP=1 -q -f "$file"
     applied_count=$((applied_count + 1))
   fi
 done < <(ls -1 "$MIGRATIONS_DIR"/*.sql | sort)
-echo "    applied $applied_count new migration(s)"
+echo "    applied $applied_count forward migration(s)"
 
 echo "==> [5/5] Running verification assertions"
 "$PSQL" -d "$GATE_DB" -v ON_ERROR_STOP=1 -f "$VERIFY_SQL"
 
 echo ""
-echo "GATE PASSED ✓  (baseline=prod schema, +$applied_count new migration(s), verify OK)"
+echo "GATE PASSED ✓  (baseline=prod schema+config, +$applied_count forward migration(s), verify OK)"

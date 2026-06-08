@@ -90,7 +90,7 @@ RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NEW; END $$;
 -- Prod baseline dump is auth+public only; migrations before prod HEAD are not
 -- re-applied. Policies below are verbatim from prod (applied via
 -- 20260309000000_create_safety_rewards_tables.sql lines 168-194). Gate
--- assertion 20260606150000 checks policyname = 'Admins can upload reward images'.
+-- assertion 20260606040413 checks policyname = 'Admins can upload reward images'.
 CREATE SCHEMA IF NOT EXISTS storage;
 
 CREATE TABLE IF NOT EXISTS storage.buckets (

@@ -1,0 +1,5 @@
+# Config/reference tables included in the baseline data slice (not user/transactional PII).
+# refresh.sh dumps these with pg_dump --data-only; run.sh loads after prod_schema.sql.
+# Extend this list when a gate assertion depends on prod-configured values.
+point_rules
+reward_catalog

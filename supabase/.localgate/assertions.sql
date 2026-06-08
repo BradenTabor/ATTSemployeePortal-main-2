@@ -469,7 +469,7 @@ BEGIN
   RAISE NOTICE 'OK: point_awarder_grants RLS — non-admin INSERT blocked, admin INSERT allowed.';
 END $$;
 
--- ---- Increment-specific checks: 20260606020000 (notify RPC 2b) ------------
+-- ---- Increment-specific checks: 20260606020802 (notify RPC 2b) ------------
 DO $$
 DECLARE
   missing text := '';
@@ -495,7 +495,7 @@ BEGIN
   END IF;
 
   IF missing <> '' THEN
-    RAISE EXCEPTION E'GATE FAILED — notify_manual_award_recipient (20260606020000) not correct:%', missing;
+    RAISE EXCEPTION E'GATE FAILED — notify_manual_award_recipient (20260606020802) not correct:%', missing;
   END IF;
   RAISE NOTICE 'OK: notify_manual_award_recipient present; award_points ledger-pure; notify uses admin_notice.';
   RAISE NOTICE 'OK: admin-create-notification edge function unchanged (admin JWT gate remains in supabase/functions/admin-create-notification/index.ts).';
@@ -781,7 +781,7 @@ BEGIN
   RAISE NOTICE 'OK: earning sources matrix — near-miss cap/corrective bonus/cert pass+renewal/index regression/inactive rule/balance all pass.';
 END $$;
 
--- ---- Increment-specific checks: 20260606120000 (redemption store increment 1) ----
+-- ---- Increment-specific checks: 20260606033350 (redemption store increment 1) ----
 DO $$
 DECLARE
   missing text := '';
@@ -845,7 +845,7 @@ BEGIN
   END IF;
 
   IF missing <> '' THEN
-    RAISE EXCEPTION E'GATE FAILED — redemption store objects (20260606120000) not correct:%', missing;
+    RAISE EXCEPTION E'GATE FAILED — redemption store objects (20260606033350) not correct:%', missing;
   END IF;
   RAISE NOTICE 'OK: redemption store table/enum/indexes/functions/policies present; no user-write on redemptions/point_transactions.';
 END $$;
@@ -1178,7 +1178,7 @@ BEGIN
   RAISE NOTICE 'OK: redemption store matrix — redeem/hold/stock/idempotency/deny/cancel/fulfill/permissions/raffle/stock-restore-idempotency/null-stock all pass.';
 END $$;
 
--- ---- Increment-specific checks: 20260606140000 (get_user_points_by_source) ----
+-- ---- Increment-specific checks: 20260606035450 (get_user_points_by_source) ----
 DO $$
 DECLARE
   missing text := '';
@@ -1193,7 +1193,7 @@ BEGIN
   END IF;
 
   IF missing <> '' THEN
-    RAISE EXCEPTION E'GATE FAILED — get_user_points_by_source objects (20260606140000) not correct:%', missing;
+    RAISE EXCEPTION E'GATE FAILED — get_user_points_by_source objects (20260606035450) not correct:%', missing;
   END IF;
 
   INSERT INTO auth.users (id, aud, role, email) VALUES
@@ -1235,7 +1235,7 @@ BEGIN
   RAISE NOTICE 'OK: get_user_points_by_source — sum reconciles to balance; non-admin cross-user denied.';
 END $$;
 
--- ---- Increment-specific checks: 20260606150000 (catalog delete RESTRICT + storage admin-only) ----
+-- ---- Increment-specific checks: 20260606040413 (catalog delete RESTRICT + storage admin-only) ----
 DO $$
 DECLARE
   missing text := '';
@@ -1273,7 +1273,7 @@ BEGIN
   END IF;
 
   IF missing <> '' THEN
-    RAISE EXCEPTION E'GATE FAILED — catalog management objects (20260606150000) not correct:%', missing;
+    RAISE EXCEPTION E'GATE FAILED — catalog management objects (20260606040413) not correct:%', missing;
   END IF;
 
   INSERT INTO public.reward_catalog (id, name, point_cost, is_active, sort_order)
@@ -1306,7 +1306,7 @@ BEGIN
   RAISE NOTICE 'OK: catalog delete RESTRICT — unused delete allowed; referenced delete blocked; safety-rewards admin-only write policies present.';
 END $$;
 
--- ---- Increment-specific checks: 20260606160000 (redemption notifications) ----
+-- ---- Increment-specific checks: 20260606041557 + 20260606041603 (redemption notifications) ----
 DO $$
 DECLARE
   missing text := '';
@@ -1349,7 +1349,7 @@ BEGIN
   END IF;
 
   IF missing <> '' THEN
-    RAISE EXCEPTION E'GATE FAILED — redemption notifications (20260606160000) not correct:%', missing;
+    RAISE EXCEPTION E'GATE FAILED — redemption notifications (20260606041557/41603) not correct:%', missing;
   END IF;
   RAISE NOTICE 'OK: redemption notification helpers + RPC hooks + dispatch trigger present.';
 END $$;
