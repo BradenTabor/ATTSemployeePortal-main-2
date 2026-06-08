@@ -69,3 +69,9 @@ export interface AwarderBudgetHint {
   remaining: number;
   isAdmin: boolean;
 }
+
+/** Preset award amounts — must stay within server-side caps for grant holders. */
+export const MANUAL_AWARD_POSITIVE_PRESETS = [5, 10, 15, 20, 25, 50, 100] as const;
+
+/** Admin-only deduction presets (negative ledger rows). */
+export const MANUAL_AWARD_DEDUCTION_PRESETS = [-5, -10, -15, -20, -25, -50] as const;

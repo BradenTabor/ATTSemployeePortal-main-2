@@ -1,5 +1,25 @@
 import { supabase } from './supabaseClient';
 import { logger } from './logger';
+import {
+  MANUAL_AWARD_DEDUCTION_PRESETS,
+  MANUAL_AWARD_POSITIVE_PRESETS,
+  type AwarderBudgetHint,
+} from '../types/manualAwards';
+
+export function getAvailableAwardPresets(
+  isAdmin: boolean,
+  budgetHint?: AwarderBudgetHint
+): { positive: number[]; negative: number[] } {
+  const positive = MANUAL_AWARD_POSITIVE_PRESETS.filter((preset) => {
+    if (isAdmin) return true;
+    if (!budgetHint) return false;
+    return preset <= budgetHint.perAwardCap && preset <= budgetHint.remaining;
+  });
+
+  const negative = isAdmin ? [...MANUAL_AWARD_DEDUCTION_PRESETS] : [];
+
+  return { positive, negative };
+}
 
 /** Map Postgres award_points exceptions to user-facing copy (DB remains authoritative). */
 export function mapAwardPointsError(raw: string): string {
@@ -17,6 +37,12 @@ export function mapAwardPointsError(raw: string): string {
   }
   if (msg.includes('Amount must be positive')) {
     return 'Amount must be a positive number.';
+  }
+  if (msg.includes('Amount must be non-zero')) {
+    return 'Select a non-zero point amount.';
+  }
+  if (msg.includes('Only admins may deduct points')) {
+    return 'Only admins can deduct points.';
   }
   if (msg.includes('Reason is required')) {
     return 'A reason is required.';

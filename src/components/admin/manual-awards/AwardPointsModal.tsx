@@ -18,6 +18,7 @@ import {
   AwardRecipientPicker,
   type AwardRecipient,
 } from './AwardRecipientPicker';
+import { AwardAmountPicker } from './AwardAmountPicker';
 
 interface AwardPointsModalProps {
   isOpen: boolean;
@@ -40,7 +41,7 @@ export function AwardPointsModal({
 
   const [phase, setPhase] = useState<ModalPhase>('form');
   const [recipient, setRecipient] = useState<AwardRecipient | null>(initialRecipient);
-  const [amount, setAmount] = useState('');
+  const [amount, setAmount] = useState<number | null>(null);
   const [category, setCategory] = useState<ManualAwardCategory>('good_performance');
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +62,7 @@ export function AwardPointsModal({
       requestIdRef.current = null;
       setPhase('form');
       setRecipient(null);
-      setAmount('');
+      setAmount(null);
       setCategory('good_performance');
       setReason('');
       setError(null);
@@ -90,9 +91,12 @@ export function AwardPointsModal({
       setError('Please select a recipient.');
       return;
     }
-    const parsedAmount = parseInt(amount, 10);
-    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-      setError('Enter a positive point amount.');
+    if (amount === null || amount === 0) {
+      setError('Select a point amount.');
+      return;
+    }
+    if (amount < 0 && !isAdmin) {
+      setError('Only admins can deduct points.');
       return;
     }
     if (!reason.trim()) {
@@ -106,12 +110,12 @@ export function AwardPointsModal({
     try {
       await awardMutation.mutateAsync({
         recipientId: recipient.user_id,
-        amount: parsedAmount,
+        amount,
         category,
         reason: reason.trim(),
         requestId: requestIdRef.current,
       });
-      setAwardedAmount(parsedAmount);
+      setAwardedAmount(amount);
       setPhase('success');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to award points.');
@@ -167,7 +171,10 @@ export function AwardPointsModal({
               <div className="text-center py-6 space-y-4">
                 <CheckCircle2 className="w-14 h-14 text-emerald-400 mx-auto" aria-hidden />
                 <p className="text-lg font-semibold text-white">
-                  {awardedAmount} point{awardedAmount === 1 ? '' : 's'} awarded!
+                  {awardedAmount < 0
+                    ? `${Math.abs(awardedAmount)} point${Math.abs(awardedAmount) === 1 ? '' : 's'} deducted`
+                    : `${awardedAmount} point${awardedAmount === 1 ? '' : 's'} awarded`}
+                  !
                 </p>
                 <p className="text-sm text-[#c7b696]">
                   {recipient?.full_name || recipient?.email} will see updated totals shortly.
@@ -190,25 +197,13 @@ export function AwardPointsModal({
                 />
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label
-                      htmlFor="award-amount"
-                      className="text-xs font-medium text-[#f8e5bb]/70 uppercase tracking-wider"
-                    >
-                      Amount
-                    </label>
-                    <input
-                      id="award-amount"
-                      type="number"
-                      min={1}
-                      inputMode="numeric"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      disabled={awardMutation.isPending}
-                      className="mt-1.5 w-full px-3 py-2.5 rounded-xl border border-white/10 bg-white/[0.03] text-white text-base focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400"
-                      required
-                    />
-                  </div>
+                  <AwardAmountPicker
+                    value={amount}
+                    onChange={setAmount}
+                    isAdmin={isAdmin}
+                    budgetHint={budgetHint}
+                    disabled={awardMutation.isPending || budgetLoading}
+                  />
                   <div>
                     <label
                       htmlFor="award-category"
@@ -242,6 +237,7 @@ export function AwardPointsModal({
                 {isAdmin && (
                   <p className="text-xs text-[#c7b696]">
                     Admin awards are not capped — limits are enforced server-side for grant holders only.
+                    Scroll to deduct points with negative presets.
                   </p>
                 )}
 
@@ -258,7 +254,11 @@ export function AwardPointsModal({
                     onChange={(e) => setReason(e.target.value)}
                     rows={3}
                     disabled={awardMutation.isPending}
-                    placeholder="Why are you awarding these points?"
+                    placeholder={
+                      amount !== null && amount < 0
+                        ? 'Why are you deducting these points?'
+                        : 'Why are you awarding these points?'
+                    }
                     className="mt-1.5 w-full px-3 py-2.5 rounded-xl border border-white/10 bg-white/[0.03] text-white text-base resize-none focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400"
                     required
                   />
@@ -276,14 +276,20 @@ export function AwardPointsModal({
 
                 <button
                   type="submit"
-                  disabled={awardMutation.isPending}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-[#f4c979] to-[#d89d3e] text-[#2d1c04] font-bold disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400"
+                  disabled={awardMutation.isPending || amount === null}
+                  className={
+                    amount !== null && amount < 0
+                      ? 'w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-red-600 to-red-700 text-white font-bold disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400'
+                      : 'w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-[#f4c979] to-[#d89d3e] text-[#2d1c04] font-bold disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400'
+                  }
                 >
                   {awardMutation.isPending ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" aria-hidden />
-                      Awarding…
+                      {amount !== null && amount < 0 ? 'Deducting…' : 'Awarding…'}
                     </>
+                  ) : amount !== null && amount < 0 ? (
+                    'Deduct Points'
                   ) : (
                     'Award Points'
                   )}
