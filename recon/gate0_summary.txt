@@ -1,0 +1,27 @@
+Gate 0 schema diff summary
+Generated: 2026-06-07T21:10:00Z
+Prod HEAD: 20260607002956
+Replay status: REPLAY_FAILED_PROD_BASELINE_ONLY
+
+Full migration replay from zero: FAILED at 20241205_job_tracker.sql
+  Error: relation "public.app_users" does not exist
+  Cause: job_tracker migration predates app_users creation (20251102034653) but references it in RLS policies.
+
+Prod-only lines: 2
+Local-only lines: 1
+
+RESULT: NON-EMPTY DIFF (see schema_diff.txt) — but comparison is prod live introspection vs prod pg_dump reload, NOT migration replay vs prod.
+
+Diff categories:
+1. CONSTRAINT formatting (user_signatures_signature_type_check) — cosmetic normalization, same semantics. Label: (D) cosmetic.
+2. INDEX idx_job_crew_assignments_assigned — in live prod (INVALID: indisvalid=false) but absent from pg_dump and migrations. Label: (A) prod-only orphan; reconciliation must NOT codify invalid indexes — human should DROP INVALID INDEX or REINDEX. HARD STOP if considering DROP.
+
+auth.is_admin* functions: NOT present in prod (MCP verified). Suspected drift does not exist.
+public.is_admin, is_admin_or_manager, is_admin_or_mechanic, is_admin_or_safety_or_gf: present in prod.
+
+Migration history version mismatch (same-day re-timestamping, not schema objects):
+  Local-only versions: 20260606020000, 20260606120000, 20260606130000, 20260606140000, 20260606150000, 20260606160000
+  Prod-only versions:  20260606020802, 20260606033350, 20260606033600, 20260606035450, 20260606040413, 20260606041557, 20260606041603
+  Label: (D) cosmetic history artifact — schema likely identical; filenames/checksums differ.
+
+Cannot prove migration-folder determinism via full replay until ordering bug in 20241205 is fixed.

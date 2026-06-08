@@ -1,0 +1,11 @@
+--- recon/baseline_reload_post.txt	2026-06-07 21:14:08
++++ recon/prod_schema_post.txt	2026-06-07 21:14:07
+@@ -1928,7 +1928,7 @@
+ CONSTRAINT|public.user_saved_locations.user_saved_locations_user_id_fkey|f|FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
+ CONSTRAINT|public.user_saved_locations.user_saved_locations_user_id_name_key|u|UNIQUE (user_id, name)
+ CONSTRAINT|public.user_signatures.user_signatures_pkey|p|PRIMARY KEY (id)
+-CONSTRAINT|public.user_signatures.user_signatures_signature_type_check|c|CHECK (signature_type::text = ANY (ARRAY['canvas'::character varying::text, 'typed'::character varying::text]))
++CONSTRAINT|public.user_signatures.user_signatures_signature_type_check|c|CHECK (signature_type::text = ANY (ARRAY['canvas'::character varying, 'typed'::character varying]::text[]))
+ CONSTRAINT|public.user_signatures.user_signatures_user_id_fkey|f|FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
+ CONSTRAINT|public.user_signatures.user_signatures_user_id_key|u|UNIQUE (user_id)
+ CONSTRAINT|public.vehicle_maintenance_log.attachments_is_array|c|CHECK (attachments IS NULL OR jsonb_typeof(attachments) = 'array'::text)
