@@ -53,3 +53,48 @@ Steps: recreate throwaway DB → load roles → stubs + committed baseline schem
 | `prod_roles.sql`, `prod_applied_versions.txt` | **no** | Machine-local refresh artifacts |
 
 Add new checks in `assertions.sql` per migration increment.
+
+## Rebuild proof (Gate 3)
+
+Schema-only check that committed baseline + forward migrations reproduce live prod:
+
+```bash
+bash supabase/.localgate/prove_rebuild.sh
+# artifacts: .tmp/gate3-rebuild/
+```
+
+Uses `introspect.sql` → `schema_normalize.sh` (cosmetic filters) → `schema_diff_report.sh`.
+
+## Re-drift guard
+
+Detect prod ↔ repo schema drift with the **same normalization path** as the rebuild proof:
+
+```bash
+bash supabase/.localgate/verify_no_drift.sh
+# artifacts: .tmp/drift-check/
+```
+
+Failure modes (opposite remediations):
+
+| Mode | Meaning | Fix |
+|------|---------|-----|
+| **PROD-AHEAD** | Object in live prod, not in baseline+forward | Out-of-band SQL — capture as forward migration |
+| **REPO-AHEAD** | Object in baseline+forward, not in live prod | Committed migration never applied — apply via MCP |
+
+### Where to run the drift guard
+
+| Home | Pros | Cons |
+|------|------|------|
+| **Manual / pre-re-baseline** (default) | No secrets in CI; runs today with `.env` | Only catches drift when someone runs it |
+| **Scheduled workflow** (`workflow_dispatch` or weekly cron + `SUPABASE_DB_URL` secret) | Unattended tripwire | Requires GitHub secret + IPv6-capable runner or proxy |
+| **Default `ci.yml` push/PR** | Always on | Needs prod creds on every PR — not recommended |
+
+**Recommendation:** keep `verify_no_drift.sh` as the canonical check; run it manually before re-baselines and before prod applies. Add an optional `.github/workflows/db-drift-check.yml` with `workflow_dispatch` + weekly schedule when you're ready to store `SUPABASE_DB_URL` as a repo secret. Do **not** wire it into the default lint/test CI job (no secrets today).
+
+## Version control (extended)
+
+| File | Tracked? | Purpose |
+|------|----------|---------|
+| `introspect.sql`, `schema_normalize.sh`, `schema_diff_report.sh` | yes | Shared normalization + diff classification |
+| `rebuild_from_baseline.sh`, `prove_rebuild.sh`, `verify_no_drift.sh` | yes | Rebuild proof + drift guard |
+| `prod_roles.sql`, `prod_applied_versions.txt` | **no** | Machine-local refresh artifacts |
