@@ -315,6 +315,27 @@ export const queryKeys = {
     transactions: (userId: string) => ['points', 'transactions', userId] as const,
   },
 
+  // Gamification (levels, badges, weekly streak, recognition feed)
+  gamification: {
+    all: ['gamification'] as const,
+    level: (userId: string) => ['gamification', 'level', userId] as const,
+    weeklyStreak: (userId: string) => ['gamification', 'weekly-streak', userId] as const,
+    badgeCatalog: ['gamification', 'badge-catalog'] as const,
+    userBadges: (userId: string) => ['gamification', 'user-badges', userId] as const,
+    settings: ['gamification', 'settings'] as const,
+    recognitionFeed: (limit?: number) =>
+      ['gamification', 'recognition-feed', limit ?? 30] as const,
+    standings: (limit?: number) =>
+      ['gamification', 'standings', limit ?? 25] as const,
+    publicProfile: (userId: string) =>
+      ['gamification', 'public-profile', userId] as const,
+    badgeProgress: (userId: string) =>
+      ['gamification', 'badge-progress', userId] as const,
+    adminMetrics: (days: number) =>
+      ['gamification', 'admin-metrics', days] as const,
+    programSettings: ['gamification', 'program-settings'] as const,
+  },
+
   // Safety Rewards (monthly raffle)
   safetyRewards: {
     reward: (year: number, month: number) =>
