@@ -2,6 +2,7 @@
  * Barrel exports for AdminTelemetry module
  */
 export { GamificationAnalyticsSection } from './GamificationAnalyticsSection';
+export { GamificationProgramAdminSection } from './GamificationProgramAdminSection';
 
 // Types
 export * from "./types";

@@ -7,3 +7,6 @@ export { PublicRankCard } from './PublicRankCard';
 export { StandingsPanel } from './StandingsPanel';
 export { RecognitionFeed } from './RecognitionFeed';
 export { GamificationCelebration } from './GamificationCelebration';
+export { ChallengeCard } from './ChallengeCard';
+export { SeasonStandingsPanel } from './SeasonStandingsPanel';
+export { SeasonFinaleStrip } from './SeasonFinaleStrip';

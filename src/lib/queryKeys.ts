@@ -334,6 +334,17 @@ export const queryKeys = {
     adminMetrics: (days: number) =>
       ['gamification', 'admin-metrics', days] as const,
     programSettings: ['gamification', 'program-settings'] as const,
+    programSeasons: ['gamification', 'program-seasons'] as const,
+    programCampaigns: ['gamification', 'program-campaigns'] as const,
+    programChallenges: ['gamification', 'program-challenges'] as const,
+    phase2AdminFlags: ['gamification', 'phase2-admin-flags'] as const,
+    phase2Flags: ['gamification', 'phase2-flags'] as const,
+    activeSeason: ['gamification', 'active-season'] as const,
+    activeChallenge: (userId: string) => ['gamification', 'active-challenge', userId] as const,
+    userSeasonProgress: (userId: string, seasonKey: string) =>
+      ['gamification', 'user-season-progress', userId, seasonKey] as const,
+    seasonStandings: (seasonKey: string, limit?: number) =>
+      ['gamification', 'season-standings', seasonKey, limit ?? 10] as const,
   },
 
   // Safety Rewards (monthly raffle)

@@ -1,11 +1,15 @@
-import { memo } from 'react';
+import { memo, lazy, Suspense } from 'react';
 import { Megaphone } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
-import { useRecognitionFeed } from '@/hooks/gamification';
+import { usePhase2GamificationFlags, useRecognitionFeed } from '@/hooks/gamification';
 import { glass } from '@/lib/glass';
 import { cn } from '@/lib/utils';
 import type { RecognitionFeedItem } from '@/lib/gamification/types';
 import { getPrestigeLabel } from '@/lib/gamification/tiers';
+
+const SeasonFinaleStrip = lazy(() =>
+  import('./SeasonFinaleStrip').then((m) => ({ default: m.SeasonFinaleStrip })),
+);
 
 function formatFeedLine(item: RecognitionFeedItem): string {
   const name = item.subjectName ?? 'A crew member';
@@ -20,9 +24,17 @@ function formatFeedLine(item: RecognitionFeedItem): string {
       return `${name} hit tenure milestone — ${String(payload.title ?? '')}`;
     case 'streak_milestone':
       return `${name} hit a weekly streak milestone — Lit badge ${getPrestigeLabel(Number(payload.prestige_tier ?? 1))}`;
+    case 'season_podium':
+      return `${name} finished on the season podium — ${String(payload.rank ?? '')} place`;
+    case 'season_most_improved':
+      return `${name} earned Most Improved — +${String(payload.delta ?? 0)} vs baseline`;
     default:
       return `${name} earned recognition`;
   }
+}
+
+function isSeasonFinaleEvent(eventType: RecognitionFeedItem['eventType']): boolean {
+  return eventType === 'season_podium' || eventType === 'season_most_improved';
 }
 
 interface RecognitionFeedProps {
@@ -35,6 +47,8 @@ export const RecognitionFeed = memo(function RecognitionFeed({
   className,
 }: RecognitionFeedProps) {
   const { data: items = [], isLoading, isError } = useRecognitionFeed(limit);
+  const { data: flags } = usePhase2GamificationFlags();
+  const showSeasons = flags?.showSeasons ?? false;
 
   return (
     <section
@@ -71,37 +85,45 @@ export const RecognitionFeed = memo(function RecognitionFeed({
       )}
 
       <ul className="space-y-2">
-        {items.map((item) => (
-          <li
-            key={item.id}
-            className={cn(
-              glass.subtle,
-              'flex items-start gap-3 rounded-xl border border-white/10 p-3',
-            )}
-            data-testid={`recognition-feed-item-${item.id}`}
-          >
-            <UserAvatar
-              avatarUrl={item.subjectAvatarUrl}
-              name={item.subjectName}
-              size="sm"
-            />
-            <div className="min-w-0 flex-1">
-              <p className="text-sm text-white/85">{formatFeedLine(item)}</p>
-              <time
-                className="text-[10px] tabular-nums text-white/40"
-                dateTime={item.createdAt}
-              >
-                {new Date(item.createdAt).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  hour: 'numeric',
-                  minute: '2-digit',
-                  timeZone: 'America/Chicago',
-                })}
-              </time>
-            </div>
-          </li>
-        ))}
+        {items.map((item) =>
+          showSeasons && isSeasonFinaleEvent(item.eventType) ? (
+            <li key={item.id}>
+              <Suspense fallback={null}>
+                <SeasonFinaleStrip item={item} />
+              </Suspense>
+            </li>
+          ) : (
+            <li
+              key={item.id}
+              className={cn(
+                glass.subtle,
+                'flex items-start gap-3 rounded-xl border border-white/10 p-3',
+              )}
+              data-testid={`recognition-feed-item-${item.id}`}
+            >
+              <UserAvatar
+                avatarUrl={item.subjectAvatarUrl}
+                name={item.subjectName}
+                size="sm"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm text-white/85">{formatFeedLine(item)}</p>
+                <time
+                  className="text-[10px] tabular-nums text-white/40"
+                  dateTime={item.createdAt}
+                >
+                  {new Date(item.createdAt).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    timeZone: 'America/Chicago',
+                  })}
+                </time>
+              </div>
+            </li>
+          ),
+        )}
       </ul>
     </section>
   );

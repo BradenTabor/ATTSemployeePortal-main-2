@@ -1,11 +1,16 @@
 import type {
+  ActiveChallenge,
+  ActiveSeason,
   BaselineCaptureResult,
   GamificationAdminMetrics,
   GamificationProgramSettings,
+  GamificationSeasonStatus,
   GamificationSettings,
   GamificationStandingsEntry,
+  Phase2GamificationFlags,
   PublicGamificationProfile,
   RecognitionFeedItem,
+  SeasonStandingsEntry,
   UserBadge,
   UserLevel,
   WeeklyStreakState,
@@ -228,5 +233,128 @@ export function mapRecognitionFeedRow(
     createdAt: String(row.created_at ?? ''),
     subjectName: subject?.full_name ?? undefined,
     subjectAvatarUrl: subject?.avatar_url ?? null,
+  };
+}
+
+export function mapGamificationProgramSeason(row: Record<string, unknown>) {
+  return {
+    seasonKey: String(row.season_key ?? ''),
+    name: String(row.name ?? ''),
+    theme: row.theme == null ? null : String(row.theme),
+    startAt: String(row.start_at ?? ''),
+    endAt: String(row.end_at ?? ''),
+    status: String(row.status ?? 'draft') as GamificationSeasonStatus,
+    mostImprovedEnabled: Boolean(row.most_improved_enabled),
+    finalizedAt: row.finalized_at == null ? null : String(row.finalized_at),
+    sortOrder: Number(row.sort_order ?? 0),
+    isActive: Boolean(row.is_active),
+    createdAt: String(row.created_at ?? ''),
+  };
+}
+
+export function mapGamificationProgramChallenge(row: Record<string, unknown>) {
+  return {
+    challengeKey: String(row.challenge_key ?? ''),
+    title: String(row.title ?? ''),
+    description: row.description == null ? null : String(row.description),
+    cadence: String(row.cadence ?? ''),
+    challengeType: String(row.challenge_type ?? ''),
+    isActive: Boolean(row.is_active),
+    sortOrder: Number(row.sort_order ?? 0),
+  };
+}
+
+export function mapGamificationProgramCampaign(row: Record<string, unknown>) {
+  return {
+    campaignKey: String(row.campaign_key ?? ''),
+    challengeKey: String(row.challenge_key ?? ''),
+    title: row.title == null ? null : String(row.title),
+    startsAt: String(row.starts_at ?? ''),
+    endsAt: String(row.ends_at ?? ''),
+    multiplier: Number(row.multiplier ?? 1),
+    isActive: Boolean(row.is_active),
+    createdBy: row.created_by == null ? null : String(row.created_by),
+    createdAt: String(row.created_at ?? ''),
+  };
+}
+
+export function mapGamificationPhase2AdminFlags(row: Record<string, unknown>) {
+  return {
+    phase2Enabled: Boolean(row.phase2_enabled),
+    seasonsEnabled: Boolean(row.seasons_enabled),
+    challengesEnabled: Boolean(row.challenges_enabled),
+    isProgramAdmin: Boolean(row.is_program_admin),
+  };
+}
+
+function parseGamificationSettingBool(value: unknown): boolean {
+  if (value === true) return true;
+  if (value === false) return false;
+  if (typeof value === 'string') {
+    const normalized = value.replace(/^"|"$/g, '').toLowerCase();
+    return normalized === 'true';
+  }
+  return false;
+}
+
+export function mapPhase2GamificationFlags(
+  rows: { key: string; value: unknown }[],
+): Phase2GamificationFlags {
+  const byKey = Object.fromEntries(rows.map((r) => [r.key, r.value]));
+  const phase2Enabled = parseGamificationSettingBool(byKey.phase2_enabled);
+  const seasonsEnabled = parseGamificationSettingBool(byKey.seasons_enabled);
+  const challengesEnabled = parseGamificationSettingBool(byKey.challenges_enabled);
+
+  return {
+    phase2Enabled,
+    seasonsEnabled,
+    challengesEnabled,
+    showChallenges: phase2Enabled && challengesEnabled,
+    showSeasons: phase2Enabled && seasonsEnabled,
+  };
+}
+
+export function mapActiveSeason(row: Record<string, unknown>): ActiveSeason {
+  return {
+    seasonKey: String(row.season_key ?? ''),
+    name: String(row.name ?? ''),
+    theme: row.theme == null ? null : String(row.theme),
+    startAt: String(row.start_at ?? ''),
+    endAt: String(row.end_at ?? ''),
+    status: String(row.status ?? 'draft') as GamificationSeasonStatus,
+    mostImprovedEnabled: Boolean(row.most_improved_enabled),
+  };
+}
+
+export function mapSeasonStandingsEntry(row: Record<string, unknown>): SeasonStandingsEntry {
+  return {
+    userId: String(row.user_id ?? ''),
+    fullName: row.full_name != null ? String(row.full_name) : null,
+    avatarUrl: row.avatar_url != null ? String(row.avatar_url) : null,
+    seasonScore: Number(row.season_score ?? 0),
+    tierKey: String(row.tier_key ?? ''),
+    tierName: String(row.tier_name ?? ''),
+    tierOrder: Number(row.tier_order ?? 0),
+    subLevel: Number(row.sub_level ?? 1),
+    subLevelLabel: String(row.sub_level_label ?? 'I'),
+  };
+}
+
+export function mapActiveChallenge(
+  activeRow: Record<string, unknown>,
+  challengeRow: Record<string, unknown>,
+  completedThisWindow: boolean,
+): ActiveChallenge {
+  const rewardSpec = (challengeRow.reward_spec as Record<string, unknown>) ?? {};
+  return {
+    challengeKey: String(activeRow.challenge_key ?? ''),
+    windowKey: String(activeRow.window_key ?? ''),
+    campaignKey: activeRow.campaign_key != null ? String(activeRow.campaign_key) : null,
+    multiplier: Number(activeRow.multiplier ?? 1),
+    title: String(challengeRow.title ?? ''),
+    description: challengeRow.description != null ? String(challengeRow.description) : null,
+    rewardPoints: Number(rewardSpec.points ?? 0),
+    completedThisWindow,
+    cadence: String(challengeRow.cadence ?? 'weekly'),
   };
 }

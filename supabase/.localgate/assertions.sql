@@ -1948,14 +1948,20 @@ BEGIN
   END IF;
 
   v_def := pg_get_functiondef('public.get_user_lifetime_earned(uuid)'::regprocedure);
-  IF position('streak_bonus' IN v_def) = 0 THEN
-    missing := missing || E'\n  - get_user_lifetime_earned does not include streak_bonus';
-  END IF;
-  IF position('redemption' IN v_def) = 0 AND position('adjustment' IN v_def) = 0 THEN
-    -- earning-source allowlist must exclude wallet-only sources
+  IF position('gamification_earning_sources' IN v_def) = 0 THEN
+    IF position('streak_bonus' IN v_def) = 0 THEN
+      missing := missing || E'\n  - get_user_lifetime_earned does not include streak_bonus';
+    END IF;
     IF position('manual_award' IN v_def) = 0 THEN
       missing := missing || E'\n  - get_user_lifetime_earned missing expected earning sources';
     END IF;
+  ELSIF NOT (
+    'streak_bonus' = ANY (public.gamification_earning_sources())
+    AND 'manual_award' = ANY (public.gamification_earning_sources())
+    AND 'challenge_reward' = ANY (public.gamification_earning_sources())
+    AND 'campaign_multiplier_bonus' = ANY (public.gamification_earning_sources())
+  ) THEN
+    missing := missing || E'\n  - gamification_earning_sources missing required Phase 1/2 labels';
   END IF;
   IF position('redemption' IN v_def) > 0 OR position('adjustment' IN v_def) > 0 THEN
     missing := missing || E'\n  - get_user_lifetime_earned must not reference redemption/adjustment in allowlist';
@@ -2949,6 +2955,1057 @@ BEGIN
   END IF;
 
   RAISE NOTICE 'OK: gamification gate 6 — hire_date assert, baseline capture once, long-tail ready, workforce levels, safety_officer access.';
+END $$;
+
+-- ---- Increment-specific checks: 20260608230000 + 20260608230100 (Phase 2 gate 1) ----
+DO $$
+DECLARE
+  missing text := '';
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_enum e
+    JOIN pg_type t ON t.oid = e.enumtypid
+    WHERE t.typname = 'point_source' AND e.enumlabel = 'challenge_reward'
+  ) THEN
+    missing := missing || E'\n  - point_source.challenge_reward enum value missing';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_enum e
+    JOIN pg_type t ON t.oid = e.enumtypid
+    WHERE t.typname = 'point_source' AND e.enumlabel = 'campaign_multiplier_bonus'
+  ) THEN
+    missing := missing || E'\n  - point_source.campaign_multiplier_bonus enum value missing';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_enum e
+    JOIN pg_type t ON t.oid = e.enumtypid
+    WHERE t.typname = 'recognition_event_type' AND e.enumlabel = 'season_podium'
+  ) THEN
+    missing := missing || E'\n  - recognition_event_type.season_podium enum value missing';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_enum e
+    JOIN pg_type t ON t.oid = e.enumtypid
+    WHERE t.typname = 'recognition_event_type' AND e.enumlabel = 'season_most_improved'
+  ) THEN
+    missing := missing || E'\n  - recognition_event_type.season_most_improved enum value missing';
+  END IF;
+
+  IF to_regclass('public.seasons') IS NULL THEN
+    missing := missing || E'\n  - table public.seasons is missing';
+  END IF;
+  IF to_regprocedure('public.gamification_setting_bool(text)') IS NULL THEN
+    missing := missing || E'\n  - function public.gamification_setting_bool is missing';
+  END IF;
+  IF to_regprocedure('public.is_phase2_master_enabled()') IS NULL THEN
+    missing := missing || E'\n  - function public.is_phase2_master_enabled is missing';
+  END IF;
+  IF to_regprocedure('public.are_seasons_enabled()') IS NULL THEN
+    missing := missing || E'\n  - function public.are_seasons_enabled is missing';
+  END IF;
+  IF to_regprocedure('public.point_tx_in_season_window(integer,timestamp with time zone,timestamp with time zone,timestamp with time zone)') IS NULL THEN
+    missing := missing || E'\n  - function public.point_tx_in_season_window is missing';
+  END IF;
+  IF to_regprocedure('public.get_user_season_score(uuid,text)') IS NULL THEN
+    missing := missing || E'\n  - function public.get_user_season_score is missing';
+  END IF;
+  IF to_regprocedure('public.finalize_season(text)') IS NULL THEN
+    missing := missing || E'\n  - function public.finalize_season is missing';
+  END IF;
+  IF to_regprocedure('public.process_gamification_season_lifecycle()') IS NULL THEN
+    missing := missing || E'\n  - function public.process_gamification_season_lifecycle is missing';
+  END IF;
+  IF to_regprocedure('public.get_user_season_improvement_delta(uuid,text)') IS NULL THEN
+    missing := missing || E'\n  - function public.get_user_season_improvement_delta is missing';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.seasons s WHERE s.season_key = 'season_1_placeholder'
+  ) THEN
+    missing := missing || E'\n  - placeholder season season_1_placeholder not seeded';
+  END IF;
+
+  IF missing <> '' THEN
+    RAISE EXCEPTION E'GATE FAILED — Phase 2 gate 1 objects (20260608230100) not correct:%', missing;
+  END IF;
+  RAISE NOTICE 'OK: Phase 2 gate 1 schema — enums, seasons, flag helpers, score RPCs, lifecycle present.';
+END $$;
+
+DO $$
+DECLARE
+  c_user       uuid := '00000000-0000-0000-0000-00000000e201';
+  c_s2_user    uuid := '00000000-0000-0000-0000-00000000e202';
+  c_flag       uuid := '00000000-0000-0000-0000-00000000e203';
+  v_season_start timestamptz := '2026-06-01 05:00:00+00'::timestamptz;
+  v_season_end   timestamptz := '2026-07-01 05:00:00+00'::timestamptz;
+  v_in_window    boolean;
+  v_score        int;
+  v_lifetime     int;
+  v_lifetime_s2  int;
+  v_level_before record;
+  v_level_after  record;
+  v_mismatch     int;
+  v_fin1         jsonb;
+  v_fin2         jsonb;
+  v_podium       int;
+  v_lifecycle    jsonb;
+  v_active       int;
+  v_user         record;
+  v_old_sum      int;
+  v_new_sum      int;
+BEGIN
+  ALTER TABLE public.point_transactions DISABLE TRIGGER trg_evaluate_badges_point_tx;
+  ALTER TABLE public.point_transactions DISABLE TRIGGER trg_weekly_streak_point_tx;
+  ALTER TABLE public.point_transactions DISABLE TRIGGER trg_recognition_feed_tier_promotion;
+
+  INSERT INTO auth.users (id, aud, role, email) VALUES
+    (c_user,    'authenticated', 'authenticated', 'gate-p2g1-user@example.invalid'),
+    (c_s2_user, 'authenticated', 'authenticated', 'gate-p2g1-s2@example.invalid'),
+    (c_flag,    'authenticated', 'authenticated', 'gate-p2g1-flag@example.invalid')
+  ON CONFLICT (id) DO NOTHING;
+
+  UPDATE public.app_users SET role = 'employee' WHERE user_id IN (c_user, c_s2_user, c_flag);
+
+  -- Flag-off defaults
+  IF public.are_seasons_enabled() THEN
+    RAISE EXCEPTION 'GATE FAILED p2g1 flag-off: are_seasons_enabled should be false at gate start';
+  END IF;
+  IF public.is_phase2_master_enabled() THEN
+    RAISE EXCEPTION 'GATE FAILED p2g1 flag-off: phase2_enabled should be false at gate start';
+  END IF;
+  SELECT count(*)::int INTO v_active FROM public.get_active_season();
+  IF v_active <> 0 THEN
+    RAISE EXCEPTION 'GATE FAILED p2g1 flag-off: get_active_season should return empty when flag off';
+  END IF;
+  v_lifecycle := public.process_gamification_season_lifecycle();
+  IF (v_lifecycle->>'status') <> 'skipped' THEN
+    RAISE EXCEPTION 'GATE FAILED p2g1 flag-off lifecycle: expected skipped, got %', v_lifecycle;
+  END IF;
+  v_fin1 := public.finalize_season('season_1_placeholder');
+  IF (v_fin1->>'status') <> 'skipped' OR (v_fin1->>'reason') <> 'seasons_disabled' THEN
+    RAISE EXCEPTION 'GATE FAILED p2g1 flag-off finalize: expected seasons_disabled skip, got %', v_fin1;
+  END IF;
+
+  -- Chicago season-window seam (mirror raffle-month CDT June boundary fixtures)
+  v_in_window := public.point_tx_in_season_window(
+    1, '2026-05-31T05:00:00.000Z'::timestamptz, v_season_start, v_season_end
+  );
+  IF v_in_window THEN
+    RAISE EXCEPTION 'GATE FAILED p2g1 season seam: May 31 05:00Z should be outside June season';
+  END IF;
+  v_in_window := public.point_tx_in_season_window(
+    1, '2026-06-01T04:59:59.000Z'::timestamptz, v_season_start, v_season_end
+  );
+  IF v_in_window THEN
+    RAISE EXCEPTION 'GATE FAILED p2g1 season seam: Jun 1 04:59:59Z should be outside June season';
+  END IF;
+  v_in_window := public.point_tx_in_season_window(
+    1, '2026-06-01T05:00:00.000Z'::timestamptz, v_season_start, v_season_end
+  );
+  IF NOT v_in_window THEN
+    RAISE EXCEPTION 'GATE FAILED p2g1 season seam: Jun 1 05:00:00Z should be inside June season';
+  END IF;
+
+  -- Gate test seasons (2099 — isolated from prod config)
+  INSERT INTO public.seasons (season_key, name, theme, start_at, end_at, status, most_improved_enabled, sort_order)
+  VALUES
+    ('gate_p2g1_season_a', 'Gate S-A', 'test',
+     '2099-06-01 05:00:00+00'::timestamptz, '2099-07-01 05:00:00+00'::timestamptz,
+     'closed', false, 900),
+    ('gate_p2g1_season_b', 'Gate S-B', 'test',
+     '2099-08-01 05:00:00+00'::timestamptz, '2099-09-01 05:00:00+00'::timestamptz,
+     'closed', false, 901)
+  ON CONFLICT (season_key) DO NOTHING;
+
+  -- Temporarily enable seasons for behavioral tests (restored at end)
+  UPDATE public.gamification_settings SET value = 'true'::jsonb
+  WHERE key IN ('phase2_enabled', 'seasons_enabled');
+
+  IF NOT public.are_seasons_enabled() THEN
+    RAISE EXCEPTION 'GATE FAILED p2g1: could not enable seasons for behavioral tests';
+  END IF;
+
+  -- Season A earnings
+  INSERT INTO public.point_transactions (user_id, amount, source, reason, created_at)
+  VALUES
+    (c_user, 100, 'compliance_form', 'gate p2g1 season A',
+     '2099-06-15 12:00:00'::timestamptz AT TIME ZONE 'America/Chicago');
+
+  -- Redemption mid-season must not affect season score (positive-only)
+  INSERT INTO public.point_transactions (user_id, amount, source, reason, created_at)
+  VALUES
+    (c_user, -10, 'redemption', 'gate p2g1 redemption',
+     '2099-06-20 12:00:00'::timestamptz AT TIME ZONE 'America/Chicago');
+
+  v_score := public.get_user_season_score(c_user, 'gate_p2g1_season_a');
+  IF v_score <> 100 THEN
+    RAISE EXCEPTION 'GATE FAILED p2g1 redemption: season score expected 100, got %', v_score;
+  END IF;
+
+  v_lifetime := public.get_user_lifetime_earned(c_user);
+  SELECT * INTO v_level_before FROM public.get_user_level(c_user);
+
+  -- Season B earnings (two-track: season score resets per window; lifetime accumulates)
+  INSERT INTO public.point_transactions (user_id, amount, source, reason, created_at)
+  VALUES
+    (c_s2_user, 50, 'announcement_claim', 'gate p2g1 season A s2',
+     '2099-06-10 12:00:00'::timestamptz AT TIME ZONE 'America/Chicago'),
+    (c_user, 75, 'compliance_form', 'gate p2g1 season B',
+     '2099-08-15 12:00:00'::timestamptz AT TIME ZONE 'America/Chicago');
+
+  IF public.get_user_season_score(c_user, 'gate_p2g1_season_a') <> 100 THEN
+    RAISE EXCEPTION 'GATE FAILED p2g1 two-track: season A score changed after season B earn';
+  END IF;
+  IF public.get_user_season_score(c_user, 'gate_p2g1_season_b') <> 75 THEN
+    RAISE EXCEPTION 'GATE FAILED p2g1 two-track: season B score expected 75, got %',
+      public.get_user_season_score(c_user, 'gate_p2g1_season_b');
+  END IF;
+
+  v_lifetime_s2 := public.get_user_lifetime_earned(c_user);
+  IF v_lifetime_s2 <> v_lifetime + 75 THEN
+    RAISE EXCEPTION 'GATE FAILED p2g1 two-track: lifetime expected % got %',
+      v_lifetime + 75, v_lifetime_s2;
+  END IF;
+
+  SELECT * INTO v_level_after FROM public.get_user_level(c_user);
+  IF v_level_after.lifetime_earned <> v_level_before.lifetime_earned + 75 THEN
+    RAISE EXCEPTION 'GATE FAILED p2g1 two-track: level lifetime_earned did not accumulate across seasons';
+  END IF;
+  IF v_level_after.tier_key IS DISTINCT FROM v_level_before.tier_key
+     AND v_level_after.lifetime_earned <= v_level_before.lifetime_earned THEN
+    RAISE EXCEPTION 'GATE FAILED p2g1 two-track: tier should only advance when lifetime increases';
+  END IF;
+
+  -- D4: get_user_lifetime_earned byte-identical for all users without challenge rows
+  SELECT count(*)::int INTO v_mismatch
+  FROM public.app_users au
+  WHERE public.get_user_lifetime_earned(au.user_id) <> (
+    SELECT COALESCE(SUM(pt.amount), 0)::integer
+    FROM public.point_transactions pt
+    WHERE pt.user_id = au.user_id
+      AND pt.amount > 0
+      AND pt.source IN (
+        'announcement_claim', 'compliance_form', 'streak_bonus',
+        'near_miss_report', 'certification', 'manual_award'
+      )
+  );
+
+  IF EXISTS (
+    SELECT 1 FROM public.point_transactions pt
+    WHERE pt.source IN ('challenge_reward', 'campaign_multiplier_bonus')
+  ) THEN
+    RAISE EXCEPTION 'GATE FAILED p2g1 lifetime regression: challenge rows exist during byte-identical test';
+  END IF;
+
+  IF v_mismatch <> 0 THEN
+    RAISE EXCEPTION 'GATE FAILED p2g1 lifetime regression: % users differ from Phase 1 source list', v_mismatch;
+  END IF;
+
+  -- Earning source list parity (season score RPC uses gamification_earning_sources)
+  IF (
+    SELECT pg_get_functiondef('public.get_user_season_score(uuid,text)'::regprocedure)
+  ) NOT LIKE '%gamification_earning_sources%' THEN
+    RAISE EXCEPTION 'GATE FAILED p2g1 source parity: get_user_season_score must use gamification_earning_sources';
+  END IF;
+  IF (
+    SELECT pg_get_functiondef('public.get_user_lifetime_earned(uuid)'::regprocedure)
+  ) NOT LIKE '%gamification_earning_sources%' THEN
+    RAISE EXCEPTION 'GATE FAILED p2g1 source parity: get_user_lifetime_earned must use gamification_earning_sources';
+  END IF;
+
+  -- finalize_season idempotency (podium only — most_improved_enabled false)
+  UPDATE public.seasons SET status = 'closed', finalized_at = NULL
+  WHERE season_key = 'gate_p2g1_season_a';
+
+  INSERT INTO public.point_transactions (user_id, amount, source, reason, awarded_by, created_at)
+  VALUES
+    (c_flag, 300, 'manual_award', 'gate p2g1 podium', c_flag,
+     '2099-06-20 12:00:00'::timestamptz AT TIME ZONE 'America/Chicago');
+
+  v_fin1 := public.finalize_season('gate_p2g1_season_a');
+  IF (v_fin1->>'status') <> 'finalized' THEN
+    RAISE EXCEPTION 'GATE FAILED p2g1 finalize first run: expected finalized, got %', v_fin1;
+  END IF;
+
+  SELECT count(*)::int INTO v_podium
+  FROM public.recognition_feed rf
+  WHERE rf.event_type = 'season_podium'
+    AND rf.payload->>'season_key' = 'gate_p2g1_season_a';
+
+  v_fin2 := public.finalize_season('gate_p2g1_season_a');
+  IF (v_fin2->>'status') <> 'already_finalized' THEN
+    RAISE EXCEPTION 'GATE FAILED p2g1 finalize idempotency: second run expected already_finalized, got %', v_fin2;
+  END IF;
+
+  IF (
+    SELECT count(*)::int FROM public.recognition_feed rf
+    WHERE rf.event_type = 'season_podium'
+      AND rf.payload->>'season_key' = 'gate_p2g1_season_a'
+  ) <> v_podium THEN
+    RAISE EXCEPTION 'GATE FAILED p2g1 finalize idempotency: podium row count changed on second run';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM public.recognition_feed rf
+    WHERE rf.event_type = 'season_most_improved'
+      AND rf.payload->>'season_key' = 'gate_p2g1_season_a'
+  ) THEN
+    RAISE EXCEPTION 'GATE FAILED p2g1 most_improved: should not emit when most_improved_enabled=false';
+  END IF;
+
+  -- Restore flags dark
+  UPDATE public.gamification_settings SET value = 'false'::jsonb
+  WHERE key IN ('phase2_enabled', 'seasons_enabled');
+
+  ALTER TABLE public.point_transactions ENABLE TRIGGER trg_evaluate_badges_point_tx;
+  ALTER TABLE public.point_transactions ENABLE TRIGGER trg_weekly_streak_point_tx;
+  ALTER TABLE public.point_transactions ENABLE TRIGGER trg_recognition_feed_tier_promotion;
+
+  RAISE NOTICE 'OK: Phase 2 gate 1 — Chicago seam, two-track, redemption exclusion, lifetime regression, finalize idempotency, flag-off, most_improved gated.';
+END $$;
+
+-- ---- Increment-specific checks: 20260608230200 (Phase 2 gate 2) ----
+DO $$
+DECLARE
+  missing text := '';
+BEGIN
+  IF to_regclass('public.challenges') IS NULL THEN
+    missing := missing || E'\n  - table public.challenges is missing';
+  END IF;
+  IF to_regclass('public.campaigns') IS NULL THEN
+    missing := missing || E'\n  - table public.campaigns is missing';
+  END IF;
+  IF to_regclass('public.challenge_completions') IS NULL THEN
+    missing := missing || E'\n  - table public.challenge_completions is missing';
+  END IF;
+  IF to_regprocedure('public.award_challenge_completion(uuid,uuid)') IS NULL THEN
+    missing := missing || E'\n  - function public.award_challenge_completion is missing';
+  END IF;
+  IF to_regprocedure('public.try_record_challenge_completion(uuid,text,text,text,timestamp with time zone)') IS NULL THEN
+    missing := missing || E'\n  - function public.try_record_challenge_completion is missing';
+  END IF;
+  IF to_regprocedure('public.evaluate_user_challenges_from_ledger(uuid,public.point_source,text,uuid,text,timestamp with time zone)') IS NULL THEN
+    missing := missing || E'\n  - function public.evaluate_user_challenges_from_ledger is missing';
+  END IF;
+  IF to_regprocedure('public.rotate_weekly_auto_challenge(timestamp with time zone)') IS NULL THEN
+    missing := missing || E'\n  - function public.rotate_weekly_auto_challenge is missing';
+  END IF;
+  IF to_regprocedure('public.get_active_challenge_for_activity(timestamp with time zone)') IS NULL THEN
+    missing := missing || E'\n  - function public.get_active_challenge_for_activity is missing';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger t
+    JOIN pg_class c ON c.oid = t.tgrelid
+    WHERE c.relname = 'point_transactions' AND t.tgname = 'trg_evaluate_challenges_point_tx' AND NOT t.tgisinternal
+  ) THEN
+    missing := missing || E'\n  - trigger trg_evaluate_challenges_point_tx is missing';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger t
+    JOIN pg_class c ON c.oid = t.tgrelid
+    WHERE c.relname = 'safety_briefing_answers' AND t.tgname = 'trg_evaluate_challenges_briefing' AND NOT t.tgisinternal
+  ) THEN
+    missing := missing || E'\n  - trigger trg_evaluate_challenges_briefing is missing';
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM public.challenges WHERE challenge_key = 'compliance_sprint') THEN
+    missing := missing || E'\n  - seed challenge compliance_sprint missing';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.challenges WHERE challenge_key = 'near_miss_week') THEN
+    missing := missing || E'\n  - seed challenge near_miss_week missing';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.challenges WHERE challenge_key = 'cert_or_training') THEN
+    missing := missing || E'\n  - seed challenge cert_or_training missing';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.gamification_settings gs
+    WHERE gs.key = 'weekly_auto_challenge_pool'
+      AND gs.value @> '["compliance_sprint"]'::jsonb
+  ) THEN
+    missing := missing || E'\n  - weekly_auto_challenge_pool seed missing or wrong';
+  END IF;
+
+  IF missing <> '' THEN
+    RAISE EXCEPTION E'GATE FAILED — Phase 2 gate 2 objects (20260608230200) not correct:%', missing;
+  END IF;
+  RAISE NOTICE 'OK: Phase 2 gate 2 schema — challenges, campaigns, completions, eval triggers, rotation present.';
+END $$;
+
+DO $$
+DECLARE
+  c_user       uuid := '00000000-0000-0000-0000-00000000e301';
+  c_incident   uuid := '00000000-0000-0000-0000-00000000e311';
+  c_ca         uuid := '00000000-0000-0000-0000-00000000e312';
+  c_compliance uuid := '00000000-0000-0000-0000-00000000e313';
+  c_cert_ref   uuid := '00000000-0000-0000-0000-00000000e314';
+  c_flag_cert  uuid := '00000000-0000-0000-0000-00000000e316';
+  v_week_a     date;
+  v_week_b     date;
+  v_window_a   text;
+  v_window_b   text;
+  v_rotate     jsonb;
+  v_count      int;
+  v_base       int;
+  v_bonus      int;
+  v_base_amt   int;
+  v_bonus_amt  int;
+  v_completion uuid;
+  v_active     record;
+  v_ts         timestamptz := '2099-03-04 18:00:00'::timestamptz AT TIME ZONE 'America/Chicago';
+  v_week_cert  date;
+  v_week_excl  date;
+  v_week_nm    date;
+  v_week_camp  date;
+  v_week_prec  date;
+  v_ts_excl    timestamptz;
+  v_ts_nm      timestamptz;
+  v_ts_camp    timestamptz;
+  v_ts_prec    timestamptz;
+  v_camp_cert  uuid := '00000000-0000-0000-0000-00000000e315';
+BEGIN
+  ALTER TABLE public.point_transactions DISABLE TRIGGER trg_evaluate_badges_point_tx;
+  ALTER TABLE public.point_transactions DISABLE TRIGGER trg_weekly_streak_point_tx;
+  ALTER TABLE public.point_transactions DISABLE TRIGGER trg_recognition_feed_tier_promotion;
+  ALTER TABLE public.point_transactions DISABLE TRIGGER trg_evaluate_challenges_point_tx;
+  ALTER TABLE public.safety_briefing_answers DISABLE TRIGGER trg_weekly_streak_briefing;
+  ALTER TABLE public.safety_briefing_answers DISABLE TRIGGER trg_evaluate_challenges_briefing;
+  ALTER TABLE public.safety_incidents DISABLE TRIGGER trg_award_near_miss_base_points;
+  ALTER TABLE public.corrective_actions DISABLE TRIGGER trg_award_near_miss_corrective_bonus;
+
+  INSERT INTO auth.users (id, aud, role, email) VALUES
+    (c_user, 'authenticated', 'authenticated', 'gate-p2g2-user@example.invalid')
+  ON CONFLICT (id) DO NOTHING;
+
+  UPDATE public.app_users SET role = 'employee' WHERE user_id = c_user;
+
+  -- Flag-off discipline
+  IF public.are_challenges_enabled() THEN
+    RAISE EXCEPTION 'GATE FAILED p2g2 flag-off: are_challenges_enabled should be false at gate start';
+  END IF;
+
+  v_rotate := public.rotate_weekly_auto_challenge(v_ts);
+  IF (v_rotate->>'status') <> 'skipped' OR (v_rotate->>'reason') <> 'challenges_disabled' THEN
+    RAISE EXCEPTION 'GATE FAILED p2g2 flag-off rotate: expected challenges_disabled skip, got %', v_rotate;
+  END IF;
+
+  INSERT INTO public.point_transactions (user_id, amount, source, reference_id, reference_table, category, created_at)
+  VALUES (c_user, 20, 'certification', c_flag_cert, 'certification_records', 'pass', v_ts);
+
+  SELECT count(*)::int INTO v_count
+  FROM public.challenge_completions cc WHERE cc.user_id = c_user;
+  IF v_count <> 0 THEN
+    RAISE EXCEPTION 'GATE FAILED p2g2 flag-off: challenge_completions rows written while disabled';
+  END IF;
+
+  SELECT count(*)::int INTO v_count
+  FROM public.point_transactions pt
+  WHERE pt.user_id = c_user AND pt.source IN ('challenge_reward', 'campaign_multiplier_bonus');
+  IF v_count <> 0 THEN
+    RAISE EXCEPTION 'GATE FAILED p2g2 flag-off: challenge ledger rows written while disabled';
+  END IF;
+
+  -- Chicago ISO week seam → distinct window_key values
+  v_week_a := public.chicago_iso_week_start('2024-01-08 05:59:00+00'::timestamptz);
+  v_week_b := public.chicago_iso_week_start('2024-01-08 06:01:00+00'::timestamptz);
+  v_window_a := public.weekly_challenge_window_key(v_week_a);
+  v_window_b := public.weekly_challenge_window_key(v_week_b);
+  IF v_week_a <> '2024-01-01'::date OR v_week_b <> '2024-01-08'::date THEN
+    RAISE EXCEPTION 'GATE FAILED p2g2 week seam: unexpected week starts % %', v_week_a, v_week_b;
+  END IF;
+  IF v_window_a = v_window_b THEN
+    RAISE EXCEPTION 'GATE FAILED p2g2 week seam: window keys should differ across Chicago Monday seam';
+  END IF;
+
+  -- Enable challenges for behavioral tests (restored at end)
+  UPDATE public.gamification_settings SET value = 'true'::jsonb
+  WHERE key IN ('phase2_enabled', 'challenges_enabled');
+
+  v_week_cert := public.chicago_iso_week_start(v_ts);
+
+  UPDATE public.gamification_settings
+  SET value = jsonb_build_object('week_start', v_week_cert, 'challenge_key', 'cert_or_training')
+  WHERE key = 'weekly_auto_challenge_active';
+
+  IF NOT public.are_challenges_enabled() THEN
+    RAISE EXCEPTION 'GATE FAILED p2g2: could not enable challenges for behavioral tests';
+  END IF;
+
+  -- cert_or_training completes on certification earn
+  INSERT INTO public.point_transactions (user_id, amount, source, reference_id, reference_table, category, created_at)
+  VALUES (c_user, 20, 'certification', c_cert_ref, 'certification_records', 'pass', v_ts);
+
+  PERFORM public.evaluate_user_challenges_from_ledger(
+    c_user, 'certification', 'pass', c_cert_ref, 'certification_records', v_ts
+  );
+
+  SELECT count(*)::int INTO v_count
+  FROM public.challenge_completions cc
+  WHERE cc.user_id = c_user
+    AND cc.challenge_key = 'cert_or_training'
+    AND cc.window_key = public.weekly_challenge_window_key(v_week_cert);
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED p2g2 cert completion: expected 1 row, got %', v_count;
+  END IF;
+
+  SELECT count(*)::int, COALESCE(max(pt.amount), 0)::int INTO v_count, v_base
+  FROM public.point_transactions pt
+  WHERE pt.user_id = c_user AND pt.source = 'challenge_reward';
+  IF v_count <> 1 OR v_base <> 30 THEN
+    RAISE EXCEPTION 'GATE FAILED p2g2 cert payout: expected 1 base tx amount 30, got count=% amount=%', v_count, v_base;
+  END IF;
+
+  -- Idempotency: repeated qualifying certification action same week must not double-pay
+  INSERT INTO public.point_transactions (user_id, amount, source, reference_id, reference_table, category, created_at)
+  VALUES (c_user, 10, 'certification', gen_random_uuid(), 'certification_records', 'early_renewal', v_ts);
+
+  PERFORM public.evaluate_user_challenges_from_ledger(
+    c_user, 'certification', 'early_renewal', gen_random_uuid(), 'certification_records', v_ts
+  );
+
+  SELECT cc.id INTO v_completion
+  FROM public.challenge_completions cc
+  WHERE cc.user_id = c_user AND cc.challenge_key = 'cert_or_training';
+
+  PERFORM public.award_challenge_completion(c_user, v_completion);
+
+  SELECT count(*)::int INTO v_count FROM public.challenge_completions cc WHERE cc.user_id = c_user;
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED p2g2 idempotency: expected 1 completion row, got %', v_count;
+  END IF;
+
+  SELECT count(*)::int, COALESCE(max(pt.amount), 0)::int INTO v_count, v_base
+  FROM public.point_transactions pt
+  WHERE pt.user_id = c_user AND pt.source = 'challenge_reward';
+  IF v_count <> 1 OR v_base <> 30 THEN
+    RAISE EXCEPTION 'GATE FAILED p2g2 idempotency: expected exactly one base tx (30), got count=% amount=%', v_count, v_base;
+  END IF;
+
+  -- Excluded sources must not complete
+  v_ts_excl := '2099-04-03 12:00:00'::timestamptz AT TIME ZONE 'America/Chicago';
+  v_week_excl := public.chicago_iso_week_start(v_ts_excl);
+
+  UPDATE public.gamification_settings
+  SET value = jsonb_build_object('week_start', v_week_excl, 'challenge_key', 'cert_or_training')
+  WHERE key = 'weekly_auto_challenge_active';
+
+  INSERT INTO public.point_transactions (user_id, amount, source, reason, created_at)
+  VALUES (c_user, 5, 'streak_bonus', 'gate p2g2 excluded', v_ts_excl);
+
+  PERFORM public.evaluate_user_challenges_from_ledger(
+    c_user, 'streak_bonus', NULL, gen_random_uuid(), NULL, v_ts_excl
+  );
+
+  INSERT INTO public.point_transactions (user_id, amount, source, reason, created_at)
+  VALUES (c_user, -10, 'redemption', 'gate p2g2 excluded', v_ts_excl);
+
+  SELECT count(*)::int INTO v_count
+  FROM public.challenge_completions cc
+  WHERE cc.user_id = c_user AND cc.window_key = public.weekly_challenge_window_key(v_week_excl);
+  IF v_count <> 0 THEN
+    RAISE EXCEPTION 'GATE FAILED p2g2 excluded sources: streak_bonus/redemption must not complete challenge';
+  END IF;
+
+  -- near_miss_week: corrective_bonus only (Sharp Eye signal), not raw base submission
+  v_ts_nm := '2099-05-07 12:00:00'::timestamptz AT TIME ZONE 'America/Chicago';
+  v_week_nm := public.chicago_iso_week_start(v_ts_nm);
+
+  UPDATE public.gamification_settings
+  SET value = jsonb_build_object('week_start', v_week_nm, 'challenge_key', 'near_miss_week')
+  WHERE key = 'weekly_auto_challenge_active';
+
+  INSERT INTO public.safety_incidents (id, incident_date, severity, incident_type, description, reported_by)
+  VALUES (c_incident, '2099-05-07', 'near_miss', 'other', 'gate p2g2 nm base only', c_user);
+
+  INSERT INTO public.point_transactions (user_id, amount, source, reference_id, reference_table, category, created_at)
+  VALUES (
+    c_user, 10, 'near_miss_report', c_incident, 'safety_incidents', 'base', v_ts_nm
+  );
+
+  PERFORM public.evaluate_user_challenges_from_ledger(
+    c_user, 'near_miss_report', 'base', c_incident, 'safety_incidents', v_ts_nm
+  );
+
+  SELECT count(*)::int INTO v_count
+  FROM public.challenge_completions cc
+  WHERE cc.user_id = c_user AND cc.challenge_key = 'near_miss_week';
+  IF v_count <> 0 THEN
+    RAISE EXCEPTION 'GATE FAILED p2g2 near_miss anti-gaming: base submission must not complete near_miss_week';
+  END IF;
+
+  INSERT INTO public.corrective_actions (id, incident_id, description, action_type, status, due_date)
+  VALUES (c_ca, c_incident, 'gate p2g2 capa', 'immediate', 'verified', '2099-05-14');
+
+  INSERT INTO public.point_transactions (user_id, amount, source, reference_id, reference_table, category, created_at)
+  VALUES (
+    c_user, 15, 'near_miss_report', c_ca, 'corrective_actions', 'corrective_bonus', v_ts_nm + interval '2 hours'
+  );
+
+  PERFORM public.evaluate_user_challenges_from_ledger(
+    c_user, 'near_miss_report', 'corrective_bonus', c_ca, 'corrective_actions', v_ts_nm + interval '2 hours'
+  );
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.challenge_completions cc
+    WHERE cc.user_id = c_user
+      AND cc.challenge_key = 'near_miss_week'
+      AND cc.window_key = public.weekly_challenge_window_key(v_week_nm)
+  ) THEN
+    RAISE EXCEPTION 'GATE FAILED p2g2 near_miss: corrective_bonus should complete near_miss_week';
+  END IF;
+
+  -- Campaign multiplier posts separate bonus row; base amount never mutated
+  UPDATE public.challenge_completions
+  SET base_tx_id = NULL, multiplier_tx_id = NULL
+  WHERE user_id = c_user;
+  DELETE FROM public.point_transactions
+  WHERE user_id = c_user AND source IN ('challenge_reward', 'campaign_multiplier_bonus');
+  DELETE FROM public.challenge_completions WHERE user_id = c_user;
+
+  INSERT INTO public.campaigns (
+    campaign_key, challenge_key, title, starts_at, ends_at, multiplier, is_active
+  ) VALUES (
+    'gate_p2g2_campaign',
+    'cert_or_training',
+    'Gate Campaign 2x',
+    '2099-06-01 05:00:00+00'::timestamptz,
+    '2099-06-15 05:00:00+00'::timestamptz,
+    2.00,
+    true
+  ) ON CONFLICT (campaign_key) DO UPDATE SET multiplier = EXCLUDED.multiplier, is_active = true;
+
+  UPDATE public.gamification_settings
+  SET value = jsonb_build_object('week_start', '2099-06-03'::date, 'challenge_key', 'compliance_sprint')
+  WHERE key = 'weekly_auto_challenge_active';
+
+  v_ts_camp := '2099-06-05 12:00:00'::timestamptz AT TIME ZONE 'America/Chicago';
+
+  INSERT INTO public.point_transactions (user_id, amount, source, reference_id, reference_table, category, created_at)
+  VALUES (
+    c_user, 20, 'certification', v_camp_cert, 'certification_records', 'pass', v_ts_camp
+  );
+
+  PERFORM public.evaluate_user_challenges_from_ledger(
+    c_user, 'certification', 'pass', v_camp_cert, 'certification_records', v_ts_camp
+  );
+
+  SELECT cc.id INTO v_completion
+  FROM public.challenge_completions cc
+  WHERE cc.user_id = c_user AND cc.campaign_key = 'gate_p2g2_campaign';
+
+  IF v_completion IS NULL THEN
+    RAISE EXCEPTION 'GATE FAILED p2g2 campaign completion: expected completion under active campaign';
+  END IF;
+
+  SELECT pt.amount INTO v_base_amt
+  FROM public.point_transactions pt
+  WHERE pt.source = 'challenge_reward' AND pt.reference_id = v_completion;
+
+  SELECT pt.amount INTO v_bonus_amt
+  FROM public.point_transactions pt
+  WHERE pt.source = 'campaign_multiplier_bonus' AND pt.reference_id = v_completion;
+
+  IF v_base_amt <> 30 THEN
+    RAISE EXCEPTION 'GATE FAILED p2g2 multiplier base: expected 30, got %', v_base_amt;
+  END IF;
+  IF v_bonus_amt <> 30 THEN
+    RAISE EXCEPTION 'GATE FAILED p2g2 multiplier bonus: expected separate 30 bonus row, got %', v_bonus_amt;
+  END IF;
+
+  PERFORM public.award_challenge_completion(c_user, v_completion);
+
+  SELECT pt.amount INTO v_base FROM public.point_transactions pt
+  WHERE pt.source = 'challenge_reward' AND pt.reference_id = v_completion;
+  SELECT pt.amount INTO v_bonus FROM public.point_transactions pt
+  WHERE pt.source = 'campaign_multiplier_bonus' AND pt.reference_id = v_completion;
+
+  IF v_base <> 30 OR v_bonus <> 30 THEN
+    RAISE EXCEPTION 'GATE FAILED p2g2 multiplier idempotency: base/bonus mutated on re-award (%, %)', v_base, v_bonus;
+  END IF;
+
+  -- Campaign precedence over auto-pool for overlapping window
+  UPDATE public.challenge_completions
+  SET base_tx_id = NULL, multiplier_tx_id = NULL
+  WHERE user_id = c_user AND campaign_key IS NULL;
+  DELETE FROM public.point_transactions
+  WHERE user_id = c_user
+    AND source IN ('challenge_reward', 'campaign_multiplier_bonus')
+    AND id NOT IN (
+      SELECT cc.base_tx_id FROM public.challenge_completions cc
+      WHERE cc.user_id = c_user AND cc.base_tx_id IS NOT NULL
+      UNION
+      SELECT cc.multiplier_tx_id FROM public.challenge_completions cc
+      WHERE cc.user_id = c_user AND cc.multiplier_tx_id IS NOT NULL
+    );
+  DELETE FROM public.challenge_completions WHERE user_id = c_user AND campaign_key IS NULL;
+
+  INSERT INTO public.campaigns (
+    campaign_key, challenge_key, title, starts_at, ends_at, multiplier, is_active
+  ) VALUES (
+    'gate_p2g2_precedence',
+    'compliance_sprint',
+    'Gate precedence campaign',
+    '2099-07-01 05:00:00+00'::timestamptz,
+    '2099-07-08 05:00:00+00'::timestamptz,
+    1.00,
+    true
+  ) ON CONFLICT (campaign_key) DO UPDATE SET is_active = true;
+
+  UPDATE public.gamification_settings
+  SET value = jsonb_build_object('week_start', '2099-07-01'::date, 'challenge_key', 'near_miss_week')
+  WHERE key = 'weekly_auto_challenge_active';
+
+  v_ts_prec := '2099-07-02 12:00:00'::timestamptz AT TIME ZONE 'America/Chicago';
+  v_week_prec := public.chicago_iso_week_start(v_ts_prec);
+
+  INSERT INTO public.compliance_rewards (id, user_id, date_for, forms_completed, points_awarded, awarded_at)
+  VALUES (
+    c_compliance, c_user, '2099-07-02', ARRAY['dvir','equipment','jsa'], 5, v_ts_prec
+  );
+
+  PERFORM public.evaluate_user_challenges_from_ledger(
+    c_user, 'compliance_form', NULL, c_compliance, 'compliance_rewards', v_ts_prec
+  );
+
+  SELECT * INTO v_active
+  FROM public.get_active_challenge_for_activity(v_ts_prec)
+  LIMIT 1;
+
+  IF v_active.challenge_key <> 'compliance_sprint' OR v_active.campaign_key <> 'gate_p2g2_precedence' THEN
+    RAISE EXCEPTION 'GATE FAILED p2g2 precedence resolve: expected campaign compliance_sprint, got % / %',
+      v_active.challenge_key, v_active.campaign_key;
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM public.challenge_completions cc
+    WHERE cc.user_id = c_user AND cc.challenge_key = 'near_miss_week'
+  ) THEN
+    RAISE EXCEPTION 'GATE FAILED p2g2 precedence: auto-pool near_miss_week must not complete when campaign active';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.challenge_completions cc
+    WHERE cc.user_id = c_user
+      AND cc.challenge_key = 'compliance_sprint'
+      AND cc.campaign_key = 'gate_p2g2_precedence'
+  ) THEN
+    RAISE EXCEPTION 'GATE FAILED p2g2 precedence: expected compliance_sprint completion via campaign';
+  END IF;
+
+  -- Rotation cron writes active row when enabled
+  v_rotate := public.rotate_weekly_auto_challenge('2099-08-05 12:00:00'::timestamptz AT TIME ZONE 'America/Chicago');
+  IF (v_rotate->>'status') NOT IN ('rotated', 'already_rotated') THEN
+    RAISE EXCEPTION 'GATE FAILED p2g2 rotate enabled: unexpected status %', v_rotate;
+  END IF;
+
+  -- Restore flags dark
+  UPDATE public.gamification_settings SET value = 'false'::jsonb
+  WHERE key IN ('phase2_enabled', 'challenges_enabled');
+  UPDATE public.gamification_settings SET value = 'null'::jsonb
+  WHERE key = 'weekly_auto_challenge_active';
+
+  ALTER TABLE public.point_transactions ENABLE TRIGGER trg_evaluate_badges_point_tx;
+  ALTER TABLE public.point_transactions ENABLE TRIGGER trg_weekly_streak_point_tx;
+  ALTER TABLE public.point_transactions ENABLE TRIGGER trg_recognition_feed_tier_promotion;
+  ALTER TABLE public.point_transactions ENABLE TRIGGER trg_evaluate_challenges_point_tx;
+  ALTER TABLE public.safety_briefing_answers ENABLE TRIGGER trg_weekly_streak_briefing;
+  ALTER TABLE public.safety_briefing_answers ENABLE TRIGGER trg_evaluate_challenges_briefing;
+  ALTER TABLE public.safety_incidents ENABLE TRIGGER trg_award_near_miss_base_points;
+  ALTER TABLE public.corrective_actions ENABLE TRIGGER trg_award_near_miss_corrective_bonus;
+
+  RAISE NOTICE 'OK: Phase 2 gate 2 — Chicago seam, cert/near_miss/compliance detection, idempotency, multiplier separate row, campaign precedence, flag-off, rotation.';
+END $$;
+
+-- ---- Increment-specific checks: 20260608230300 (Phase 2 gate 3) ----
+DO $$
+DECLARE
+  missing text := '';
+BEGIN
+  IF to_regprocedure('public.list_gamification_program_seasons()') IS NULL THEN
+    missing := missing || E'\n  - function public.list_gamification_program_seasons() is missing';
+  END IF;
+  IF to_regprocedure('public.list_gamification_program_challenges()') IS NULL THEN
+    missing := missing || E'\n  - function public.list_gamification_program_challenges() is missing';
+  END IF;
+  IF to_regprocedure('public.list_gamification_program_campaigns()') IS NULL THEN
+    missing := missing || E'\n  - function public.list_gamification_program_campaigns() is missing';
+  END IF;
+  IF to_regprocedure('public.upsert_gamification_season(text,text,timestamp with time zone,timestamp with time zone,text,boolean,integer)') IS NULL THEN
+    missing := missing || E'\n  - function public.upsert_gamification_season is missing';
+  END IF;
+  IF to_regprocedure('public.set_gamification_season_status(text,public.season_status)') IS NULL THEN
+    missing := missing || E'\n  - function public.set_gamification_season_status is missing';
+  END IF;
+  IF to_regprocedure('public.upsert_gamification_campaign(text,text,timestamp with time zone,timestamp with time zone,text,numeric)') IS NULL THEN
+    missing := missing || E'\n  - function public.upsert_gamification_campaign is missing';
+  END IF;
+  IF to_regprocedure('public.set_gamification_campaign_active(text,boolean)') IS NULL THEN
+    missing := missing || E'\n  - function public.set_gamification_campaign_active is missing';
+  END IF;
+  IF to_regprocedure('public.nudge_program_owner_season_needs_campaign(text)') IS NULL THEN
+    missing := missing || E'\n  - function public.nudge_program_owner_season_needs_campaign is missing';
+  END IF;
+  IF to_regprocedure('public.process_gamification_program_owner_nudges()') IS NULL THEN
+    missing := missing || E'\n  - function public.process_gamification_program_owner_nudges is missing';
+  END IF;
+  IF to_regprocedure('public.get_gamification_program_owner_user_id()') IS NULL THEN
+    missing := missing || E'\n  - function public.get_gamification_program_owner_user_id is missing';
+  END IF;
+  IF to_regprocedure('public.season_has_active_campaign(text)') IS NULL THEN
+    missing := missing || E'\n  - function public.season_has_active_campaign is missing';
+  END IF;
+
+  IF missing <> '' THEN
+    RAISE EXCEPTION E'GATE FAILED — Phase 2 gate 3 objects (20260608230300) not correct:%', missing;
+  END IF;
+  RAISE NOTICE 'OK: Phase 2 gate 3 schema — program-admin RPCs, owner nudge, RLS refresh present.';
+END $$;
+
+DO $$
+DECLARE
+  c_user       uuid := '00000000-0000-0000-0000-00000000f301';
+  c_owner      uuid := '00000000-0000-0000-0000-00000000f302';
+  c_employee   uuid := '00000000-0000-0000-0000-00000000f303';
+  c_safety     uuid := '00000000-0000-0000-0000-00000000f304';
+  c_cert       uuid := '00000000-0000-0000-0000-00000000f311';
+  v_caught     boolean := false;
+  v_result     jsonb;
+  v_count      int;
+  v_active     record;
+  v_lifecycle  jsonb;
+  v_nudge      jsonb;
+  v_ts         timestamptz := '2099-05-10 18:00:00'::timestamptz AT TIME ZONE 'America/Chicago';
+  v_week       date;
+  v_season_start timestamptz := now() - interval '2 days';
+  v_season_end   timestamptz := now() + interval '60 days';
+BEGIN
+  ALTER TABLE public.point_transactions DISABLE TRIGGER trg_evaluate_badges_point_tx;
+  ALTER TABLE public.point_transactions DISABLE TRIGGER trg_weekly_streak_point_tx;
+  ALTER TABLE public.point_transactions DISABLE TRIGGER trg_recognition_feed_tier_promotion;
+  ALTER TABLE public.point_transactions DISABLE TRIGGER trg_evaluate_challenges_point_tx;
+  ALTER TABLE public.safety_briefing_answers DISABLE TRIGGER trg_weekly_streak_briefing;
+  ALTER TABLE public.safety_briefing_answers DISABLE TRIGGER trg_evaluate_challenges_briefing;
+  ALTER TABLE public.safety_incidents DISABLE TRIGGER trg_award_near_miss_base_points;
+  ALTER TABLE public.corrective_actions DISABLE TRIGGER trg_award_near_miss_corrective_bonus;
+
+  INSERT INTO auth.users (id, aud, role, email) VALUES
+    (c_user,     'authenticated', 'authenticated', 'gate-p2g3-user@example.invalid'),
+    (c_owner,    'authenticated', 'authenticated', 'gate-p2g3-owner@example.invalid'),
+    (c_employee, 'authenticated', 'authenticated', 'gate-p2g3-employee@example.invalid'),
+    (c_safety,   'authenticated', 'authenticated', 'gate-p2g3-safety@example.invalid')
+  ON CONFLICT (id) DO NOTHING;
+
+  UPDATE public.app_users SET role = 'employee' WHERE user_id IN (c_user, c_employee);
+  UPDATE public.app_users SET role = 'admin' WHERE user_id = c_owner;
+  UPDATE public.app_users SET role = 'safety_officer' WHERE user_id = c_safety;
+
+  UPDATE public.gamification_settings SET value = to_jsonb(c_owner::text)
+  WHERE key = 'program_owner_user_id';
+
+  -- Non-program-admin blocked from campaign create
+  PERFORM set_config('request.jwt.claim.sub', c_employee::text, true);
+  v_caught := false;
+  BEGIN
+    PERFORM public.upsert_gamification_campaign(
+      'gate_p2g3_blocked',
+      'compliance_sprint',
+      '2099-05-01 05:00:00+00'::timestamptz,
+      '2099-05-08 05:00:00+00'::timestamptz,
+      'Blocked',
+      1.00
+    );
+  EXCEPTION
+    WHEN OTHERS THEN
+      v_caught := true;
+  END;
+  IF NOT v_caught THEN
+    RAISE EXCEPTION 'GATE FAILED p2g3 auth: employee must not upsert campaigns';
+  END IF;
+
+  -- safety_officer can stage a campaign (inactive by default)
+  PERFORM set_config('request.jwt.claim.sub', c_safety::text, true);
+  IF NOT public.is_gamification_program_admin() THEN
+    RAISE EXCEPTION 'GATE FAILED p2g3 auth: safety_officer should be program admin';
+  END IF;
+
+  v_result := public.upsert_gamification_campaign(
+    'gate_p2g3_staged',
+    'cert_or_training',
+    '2099-05-01 05:00:00+00'::timestamptz,
+    '2099-05-15 05:00:00+00'::timestamptz,
+    'Staged kickoff campaign',
+    1.50
+  );
+  IF (v_result->>'status') <> 'ok' OR (v_result->>'staged')::boolean IS NOT TRUE THEN
+    RAISE EXCEPTION 'GATE FAILED p2g3 staged create: expected staged campaign, got %', v_result;
+  END IF;
+
+  -- Activate staged campaign but keep master flag dark → zero payouts
+  v_result := public.set_gamification_campaign_active('gate_p2g3_staged', true);
+  IF (v_result->>'is_active')::boolean IS NOT TRUE THEN
+    RAISE EXCEPTION 'GATE FAILED p2g3 activate: expected is_active true, got %', v_result;
+  END IF;
+
+  IF public.are_challenges_enabled() THEN
+    RAISE EXCEPTION 'GATE FAILED p2g3 dark master: are_challenges_enabled should be false';
+  END IF;
+
+  v_week := public.chicago_iso_week_start(v_ts);
+  UPDATE public.gamification_settings
+  SET value = jsonb_build_object('week_start', v_week, 'challenge_key', 'cert_or_training')
+  WHERE key = 'weekly_auto_challenge_active';
+
+  INSERT INTO public.point_transactions (user_id, amount, source, reference_id, reference_table, category, created_at)
+  VALUES (c_user, 20, 'certification', c_cert, 'certification_records', 'pass', v_ts);
+
+  PERFORM public.evaluate_user_challenges_from_ledger(
+    c_user, 'certification', 'pass', c_cert, 'certification_records', v_ts
+  );
+
+  SELECT count(*)::int INTO v_count
+  FROM public.challenge_completions cc
+  WHERE cc.user_id = c_user AND cc.campaign_key = 'gate_p2g3_staged';
+  IF v_count <> 0 THEN
+    RAISE EXCEPTION 'GATE FAILED p2g3 dark staged campaign: completion written while phase2_enabled false';
+  END IF;
+
+  SELECT count(*)::int INTO v_count
+  FROM public.point_transactions pt
+  WHERE pt.user_id = c_user
+    AND pt.source IN ('challenge_reward', 'campaign_multiplier_bonus');
+  IF v_count <> 0 THEN
+    RAISE EXCEPTION 'GATE FAILED p2g3 dark staged campaign: payout rows written while phase2_enabled false';
+  END IF;
+
+  -- Owner nudge no-ops while dark
+  v_nudge := public.nudge_program_owner_season_needs_campaign('gate_p2g3_season_sched');
+  IF (v_nudge->>'status') <> 'skipped' OR (v_nudge->>'reason') <> 'phase2_dark' THEN
+    RAISE EXCEPTION 'GATE FAILED p2g3 nudge dark: expected phase2_dark skip, got %', v_nudge;
+  END IF;
+
+  SELECT count(*)::int INTO v_count
+  FROM public.notification_events ne
+  WHERE ne.entity_type = 'gamification_season_nudge'
+    AND ne.target_ref = c_owner::text;
+  IF v_count <> 0 THEN
+    RAISE EXCEPTION 'GATE FAILED p2g3 nudge dark: notification inserted while phase2 dark';
+  END IF;
+
+  -- Season tooling + lifecycle when enabled
+  PERFORM set_config('request.jwt.claim.sub', c_owner::text, true);
+  v_result := public.upsert_gamification_season(
+    'gate_p2g3_season_sched',
+    'Gate Season Q3',
+    v_season_start,
+    v_season_end,
+    'ember',
+    false,
+    50
+  );
+  IF (v_result->>'status') <> 'ok' THEN
+    RAISE EXCEPTION 'GATE FAILED p2g3 season upsert: %', v_result;
+  END IF;
+
+  v_result := public.set_gamification_season_status('gate_p2g3_season_sched', 'scheduled');
+  IF (v_result->>'season_status')::text <> 'scheduled' THEN
+    RAISE EXCEPTION 'GATE FAILED p2g3 season schedule: %', v_result;
+  END IF;
+
+  UPDATE public.gamification_settings SET value = 'true'::jsonb
+  WHERE key IN ('phase2_enabled', 'seasons_enabled', 'challenges_enabled');
+
+  -- Staged-but-inactive campaign still pays nothing even when flags on
+  PERFORM public.set_gamification_campaign_active('gate_p2g3_staged', false);
+
+  SELECT * INTO v_active
+  FROM public.get_active_challenge_for_activity(v_ts);
+  IF v_active.campaign_key = 'gate_p2g3_staged' THEN
+    RAISE EXCEPTION 'GATE FAILED p2g3 inactive campaign: staged campaign must not resolve as active challenge';
+  END IF;
+
+  DELETE FROM public.point_transactions WHERE user_id = c_user;
+  DELETE FROM public.challenge_completions WHERE user_id = c_user;
+
+  INSERT INTO public.point_transactions (user_id, amount, source, reference_id, reference_table, category, created_at)
+  VALUES (c_user, 20, 'certification', gen_random_uuid(), 'certification_records', 'pass', v_ts);
+
+  PERFORM public.evaluate_user_challenges_from_ledger(
+    c_user, 'certification', 'pass', gen_random_uuid(), 'certification_records', v_ts
+  );
+
+  SELECT count(*)::int INTO v_count
+  FROM public.challenge_completions cc
+  WHERE cc.user_id = c_user AND cc.campaign_key = 'gate_p2g3_staged';
+  IF v_count <> 0 THEN
+    RAISE EXCEPTION 'GATE FAILED p2g3 inactive campaign: completion tied to inactive staged campaign';
+  END IF;
+
+  -- Lifecycle promotes scheduled season when window open (only when enabled)
+  v_lifecycle := public.process_gamification_season_lifecycle();
+  IF (v_lifecycle->>'status') <> 'ok' OR COALESCE((v_lifecycle->>'activated')::int, 0) < 1 THEN
+    RAISE EXCEPTION 'GATE FAILED p2g3 lifecycle activate: expected activation, got %', v_lifecycle;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.seasons s
+    WHERE s.season_key = 'gate_p2g3_season_sched' AND s.status = 'active'
+  ) THEN
+    RAISE EXCEPTION 'GATE FAILED p2g3 lifecycle: scheduled season should be active after cron';
+  END IF;
+
+  v_result := public.set_gamification_season_status('gate_p2g3_season_sched', 'closed');
+  IF (v_result->>'season_status')::text <> 'closed' THEN
+    RAISE EXCEPTION 'GATE FAILED p2g3 season close: %', v_result;
+  END IF;
+
+  -- Owner nudge targets configured owner once Phase 2 is live
+  v_result := public.upsert_gamification_season(
+    'gate_p2g3_season_nudge',
+    'Gate Season Nudge',
+    v_season_start,
+    v_season_end,
+    'gold',
+    false,
+    51
+  );
+  v_result := public.set_gamification_season_status('gate_p2g3_season_nudge', 'scheduled');
+
+  v_nudge := public.nudge_program_owner_season_needs_campaign('gate_p2g3_season_nudge');
+  IF (v_nudge->>'status') <> 'sent' OR (v_nudge->>'owner_user_id')::uuid IS DISTINCT FROM c_owner THEN
+    RAISE EXCEPTION 'GATE FAILED p2g3 nudge owner: expected sent to owner, got %', v_nudge;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.notification_events ne
+    WHERE ne.entity_type = 'gamification_season_nudge'
+      AND ne.target_type = 'user'
+      AND ne.target_ref = c_owner::text
+  ) THEN
+    RAISE EXCEPTION 'GATE FAILED p2g3 nudge owner: notification_events row missing for owner';
+  END IF;
+
+  -- Restore dark flags + cleanup gate fixtures
+  UPDATE public.gamification_settings SET value = 'false'::jsonb
+  WHERE key IN ('phase2_enabled', 'seasons_enabled', 'challenges_enabled');
+  UPDATE public.gamification_settings SET value = 'null'::jsonb
+  WHERE key IN ('program_owner_user_id', 'weekly_auto_challenge_active');
+
+  DELETE FROM public.notification_events WHERE entity_type = 'gamification_season_nudge';
+  DELETE FROM public.challenge_completions WHERE user_id = c_user;
+  DELETE FROM public.point_transactions WHERE user_id = c_user;
+  DELETE FROM public.campaigns WHERE campaign_key LIKE 'gate_p2g3_%';
+  DELETE FROM public.seasons WHERE season_key LIKE 'gate_p2g3_%';
+
+  ALTER TABLE public.point_transactions ENABLE TRIGGER trg_evaluate_badges_point_tx;
+  ALTER TABLE public.point_transactions ENABLE TRIGGER trg_weekly_streak_point_tx;
+  ALTER TABLE public.point_transactions ENABLE TRIGGER trg_recognition_feed_tier_promotion;
+  ALTER TABLE public.point_transactions ENABLE TRIGGER trg_evaluate_challenges_point_tx;
+  ALTER TABLE public.safety_briefing_answers ENABLE TRIGGER trg_weekly_streak_briefing;
+  ALTER TABLE public.safety_briefing_answers ENABLE TRIGGER trg_evaluate_challenges_briefing;
+  ALTER TABLE public.safety_incidents ENABLE TRIGGER trg_award_near_miss_base_points;
+  ALTER TABLE public.corrective_actions ENABLE TRIGGER trg_award_near_miss_corrective_bonus;
+
+  RAISE NOTICE 'OK: Phase 2 gate 3 — admin-only staging, dark master zero payouts, owner nudge dark/live, season lifecycle + close controls.';
 END $$;
 
 ROLLBACK;

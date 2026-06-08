@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -45,6 +45,13 @@ const MONTHS = [
 ];
 
 const pageEnter = { duration: 0.2 };
+
+const Phase2ChallengeSection = lazy(
+  () => import('@/components/gamification/Phase2ChallengeSection'),
+);
+const Phase2SeasonStandingsSection = lazy(
+  () => import('@/components/gamification/Phase2SeasonStandingsSection'),
+);
 
 export default function MyPointsPage() {
   const { user } = useAuth();
@@ -229,6 +236,9 @@ export default function MyPointsPage() {
           </div>
           <BadgeCase items={badgeProgress} isLoading={badgeProgressLoading} />
           <WeeklyStreakPanel streak={weeklyStreak} isLoading={weeklyStreakLoading} />
+          <Suspense fallback={null}>
+            <Phase2ChallengeSection />
+          </Suspense>
         </motion.section>
 
         {/* Recognition + standings */}
@@ -239,6 +249,9 @@ export default function MyPointsPage() {
           className={`${cardClass} p-4 space-y-6`}
         >
           <RecognitionFeed limit={15} />
+          <Suspense fallback={null}>
+            <Phase2SeasonStandingsSection />
+          </Suspense>
           <StandingsPanel limit={10} />
         </motion.section>
 

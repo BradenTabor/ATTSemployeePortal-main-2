@@ -17,6 +17,7 @@ import {
   useGamificationProgramSettings,
 } from '@/hooks/gamification';
 import { itemVariants } from './constants';
+import { GamificationProgramAdminSection } from './GamificationProgramAdminSection';
 
 interface StatBoxProps {
   label: string;
@@ -98,9 +99,13 @@ export function GamificationAnalyticsSection({ days }: GamificationAnalyticsSect
           <span className="text-amber-300/90 font-medium">Program owners: </span>
           {programSettings.programOwnerUserId ?? 'not set'}
           {programSettings.programBackupUserId ? ` · backup ${programSettings.programBackupUserId}` : ''}
-          <span className="block mt-1 text-white/40">Season campaign nudge — Phase 2 (stubbed)</span>
+          <span className="block mt-1 text-white/40">
+            Season-needs-campaign nudge fires to the program owner when Phase 2 is live and a scheduled season lacks an activated campaign.
+          </span>
         </div>
       )}
+
+      <GamificationProgramAdminSection />
 
       {isLoading ? (
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 animate-pulse h-32" />

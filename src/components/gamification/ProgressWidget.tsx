@@ -3,7 +3,7 @@
  * Tier + sub-level bar, weekly streak, next milestone. Reads get_user_level (lifetime earned).
  */
 
-import { memo, useMemo } from 'react';
+import { memo, useMemo, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ChevronRight, Target, TreePine } from 'lucide-react';
@@ -15,6 +15,10 @@ import { cn } from '@/lib/utils';
 import { formatTierLabel, getTierTheme, GROWTH_TEXTURE_STYLE } from '@/lib/gamification/tiers';
 import { TierProgressBar } from './TierProgressBar';
 import { WeeklyStreakChip } from './WeeklyStreakChip';
+
+const Phase2DashboardChallengeStrip = lazy(
+  () => import('./Phase2DashboardChallengeStrip'),
+);
 
 export interface ProgressWidgetProps {
   theme?: 'emerald' | 'blue';
@@ -122,6 +126,10 @@ function ProgressWidgetComponent({ theme = 'emerald', className }: ProgressWidge
           </div>
         </div>
       </div>
+
+      <Suspense fallback={null}>
+        <Phase2DashboardChallengeStrip />
+      </Suspense>
 
       <Link
         to="/my-points"

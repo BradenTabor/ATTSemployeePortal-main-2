@@ -15,3 +15,18 @@ export {
   useGamificationProgramSettings,
   useUpdateGamificationProgramSettings,
 } from './useGamificationProgramSettings';
+export {
+  useGamificationPhase2AdminFlags,
+  useGamificationProgramSeasons,
+  useGamificationProgramChallenges,
+  useGamificationProgramCampaigns,
+  useUpsertGamificationSeason,
+  useSetGamificationSeasonStatus,
+  useUpsertGamificationCampaign,
+  useSetGamificationCampaignActive,
+} from './useGamificationProgramAdmin';
+export { usePhase2GamificationFlags } from './usePhase2GamificationFlags';
+export { useActiveSeason } from './useActiveSeason';
+export { useActiveChallenge } from './useActiveChallenge';
+export { useUserSeasonProgress } from './useUserSeasonProgress';
+export { useSeasonStandings } from './useSeasonStandings';

@@ -42,7 +42,9 @@ export type RecognitionEventType =
   | 'tier_promotion'
   | 'badge_awarded'
   | 'tenure_milestone'
-  | 'streak_milestone';
+  | 'streak_milestone'
+  | 'season_podium'
+  | 'season_most_improved';
 
 export interface RecognitionFeedItem {
   id: string;
@@ -95,6 +97,99 @@ export interface GamificationSettings {
 export interface GamificationProgramSettings {
   programOwnerUserId: string | null;
   programBackupUserId: string | null;
+}
+
+export type GamificationSeasonStatus = 'draft' | 'scheduled' | 'active' | 'closed';
+
+export interface GamificationProgramSeason {
+  seasonKey: string;
+  name: string;
+  theme: string | null;
+  startAt: string;
+  endAt: string;
+  status: GamificationSeasonStatus;
+  mostImprovedEnabled: boolean;
+  finalizedAt: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface GamificationProgramChallenge {
+  challengeKey: string;
+  title: string;
+  description: string | null;
+  cadence: string;
+  challengeType: string;
+  isActive: boolean;
+  sortOrder: number;
+}
+
+export interface GamificationProgramCampaign {
+  campaignKey: string;
+  challengeKey: string;
+  title: string | null;
+  startsAt: string;
+  endsAt: string;
+  multiplier: number;
+  isActive: boolean;
+  createdBy: string | null;
+  createdAt: string;
+}
+
+export interface GamificationPhase2AdminFlags {
+  phase2Enabled: boolean;
+  seasonsEnabled: boolean;
+  challengesEnabled: boolean;
+  isProgramAdmin: boolean;
+}
+
+/** Player-facing Phase 2 flags — read from gamification_settings, not admin RPC. */
+export interface Phase2GamificationFlags {
+  phase2Enabled: boolean;
+  seasonsEnabled: boolean;
+  challengesEnabled: boolean;
+  showChallenges: boolean;
+  showSeasons: boolean;
+}
+
+export interface ActiveSeason {
+  seasonKey: string;
+  name: string;
+  theme: string | null;
+  startAt: string;
+  endAt: string;
+  status: GamificationSeasonStatus;
+  mostImprovedEnabled: boolean;
+}
+
+export interface ActiveChallenge {
+  challengeKey: string;
+  windowKey: string;
+  campaignKey: string | null;
+  multiplier: number;
+  title: string;
+  description: string | null;
+  rewardPoints: number;
+  completedThisWindow: boolean;
+  cadence: string;
+}
+
+export interface UserSeasonProgress {
+  seasonScore: number;
+  improvementDelta: number;
+}
+
+export interface SeasonStandingsEntry {
+  userId: string;
+  fullName: string | null;
+  avatarUrl: string | null;
+  seasonScore: number;
+  tierKey: string;
+  tierName: string;
+  tierOrder: number;
+  subLevel: number;
+  subLevelLabel: string;
 }
 
 export interface GamificationMissingHireDateUser {

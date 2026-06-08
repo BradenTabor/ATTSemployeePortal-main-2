@@ -6,3 +6,6 @@ reward_catalog
 level_tiers
 gamification_settings
 badges
+seasons
+challenges
+campaigns
