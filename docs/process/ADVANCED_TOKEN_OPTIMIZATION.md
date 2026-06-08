@@ -39,9 +39,9 @@ docs/Telemetry_plan.md
 
 # Exclude migration documentation (only needed when working on DB)
 supabase/SCHEMA_DOCUMENTATION.md
-supabase/SUPABASE_MIGRATION_RECONCILIATION.md
+docs/archive/december-2025-migration-incident/
 supabase/RLS_FIX_SUMMARY.md
-supabase/MIGRATION_RESOLUTION_GUIDE.md
+supabase/SCHEMA_DOCUMENTATION.md
 EOF
 ```
 

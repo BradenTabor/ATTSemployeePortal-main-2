@@ -16,6 +16,7 @@
   },
   "urls": [
     "http://127.0.0.1:4173/dashboard",
+    "http://127.0.0.1:4173/my-points",
     "http://127.0.0.1:4173/announcements",
     "http://127.0.0.1:4173/admin/users",
     "http://127.0.0.1:4173/admin/requests-oversight?section=rto","http://127.0.0.1:4173/admin/requests-oversight?section=jsa","http://127.0.0.1:4173/admin/requests-oversight?section=parts-fixes",

@@ -36,9 +36,9 @@ performance-report/
 
 # Exclude migration documentation (load only when needed)
 supabase/SCHEMA_DOCUMENTATION.md
-supabase/SUPABASE_MIGRATION_RECONCILIATION.md
+docs/archive/december-2025-migration-incident/
 supabase/RLS_FIX_SUMMARY.md
-supabase/MIGRATION_RESOLUTION_GUIDE.md
+supabase/SCHEMA_DOCUMENTATION.md
 
 # Exclude planning documents
 plan.md
