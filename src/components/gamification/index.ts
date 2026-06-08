@@ -5,3 +5,4 @@ export { BadgeCase } from './BadgeCase';
 export { WeeklyStreakPanel } from './WeeklyStreakPanel';
 export { PublicRankCard } from './PublicRankCard';
 export { StandingsPanel } from './StandingsPanel';
+export { RecognitionFeed } from './RecognitionFeed';
