@@ -748,7 +748,7 @@ export function AnimatedRoutes() {
               path="/admin/telemetry"
               element={
                 <PageWrapper>
-                  <ProtectedRoute requiredRole="admin">
+                  <ProtectedRoute allowedRoles={["admin", "safety_officer"]}>
                     <AdminTelemetry />
                   </ProtectedRoute>
                 </PageWrapper>

@@ -59,6 +59,7 @@ import {
   EVENT_TYPE_META,
   containerVariants,
   itemVariants,
+  GamificationAnalyticsSection,
 } from "./admin-telemetry";
 
 // ============================================================================
@@ -1376,6 +1377,9 @@ export default function AdminTelemetry() {
             <RefreshCw className="w-3 h-3" />
           </button>
         </motion.div>
+
+        {/* Gamification — always visible for program admins */}
+        <GamificationAnalyticsSection days={selectedDays} />
 
         {/* Content */}
         {isLoading ? (
