@@ -19,6 +19,7 @@ import {
 import { logger } from '../lib/logger';
 import { getRoleDashboard } from '../lib/navigation';
 import { trackDashboardAction } from '../lib/telemetry';
+import { useTotalPoints } from '../hooks/useAnnouncementRewards';
 import type { JobProgressTracker } from '../types/jobs';
 
 // Dashboard components
@@ -45,8 +46,8 @@ import { RecentlySynced } from '../components/RecentlySynced';
 
 // Lazy-loaded components for code splitting
 const NavCards = lazy(() => import('../components/NavCards'));
-const EnhancedRewardsCard = lazy(
-  () => import('../components/dashboard/EnhancedRewardsCard')
+const ProgressWidget = lazy(
+  () => import('../components/gamification/ProgressWidget')
 );
 
 // ============================================================================
@@ -346,8 +347,8 @@ function Dashboard() {
     equipment: false,
     jsa: false,
   });
-  const [rewardPoints, setRewardPoints] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const { data: rewardPoints = 0 } = useTotalPoints();
 
   // Preserve scroll position when navigating away and back
   useEffect(() => {
@@ -607,7 +608,7 @@ function Dashboard() {
                         </div>
                       </div>
                     }>
-                      <EnhancedRewardsCard theme="emerald" onPointsChange={setRewardPoints} />
+                      <ProgressWidget theme="emerald" />
                     </Suspense>
                     
                     {/* Pinned Favorites - In right column on desktop */}
