@@ -36,16 +36,25 @@ export function AwardPointsModal({
 }: AwardPointsModalProps) {
   const { user, role } = useAuth();
   const isAdmin = role === 'admin';
-  const requestIdRef = useRef<string | null>(null);
+  // Stable request_id per recipient per modal session — reused on retry so the
+  // server-side dedup on p_request_id prevents double-awards after network blips.
+  const requestIdsRef = useRef<Map<string, string>>(new Map());
   const { modalRef } = useModalOverlay({ isOpen, onClose, zIndex: Z.modal });
 
   const [phase, setPhase] = useState<ModalPhase>('form');
-  const [recipient, setRecipient] = useState<AwardRecipient | null>(initialRecipient);
+  const [recipients, setRecipients] = useState<AwardRecipient[]>(
+    initialRecipient ? [initialRecipient] : []
+  );
   const [amount, setAmount] = useState<number | null>(null);
   const [category, setCategory] = useState<ManualAwardCategory>('good_performance');
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [awardedAmount, setAwardedAmount] = useState(0);
+  const [awardedRecipients, setAwardedRecipients] = useState<AwardRecipient[]>([]);
+  const [awardProgress, setAwardProgress] = useState<{ current: number; total: number } | null>(
+    null
+  );
+  const [partialFailureMessage, setPartialFailureMessage] = useState<string | null>(null);
 
   const { data: budgetHint, isLoading: budgetLoading } = useAwarderBudgetHint(
     user?.id,
@@ -53,20 +62,19 @@ export function AwardPointsModal({
   );
   const awardMutation = useAwardPoints();
 
-  // One request_id per modal open / award attempt — reused on retry, never regenerated mid-attempt.
   useEffect(() => {
-    if (isOpen && !requestIdRef.current) {
-      requestIdRef.current = crypto.randomUUID();
-    }
     if (!isOpen) {
-      requestIdRef.current = null;
+      requestIdsRef.current = new Map();
       setPhase('form');
-      setRecipient(null);
+      setRecipients([]);
       setAmount(null);
       setCategory('good_performance');
       setReason('');
       setError(null);
       setAwardedAmount(0);
+      setAwardedRecipients([]);
+      setAwardProgress(null);
+      setPartialFailureMessage(null);
       awardMutation.reset();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reset awardMutation only on close
@@ -74,21 +82,24 @@ export function AwardPointsModal({
 
   useEffect(() => {
     if (isOpen && initialRecipient) {
-      setRecipient(initialRecipient);
+      setRecipients([initialRecipient]);
     }
   }, [isOpen, initialRecipient]);
 
+  const isSubmitting = awardMutation.isPending || awardProgress !== null;
+
   const handleClose = useCallback(() => {
-    if (awardMutation.isPending) return;
+    if (isSubmitting) return;
     onClose();
-  }, [awardMutation.isPending, onClose]);
+  }, [isSubmitting, onClose]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setError(null);
 
-    if (!recipient) {
-      setError('Please select a recipient.');
+    if (recipients.length === 0) {
+      setError('Please select at least one recipient.');
       return;
     }
     if (amount === null || amount === 0) {
@@ -103,23 +114,61 @@ export function AwardPointsModal({
       setError('A reason is required.');
       return;
     }
-    if (!requestIdRef.current) {
-      requestIdRef.current = crypto.randomUUID();
+
+    const succeeded: AwardRecipient[] = [];
+    const failures: { recipient: AwardRecipient; message: string }[] = [];
+
+    setAwardProgress({ current: 0, total: recipients.length });
+
+    for (let i = 0; i < recipients.length; i++) {
+      const recipient = recipients[i];
+      setAwardProgress({ current: i + 1, total: recipients.length });
+
+      let requestId = requestIdsRef.current.get(recipient.user_id);
+      if (!requestId) {
+        requestId = crypto.randomUUID();
+        requestIdsRef.current.set(recipient.user_id, requestId);
+      }
+
+      try {
+        await awardMutation.mutateAsync({
+          recipientId: recipient.user_id,
+          amount,
+          category,
+          reason: reason.trim(),
+          requestId,
+        });
+        succeeded.push(recipient);
+      } catch (err) {
+        failures.push({
+          recipient,
+          message: err instanceof Error ? err.message : 'Unable to award points.',
+        });
+      }
     }
 
-    try {
-      await awardMutation.mutateAsync({
-        recipientId: recipient.user_id,
-        amount,
-        category,
-        reason: reason.trim(),
-        requestId: requestIdRef.current,
-      });
-      setAwardedAmount(amount);
-      setPhase('success');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to award points.');
+    setAwardProgress(null);
+
+    if (succeeded.length === 0) {
+      const first = failures[0];
+      setError(
+        recipients.length === 1
+          ? first.message
+          : `Failed to award all ${recipients.length} recipients. ${first.message}`
+      );
+      return;
     }
+
+    setAwardedAmount(amount);
+    setAwardedRecipients(succeeded);
+    setPartialFailureMessage(
+      failures.length > 0
+        ? `Awarded ${succeeded.length} of ${recipients.length}. Failed for: ${failures
+            .map((f) => f.recipient.full_name || f.recipient.email)
+            .join(', ')}.`
+        : null
+    );
+    setPhase('success');
   };
 
   if (!isOpen) return null;
@@ -158,7 +207,7 @@ export function AwardPointsModal({
             <button
               type="button"
               onClick={handleClose}
-              disabled={awardMutation.isPending}
+              disabled={isSubmitting}
               className="p-2 rounded-lg text-[#c7b696] hover:text-white hover:bg-white/10 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400"
               aria-label="Close"
             >
@@ -172,13 +221,39 @@ export function AwardPointsModal({
                 <CheckCircle2 className="w-14 h-14 text-emerald-400 mx-auto" aria-hidden />
                 <p className="text-lg font-semibold text-white">
                   {awardedAmount < 0
-                    ? `${Math.abs(awardedAmount)} point${Math.abs(awardedAmount) === 1 ? '' : 's'} deducted`
-                    : `${awardedAmount} point${awardedAmount === 1 ? '' : 's'} awarded`}
+                    ? `${Math.abs(awardedAmount)} point${Math.abs(awardedAmount) === 1 ? '' : 's'} deducted${
+                        awardedRecipients.length > 1
+                          ? ` from ${awardedRecipients.length} recipients`
+                          : ''
+                      }`
+                    : `${awardedAmount} point${awardedAmount === 1 ? '' : 's'} awarded${
+                        awardedRecipients.length > 1
+                          ? ` to ${awardedRecipients.length} recipients`
+                          : ''
+                      }`}
                   !
                 </p>
+                {partialFailureMessage && (
+                  <div
+                    role="alert"
+                    className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-sm text-amber-200 text-left"
+                  >
+                    <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" aria-hidden />
+                    <span>{partialFailureMessage}</span>
+                  </div>
+                )}
                 <p className="text-sm text-[#c7b696]">
-                  {recipient?.full_name || recipient?.email} will see updated totals shortly.
+                  {awardedRecipients.length === 1
+                    ? `${awardedRecipients[0].full_name || awardedRecipients[0].email} will see updated totals shortly.`
+                    : `${awardedRecipients.length} recipients will see updated totals shortly.`}
                 </p>
+                {awardedRecipients.length > 1 && (
+                  <p className="text-xs text-[#c7b696]/80 max-h-24 overflow-y-auto">
+                    {awardedRecipients
+                      .map((r) => r.full_name || r.email)
+                      .join(' · ')}
+                  </p>
+                )}
                 <button
                   type="button"
                   onClick={handleClose}
@@ -191,9 +266,9 @@ export function AwardPointsModal({
               <form onSubmit={handleSubmit} className="space-y-4">
                 <AwardRecipientPicker
                   currentUserId={user?.id ?? ''}
-                  selected={recipient}
-                  onSelect={setRecipient}
-                  disabled={awardMutation.isPending}
+                  selected={recipients}
+                  onChange={setRecipients}
+                  disabled={isSubmitting}
                 />
 
                 <div className="grid grid-cols-2 gap-3">
@@ -202,7 +277,7 @@ export function AwardPointsModal({
                     onChange={setAmount}
                     isAdmin={isAdmin}
                     budgetHint={budgetHint}
-                    disabled={awardMutation.isPending || budgetLoading}
+                    disabled={isSubmitting || budgetLoading}
                   />
                   <div>
                     <label
@@ -215,7 +290,7 @@ export function AwardPointsModal({
                       id="award-category"
                       value={category}
                       onChange={(e) => setCategory(e.target.value as ManualAwardCategory)}
-                      disabled={awardMutation.isPending}
+                      disabled={isSubmitting}
                       className="mt-1.5 w-full px-3 py-2.5 rounded-xl border border-white/10 bg-white/[0.03] text-white text-base focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400"
                     >
                       {MANUAL_AWARD_CATEGORIES.map((cat) => (
@@ -253,7 +328,7 @@ export function AwardPointsModal({
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                     rows={3}
-                    disabled={awardMutation.isPending}
+                    disabled={isSubmitting}
                     placeholder={
                       amount !== null && amount < 0
                         ? 'Why are you deducting these points?'
@@ -276,20 +351,28 @@ export function AwardPointsModal({
 
                 <button
                   type="submit"
-                  disabled={awardMutation.isPending || amount === null}
+                  disabled={isSubmitting || amount === null}
                   className={
                     amount !== null && amount < 0
                       ? 'w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-red-600 to-red-700 text-white font-bold disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400'
                       : 'w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-[#f4c979] to-[#d89d3e] text-[#2d1c04] font-bold disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400'
                   }
                 >
-                  {awardMutation.isPending ? (
+                  {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" aria-hidden />
-                      {amount !== null && amount < 0 ? 'Deducting…' : 'Awarding…'}
+                      {awardProgress
+                        ? `${amount !== null && amount < 0 ? 'Deducting' : 'Awarding'} ${awardProgress.current}/${awardProgress.total}…`
+                        : amount !== null && amount < 0
+                          ? 'Deducting…'
+                          : 'Awarding…'}
                     </>
                   ) : amount !== null && amount < 0 ? (
-                    'Deduct Points'
+                    recipients.length > 1
+                      ? `Deduct Points (${recipients.length})`
+                      : 'Deduct Points'
+                  ) : recipients.length > 1 ? (
+                    `Award Points (${recipients.length})`
                   ) : (
                     'Award Points'
                   )}

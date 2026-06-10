@@ -127,12 +127,12 @@ describe('MyPointsPage', () => {
     renderWithProviders(<MyPointsPage />);
 
     await waitFor(() => {
-      expect(screen.getByTestId('my-points-page')).toBeInTheDocument();
+      expect(screen.getByTestId('my-progress-page')).toBeInTheDocument();
     });
 
     expect(screen.getByTestId('my-points-balance')).toHaveTextContent('72');
     expect(screen.getByTestId('my-points-raffle')).toHaveTextContent('8');
-    expect(screen.getByTestId('my-points-streak')).toHaveTextContent('4-day briefing streak');
+    expect(screen.getByTestId('my-points-briefing-streak')).toHaveTextContent('4-day briefing streak');
     expect(screen.queryByRole('button', { name: /redeem|award|edit/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('form')).not.toBeInTheDocument();
   });

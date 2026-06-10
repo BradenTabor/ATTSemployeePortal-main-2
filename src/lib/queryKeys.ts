@@ -12,7 +12,7 @@ export const queryKeys = {
   // Users / Crew
   users: {
     all: ['users'] as const,
-    list: (filters?: { role?: string; search?: string }) =>
+    list: (filters?: { role?: string; search?: string; excludeTestUsers?: boolean }) =>
       ['users', 'list', filters] as const,
     detail: (userId: string) => ['users', 'detail', userId] as const,
   },

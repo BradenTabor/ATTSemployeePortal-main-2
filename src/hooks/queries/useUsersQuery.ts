@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { queryKeys } from '../../lib/queryKeys';
 import { toast } from '../../lib/toast';
 import { logger } from '../../lib/logger';
+import { isTestAppUser, shouldHideTestUsers } from '../../lib/testUsers';
 
 interface User {
   id: string;
@@ -16,6 +17,8 @@ interface User {
 interface UseUsersOptions {
   role?: string;
   search?: string;
+  /** Defaults to true in production builds. */
+  excludeTestUsers?: boolean;
 }
 
 /**
@@ -45,7 +48,10 @@ export function useUsersQuery(options?: UseUsersOptions) {
         throw new Error('Failed to load users');
       }
 
-      return data as User[];
+      const excludeTestUsers = options?.excludeTestUsers ?? shouldHideTestUsers();
+      const users = (data ?? []) as User[];
+
+      return excludeTestUsers ? users.filter((u) => !isTestAppUser(u)) : users;
     },
   });
 }

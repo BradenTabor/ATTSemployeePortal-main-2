@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabaseClient';
 import { queryKeys } from '../../lib/queryKeys';
 import { logger } from '../../lib/logger';
+import { isTestAppUser } from '../../lib/testUsers';
 
 export interface TeamContact {
   id: string;
@@ -34,11 +35,7 @@ export function useTeamContactsQuery() {
       }
 
       return (data ?? [])
-        .filter((u) => {
-          if (u.email?.endsWith('@atts.test')) return false;
-          if (u.full_name?.startsWith('Test ')) return false;
-          return true;
-        })
+        .filter((u) => !isTestAppUser(u))
         .map((user) => ({
           ...user,
           avatar_url: resolveAvatarUrl(user.avatar_url),
