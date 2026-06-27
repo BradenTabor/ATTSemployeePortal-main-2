@@ -9,3 +9,4 @@ badges
 seasons
 challenges
 campaigns
+audit_checklist_items

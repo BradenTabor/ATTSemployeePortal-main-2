@@ -101,8 +101,23 @@ CREATE TABLE IF NOT EXISTS storage.buckets (
 
 CREATE TABLE IF NOT EXISTS storage.objects (
   id        uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  bucket_id text REFERENCES storage.buckets(id)
+  bucket_id text REFERENCES storage.buckets(id),
+  name      text,
+  owner     uuid
 );
+-- Faithful to prod storage.objects: owner-scoped policies reference name +
+-- storage.foldername(). Added so forward migrations that create owner-folder
+-- policies (e.g. field-audit-photos, jsa-photos) parse on the local gate.
+-- Real Storage returns the path's folder segments (all parts except the file).
+CREATE OR REPLACE FUNCTION storage.foldername(name text)
+RETURNS text[] LANGUAGE plpgsql IMMUTABLE AS $$
+DECLARE
+  _parts text[];
+BEGIN
+  _parts := string_to_array(name, '/');
+  RETURN _parts[1 : GREATEST(array_length(_parts, 1) - 1, 0)];
+END
+$$;
 
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('safety-rewards', 'safety-rewards', true)
