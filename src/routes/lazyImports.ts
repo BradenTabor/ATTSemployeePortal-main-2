@@ -58,6 +58,7 @@ export const EmployeeAttendance = lazy(() => import("@/pages/general-foreman/Emp
 export const SafetyOfficerDashboard = lazy(() => import("@/pages/safety-officer/SafetyOfficerDashboard"));
 export const OSHA300ASummary = lazy(() => import("@/pages/safety-officer/OSHA300ASummary"));
 export const InspectionReadiness = lazy(() => import("@/pages/safety-officer/InspectionReadiness"));
+export const FieldAuditPage = lazy(() => import("@/pages/safety-officer/FieldAuditPage"));
 
 // Form pages
 export const RequestTimeOff = lazy(() => import("@/pages/forms/RequestTimeOff"));

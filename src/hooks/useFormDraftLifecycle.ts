@@ -40,7 +40,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFormPersistence, type DraftData } from './useFormPersistence';
 import { formToast } from '../lib/formToast';
 
-type FormType = 'jsa' | 'dvir' | 'equipment' | 'near_miss' | 'tree_felling_jsa';
+type FormType = 'jsa' | 'dvir' | 'equipment' | 'near_miss' | 'tree_felling_jsa' | 'field_audit';
 
 /** Window for silent same-session / remount auto-restore. */
 const AUTO_RESTORE_WINDOW_MS = 60_000;

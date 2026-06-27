@@ -1,5 +1,6 @@
 import {
   ClipboardList,
+  ClipboardCheck,
   FileText,
   Users,
   Wrench,
@@ -327,6 +328,13 @@ export const GENERAL_FOREMAN_NAV_CARDS: AdminNavCardConfig[] = [
 ];
 
 export const SAFETY_OFFICER_NAV_CARDS: AdminNavCardConfig[] = [
+  {
+    title: "Field Safety Audit",
+    description: "Audit a site visit: equipment and crew Pass/Fail checks with escalation.",
+    icon: <ClipboardCheck className="w-8 h-8 text-[#fecaca]" />,
+    to: "/safety-officer/field-audit",
+    variant: "redwhite",
+  },
   {
     title: "OSHA 300A Summary",
     description: "Annual summary of work-related injuries and illnesses; certify and export.",

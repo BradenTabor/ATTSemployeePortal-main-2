@@ -61,6 +61,7 @@ import {
   SafetyOfficerDashboard,
   OSHA300ASummary,
   InspectionReadiness,
+  FieldAuditPage,
   RequestTimeOff,
   DVIRForm,
   DailyEquipmentInspectionForm,
@@ -640,6 +641,18 @@ export function AnimatedRoutes() {
                 <PageWrapper>
                   <ProtectedRoute allowedRoles={["admin", "safety_officer"]}>
                     <OSHA300ASummary />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            {/* Field Safety Audit — admin, safety_officer, general_foreman */}
+            <Route
+              path="/safety-officer/field-audit"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute allowedRoles={["admin", "safety_officer", "general_foreman"]}>
+                    <FieldAuditPage />
                   </ProtectedRoute>
                 </PageWrapper>
               }

@@ -215,6 +215,14 @@ export const queryKeys = {
     detail: (reportId: string) => ['nearMiss', 'detail', reportId] as const,
   },
 
+  // Field Safety Audit (safety officer site-visit audits)
+  fieldAudit: {
+    all: ['fieldAudit'] as const,
+    detail: (auditId: string) => ['fieldAudit', 'detail', auditId] as const,
+    list: (filters?: { status?: string; dateFrom?: string; dateTo?: string }) =>
+      ['fieldAudit', 'list', filters] as const,
+  },
+
   // Resources / Study Guides
   resources: {
     all: ['resources'] as const,

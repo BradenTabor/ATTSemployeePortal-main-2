@@ -28,7 +28,7 @@ interface DraftData<T> {
 
 interface UseFormPersistenceOptions<T> {
   /** Form type identifier (e.g., 'jsa', 'dvir') */
-  formType: 'jsa' | 'dvir' | 'equipment' | 'near_miss' | 'tree_felling_jsa';
+  formType: 'jsa' | 'dvir' | 'equipment' | 'near_miss' | 'tree_felling_jsa' | 'field_audit';
   /** Current user ID for multi-user support */
   userId: string | undefined;
   /** Initial form state factory */
@@ -50,8 +50,8 @@ interface UseFormPersistenceReturn<T> {
   hasUnsavedChanges: boolean;
   /** Save current state as draft */
   saveDraft: (form: T, currentStep: number, completedSteps: Set<number>) => void;
-  /** Save draft immediately (synchronous, for beforeunload) */
-  flushPendingSave: (form: T, currentStep: number, completedSteps: Set<number>) => void;
+  /** Save draft immediately (synchronous, for beforeunload). Returns false if the localStorage write failed. */
+  flushPendingSave: (form: T, currentStep: number, completedSteps: Set<number>) => boolean;
   /** Clear the draft (call after successful submission) */
   clearDraft: () => void;
   /** Dismiss draft recovery prompt */
