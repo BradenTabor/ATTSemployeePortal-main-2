@@ -4008,4 +4008,175 @@ BEGIN
   RAISE NOTICE 'OK: Phase 2 gate 3 — admin-only staging, dark master zero payouts, owner nudge dark/live, season lifecycle + close controls.';
 END $$;
 
+-- =============================================================================
+-- Field Safety Audit — Chunk 4 (migrations 20260627160000 + 20260627170000)
+-- =============================================================================
+-- (1) 20260627170000 restored the corrective_actions branch in
+--     safety_audit_log_insert() that 20260301000001 + 20260303000000 clobbered
+--     (generic ELSE dereferenced (NEW).user_id, a column corrective_actions
+--     lacks -> every CA insert errored). Structural + behavioral proof below.
+-- (2) 20260627160000 added escalate_field_audit_item: assignee defaults to the
+--     audited person, one clamped field_audit_violation deduction
+--     (counts_toward_raffle=false), and TWO safety_alert notification_events
+--     (employee + crew foreman, or general_foreman role fallback). Idempotent.
+-- -----------------------------------------------------------------------------
+
+-- ---- (A) Structural: both functions carry their Chunk-4 shape ----------------
+DO $$
+DECLARE
+  v_audit_src text := pg_get_functiondef('public.safety_audit_log_insert()'::regprocedure);
+  v_esc_src   text := pg_get_functiondef('public.escalate_field_audit_item(uuid,integer,text,date,uuid)'::regprocedure);
+  v_esc_owner text;
+BEGIN
+  IF position('corrective_action_created' IN v_audit_src) = 0
+     OR position('assigned_by' IN v_audit_src) = 0 THEN
+    RAISE EXCEPTION 'GATE FAILED — safety_audit_log_insert() is missing the restored corrective_actions branch (20260627170000)';
+  END IF;
+
+  IF to_regprocedure('public.escalate_field_audit_item(uuid,integer,text,date,uuid)') IS NULL THEN
+    RAISE EXCEPTION 'GATE FAILED — escalate_field_audit_item is missing (20260627160000)';
+  END IF;
+  IF position('general_foreman' IN v_esc_src) = 0 THEN
+    RAISE EXCEPTION 'GATE FAILED — escalate_field_audit_item is missing the general_foreman role fallback';
+  END IF;
+  IF position('custom_label' IN v_esc_src) = 0 THEN
+    RAISE EXCEPTION 'GATE FAILED — escalate_field_audit_item is missing the COALESCE(label, custom_label) label fix';
+  END IF;
+
+  SELECT pg_get_userbyid(p.proowner) INTO v_esc_owner
+  FROM pg_proc p WHERE p.oid = 'public.escalate_field_audit_item(uuid,integer,text,date,uuid)'::regprocedure;
+  IF v_esc_owner <> 'postgres' THEN
+    RAISE EXCEPTION 'GATE FAILED — escalate_field_audit_item owner is % (expected postgres for notification_events RLS bypass)', v_esc_owner;
+  END IF;
+
+  RAISE NOTICE 'OK: Chunk 4 structural — CA audit branch restored; escalate_field_audit_item present (role fallback + label fix, owner=postgres).';
+END $$;
+
+-- Gate-local fidelity: escalate_field_audit_item is SECURITY DEFINER owned by
+-- `postgres`. On prod `postgres` owns the public tables (so its writes succeed —
+-- see Proof B); the throwaway gate DB builds them under the rebuild superuser, so
+-- the definer would hit "permission denied". Grant `postgres` the table rights it
+-- holds on prod. This rides the gate's BEGIN/ROLLBACK and is in assertions.sql,
+-- not a migration — it never touches prod and does not affect the drift guard.
+GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres;
+
+-- ---- (B) Behavioral: escalate end-to-end, both recipient variants, idempotent.
+--      Runs with trigger_safety_audit_corrective_actions ENABLED so the CA insert
+--      also proves the 20260627170000 fix (a safety_audit_log row is written).
+DO $$
+DECLARE
+  c_so       uuid := '00000000-0000-0000-0000-00000000fa01';
+  c_person   uuid := '00000000-0000-0000-0000-00000000fa02';
+  c_foreman  uuid := '00000000-0000-0000-0000-00000000fa03';
+  v_person_app  uuid;
+  v_foreman_app uuid;
+  v_audit  uuid; v_subj uuid; v_item uuid; v_ca uuid; v_ca2 uuid;
+  v_ca_assignee uuid;
+  v_ledger int; v_amt int; v_raffle_false int;
+  v_events int; v_emp int; v_emp_sev text; v_fore int; v_role int;
+  v_audit_rows int;
+  v_audit2 uuid; v_subj2 uuid; v_item2 uuid; v_ca_b uuid;
+  v_events_b int; v_emp_b int; v_foreuser_b int; v_role_b int;
+BEGIN
+  -- The earlier safety_audit_log block disabled this trigger to dodge the
+  -- pre-fix function. With 20260627170000 applied it is safe (and required) to
+  -- run live so the CA insert exercises the restored branch.
+  ALTER TABLE public.corrective_actions ENABLE TRIGGER trigger_safety_audit_corrective_actions;
+
+  INSERT INTO auth.users (id, aud, role, email) VALUES
+    (c_so     , 'authenticated', 'authenticated', 'gate-fa-so@example.invalid'),
+    (c_person , 'authenticated', 'authenticated', 'gate-fa-person@example.invalid'),
+    (c_foreman, 'authenticated', 'authenticated', 'gate-fa-foreman@example.invalid');
+  UPDATE public.app_users SET role = 'safety_officer' WHERE user_id = c_so;
+  UPDATE public.app_users SET role = 'foreman'        WHERE user_id = c_foreman;
+
+  SELECT id INTO v_person_app  FROM public.app_users WHERE user_id = c_person;
+  SELECT id INTO v_foreman_app FROM public.app_users WHERE user_id = c_foreman;
+  IF v_person_app IS NULL OR v_foreman_app IS NULL THEN
+    RAISE EXCEPTION 'GATE FAILED — field-audit seed: app_users auto-provisioning did not create person/foreman rows';
+  END IF;
+
+  PERFORM set_config('request.jwt.claim.sub', c_so::text, true);
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', c_so, 'role', 'authenticated')::text, true);
+
+  -- ---- Variant A: foreman present -> employee + foreman, with a -5 deduction --
+  INSERT INTO public.field_audits (auditor_id, foreman_id, location_text, status)
+    VALUES (c_so, v_foreman_app, 'gate field-audit A', 'draft') RETURNING id INTO v_audit;
+  INSERT INTO public.field_audit_subjects (field_audit_id, subject_type, person_id)
+    VALUES (v_audit, 'person', v_person_app) RETURNING id INTO v_subj;
+  INSERT INTO public.field_audit_items (field_audit_id, field_audit_subject_id, result, custom_label)
+    VALUES (v_audit, v_subj, 'fail', 'gate: missing hard hat') RETURNING id INTO v_item;
+
+  v_ca := public.escalate_field_audit_item(v_item, 5);
+
+  SELECT count(*) INTO v_audit_rows FROM public.corrective_actions WHERE id = v_ca;
+  SELECT assigned_to INTO v_ca_assignee FROM public.corrective_actions WHERE id = v_ca;
+  IF v_audit_rows <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED — escalate A: expected 1 corrective_action, got %', v_audit_rows;
+  END IF;
+  IF v_ca_assignee IS DISTINCT FROM c_person THEN
+    RAISE EXCEPTION 'GATE FAILED — escalate A: CA assignee % (expected audited person %)', v_ca_assignee, c_person;
+  END IF;
+
+  SELECT count(*), COALESCE(max(amount),0), count(*) FILTER (WHERE counts_toward_raffle = false)
+    INTO v_ledger, v_amt, v_raffle_false
+    FROM public.point_transactions WHERE reference_id = v_item AND source = 'field_audit_violation';
+  IF v_ledger <> 1 OR v_amt <> -5 OR v_raffle_false <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED — escalate A ledger: rows=% amt=% raffle_false=% (expected 1 / -5 / 1)', v_ledger, v_amt, v_raffle_false;
+  END IF;
+
+  SELECT count(*),
+         count(*) FILTER (WHERE target_type='user' AND target_ref=c_person::text),
+         max(severity) FILTER (WHERE target_type='user' AND target_ref=c_person::text),
+         count(*) FILTER (WHERE target_type='user' AND target_ref=c_foreman::text),
+         count(*) FILTER (WHERE target_type='role' AND target_ref='general_foreman')
+    INTO v_events, v_emp, v_emp_sev, v_fore, v_role
+    FROM public.notification_events WHERE entity_type='field_audit_item' AND entity_id=v_item;
+  IF v_events <> 2 OR v_emp <> 1 OR v_emp_sev <> 'high' OR v_fore <> 1 OR v_role <> 0 THEN
+    RAISE EXCEPTION 'GATE FAILED — escalate A notifications: total=% emp=% emp_sev=% foreman=% role=% (expected 2/1/high/1/0)', v_events, v_emp, v_emp_sev, v_fore, v_role;
+  END IF;
+
+  -- Fix proof: the CA insert wrote an audit row via the restored branch.
+  SELECT count(*) INTO v_audit_rows
+    FROM public.safety_audit_log
+    WHERE table_name='corrective_actions' AND record_id=v_ca
+      AND event_type='corrective_action_created' AND user_id=c_so;
+  IF v_audit_rows <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED — restored CA audit branch: expected 1 safety_audit_log row (actor=assigned_by), got %', v_audit_rows;
+  END IF;
+
+  -- Re-tap: same CA, no second ledger/notification.
+  v_ca2 := public.escalate_field_audit_item(v_item, 5);
+  IF v_ca2 <> v_ca THEN
+    RAISE EXCEPTION 'GATE FAILED — escalate idempotency: re-tap returned % (expected %)', v_ca2, v_ca;
+  END IF;
+  SELECT count(*) INTO v_ledger FROM public.point_transactions WHERE reference_id=v_item AND source='field_audit_violation';
+  SELECT count(*) INTO v_events FROM public.notification_events WHERE entity_type='field_audit_item' AND entity_id=v_item;
+  IF v_ledger <> 1 OR v_events <> 2 THEN
+    RAISE EXCEPTION 'GATE FAILED — escalate idempotency: re-tap changed counts (ledger=% events=%, expected 1/2)', v_ledger, v_events;
+  END IF;
+
+  -- ---- Variant B: foreman-less -> employee + general_foreman role fallback ----
+  INSERT INTO public.field_audits (auditor_id, foreman_id, location_text, status)
+    VALUES (c_so, NULL, 'gate field-audit B', 'draft') RETURNING id INTO v_audit2;
+  INSERT INTO public.field_audit_subjects (field_audit_id, subject_type, person_id)
+    VALUES (v_audit2, 'person', v_person_app) RETURNING id INTO v_subj2;
+  INSERT INTO public.field_audit_items (field_audit_id, field_audit_subject_id, result, custom_label)
+    VALUES (v_audit2, v_subj2, 'fail', 'gate: no chaps') RETURNING id INTO v_item2;
+
+  v_ca_b := public.escalate_field_audit_item(v_item2, 5);
+
+  SELECT count(*),
+         count(*) FILTER (WHERE target_type='user' AND target_ref=c_person::text),
+         count(*) FILTER (WHERE target_type='user' AND target_ref=c_foreman::text),
+         count(*) FILTER (WHERE target_type='role' AND target_ref='general_foreman')
+    INTO v_events_b, v_emp_b, v_foreuser_b, v_role_b
+    FROM public.notification_events WHERE entity_type='field_audit_item' AND entity_id=v_item2;
+  IF v_events_b <> 2 OR v_emp_b <> 1 OR v_foreuser_b <> 0 OR v_role_b <> 1 THEN
+    RAISE EXCEPTION 'GATE FAILED — escalate B (foreman-less): total=% emp=% foreman_user=% role_gf=% (expected 2/1/0/1)', v_events_b, v_emp_b, v_foreuser_b, v_role_b;
+  END IF;
+
+  RAISE NOTICE 'OK: Chunk 4 behavioral — escalate creates 1 CA (assignee=audited person) + 1 ledger (-5, raffle=false) + 2 notifications (employee high + foreman / general_foreman fallback), idempotent on re-tap, and the restored audit branch logs the CA.';
+END $$;
+
 ROLLBACK;
