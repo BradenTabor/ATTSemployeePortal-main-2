@@ -221,6 +221,15 @@ export const queryKeys = {
     detail: (auditId: string) => ['fieldAudit', 'detail', auditId] as const,
     list: (filters?: { status?: string; dateFrom?: string; dateTo?: string }) =>
       ['fieldAudit', 'list', filters] as const,
+    // Config: seeded audit_checklist_items (rarely changes).
+    checklistConfig: () => ['fieldAudit', 'checklistConfig'] as const,
+    // Per-audit subjects (people + equipment under audit).
+    subjects: (auditId: string) => ['fieldAudit', 'subjects', auditId] as const,
+    // Per-audit checklist responses (field_audit_items).
+    items: (auditId: string) => ['fieldAudit', 'items', auditId] as const,
+    // Read-only recent field_notes for one person/equipment subject.
+    notesForSubject: (subjectKey: string) =>
+      ['fieldAudit', 'notes', subjectKey] as const,
   },
 
   // Resources / Study Guides

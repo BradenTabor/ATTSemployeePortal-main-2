@@ -47,6 +47,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useFormPersistence } from "../../hooks/useFormPersistence";
 import { useWorkSitesQuery } from "../../hooks/queries/useWorkSites";
 import { useCrews } from "../../hooks/useCrews";
+import { SubjectsTray } from "./field-audit";
 
 const TZ = "America/Chicago";
 
@@ -436,16 +437,11 @@ export default function FieldAuditPage() {
                 </div>
               )}
 
-              {/* Subjects tray + checklist land in the next build. */}
-              <div className="rounded-xl border border-dashed border-white/15 bg-white/[0.02] px-4 py-6 text-center">
-                <p className="text-sm font-medium text-white/70">
-                  Subjects &amp; checklist
-                </p>
-                <p className="mt-1 text-xs text-white/40">
-                  Add equipment and crew, then run their Pass / Fail checks.
-                  Coming in the next build.
-                </p>
-              </div>
+              {/* Subjects tray + per-subject checklist (Chunk 3). */}
+              <SubjectsTray
+                auditId={resumedAudit.id}
+                crewId={resumedAudit.crew_id}
+              />
 
               <div className="flex items-center justify-between gap-3 pt-1">
                 <button
