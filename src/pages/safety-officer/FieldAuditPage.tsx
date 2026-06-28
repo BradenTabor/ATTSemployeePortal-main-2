@@ -47,7 +47,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useFormPersistence } from "../../hooks/useFormPersistence";
 import { useWorkSitesQuery } from "../../hooks/queries/useWorkSites";
 import { useCrews } from "../../hooks/useCrews";
-import { SubjectsTray } from "./field-audit";
+import { SubjectsTray, StandaloneFieldNotes } from "./field-audit";
 
 const TZ = "America/Chicago";
 
@@ -591,6 +591,9 @@ export default function FieldAuditPage() {
               </div>
             </motion.section>
           )}
+
+          {/* Standalone quick notes — no audit session required (Chunk 5). */}
+          {!resumedAudit && !showResuming && <StandaloneFieldNotes />}
         </div>
       </div>
     </DashboardLayout>

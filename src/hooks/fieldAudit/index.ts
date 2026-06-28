@@ -14,6 +14,10 @@ export {
   RECENT_NOTES_LIMIT,
 } from "./useFieldNotesForSubject";
 export {
+  useCreateFieldNote,
+  type CreateFieldNoteInput,
+} from "./useCreateFieldNote";
+export {
   useFieldAuditPhotos,
   FIELD_AUDIT_PHOTO_BUCKET,
   FIELD_AUDIT_SIGNED_URL_EXPIRY,

@@ -3,3 +3,4 @@
  */
 export { default as SubjectsTray } from "./SubjectsTray";
 export { default as ChecklistTriState } from "./ChecklistTriState";
+export { default as StandaloneFieldNotes } from "./StandaloneFieldNotes";
