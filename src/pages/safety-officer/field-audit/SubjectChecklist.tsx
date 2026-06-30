@@ -102,6 +102,12 @@ export default function SubjectChecklist({
   // Mirror of `rows` for synchronous back-to-back edits. Every setRows() call
   // below updates this ref in lockstep, so it never needs syncing during render.
   const rowsRef = useRef<Record<string, RowDraft>>({});
+  // Per-row save chain: a fast result→note sequence fires two persistDraft calls
+  // before the first INSERT returns an id. Serialized per key, the second call
+  // waits and re-reads the freshly-saved id, so it UPDATEs instead of racing a
+  // second INSERT (which trips uq_fa_items_subject_item and drops the later edit).
+  // Different rows keep their own chains, so they still save concurrently.
+  const saveChainRef = useRef<Record<string, Promise<void>>>({});
 
   // Hydrate once from existing items (covers resume mid-checklist).
   const hydratedRef = useRef(false);
@@ -138,51 +144,64 @@ export default function SubjectChecklist({
   );
 
   const persistDraft = useCallback(
-    async (key: string, checklistItemId: string | null, draft: RowDraft) => {
-      if (draft.value === "") return;
-      const isAdHoc = checklistItemId === null;
-      if (isAdHoc && !draft.customLabel.trim()) {
-        mergeRow(key, { error: "Enter a label for this item." });
-        return;
-      }
-
-      mergeRow(key, { saving: true, error: null });
-
-      // Upload the pending photo first; a failure flags retry but never blocks save.
-      let photoPath = draft.photoPath;
-      let photoRetry = false;
-      if (draft.pendingPhoto) {
-        try {
-          photoPath = await uploadPhoto(draft.pendingPhoto, auditId);
-        } catch {
-          photoRetry = true;
+    (key: string, checklistItemId: string | null): Promise<void> => {
+      const run = async () => {
+        // Re-read at run time so a save queued behind another picks up the id
+        // the first one just wrote (INSERT → UPDATE) plus the latest note/photo.
+        const draft = rowsRef.current[key];
+        if (!draft || draft.value === "") return;
+        const isAdHoc = checklistItemId === null;
+        if (isAdHoc && !draft.customLabel.trim()) {
+          mergeRow(key, { error: "Enter a label for this item." });
+          return;
         }
-      }
 
-      try {
-        const saved = await saveItem({
-          subjectId: subject.id,
-          checklistItemId,
-          customLabel: isAdHoc ? draft.customLabel.trim() : null,
-          result: TRI_TO_RESULT[draft.value as Exclude<TriValue, "">],
-          note: draft.note.trim() || null,
-          photoPath: photoPath ?? null,
-          existingItemId: draft.itemId,
-        });
-        mergeRow(key, {
-          itemId: saved.id,
-          photoPath: saved.photo_path,
-          pendingPhoto: photoRetry ? draft.pendingPhoto : null,
-          photoRetry,
-          saving: false,
-          error: null,
-        });
-      } catch (e) {
-        mergeRow(key, {
-          saving: false,
-          error: e instanceof Error ? e.message : "Could not save this item.",
-        });
-      }
+        mergeRow(key, { saving: true, error: null });
+
+        // Upload the pending photo first; a failure flags retry but never blocks save.
+        let photoPath = draft.photoPath;
+        let photoRetry = false;
+        if (draft.pendingPhoto) {
+          try {
+            photoPath = await uploadPhoto(draft.pendingPhoto, auditId);
+          } catch {
+            photoRetry = true;
+          }
+        }
+
+        try {
+          const saved = await saveItem({
+            subjectId: subject.id,
+            checklistItemId,
+            customLabel: isAdHoc ? draft.customLabel.trim() : null,
+            result: TRI_TO_RESULT[draft.value as Exclude<TriValue, "">],
+            note: draft.note.trim() || null,
+            photoPath: photoPath ?? null,
+            existingItemId: draft.itemId,
+          });
+          mergeRow(key, {
+            itemId: saved.id,
+            photoPath: saved.photo_path,
+            pendingPhoto: photoRetry ? draft.pendingPhoto : null,
+            photoRetry,
+            saving: false,
+            error: null,
+          });
+        } catch (e) {
+          mergeRow(key, {
+            saving: false,
+            error: e instanceof Error ? e.message : "Could not save this item.",
+          });
+        }
+      };
+
+      // Chain after any in-flight save for this row (run on settle, success or not).
+      const next = (saveChainRef.current[key] ?? Promise.resolve()).then(
+        run,
+        run,
+      );
+      saveChainRef.current[key] = next;
+      return next;
     },
     [auditId, mergeRow, saveItem, subject.id, uploadPhoto],
   );
@@ -190,8 +209,8 @@ export default function SubjectChecklist({
   // ── Row handlers ──────────────────────────────────────────────────────────
   const handleValue = useCallback(
     (key: string, checklistItemId: string | null, v: Exclude<TriValue, "">) => {
-      const merged = mergeRow(key, { value: v, error: null });
-      void persistDraft(key, checklistItemId, merged);
+      mergeRow(key, { value: v, error: null });
+      void persistDraft(key, checklistItemId);
     },
     [mergeRow, persistDraft],
   );
@@ -206,7 +225,7 @@ export default function SubjectChecklist({
   const handleNoteBlur = useCallback(
     (key: string, checklistItemId: string | null) => {
       const draft = rowsRef.current[key];
-      if (draft && draft.value !== "") void persistDraft(key, checklistItemId, draft);
+      if (draft && draft.value !== "") void persistDraft(key, checklistItemId);
     },
     [persistDraft],
   );
@@ -222,7 +241,7 @@ export default function SubjectChecklist({
     (key: string) => {
       const draft = rowsRef.current[key];
       if (draft && draft.value !== "" && draft.customLabel.trim()) {
-        void persistDraft(key, null, draft);
+        void persistDraft(key, null);
       }
     },
     [persistDraft],
@@ -236,7 +255,7 @@ export default function SubjectChecklist({
         return;
       }
       const merged = mergeRow(key, { pendingPhoto: file, photoRetry: false, error: null });
-      if (merged.value !== "") void persistDraft(key, checklistItemId, merged);
+      if (merged.value !== "") void persistDraft(key, checklistItemId);
     },
     [mergeRow, persistDraft],
   );
@@ -254,7 +273,7 @@ export default function SubjectChecklist({
         pendingPhoto: null,
         photoRetry: false,
       });
-      if (merged.value !== "") void persistDraft(key, checklistItemId, merged);
+      if (merged.value !== "") void persistDraft(key, checklistItemId);
     },
     [deletePhoto, mergeRow, persistDraft],
   );
@@ -262,7 +281,7 @@ export default function SubjectChecklist({
   const handleRetryPhoto = useCallback(
     (key: string, checklistItemId: string | null) => {
       const draft = rowsRef.current[key];
-      if (draft) void persistDraft(key, checklistItemId, draft);
+      if (draft) void persistDraft(key, checklistItemId);
     },
     [persistDraft],
   );
