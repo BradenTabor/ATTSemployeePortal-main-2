@@ -230,6 +230,23 @@ export const queryKeys = {
     // Read-only recent field_notes for one person/equipment subject.
     notesForSubject: (subjectKey: string) =>
       ['fieldAudit', 'notes', subjectKey] as const,
+    // History list (Chunk 6) — filtered + paginated audits with read-time rollups.
+    history: (params: {
+      page: number;
+      pageSize: number;
+      statusFilter: string;
+      dateFrom?: string;
+      dateTo?: string;
+      equipmentType?: string;
+      personId?: string;
+      openFailsOnly?: boolean;
+    }) => ['fieldAudit', 'history', params] as const,
+    // Full read-only detail (subjects + items) for the history detail modal.
+    historyDetail: (auditId: string) =>
+      ['fieldAudit', 'historyDetail', auditId] as const,
+    // Interleaved findings + field_notes timeline for one subject identity.
+    timeline: (subjectKey: string) =>
+      ['fieldAudit', 'timeline', subjectKey] as const,
   },
 
   // Resources / Study Guides

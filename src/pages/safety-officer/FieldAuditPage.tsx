@@ -21,6 +21,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "framer-motion";
 import { toZonedTime } from "date-fns-tz";
@@ -34,6 +35,7 @@ import {
   AlertTriangle,
   WifiOff,
   ArrowRight,
+  History,
 } from "lucide-react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { supabase } from "../../lib/supabaseClient";
@@ -349,7 +351,7 @@ export default function FieldAuditPage() {
               <div className="w-12 h-12 rounded-2xl bg-rose-500/15 border border-rose-500/25 flex items-center justify-center shrink-0">
                 <ClipboardCheck className="w-6 h-6 text-rose-300" aria-hidden />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <h1 className="text-xl sm:text-2xl font-bold text-white">
                   Field Safety Audit
                 </h1>
@@ -358,6 +360,14 @@ export default function FieldAuditPage() {
                   with OSHA-referenced findings.
                 </p>
               </div>
+              <Link
+                to="/safety-officer/field-audit/history"
+                data-testid="field-audit-history-link"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-medium text-white/70 hover:text-white hover:bg-white/[0.06] transition-colors shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50"
+              >
+                <History className="w-4 h-4" aria-hidden />
+                <span className="hidden sm:inline">History</span>
+              </Link>
             </div>
           </header>
 

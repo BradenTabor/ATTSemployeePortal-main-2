@@ -59,6 +59,7 @@ export const SafetyOfficerDashboard = lazy(() => import("@/pages/safety-officer/
 export const OSHA300ASummary = lazy(() => import("@/pages/safety-officer/OSHA300ASummary"));
 export const InspectionReadiness = lazy(() => import("@/pages/safety-officer/InspectionReadiness"));
 export const FieldAuditPage = lazy(() => import("@/pages/safety-officer/FieldAuditPage"));
+export const FieldAuditHistoryPage = lazy(() => import("@/pages/safety-officer/FieldAuditHistoryPage"));
 
 // Form pages
 export const RequestTimeOff = lazy(() => import("@/pages/forms/RequestTimeOff"));

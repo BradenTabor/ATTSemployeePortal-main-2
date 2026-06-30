@@ -62,6 +62,7 @@ import {
   OSHA300ASummary,
   InspectionReadiness,
   FieldAuditPage,
+  FieldAuditHistoryPage,
   RequestTimeOff,
   DVIRForm,
   DailyEquipmentInspectionForm,
@@ -653,6 +654,18 @@ export function AnimatedRoutes() {
                 <PageWrapper>
                   <ProtectedRoute allowedRoles={["admin", "safety_officer", "general_foreman"]}>
                     <FieldAuditPage />
+                  </ProtectedRoute>
+                </PageWrapper>
+              }
+            />
+
+            {/* Field Safety Audit — history + per-subject timeline (Chunk 6) */}
+            <Route
+              path="/safety-officer/field-audit/history"
+              element={
+                <PageWrapper>
+                  <ProtectedRoute allowedRoles={["admin", "safety_officer", "general_foreman"]}>
+                    <FieldAuditHistoryPage />
                   </ProtectedRoute>
                 </PageWrapper>
               }

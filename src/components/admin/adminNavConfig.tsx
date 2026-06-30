@@ -6,6 +6,7 @@ import {
   Wrench,
   Gauge,
   Shield,
+  History,
 } from "lucide-react";
 import type { AdminNavCardConfig } from "./AdminPremiumScaffold";
 
@@ -333,6 +334,13 @@ export const SAFETY_OFFICER_NAV_CARDS: AdminNavCardConfig[] = [
     description: "Audit a site visit: equipment and crew Pass/Fail checks with escalation.",
     icon: <ClipboardCheck className="w-8 h-8 text-[#fecaca]" />,
     to: "/safety-officer/field-audit",
+    variant: "redwhite",
+  },
+  {
+    title: "Field Audit History",
+    description: "Browse past audits and a subject's findings + field-note timeline.",
+    icon: <History className="w-8 h-8 text-[#fecaca]" />,
+    to: "/safety-officer/field-audit/history",
     variant: "redwhite",
   },
   {

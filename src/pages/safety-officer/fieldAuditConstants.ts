@@ -288,3 +288,86 @@ export function fieldNotesSubjectKey(
     ? `person:${subject.person_id ?? ""}`
     : `equipment:${subject.equipment_type ?? ""}:${subject.equipment_number ?? ""}`;
 }
+
+// ── History rollups (read-time, Chunk 6) ─────────────────────────────────────
+
+/**
+ * Read-time pass/fail rollup for one audit or one subject. There is no
+ * denormalized rollup column — counts are computed over `field_audit_items`
+ * (GROUP BY at read time), backed by `idx_fa_items_fail` for the fail filter.
+ */
+export interface RollupCounts {
+  total: number;
+  pass: number;
+  fail: number;
+  na: number;
+  /** Fail items not yet escalated to a corrective action ("open" findings). */
+  openFail: number;
+}
+
+export function emptyRollup(): RollupCounts {
+  return { total: 0, pass: 0, fail: 0, na: 0, openFail: 0 };
+}
+
+/** Roll item results (+ escalation state) up to counts for a list/card badge. */
+export function summarizeItems(
+  items: ReadonlyArray<Pick<FieldAuditItem, "result" | "corrective_action_id">>,
+): RollupCounts {
+  const counts = emptyRollup();
+  for (const it of items) {
+    counts.total += 1;
+    if (it.result === "pass") counts.pass += 1;
+    else if (it.result === "na") counts.na += 1;
+    else {
+      counts.fail += 1;
+      if (!it.corrective_action_id) counts.openFail += 1;
+    }
+  }
+  return counts;
+}
+
+/** Rollup → single status dot (mirrors SubjectCard's read-time dot). */
+export function rollupCountsStatus(counts: RollupCounts): RollupStatus {
+  if (counts.total === 0) return "none";
+  if (counts.fail > 0) return "fail";
+  return "pass";
+}
+
+// ── Per-subject timeline identity (Chunk 6) ──────────────────────────────────
+
+/**
+ * Identity of a timeline subject (one person OR one equipment unit). The unit
+ * number is kept as-entered here and normalized (upper-trim) at query time, so a
+ * typed `j119` resolves to the same history as a stored `J-119` — the same D2
+ * normalization used on every write path.
+ */
+export interface TimelineSubjectIdentity {
+  subjectType: "person" | "equipment";
+  personId: string | null;
+  equipmentType: string | null;
+  equipmentNumber: string | null;
+}
+
+/** True when the identity is complete enough to query a timeline for. */
+export function hasTimelineIdentity(
+  identity: TimelineSubjectIdentity | null,
+): identity is TimelineSubjectIdentity {
+  if (!identity) return false;
+  return identity.subjectType === "person"
+    ? Boolean(identity.personId)
+    : Boolean(identity.equipmentType && identity.equipmentNumber?.trim());
+}
+
+/**
+ * Stable cache key for a subject timeline. Equipment units are normalized so
+ * the cache (and the join) don't fragment on casing/punctuation differences.
+ */
+export function timelineSubjectCacheKey(
+  identity: TimelineSubjectIdentity,
+): string {
+  return identity.subjectType === "person"
+    ? `person:${identity.personId ?? ""}`
+    : `equipment:${identity.equipmentType ?? ""}:${normalizeEquipmentNumber(
+        identity.equipmentNumber ?? "",
+      )}`;
+}

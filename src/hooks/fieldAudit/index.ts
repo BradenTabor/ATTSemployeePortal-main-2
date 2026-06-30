@@ -22,3 +22,20 @@ export {
   FIELD_AUDIT_PHOTO_BUCKET,
   FIELD_AUDIT_SIGNED_URL_EXPIRY,
 } from "./useFieldAuditPhotos";
+export {
+  useFieldAuditHistory,
+  type FieldAuditHistoryParams,
+  type FieldAuditHistoryRow,
+  type FieldAuditHistoryResult,
+  type FieldAuditStatusFilter,
+} from "./useFieldAuditHistory";
+export {
+  useFieldAuditDetail,
+  type FieldAuditDetail,
+  type FieldAuditDetailRow,
+} from "./useFieldAuditDetail";
+export {
+  useFieldSubjectTimeline,
+  type SubjectTimeline,
+  type TimelineEntry,
+} from "./useFieldSubjectTimeline";
