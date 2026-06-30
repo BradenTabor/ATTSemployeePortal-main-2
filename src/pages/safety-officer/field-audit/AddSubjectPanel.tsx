@@ -34,6 +34,14 @@ interface AddSubjectPanelProps {
   /** app_users ids already added as person subjects (disabled in the picker). */
   existingPersonIds: Set<string>;
   busy?: boolean;
+  /**
+   * Require a unit number before equipment can be picked. Audit subjects allow a
+   * blank unit; field notes don't (`field_notes` CHECK demands equipment_number),
+   * so the standalone notes picker sets this true.
+   */
+  requireEquipmentNumber?: boolean;
+  /** CTA label for the equipment action (default "Add equipment"). */
+  equipmentCtaLabel?: string;
   onAddEquipment: (input: AddEquipmentInput) => void;
   onAddPerson: (personId: string) => void;
 }
@@ -43,6 +51,8 @@ export default function AddSubjectPanel({
   crewRosterIds,
   existingPersonIds,
   busy = false,
+  requireEquipmentNumber = false,
+  equipmentCtaLabel = "Add equipment",
   onAddEquipment,
   onAddPerson,
 }: AddSubjectPanelProps) {
@@ -77,9 +87,12 @@ export default function AddSubjectPanel({
         : unitSelect
       : numberText;
 
-  const canAddEquipment = isCustomType
+  const baseCanAdd = isCustomType
     ? customType.trim().length > 0
     : Boolean(typeToken);
+  const canAddEquipment =
+    baseCanAdd &&
+    (!requireEquipmentNumber || resolvedNumber.trim().length > 0);
 
   const resetEquipment = () => {
     setTypeToken("");
@@ -225,7 +238,7 @@ export default function AddSubjectPanel({
             ) : (
               <Plus className="w-3.5 h-3.5" aria-hidden />
             )}
-            Add equipment
+            {equipmentCtaLabel}
           </button>
         </div>
       ) : (

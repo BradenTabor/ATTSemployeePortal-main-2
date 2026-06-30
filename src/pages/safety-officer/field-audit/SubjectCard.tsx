@@ -13,8 +13,10 @@ import {
   User,
   Wrench,
   Loader2,
+  StickyNote,
 } from "lucide-react";
 import RecentNotesStrip from "./RecentNotesStrip";
+import FieldNoteComposer from "./FieldNoteComposer";
 import SubjectChecklist from "./SubjectChecklist";
 import type { FieldNotesSubject, SaveItemInput } from "../../../hooks/fieldAudit";
 import {
@@ -74,6 +76,7 @@ export default function SubjectCard({
   onRemove,
 }: SubjectCardProps) {
   const [expanded, setExpanded] = useState(true);
+  const [noteOpen, setNoteOpen] = useState(false);
 
   const status: DotStatus = useMemo(() => {
     if (subjectItems.some((i) => i.result === "fail")) return "fail";
@@ -129,6 +132,24 @@ export default function SubjectCard({
 
         <button
           type="button"
+          onClick={() => {
+            setExpanded(true);
+            setNoteOpen((v) => !v);
+          }}
+          aria-label="Add note"
+          aria-expanded={noteOpen}
+          data-testid="field-audit-subject-note-btn"
+          className={`rounded-lg p-1.5 transition-colors shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 ${
+            noteOpen
+              ? "text-rose-300 bg-rose-500/10"
+              : "text-white/40 hover:text-rose-300 hover:bg-rose-500/10"
+          }`}
+        >
+          <StickyNote className="w-4 h-4" aria-hidden />
+        </button>
+
+        <button
+          type="button"
           onClick={onRemove}
           disabled={removing}
           aria-label="Remove subject"
@@ -145,6 +166,21 @@ export default function SubjectCard({
 
       {expanded && (
         <div className="px-3.5 pb-3.5 space-y-3">
+          {/* Quick-note composer (per-subject entry point) */}
+          {noteOpen && (
+            <FieldNoteComposer
+              subjectType={subject.subject_type}
+              personId={subject.person_id}
+              equipmentType={subject.equipment_type}
+              equipmentNumber={subject.equipment_number}
+              isCustomEquipment={subject.is_custom_equipment}
+              fieldAuditId={auditId}
+              autoFocus
+              onSaved={() => setNoteOpen(false)}
+              onCancel={() => setNoteOpen(false)}
+            />
+          )}
+
           {/* Read-only recent notes (memory layer) */}
           <div className="rounded-xl border border-white/[0.06] bg-white/[0.01] p-2.5">
             <p className="px-1 pb-1.5 text-[10px] uppercase tracking-widest text-rose-200/50">

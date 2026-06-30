@@ -180,6 +180,27 @@ export type FieldNoteKind =
   | "verbal_warning"
   | "repair_noted";
 
+/**
+ * note_kind chip options (label ↔ stored token). `ppe_issued` / `equipment_issued`
+ * are the issuance kinds the monthly summary aggregates by `item_tag`.
+ */
+export const FIELD_NOTE_KINDS: ReadonlyArray<{
+  value: FieldNoteKind;
+  label: string;
+}> = [
+  { value: "general", label: "General" },
+  { value: "ppe_issued", label: "PPE issued" },
+  { value: "equipment_issued", label: "Equipment issued" },
+  { value: "verbal_warning", label: "Verbal warning" },
+  { value: "repair_noted", label: "Repair noted" },
+];
+
+/** note_kinds for which an `item_tag` (e.g. "hard hat", "chaps") is meaningful. */
+export const FIELD_NOTE_ISSUANCE_KINDS: ReadonlySet<FieldNoteKind> = new Set([
+  "ppe_issued",
+  "equipment_issued",
+]);
+
 export interface FieldNote {
   id: string;
   field_audit_id: string | null;
