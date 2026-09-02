@@ -8,9 +8,21 @@
 #         you don't want in git — it is gitignored via docs/sms-upgrade/clicksend-audit-*.json.
 set -euo pipefail
 
+# Parse only ClickSend keys from .env — do not `source` the whole file (URLs and
+# unquoted values in other keys can make bash try to execute them).
 if [[ -z "${CLICKSEND_USERNAME:-}" && -f .env ]]; then
-  # shellcheck disable=SC1091
-  set -a; source .env; set +a
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    case "$line" in
+      CLICKSEND_USERNAME=*|CLICKSEND_API_KEY=*|CLICKSEND_PASSWORD=*)
+        key="${line%%=*}"
+        val="${line#*=}"
+        val="${val%$'\r'}"
+        val="${val#\"}"; val="${val%\"}"
+        val="${val#\'}"; val="${val%\'}"
+        export "$key=$val"
+        ;;
+    esac
+  done < .env
 fi
 KEY="${CLICKSEND_API_KEY:-${CLICKSEND_PASSWORD:-}}"
 if [[ -z "${CLICKSEND_USERNAME:-}" || -z "$KEY" ]]; then
