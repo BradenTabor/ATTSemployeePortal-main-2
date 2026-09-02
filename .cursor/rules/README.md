@@ -52,6 +52,12 @@ All rules are **disabled by default** to minimize token consumption. Activate th
 **Token Cost:** ~1,500 tokens per audit  
 **Use when:** Security review or before production deployment
 
+### 📱 SMS Upgrade (`20-sms-upgrade.mdc`)
+**Status:** ⚪ Disabled (alwaysApply: false); glob-scoped to ClickSend helpers, SMS Edge Functions, SMS migrations, and `ComplianceDataExportPanel.tsx`  
+**Purpose:** Hard constraints for the SMS pipeline upgrade — no live sends from agent sessions, additive schema only, employees/crew only  
+**Token Cost:** ~400 tokens when a matching file is in context  
+**Use when:** Working on ClickSend, SMS logs, opt-out, or SMS export
+
 ## 💰 Token Usage Comparison
 
 ### Before Optimization (All rules active)
