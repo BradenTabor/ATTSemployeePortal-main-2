@@ -33,32 +33,30 @@ reviewed: 2026-09-02
 ### Sending
 | What | Path | Notes |
 |---|---|---|
-| Shared ClickSend helper | `supabase/functions/_shared/clicksend.ts` | `sendSMS(messages, {username,password,from})` → POST `https://rest.clicksend.com/v3/sms/send`; returns per-message `status`, `messageId`, `price`; treats `SUCCESS` and `THROTTLED` as success. Unified logging wrapper: `sendAndLogSMS()`. |
+| Shared ClickSend helper | `supabase/functions/_shared/clicksend.ts` | `sendSMS()` POST is unchanged. Unified per-recipient logging: `sendAndLogSMS()` / `smsMessageLog.ts`. |
 | Safety briefing reminder (Tier 0) | `supabase/functions/safety-briefing-reminder-sms/index.ts` | Mon–Fri 10:40 UTC. Default from `+18443781444`. |
-| Safety briefing escalation (Tier 1/2) | `supabase/functions/safety-briefing-escalation-sms/index.ts` | Mon–Fri 16:00 UTC. Four `sendSMS`/`sendAndLogSMS` call sites. Default from `+18443781444`. |
-| Payroll hours reminder | `supabase/functions/payroll-hours-reminder-sms/index.ts` | Thu/Fri/Sat 8 AM Central. Default from `+18443781444`. Kill switch `app_settings.payroll_reminder_sms_config`. |
-| Admin mass SMS | `supabase/functions/send-mass-sms/index.ts` | Admin JWT; dry-run by default; 15-min cooldown; batches of 500. Default `from` is `""` (unset). |
+| Safety briefing escalation (Tier 1/2) | `supabase/functions/safety-briefing-escalation-sms/index.ts` | Mon–Fri 16:00 UTC. Four `sendSMS(` call sites (~L525, L582, L836, L894). Default from `+18443781444`. |
+| Payroll hours reminder | `supabase/functions/payroll-hours-reminder-sms/index.ts` | Thu/Fri/Sat 8 AM Central, two UTC cron slots + wall-clock guard. Default from `+18443781444`. Kill switch `app_settings.payroll_reminder_sms_config`. |
+| Admin mass SMS | `supabase/functions/send-mass-sms/index.ts` | Admin JWT; dry-run by default; 15-min cooldown; batches of 500. **Default `from` is `""` (unset)**, unlike the other three. |
 | Cron inventory | `docs/cron-jobs-inventory.md`, `scripts/deploy-cron-auth.sh` | All HTTP cron jobs need the service-role Bearer injected. |
 | Read-only ClickSend audit | `scripts/clicksend-audit.sh` | GET only. Output gitignored as `docs/sms-upgrade/clicksend-audit-*.json`. |
 
-### Logging
+### Logging (fragmented — this is what gets unified)
 | Table | Created by | Shape |
 |---|---|---|
-| `sms_message_log` | `20260902200000_sms_message_log.sql` | One row per recipient per send (Chunk 1). |
-| `sms_message_log_compat` | same migration | View: new table UNION ALL unnested legacy rows with no matching `run_id`. |
-| `sms_escalation_send_log` | `20260310000005_…`, extended by `20260310120000_…` and `20260310130000_…` | One row per run per tier. |
-| `mass_sms_log` | `20260320120000_sms_opt_out_and_mass_sms_log.sql` | One row per blast. **No per-recipient rows.** |
+| `sms_escalation_send_log` | `20260310000005_…`, extended by `20260310130000_…` | One row per run per tier: `date_checked`, `tier`, `recipient_count`, `total_price`, `results` (jsonb per-recipient status), `orphaned_user_ids`, `suppression_log`. |
+| `mass_sms_log` | `20260320120000_sms_opt_out_and_mass_sms_log.sql` | One row per blast: `admin_user_id`, `message_preview`, `sent_count`, `failed_count`, `total_price`, `status`, `batch_details`. **No per-recipient rows.** |
 | `payroll_reminder_sms_log` | `20260521120000_payroll_hours_reminder_sms.sql` | One row per (date, tier) slot; RPC `claim_payroll_reminder_sms_log(date, tier)`. |
 | `payroll_sms_cron_monitoring` | `20260521130000_…` | Cron run monitoring. |
-| Schema snapshot | `supabase/.localgate/prod_schema.sql` | Confirm exact current columns before writing SQL. |
+| Schema snapshot | `supabase/.localgate/prod_schema.sql` | Use this to confirm exact current columns before writing SQL. |
 
 ### Opt-out / consent state
 | Field | Added by | Meaning |
 |---|---|---|
 | `app_users.sms_marketing_opt_out` | `20260320120000_…` | Excluded from admin mass SMS. |
-| `app_users.sms_operational_opt_out` | `20260521120000_…` | Honored by payroll. Reminder + escalation do **not** read it (do not change in Chunk 1). |
-| `app_users.phone_number` | `20260308100000_…`; normalized `20260310130003_…`; backfilled `20260320120001_…` | No consent record exists. |
-| Escalation static recipients | `sms_escalation_recipients` (tier 2) | E.164, `is_active`. No `user_id`. |
+| `app_users.sms_operational_opt_out` | `20260521120000_…` | Excluded from payroll (and should be honored by all operational sends — verify each function reads it). |
+| `app_users.phone_number` | `20260308100000_…`; normalized `20260310130003_…`; **backfilled from `auth.users` by `20260320120001_backfill_app_users_phone_from_auth.sql`** | No consent record exists anywhere. |
+| Escalation static recipients | `sms_escalation_recipients` (tier 2) | E.164, `is_active`. |
 
 ## Chunk list
 
