@@ -162,10 +162,10 @@ export default function ResourceDocView() {
 
         {/* Page header */}
         <header>
-          <p className="text-xs font-medium uppercase tracking-wider text-emerald-400/80 mb-1">
+          <p className="text-xs font-medium uppercase text-emerald-400/80 mb-1 font-mono font-medium tracking-[0.14em]">
             {config.sectionTitle}
           </p>
-          <h1 className="text-2xl font-bold text-white">{entry.title}</h1>
+          <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">{entry.title}</h1>
         </header>
 
         {/* Content card */}

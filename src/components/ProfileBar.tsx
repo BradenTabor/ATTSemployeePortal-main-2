@@ -21,32 +21,32 @@ const themeStyles: Record<ProfileBarTheme, {
   roleText: string;
 }> = {
   emerald: {
-    container: "border-white/10 bg-[#03150f]/80",
+    container: "border-white/10 bg-[#0B100D]/80",
     label: "text-emerald-200/70",
     roleText: "text-white/60",
   },
   gold: {
-    container: "border-[#f6dcb2]/20 bg-[#14110d]/80",
-    label: "text-[#f8dfb3]/70",
-    roleText: "text-[#f8e5bb]/60",
+    container: "border-[#E4EAE1]/20 bg-[#0B100D]/80",
+    label: "text-[#ECFFAE]/70",
+    roleText: "text-[#E4EAE1]/60",
   },
   ember: {
-    container: "border-[#ff9350]/20 bg-[#140804]/80",
-    label: "text-[#ffb48a]/70",
+    container: "border-[#B8FF7A]/20 bg-[#0B100D]/80",
+    label: "text-[#D2FFA3]/70",
     roleText: "text-white/60",
   },
   purple: {
-    container: "border-[#c084fc]/20 bg-[#2d1b4e]/60",
-    label: "text-[#e9d5ff]/70",
+    container: "border-[#5EE898]/20 bg-[#12482A]/60",
+    label: "text-[#C8FFD4]/70",
     roleText: "text-white/60",
   },
   redwhite: {
-    container: "border-[#fecaca]/25 bg-[#450a0a]/60",
+    container: "border-[#fecaca]/25 bg-[#1E2A23]/60",
     label: "text-[#fef2f2]/70",
     roleText: "text-white/60",
   },
   bluewhite: {
-    container: "border-blue-500/25 bg-[#0a1628]/60",
+    container: "border-blue-500/25 bg-[#0A2A19]/60",
     label: "text-blue-200/70",
     roleText: "text-white/60",
   },
@@ -62,7 +62,7 @@ const ProfileBar = memo(function ProfileBar({
   const styles = themeStyles[theme];
 
   return (
-    <div className={`rounded-2xl border p-4 sm:p-5 ${styles.container}`}>
+    <div className={`rounded-leaf-sm border p-4 sm:p-5 ${styles.container}`}>
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="min-w-0 flex-1">
           <p className={`text-[10px] sm:text-xs uppercase tracking-[0.35em] ${styles.label}`}>

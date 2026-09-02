@@ -85,7 +85,7 @@ export default function StandaloneFieldNotes() {
 
   return (
     <section
-      className="rounded-2xl border border-white/[0.07] bg-white/[0.02] overflow-hidden"
+      className="rounded-leaf-sm border border-white/[0.07] bg-white/[0.02] overflow-hidden"
       data-testid="field-audit-standalone-notes"
     >
       <button
@@ -169,7 +169,7 @@ export default function StandaloneFieldNotes() {
 
               {notesSubject && (
                 <div className="rounded-xl border border-white/[0.06] bg-white/[0.01] p-2.5">
-                  <p className="px-1 pb-1.5 text-[10px] uppercase tracking-widest text-rose-200/50">
+                  <p className="px-1 pb-1.5 text-[10px] uppercase text-rose-200/50 font-mono font-medium tracking-[0.14em]">
                     Recent notes
                   </p>
                   <RecentNotesStrip subject={notesSubject} />

@@ -74,7 +74,7 @@ export function useUserPreferences() {
           .from('user_preferences')
           .select('*')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
         if (fetchError) {
           // If no record exists, use defaults (not an error)

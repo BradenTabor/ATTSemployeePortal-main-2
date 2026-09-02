@@ -3,6 +3,7 @@
  */
 export { GamificationAnalyticsSection } from './GamificationAnalyticsSection';
 export { GamificationProgramAdminSection } from './GamificationProgramAdminSection';
+export { SectionInfo, type SectionInfoTone } from './SectionInfo';
 
 // Types
 export * from "./types";

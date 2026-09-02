@@ -74,7 +74,7 @@ export function FloatingPanelTrigger({
       ref={triggerRef}
       layoutId={`floating-panel-trigger-${uniqueId}`}
       className={cn(
-        "flex h-9 items-center border border-emerald-500/30 bg-[#041812] px-3 text-emerald-100",
+        "flex h-9 items-center border border-emerald-500/30 bg-[#0B100D] px-3 text-emerald-100",
         className
       )}
       style={{ borderRadius: 8 }}
@@ -219,9 +219,9 @@ export function FloatingPanelContent({
             className={cn(
               "fixed z-[9999] overflow-hidden max-h-[80vh] flex flex-col",
               // Premium glass morphism with emerald theme
-              "bg-gradient-to-br from-[#04150f]/98 via-[#041812]/95 to-[#03120c]/98",
+              "bg-gradient-to-br from-[#0B100D]/98 via-[#0B100D]/95 to-[#0B100D]/98",
               "border border-emerald-500",
-              "shadow-[0_0_25px_4px_rgba(245,244,244,0.35),0_0_60px_-12px_rgba(16,185,129,0.4)]",
+              "shadow-[0_0_25px_4px_rgba(244,247,242,0.35),0_0_60px_-12px_rgba(47,164,90,0.4)]",
               "backdrop-blur-xl",
               // Ensure panel content can be scrolled
               "overscroll-contain",
@@ -263,7 +263,7 @@ function FloatingPanelTitle({ children }: FloatingPanelTitleProps) {
   return (
     <motion.div
       layoutId={`floating-panel-label-container-${uniqueId}`}
-      className="px-5 py-4 border-b border-emerald-500/20 bg-gradient-to-r from-emerald-500/5 to-transparent shadow-[0_0_25px_4px_rgba(15,15,15,0.35)]"
+      className="px-5 py-4 border-b border-emerald-500/20 bg-gradient-to-r from-emerald-500/5 to-transparent shadow-[0_0_25px_4px_rgba(11,16,13,0.35)]"
     >
       <motion.div
         layoutId={`floating-panel-label-${uniqueId}`}

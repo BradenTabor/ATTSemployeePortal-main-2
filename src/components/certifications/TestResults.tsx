@@ -78,9 +78,9 @@ function ProgressRing({
       <svg width={size} height={size} className="transform -rotate-90">
         <defs>
           <linearGradient id="progressGradientPass" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#34d399" />
-            <stop offset="50%" stopColor="#10b981" />
-            <stop offset="100%" stopColor="#059669" />
+            <stop offset="0%" stopColor="#5EE898" />
+            <stop offset="50%" stopColor="#3DDC84" />
+            <stop offset="100%" stopColor="#2FA45A" />
           </linearGradient>
           <linearGradient id="progressGradientFail" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#f87171" />
@@ -88,9 +88,9 @@ function ProgressRing({
             <stop offset="100%" stopColor="#dc2626" />
           </linearGradient>
           <linearGradient id="progressGradientPending" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#93c5fd" />
-            <stop offset="50%" stopColor="#60a5fa" />
-            <stop offset="100%" stopColor="#3b82f6" />
+            <stop offset="0%" stopColor="#C8FFD4" />
+            <stop offset="50%" stopColor="#C8FFD4" />
+            <stop offset="100%" stopColor="#8DF5A8" />
           </linearGradient>
         </defs>
         <circle
@@ -113,7 +113,7 @@ function ProgressRing({
           initial={{ strokeDashoffset: circumference }}
           animate={{ strokeDashoffset: offset }}
           transition={{ duration: 1.5, delay: 0.3, ease: EASE_OUT_EXPO }}
-          style={{ filter: 'drop-shadow(0 0 8px rgba(16, 185, 129, 0.3))' }}
+          style={{ filter: 'drop-shadow(0 0 8px rgba(47,164,90, 0.3))' }}
         />
       </svg>
     </div>
@@ -148,7 +148,7 @@ function AnimatedCounter({ value, suffix = "", delay = 0.5 }: { value: number; s
   return <>{displayValue.toFixed(1)}{suffix}</>;
 }
 
-const CONFETTI_COLORS = ['#34d399', '#10b981', '#fbbf24', '#60a5fa', '#a78bfa', '#f472b6'];
+const CONFETTI_COLORS = ['#5EE898', '#3DDC84', '#B8FF7A', '#C8FFD4', '#3DDC84', '#7FE0B0'];
 
 export function TestResults({ result, certName }: TestResultsProps) {
   const isPendingReview = result.pending_review_count > 0;
@@ -225,7 +225,7 @@ export function TestResults({ result, certName }: TestResultsProps) {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="relative mx-auto max-w-md overflow-hidden rounded-2xl border border-blue-500/20 bg-gray-900 p-6 sm:p-8 text-center shadow-2xl shadow-black/30"
+        className="relative mx-auto max-w-md overflow-hidden rounded-leaf-sm border border-blue-500/20 bg-gray-900 p-6 sm:p-8 text-center shadow-2xl shadow-black/30"
       >
         {/* Decorative glow */}
         <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
@@ -261,7 +261,7 @@ export function TestResults({ result, certName }: TestResultsProps) {
             transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
           >
             <Clock className="w-3.5 h-3.5 text-blue-300" strokeWidth={1.5} />
-            <span className="text-xs font-medium text-blue-200 uppercase tracking-wider">Pending Review</span>
+            <span className="text-xs font-medium text-blue-200 uppercase font-mono font-medium tracking-[0.14em]">Pending Review</span>
           </motion.div>
         </motion.div>
 
@@ -290,7 +290,7 @@ export function TestResults({ result, certName }: TestResultsProps) {
           className="rounded-xl border border-white/10 bg-gray-800/60 px-4 py-4 shadow-md shadow-black/20 mb-6"
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs uppercase tracking-wider text-white/50 font-medium">Auto-Graded Questions</span>
+            <span className="text-xs uppercase text-white/50 font-medium font-mono font-medium tracking-[0.14em]">Auto-Graded Questions</span>
             <span className="text-xs text-emerald-400 font-medium">
               {result.correct_answers}/{autoGradedTotal}
             </span>
@@ -335,9 +335,9 @@ export function TestResults({ result, certName }: TestResultsProps) {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="relative mx-auto max-w-md overflow-hidden rounded-2xl border bg-gray-900 p-6 sm:p-8 text-center shadow-2xl shadow-black/30"
+      className="relative mx-auto max-w-md overflow-hidden rounded-leaf-sm border bg-gray-900 p-6 sm:p-8 text-center shadow-2xl shadow-black/30"
       style={{
-        borderColor: passed ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)',
+        borderColor: passed ? 'rgba(47,164,90, 0.25)' : 'rgba(239,68,68, 0.25)',
       }}
     >
       {/* Confetti explosion for passing */}
@@ -359,13 +359,13 @@ export function TestResults({ result, certName }: TestResultsProps) {
       {/* Decorative glows */}
       <motion.div
         className="absolute -top-20 -right-20 w-40 h-40 rounded-full blur-3xl pointer-events-none"
-        style={{ background: passed ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.12)' }}
+        style={{ background: passed ? 'rgba(47,164,90, 0.15)' : 'rgba(239,68,68, 0.12)' }}
         animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
         className="absolute -bottom-20 -left-20 w-40 h-40 rounded-full blur-3xl pointer-events-none"
-        style={{ background: passed ? 'rgba(52, 211, 153, 0.1)' : 'rgba(248, 113, 113, 0.08)' }}
+        style={{ background: passed ? 'rgba(61,220,132, 0.1)' : 'rgba(248,113,113, 0.08)' }}
         animate={{ scale: [1, 1.3, 1], opacity: [0.2, 0.4, 0.2] }}
         transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
       />
@@ -376,8 +376,8 @@ export function TestResults({ result, certName }: TestResultsProps) {
           className="h-full w-1/3"
           style={{
             background: passed
-              ? 'linear-gradient(90deg, transparent, rgba(52, 211, 153, 0.4), transparent)'
-              : 'linear-gradient(90deg, transparent, rgba(248, 113, 113, 0.4), transparent)'
+              ? 'linear-gradient(90deg, transparent, rgba(61,220,132, 0.4), transparent)'
+              : 'linear-gradient(90deg, transparent, rgba(248,113,113, 0.4), transparent)'
           }}
           animate={{ x: ['-100%', '400%'] }}
           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", repeatDelay: 1 }}
@@ -396,7 +396,7 @@ export function TestResults({ result, certName }: TestResultsProps) {
             <span className="text-3xl sm:text-4xl font-black text-white">
               <AnimatedCounter value={result.score_percentage} suffix="%" delay={0.8} />
             </span>
-            <span className="text-[10px] uppercase tracking-wider text-white/60 font-medium">Score</span>
+            <span className="text-[10px] uppercase text-white/60 font-medium font-mono font-medium tracking-[0.14em]">Score</span>
           </motion.div>
         </div>
       </motion.div>
@@ -440,11 +440,11 @@ export function TestResults({ result, certName }: TestResultsProps) {
         <div className="grid grid-cols-2 gap-4">
           <div className="text-center">
             <p className="text-2xl font-bold text-white">{result.correct_answers}</p>
-            <p className="text-xs text-white/60 uppercase tracking-wider font-medium">Correct</p>
+            <p className="text-xs text-white/60 uppercase font-medium font-mono font-medium tracking-[0.14em]">Correct</p>
           </div>
           <div className="text-center">
             <p className="text-2xl font-bold text-white">{result.total_questions}</p>
-            <p className="text-xs text-white/60 uppercase tracking-wider font-medium">Total</p>
+            <p className="text-xs text-white/60 uppercase font-medium font-mono font-medium tracking-[0.14em]">Total</p>
           </div>
         </div>
       </motion.div>

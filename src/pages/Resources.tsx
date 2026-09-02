@@ -207,17 +207,17 @@ export default function Resources() {
           custom={0}
         >
           <div
-            className="pointer-events-none absolute -inset-x-12 -top-16 bottom-0"
+            className="pointer-events-none absolute inset-x-0 -top-16 bottom-0"
             aria-hidden
             style={{
               background:
-                "radial-gradient(ellipse 60% 80% at 50% 0%, rgba(16,185,129,0.07) 0%, transparent 70%)",
+                "radial-gradient(ellipse 60% 80% at 50% 0%, rgba(47,164,90,0.07) 0%, transparent 70%)",
             }}
           />
-          <p className="relative text-xs font-medium uppercase tracking-wider text-emerald-400/80">
+          <p className="relative text-xs font-medium uppercase text-emerald-400/80 font-mono font-medium tracking-[0.14em]">
             Company Resources
           </p>
-          <h1 className="relative text-2xl font-bold text-white mt-1">
+          <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)] relative mt-1">
             Resources
           </h1>
           <p className="relative text-sm text-white/60 mt-1">
@@ -227,7 +227,7 @@ export default function Resources() {
 
         {/* ─── In Case of Emergency ────────────────────────────────── */}
         <motion.section
-          className="relative overflow-hidden rounded-2xl border border-red-500/30 bg-gradient-to-br from-red-950/90 to-red-950/70 p-4 sm:p-6 shadow-lg shadow-black/25 emergency-glow-pulse before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-red-400/10 before:to-transparent before:pointer-events-none"
+          className="relative overflow-hidden rounded-leaf-sm border border-red-500/30 bg-gradient-to-br from-red-950/90 to-red-950/70 p-4 sm:p-6 shadow-lg shadow-black/25 emergency-glow-pulse before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-red-400/10 before:to-transparent before:pointer-events-none"
           variants={sectionVariants}
           initial={motionInitial}
           animate="visible"
@@ -236,8 +236,11 @@ export default function Resources() {
           <div className="flex items-center gap-3 mb-2">
             <div className="flex items-center justify-center w-20 h-20 shrink-0">
               <img
-                src="/assets/emergency-action-plan.webp"
+                src="/assets/emergency-action-plan-sm.webp"
                 loading="lazy"
+                decoding="async"
+                width={240}
+                height={131}
                 alt=""
                 className="w-full h-full object-contain"
                 aria-hidden
@@ -263,9 +266,9 @@ export default function Resources() {
           <motion.button
             type="button"
             onClick={() => setPowerSafeOverlayOpen(true)}
-            className="group relative flex items-center justify-center gap-2 sm:gap-3 py-3 px-5 sm:py-4 sm:px-8 rounded-xl sm:rounded-2xl text-white font-bold text-base sm:text-lg shadow-xl sm:shadow-2xl transition-all duration-300 hover:scale-[1.02] sm:hover:scale-[1.03] hover:shadow-[0_15px_40px_-10px_rgba(139,92,246,0.5)] focus-visible:outline focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#010604] min-h-[48px] sm:min-h-[56px] overflow-hidden"
+            className="group relative flex items-center justify-center gap-2 sm:gap-3 py-3 px-5 sm:py-4 sm:px-8 rounded-xl sm:rounded-leaf-sm text-white font-bold text-base sm:text-lg shadow-xl sm:shadow-2xl transition-all duration-300 hover:scale-[1.02] sm:hover:scale-[1.03] hover:shadow-[0_15px_40px_-10px_rgba(125,205,162,0.5)] focus-visible:outline focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#040605] min-h-[48px] sm:min-h-[56px] overflow-hidden"
             style={{
-              background: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 25%, #ec4899 50%, #3b82f6 75%, #7c3aed 100%)',
+              background: 'linear-gradient(135deg, #1F7A44 0%, #2FA45A 25%, #4CCB8F 50%, #8DF5A8 75%, #1F7A44 100%)',
               backgroundSize: '200% 200%',
               animation: prefersReducedMotion ? 'none' : 'pulse-gradient 4s ease-in-out infinite',
             }}
@@ -298,7 +301,7 @@ export default function Resources() {
           ) : (
             <>
               <div className="mb-3 sm:mb-4">
-                <p className="text-xs font-medium uppercase tracking-wider text-emerald-400/80 mb-1">Certifications</p>
+                <p className="text-xs font-medium uppercase text-emerald-400/80 mb-1 font-mono font-medium tracking-[0.14em]">Certifications</p>
                 <h2 className="text-lg font-semibold text-white">Take Tests &amp; Track Status</h2>
               </div>
               {renderCertificationsContent()}
@@ -314,7 +317,7 @@ export default function Resources() {
           custom={3}
         >
           <div className="mb-3 sm:mb-4">
-            <p className="text-xs font-medium uppercase tracking-wider text-emerald-400/80 mb-1">Training Materials</p>
+            <p className="text-xs font-medium uppercase text-emerald-400/80 mb-1 font-mono font-medium tracking-[0.14em]">Training Materials</p>
             <h2 className="text-lg font-semibold text-white">Reference Docs &amp; Study Guides</h2>
           </div>
           {visibleTrainingEntries.length > 0 ? (
@@ -345,7 +348,7 @@ export default function Resources() {
           custom={4}
         >
           <div className="mb-3 sm:mb-4">
-            <p className="text-xs font-medium uppercase tracking-wider text-emerald-400/80 mb-1">Safety Resources</p>
+            <p className="text-xs font-medium uppercase text-emerald-400/80 mb-1 font-mono font-medium tracking-[0.14em]">Safety Resources</p>
             <h2 className="text-lg font-semibold text-white">Quick Reference &amp; Guidelines</h2>
           </div>
           {SAFETY_ENTRIES.length > 0 ? (

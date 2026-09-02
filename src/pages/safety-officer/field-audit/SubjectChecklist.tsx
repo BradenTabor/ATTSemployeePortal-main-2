@@ -1,10 +1,12 @@
 /**
- * SubjectChecklist — per-subject Pass/Fail/NA checklist with live upsert (Chunk 3).
+ * SubjectChecklist — scoped Pass/Fail/NA checklist with live upsert (Chunk 3).
  *
- * Renders the seeded items applicable to this subject (by subject_scope +
- * equipment_types containment) plus any ad-hoc "+ Add item" rows. Each change
+ * Renders against a `ChecklistScope`: one subject (seeded items by subject_scope
+ * + equipment_types containment) or the audit itself (site-scoped items, stored
+ * with a NULL subject id), plus any ad-hoc "+ Add item" rows. Each change
  * upserts live to the server (D1): the result persists immediately, the note
- * persists on blur, and a photo uploads at save time. A failed photo upload
+ * autosaves after a typing pause (and on blur), and a photo uploads at save
+ * time. A failed photo upload
  * never blocks recording the finding — the row saves without the photo and is
  * flagged for retry (DVIR/Equipment in-memory-photo pattern; not draft-persisted).
  */
@@ -16,13 +18,18 @@ import { validators } from "../../../lib/formValidation";
 import {
   RESULT_TO_TRI,
   TRI_TO_RESULT,
+  checklistItemsForSite,
   checklistItemsForSubject,
   type AuditChecklistItem,
+  type ChecklistScope,
   type FieldAuditItem,
-  type FieldAuditSubject,
+  type FindingSubjectType,
   type TriValue,
 } from "../fieldAuditConstants";
 import type { SaveItemInput } from "../../../hooks/fieldAudit";
+
+/** Idle delay before a finding note is persisted while the field still has focus. */
+const NOTE_AUTOSAVE_MS = 600;
 
 interface RowDraft {
   value: TriValue;
@@ -69,8 +76,9 @@ function draftFromItem(it: FieldAuditItem): RowDraft {
 
 interface SubjectChecklistProps {
   auditId: string;
-  subject: FieldAuditSubject;
+  scope: ChecklistScope;
   configItems: AuditChecklistItem[];
+  /** Items already bound to this scope (subject rows, or NULL-subject site rows). */
   subjectItems: FieldAuditItem[];
   itemsLoading: boolean;
   saveItem: (input: SaveItemInput) => Promise<FieldAuditItem>;
@@ -82,7 +90,7 @@ interface SubjectChecklistProps {
 
 export default function SubjectChecklist({
   auditId,
-  subject,
+  scope,
   configItems,
   subjectItems,
   itemsLoading,
@@ -92,8 +100,15 @@ export default function SubjectChecklist({
   deletePhoto,
   getSignedUrl,
 }: SubjectChecklistProps) {
+  const subject = scope.kind === "subject" ? scope.subject : null;
+  const subjectId = subject?.id ?? null;
+  const findingSubjectType: FindingSubjectType = subject?.subject_type ?? "site";
+
   const seededItems = useMemo(
-    () => checklistItemsForSubject(configItems, subject),
+    () =>
+      subject
+        ? checklistItemsForSubject(configItems, subject)
+        : checklistItemsForSite(configItems),
     [configItems, subject],
   );
 
@@ -171,7 +186,7 @@ export default function SubjectChecklist({
 
         try {
           const saved = await saveItem({
-            subjectId: subject.id,
+            subjectId,
             checklistItemId,
             customLabel: isAdHoc ? draft.customLabel.trim() : null,
             result: TRI_TO_RESULT[draft.value as Exclude<TriValue, "">],
@@ -179,11 +194,20 @@ export default function SubjectChecklist({
             photoPath: photoPath ?? null,
             existingItemId: draft.itemId,
           });
+          // A photo picked while this save was in flight is still pending and
+          // belongs to the chained save — only clear the one we just uploaded.
+          const latest = rowsRef.current[key];
+          const uploadedThis =
+            draft.pendingPhoto !== null && latest?.pendingPhoto === draft.pendingPhoto;
           mergeRow(key, {
             itemId: saved.id,
             photoPath: saved.photo_path,
-            pendingPhoto: photoRetry ? draft.pendingPhoto : null,
-            photoRetry,
+            pendingPhoto: uploadedThis
+              ? photoRetry
+                ? draft.pendingPhoto
+                : null
+              : (latest?.pendingPhoto ?? null),
+            photoRetry: uploadedThis ? photoRetry : (latest?.photoRetry ?? false),
             saving: false,
             error: null,
           });
@@ -203,7 +227,7 @@ export default function SubjectChecklist({
       saveChainRef.current[key] = next;
       return next;
     },
-    [auditId, mergeRow, saveItem, subject.id, uploadPhoto],
+    [auditId, mergeRow, saveItem, subjectId, uploadPhoto],
   );
 
   // ── Row handlers ──────────────────────────────────────────────────────────
@@ -215,15 +239,34 @@ export default function SubjectChecklist({
     [mergeRow, persistDraft],
   );
 
+  // Notes autosave shortly after typing pauses (and flush on blur) so the
+  // Review panel's readiness reflects the note without waiting for focus to
+  // leave the field — on a phone the next tap is often "Submit".
+  const noteTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  useEffect(() => {
+    const timers = noteTimersRef.current;
+    return () => {
+      for (const t of Object.values(timers)) clearTimeout(t);
+    };
+  }, []);
+
   const handleNoteChange = useCallback(
-    (key: string, s: string) => {
-      mergeRow(key, { note: s });
+    (key: string, checklistItemId: string | null, s: string) => {
+      const merged = mergeRow(key, { note: s });
+      clearTimeout(noteTimersRef.current[key]);
+      if (merged.value === "") return;
+      noteTimersRef.current[key] = setTimeout(() => {
+        delete noteTimersRef.current[key];
+        void persistDraft(key, checklistItemId);
+      }, NOTE_AUTOSAVE_MS);
     },
-    [mergeRow],
+    [mergeRow, persistDraft],
   );
 
   const handleNoteBlur = useCallback(
     (key: string, checklistItemId: string | null) => {
+      clearTimeout(noteTimersRef.current[key]);
+      delete noteTimersRef.current[key];
       const draft = rowsRef.current[key];
       if (draft && draft.value !== "") void persistDraft(key, checklistItemId);
     },
@@ -318,8 +361,9 @@ export default function SubjectChecklist({
     return (
       <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.01] px-3.5 py-4 text-center">
         <p className="text-xs text-white/40">
-          No standard checklist items for this subject. Use “+ Add item” to record
-          a finding.
+          {subject
+            ? "No standard checklist items for this subject. Use “+ Add item” to record a finding."
+            : "No site checks are configured. Use “+ Add item” to record a site finding."}
         </p>
         <AddItemButton onClick={handleAddAdHoc} className="mt-3" />
       </div>
@@ -329,7 +373,7 @@ export default function SubjectChecklist({
   return (
     <div className="space-y-2.5">
       <div className="flex items-center justify-between">
-        <p className="text-[11px] uppercase tracking-wide text-white/40">
+        <p className="text-[11px] uppercase text-white/40 font-mono font-medium tracking-[0.14em]">
           Checklist
         </p>
         <span className="text-[11px] font-mono tabular-nums text-white/35">
@@ -354,13 +398,13 @@ export default function SubjectChecklist({
             saving={draft.saving}
             error={draft.error}
             auditId={auditId}
-            subjectType={subject.subject_type}
+            subjectType={findingSubjectType}
             itemId={draft.itemId}
             correctiveActionId={draft.correctiveActionId}
             onEscalated={(caId) => mergeRow(key, { correctiveActionId: caId })}
             getSignedUrl={getSignedUrl}
             onValueChange={(v) => handleValue(key, item.id, v)}
-            onNoteChange={(s) => handleNoteChange(key, s)}
+            onNoteChange={(s) => handleNoteChange(key, item.id, s)}
             onNoteBlur={() => handleNoteBlur(key, item.id)}
             onPickPhoto={(file) => handlePickPhoto(key, item.id, file)}
             onRemovePhoto={() => handleRemovePhoto(key, item.id)}
@@ -385,13 +429,13 @@ export default function SubjectChecklist({
             saving={draft.saving}
             error={draft.error}
             auditId={auditId}
-            subjectType={subject.subject_type}
+            subjectType={findingSubjectType}
             itemId={draft.itemId}
             correctiveActionId={draft.correctiveActionId}
             onEscalated={(caId) => mergeRow(key, { correctiveActionId: caId })}
             getSignedUrl={getSignedUrl}
             onValueChange={(v) => handleValue(key, null, v)}
-            onNoteChange={(s) => handleNoteChange(key, s)}
+            onNoteChange={(s) => handleNoteChange(key, null, s)}
             onNoteBlur={() => handleNoteBlur(key, null)}
             onPickPhoto={(file) => handlePickPhoto(key, null, file)}
             onRemovePhoto={() => handleRemovePhoto(key, null)}

@@ -63,17 +63,17 @@ export default function Contact() {
             className="relative"
           >
             <div 
-              className="relative overflow-hidden rounded-2xl md:rounded-3xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
+              className="relative overflow-hidden rounded-leaf-sm md:rounded-leaf border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
               style={{
                 backdropFilter: 'blur(24px) saturate(180%)',
                 WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-                background: 'linear-gradient(145deg, rgba(4, 30, 21, 0.6) 0%, rgba(2, 15, 10, 0.5) 50%, rgba(1, 8, 5, 0.4) 100%)',
-                boxShadow: 'inset 0 0 15px rgba(125, 225, 180, 0.05), 0 8px 32px rgba(0,0,0,0.4)',
+                background: 'linear-gradient(145deg, rgba(11,16,13, 0.6) 0%, rgba(4,6,5, 0.5) 50%, rgba(4,6,5, 0.4) 100%)',
+                boxShadow: 'inset 0 0 15px rgba(94,232,152, 0.05), 0 8px 32px rgba(0,0,0,0.4)',
               }}
             >
               <div className="absolute inset-0 opacity-70 pointer-events-none" style={{ background: 'linear-gradient(125deg, rgba(255,255,255,0.15) 0%, transparent 30%, transparent 70%, rgba(255,255,255,0.05) 100%)' }} />
               <div className="absolute inset-0 opacity-50 pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 50%)' }} />
-              <div className="absolute top-0 left-0 w-24 h-24 rounded-full opacity-30 pointer-events-none" style={{ background: 'radial-gradient(circle at 50% 50%, rgba(125,225,180,0.3) 0%, transparent 70%)', filter: 'blur(15px)' }} />
+              <div className="absolute top-0 left-0 w-24 h-24 rounded-full opacity-30 pointer-events-none" style={{ background: 'radial-gradient(circle at 50% 50%, rgba(94,232,152,0.3) 0%, transparent 70%)', filter: 'blur(15px)' }} />
               <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-white/[0.15] to-transparent" />
               <div className="absolute top-0 bottom-0 left-0 w-[1px] bg-gradient-to-b from-transparent via-white/[0.1] to-transparent" />
               <div className="absolute top-0 bottom-0 right-0 w-[1px] bg-gradient-to-b from-transparent via-black/[0.1] to-transparent" />
@@ -83,22 +83,22 @@ export default function Contact() {
                 <div className="flex items-center gap-3 mb-3">
                   <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.2 }} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30">
                     <Headphones className="w-3.5 h-3.5 text-emerald-400" />
-                    <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-emerald-200">People & Support</span>
+                    <span className="text-[10px] uppercase text-emerald-200 font-mono font-medium tracking-[0.14em]">People & Support</span>
                   </motion.div>
-                  <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.3 }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#03150f]/60 border border-emerald-500/20">
+                  <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.3 }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0B100D]/60 border border-emerald-500/20">
                     <Clock4 className="w-3 h-3 text-emerald-400" />
-                    <span className="text-[9px] uppercase tracking-wider font-semibold text-emerald-200/70">7a–6p CT</span>
+                    <span className="text-[9px] uppercase text-emerald-200/70 font-mono font-medium tracking-[0.14em]">7a–6p CT</span>
                   </motion.div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <motion.div initial={{ scaleY: 0, opacity: 0 }} animate={{ scaleY: 1, opacity: 1 }} transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }} className="w-1 h-14 md:h-16 rounded-full bg-gradient-to-b from-emerald-400 via-emerald-500 to-emerald-600 origin-top flex-shrink-0" style={{ boxShadow: '0 0 20px rgba(16, 185, 129, 0.4), 0 0 40px rgba(16, 185, 129, 0.2)' }} />
+                  <motion.div initial={{ scaleY: 0, opacity: 0 }} animate={{ scaleY: 1, opacity: 1 }} transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }} className="w-1 h-14 md:h-16 rounded-full bg-gradient-to-b from-emerald-400 via-emerald-500 to-emerald-600 origin-top flex-shrink-0" style={{ boxShadow: '0 0 20px rgba(47,164,90, 0.4), 0 0 40px rgba(47,164,90, 0.2)' }} />
                   <div className="flex-1 min-w-0">
                     {enableAnimations ? (
-                      <TextEffect as="h1" preset="blurSlide" per="char" delay={0.15} className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight" segmentWrapperClassName="bg-gradient-to-r from-white via-emerald-100 to-white/90 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(125,225,180,0.3)]">
+                      <TextEffect as="h1" preset="blurSlide" per="char" delay={0.15} className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]" segmentWrapperClassName="text-glow">
                         Connect with ATTS leadership
                       </TextEffect>
                     ) : (
-                      <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight bg-gradient-to-r from-white via-emerald-100 to-white/90 bg-clip-text text-transparent">Connect with ATTS leadership</h1>
+                      <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">Connect with ATTS leadership</h1>
                     )}
                     <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.7 }} className="mt-1.5 md:mt-2 text-xs sm:text-sm text-emerald-200/50 font-medium leading-relaxed max-w-xl">
                       One touch to reach management, HR, or the safety desk
@@ -113,12 +113,12 @@ export default function Contact() {
         <div className="space-y-6 md:space-y-10">
           {/* Quick Access Support Bar */}
           <section 
-            className="rounded-2xl border border-white/15 bg-[#03150f]/85 p-4 sm:p-5"
-            style={{ boxShadow: '0px 4px 25px 8px rgba(0, 0, 0, 0.65)' }}
+            className="rounded-leaf-sm border border-white/15 bg-[#0B100D]/85 p-4 sm:p-5"
+            style={{ boxShadow: '0px 4px 25px 8px rgba(0,0,0, 0.65)' }}
           >
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div className="flex-1 min-w-0">
-                <p className="text-xs uppercase tracking-[0.35em] text-emerald-200/70 mb-1">
+                <p className="text-xs uppercase text-emerald-200/70 mb-1 font-mono font-medium tracking-[0.14em]">
                   Quick access
                 </p>
                 <p className="text-lg font-semibold text-white">
@@ -133,8 +133,8 @@ export default function Contact() {
                   href="mailto:shane@alltts.com"
                   className="inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-black transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 min-h-[44px]"
                   style={{
-                    background: 'radial-gradient(circle at 50% 50%, rgba(52, 211, 153, 1) 0%, rgba(5, 5, 5, 0.5) 100%)',
-                    boxShadow: '0px 10px 15px -0.54px rgba(16, 185, 129, 0.45), 0px 4px 6px -4px rgba(16, 185, 129, 0.3)'
+                    background: 'radial-gradient(circle at 50% 50%, rgba(61,220,132, 1) 0%, rgba(4,6,5, 0.5) 100%)',
+                    boxShadow: '0px 10px 15px -0.54px rgba(47,164,90, 0.45), 0px 4px 6px -4px rgba(47,164,90, 0.3)'
                   }}
                 >
                   <Mail className="w-4 h-4" />
@@ -144,24 +144,24 @@ export default function Contact() {
             </div>
           </section>
           <section 
-            className="rounded-3xl border border-white/10 bg-[#03150f]/80 p-6 backdrop-blur"
+            className="rounded-leaf border border-white/10 bg-[#0B100D]/80 p-6 backdrop-blur"
             style={{
-              background: 'linear-gradient(90deg, rgba(3, 21, 15, 0.8) 0%, rgba(16, 66, 42, 1) 100%)',
-              boxShadow: '0px 4px 25px 8px rgba(0, 0, 0, 0.85)'
+              background: 'linear-gradient(90deg, rgba(11,16,13, 0.8) 0%, rgba(18,72,42, 1) 100%)',
+              boxShadow: '0px 4px 25px 8px rgba(0,0,0, 0.85)'
             }}
           >
             <div className="grid gap-6 md:grid-cols-2">
               {CONTACT_CHANNELS.map((channel) => (
                 <article
                   key={channel.title}
-                  className="rounded-2xl border border-white/10 bg-black/30 p-5 text-white/90 hover:border-emerald-400/40 transition"
+                  className="rounded-leaf-sm border border-white/10 bg-black/30 p-5 text-white/90 hover:border-emerald-400/40 transition"
                   style={{
-                    boxShadow: '0px 4px 25px 20px rgba(0, 0, 0, 0.75)'
+                    boxShadow: '0px 4px 25px 20px rgba(0,0,0, 0.75)'
                   }}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.35em] text-emerald-200/70">
+                      <p className="text-xs uppercase text-emerald-200/70 font-mono font-medium tracking-[0.14em]">
                         {channel.owner}
                       </p>
                       <h3 className="text-xl font-semibold text-white">
@@ -291,10 +291,10 @@ function ContactForm({ userId, userEmail }: ContactFormProps) {
 
   return (
     <section 
-      className="rounded-3xl border border-white/10 bg-[#04150f]/85 p-6 space-y-6"
+      className="rounded-leaf border border-white/10 bg-[#0B100D]/85 p-6 space-y-6"
       style={{
-        background: 'linear-gradient(90deg, rgba(4, 21, 15, 0.85) 0%, rgba(16, 66, 42, 0.85) 100%)',
-        boxShadow: 'inset 0px 4px 35px 15px rgba(0, 0, 0, 0.85), 0px 4px 25px 8px rgba(0, 0, 0, 0.85)'
+        background: 'linear-gradient(90deg, rgba(11,16,13, 0.85) 0%, rgba(18,72,42, 0.85) 100%)',
+        boxShadow: 'inset 0px 4px 35px 15px rgba(0,0,0, 0.85), 0px 4px 25px 8px rgba(0,0,0, 0.85)'
       }}
     >
       <div>
@@ -326,7 +326,7 @@ function ContactForm({ userId, userEmail }: ContactFormProps) {
             name="name"
             value={form.name}
             onChange={handleChange}
-            className="w-full rounded-2xl border border-white/15 bg-black/40 px-4 py-3 text-base text-white placeholder:text-white/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
+            className="w-full rounded-leaf-sm border border-white/15 bg-black/40 px-4 py-3 text-base text-white placeholder:text-white/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
             placeholder="Jane Crewlead"
             aria-invalid={errors.name ? "true" : "false"}
             aria-describedby={errors.name ? "name-error" : undefined}
@@ -351,7 +351,7 @@ function ContactForm({ userId, userEmail }: ContactFormProps) {
             type="email"
             value={form.email}
             onChange={handleChange}
-            className="w-full rounded-2xl border border-white/15 bg-black/40 px-4 py-3 text-base text-white placeholder:text-white/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
+            className="w-full rounded-leaf-sm border border-white/15 bg-black/40 px-4 py-3 text-base text-white placeholder:text-white/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
             placeholder="name@alltts.com"
             aria-invalid={errors.email ? "true" : "false"}
             aria-describedby={errors.email ? "email-error" : undefined}
@@ -376,7 +376,7 @@ function ContactForm({ userId, userEmail }: ContactFormProps) {
               name="topic"
               value={form.topic}
               onChange={handleChange}
-              className="w-full rounded-2xl border border-white/15 bg-black/40 px-4 py-3 text-base text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
+              className="w-full rounded-leaf-sm border border-white/15 bg-black/40 px-4 py-3 text-base text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
             >
               <option value="general">General question</option>
               <option value="hr">Human Resources</option>
@@ -406,7 +406,7 @@ function ContactForm({ userId, userEmail }: ContactFormProps) {
             value={form.message}
             onChange={handleChange}
             rows={5}
-            className="w-full rounded-2xl border border-white/15 bg-black/40 px-4 py-3 text-base text-white placeholder:text-white/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
+            className="w-full rounded-leaf-sm border border-white/15 bg-black/40 px-4 py-3 text-base text-white placeholder:text-white/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
             placeholder="Share details so we can route your request."
             aria-invalid={errors.message ? "true" : "false"}
             aria-describedby={errors.message ? "message-error" : undefined}
@@ -423,9 +423,9 @@ function ContactForm({ userId, userEmail }: ContactFormProps) {
             type="submit"
             disabled={status === "loading"}
             aria-label={status === "loading" ? "Sending message" : status === "success" ? "Message sent" : status === "error" ? "Retry sending message" : "Send message"}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold text-[#02150d] shadow-lg shadow-emerald-500/40 transition hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-200"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-leaf-sm px-4 py-3 text-sm font-semibold text-[#0B100D] shadow-lg shadow-emerald-500/40 transition hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-200"
             style={{
-              background: 'linear-gradient(90deg, rgba(16, 66, 42, 0.85) 5%, rgba(52, 211, 153, 1) 50%, rgba(16, 66, 42, 1) 100%)'
+              background: 'linear-gradient(90deg, rgba(18,72,42, 0.85) 5%, rgba(61,220,132, 1) 50%, rgba(18,72,42, 1) 100%)'
             }}
           >
             {status === "loading" ? (
@@ -465,7 +465,7 @@ function generateConfettiPieces() {
 }
 
 function ConfettiBurst() {
-  const colors = ["#34d399", "#6ee7b7", "#bef264", "#fef3c7", "#bae6fd"];
+  const colors = ["#5EE898", "#8DF5A8", "#5EE898", "#F6FFE6", "#CFEEDB"];
   // Use useState with lazy initializer to generate pieces once per mount
   const [pieces] = useState(() => generateConfettiPieces());
 
@@ -517,10 +517,10 @@ function LazyMap() {
   return (
     <section
       ref={ref}
-      className="rounded-3xl border border-white/10 bg-[#03150f]/85 p-6 space-y-4"
+      className="rounded-leaf border border-white/10 bg-[#0B100D]/85 p-6 space-y-4"
       style={{
-        background: 'radial-gradient(circle at 50% 50%, rgba(3, 21, 15, 0.85) 60%, rgba(26, 102, 74, 1) 100%)',
-        boxShadow: 'inset 0px 4px 25px 15px rgba(0, 0, 0, 0.85), 0px 4px 25px 8px rgba(0, 0, 0, 0.85)'
+        background: 'radial-gradient(circle at 50% 50%, rgba(11,16,13, 0.85) 60%, rgba(31,122,68, 1) 100%)',
+        boxShadow: 'inset 0px 4px 25px 15px rgba(0,0,0, 0.85), 0px 4px 25px 8px rgba(0,0,0, 0.85)'
       }}
     >
       <div className="flex items-center gap-2">
@@ -528,7 +528,7 @@ function LazyMap() {
         <h3 className="text-lg font-bold text-white">HQ map</h3>
       </div>
       {visible ? (
-        <div className="h-72 w-full overflow-hidden rounded-2xl border border-white/15">
+        <div className="h-72 w-full overflow-hidden rounded-leaf-sm border border-white/15">
           <iframe
             title="ATTS HQ map"
             src="https://maps.google.com/maps?q=5399%20US-65%20Harrison%20AR%2072601&t=&z=13&ie=UTF8&iwloc=&output=embed"
@@ -537,7 +537,7 @@ function LazyMap() {
           />
         </div>
       ) : (
-        <div className="h-72 w-full rounded-2xl border border-white/15 bg-black/30 animate-pulse" />
+        <div className="h-72 w-full rounded-leaf-sm border border-white/15 bg-black/30 animate-pulse" />
       )}
       <p className="text-sm text-white/70">
         Tap “Directions” inside the map to open in your default navigation app.

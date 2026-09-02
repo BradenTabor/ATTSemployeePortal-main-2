@@ -68,7 +68,7 @@ export default function PendingDefectsWidget() {
             onClick={handleRefresh}
             disabled={refreshing}
             aria-label={refreshing ? "Retrying..." : "Retry loading defects"}
-            className="px-3 py-1.5 text-xs font-medium text-red-200 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition-colors disabled:opacity-50 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+            className="px-3 py-1.5 text-xs font-medium text-red-200 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition-colors disabled:opacity-50 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
           >
             {refreshing ? 'Retrying...' : 'Retry'}
           </button>
@@ -79,7 +79,7 @@ export default function PendingDefectsWidget() {
   
   if (loading) {
     return (
-      <div className="rounded-xl border border-orange-500/15 bg-[#1a0c08]/60 p-4 animate-pulse">
+      <div className="rounded-xl border border-orange-500/15 bg-[#132308]/60 p-4 animate-pulse">
         <div className="flex items-center gap-2 mb-3">
           <div className="w-8 h-8 rounded-lg bg-orange-500/20" />
           <div className="h-4 w-32 bg-white/10 rounded-full" />
@@ -120,8 +120,8 @@ export default function PendingDefectsWidget() {
       className={cn(
         "rounded-xl border p-4 transition-colors",
         hasCritical 
-          ? "border-red-500/30 bg-gradient-to-br from-red-900/20 to-[#1a0c08]"
-          : "border-orange-500/20 bg-gradient-to-br from-[#1a0c08] to-[#0f0705]"
+          ? "border-red-500/30 bg-gradient-to-br from-red-900/20 to-[#132308]"
+          : "border-orange-500/20 bg-gradient-to-br from-[#132308] to-[#0B100D]"
       )}
     >
       {/* Header */}
@@ -147,7 +147,7 @@ export default function PendingDefectsWidget() {
           onClick={handleRefresh}
           disabled={refreshing}
           aria-label={refreshing ? "Refreshing defects" : "Refresh pending defects"}
-          className="p-1.5 rounded-lg hover:bg-white/5 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-orange-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+          className="p-1.5 rounded-lg hover:bg-white/5 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-orange-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
         >
           <RefreshCw className={cn(
             "w-3.5 h-3.5 text-white/40 hover:text-white/60",
@@ -230,7 +230,7 @@ export default function PendingDefectsWidget() {
           type="button"
           onClick={() => navigate('/mechanic/equipment-logs')}
           aria-label={`View all ${summary.total} defects in equipment logs`}
-          className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors group focus-visible:outline focus-visible:ring-2 focus-visible:ring-orange-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+          className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors group focus-visible:outline focus-visible:ring-2 focus-visible:ring-orange-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
         >
           <span className="text-xs font-medium text-white/60 group-hover:text-white/80">
             View all {summary.total} defects

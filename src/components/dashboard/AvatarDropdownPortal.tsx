@@ -58,7 +58,7 @@ const themeConfig: Record<AvatarTheme, {
     gradient: 'from-emerald-400 via-emerald-500 to-emerald-700',
     ring: 'ring-emerald-400/30',
     online: 'bg-emerald-400',
-    menuBg: 'linear-gradient(145deg, rgba(4, 30, 21, 0.98) 0%, rgba(2, 15, 10, 0.99) 100%)',
+    menuBg: 'linear-gradient(145deg, rgba(11,16,13, 0.98) 0%, rgba(4,6,5, 0.99) 100%)',
     menuBorder: 'border-emerald-500/30',
     shine: 'via-emerald-400/50',
     accent: 'text-emerald-400',
@@ -69,7 +69,7 @@ const themeConfig: Record<AvatarTheme, {
     gradient: 'from-amber-300 via-yellow-400 to-amber-600',
     ring: 'ring-amber-400/30',
     online: 'bg-amber-400',
-    menuBg: 'linear-gradient(145deg, rgba(20, 17, 13, 0.98) 0%, rgba(10, 8, 6, 0.99) 100%)',
+    menuBg: 'linear-gradient(145deg, rgba(11,16,13, 0.98) 0%, rgba(4,6,5, 0.99) 100%)',
     menuBorder: 'border-amber-500/30',
     shine: 'via-amber-400/50',
     accent: 'text-amber-400',
@@ -80,7 +80,7 @@ const themeConfig: Record<AvatarTheme, {
     gradient: 'from-orange-400 via-orange-500 to-orange-700',
     ring: 'ring-orange-400/30',
     online: 'bg-orange-400',
-    menuBg: 'linear-gradient(145deg, rgba(20, 8, 4, 0.98) 0%, rgba(10, 4, 2, 0.99) 100%)',
+    menuBg: 'linear-gradient(145deg, rgba(11,16,13, 0.98) 0%, rgba(4,6,5, 0.99) 100%)',
     menuBorder: 'border-orange-500/30',
     shine: 'via-orange-400/50',
     accent: 'text-orange-400',
@@ -91,7 +91,7 @@ const themeConfig: Record<AvatarTheme, {
     gradient: 'from-purple-400 via-purple-500 to-purple-700',
     ring: 'ring-purple-400/30',
     online: 'bg-purple-400',
-    menuBg: 'linear-gradient(145deg, rgba(45, 27, 78, 0.98) 0%, rgba(20, 12, 35, 0.99) 100%)',
+    menuBg: 'linear-gradient(145deg, rgba(28,59,44, 0.98) 0%, rgba(18,26,21, 0.99) 100%)',
     menuBorder: 'border-purple-500/30',
     shine: 'via-purple-400/50',
     accent: 'text-purple-400',
@@ -102,7 +102,7 @@ const themeConfig: Record<AvatarTheme, {
     gradient: 'from-blue-400 via-blue-500 to-blue-700',
     ring: 'ring-blue-400/30',
     online: 'bg-blue-400',
-    menuBg: 'linear-gradient(145deg, rgba(10, 22, 40, 0.98) 0%, rgba(5, 11, 20, 0.99) 100%)',
+    menuBg: 'linear-gradient(145deg, rgba(18,26,21, 0.98) 0%, rgba(11,16,13, 0.99) 100%)',
     menuBorder: 'border-blue-500/30',
     shine: 'via-blue-400/50',
     accent: 'text-blue-400',
@@ -113,7 +113,7 @@ const themeConfig: Record<AvatarTheme, {
     gradient: 'from-red-400 via-red-500 to-red-700',
     ring: 'ring-red-400/30',
     online: 'bg-red-400',
-    menuBg: 'linear-gradient(145deg, rgba(69, 10, 10, 0.98) 0%, rgba(30, 5, 5, 0.99) 100%)',
+    menuBg: 'linear-gradient(145deg, rgba(30,42,35, 0.98) 0%, rgba(11,16,13, 0.99) 100%)',
     menuBorder: 'border-red-400/30',
     shine: 'via-red-400/50',
     accent: 'text-red-400',
@@ -230,7 +230,7 @@ function AvatarDropdownPortalComponent({
         whileHover={caps.prefersReducedMotion ? undefined : { scale: 1.02 }}
         whileTap={caps.prefersReducedMotion ? undefined : { scale: 0.97 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 p-2 -m-1 rounded-2xl hover:bg-white/5 active:bg-white/10 transition-colors touch-manipulation min-w-[48px] min-h-[48px]"
+        className="flex items-center gap-2 p-2 -m-1 rounded-leaf-sm hover:bg-white/5 active:bg-white/10 transition-colors touch-manipulation min-w-[48px] min-h-[48px]"
         aria-label="Open profile menu"
         aria-expanded={isOpen}
         aria-haspopup="menu"
@@ -281,7 +281,7 @@ function AvatarDropdownPortalComponent({
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -10, scale: 0.95 }}
                 transition={{ duration: 0.15 }}
-                className={`fixed w-64 max-w-[calc(100vw-2rem)] rounded-2xl border ${colors.menuBorder} shadow-2xl shadow-black/50 z-[9999] overflow-hidden`}
+                className={`fixed w-64 max-w-[calc(100vw-2rem)] rounded-leaf-sm border ${colors.menuBorder} shadow-2xl shadow-black/50 z-[9999] overflow-hidden`}
                 style={{
                   top: menuPosition.top,
                   ...(menuPosition.left !== undefined 

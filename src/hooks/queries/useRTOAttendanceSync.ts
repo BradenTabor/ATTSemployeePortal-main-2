@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabaseClient';
+import { getAuthUserFast } from '../../lib/authUser';
 import { queryKeys } from '../../lib/queryKeys';
 import { getWeekStartString } from '../../lib/dateUtils';
 
@@ -38,7 +39,7 @@ export function useRTOAttendanceSync(currentDate: string) {
       const missing = approvedRTOs.filter((r) => !existingSet.has(r.user_id));
       if (!missing.length) return;
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getAuthUserFast();
       if (!user?.id) return;
 
       await supabase.from('daily_attendance').upsert(

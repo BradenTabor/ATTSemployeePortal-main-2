@@ -21,7 +21,7 @@ export const ShineBorder = memo(function ShineBorder({
   borderRadius = 16,
   borderWidth = 1,
   duration = 14,
-  color = '#10b981',
+  color = '#3DDC84',
   className,
   children,
 }: ShineBorderProps) {

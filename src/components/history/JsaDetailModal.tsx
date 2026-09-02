@@ -101,7 +101,7 @@ function SectionHeader({
   return (
     <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/[0.06]">
       <Icon className={`w-4 h-4 ${accent}`} />
-      <h3 className="text-xs uppercase tracking-wider text-white/50 font-semibold">
+      <h3 className="text-xs uppercase text-white/50 font-mono font-medium tracking-[0.14em]">
         {label}
       </h3>
       {count != null && (
@@ -349,7 +349,7 @@ export const JsaDetailModal = memo(function JsaDetailModal({
             ? { duration: 0.2 }
             : { type: "spring", damping: 28, stiffness: 300 }
         }
-        className={`relative z-10 w-full max-w-3xl max-h-[92vh] sm:max-h-[85vh] flex flex-col rounded-t-2xl sm:rounded-2xl overflow-hidden mx-0 sm:mx-4 ${glass.elevated}`}
+        className={`relative z-10 w-full max-w-3xl max-h-[92vh] sm:max-h-[85vh] flex flex-col rounded-t-2xl sm:rounded-leaf-sm overflow-hidden mx-0 sm:mx-4 ${glass.elevated}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Sticky header */}
@@ -637,7 +637,7 @@ export const JsaDetailModal = memo(function JsaDetailModal({
                   <div className="space-y-3 max-h-52 overflow-y-auto">
                     {siteHazards.length > 0 && (
                       <div>
-                        <p className="text-xs uppercase tracking-wider text-red-200/60 mb-1.5 font-semibold">
+                        <p className="text-xs uppercase text-red-200/60 mb-1.5 font-mono font-medium tracking-[0.14em]">
                           Site ({siteHazards.length})
                         </p>
                         <ul className="space-y-1">
@@ -666,7 +666,7 @@ export const JsaDetailModal = memo(function JsaDetailModal({
                             : ""
                         }
                       >
-                        <p className="text-xs uppercase tracking-wider text-red-200/60 mb-1.5 font-semibold">
+                        <p className="text-xs uppercase text-red-200/60 mb-1.5 font-mono font-medium tracking-[0.14em]">
                           Traffic ({trafficHazards.length})
                         </p>
                         <ul className="space-y-1">
@@ -776,7 +776,7 @@ export const JsaDetailModal = memo(function JsaDetailModal({
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className={sectionCard}>
-                <h4 className="text-xs uppercase tracking-wider text-white/40 mb-2">
+                <h4 className="text-xs uppercase text-white/40 mb-2 font-mono font-medium tracking-[0.14em]">
                   Employee
                 </h4>
                 {jsa.employee_signature_path ? (
@@ -818,7 +818,7 @@ export const JsaDetailModal = memo(function JsaDetailModal({
               {Array.isArray(jsa.observer_signatures) &&
                 jsa.observer_signatures.length > 0 && (
                   <div className={sectionCard}>
-                    <h4 className="text-xs uppercase tracking-wider text-white/40 mb-2">
+                    <h4 className="text-xs uppercase text-white/40 mb-2 font-mono font-medium tracking-[0.14em]">
                       Observers ({jsa.observer_signatures.length})
                     </h4>
                     <div className="space-y-3 max-h-64 overflow-y-auto">

@@ -7,10 +7,15 @@
  * checklist responses and a read-time pass/fail rollup, plus any audit-wide
  * (site-scoped) checks. Each subject can open the per-subject timeline
  * (SubjectTimelineModal) stacked above this one.
+ *
+ * Footer actions: a draft offers "Resume draft" (deep link back to the audit
+ * page); a submitted audit offers an admin-only "Reopen" (RPC, confirm-gated)
+ * that flips it back to draft and lands the admin on the resumed audit.
  */
 
 import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   AlertTriangle,
@@ -22,6 +27,8 @@ import {
   Loader2,
   MapPin,
   MinusCircle,
+  PlayCircle,
+  Unlock,
   User,
   Users,
   Wrench,
@@ -29,23 +36,28 @@ import {
 } from "lucide-react";
 import { useModalOverlay } from "../../../hooks/useModalOverlay";
 import { glass } from "../../../lib/glass";
+import { formToast } from "../../../lib/formToast";
+import { useAuth } from "../../../contexts/AuthContext";
 import {
   useAuditChecklistItems,
   useFieldAuditDetail,
+  useReopenFieldAudit,
 } from "../../../hooks/fieldAudit";
 import { useCrewMembers } from "../../../hooks/jobs/useCrewMembers";
 import { useCrews } from "../../../hooks/useCrews";
 import { useWorkSitesQuery } from "../../../hooks/queries/useWorkSites";
 import SubjectTimelineModal from "./SubjectTimelineModal";
+import FieldAuditConfirmDialog from "./FieldAuditConfirmDialog";
+import { describeSubject } from "./subjectDisplay";
 import {
-  equipmentTypeLabel,
   summarizeItems,
   type FieldAuditItem,
   type FieldAuditResult,
-  type FieldAuditSubject,
   type RollupCounts,
   type TimelineSubjectIdentity,
 } from "../fieldAuditConstants";
+
+const RESUME_PATH = "/safety-officer/field-audit";
 
 interface FieldAuditDetailModalProps {
   auditId: string;
@@ -83,10 +95,22 @@ function formatAuditDate(d: string): string {
   });
 }
 
+function formatSubmittedAt(iso: string): string {
+  const dt = new Date(iso);
+  if (Number.isNaN(dt.getTime())) return iso;
+  return dt.toLocaleString("en-US", {
+    timeZone: "America/Chicago",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
 function RollupBadge({ rollup }: { rollup: RollupCounts }) {
   if (rollup.total === 0) {
     return (
-      <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/45">
+      <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] uppercase text-white/45 font-mono font-medium tracking-[0.14em]">
         No checks
       </span>
     );
@@ -138,7 +162,7 @@ function ItemRow({ item, label }: { item: FieldAuditItem; label: string }) {
               </span>
             )}
             {item.corrective_action_id && (
-              <span className="inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-200">
+              <span className="inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[10px] uppercase text-amber-200 font-mono font-medium tracking-[0.14em]">
                 Escalated
               </span>
             )}
@@ -154,8 +178,12 @@ export default function FieldAuditDetailModal({
   onClose,
 }: FieldAuditDetailModalProps) {
   const prefersReducedMotion = useReducedMotion();
+  const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   const { modalRef, zIndex } = useModalOverlay({ isOpen: true, onClose, zIndex: 100 });
   const [timelineTarget, setTimelineTarget] = useState<TimelineTarget | null>(null);
+  const [reopenConfirmOpen, setReopenConfirmOpen] = useState(false);
+  const { reopen, isReopening } = useReopenFieldAudit();
 
   const { data: detail, isLoading, isError } = useFieldAuditDetail(auditId);
   const { data: configItems = [] } = useAuditChecklistItems();
@@ -192,20 +220,20 @@ export default function FieldAuditDetailModal({
         itemLabel(a).localeCompare(itemLabel(b)),
     );
 
-  const subjectDisplay = (subject: FieldAuditSubject): { name: string; subtitle: string } => {
-    if (subject.subject_type === "person") {
-      const profile = subject.person_id ? profileById.get(subject.person_id) : undefined;
-      return {
-        name: profile?.full_name || profile?.email || "Crew member",
-        subtitle: profile?.role || "Person",
-      };
+  const handleReopen = async () => {
+    setReopenConfirmOpen(false);
+    formToast.submitting("Reopening audit…");
+    try {
+      const id = await reopen(auditId);
+      formToast.success("Audit reopened", "It's a draft again — make your corrections and resubmit.");
+      onClose();
+      navigate(`${RESUME_PATH}?resume=${id}`);
+    } catch (e) {
+      formToast.error(
+        "Could not reopen audit",
+        e instanceof Error ? e.message : "Please try again.",
+      );
     }
-    return {
-      name:
-        equipmentTypeLabel(subject.equipment_type) +
-        (subject.equipment_number ? ` · ${subject.equipment_number}` : ""),
-      subtitle: subject.is_custom_equipment ? "Custom equipment" : "Equipment",
-    };
   };
 
   const itemsBySubject = useMemo(() => {
@@ -272,7 +300,7 @@ export default function FieldAuditDetailModal({
             ? { duration: 0.2 }
             : { type: "spring", damping: 28, stiffness: 300 }
         }
-        className={`relative z-10 w-full max-w-3xl max-h-[92vh] sm:max-h-[85vh] flex flex-col rounded-t-2xl sm:rounded-2xl overflow-hidden mx-0 sm:mx-4 ${glass.elevated}`}
+        className={`relative z-10 w-full max-w-3xl max-h-[92vh] sm:max-h-[85vh] flex flex-col rounded-t-2xl sm:rounded-leaf-sm overflow-hidden mx-0 sm:mx-4 ${glass.elevated}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Sticky header */}
@@ -287,8 +315,14 @@ export default function FieldAuditDetailModal({
                 <h2 id="fa-detail-title" className="text-lg sm:text-xl font-bold text-white truncate">
                   {audit ? locationLabel : "Field audit"}
                 </h2>
-                <p className="text-xs text-white/40">
+                <p className="text-xs text-white/40" data-testid="field-audit-detail-subline">
                   {audit ? formatAuditDate(audit.audit_date) : ""}
+                  {audit?.status === "submitted" && audit.submitted_at && (
+                    <span className="text-white/30">
+                      {" "}
+                      · submitted {formatSubmittedAt(audit.submitted_at)} CT
+                    </span>
+                  )}
                 </p>
               </div>
             </div>
@@ -332,7 +366,7 @@ export default function FieldAuditDetailModal({
               {/* Meta + overall rollup */}
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className={`${glass.subtle} p-3.5`}>
-                  <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-white/40">
+                  <p className="flex items-center gap-1.5 text-[10px] uppercase text-white/40 font-mono font-medium tracking-[0.14em]">
                     <CalendarDays className="w-3.5 h-3.5" aria-hidden /> Date
                   </p>
                   <p className="mt-1 text-sm font-medium text-white">
@@ -340,13 +374,13 @@ export default function FieldAuditDetailModal({
                   </p>
                 </div>
                 <div className={`${glass.subtle} p-3.5`}>
-                  <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-white/40">
+                  <p className="flex items-center gap-1.5 text-[10px] uppercase text-white/40 font-mono font-medium tracking-[0.14em]">
                     <MapPin className="w-3.5 h-3.5" aria-hidden /> Location
                   </p>
                   <p className="mt-1 text-sm font-medium text-white truncate">{locationLabel}</p>
                 </div>
                 <div className={`${glass.subtle} p-3.5`}>
-                  <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-white/40">
+                  <p className="flex items-center gap-1.5 text-[10px] uppercase text-white/40 font-mono font-medium tracking-[0.14em]">
                     <Users className="w-3.5 h-3.5" aria-hidden /> Crew
                   </p>
                   <p className="mt-1 text-sm font-medium text-white truncate">{crewLabel}</p>
@@ -354,7 +388,7 @@ export default function FieldAuditDetailModal({
               </div>
 
               <div className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
-                <span className="text-xs uppercase tracking-wide text-white/45">
+                <span className="text-xs uppercase text-white/45 font-mono font-medium tracking-[0.14em]">
                   Overall result
                 </span>
                 <RollupBadge rollup={overallRollup} />
@@ -362,7 +396,7 @@ export default function FieldAuditDetailModal({
 
               {audit.notes?.trim() && (
                 <div className={`${glass.subtle} p-3.5`}>
-                  <p className="text-[10px] uppercase tracking-wide text-white/40 mb-1">Audit notes</p>
+                  <p className="text-[10px] uppercase text-white/40 mb-1 font-mono font-medium tracking-[0.14em]">Audit notes</p>
                   <p className="text-sm text-white/80 whitespace-pre-wrap leading-relaxed">
                     {audit.notes.trim()}
                   </p>
@@ -385,14 +419,17 @@ export default function FieldAuditDetailModal({
                   </p>
                 ) : (
                   detail.subjects.map((subject) => {
-                    const { name, subtitle } = subjectDisplay(subject);
+                    const { name, subtitle } = describeSubject(
+                      subject,
+                      subject.person_id ? profileById.get(subject.person_id) : undefined,
+                    );
                     const subjectItems = sortItems(itemsBySubject.map.get(subject.id) ?? []);
                     const rollup = summarizeItems(subjectItems);
                     const Icon = subject.subject_type === "person" ? User : Wrench;
                     return (
                       <div
                         key={subject.id}
-                        className="rounded-xl border border-rose-500/15 bg-gradient-to-br from-rose-950/20 to-[#0f1216] p-3.5"
+                        className="rounded-xl border border-rose-500/15 bg-gradient-to-br from-rose-950/20 to-[#121A15] p-3.5"
                         data-testid="field-audit-detail-subject"
                       >
                         <div className="flex items-start justify-between gap-3">
@@ -452,7 +489,7 @@ export default function FieldAuditDetailModal({
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <MinusCircle className="w-4 h-4 text-rose-300/80" aria-hidden />
-                    <h3 className="text-sm font-semibold text-white">Audit-wide checks</h3>
+                    <h3 className="text-sm font-semibold text-white">Site conditions</h3>
                   </div>
                   <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3.5">
                     <ul className="divide-y divide-white/[0.04]">
@@ -466,7 +503,56 @@ export default function FieldAuditDetailModal({
             </>
           )}
         </div>
+
+        {/* Footer actions */}
+        {audit && (audit.status === "draft" || isAdmin) && (
+          <div className="border-t border-white/[0.06] bg-gray-800/80 px-5 sm:px-6 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <p className="text-[11px] text-white/45">
+              {audit.status === "draft"
+                ? "This audit hasn't been submitted yet."
+                : "Submitted audits are locked. Reopening returns it to draft for corrections."}
+            </p>
+            {audit.status === "draft" ? (
+              <Link
+                to={`${RESUME_PATH}?resume=${audit.id}`}
+                onClick={onClose}
+                data-testid="field-audit-resume-draft"
+                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-rose-600 hover:bg-rose-500 border border-rose-500/30 px-4 py-2 text-sm font-semibold text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50"
+              >
+                <PlayCircle className="w-4 h-4" aria-hidden />
+                Resume draft
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setReopenConfirmOpen(true)}
+                disabled={isReopening}
+                data-testid="field-audit-reopen-btn"
+                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/[0.08] px-4 py-2 text-sm font-medium text-amber-200 hover:bg-amber-500/15 transition-colors disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50"
+              >
+                {isReopening ? (
+                  <Loader2 className="w-4 h-4 animate-spin" aria-hidden />
+                ) : (
+                  <Unlock className="w-4 h-4" aria-hidden />
+                )}
+                Reopen for corrections
+              </button>
+            )}
+          </div>
+        )}
       </motion.div>
+
+      <FieldAuditConfirmDialog
+        isOpen={reopenConfirmOpen}
+        tone="warning"
+        title="Reopen this audit?"
+        description="It goes back to draft so checks, notes and photos can be changed, then it must be submitted again. Corrective actions already issued are unaffected."
+        confirmLabel="Reopen audit"
+        confirmLoading={isReopening}
+        testId="field-audit-reopen-confirm"
+        onConfirm={() => void handleReopen()}
+        onCancel={() => setReopenConfirmOpen(false)}
+      />
 
       {timelineTarget && (
         <SubjectTimelineModal

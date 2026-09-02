@@ -91,7 +91,7 @@ export function ResultsList({
             </span>
           </div>
           <ArrowUp className="h-4 w-4 text-emerald-400/60 animate-bounce" />
-          <p className="text-[10px] text-gray-500 uppercase tracking-wider">
+          <p className="text-[10px] text-gray-500 uppercase font-mono font-medium tracking-[0.14em]">
             Type above to search
           </p>
         </div>
@@ -136,7 +136,7 @@ export function ResultsList({
       aria-label="Location search results"
     >
       {isShowingRecent && (
-        <p className="text-[10px] uppercase tracking-wider text-gray-500 font-medium px-2 py-1.5">
+        <p className="text-[10px] uppercase text-gray-500 font-medium px-2 py-1.5 font-mono font-medium tracking-[0.14em]">
           Recent Selections
         </p>
       )}

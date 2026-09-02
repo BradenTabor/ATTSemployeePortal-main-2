@@ -7,6 +7,7 @@ import { useMemo } from "react";
 import { Award, Loader2, AlertTriangle } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import { useDashboardCardTheme } from "../../contexts/dashboardCardTheme";
+import WidgetHeader from "./WidgetHeader";
 import { differenceInDays } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 
@@ -73,9 +74,9 @@ export default function CertExpirationWarnings() {
   if (isLoading) {
     return (
       <div className={`${cardClass} p-4`}>
-        <h3 className="text-sm font-semibold text-white mb-3">Certification expiration</h3>
+        <WidgetHeader title="Certification expiration" icon={Award} />
         <div className="flex items-center justify-center py-6">
-          <Loader2 className="w-6 h-6 animate-spin text-amber-400" aria-hidden />
+          <Loader2 className="w-6 h-6 animate-spin text-rose-300/80" aria-hidden />
         </div>
       </div>
     );
@@ -84,7 +85,7 @@ export default function CertExpirationWarnings() {
   if (error) {
     return (
       <div className={`${cardClass} p-4`}>
-        <h3 className="text-sm font-semibold text-white mb-3">Certification expiration</h3>
+        <WidgetHeader title="Certification expiration" icon={Award} />
         <div className="flex items-center gap-2 py-4 text-red-300 text-sm">
           <AlertTriangle className="w-5 h-5 flex-shrink-0" />
           <span>{error.message}</span>
@@ -97,7 +98,7 @@ export default function CertExpirationWarnings() {
   if (all.length === 0) {
     return (
       <div className={`${cardClass} p-4`}>
-        <h3 className="text-sm font-semibold text-white mb-3">Certification expiration</h3>
+        <WidgetHeader title="Certification expiration" icon={Award} />
         <p className="text-sm text-white/80 py-4">No certifications expiring in the next 90 days.</p>
       </div>
     );
@@ -112,7 +113,7 @@ export default function CertExpirationWarnings() {
 
   return (
     <div className={`${cardClass} p-4`}>
-      <h3 className="text-sm font-semibold text-white mb-3">Certification expiration</h3>
+      <WidgetHeader title="Certification expiration" icon={Award} />
       <ul className="space-y-2 max-h-56 overflow-y-auto">
         {all.map((r) => {
           const days = differenceInDays(new Date(r.expires_at), now);

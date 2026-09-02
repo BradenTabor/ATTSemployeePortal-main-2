@@ -27,7 +27,7 @@ function PhoneLink({ phone, name }: { phone: string; name: string }) {
     <a
       href={tel}
       className={`
-        inline-flex items-center gap-1.5
+        tap-44 relative inline-flex items-center gap-1.5
         text-red-300 hover:text-red-200 font-semibold
         underline underline-offset-2 decoration-red-400/40 hover:decoration-red-300/60
         transition-colors duration-150
@@ -51,7 +51,7 @@ function RoleCard({
 }) {
   return (
     <motion.div
-      className={`bg-[linear-gradient(180deg,rgba(84,84,84,0.65)_1%,rgba(77,23,5,0.75)_39%,rgba(5,5,5,0.9)_100%)] border border-slate-700/80 border-l-4 ${borderColor} rounded-xl p-5 ${CARD_SHADOW}`}
+      className={`bg-[linear-gradient(180deg,rgba(90,107,96,0.65)_1%,rgba(77,23,5,0.75)_39%,rgba(4,6,5,0.9)_100%)] border border-slate-700/80 border-l-4 ${borderColor} rounded-xl p-5 ${CARD_SHADOW}`}
       variants={cardVariants}
       initial="hidden"
       whileInView="visible"

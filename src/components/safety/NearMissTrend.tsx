@@ -4,9 +4,10 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { Loader2, AlertTriangle, Eye } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { useDashboardCardTheme } from '../../contexts/dashboardCardTheme';
+import WidgetHeader from '../dashboard/WidgetHeader';
 import { subMonths } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 
@@ -66,9 +67,9 @@ export default function NearMissTrend() {
   if (isLoading) {
     return (
       <div className={`${cardClass} p-4`}>
-        <h3 className="text-sm font-semibold text-white mb-3">Near-Miss Trend (12 months)</h3>
+        <WidgetHeader title="Near-Miss Trend (12 months)" icon={Eye} />
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="w-6 h-6 animate-spin text-emerald-400" aria-hidden />
+          <Loader2 className="w-6 h-6 animate-spin text-rose-300/80" aria-hidden />
         </div>
       </div>
     );
@@ -77,7 +78,7 @@ export default function NearMissTrend() {
   if (error) {
     return (
       <div className={`${cardClass} p-4`}>
-        <h3 className="text-sm font-semibold text-white mb-3">Near-Miss Trend (12 months)</h3>
+        <WidgetHeader title="Near-Miss Trend (12 months)" icon={Eye} />
         <div className="flex items-center gap-2 py-4 text-red-300 text-sm">
           <AlertTriangle className="w-5 h-5 flex-shrink-0" />
           <span>{error.message}</span>
@@ -88,7 +89,7 @@ export default function NearMissTrend() {
 
   return (
     <div className={`${cardClass} p-4`}>
-      <h3 className="text-sm font-semibold text-white mb-3">Near-Miss Trend (12 months)</h3>
+      <WidgetHeader title="Near-Miss Trend (12 months)" icon={Eye} />
       <div className="flex flex-col gap-2">
         {months.map((month) => {
           const count = byMonth.get(month) ?? 0;
@@ -107,7 +108,7 @@ export default function NearMissTrend() {
                     width: `${widthPct}%`,
                     minWidth: count > 0 ? 4 : 0,
                     height: '100%',
-                    backgroundColor: '#10b981',
+                    backgroundColor: '#fb7185',
                   }}
                   title={`${month}: ${count}`}
                 />

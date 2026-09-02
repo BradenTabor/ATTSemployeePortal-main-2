@@ -134,7 +134,7 @@ export default function MaintenanceCostChart({ logs, isLoading }: MaintenanceCos
   
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-white/10 bg-[#050302] p-4">
+      <div className="rounded-xl border border-white/10 bg-[#040605] p-4">
         <div className="h-48 flex items-center justify-center">
           <div className="animate-spin w-6 h-6 border-2 border-amber-500/30 border-t-amber-500 rounded-full" />
         </div>
@@ -143,7 +143,7 @@ export default function MaintenanceCostChart({ logs, isLoading }: MaintenanceCos
   }
   
   return (
-    <div className="rounded-xl border border-white/10 bg-[#050302] overflow-hidden">
+    <div className="rounded-xl border border-white/10 bg-[#040605] overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-emerald-500/8 to-transparent border-b border-white/5">
         <div className="flex items-center gap-2">
@@ -173,11 +173,11 @@ export default function MaintenanceCostChart({ logs, isLoading }: MaintenanceCos
       <div className="grid grid-cols-3 gap-3 p-3 border-b border-white/5">
         <div className="rounded-lg bg-white/[0.02] border border-white/5 p-2.5 text-center">
           <p className="text-lg font-bold text-white">{formatCost(stats.totalCost)}</p>
-          <p className="text-[10px] text-white/40 uppercase tracking-wider">Total</p>
+          <p className="text-[10px] text-white/40 uppercase font-mono font-medium tracking-[0.14em]">Total</p>
         </div>
         <div className="rounded-lg bg-white/[0.02] border border-white/5 p-2.5 text-center">
           <p className="text-lg font-bold text-white">{formatCost(stats.avgPerMonth)}</p>
-          <p className="text-[10px] text-white/40 uppercase tracking-wider">Avg/Month</p>
+          <p className="text-[10px] text-white/40 uppercase font-mono font-medium tracking-[0.14em]">Avg/Month</p>
         </div>
         <div className="rounded-lg bg-white/[0.02] border border-white/5 p-2.5 text-center">
           <div className="flex items-center justify-center gap-1">
@@ -192,7 +192,7 @@ export default function MaintenanceCostChart({ logs, isLoading }: MaintenanceCos
               {stats.trend > 0 ? '+' : ''}{stats.trend.toFixed(1)}%
             </p>
           </div>
-          <p className="text-[10px] text-white/40 uppercase tracking-wider">Trend</p>
+          <p className="text-[10px] text-white/40 uppercase font-mono font-medium tracking-[0.14em]">Trend</p>
         </div>
       </div>
       
@@ -243,7 +243,7 @@ export default function MaintenanceCostChart({ logs, isLoading }: MaintenanceCos
       {/* Cost by Type */}
       {Object.keys(stats.byType).length > 0 && (
         <div className="px-4 pb-4 border-t border-white/5 pt-3">
-          <p className="text-[10px] text-white/40 uppercase tracking-wider mb-2">By Type</p>
+          <p className="text-[10px] text-white/40 uppercase mb-2 font-mono font-medium tracking-[0.14em]">By Type</p>
           <div className="space-y-1.5">
             {Object.entries(stats.byType)
               .sort((a, b) => b[1] - a[1])

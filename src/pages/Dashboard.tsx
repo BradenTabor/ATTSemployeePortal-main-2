@@ -5,6 +5,10 @@ import { ScrollReveal } from '../motion';
 import {
   RefreshCw,
   AlertTriangle,
+  Briefcase,
+  LayoutGrid,
+  Pin,
+  ArrowUpRight,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useUserAssignedJobs } from '../hooks/jobs';
@@ -41,7 +45,7 @@ import {
   GoodCatchPrompt,
 } from '../components/dashboard';
 import { CompactJobCard, StackedJobCard } from '../components/jobs';
-import { EnableNotificationsButton } from '../components/notifications';
+import { EnableNotificationsButton } from '../components/notifications/EnableNotificationsButton';
 import { OfflineModeBanner } from '../components/OfflineModeBanner';
 import { RecentlySynced } from '../components/RecentlySynced';
 
@@ -72,7 +76,7 @@ const ErrorState = memo(function ErrorState({ message, onRetry }: ErrorStateProp
           type="button"
           onClick={onRetry}
           aria-label="Try again"
-          className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-medium hover:bg-red-500/20 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] min-h-[44px]"
+          className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-medium hover:bg-red-500/20 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D] min-h-[44px]"
         >
           <RefreshCw className="w-3.5 h-3.5" aria-hidden />
           Try Again
@@ -90,7 +94,7 @@ interface NavigableJobCardProps {
   job: JobProgressTracker;
 }
 
-const FOCUS_RING = 'focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] rounded-xl';
+const FOCUS_RING = 'focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D] rounded-xl';
 
 const NavigableJobCard = memo(
   function NavigableJobCard({ job }: NavigableJobCardProps) {
@@ -267,26 +271,12 @@ const AssignedJobsSection = memo(function AssignedJobsSection({
       {/* Compact Header */}
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2.5">
-          <div className="relative w-full h-full flex items-center justify-center overflow-visible min-w-[80px] min-h-[96px] md:min-w-[96px] md:min-h-[112px] flex-shrink-0">
-            <img
-              src="/assets/jobs-specialist.webp"
-              alt=""
-              width={312}
-              height={384}
-              decoding="async"
-              fetchPriority="high"
-              className="h-20 w-auto md:h-24 object-contain object-center select-none pointer-events-none"
-              style={{
-                imageRendering: 'auto',
-                WebkitBackfaceVisibility: 'hidden',
-                backfaceVisibility: 'hidden',
-                transform: 'translateZ(0)',
-              }}
-            />
-          </div>
+          <span className="flex h-10 w-10 items-center justify-center rounded-leaf-xs border border-bone-50/[0.1] bg-ink-950/70">
+            <Briefcase className="h-4 w-4 text-verdant-300" aria-hidden />
+          </span>
           <div>
-            <h3 className="text-xs sm:text-sm font-semibold tracking-tight text-white">Active Jobs</h3>
-            <p className="text-[10px] sm:text-xs text-emerald-400/50 font-medium">
+            <h3 className="type-display text-lg text-bone-50">Active Jobs</h3>
+            <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-bone-400">
               {jobs.length} assignment{jobs.length !== 1 ? 's' : ''}
             </p>
           </div>
@@ -295,7 +285,7 @@ const AssignedJobsSection = memo(function AssignedJobsSection({
         {/* View all link */}
         <a 
           href="/assigned-jobs"
-          className={`text-xs font-medium text-emerald-400/70 hover:text-emerald-300 transition-colors rounded ${FOCUS_RING}`}
+          className={`tap-44 relative inline-block text-xs font-medium text-emerald-400/70 hover:text-emerald-300 transition-colors rounded ${FOCUS_RING}`}
         >
           View all →
         </a>
@@ -467,9 +457,9 @@ function Dashboard() {
   }
 
   return (
-    <DashboardLayout title="Employee Hub">
+    <DashboardLayout title="Employee Hub" pageHeading>
       <PullToRefresh onRefresh={handleRefresh} isRefreshing={isRefreshing}>
-        <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 pb-4 pt-3 sm:pt-6" data-testid="dashboard">
+        <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 pb-6 pt-1 sm:pt-2" data-testid="dashboard">
 
           {/* Offline Mode Banner - shows when offline or submissions queued */}
           <OfflineModeBanner />
@@ -480,7 +470,7 @@ function Dashboard() {
           {/* ============================================================ */}
           {/* TIER 1: Welcome Header - Compact identity + status */}
           {/* ============================================================ */}
-          <div className="mb-3 sm:mb-4">
+          <div className="mb-4 sm:mb-5">
             <Suspense fallback={<WelcomeHeaderSkeleton />}>
               <WelcomeHeader
                 allFormsComplete={allFormsComplete}
@@ -496,7 +486,7 @@ function Dashboard() {
           {/* TIER 2: Compliance Strip - #1 morning action for field crews */}
           {/* Elevated above announcements for immediate form access */}
           {/* ============================================================ */}
-          <div className="mb-3 sm:mb-4">
+          <div className="mb-4 sm:mb-5">
             <ScrollReveal variant="fadeUp" delay={0.05}>
               <CompactComplianceStrip onComplianceChange={handleComplianceChange} />
             </ScrollReveal>
@@ -505,7 +495,7 @@ function Dashboard() {
           {/* ============================================================ */}
           {/* TIER 2.5: Featured Announcement - Safety briefing awareness */}
           {/* ============================================================ */}
-          <div className="mb-3 sm:mb-4">
+          <div className="mb-4 sm:mb-5">
             <ScrollReveal variant="fadeUp" delay={0.1}>
               <FeaturedAnnouncementSection />
             </ScrollReveal>
@@ -519,7 +509,7 @@ function Dashboard() {
           {/* Two columns on md+ screens: Jobs | Announcements+Rewards */}
           {/* Single column stacked on mobile */}
           {/* ============================================================ */}
-          <div className="mb-3 sm:mb-4">
+          <div className="mb-4 sm:mb-5">
             <ScrollReveal variant="fadeUp" delay={0.15}>
               <DashboardGrid
                 gap="md"
@@ -539,26 +529,8 @@ function Dashboard() {
                               ? 'No assignments'
                               : `${assignedJobs.length} assignment${assignedJobs.length !== 1 ? 's' : ''}`
                       }
-                      transparentIconContainer
-                      icon={
-                        <div className="relative w-full h-full flex items-center justify-center overflow-visible min-w-[100px] min-h-[120px] md:min-w-[120px] md:min-h-[140px]">
-                          <img
-                            src="/assets/jobs-specialist.webp"
-                            alt=""
-                            width={312}
-                            height={384}
-                            decoding="async"
-                            fetchPriority="high"
-                            className="h-[120px] w-auto md:h-[140px] object-contain object-center select-none pointer-events-none"
-                            style={{
-                              imageRendering: 'auto',
-                              WebkitBackfaceVisibility: 'hidden',
-                              backfaceVisibility: 'hidden',
-                              transform: 'translateZ(0)',
-                            }}
-                          />
-                        </div>
-                      }
+                      index={1}
+                      icon={<Briefcase className="h-5 w-5 text-verdant-300" aria-hidden />}
                       storageKey="dashboard_active_jobs_expanded"
                       defaultOpen={true}
                       theme="emerald"
@@ -566,9 +538,9 @@ function Dashboard() {
                       headerAction={
                         <a
                           href="/assigned-jobs"
-                          className={`text-xs font-medium text-emerald-400/70 hover:text-emerald-300 transition-colors rounded ${FOCUS_RING}`}
+                          className={`tap-44 relative inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.15em] text-bone-300 hover:text-verdant-200 transition-colors ${FOCUS_RING}`}
                         >
-                          View all →
+                          View all <ArrowUpRight className="h-3 w-3" aria-hidden />
                         </a>
                       }
                     >
@@ -600,9 +572,9 @@ function Dashboard() {
                   <StackedLayout gap="sm">
                     {/* Rewards Card */}
                     <Suspense fallback={
-                      <div className="rounded-2xl border border-emerald-400/20 bg-[#041b14] p-4 animate-pulse h-[120px]">
+                      <div className="rounded-leaf border border-bone-50/[0.08] bg-ink-900 p-4 animate-pulse h-[120px]">
                         <div className="flex items-center gap-4">
-                          <div className="w-14 h-14 rounded-2xl bg-white/5" />
+                          <div className="w-14 h-14 rounded-leaf-xs bg-white/5" />
                           <div className="flex-1 space-y-2">
                             <div className="h-4 w-28 bg-white/10 rounded" />
                             <div className="h-3 w-40 bg-white/5 rounded" />
@@ -626,51 +598,28 @@ function Dashboard() {
           {/* ============================================================ */}
           {/* TIER 4: All Tools (Expandable) - Full width */}
           {/* ============================================================ */}
-          <ScrollReveal variant="fadeUp" delay={0.2} className="shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
+          <ScrollReveal variant="fadeUp" delay={0.2}>
             <ExpandableSection
               id="dashboard-all-tools"
               title="All Tools"
               subtitle="Forms, resources & more"
-              transparentIconContainer
-              icon={
-                <div className="relative w-full h-full flex items-center justify-center overflow-visible min-w-[130px] min-h-[156px] md:min-w-[156px] md:min-h-[192px]">
-                  <img
-                    src="/assets/all-tools.webp"
-                    alt=""
-                    width={312}
-                    height={384}
-                    decoding="async"
-                    fetchPriority="high"
-                    className="h-[156px] w-auto md:h-[192px] object-contain object-center select-none pointer-events-none"
-                    style={{
-                      imageRendering: 'auto',
-                      WebkitBackfaceVisibility: 'hidden',
-                      backfaceVisibility: 'hidden',
-                      transform: 'translateY(-16px) translateZ(0)',
-                    }}
-                  />
-                </div>
-              }
+              index={2}
+              icon={<LayoutGrid className="h-5 w-5 text-verdant-300" aria-hidden />}
               storageKey={PERSISTENCE_KEYS.ALL_TOOLS}
               defaultOpen={false}
               ariaLabel="All Tools section. Expand to browse forms and resources. Tap and hold any item to pin it to your Quick Access shortcuts above."
             >
               <div className="space-y-4">
                 {/* Pin hint message */}
-                <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-gradient-to-r from-amber-900/30 via-amber-950/20 to-transparent border border-amber-500/25">
-                  <div className="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-400/30 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-3.5 h-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                    </svg>
-                  </div>
-                  <p className="text-xs text-amber-200/80 leading-relaxed">
-                    <span className="font-semibold text-amber-300">Tip:</span>{' '}
-                    <span className="hidden sm:inline">Long-press (mobile) or right-click (desktop) any item below to </span>
-                    <span className="sm:hidden">Long-press any item to </span>
-                    <span className="font-medium text-amber-200">pin it to Quick Access</span>
+                <div className="flex items-center gap-3 rounded-leaf-xs border border-lime-400/25 bg-lime-500/[0.06] px-3.5 py-2.5">
+                  <Pin className="h-3.5 w-3.5 shrink-0 text-lime-300" aria-hidden />
+                  <p className="font-mono text-[10px] uppercase tracking-[0.15em] leading-relaxed text-lime-200/80">
+                    <span className="hidden sm:inline">Long-press or right-click any tile to </span>
+                    <span className="sm:hidden">Long-press a tile to </span>
+                    <span className="text-lime-100">pin it to quick access</span>
                   </p>
                 </div>
-                
+
                 {/* Navigation Cards */}
                 <Suspense fallback={<EnhancedNavCardsSkeleton />}>
                   <NavCards />

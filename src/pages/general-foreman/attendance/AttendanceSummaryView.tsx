@@ -85,7 +85,7 @@ export default function AttendanceSummaryView() {
                 }}
                 className={`px-3 py-2 rounded-xl text-sm font-medium border transition-colors ${
                   !useCustom && preset === p.id
-                    ? 'bg-[#c084fc]/20 border-[#c084fc]/40 text-[#e9d5ff]'
+                    ? 'bg-[#5EE898]/20 border-[#5EE898]/40 text-[#C8FFD4]'
                     : 'bg-white/[0.03] border-white/10 text-gray-400 hover:text-white hover:border-white/20'
                 }`}
               >
@@ -97,7 +97,7 @@ export default function AttendanceSummaryView() {
               onClick={() => setUseCustom(true)}
               className={`px-3 py-2 rounded-xl text-sm font-medium border transition-colors flex items-center gap-1.5 ${
                 useCustom
-                  ? 'bg-[#c084fc]/20 border-[#c084fc]/40 text-[#e9d5ff]'
+                  ? 'bg-[#5EE898]/20 border-[#5EE898]/40 text-[#C8FFD4]'
                   : 'bg-white/[0.03] border-white/10 text-gray-400 hover:text-white hover:border-white/20'
               }`}
             >
@@ -112,7 +112,7 @@ export default function AttendanceSummaryView() {
                 value={customStart}
                 onChange={(e) => setCustomStart(e.target.value)}
                 max={customEnd}
-                className="px-3 py-2 rounded-xl text-sm bg-white/[0.03] border border-white/10 text-white focus:outline-none focus-visible:border-[#c084fc]/40"
+                className="px-3 py-2 rounded-xl text-sm bg-white/[0.03] border border-white/10 text-white focus:outline-none focus-visible:border-[#5EE898]/40"
               />
               <span className="text-gray-500">–</span>
               <input
@@ -121,7 +121,7 @@ export default function AttendanceSummaryView() {
                 onChange={(e) => setCustomEnd(e.target.value)}
                 min={customStart}
                 max={today}
-                className="px-3 py-2 rounded-xl text-sm bg-white/[0.03] border border-white/10 text-white focus:outline-none focus-visible:border-[#c084fc]/40"
+                className="px-3 py-2 rounded-xl text-sm bg-white/[0.03] border border-white/10 text-white focus:outline-none focus-visible:border-[#5EE898]/40"
               />
             </div>
           )}
@@ -135,7 +135,7 @@ export default function AttendanceSummaryView() {
         <ScrollReveal variant="fadeUp" delay={0.05}>
           <div className="flex flex-wrap gap-2">
             <div className="flex items-center gap-1.5 bg-white/[0.03] border border-white/[0.06] rounded-xl px-3 py-2">
-              <div className="w-2 h-2 rounded-full bg-[#c084fc]" />
+              <div className="w-2 h-2 rounded-full bg-[#5EE898]" />
               <span className="text-xs text-gray-400">Overall</span>
               <span className="text-sm font-bold text-white tabular-nums">{aggregates.overallRate}%</span>
             </div>
@@ -164,7 +164,7 @@ export default function AttendanceSummaryView() {
       )}
 
       <ScrollReveal variant="fadeUp" delay={0.08}>
-        <div className="bg-gray-900 border border-white/[0.06] rounded-2xl p-4 overflow-hidden">
+        <div className="bg-gray-900 border border-white/[0.06] rounded-leaf-sm p-4 overflow-hidden">
           <h3 className="text-sm font-semibold text-white mb-3">Attendance by employee</h3>
           <AttendanceSummaryTable rows={rows} isLoading={isLoading} />
         </div>

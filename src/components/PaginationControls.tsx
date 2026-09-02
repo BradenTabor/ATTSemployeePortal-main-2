@@ -48,10 +48,10 @@ export function PaginationControls({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="flex flex-col sm:flex-row items-center justify-between px-6 py-5 rounded-3xl gap-4"
+      className="flex flex-col sm:flex-row items-center justify-between px-6 py-5 rounded-leaf gap-4"
       style={{
-        background: 'radial-gradient(circle at 50% 50%, rgba(18, 17, 17, 0.5) 0%, rgba(8, 8, 8, 1) 0%, rgba(32, 121, 82, 1) 0%, rgba(15, 67, 50, 1) 100%)',
-        boxShadow: '0px 4px 25px 8px rgba(0, 0, 0, 0.85)'
+        background: 'radial-gradient(circle at 50% 50%, rgba(11,16,13, 0.5) 0%, rgba(4,6,5, 1) 0%, rgba(31,122,68, 1) 0%, rgba(18,72,42, 1) 100%)',
+        boxShadow: '0px 4px 25px 8px rgba(0,0,0, 0.85)'
       }}
     >
       {/* Left: Item Range */}
@@ -72,7 +72,7 @@ export function PaginationControls({
           disabled={currentPage === 1 || loading}
           onClick={onPreviousClick}
           aria-label="Previous page"
-          className="inline-flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium bg-white/5 text-white hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all border border-white/10 hover:border-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
+          className="inline-flex min-h-[44px] items-center justify-center gap-1 px-4 py-2 rounded-lg text-sm font-medium bg-white/5 text-white hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all border border-white/10 hover:border-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
         >
           <ChevronLeft className="w-4 h-4" aria-hidden />
           <span className="hidden sm:inline">Previous</span>
@@ -89,7 +89,7 @@ export function PaginationControls({
           disabled={currentPage >= totalPages || loading}
           onClick={onNextClick}
           aria-label="Next page"
-          className="inline-flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium bg-white/5 text-white hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all border border-white/10 hover:border-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
+          className="inline-flex min-h-[44px] items-center justify-center gap-1 px-4 py-2 rounded-lg text-sm font-medium bg-white/5 text-white hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all border border-white/10 hover:border-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
         >
           <span className="hidden sm:inline">Next</span>
           <ChevronRight className="w-4 h-4" aria-hidden />

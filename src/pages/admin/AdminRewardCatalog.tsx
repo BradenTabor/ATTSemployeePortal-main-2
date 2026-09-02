@@ -92,16 +92,16 @@ export default function AdminRewardCatalog() {
           className="mb-6"
         >
           <div className="flex items-center gap-3 mb-2">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#f4c979]/15 border border-[#f4c979]/30">
-              <Sparkles className="w-3.5 h-3.5 text-[#f4c979]" aria-hidden />
-              <span className="text-xs font-medium text-[#f4c979]">Admin</span>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#F4F7F2]/15 border border-[#F4F7F2]/30">
+              <Sparkles className="w-3.5 h-3.5 text-[#F4F7F2]" aria-hidden />
+              <span className="text-xs font-medium text-[#F4F7F2]">Admin</span>
             </div>
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-3">
-              <Store className="w-8 h-8 text-[#f4c979]" aria-hidden />
+              <Store className="w-8 h-8 text-[#F4F7F2]" aria-hidden />
               <div>
-                <h1 className="text-2xl font-bold text-white">Reward Catalog</h1>
+                <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">Reward Catalog</h1>
                 <p className="text-sm text-white/50 mt-0.5">
                   Manage store items, prices, and images. Deactivate items to retire them from the
                   storefront without losing redemption history.
@@ -111,7 +111,7 @@ export default function AdminRewardCatalog() {
             <button
               type="button"
               onClick={openCreate}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#f4c979] text-black font-medium hover:bg-[#e5ba6a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-400"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#F4F7F2] text-black font-medium hover:bg-[#C8F55E] focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-400"
               data-testid="add-catalog-item"
             >
               <Plus className="w-4 h-4" aria-hidden />
@@ -121,7 +121,7 @@ export default function AdminRewardCatalog() {
           <div className="mt-4 flex flex-wrap gap-3 text-sm">
             <Link
               to="/admin/redemption-fulfillment"
-              className="inline-flex items-center gap-1.5 text-[#f4c979]/90 hover:text-[#f4c979] focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-400 rounded"
+              className="inline-flex items-center gap-1.5 text-[#F4F7F2]/90 hover:text-[#F4F7F2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-400 rounded"
             >
               <Gift className="w-4 h-4" aria-hidden />
               Redemption fulfillment queue

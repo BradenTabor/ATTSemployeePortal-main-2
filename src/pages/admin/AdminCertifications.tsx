@@ -17,7 +17,7 @@ import {
 import { useUsersQuery } from "../../hooks/queries/useUsersQuery";
 import { Award, AlertTriangle, Lock, Unlock, UserPlus, X, CheckCircle, XCircle, Clock, User, ChevronDown, ChevronUp } from "lucide-react";
 import type { CertificationType } from "../../types/certifications";
-import attsLogoStamped from "../../assets/ATTS_Logo_stamped.png";
+import { BrandMark } from "@/components/canopy/BrandMark";
 import { getDeviceCapabilities } from "../../lib/mobilePerf";
 import { toast } from "../../lib/toast";
 import { createNotificationSilent } from "../../lib/pushNotifications";
@@ -25,10 +25,10 @@ import { Z } from "@/lib/zIndex";
 
 const SECTION_TITLE_STYLE = {
   backgroundImage:
-    "linear-gradient(105deg, rgba(167, 243, 208, 1) 0%, rgba(110, 231, 183, 1) 25%, rgba(52, 211, 153, 1) 50%, rgba(16, 185, 129, 1) 75%, rgba(110, 231, 183, 1) 100%)",
+    "linear-gradient(105deg, rgba(141,245,168, 1) 0%, rgba(94,232,152, 1) 25%, rgba(61,220,132, 1) 50%, rgba(47,164,90, 1) 75%, rgba(94,232,152, 1) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
-  textShadow: "0 0 10px rgba(52, 211, 153, 0.35)",
+  textShadow: "0 0 10px rgba(61,220,132, 0.35)",
 } as const;
 
 const cardBase =
@@ -188,12 +188,12 @@ function ReviewCard({ review }: { review: PendingReview }) {
                 <p className="text-xs text-gray-400 mb-1">Written Response #{idx + 1}</p>
                 {/* Question text */}
                 <div className="text-sm font-medium text-white bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 mb-3">
-                  <span className="text-[10px] uppercase tracking-wider text-amber-400/70 block mb-1">Question</span>
+                  <span className="text-[10px] uppercase text-amber-400/70 block mb-1 font-mono font-medium tracking-[0.14em]">Question</span>
                   {answer.question_text || <em className="text-gray-400">Question text not available</em>}
                 </div>
                 {/* User's answer */}
                 <div className="text-sm text-gray-300 bg-white/5 border border-white/10 rounded-lg px-3 py-2 mb-3">
-                  <span className="text-[10px] uppercase tracking-wider text-gray-500 block mb-1">Employee's Answer</span>
+                  <span className="text-[10px] uppercase text-gray-500 block mb-1 font-mono font-medium tracking-[0.14em]">Employee's Answer</span>
                   {answer.user_answer || <em className="text-gray-500">No answer provided</em>}
                 </div>
                 {/* Expected answer hint (for grading reference) */}
@@ -273,11 +273,7 @@ function SectionHeader({
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
       >
-        <img
-          src={attsLogoStamped}
-          alt="ATTS Logo"
-          className="h-11 w-11 object-contain xs:h-12 xs:w-12 sm:h-16 sm:w-16 brightness-0 invert opacity-95"
-        />
+        <BrandMark size={52} />
       </motion.div>
       <h2
         className="text-base font-semibold tracking-tight text-transparent bg-clip-text sm:text-lg"

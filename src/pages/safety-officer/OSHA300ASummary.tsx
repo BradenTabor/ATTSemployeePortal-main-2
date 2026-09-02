@@ -158,17 +158,17 @@ export default function OSHA300ASummaryPage() {
           Back to Safety Officer Dashboard
         </Link>
 
-        <p className="text-xs font-medium text-rose-200/60 uppercase tracking-widest mb-1" aria-hidden>
+        <p className="text-xs font-medium text-rose-200/60 uppercase mb-1 font-mono font-medium tracking-[0.14em]" aria-hidden>
           Annual summary
         </p>
-        <h1 className="text-2xl font-bold text-white leading-tight mb-2">OSHA 300A Annual Summary</h1>
+        <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)] mb-2">OSHA 300A Annual Summary</h1>
         <p className="text-sm text-white/60 leading-relaxed mb-6">
           Summary of work-related injuries and illnesses. 300A must be posted Feb 1–Apr 30 each year.
         </p>
 
         {/* Year selector */}
         <div className={`${glass.card} p-4 mb-6`}>
-          <label htmlFor="osha-300a-year" className="block text-xs font-medium text-white/60 uppercase tracking-wider mb-2">
+          <label htmlFor="osha-300a-year" className="block text-xs font-medium text-white/60 uppercase mb-2 font-mono font-medium tracking-[0.14em]">
             Reporting year
           </label>
           <select
@@ -198,7 +198,7 @@ export default function OSHA300ASummaryPage() {
           <div className="space-y-6">
             {/* Summary data card */}
             <div className={glass.card}>
-              <h2 className="text-xs font-medium text-rose-200/60 uppercase tracking-widest mb-2 px-4 pt-3">Summary (from incident data)</h2>
+              <h2 className="text-xs font-medium text-rose-200/60 uppercase mb-2 px-4 pt-3 font-mono font-medium tracking-[0.14em]">Summary (from incident data)</h2>
               <dl className="grid grid-cols-1 sm:grid-cols-2 text-sm">
                 <div className="flex items-baseline justify-between px-4 py-2 border-b border-white/[0.04]"><dt className="text-white/60 text-xs">Total recordable cases</dt><dd className="text-white font-medium font-mono tabular-nums">{summaryWithManual.total_recordable_cases}</dd></div>
                 <div className="flex items-baseline justify-between px-4 py-2 border-b border-white/[0.04]"><dt className="text-white/60 text-xs">Cases with days away</dt><dd className="text-white font-medium font-mono tabular-nums">{summaryWithManual.cases_days_away}</dd></div>
@@ -214,7 +214,7 @@ export default function OSHA300ASummaryPage() {
 
             {/* Manual entry: employees & hours */}
             <div className={glass.card}>
-              <h2 className="text-xs font-medium text-white/60 uppercase tracking-wider mb-4">Optional (for certification)</h2>
+              <h2 className="text-xs font-medium text-white/60 uppercase mb-4 font-mono font-medium tracking-[0.14em]">Optional (for certification)</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="total-employees" className="block text-sm font-medium text-white/80 mb-2">Total employees (average)</label>

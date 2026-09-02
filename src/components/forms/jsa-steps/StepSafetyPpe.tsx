@@ -50,7 +50,7 @@ export function StepSafetyPpe({
     <div className="space-y-5">
       {/* Jobs Being Performed */}
       <div className="space-y-3">
-        <p className="text-xs font-medium text-white/50 uppercase tracking-wider">
+        <p className="text-xs font-medium text-white/50 uppercase font-mono font-medium tracking-[0.14em]">
           Jobs Being Performed
         </p>
         <div className="grid gap-2 grid-cols-2 sm:grid-cols-3">
@@ -92,7 +92,7 @@ export function StepSafetyPpe({
 
       {/* PPE Checklist */}
       <div className="space-y-3 pt-2">
-        <p className="text-xs font-medium text-white/50 uppercase tracking-wider">
+        <p className="text-xs font-medium text-white/50 uppercase font-mono font-medium tracking-[0.14em]">
           PPE Checklist
         </p>
         <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
@@ -109,7 +109,7 @@ export function StepSafetyPpe({
                     type="button"
                     onClick={() => onPpeToggle(item.key)}
                     className={cn(
-                      "px-2 py-0.5 rounded text-[10px] font-semibold border transition touch-manipulation",
+                      "tap-44 relative min-h-[32px] px-2.5 py-0.5 rounded text-[10px] font-semibold border transition touch-manipulation",
                       state?.required
                         ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
                         : "bg-white/5 border-white/10 text-gray-400"

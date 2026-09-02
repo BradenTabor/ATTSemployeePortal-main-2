@@ -59,7 +59,7 @@ export function FormProgressRing({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={isComplete ? '#10b981' : '#34d399'}
+          stroke={isComplete ? '#3DDC84' : '#5EE898'}
           strokeWidth={strokeWidth}
           strokeLinecap="round"
           strokeDasharray={circumference}
@@ -67,7 +67,7 @@ export function FormProgressRing({
           animate={{ strokeDashoffset }}
           transition={{ duration: 0.5, ease: 'easeOut' }}
           style={{
-            filter: isComplete ? 'drop-shadow(0 0 6px rgba(16, 185, 129, 0.5))' : 'none',
+            filter: isComplete ? 'drop-shadow(0 0 6px rgba(47,164,90, 0.5))' : 'none',
           }}
         />
       </svg>
@@ -121,7 +121,7 @@ export function FormProgressBar({
           animate={{ width: `${Math.min(progress, 100)}%` }}
           transition={{ duration: 0.4, ease: 'easeOut' }}
           style={{
-            boxShadow: isComplete ? '0 0 8px rgba(16, 185, 129, 0.5)' : 'none',
+            boxShadow: isComplete ? '0 0 8px rgba(47,164,90, 0.5)' : 'none',
           }}
         />
       </div>

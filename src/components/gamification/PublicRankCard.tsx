@@ -55,7 +55,7 @@ export const PublicRankCard = memo(function PublicRankCard({
       )}
       style={{
         boxShadow: `0 4px 24px ${theme.glow}`,
-        backgroundColor: 'rgba(6, 10, 8, 0.95)',
+        backgroundColor: 'rgba(4,6,5, 0.95)',
       }}
       data-testid={rank != null ? `rank-card-${rank}` : 'public-rank-card'}
     >

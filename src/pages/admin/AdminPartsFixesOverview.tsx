@@ -108,13 +108,13 @@ function StatCard({ label, value, subValue, icon, trend, onClick }: StatCardProp
     <button
       onClick={onClick}
       disabled={!onClick}
-      className={`rounded-xl sm:rounded-2xl border border-[#f4c979]/20 bg-gradient-to-br from-[#1a1408]/60 to-[#0a0804]/80 p-2.5 sm:p-4 text-left transition-all ${
-        onClick ? 'hover:border-[#f4c979]/40 hover:bg-[#1a1408]/70 cursor-pointer' : 'cursor-default'
+      className={`rounded-xl sm:rounded-leaf-sm border border-[#F4F7F2]/20 bg-gradient-to-br from-[#0B100D]/60 to-[#040605]/80 p-2.5 sm:p-4 text-left transition-all ${
+        onClick ? 'hover:border-[#F4F7F2]/40 hover:bg-[#0B100D]/70 cursor-pointer' : 'cursor-default'
       }`}
     >
       <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-2">
-        <div className="text-[#f4c979]">{icon}</div>
-        <span className="text-[8px] sm:text-[10px] uppercase tracking-wider text-[#f4c979]/50 truncate">{label}</span>
+        <div className="text-[#F4F7F2]">{icon}</div>
+        <span className="text-[8px] sm:text-[10px] uppercase text-[#F4F7F2]/50 truncate font-mono font-medium tracking-[0.14em]">{label}</span>
       </div>
       <div className="flex items-end justify-between">
         <div className="min-w-0">
@@ -222,53 +222,53 @@ function AdminAiInsightsPanel({
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="relative rounded-2xl overflow-hidden"
+      className="relative rounded-leaf-sm overflow-hidden"
     >
       {/* Premium Animated Border */}
-      <div className="absolute inset-0 rounded-2xl p-[1px] bg-gradient-to-r from-[#f4c979]/60 via-[#ffd700]/40 to-[#f4c979]/60 animate-[shimmer_3s_ease-in-out_infinite]" />
+      <div className="absolute inset-0 rounded-leaf-sm p-[1px] bg-gradient-to-r from-[#F4F7F2]/60 via-[#B8FF7A]/40 to-[#F4F7F2]/60 animate-[shimmer_3s_ease-in-out_infinite]" />
       
       {/* Gold Shimmer Overlay */}
       <div 
-        className="absolute inset-0 rounded-2xl opacity-30 pointer-events-none"
+        className="absolute inset-0 rounded-leaf-sm opacity-30 pointer-events-none"
         style={{
-          background: 'linear-gradient(90deg, transparent 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)',
+          background: 'linear-gradient(90deg, transparent 0%, rgba(174,219,63, 0.1) 50%, transparent 100%)',
           backgroundSize: '200% 100%',
           animation: 'shimmer 3s ease-in-out infinite',
         }}
       />
       
       {/* Main Content Container */}
-      <div className="relative rounded-2xl bg-gradient-to-br from-[#1a1408]/95 via-[#0f0a04]/95 to-[#0a0804]/95 backdrop-blur-xl">
+      <div className="relative rounded-leaf-sm bg-gradient-to-br from-[#0B100D]/95 via-[#0B100D]/95 to-[#040605]/95 backdrop-blur-xl">
         {/* Floating Gold Coins Background - hidden on mobile for performance */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none hidden sm:block">
           {/* Gold coin 1 - positioned on left side */}
           <motion.div
             animate={{ y: [0, -8, 0], rotate: [0, 5, 0] }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute top-4 left-[35%] w-6 h-6 rounded-full bg-gradient-to-br from-[#ffd700] via-[#f4c979] to-[#c9a227] shadow-lg shadow-[#ffd700]/20 flex items-center justify-center"
+            className="absolute top-4 left-[35%] w-6 h-6 rounded-full bg-gradient-to-br from-[#B8FF7A] via-[#F4F7F2] to-[#7CC43F] shadow-lg shadow-[#B8FF7A]/20 flex items-center justify-center"
           >
-            <span className="text-[8px] font-bold text-[#1a1408]">$</span>
+            <span className="text-[8px] font-bold text-[#0B100D]">$</span>
           </motion.div>
           {/* Gold coin 2 - positioned center-left */}
           <motion.div
             animate={{ y: [0, -6, 0], rotate: [0, -3, 0] }}
             transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-            className="absolute top-12 left-[45%] w-4 h-4 rounded-full bg-gradient-to-br from-[#ffd700] via-[#f4c979] to-[#c9a227] shadow-md shadow-[#ffd700]/15 flex items-center justify-center opacity-70"
+            className="absolute top-12 left-[45%] w-4 h-4 rounded-full bg-gradient-to-br from-[#B8FF7A] via-[#F4F7F2] to-[#7CC43F] shadow-md shadow-[#B8FF7A]/15 flex items-center justify-center opacity-70"
           >
-            <span className="text-[6px] font-bold text-[#1a1408]">$</span>
+            <span className="text-[6px] font-bold text-[#0B100D]">$</span>
           </motion.div>
           {/* Gold coin 3 - positioned below header area */}
           <motion.div
             animate={{ y: [0, -10, 0], rotate: [0, 8, 0] }}
             transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-            className="absolute top-24 left-[40%] w-5 h-5 rounded-full bg-gradient-to-br from-[#ffd700] via-[#f4c979] to-[#c9a227] shadow-md shadow-[#ffd700]/20 flex items-center justify-center opacity-50"
+            className="absolute top-24 left-[40%] w-5 h-5 rounded-full bg-gradient-to-br from-[#B8FF7A] via-[#F4F7F2] to-[#7CC43F] shadow-md shadow-[#B8FF7A]/20 flex items-center justify-center opacity-50"
           >
-            <span className="text-[7px] font-bold text-[#1a1408]">$</span>
+            <span className="text-[7px] font-bold text-[#0B100D]">$</span>
           </motion.div>
           
           {/* Ambient Gold Glow */}
-          <div className="absolute top-0 left-1/3 w-64 h-64 bg-[#ffd700]/5 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-1/4 w-48 h-48 bg-[#f4c979]/5 rounded-full blur-3xl" />
+          <div className="absolute top-0 left-1/3 w-64 h-64 bg-[#B8FF7A]/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-1/4 w-48 h-48 bg-[#F4F7F2]/5 rounded-full blur-3xl" />
         </div>
         
         {/* Header */}
@@ -282,14 +282,14 @@ function AdminAiInsightsPanel({
               <motion.div
                 animate={{ scale: [1, 1.05, 1] }}
                 transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute inset-0 rounded-lg sm:rounded-xl bg-gradient-to-br from-[#ffd700] to-[#f4c979] blur-lg opacity-50"
+                className="absolute inset-0 rounded-lg sm:rounded-xl bg-gradient-to-br from-[#B8FF7A] to-[#F4F7F2] blur-lg opacity-50"
               />
-              <div className="relative w-10 h-10 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl bg-gradient-to-br from-[#ffd700] via-[#f4c979] to-[#c9a227] flex items-center justify-center shadow-xl shadow-[#ffd700]/30 border border-[#ffd700]/50">
+              <div className="relative w-10 h-10 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl bg-gradient-to-br from-[#B8FF7A] via-[#F4F7F2] to-[#7CC43F] flex items-center justify-center shadow-xl shadow-[#B8FF7A]/30 border border-[#B8FF7A]/50">
                 <motion.div
                   animate={{ rotate: [0, 360] }}
                   transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
                 >
-                  <Sparkles className="w-5 h-5 sm:w-7 sm:h-7 text-[#1a1408]" />
+                  <Sparkles className="w-5 h-5 sm:w-7 sm:h-7 text-[#0B100D]" />
                 </motion.div>
               </div>
               {/* Orbiting dot - hidden on mobile */}
@@ -298,17 +298,17 @@ function AdminAiInsightsPanel({
                 transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
                 className="absolute inset-0 hidden sm:block"
               >
-                <div className="absolute -top-1 left-1/2 w-2 h-2 rounded-full bg-[#ffd700] shadow-lg shadow-[#ffd700]/50" />
+                <div className="absolute -top-1 left-1/2 w-2 h-2 rounded-full bg-[#B8FF7A] shadow-lg shadow-[#B8FF7A]/50" />
               </motion.div>
             </div>
             
             <div className="text-left min-w-0 flex-1">
-              <h3 className="text-sm sm:text-lg font-bold bg-gradient-to-r from-[#ffd700] via-[#f4c979] to-[#ffd700] bg-clip-text text-transparent flex items-center gap-1 sm:gap-2 flex-wrap">
+              <h3 className="text-sm sm:text-lg font-bold bg-gradient-to-r from-[#B8FF7A] via-[#F4F7F2] to-[#B8FF7A] bg-clip-text text-transparent flex items-center gap-1 sm:gap-2 flex-wrap">
                 <span>Fleet Maintenance Intelligence</span>
-                {isLoading && <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin text-[#ffd700]" />}
+                {isLoading && <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin text-[#B8FF7A]" />}
               </h3>
-              <p className="text-[10px] sm:text-xs text-[#f4c979]/60 flex items-center gap-1 sm:gap-1.5 mt-0.5">
-                <span className="inline-block w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-[#ffd700] animate-pulse flex-shrink-0" />
+              <p className="text-[10px] sm:text-xs text-[#F4F7F2]/60 flex items-center gap-1 sm:gap-1.5 mt-0.5">
+                <span className="inline-block w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-[#B8FF7A] animate-pulse flex-shrink-0" />
                 <span className="sm:hidden">AI insights</span>
                 <span className="hidden sm:inline">AI-powered insights • Executive summary</span>
               </p>
@@ -323,7 +323,7 @@ function AdminAiInsightsPanel({
                 onGenerate();
               }}
               disabled={isLoading}
-              className="px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-gradient-to-r from-[#ffd700]/20 to-[#f4c979]/20 border border-[#ffd700]/40 text-[#ffd700] text-[10px] sm:text-xs font-semibold hover:from-[#ffd700]/30 hover:to-[#f4c979]/30 hover:border-[#ffd700]/60 disabled:opacity-50 transition-all flex items-center gap-1.5 sm:gap-2 shadow-lg shadow-[#ffd700]/10"
+              className="px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-gradient-to-r from-[#B8FF7A]/20 to-[#F4F7F2]/20 border border-[#B8FF7A]/40 text-[#B8FF7A] text-[10px] sm:text-xs font-semibold hover:from-[#B8FF7A]/30 hover:to-[#F4F7F2]/30 hover:border-[#B8FF7A]/60 disabled:opacity-50 transition-all flex items-center gap-1.5 sm:gap-2 shadow-lg shadow-[#B8FF7A]/10"
             >
               <RefreshCw className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
               <span className="sm:hidden">Refresh</span>
@@ -333,7 +333,7 @@ function AdminAiInsightsPanel({
               animate={{ rotate: isExpanded ? 180 : 0 }}
               transition={{ duration: 0.2 }}
             >
-              <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 text-[#f4c979]/60" />
+              <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 text-[#F4F7F2]/60" />
             </motion.div>
           </div>
         </button>
@@ -358,13 +358,13 @@ function AdminAiInsightsPanel({
                     transition={{ delay: 0.1 }}
                     className="relative rounded-lg sm:rounded-xl overflow-hidden"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#f4c979]/10 to-transparent" />
-                    <div className="relative border border-[#f4c979]/20 rounded-lg sm:rounded-xl p-2 sm:p-3 backdrop-blur-sm">
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#F4F7F2]/10 to-transparent" />
+                    <div className="relative border border-[#F4F7F2]/20 rounded-lg sm:rounded-xl p-2 sm:p-3 backdrop-blur-sm">
                       <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
-                        <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-md sm:rounded-lg bg-[#f4c979]/20 flex items-center justify-center">
-                          <Package className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#f4c979]" />
+                        <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-md sm:rounded-lg bg-[#F4F7F2]/20 flex items-center justify-center">
+                          <Package className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#F4F7F2]" />
                         </div>
-                        <span className="text-[8px] sm:text-[9px] uppercase tracking-wider text-[#f4c979]/60 font-medium">30-Day Fixes</span>
+                        <span className="text-[8px] sm:text-[9px] uppercase text-[#F4F7F2]/60 font-medium font-mono font-medium tracking-[0.14em]">30-Day Fixes</span>
                       </div>
                       <p className="text-xl sm:text-2xl font-black text-white">{metrics.currentPeriodFixes}</p>
                       <p className="text-[9px] sm:text-[10px] text-white/40">vs {metrics.previousPeriodFixes} prior</p>
@@ -378,22 +378,22 @@ function AdminAiInsightsPanel({
                     transition={{ delay: 0.15 }}
                     className="relative rounded-lg sm:rounded-xl overflow-hidden"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#ffd700]/15 via-[#f4c979]/10 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#B8FF7A]/15 via-[#F4F7F2]/10 to-transparent" />
                     <motion.div
                       animate={{ opacity: [0.5, 1, 0.5] }}
                       transition={{ duration: 2, repeat: Infinity }}
-                      className="absolute top-1 right-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-gradient-to-br from-[#ffd700] to-[#c9a227] hidden sm:flex items-center justify-center shadow-lg shadow-[#ffd700]/30"
+                      className="absolute top-1 right-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-gradient-to-br from-[#B8FF7A] to-[#7CC43F] hidden sm:flex items-center justify-center shadow-lg shadow-[#B8FF7A]/30"
                     >
-                      <DollarSign className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#1a1408]" />
+                      <DollarSign className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#0B100D]" />
                     </motion.div>
-                    <div className="relative border border-[#ffd700]/30 rounded-lg sm:rounded-xl p-2 sm:p-3 backdrop-blur-sm">
+                    <div className="relative border border-[#B8FF7A]/30 rounded-lg sm:rounded-xl p-2 sm:p-3 backdrop-blur-sm">
                       <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
-                        <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-md sm:rounded-lg bg-gradient-to-br from-[#ffd700]/30 to-[#f4c979]/20 flex items-center justify-center">
-                          <DollarSign className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#ffd700]" />
+                        <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-md sm:rounded-lg bg-gradient-to-br from-[#B8FF7A]/30 to-[#F4F7F2]/20 flex items-center justify-center">
+                          <DollarSign className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#B8FF7A]" />
                         </div>
-                        <span className="text-[8px] sm:text-[9px] uppercase tracking-wider text-[#ffd700]/70 font-medium truncate">30-Day Spend</span>
+                        <span className="text-[8px] sm:text-[9px] uppercase text-[#B8FF7A]/70 font-medium truncate font-mono font-medium tracking-[0.14em]">30-Day Spend</span>
                       </div>
-                      <p className="text-lg sm:text-2xl font-black bg-gradient-to-r from-[#ffd700] to-[#f4c979] bg-clip-text text-transparent truncate">
+                      <p className="text-lg sm:text-2xl font-black bg-gradient-to-r from-[#B8FF7A] to-[#F4F7F2] bg-clip-text text-transparent truncate">
                         {formatCurrency(metrics.currentPeriodCost)}
                       </p>
                       <div className={`text-[9px] sm:text-[10px] flex items-center gap-0.5 ${metrics.costChange > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
@@ -416,7 +416,7 @@ function AdminAiInsightsPanel({
                         <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-md sm:rounded-lg bg-blue-500/20 flex items-center justify-center">
                           <BarChart3 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-blue-400" />
                         </div>
-                        <span className="text-[8px] sm:text-[9px] uppercase tracking-wider text-blue-400/70 font-medium truncate">Avg Cost/Fix</span>
+                        <span className="text-[8px] sm:text-[9px] uppercase text-blue-400/70 font-medium truncate font-mono font-medium tracking-[0.14em]">Avg Cost/Fix</span>
                       </div>
                       <p className="text-xl sm:text-2xl font-black text-white truncate">{formatCurrency(metrics.avgCostPerFix)}</p>
                     </div>
@@ -435,7 +435,7 @@ function AdminAiInsightsPanel({
                         <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-md sm:rounded-lg bg-amber-500/20 flex items-center justify-center">
                           <AlertTriangle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400" />
                         </div>
-                        <span className="text-[8px] sm:text-[9px] uppercase tracking-wider text-amber-400/70 font-medium">Recurring</span>
+                        <span className="text-[8px] sm:text-[9px] uppercase text-amber-400/70 font-medium font-mono font-medium tracking-[0.14em]">Recurring</span>
                       </div>
                       <p className="text-xl sm:text-2xl font-black text-amber-400">{metrics.recurringCount}</p>
                       <p className="text-[9px] sm:text-[10px] text-white/40">issues</p>
@@ -460,7 +460,7 @@ function AdminAiInsightsPanel({
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="relative rounded-lg sm:rounded-xl border border-[#ffd700]/20 bg-gradient-to-br from-[#ffd700]/5 to-transparent p-4 sm:p-8"
+                    className="relative rounded-lg sm:rounded-xl border border-[#B8FF7A]/20 bg-gradient-to-br from-[#B8FF7A]/5 to-transparent p-4 sm:p-8"
                   >
                     <div className="flex flex-col items-center justify-center">
                       {/* AI Processing Animation */}
@@ -468,18 +468,18 @@ function AdminAiInsightsPanel({
                         <motion.div
                           animate={{ rotate: 360 }}
                           transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                          className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-2 border-[#ffd700]/20 border-t-[#ffd700] border-r-[#ffd700]"
+                          className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-2 border-[#B8FF7A]/20 border-t-[#B8FF7A] border-r-[#B8FF7A]"
                         />
                         <div className="absolute inset-0 flex items-center justify-center">
                           <motion.div
                             animate={{ scale: [1, 1.2, 1] }}
                             transition={{ duration: 1, repeat: Infinity }}
                           >
-                            <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-[#ffd700]" />
+                            <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-[#B8FF7A]" />
                           </motion.div>
                         </div>
                       </div>
-                      <p className="text-xs sm:text-sm font-medium text-[#f4c979] text-center">Analyzing fleet maintenance...</p>
+                      <p className="text-xs sm:text-sm font-medium text-[#F4F7F2] text-center">Analyzing fleet maintenance...</p>
                       <p className="text-[10px] sm:text-xs text-white/40 mt-1">AI is processing</p>
                       
                       {/* Animated dots */}
@@ -489,7 +489,7 @@ function AdminAiInsightsPanel({
                             key={i}
                             animate={{ opacity: [0.3, 1, 0.3] }}
                             transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
-                            className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#ffd700]"
+                            className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#B8FF7A]"
                           />
                         ))}
                       </div>
@@ -502,24 +502,24 @@ function AdminAiInsightsPanel({
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="relative rounded-lg sm:rounded-xl border border-[#ffd700]/20 bg-gradient-to-br from-[#ffd700]/5 via-transparent to-[#f4c979]/5 p-4 sm:p-8 text-center overflow-hidden"
+                    className="relative rounded-lg sm:rounded-xl border border-[#B8FF7A]/20 bg-gradient-to-br from-[#B8FF7A]/5 via-transparent to-[#F4F7F2]/5 p-4 sm:p-8 text-center overflow-hidden"
                   >
                     {/* Background gold coins - hidden on mobile */}
                     <div className="absolute inset-0 pointer-events-none hidden sm:block">
                       <motion.div
                         animate={{ y: [0, -5, 0], opacity: [0.2, 0.4, 0.2] }}
                         transition={{ duration: 3, repeat: Infinity }}
-                        className="absolute top-4 left-8 w-4 h-4 rounded-full bg-gradient-to-br from-[#ffd700] to-[#c9a227]"
+                        className="absolute top-4 left-8 w-4 h-4 rounded-full bg-gradient-to-br from-[#B8FF7A] to-[#7CC43F]"
                       />
                       <motion.div
                         animate={{ y: [0, -8, 0], opacity: [0.15, 0.3, 0.15] }}
                         transition={{ duration: 4, repeat: Infinity, delay: 0.5 }}
-                        className="absolute bottom-6 right-12 w-3 h-3 rounded-full bg-gradient-to-br from-[#ffd700] to-[#c9a227]"
+                        className="absolute bottom-6 right-12 w-3 h-3 rounded-full bg-gradient-to-br from-[#B8FF7A] to-[#7CC43F]"
                       />
                       <motion.div
                         animate={{ y: [0, -6, 0], opacity: [0.1, 0.25, 0.1] }}
                         transition={{ duration: 3.5, repeat: Infinity, delay: 1 }}
-                        className="absolute top-1/2 right-8 w-5 h-5 rounded-full bg-gradient-to-br from-[#ffd700] to-[#c9a227]"
+                        className="absolute top-1/2 right-8 w-5 h-5 rounded-full bg-gradient-to-br from-[#B8FF7A] to-[#7CC43F]"
                       />
                     </div>
                     
@@ -527,12 +527,12 @@ function AdminAiInsightsPanel({
                       <motion.div
                         animate={{ scale: [1, 1.05, 1], rotate: [0, 5, -5, 0] }}
                         transition={{ duration: 3, repeat: Infinity }}
-                        className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-gradient-to-br from-[#ffd700]/20 to-[#f4c979]/10 border border-[#ffd700]/30 flex items-center justify-center mx-auto mb-3 sm:mb-4 shadow-xl shadow-[#ffd700]/10"
+                        className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-leaf-sm bg-gradient-to-br from-[#B8FF7A]/20 to-[#F4F7F2]/10 border border-[#B8FF7A]/30 flex items-center justify-center mx-auto mb-3 sm:mb-4 shadow-xl shadow-[#B8FF7A]/10"
                       >
-                        <Sparkles className="w-7 h-7 sm:w-10 sm:h-10 text-[#ffd700]" />
+                        <Sparkles className="w-7 h-7 sm:w-10 sm:h-10 text-[#B8FF7A]" />
                       </motion.div>
                       
-                      <h4 className="text-base sm:text-lg font-bold bg-gradient-to-r from-[#ffd700] to-[#f4c979] bg-clip-text text-transparent mb-1.5 sm:mb-2">
+                      <h4 className="text-base sm:text-lg font-bold bg-gradient-to-r from-[#B8FF7A] to-[#F4F7F2] bg-clip-text text-transparent mb-1.5 sm:mb-2">
                         Ready to Analyze
                       </h4>
                       <p className="text-xs sm:text-sm text-white/50 mb-3 sm:mb-5 max-w-sm mx-auto">
@@ -540,10 +540,10 @@ function AdminAiInsightsPanel({
                       </p>
                       
                       <motion.button
-                        whileHover={{ scale: 1.03, boxShadow: '0 20px 40px rgba(255, 215, 0, 0.3)' }}
+                        whileHover={{ scale: 1.03, boxShadow: '0 20px 40px rgba(174,219,63, 0.3)' }}
                         whileTap={{ scale: 0.97 }}
                         onClick={onGenerate}
-                        className="inline-flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl bg-gradient-to-r from-[#ffd700] via-[#f4c979] to-[#ffd700] text-[#1a1408] text-xs sm:text-sm font-bold shadow-xl shadow-[#ffd700]/30 transition-all"
+                        className="inline-flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl bg-gradient-to-r from-[#B8FF7A] via-[#F4F7F2] to-[#B8FF7A] text-[#0B100D] text-xs sm:text-sm font-bold shadow-xl shadow-[#B8FF7A]/30 transition-all"
                       >
                         <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
                         Generate AI Summary
@@ -560,34 +560,34 @@ function AdminAiInsightsPanel({
                     className="relative rounded-lg sm:rounded-xl overflow-hidden"
                   >
                     {/* Gold gradient border */}
-                    <div className="absolute inset-0 rounded-lg sm:rounded-xl p-[1px] bg-gradient-to-r from-[#ffd700]/50 via-[#f4c979]/30 to-[#ffd700]/50" />
+                    <div className="absolute inset-0 rounded-lg sm:rounded-xl p-[1px] bg-gradient-to-r from-[#B8FF7A]/50 via-[#F4F7F2]/30 to-[#B8FF7A]/50" />
                     
-                    <div className="relative rounded-lg sm:rounded-xl bg-gradient-to-br from-[#ffd700]/10 via-[#1a1408] to-[#f4c979]/5 p-3 sm:p-5">
+                    <div className="relative rounded-lg sm:rounded-xl bg-gradient-to-br from-[#B8FF7A]/10 via-[#0B100D] to-[#F4F7F2]/5 p-3 sm:p-5">
                       <div className="flex items-start gap-2.5 sm:gap-4">
                         {/* AI Avatar */}
                         <div className="relative flex-shrink-0">
                           <motion.div
                             animate={{ scale: [1, 1.05, 1] }}
                             transition={{ duration: 2, repeat: Infinity }}
-                            className="w-9 h-9 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-[#ffd700] via-[#f4c979] to-[#c9a227] flex items-center justify-center shadow-lg shadow-[#ffd700]/30"
+                            className="w-9 h-9 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-[#B8FF7A] via-[#F4F7F2] to-[#7CC43F] flex items-center justify-center shadow-lg shadow-[#B8FF7A]/30"
                           >
-                            <Sparkles className="w-4 h-4 sm:w-6 sm:h-6 text-[#1a1408]" />
+                            <Sparkles className="w-4 h-4 sm:w-6 sm:h-6 text-[#0B100D]" />
                           </motion.div>
-                          <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-emerald-500 border-2 border-[#1a1408] flex items-center justify-center">
+                          <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-emerald-500 border-2 border-[#0B100D] flex items-center justify-center">
                             <span className="text-[6px] sm:text-[8px] text-white">✓</span>
                           </div>
                         </div>
                         
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
-                            <span className="text-[10px] sm:text-xs font-semibold text-[#ffd700]">AI Analysis</span>
-                            <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-[#ffd700]/20 text-[#ffd700] text-[8px] sm:text-[9px] font-medium">
+                            <span className="text-[10px] sm:text-xs font-semibold text-[#B8FF7A]">AI Analysis</span>
+                            <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-[#B8FF7A]/20 text-[#B8FF7A] text-[8px] sm:text-[9px] font-medium">
                               GPT-4o
                             </span>
                           </div>
                           <p className="text-xs sm:text-sm text-white/90 leading-relaxed">{summary.summary}</p>
-                          <p className="text-[9px] sm:text-[10px] text-[#f4c979]/50 mt-2 sm:mt-3 flex items-center gap-1">
-                            <span className="inline-block w-1 h-1 rounded-full bg-[#ffd700]/50" />
+                          <p className="text-[9px] sm:text-[10px] text-[#F4F7F2]/50 mt-2 sm:mt-3 flex items-center gap-1">
+                            <span className="inline-block w-1 h-1 rounded-full bg-[#B8FF7A]/50" />
                             {new Date(summary.generated_at).toLocaleDateString()}
                           </p>
                         </div>
@@ -657,7 +657,7 @@ function TopAssetsTable({ assets, title }: TopAssetsTableProps) {
   
   if (sortedByCost.length === 0) {
     return (
-      <div className="rounded-lg sm:rounded-xl border border-white/10 bg-[#0a0804] p-4 sm:p-6 text-center">
+      <div className="rounded-lg sm:rounded-xl border border-white/10 bg-[#040605] p-4 sm:p-6 text-center">
         <Truck className="w-6 h-6 sm:w-8 sm:h-8 text-white/20 mx-auto mb-2" />
         <p className="text-xs sm:text-sm text-white/40">No data available</p>
       </div>
@@ -668,10 +668,10 @@ function TopAssetsTable({ assets, title }: TopAssetsTableProps) {
   const maxCost = sortedByCost[0]?.total_cost + sortedByCost[0]?.estimated_cost || 1;
   
   return (
-    <div className="rounded-lg sm:rounded-xl border border-white/10 bg-[#0a0804] overflow-hidden">
+    <div className="rounded-lg sm:rounded-xl border border-white/10 bg-[#040605] overflow-hidden">
       <div className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gradient-to-r from-white/5 to-transparent border-b border-white/5">
         <h3 className="text-xs sm:text-sm font-medium text-white flex items-center gap-1.5 sm:gap-2">
-          <Crown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#f4c979]" />
+          <Crown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#F4F7F2]" />
           <span className="truncate">{title}</span>
         </h3>
       </div>
@@ -700,7 +700,7 @@ function TopAssetsTable({ assets, title }: TopAssetsTableProps) {
                   initial={{ width: 0 }}
                   animate={{ width: `${barWidth}%` }}
                   transition={{ delay: i * 0.05, duration: 0.4 }}
-                  className="h-full bg-gradient-to-r from-[#f4c979] to-[#d4a94d] rounded-full"
+                  className="h-full bg-gradient-to-r from-[#F4F7F2] to-[#AEDB3F] rounded-full"
                 />
               </div>
             </div>
@@ -723,10 +723,10 @@ interface RecentFixesTableProps {
 
 function RecentFixesTable({ fixes, onSelectFix, selectedFixId }: RecentFixesTableProps) {
   return (
-    <div className="rounded-lg sm:rounded-xl border border-white/10 bg-[#0a0804] overflow-hidden">
+    <div className="rounded-lg sm:rounded-xl border border-white/10 bg-[#040605] overflow-hidden">
       <div className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gradient-to-r from-white/5 to-transparent border-b border-white/5">
         <h3 className="text-xs sm:text-sm font-medium text-white flex items-center gap-1.5 sm:gap-2">
-          <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#f4c979]" />
+          <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#F4F7F2]" />
           Recent Fixes
         </h3>
       </div>
@@ -746,7 +746,7 @@ function RecentFixesTable({ fixes, onSelectFix, selectedFixId }: RecentFixesTabl
               transition={{ delay: Math.min(index * 0.02, 0.2) }}
               onClick={() => onSelectFix(fix)}
               className={`w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 transition-all hover:bg-white/[0.02] active:bg-white/[0.04] ${
-                selectedFixId === fix.id ? 'bg-[#f4c979]/10 border-l-2 border-l-[#f4c979]' : 'border-l-2 border-l-transparent'
+                selectedFixId === fix.id ? 'bg-[#F4F7F2]/10 border-l-2 border-l-[#F4F7F2]' : 'border-l-2 border-l-transparent'
               }`}
             >
               <div className="flex items-start gap-2 sm:gap-3">
@@ -789,9 +789,9 @@ interface FixDetailPanelProps {
 function FixDetailPanel({ fix }: FixDetailPanelProps) {
   if (!fix) {
     return (
-      <div className="h-full min-h-[200px] sm:min-h-[400px] rounded-lg sm:rounded-xl border border-white/5 bg-[#050302] p-4 sm:p-6 flex flex-col items-center justify-center text-center">
-        <div className="inline-flex items-center justify-center w-10 h-10 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl bg-[#f4c979]/10 border border-[#f4c979]/20 mb-3 sm:mb-4">
-          <Package className="w-5 h-5 sm:w-6 sm:h-6 text-[#f4c979]/70" />
+      <div className="h-full min-h-[200px] sm:min-h-[400px] rounded-lg sm:rounded-xl border border-white/5 bg-[#040605] p-4 sm:p-6 flex flex-col items-center justify-center text-center">
+        <div className="inline-flex items-center justify-center w-10 h-10 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl bg-[#F4F7F2]/10 border border-[#F4F7F2]/20 mb-3 sm:mb-4">
+          <Package className="w-5 h-5 sm:w-6 sm:h-6 text-[#F4F7F2]/70" />
         </div>
         <p className="text-xs sm:text-sm font-medium text-white/80 mb-1">Select a Fix</p>
         <p className="text-[10px] sm:text-xs text-white/40 max-w-xs">
@@ -812,7 +812,7 @@ function FixDetailPanel({ fix }: FixDetailPanelProps) {
       key={fix.id}
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-lg sm:rounded-xl border border-white/10 bg-[#050302] overflow-hidden"
+      className="rounded-lg sm:rounded-xl border border-white/10 bg-[#040605] overflow-hidden"
     >
       {/* Header */}
       <div className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gradient-to-r from-white/5 to-transparent border-b border-white/5">
@@ -836,14 +836,14 @@ function FixDetailPanel({ fix }: FixDetailPanelProps) {
       <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
         {/* Description */}
         <div>
-          <label className="block text-[9px] sm:text-[10px] uppercase tracking-wider text-white/40 mb-1">Description</label>
+          <label className="block text-[9px] sm:text-[10px] uppercase text-white/40 mb-1 font-mono font-medium tracking-[0.14em]">Description</label>
           <p className="text-xs sm:text-sm text-white/80">{fix.description}</p>
         </div>
         
         {/* Deficiencies */}
         {fix.deficiencies_corrected && fix.deficiencies_corrected.length > 0 && (
           <div>
-            <label className="block text-[9px] sm:text-[10px] uppercase tracking-wider text-white/40 mb-1.5 sm:mb-2">Issues Corrected</label>
+            <label className="block text-[9px] sm:text-[10px] uppercase text-white/40 mb-1.5 sm:mb-2 font-mono font-medium tracking-[0.14em]">Issues Corrected</label>
             <div className="flex flex-wrap gap-1 sm:gap-1.5">
               {fix.deficiencies_corrected.map((def, i) => (
                 <span key={i} className="text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md sm:rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
@@ -857,7 +857,7 @@ function FixDetailPanel({ fix }: FixDetailPanelProps) {
         {/* Parts */}
         {fix.parts_used && fix.parts_used.length > 0 && (
           <div>
-            <label className="block text-[9px] sm:text-[10px] uppercase tracking-wider text-white/40 mb-1.5 sm:mb-2">Parts Used</label>
+            <label className="block text-[9px] sm:text-[10px] uppercase text-white/40 mb-1.5 sm:mb-2 font-mono font-medium tracking-[0.14em]">Parts Used</label>
             <div className="space-y-1 sm:space-y-1.5">
               {fix.parts_used.map((part, i) => (
                 <div key={i} className="flex items-center justify-between px-2 sm:px-3 py-1.5 sm:py-2 rounded-md sm:rounded-lg bg-black/30 border border-white/5">
@@ -877,7 +877,7 @@ function FixDetailPanel({ fix }: FixDetailPanelProps) {
           <div className="rounded-md sm:rounded-lg border border-white/10 bg-black/20 p-2 sm:p-3">
             <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
               <DollarSign className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-400" />
-              <span className="text-[8px] sm:text-[10px] uppercase tracking-wider text-white/40">
+              <span className="text-[8px] sm:text-[10px] uppercase text-white/40 font-mono font-medium tracking-[0.14em]">
                 {isEstimated ? 'Est. Cost' : 'Cost'}
               </span>
             </div>
@@ -888,8 +888,8 @@ function FixDetailPanel({ fix }: FixDetailPanelProps) {
           
           <div className="rounded-md sm:rounded-lg border border-white/10 bg-black/20 p-2 sm:p-3">
             <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
-              <Truck className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#f4c979]" />
-              <span className="text-[8px] sm:text-[10px] uppercase tracking-wider text-white/40">Mileage</span>
+              <Truck className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#F4F7F2]" />
+              <span className="text-[8px] sm:text-[10px] uppercase text-white/40 font-mono font-medium tracking-[0.14em]">Mileage</span>
             </div>
             <p className="text-base sm:text-lg font-bold text-white">{formatMileage(fix.mileage_at_fix)}</p>
           </div>
@@ -898,7 +898,7 @@ function FixDetailPanel({ fix }: FixDetailPanelProps) {
         {/* Notes */}
         {fix.notes && (
           <div>
-            <label className="block text-[9px] sm:text-[10px] uppercase tracking-wider text-white/40 mb-1">Notes</label>
+            <label className="block text-[9px] sm:text-[10px] uppercase text-white/40 mb-1 font-mono font-medium tracking-[0.14em]">Notes</label>
             <p className="text-[10px] sm:text-xs text-white/60 p-2 sm:p-3 rounded-md sm:rounded-lg bg-black/30 border border-white/5">{fix.notes}</p>
           </div>
         )}
@@ -989,7 +989,7 @@ function FilterBar({ filters, onFiltersChange, onClear }: FilterBarProps) {
   const hasActiveFilters = filters.search || filters.asset_type !== 'all' || filters.source !== 'all' || filters.date_from || filters.date_to || filters.cost_min !== undefined || filters.cost_max !== undefined;
   
   return (
-    <div className="rounded-lg sm:rounded-xl border border-[#f4c979]/15 bg-gradient-to-r from-[#0c0804] to-[#120a05] p-2.5 sm:p-3">
+    <div className="rounded-lg sm:rounded-xl border border-[#F4F7F2]/15 bg-gradient-to-r from-[#040605] to-[#0B100D] p-2.5 sm:p-3">
       <div className="flex flex-col gap-2 sm:gap-3">
         {/* Search - full width on mobile */}
         <div className="relative w-full">
@@ -999,7 +999,7 @@ function FilterBar({ filters, onFiltersChange, onClear }: FilterBarProps) {
             placeholder="Search asset #, description..."
             value={filters.search || ''}
             onChange={(e) => onFiltersChange({ ...filters, search: e.target.value })}
-            className="w-full bg-black/30 border border-white/10 rounded-md sm:rounded-lg pl-8 pr-3 py-2 text-xs sm:text-sm text-white placeholder:text-white/30 focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/50 transition-all"
+            className="w-full bg-black/30 border border-white/10 rounded-md sm:rounded-lg pl-8 pr-3 py-2 text-xs sm:text-sm text-white placeholder:text-white/30 focus:outline-none focus-visible:ring-1 focus-visible:ring-[#F4F7F2]/50 transition-all"
           />
         </div>
         
@@ -1009,7 +1009,7 @@ function FilterBar({ filters, onFiltersChange, onClear }: FilterBarProps) {
           <select
             value={filters.asset_type || 'all'}
             onChange={(e) => onFiltersChange({ ...filters, asset_type: e.target.value as AssetType | 'all' })}
-            className="flex-1 min-w-[100px] bg-black/30 border border-white/10 rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/50"
+            className="flex-1 min-w-[100px] bg-black/30 border border-white/10 rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#F4F7F2]/50"
           >
             <option value="all">All Assets</option>
             <option value="truck">Trucks</option>
@@ -1022,7 +1022,7 @@ function FilterBar({ filters, onFiltersChange, onClear }: FilterBarProps) {
           <select
             value={filters.source || 'all'}
             onChange={(e) => onFiltersChange({ ...filters, source: e.target.value as FixSource | 'all' })}
-            className="flex-1 min-w-[100px] bg-black/30 border border-white/10 rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/50"
+            className="flex-1 min-w-[100px] bg-black/30 border border-white/10 rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#F4F7F2]/50"
           >
             <option value="all">All Sources</option>
             <option value="repairs_log">Repair Logs</option>
@@ -1034,7 +1034,7 @@ function FilterBar({ filters, onFiltersChange, onClear }: FilterBarProps) {
           <button
             onClick={() => setShowAdvanced(!showAdvanced)}
             className={`inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium transition-colors ${
-              showAdvanced ? 'bg-[#f4c979]/20 text-[#f4c979]' : 'text-white/50 hover:text-white hover:bg-white/5 active:bg-white/10'
+              showAdvanced ? 'bg-[#F4F7F2]/20 text-[#F4F7F2]' : 'text-white/50 hover:text-white hover:bg-white/5 active:bg-white/10'
             }`}
           >
             <Filter className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
@@ -1044,7 +1044,7 @@ function FilterBar({ filters, onFiltersChange, onClear }: FilterBarProps) {
           {hasActiveFilters && (
             <button
               onClick={onClear}
-              className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium text-[#f4c979]/80 hover:text-[#f4c979] hover:bg-[#f4c979]/10 active:bg-[#f4c979]/20 border border-[#f4c979]/20 transition-colors"
+              className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium text-[#F4F7F2]/80 hover:text-[#F4F7F2] hover:bg-[#F4F7F2]/10 active:bg-[#F4F7F2]/20 border border-[#F4F7F2]/20 transition-colors"
             >
               <X className="w-3 h-3" />
               <span className="hidden sm:inline">Clear</span>
@@ -1064,43 +1064,43 @@ function FilterBar({ filters, onFiltersChange, onClear }: FilterBarProps) {
           >
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3 pt-2 sm:pt-3 mt-2 sm:mt-3 border-t border-white/5">
               <div>
-                <label className="block text-[9px] sm:text-[10px] uppercase tracking-wider text-white/40 mb-1">From</label>
+                <label className="block text-[9px] sm:text-[10px] uppercase text-white/40 mb-1 font-mono font-medium tracking-[0.14em]">From</label>
                 <input
                   type="date"
                   value={filters.date_from || ''}
                   onChange={(e) => onFiltersChange({ ...filters, date_from: e.target.value })}
-                  className="w-full bg-black/30 border border-white/10 rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/50 [color-scheme:dark]"
+                  className="w-full bg-black/30 border border-white/10 rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#F4F7F2]/50 [color-scheme:dark]"
                 />
               </div>
               <div>
-                <label className="block text-[9px] sm:text-[10px] uppercase tracking-wider text-white/40 mb-1">To</label>
+                <label className="block text-[9px] sm:text-[10px] uppercase text-white/40 mb-1 font-mono font-medium tracking-[0.14em]">To</label>
                 <input
                   type="date"
                   value={filters.date_to || ''}
                   onChange={(e) => onFiltersChange({ ...filters, date_to: e.target.value })}
-                  className="w-full bg-black/30 border border-white/10 rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/50 [color-scheme:dark]"
+                  className="w-full bg-black/30 border border-white/10 rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#F4F7F2]/50 [color-scheme:dark]"
                 />
               </div>
               <div>
-                <label className="block text-[9px] sm:text-[10px] uppercase tracking-wider text-white/40 mb-1">Min Cost</label>
+                <label className="block text-[9px] sm:text-[10px] uppercase text-white/40 mb-1 font-mono font-medium tracking-[0.14em]">Min Cost</label>
                 <input
                   type="number"
                   min="0"
                   placeholder="$0"
                   value={filters.cost_min || ''}
                   onChange={(e) => onFiltersChange({ ...filters, cost_min: e.target.value ? Number(e.target.value) : undefined })}
-                  className="w-full bg-black/30 border border-white/10 rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/50"
+                  className="w-full bg-black/30 border border-white/10 rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#F4F7F2]/50"
                 />
               </div>
               <div>
-                <label className="block text-[9px] sm:text-[10px] uppercase tracking-wider text-white/40 mb-1">Max Cost</label>
+                <label className="block text-[9px] sm:text-[10px] uppercase text-white/40 mb-1 font-mono font-medium tracking-[0.14em]">Max Cost</label>
                 <input
                   type="number"
                   min="0"
                   placeholder="$∞"
                   value={filters.cost_max || ''}
                   onChange={(e) => onFiltersChange({ ...filters, cost_max: e.target.value ? Number(e.target.value) : undefined })}
-                  className="w-full bg-black/30 border border-white/10 rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/50"
+                  className="w-full bg-black/30 border border-white/10 rounded-md sm:rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#F4F7F2]/50"
                 />
               </div>
             </div>
@@ -1169,8 +1169,8 @@ export function AdminPartsFixesContent() {
     return (
       <div className="min-h-[50vh] sm:min-h-[60vh] flex items-center justify-center px-4">
         <div className="text-center">
-          <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-full bg-[#f4c979]/10 flex items-center justify-center mx-auto mb-3 sm:mb-4">
-            <Shield className="w-7 h-7 sm:w-10 sm:h-10 text-[#f4c979]" />
+          <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-full bg-[#F4F7F2]/10 flex items-center justify-center mx-auto mb-3 sm:mb-4">
+            <Shield className="w-7 h-7 sm:w-10 sm:h-10 text-[#F4F7F2]" />
           </div>
           <h2 className="text-lg sm:text-2xl font-bold text-white mb-1.5 sm:mb-2">Admin Access Required</h2>
           <p className="text-sm sm:text-base text-gray-400">You do not have permission to view this page.</p>
@@ -1190,17 +1190,17 @@ export function AdminPartsFixesContent() {
             className="relative"
           >
             <div 
-              className="relative overflow-hidden rounded-xl sm:rounded-2xl md:rounded-3xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
+              className="relative overflow-hidden rounded-xl sm:rounded-leaf-sm md:rounded-leaf border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
               style={{
                 backdropFilter: 'blur(24px) saturate(180%)',
                 WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-                background: 'linear-gradient(145deg, rgba(26, 20, 8, 0.6) 0%, rgba(10, 8, 4, 0.5) 50%, rgba(5, 3, 2, 0.4) 100%)',
-                boxShadow: 'inset 0 0 15px rgba(244, 201, 121, 0.08), 0 8px 32px rgba(0,0,0,0.5)',
+                background: 'linear-gradient(145deg, rgba(11,16,13, 0.6) 0%, rgba(4,6,5, 0.5) 50%, rgba(4,6,5, 0.4) 100%)',
+                boxShadow: 'inset 0 0 15px rgba(221,255,133, 0.08), 0 8px 32px rgba(0,0,0,0.5)',
               }}
             >
               {/* Decorative elements - hidden on mobile for performance */}
               <div className="absolute inset-0 opacity-70 pointer-events-none hidden sm:block" style={{ background: 'linear-gradient(125deg, rgba(255,255,255,0.15) 0%, transparent 30%, transparent 70%, rgba(255,255,255,0.05) 100%)' }} />
-              <div className="absolute top-0 left-0 w-24 h-24 rounded-full opacity-30 pointer-events-none hidden sm:block" style={{ background: 'radial-gradient(circle at 50% 50%, rgba(244, 201, 121, 0.3) 0%, transparent 70%)', filter: 'blur(15px)' }} />
+              <div className="absolute top-0 left-0 w-24 h-24 rounded-full opacity-30 pointer-events-none hidden sm:block" style={{ background: 'radial-gradient(circle at 50% 50%, rgba(221,255,133, 0.3) 0%, transparent 70%)', filter: 'blur(15px)' }} />
               
               <div className="relative px-3 py-3 sm:px-5 sm:py-4 md:px-7 md:py-5">
                 {/* Badges row - more compact on mobile */}
@@ -1209,19 +1209,19 @@ export function AdminPartsFixesContent() {
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.4, delay: 0.2 }}
-                    className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl bg-[#f4c979]/15 border border-[#f4c979]/30"
+                    className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl bg-[#F4F7F2]/15 border border-[#F4F7F2]/30"
                   >
-                    <Crown className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#f4c979]" />
-                    <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.15em] sm:tracking-[0.2em] font-bold text-[#f4c979]">Admin</span>
+                    <Crown className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#F4F7F2]" />
+                    <span className="text-[9px] sm:text-[10px] uppercase sm:tracking-[0.2em] text-[#F4F7F2] font-mono font-medium tracking-[0.14em]">Admin</span>
                   </motion.div>
                   <motion.div
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.4, delay: 0.3 }}
-                    className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#1a0804]/60 border border-[#f4c979]/20"
+                    className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0B100D]/60 border border-[#F4F7F2]/20"
                   >
-                    <Package className="w-3 h-3 text-[#f4c979]" />
-                    <span className="text-[9px] uppercase tracking-wider font-semibold text-[#f4c979]/70">Fleet Overview</span>
+                    <Package className="w-3 h-3 text-[#F4F7F2]" />
+                    <span className="text-[9px] uppercase text-[#F4F7F2]/70 font-mono font-medium tracking-[0.14em]">Fleet Overview</span>
                   </motion.div>
                 </div>
                 
@@ -1231,8 +1231,8 @@ export function AdminPartsFixesContent() {
                       initial={{ scaleY: 0, opacity: 0 }}
                       animate={{ scaleY: 1, opacity: 1 }}
                       transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                      className="w-1 h-10 sm:h-14 md:h-16 rounded-full bg-gradient-to-b from-[#f4c979] via-[#d4a94d] to-[#a67c3d] origin-top flex-shrink-0"
-                      style={{ boxShadow: '0 0 20px rgba(244, 201, 121, 0.4), 0 0 40px rgba(244, 201, 121, 0.2)' }}
+                      className="w-1 h-10 sm:h-14 md:h-16 rounded-full bg-gradient-to-b from-[#F4F7F2] via-[#AEDB3F] to-[#8DB52A] origin-top flex-shrink-0"
+                      style={{ boxShadow: '0 0 20px rgba(221,255,133, 0.4), 0 0 40px rgba(221,255,133, 0.2)' }}
                     />
                     <div className="min-w-0">
                       {enableAnimations ? (
@@ -1241,13 +1241,13 @@ export function AdminPartsFixesContent() {
                           preset="blurSlide"
                           per="char"
                           delay={0.15}
-                          className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black tracking-tight"
-                          segmentWrapperClassName="bg-gradient-to-r from-white via-[#f4c979] to-white/90 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(244,201,121,0.3)]"
+                          className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]"
+                          segmentWrapperClassName="text-glow"
                         >
                           Parts & Fixes
                         </TextEffect>
                       ) : (
-                        <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black tracking-tight bg-gradient-to-r from-white via-[#f4c979] to-white/90 bg-clip-text text-transparent">
+                        <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">
                           Parts & Fixes
                         </h1>
                       )}
@@ -1255,7 +1255,7 @@ export function AdminPartsFixesContent() {
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.5, delay: 0.7 }}
-                        className="mt-0.5 sm:mt-1.5 text-[10px] sm:text-xs md:text-sm text-[#f4c979]/50 font-medium"
+                        className="mt-0.5 sm:mt-1.5 text-[10px] sm:text-xs md:text-sm text-[#F4F7F2]/50 font-medium"
                       >
                         <span className="hidden sm:inline">Fleet-wide maintenance analytics and cost tracking</span>
                         <span className="sm:hidden">Fleet maintenance & costs</span>

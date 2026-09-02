@@ -36,7 +36,7 @@ import {
   type BriefingQuestion,
 } from '../config/safetyBriefing';
 import { cn } from '../lib/utils';
-import { getDeviceCapabilities } from '../lib/mobilePerf';
+import { getDeviceCapabilities, isCellular3g } from '../lib/mobilePerf';
 import { parseFormError } from '../lib/errorHandling';
 import { toast } from '../lib/toast';
 import { trackDashboardAction } from '../lib/telemetry';
@@ -45,7 +45,7 @@ import { getVideoUrl } from '../lib/videoCdn';
 import { Z } from "@/lib/zIndex";
 
 const FOCUS_RING =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c0a08]';
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]';
 
 /** Routes for quick links from relatedForms */
 const RELATED_FORM_ROUTES: Record<string, string> = {
@@ -82,13 +82,13 @@ function getBriefingTheme(conditions: RawConditions | null | undefined): Briefin
 
 const THEME_OVERLAYS: Record<BriefingTheme, string> = {
   default:
-    'linear-gradient(180deg, rgba(12, 10, 8, 0.93) 0%, rgba(12, 10, 8, 0.88) 50%, rgba(12, 10, 8, 0.95) 100%)',
+    'linear-gradient(180deg, rgba(11,16,13, 0.93) 0%, rgba(11,16,13, 0.88) 50%, rgba(11,16,13, 0.95) 100%)',
   rain:
-    'linear-gradient(180deg, rgba(10, 12, 16, 0.92) 0%, rgba(10, 14, 18, 0.88) 50%, rgba(12, 10, 8, 0.95) 100%)',
+    'linear-gradient(180deg, rgba(11,16,13, 0.92) 0%, rgba(11,16,13, 0.88) 50%, rgba(11,16,13, 0.95) 100%)',
   wind:
-    'linear-gradient(180deg, rgba(14, 12, 10, 0.93) 0%, rgba(14, 12, 10, 0.88) 50%, rgba(12, 10, 8, 0.95) 100%)',
+    'linear-gradient(180deg, rgba(11,16,13, 0.93) 0%, rgba(11,16,13, 0.88) 50%, rgba(11,16,13, 0.95) 100%)',
   cold:
-    'linear-gradient(180deg, rgba(10, 12, 16, 0.93) 0%, rgba(10, 14, 18, 0.88) 50%, rgba(12, 10, 8, 0.95) 100%)',
+    'linear-gradient(180deg, rgba(11,16,13, 0.93) 0%, rgba(11,16,13, 0.88) 50%, rgba(11,16,13, 0.95) 100%)',
 };
 
 function AccordionSection({
@@ -108,8 +108,8 @@ function AccordionSection({
       className="rounded-xl border border-white/[0.08] bg-white/[0.03] overflow-hidden shadow-lg shadow-black/10"
       initial={false}
       animate={{
-        borderColor: isOpen ? 'rgba(245, 158, 11, 0.2)' : 'rgba(255, 255, 255, 0.08)',
-        boxShadow: isOpen ? '0 4px 24px -4px rgba(245, 158, 11, 0.1)' : '0 4px 6px -1px rgba(0, 0, 0, 0.2)',
+        borderColor: isOpen ? 'rgba(174,219,63, 0.2)' : 'rgba(255,255,255, 0.08)',
+        boxShadow: isOpen ? '0 4px 24px -4px rgba(174,219,63, 0.1)' : '0 4px 6px -1px rgba(0,0,0, 0.2)',
       }}
       transition={{ duration: 0.2 }}
     >
@@ -180,7 +180,7 @@ function QuestionBlock({
               className={cn(
                 'w-full flex items-center gap-3 rounded-xl border p-3.5 text-left text-sm transition-all duration-200 min-h-[44px]',
                 selected
-                  ? 'border-amber-400/35 bg-amber-500/[0.10] text-amber-50 shadow-[0_0_12px_-4px_rgba(245,158,11,0.12)]'
+                  ? 'border-amber-400/35 bg-amber-500/[0.10] text-amber-50 shadow-[0_0_12px_-4px_rgba(174,219,63,0.12)]'
                   : 'border-white/[0.07] bg-white/[0.02] text-white/75 hover:border-white/[0.12] hover:bg-white/[0.04]',
                 FOCUS_RING
               )}
@@ -260,6 +260,11 @@ export default function SafetyBriefingPage() {
 
   const caps = useMemo(() => getDeviceCapabilities(), []);
   const reduceMotion = caps.prefersReducedMotion;
+  // The ambient background video is ~2.4 MB. Every field worker opens this page
+  // each morning, usually on cellular — skip it on constrained connections and
+  // for reduced-motion users; the global canopy background remains underneath.
+  // (It is HTTP-cached for 30 days, so on good connections it is a one-time cost.)
+  const showBgVideo = !caps.isSlowConnection && !caps.isLowEnd && !reduceMotion && !isCellular3g();
 
   const sectionFade = useMemo(
     () =>
@@ -465,25 +470,28 @@ export default function SafetyBriefingPage() {
   /* ─── Loading state ─── */
   if (isLoading) {
     return (
-      <div className="relative min-h-screen bg-[#0c0a08] overflow-hidden">
-        <video
-          ref={loadingVideoRef}
-          src={getVideoUrl("/videos/safety-briefing-bg.mp4")}
-          loop
-          muted
-          playsInline
-          preload="none"
-          className="absolute inset-0 w-full h-full object-cover z-0"
-          aria-hidden
-        />
+      <div className="relative min-h-dvh-safe bg-[#0B100D] overflow-hidden">
+        {showBgVideo && (
+          <video
+            ref={loadingVideoRef}
+            src={getVideoUrl("/videos/safety-briefing-bg.mp4")}
+            loop
+            muted
+            playsInline
+            preload="none"
+            className="absolute inset-0 w-full h-full object-cover z-0"
+            aria-hidden
+          />
+        )}
         <div
           className="absolute inset-0 z-[5] pointer-events-none"
           style={overlayStyle}
           aria-hidden
         />
-        <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-6">
+        <main className="relative z-10 flex flex-col items-center justify-center min-h-dvh-safe p-6" aria-busy="true">
+          <h1 className="sr-only">Daily Safety Briefing</h1>
           <motion.div
-            className="flex flex-col items-center rounded-2xl border border-white/[0.08] bg-white/[0.04] backdrop-blur-sm px-8 py-10 shadow-xl shadow-black/20 max-w-xs w-full"
+            className="flex flex-col items-center rounded-leaf-sm border border-white/[0.08] bg-white/[0.04] backdrop-blur-sm px-8 py-10 shadow-xl shadow-black/20 max-w-xs w-full"
             initial={reduceMotion ? undefined : { opacity: 0, y: 12 }}
             animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
@@ -552,7 +560,7 @@ export default function SafetyBriefingPage() {
               )}
             </motion.div>
           </motion.div>
-        </div>
+        </main>
       </div>
     );
   }
@@ -567,18 +575,20 @@ export default function SafetyBriefingPage() {
   const answeredCount = Object.keys(selectedAnswers).length;
 
   return (
-    <div className="relative min-h-screen bg-[#0c0a08] text-white overflow-hidden">
-      {/* Full-bleed background video */}
-      <video
-        ref={mainVideoRef}
-        src={getVideoUrl("/videos/safety-briefing-bg.mp4")}
-        loop
-        muted
-        playsInline
-        preload="none"
-        className="absolute inset-0 w-full h-full object-cover z-0"
-        aria-hidden
-      />
+    <div className="relative min-h-dvh-safe bg-[#0B100D] text-white overflow-hidden">
+      {/* Full-bleed background video (skipped on constrained connections) */}
+      {showBgVideo && (
+        <video
+          ref={mainVideoRef}
+          src={getVideoUrl("/videos/safety-briefing-bg.mp4")}
+          loop
+          muted
+          playsInline
+          preload="none"
+          className="absolute inset-0 w-full h-full object-cover z-0"
+          aria-hidden
+        />
+      )}
       <div
         className="absolute inset-0 z-[5] pointer-events-none"
         style={overlayStyle}
@@ -586,13 +596,13 @@ export default function SafetyBriefingPage() {
       />
 
       {/* ─── Sticky header with progress bar ─── */}
-      <header className="sticky top-0 z-10 border-b border-white/[0.06] bg-[rgba(12,10,8,0.92)] backdrop-blur-lg shadow-lg shadow-black/20">
+      <header className="sticky top-0 z-10 border-b border-white/[0.06] bg-[rgba(11,16,13,0.92)] pt-[env(safe-area-inset-top)] backdrop-blur-lg shadow-lg shadow-black/20">
         <div className="px-4 py-3.5 flex items-center gap-3">
           <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-amber-500/15 border border-amber-500/20">
             <Shield className="h-5 w-5 text-amber-400" aria-hidden />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-white tracking-tight">Daily Safety Briefing</h1>
+            <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">Daily Safety Briefing</h1>
             <p className="text-xs text-white/50">Complete to continue to your dashboard</p>
           </div>
         </div>
@@ -610,10 +620,10 @@ export default function SafetyBriefingPage() {
         {/* ─── Hero streak block ─── */}
         <motion.section
           {...sectionFade}
-          className="relative overflow-hidden rounded-2xl border border-amber-500/15 bg-gradient-to-br from-amber-950/40 via-amber-950/15 to-transparent p-5"
+          className="relative overflow-hidden rounded-leaf-sm border border-amber-500/15 bg-gradient-to-br from-amber-950/40 via-amber-950/15 to-transparent p-5"
         >
           <div
-            className="absolute inset-0 rounded-2xl bg-[radial-gradient(ellipse_at_top_left,rgba(245,158,11,0.06),transparent_60%)] pointer-events-none"
+            className="absolute inset-0 rounded-leaf-sm bg-[radial-gradient(ellipse_at_top_left,rgba(174,219,63,0.06),transparent_60%)] pointer-events-none"
             aria-hidden
           />
           <div className="relative flex items-center gap-4">
@@ -623,7 +633,7 @@ export default function SafetyBriefingPage() {
                 animate={reduceMotion ? undefined : { scale: [1, 1.06, 1] }}
                 transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
               >
-                <Flame className="relative h-10 w-10 text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.25)]" aria-hidden />
+                <Flame className="relative h-10 w-10 text-amber-400 drop-shadow-[0_0_8px_rgba(174,219,63,0.25)]" aria-hidden />
               </motion.div>
             </div>
             <div>
@@ -666,10 +676,10 @@ export default function SafetyBriefingPage() {
 
         {/* ─── Today's safety message ─── */}
         <motion.section {...sectionFade} className="space-y-2">
-          <h2 className="text-[10px] font-semibold uppercase tracking-widest text-amber-400/70">Today&apos;s safety message</h2>
+          <h2 className="text-[10px] uppercase text-amber-400/70 font-mono font-medium tracking-[0.14em]">Today&apos;s safety message</h2>
           <div
-            className="rounded-2xl border border-amber-500/15 p-5 shadow-lg shadow-amber-900/5"
-            style={{ background: 'linear-gradient(135deg, rgba(120, 53, 0, 0.25) 0%, rgba(12, 10, 8, 0.95) 100%)' }}
+            className="rounded-leaf-sm border border-amber-500/15 p-5 shadow-lg shadow-amber-900/5"
+            style={{ background: 'linear-gradient(135deg, rgba(74,97,22, 0.25) 0%, rgba(11,16,13, 0.95) 100%)' }}
           >
             <p className="text-[15px] font-semibold text-white/95 mb-2 leading-snug tracking-tight">{todayAnnouncement.title}</p>
             <p className="text-sm text-white/70 leading-relaxed whitespace-pre-wrap">{todayAnnouncement.message}</p>
@@ -678,7 +688,7 @@ export default function SafetyBriefingPage() {
               onClick={handleListen}
               disabled={ttsLoading}
               className={cn(
-                'mt-4 inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-2.5 text-xs font-medium text-white/70 hover:bg-white/[0.07] transition-colors disabled:opacity-50',
+                'mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-2.5 text-xs font-medium text-white/70 hover:bg-white/[0.07] transition-colors disabled:opacity-50',
                 FOCUS_RING
               )}
             >
@@ -695,7 +705,7 @@ export default function SafetyBriefingPage() {
         {/* ─── Today's conditions ─── */}
         {conditions && (
           <motion.section {...sectionFade} className="space-y-2">
-            <h2 className="text-[10px] font-semibold uppercase tracking-widest text-amber-400/70">Today&apos;s conditions</h2>
+            <h2 className="text-[10px] uppercase text-amber-400/70 font-mono font-medium tracking-[0.14em]">Today&apos;s conditions</h2>
             <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-3.5 flex flex-wrap items-center gap-3 text-sm text-white/80">
               <span className="inline-flex items-center gap-1.5">
                 <Cloud className="h-4 w-4 text-white/50" aria-hidden />
@@ -716,7 +726,7 @@ export default function SafetyBriefingPage() {
 
         {/* ─── Your focus today ─── */}
         <motion.section {...sectionFade} className="space-y-2">
-          <h2 className="text-[10px] font-semibold uppercase tracking-widest text-amber-400/70">Your focus today</h2>
+          <h2 className="text-[10px] uppercase text-amber-400/70 font-mono font-medium tracking-[0.14em]">Your focus today</h2>
           <div className="space-y-2">
             {focusItems.length > 0 ? (
               focusItems.map((item, i) => (
@@ -771,7 +781,7 @@ export default function SafetyBriefingPage() {
         {/* ─── Hazards & PPE today ─── */}
         {sections && (sections.topHazards?.length || sections.ppeReminders?.length) ? (
           <motion.section {...sectionFade} className="space-y-2">
-            <h2 className="text-[10px] font-semibold uppercase tracking-widest text-amber-400/70">Hazards & PPE today</h2>
+            <h2 className="text-[10px] uppercase text-amber-400/70 font-mono font-medium tracking-[0.14em]">Hazards & PPE today</h2>
             <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4 space-y-3">
               {sections.topHazards?.length ? (
                 <div>
@@ -825,7 +835,7 @@ export default function SafetyBriefingPage() {
 
         {/* ─── Safety tip ─── */}
         <motion.section {...sectionFade} className="space-y-2">
-          <h2 className="text-[10px] font-semibold uppercase tracking-widest text-amber-400/70">Safety tip</h2>
+          <h2 className="text-[10px] uppercase text-amber-400/70 font-mono font-medium tracking-[0.14em]">Safety tip</h2>
           <div className="rounded-xl border border-amber-500/15 bg-amber-500/[0.06] p-3.5 flex items-start gap-2.5">
             <Lightbulb className="h-4 w-4 text-amber-300/70 shrink-0 mt-0.5" aria-hidden />
             <p className="text-sm text-white/80">{safetyTip}</p>
@@ -834,7 +844,7 @@ export default function SafetyBriefingPage() {
 
         {/* ─── Safety information accordions ─── */}
         <motion.section {...sectionFade} className="space-y-3">
-          <h2 className="text-[10px] font-semibold uppercase tracking-widest text-amber-400/70">Safety information</h2>
+          <h2 className="text-[10px] uppercase text-amber-400/70 font-mono font-medium tracking-[0.14em]">Safety information</h2>
           <AccordionSection
             title={TREE_SERVICE_STANDARD.title}
             body={TREE_SERVICE_STANDARD.body}
@@ -858,7 +868,7 @@ export default function SafetyBriefingPage() {
         {/* ─── Questions ─── */}
         <motion.section {...sectionFade} className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-[10px] font-semibold uppercase tracking-widest text-amber-400/70">Please answer the following</h2>
+            <h2 className="text-[10px] uppercase text-amber-400/70 font-mono font-medium tracking-[0.14em]">Please answer the following</h2>
             <span className="text-[10px] font-mono text-white/35 tabular-nums">{answeredCount}/{questions.length}</span>
           </div>
 
@@ -898,7 +908,7 @@ export default function SafetyBriefingPage() {
               rows={2}
               className={cn(
                 'w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-3.5 py-2.5 text-sm text-white/85 placeholder:text-white/30 resize-none',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c0a08]'
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]'
               )}
               aria-label="Optional: one thing you'll watch for today"
             />
@@ -978,7 +988,7 @@ export default function SafetyBriefingPage() {
               initial={{ opacity: 0, scale: 0.9, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               transition={{ type: 'spring', damping: 24, stiffness: 300 }}
-              className="max-w-sm w-full rounded-2xl border border-emerald-400/25 bg-gradient-to-br from-emerald-950/50 to-[#0c0a08] p-6 text-center shadow-2xl shadow-emerald-900/15"
+              className="max-w-sm w-full rounded-leaf-sm border border-emerald-400/25 bg-gradient-to-br from-emerald-950/50 to-[#0B100D] p-6 text-center shadow-2xl shadow-emerald-900/15"
             >
               <motion.div
                 initial={{ scale: 0 }}

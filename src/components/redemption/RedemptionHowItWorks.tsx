@@ -5,7 +5,7 @@ import { glass } from '@/lib/glass';
 export const RedemptionHowItWorks = memo(function RedemptionHowItWorks() {
   return (
     <section
-      className={`${glass.subtle} border-[#f4c979]/15 p-4 sm:p-5`}
+      className={`${glass.subtle} border-[#F4F7F2]/15 p-4 sm:p-5`}
       aria-labelledby="how-it-works-heading"
       data-testid="redemption-how-it-works"
     >
@@ -16,7 +16,7 @@ export const RedemptionHowItWorks = memo(function RedemptionHowItWorks() {
         {REDEMPTION_HOW_IT_WORKS.map((step) => (
           <li key={step.step} className="flex gap-3">
             <span
-              className="flex-shrink-0 w-7 h-7 rounded-full bg-[#f4c979]/15 border border-[#f4c979]/30 text-[#f4c979] text-xs font-bold flex items-center justify-center"
+              className="flex-shrink-0 w-7 h-7 rounded-full bg-[#F4F7F2]/15 border border-[#F4F7F2]/30 text-[#F4F7F2] text-xs font-bold flex items-center justify-center"
               aria-hidden
             >
               {step.step}

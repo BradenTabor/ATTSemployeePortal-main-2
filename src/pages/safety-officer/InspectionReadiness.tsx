@@ -205,7 +205,7 @@ export default function InspectionReadiness() {
   return (
     <DashboardLayout title="Inspection Readiness">
       <div className="max-w-3xl mx-auto pb-20">
-        <p className="text-xs font-medium text-rose-200/60 uppercase tracking-widest mb-1.5" aria-hidden>
+        <p className="text-xs font-medium text-rose-200/60 uppercase mb-1.5 font-mono font-medium tracking-[0.14em]" aria-hidden>
           Live checklist
         </p>
         <p className="text-sm text-white/70 leading-relaxed mb-4 max-w-[60ch]">
@@ -222,17 +222,17 @@ export default function InspectionReadiness() {
           <span className="inline-flex items-center gap-1.5 text-sm font-mono tabular-nums text-emerald-400">
             <span className="w-2 h-2 rounded-full bg-emerald-400" aria-hidden />
             {summary.compliant}
-            <span className="text-[10px] uppercase tracking-wider text-white/40 font-sans">pass</span>
+            <span className="text-[10px] uppercase text-white/40 font-sans font-mono font-medium tracking-[0.14em]">pass</span>
           </span>
           <span className="inline-flex items-center gap-1.5 text-sm font-mono tabular-nums text-amber-400">
             <span className="w-2 h-2 rounded-full bg-amber-400" aria-hidden />
             {summary.warning}
-            <span className="text-[10px] uppercase tracking-wider text-white/40 font-sans">verify</span>
+            <span className="text-[10px] uppercase text-white/40 font-sans font-mono font-medium tracking-[0.14em]">verify</span>
           </span>
           <span className="inline-flex items-center gap-1.5 text-sm font-mono tabular-nums text-rose-400">
             <span className="w-2 h-2 rounded-full bg-rose-400" aria-hidden />
             {summary.nonCompliant}
-            <span className="text-[10px] uppercase tracking-wider text-white/40 font-sans">action</span>
+            <span className="text-[10px] uppercase text-white/40 font-sans font-mono font-medium tracking-[0.14em]">action</span>
           </span>
         </div>
 
@@ -240,7 +240,7 @@ export default function InspectionReadiness() {
         <div className={`${glass.card} overflow-hidden`}>
           <div className="px-3 py-2.5 border-b border-white/[0.06] flex items-center gap-2">
             <ClipboardCheck className="w-4 h-4 text-rose-400 flex-shrink-0" aria-hidden />
-            <span className="text-xs font-medium text-white/80 uppercase tracking-wider">Checklist</span>
+            <span className="text-xs font-medium text-white/80 uppercase font-mono font-medium tracking-[0.14em]">Checklist</span>
           </div>
           <ul className="divide-y divide-white/[0.04]" aria-label="Inspection readiness checklist">
             {items.map((item, index) => (

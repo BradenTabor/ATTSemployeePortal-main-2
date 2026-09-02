@@ -118,31 +118,31 @@ function GoldCollapsibleSectionComponent({
   return (
     <section
       className={cn(
-        'relative rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] overflow-hidden transition-all shadow-[0_25px_50px_rgba(0,0,0,0.5)]',
-        isHovered && shouldAnimate && 'border-[#f6dcb2]/40 shadow-[0_30px_60px_rgba(0,0,0,0.6)]',
+        'relative rounded-leaf border border-[#E4EAE1]/20 bg-gradient-to-br from-[#0B100D] via-[#040605] to-[#040605] overflow-hidden transition-all shadow-[0_25px_50px_rgba(0,0,0,0.5)]',
+        isHovered && shouldAnimate && 'border-[#E4EAE1]/40 shadow-[0_30px_60px_rgba(0,0,0,0.6)]',
         className
       )}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Ambient glow overlays */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(247,228,189,0.08),transparent_50%)] opacity-80" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(209,152,57,0.06),transparent_40%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(236,255,174,0.08),transparent_50%)] opacity-80" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(174,219,63,0.06),transparent_40%)]" />
       
       {/* Shimmer effect on hover - respects reduced motion */}
       {shouldAnimate && (
         <div 
           className={cn(
-            "pointer-events-none absolute inset-0 overflow-hidden rounded-3xl transition-opacity duration-500",
+            "pointer-events-none absolute inset-0 overflow-hidden rounded-leaf transition-opacity duration-500",
             isHovered ? "opacity-100" : "opacity-0"
           )}
           style={{
             background: `linear-gradient(
               115deg,
               transparent 15%,
-              rgba(247,228,189,0.06) 35%,
-              rgba(244,201,121,0.04) 50%,
-              rgba(247,228,189,0.06) 65%,
+              rgba(236,255,174,0.06) 35%,
+              rgba(221,255,133,0.04) 50%,
+              rgba(236,255,174,0.06) 65%,
               transparent 85%
             )`,
             backgroundSize: '250% 100%',
@@ -164,24 +164,24 @@ function GoldCollapsibleSectionComponent({
             aria-label={isOpen ? `Collapse ${title}` : `Expand ${title}`}
             className={cn(
               'flex-1 flex items-center gap-4 text-left',
-              'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c0b09]',
+              'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]',
               'rounded-xl -m-2 p-2 transition-all duration-300 hover:bg-white/5'
             )}
           >
             {/* Icon container with gold glow */}
             {icon && (
-              <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-[#fef3d1]/15 to-[#f4c979]/10 border border-[#f4c979]/40 flex items-center justify-center shadow-[0_0_20px_rgba(244,201,121,0.15)]">
+              <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-[#F4F7F2]/15 to-[#F4F7F2]/10 border border-[#F4F7F2]/40 flex items-center justify-center shadow-[0_0_20px_rgba(221,255,133,0.15)]">
                 {icon}
               </div>
             )}
 
             {/* Title and subtitle */}
             <div className="flex-1 min-w-0">
-              <h3 className="text-lg md:text-xl font-bold text-[#fff6dd] flex items-center gap-2 tracking-wide">
+              <h3 className="text-lg md:text-xl font-bold text-[#F4F7F2] flex items-center gap-2 tracking-wide">
                 {title}
               </h3>
               {subtitle && (
-                <p className="text-xs md:text-sm text-[#f8e5bb]/70 mt-0.5 line-clamp-1">
+                <p className="text-xs md:text-sm text-[#E4EAE1]/70 mt-0.5 line-clamp-1">
                   {subtitle}
                 </p>
               )}
@@ -191,10 +191,10 @@ function GoldCollapsibleSectionComponent({
             <motion.div
               animate={{ rotate: isOpen ? 180 : 0 }}
               transition={prefersReducedMotion ? chevronTransitionReduced : chevronTransition}
-              className="flex-shrink-0 w-8 h-8 rounded-full bg-[#f4c979]/10 border border-[#f4c979]/30 flex items-center justify-center will-change-transform"
+              className="flex-shrink-0 w-8 h-8 rounded-full bg-[#F4F7F2]/10 border border-[#F4F7F2]/30 flex items-center justify-center will-change-transform"
             >
               <ChevronDown
-                className="w-5 h-5 text-[#f4c979]"
+                className="w-5 h-5 text-[#F4F7F2]"
                 aria-hidden="true"
               />
             </motion.div>
@@ -218,7 +218,7 @@ function GoldCollapsibleSectionComponent({
             className="overflow-hidden"
           >
             {/* Content divider line */}
-            <div className="mx-3 sm:mx-5 md:mx-6 h-px bg-gradient-to-r from-transparent via-[#f4c979]/30 to-transparent" />
+            <div className="mx-3 sm:mx-5 md:mx-6 h-px bg-gradient-to-r from-transparent via-[#F4F7F2]/30 to-transparent" />
             
             <div className="p-3 sm:p-5 md:p-6 pt-3 sm:pt-4">
               {hasHydrated && children}

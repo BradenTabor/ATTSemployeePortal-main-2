@@ -1331,39 +1331,43 @@ export default function DailyJSAForm() {
     navigate(getRoleDashboard(role));
   }, [navigate, role]);
 
+  const hasValidationErrors = Object.keys(allErrors).some((k) => allErrors[k]);
+  const validationSummaryEl = (
+    <ValidationSummary
+      errors={allErrors}
+      currentStep={currentStep}
+      getStepForField={getStepForField}
+      onNavigateToStep={(step: number) => {
+        setCurrentStep(step);
+        setTimeout(() => {
+          const firstErrorField = Object.keys(allErrors).find((key) => allErrors[key]);
+          if (firstErrorField) {
+            scrollToFirstError(allErrors, { offset: 180 });
+          }
+        }, 300);
+      }}
+      formType="jsa"
+      compact={true}
+    />
+  );
+
   return (
     <DashboardLayout title="Daily JSA" hideHeader pageHeading>
       <div
         className="fixed inset-0 flex flex-col"
         style={{
           background:
-            "linear-gradient(180deg, rgba(3,18,12,1) 0%, rgba(0,8,4,1) 50%, rgba(0,0,0,1) 100%)",
+            "linear-gradient(180deg, rgba(11,16,13,1) 0%, rgba(4,6,5,1) 50%, rgba(0,0,0,1) 100%)",
         }}
       >
         {/* Offline form indicator */}
         <OfflineFormIndicator offlineCapable={true} className="mx-3 mt-2" />
 
-        {/* Validation Summary - Step-aware (positioned top-right, compact, non-obstructive, below all header elements) */}
-        {Object.keys(allErrors).filter(k => allErrors[k]).length > 0 && (
-          <div className="fixed top-16 right-2 sm:absolute sm:top-[140px] sm:right-3 z-50 pointer-events-none max-w-[calc(100vw-1rem)] sm:max-w-none">
-            <div className="pointer-events-auto">
-              <ValidationSummary
-                errors={allErrors}
-                currentStep={currentStep}
-                getStepForField={getStepForField}
-                onNavigateToStep={(step: number) => {
-                  setCurrentStep(step);
-                  setTimeout(() => {
-                    const firstErrorField = Object.keys(allErrors).find(key => allErrors[key]);
-                    if (firstErrorField) {
-                      scrollToFirstError(allErrors, { offset: 180 });
-                    }
-                  }, 300);
-                }}
-                formType="jsa"
-                compact={true}
-              />
-            </div>
+        {/* Validation Summary - Step-aware. Floats top-right on desktop; on phones the
+            wizard header is ~150px tall so we render it in-flow via the wizard's banner slot. */}
+        {hasValidationErrors && (
+          <div className="hidden sm:block absolute top-[140px] right-3 z-50 pointer-events-none">
+            <div className="pointer-events-auto">{validationSummaryEl}</div>
           </div>
         )}
 
@@ -1405,7 +1409,7 @@ export default function DailyJSAForm() {
               className="flex-shrink-0 border-b border-emerald-500/20 flex items-center justify-between px-3 py-2 sm:px-5 sm:py-2.5"
               style={{
                 background:
-                  "linear-gradient(180deg, rgba(5,30,18,0.98) 0%, rgba(0,15,8,0.95) 100%)",
+                  "linear-gradient(180deg, rgba(11,16,13,0.98) 0%, rgba(4,6,5,0.95) 100%)",
               }}
             >
               <button
@@ -1416,7 +1420,7 @@ export default function DailyJSAForm() {
                 <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span className="text-xs sm:text-sm font-medium">Back</span>
               </button>
-              <h1 className="text-xs sm:text-sm font-bold text-white truncate">Paper JSA Upload</h1>
+              <h1 className="font-display text-sm font-medium tracking-tight text-bone-50 truncate">Paper JSA Upload</h1>
               {!isEditMode && (
                 <button
                   type="button"
@@ -1440,7 +1444,7 @@ export default function DailyJSAForm() {
                   required
                 />
                 <div>
-                  <p className="text-xs sm:text-sm font-medium text-white/50 uppercase tracking-wider mb-2">
+                  <p className="text-xs sm:text-sm font-medium text-white/50 uppercase mb-2 font-mono font-medium tracking-[0.14em]">
                     Location
                   </p>
                   <SavedLocationPicker
@@ -1455,7 +1459,7 @@ export default function DailyJSAForm() {
                       handleInputChange("circuitNumber", values.circuitNumber);
                     }}
                   />
-                  <label className="flex items-center gap-1 text-xs sm:text-sm font-medium text-white/70 mb-0.5 sm:mb-1 uppercase tracking-wide mt-2">
+                  <label className="flex items-center gap-1 text-xs sm:text-sm font-medium text-white/70 mb-0.5 sm:mb-1 uppercase mt-2 font-mono font-medium tracking-[0.14em]">
                     Work Location <span className="text-emerald-400">*</span>
                   </label>
                   <input
@@ -1531,7 +1535,7 @@ export default function DailyJSAForm() {
               className="relative z-10 flex-shrink-0 border-t border-white/10 py-3 px-4 flex flex-col items-center gap-2"
               style={{
                 background:
-                  "linear-gradient(0deg, rgba(0,10,5,0.98) 0%, rgba(0,20,10,0.95) 100%)",
+                  "linear-gradient(0deg, rgba(4,6,5,0.98) 0%, rgba(11,16,13,0.95) 100%)",
               }}
             >
               <button
@@ -1574,13 +1578,14 @@ export default function DailyJSAForm() {
             hasUnsavedChanges={hasUnsavedChanges}
             stepCompletionStatus={stepCompletionStatus}
             validationErrors={allErrors}
+            banner={hasValidationErrors ? <div className="sm:hidden">{validationSummaryEl}</div> : undefined}
             headerRight={
               !isEditMode &&
               (form.submissionType === "digital" ? (
                 <button
                   type="button"
                   onClick={handleSwitchToPaper}
-                  className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg border border-amber-500/40 bg-amber-500/15 text-amber-200 hover:bg-amber-500/25 hover:border-amber-400/50 hover:text-amber-100 text-xs sm:text-sm font-semibold whitespace-nowrap transition-colors shadow-[0_0_12px_rgba(245,158,11,0.15)]"
+                  className="tap-44 relative inline-flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg border border-amber-500/40 bg-amber-500/15 text-amber-200 hover:bg-amber-500/25 hover:border-amber-400/50 hover:text-amber-100 text-xs sm:text-sm font-semibold whitespace-nowrap transition-colors shadow-[0_0_12px_rgba(174,219,63,0.15)]"
                   aria-label="Switch to upload a photo of a paper JSA form instead"
                 >
                   <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" aria-hidden />
@@ -1590,7 +1595,7 @@ export default function DailyJSAForm() {
                 <button
                   type="button"
                   onClick={handleSwitchToDigital}
-                  className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg border border-emerald-500/40 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25 hover:border-emerald-400/50 hover:text-emerald-100 text-xs sm:text-sm font-semibold whitespace-nowrap transition-colors"
+                  className="tap-44 relative inline-flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg border border-emerald-500/40 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25 hover:border-emerald-400/50 hover:text-emerald-100 text-xs sm:text-sm font-semibold whitespace-nowrap transition-colors"
                   aria-label="Switch to full digital JSA form"
                 >
                   <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" aria-hidden />

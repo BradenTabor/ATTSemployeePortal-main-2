@@ -55,7 +55,7 @@ export default function EmergencyTriage({
                 ${
                   isSelected
                     ? p.type === 'equipment-fire'
-                      ? 'bg-[linear-gradient(90deg,rgba(176,78,12,0.55)_0%,rgba(29,51,119,0.55)_2%)] border-2 border-amber-600/80 text-white shadow-[0_0_18px_rgba(220,38,38,0.3),0_2px_8px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.08)]'
+                      ? 'bg-[linear-gradient(90deg,rgba(107,138,31,0.55)_0%,rgba(47,95,72,0.55)_2%)] border-2 border-amber-600/80 text-white shadow-[0_0_18px_rgba(220,38,38,0.3),0_2px_8px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.08)]'
                       : 'bg-gradient-to-b from-red-800/90 to-red-900/90 border-2 border-red-500 text-white shadow-[0_0_18px_rgba(220,38,38,0.3),0_2px_8px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.08)]'
                     : p.type === 'medical'
                       ? 'bg-[linear-gradient(rgba(178,6,6,0.05),rgba(178,6,6,0.05)),linear-gradient(to_bottom,var(--tw-gradient-from),var(--tw-gradient-to))] from-slate-750 to-slate-800 border-2 border-slate-600/80 text-slate-200 shadow-[0_1px_3px_rgba(0,0,0,0.2),0_6px_20px_rgba(0,0,0,0.15),inset_0_1px_0_rgba(255,255,255,0.04)]'

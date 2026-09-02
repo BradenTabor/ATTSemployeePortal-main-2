@@ -104,13 +104,13 @@ function StatCard({ label, value, icon, color, onClick }: StatCardProps) {
     <button
       onClick={onClick}
       disabled={!onClick}
-      className={`rounded-lg sm:rounded-2xl border border-[#ff9350]/20 bg-gradient-to-br from-[#2d1409]/50 to-[#0a0402]/70 p-2 sm:p-4 text-left transition-all ${
-        onClick ? 'hover:border-[#ff9350]/40 hover:bg-[#2d1409]/60 cursor-pointer' : 'cursor-default'
+      className={`rounded-lg sm:rounded-leaf-sm border border-[#B8FF7A]/20 bg-gradient-to-br from-[#121A15]/50 to-[#040605]/70 p-2 sm:p-4 text-left transition-all ${
+        onClick ? 'hover:border-[#B8FF7A]/40 hover:bg-[#121A15]/60 cursor-pointer' : 'cursor-default'
       }`}
     >
       <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-2">
         <div className={cn(color, "w-3 h-3 sm:w-4 sm:h-4")}>{icon}</div>
-        <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-amber-200/50">{label}</span>
+        <span className="text-[9px] sm:text-[10px] uppercase text-amber-200/50 font-mono font-medium tracking-[0.14em]">{label}</span>
       </div>
       <p className="text-lg sm:text-2xl font-bold text-white">{value}</p>
     </button>
@@ -202,9 +202,9 @@ function VehicleRow({ vehicle, isSelected, isHighlighted, onSelect, index, butto
       className={cn(
         "w-full text-left px-2.5 sm:px-4 py-2 sm:py-3 transition-all duration-150 flex items-center gap-2 sm:gap-3 group",
         isSelected
-          ? 'bg-gradient-to-r from-[#ff9350]/20 to-[#ff9350]/5 border-l-2 border-l-[#ff9350]'
+          ? 'bg-gradient-to-r from-[#B8FF7A]/20 to-[#B8FF7A]/5 border-l-2 border-l-[#B8FF7A]'
           : 'border-l-2 border-l-transparent hover:bg-white/[0.03]',
-        isHighlighted && 'ring-2 ring-[#ff9350]/50 ring-offset-2 ring-offset-[#080403]'
+        isHighlighted && 'ring-2 ring-[#B8FF7A]/50 ring-offset-2 ring-offset-[#040605]'
       )}
     >
       {/* Status indicator */}
@@ -257,7 +257,7 @@ function VehicleRow({ vehicle, isSelected, isHighlighted, onSelect, index, butto
       
       <ChevronRight className={cn(
         "w-3.5 h-3.5 sm:w-4 sm:h-4 transition-all flex-shrink-0",
-        isSelected ? 'text-[#ff9350]' : 'text-white/20 group-hover:text-white/40'
+        isSelected ? 'text-[#B8FF7A]' : 'text-white/20 group-hover:text-white/40'
       )} />
     </motion.button>
   );
@@ -451,17 +451,17 @@ export default function MechanicPartsRepairsLog() {
             className="relative"
           >
             <div 
-              className="relative overflow-hidden rounded-lg sm:rounded-2xl md:rounded-3xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
+              className="relative overflow-hidden rounded-lg sm:rounded-leaf-sm md:rounded-leaf border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
               style={{
                 backdropFilter: 'blur(24px) saturate(180%)',
                 WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-                background: 'linear-gradient(145deg, rgba(45, 20, 8, 0.6) 0%, rgba(20, 8, 4, 0.5) 50%, rgba(10, 4, 2, 0.4) 100%)',
-                boxShadow: 'inset 0 0 15px rgba(255, 147, 80, 0.08), 0 8px 32px rgba(0,0,0,0.5)',
+                background: 'linear-gradient(145deg, rgba(18,26,21, 0.6) 0%, rgba(11,16,13, 0.5) 50%, rgba(4,6,5, 0.4) 100%)',
+                boxShadow: 'inset 0 0 15px rgba(200,245,94, 0.08), 0 8px 32px rgba(0,0,0,0.5)',
               }}
             >
               <div className="absolute inset-0 opacity-70 pointer-events-none" style={{ background: 'linear-gradient(125deg, rgba(255,255,255,0.15) 0%, transparent 30%, transparent 70%, rgba(255,255,255,0.05) 100%)' }} />
               <div className="absolute inset-0 opacity-50 pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 50%)' }} />
-              <div className="absolute top-0 left-0 w-24 h-24 rounded-full opacity-30 pointer-events-none" style={{ background: 'radial-gradient(circle at 50% 50%, rgba(255, 147, 80, 0.3) 0%, transparent 70%)', filter: 'blur(15px)' }} />
+              <div className="absolute top-0 left-0 w-24 h-24 rounded-full opacity-30 pointer-events-none" style={{ background: 'radial-gradient(circle at 50% 50%, rgba(200,245,94, 0.3) 0%, transparent 70%)', filter: 'blur(15px)' }} />
               <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-white/[0.15] to-transparent" />
               
               <div className="relative px-3 py-2.5 sm:px-5 sm:py-4 md:px-7 md:py-5">
@@ -473,16 +473,16 @@ export default function MechanicPartsRepairsLog() {
                     className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl bg-amber-500/15 border border-amber-500/30"
                   >
                     <Flame className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400" />
-                    <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-bold text-amber-200">Mechanics</span>
+                    <span className="text-[9px] sm:text-[10px] uppercase text-amber-200 font-mono font-medium tracking-[0.14em]">Mechanics</span>
                   </motion.div>
                   <motion.div
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.4, delay: 0.3 }}
-                    className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md sm:rounded-lg bg-[#1a0804]/60 border border-amber-500/20"
+                    className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md sm:rounded-lg bg-[#0B100D]/60 border border-amber-500/20"
                   >
                     <Package className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-amber-400" />
-                    <span className="text-[8px] sm:text-[9px] uppercase tracking-wider font-semibold text-amber-200/70">Parts & Repairs</span>
+                    <span className="text-[8px] sm:text-[9px] uppercase text-amber-200/70 font-mono font-medium tracking-[0.14em]">Parts & Repairs</span>
                   </motion.div>
                 </div>
                 <div className="flex items-center gap-2 sm:gap-4">
@@ -491,7 +491,7 @@ export default function MechanicPartsRepairsLog() {
                     animate={{ scaleY: 1, opacity: 1 }}
                     transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
                     className="w-0.5 sm:w-1 h-10 sm:h-14 md:h-16 rounded-full bg-gradient-to-b from-amber-400 via-orange-500 to-red-600 origin-top flex-shrink-0"
-                    style={{ boxShadow: '0 0 20px rgba(251, 146, 60, 0.4), 0 0 40px rgba(251, 146, 60, 0.2)' }}
+                    style={{ boxShadow: '0 0 20px rgba(200,245,94, 0.4), 0 0 40px rgba(200,245,94, 0.2)' }}
                   />
                   <div className="flex-1 min-w-0">
                     {enableAnimations ? (
@@ -500,13 +500,13 @@ export default function MechanicPartsRepairsLog() {
                         preset="blurSlide"
                         per="char"
                         delay={0.15}
-                        className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black tracking-tight"
-                        segmentWrapperClassName="bg-gradient-to-r from-white via-amber-100 to-white/90 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(251,146,60,0.3)]"
+                        className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]"
+                        segmentWrapperClassName="text-glow"
                       >
                         Parts & Repairs Log
                       </TextEffect>
                     ) : (
-                      <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black tracking-tight bg-gradient-to-r from-white via-amber-100 to-white/90 bg-clip-text text-transparent">
+                      <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">
                         Parts & Repairs Log
                       </h1>
                     )}
@@ -546,7 +546,7 @@ export default function MechanicPartsRepairsLog() {
               {viewMode === 'repairs' && (
                 <motion.div
                   layoutId="activeViewTab"
-                  className="absolute inset-0 bg-gradient-to-r from-[#ff9350] to-[#e87830] rounded-md sm:rounded-lg shadow-lg shadow-[#ff9350]/20"
+                  className="absolute inset-0 bg-gradient-to-r from-[#B8FF7A] to-[#9BEB5B] rounded-md sm:rounded-lg shadow-lg shadow-[#B8FF7A]/20"
                   transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
                 />
               )}
@@ -568,7 +568,7 @@ export default function MechanicPartsRepairsLog() {
               {viewMode === 'parts' && (
                 <motion.div
                   layoutId="activeViewTab"
-                  className="absolute inset-0 bg-gradient-to-r from-[#ff9350] to-[#e87830] rounded-md sm:rounded-lg shadow-lg shadow-[#ff9350]/20"
+                  className="absolute inset-0 bg-gradient-to-r from-[#B8FF7A] to-[#9BEB5B] rounded-md sm:rounded-lg shadow-lg shadow-[#B8FF7A]/20"
                   transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
                 />
               )}
@@ -623,7 +623,7 @@ export default function MechanicPartsRepairsLog() {
         {batchedAlerts.length > 0 && (
           <ScrollRevealSection delay={0.05}>
             <div className="mb-3 sm:mb-5">
-              <h2 className="text-[10px] sm:text-xs uppercase tracking-wider text-amber-200/50 font-medium px-1 mb-2 sm:mb-3">
+              <h2 className="text-[10px] sm:text-xs uppercase text-amber-200/50 font-medium px-1 mb-2 sm:mb-3 font-mono font-medium tracking-[0.14em]">
                 Needs Attention
               </h2>
               <div className="grid gap-2 sm:gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -647,7 +647,7 @@ export default function MechanicPartsRepairsLog() {
         
         {/* Filter Bar */}
         <ScrollRevealSection delay={0.1}>
-          <div className="rounded-lg sm:rounded-xl border border-[#ff9350]/15 bg-gradient-to-r from-[#0c0402] to-[#120805] p-2 sm:p-3 mb-3 sm:mb-5">
+          <div className="rounded-lg sm:rounded-xl border border-[#B8FF7A]/15 bg-gradient-to-r from-[#040605] to-[#0B100D] p-2 sm:p-3 mb-3 sm:mb-5">
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               {/* Urgency Filter */}
               <div className="flex gap-0.5 sm:gap-1 p-0.5 sm:p-1 bg-black/30 rounded-md sm:rounded-lg border border-white/5 overflow-x-auto">
@@ -661,7 +661,7 @@ export default function MechanicPartsRepairsLog() {
                       className={cn(
                         "px-1.5 sm:px-2.5 py-1 sm:py-1.5 rounded text-[10px] sm:text-xs font-medium transition-all whitespace-nowrap shrink-0",
                         isSelected
-                          ? 'bg-gradient-to-r from-[#ff9350] to-[#e87830] text-white shadow-md'
+                          ? 'bg-gradient-to-r from-[#B8FF7A] to-[#9BEB5B] text-white shadow-md'
                           : 'text-white/60 hover:text-white hover:bg-white/5'
                       )}
                     >
@@ -679,7 +679,7 @@ export default function MechanicPartsRepairsLog() {
                   placeholder="Search by truck number..."
                   value={searchQuery}
                   onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                  className="w-full bg-black/30 border border-white/10 rounded-md sm:rounded-lg pl-7 sm:pl-8 pr-7 sm:pr-8 py-1.5 sm:py-2 text-xs sm:text-sm text-white placeholder:text-white/30 focus:outline-none focus-visible:ring-1 focus-visible:ring-[#ff9350]/50 transition-all"
+                  className="w-full bg-black/30 border border-white/10 rounded-md sm:rounded-lg pl-7 sm:pl-8 pr-7 sm:pr-8 py-1.5 sm:py-2 text-xs sm:text-sm text-white placeholder:text-white/30 focus:outline-none focus-visible:ring-1 focus-visible:ring-[#B8FF7A]/50 transition-all"
                 />
                 {searchQuery && (
                   <button
@@ -728,11 +728,11 @@ export default function MechanicPartsRepairsLog() {
           {!isLoading && !error && (
             <div className="grid gap-2 sm:gap-4 lg:grid-cols-3">
               {/* Vehicle List */}
-              <div className="rounded-lg sm:rounded-xl border border-white/10 bg-[#080403] overflow-hidden flex flex-col">
+              <div className="rounded-lg sm:rounded-xl border border-white/10 bg-[#040605] overflow-hidden flex flex-col">
                 {/* Header */}
                 <div className="flex items-center justify-between px-2.5 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-white/5 to-transparent border-b border-white/5">
                   <div className="flex items-center gap-1.5 sm:gap-2">
-                    <Truck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#ff9350]" />
+                    <Truck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B8FF7A]" />
                     <span className="text-[10px] sm:text-xs font-medium text-white/80">Fleet Vehicles</span>
                     <span className="text-[9px] sm:text-[10px] text-white/40">({filteredVehicles.length})</span>
                   </div>
@@ -797,10 +797,10 @@ export default function MechanicPartsRepairsLog() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -8 }}
                       transition={{ duration: 0.2 }}
-                      className="h-full min-h-[300px] sm:min-h-[400px] rounded-lg sm:rounded-xl border border-white/5 bg-[#050302] p-4 sm:p-6 flex flex-col items-center justify-center text-center"
+                      className="h-full min-h-[300px] sm:min-h-[400px] rounded-lg sm:rounded-xl border border-white/5 bg-[#040605] p-4 sm:p-6 flex flex-col items-center justify-center text-center"
                     >
-                      <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl bg-[#ff9350]/10 border border-[#ff9350]/20 mb-3 sm:mb-4">
-                        <Wrench className="w-5 h-5 sm:w-6 sm:h-6 text-[#ff9350]/70" />
+                      <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl bg-[#B8FF7A]/10 border border-[#B8FF7A]/20 mb-3 sm:mb-4">
+                        <Wrench className="w-5 h-5 sm:w-6 sm:h-6 text-[#B8FF7A]/70" />
                       </div>
                       <p className="text-xs sm:text-sm font-medium text-white/80 mb-1">
                         Select a Vehicle

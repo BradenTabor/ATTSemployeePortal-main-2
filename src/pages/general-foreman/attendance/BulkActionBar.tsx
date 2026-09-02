@@ -50,8 +50,8 @@ export default function BulkActionBar({
           >
             <div
               className={cn(
-                'max-w-2xl mx-auto rounded-2xl bg-gray-800 border border-white/[0.08]',
-                'shadow-[0_-4px_20px_rgba(192,132,252,0.15),0_2px_8px_rgba(0,0,0,0.6)]',
+                'max-w-2xl mx-auto rounded-leaf-sm bg-gray-800 border border-white/[0.08]',
+                'shadow-[0_-4px_20px_rgba(127,224,176,0.15),0_2px_8px_rgba(0,0,0,0.6)]',
                 'p-4'
               )}
             >

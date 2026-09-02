@@ -102,20 +102,20 @@ export default function RewardsStorePage() {
           >
             <Link
               to="/my-points"
-              className="inline-flex items-center gap-1.5 text-xs text-[#f4c979]/80 hover:text-[#f4c979] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400 rounded"
+              className="tap-44 relative inline-flex items-center gap-1.5 text-xs text-[#F4F7F2]/80 hover:text-[#F4F7F2] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400 rounded"
             >
               View My Progress
               <ChevronRight className="w-3.5 h-3.5" aria-hidden />
             </Link>
             <Link
               to="/safety-rewards"
-              className="inline-flex items-center gap-1.5 text-xs text-white/50 hover:text-white/80 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400 rounded"
+              className="tap-44 relative inline-flex items-center gap-1.5 text-xs text-white/50 hover:text-white/80 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400 rounded"
             >
               <ArrowLeft className="w-3.5 h-3.5" aria-hidden />
               Back to Safety Rewards
             </Link>
           </nav>
-          <h1 className="text-2xl font-bold text-white">Rewards Store</h1>
+          <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">Rewards Store</h1>
           <p className="text-sm text-white/60 mt-1">
             Spend your earned points on ATTS gear and gift cards.
           </p>
@@ -202,7 +202,7 @@ export default function RewardsStorePage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
           style={{ zIndex: Z.toast }}
-          className={`fixed bottom-6 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-sm p-4 flex items-start gap-3 ${glass.success}`}
+          className={`fixed bottom-safe-6 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-sm p-4 flex items-start gap-3 ${glass.success}`}
           role="status"
           data-testid="redeem-success-toast"
         >

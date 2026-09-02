@@ -12,7 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { Clock, Trash2, RotateCcw } from 'lucide-react';
 import type { DraftData } from '../../hooks/useFormPersistence';
-import attsLogoStamped from '../../assets/ATTS_Logo_stamped.png';
+import { BrandMark } from '@/components/canopy/BrandMark';
 import { useModalOverlay } from '../../hooks/useModalOverlay';
 
 interface DraftRecoveryModalProps<T> {
@@ -93,7 +93,7 @@ export function DraftRecoveryModal<T>({
           role="dialog"
           aria-modal="true"
           aria-labelledby="draft-recovery-modal-title"
-          className="relative w-full max-w-sm bg-gradient-to-br from-gray-900 via-gray-900 to-gray-950 rounded-2xl border border-white/10 shadow-2xl overflow-hidden"
+          className="relative w-full max-w-sm bg-gradient-to-br from-gray-900 via-gray-900 to-gray-950 rounded-leaf-sm border border-white/10 shadow-2xl overflow-hidden"
           initial={{ scale: 0.9, y: 20, opacity: 0 }}
           animate={{ scale: 1, y: 0, opacity: 1 }}
           exit={{ scale: 0.9, y: 20, opacity: 0 }}
@@ -108,7 +108,7 @@ export function DraftRecoveryModal<T>({
               {/* Icon — 3× size, premium in/out motion */}
               <div className="flex justify-center mb-5">
                 <motion.div
-                  className="w-[128px] h-[128px] rounded-2xl flex items-center justify-center overflow-hidden bg-transparent"
+                  className="w-[128px] h-[128px] rounded-leaf-sm flex items-center justify-center overflow-hidden bg-transparent"
                   initial={{ scale: 0.6, opacity: 0 }}
                   animate={
                     logoEntranceDone
@@ -130,17 +130,12 @@ export function DraftRecoveryModal<T>({
                         }
                   }
                 >
-                  <img
-                    src={attsLogoStamped}
-                    alt=""
-                    className="w-[120px] h-[120px] object-contain brightness-0 invert opacity-95"
-                    aria-hidden
-                  />
+                  <BrandMark size={96} live />
                 </motion.div>
               </div>
 
               {/* Title */}
-              <h3 id="draft-recovery-modal-title" className="text-lg font-bold text-white text-center mb-1">
+              <h3 id="draft-recovery-modal-title" className="type-display text-[1.75rem] font-light text-bone-50 text-center mb-1">
                 Resume Draft?
               </h3>
 

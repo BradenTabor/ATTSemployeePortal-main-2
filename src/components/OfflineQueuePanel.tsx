@@ -253,7 +253,7 @@ export function OfflineQueuePanel({ open, onClose }: OfflineQueuePanelProps) {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed right-0 top-0 bottom-0 z-[61] w-full max-w-md bg-[#0a0f0d] border-l border-white/10 shadow-2xl flex flex-col"
+            className="fixed right-0 top-0 bottom-0 z-[61] w-full max-w-md bg-[#0B100D] border-l border-white/10 shadow-2xl flex flex-col"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-white/10">
@@ -444,7 +444,7 @@ export function OfflineQueuePanel({ open, onClose }: OfflineQueuePanelProps) {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.15 }}
-                  className="bg-[#0a0f0d] border border-white/15 rounded-xl shadow-2xl max-w-sm w-full p-4 space-y-4"
+                  className="bg-[#0B100D] border border-white/15 rounded-xl shadow-2xl max-w-sm w-full p-4 space-y-4"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <p id="offline-discard-title" className="text-sm font-semibold text-white">
@@ -458,14 +458,14 @@ export function OfflineQueuePanel({ open, onClose }: OfflineQueuePanelProps) {
                       ref={discardCancelRef}
                       type="button"
                       onClick={cancelDiscard}
-                      className="px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:bg-white/10 border border-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+                      className="px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:bg-white/10 border border-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
                     >
                       Cancel
                     </button>
                     <button
                       type="button"
                       onClick={() => void confirmDiscard()}
-                      className="px-3 py-2 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+                      className="px-3 py-2 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
                     >
                       Discard
                     </button>

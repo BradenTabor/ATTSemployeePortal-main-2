@@ -89,7 +89,7 @@ export function RedemptionConfirmDialog({
                 type="button"
                 onClick={onConfirm}
                 disabled={confirmDisabled || confirmLoading}
-                className="px-4 py-2 text-sm font-medium text-[#2d1c04] bg-gradient-to-r from-[#f4c979] to-[#d89d3e] hover:from-[#f6dcb2] hover:to-[#f4c979] rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
+                className="px-4 py-2 text-sm font-medium text-[#040605] bg-gradient-to-r from-[#F4F7F2] to-[#8DF5A8] hover:from-[#E4EAE1] hover:to-[#F4F7F2] rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
               >
                 {confirmLoading ? 'Processing…' : confirmLabel}
               </button>

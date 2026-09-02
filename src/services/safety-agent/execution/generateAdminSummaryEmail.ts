@@ -239,7 +239,7 @@ export function generateHtmlBody(summary: AdminComplianceSummary): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ATTS Daily Safety Form Compliance Report</title>
 </head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.5; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 20px;">
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.5; color: #1E2A23; max-width: 600px; margin: 0 auto; padding: 20px;">
   
   <!-- Header -->
   <div style="background: linear-gradient(135deg, #166534 0%, #15803d 100%); color: white; padding: 24px; border-radius: 12px 12px 0 0; text-align: center;">
@@ -249,20 +249,20 @@ export function generateHtmlBody(summary: AdminComplianceSummary): string {
   </div>
   
   <!-- Main Content -->
-  <div style="background: #ffffff; border: 1px solid #e5e7eb; border-top: none; padding: 24px; border-radius: 0 0 12px 12px;">
+  <div style="background: #ffffff; border: 1px solid #E4EAE1; border-top: none; padding: 24px; border-radius: 0 0 12px 12px;">
     
     <!-- Date Info -->
     <div style="margin-bottom: 20px;">
-      <p style="margin: 0; color: #6b7280;"><strong>Date:</strong> ${dateLong}</p>
-      <p style="margin: 0; color: #6b7280;"><strong>Report Generated:</strong> ${generatedTime}</p>
+      <p style="margin: 0; color: #5A6B60;"><strong>Date:</strong> ${dateLong}</p>
+      <p style="margin: 0; color: #5A6B60;"><strong>Report Generated:</strong> ${generatedTime}</p>
     </div>
     
     <!-- Summary Stats -->
     <div style="background: #f9fafb; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
-      <h2 style="margin: 0 0 12px 0; font-size: 16px; color: #374151;">Summary</h2>
+      <h2 style="margin: 0 0 12px 0; font-size: 16px; color: #2F3F36;">Summary</h2>
       <table style="width: 100%; border-collapse: collapse;">
         <tr>
-          <td style="padding: 4px 0; color: #6b7280;">Total Required Employees:</td>
+          <td style="padding: 4px 0; color: #5A6B60;">Total Required Employees:</td>
           <td style="padding: 4px 0; text-align: right; font-weight: 600;">${summary.totalRequired}</td>
         </tr>
         <tr>
@@ -278,18 +278,18 @@ export function generateHtmlBody(summary: AdminComplianceSummary): string {
     
     <!-- Non-Compliant Employees -->
     <div style="margin-bottom: 20px;">
-      <h2 style="margin: 0 0 12px 0; font-size: 16px; color: #374151;">
+      <h2 style="margin: 0 0 12px 0; font-size: 16px; color: #2F3F36;">
         ${summary.totalNonCompliant > 0 ? 'Non-Compliant Employees' : 'Compliance Status'}
       </h2>
       ${nonCompliantHtml}
     </div>
     
     <!-- Footer -->
-    <div style="border-top: 1px solid #e5e7eb; padding-top: 16px; margin-top: 20px;">
-      <p style="margin: 0 0 8px 0; font-size: 12px; color: #9ca3af;">
+    <div style="border-top: 1px solid #E4EAE1; padding-top: 16px; margin-top: 20px;">
+      <p style="margin: 0 0 8px 0; font-size: 12px; color: #8A9A8E;">
         This report was generated on ${fullTimestamp}.
       </p>
-      <p style="margin: 0; font-size: 12px; color: #9ca3af;">
+      <p style="margin: 0; font-size: 12px; color: #8A9A8E;">
         Thank you for reviewing this compliance report. Please follow up with the listed employees as needed.
       </p>
     </div>
@@ -297,7 +297,7 @@ export function generateHtmlBody(summary: AdminComplianceSummary): string {
   </div>
   
   <!-- Footer Branding -->
-  <div style="text-align: center; padding: 16px; color: #9ca3af; font-size: 12px;">
+  <div style="text-align: center; padding: 16px; color: #8A9A8E; font-size: 12px;">
     ATTS Safety Compliance System
   </div>
   

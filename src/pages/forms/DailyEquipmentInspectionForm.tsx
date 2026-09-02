@@ -33,6 +33,7 @@ import { parseFormError, getErrorToastTitle } from "../../lib/errorHandling";
 import { isOnline, addToQueue } from "../../lib/offlineQueue";
 import { storePhotosForQueue } from "../../lib/offlinePhotoStore";
 import { compressImage } from "../../lib/imageCompression";
+import { uploadBatch } from "../../lib/asyncPool";
 import { OfflineFormIndicator } from "../../components/OfflineFormIndicator";
 import { validators as formValidators } from "../../lib/formValidation";
 import { useEquipmentFormValidation } from "../../hooks/equipment";
@@ -542,20 +543,29 @@ export default function DailyEquipmentInspectionForm() {
     const additionalPaths: string[] = [];
 
     try {
+      // Upload all photos with bounded concurrency; successes are recorded in
+      // uploadedPaths even when a sibling fails so the catch can roll back.
+      const photoJobs: Array<{ file: File; slot: string; key?: PhotoTypes; additionalIndex?: number }> = [];
       for (const key of PHOTO_KEYS_ORDER) {
         const file = photos[key];
-        if (!file) continue;
-        const objectPath = await uploadPhoto(file, key);
-        photoPathMap[key] = objectPath;
-        uploadedPaths.push(objectPath);
+        if (file) photoJobs.push({ file, slot: key, key });
       }
+      additionalPhotos.forEach((file, i) => {
+        photoJobs.push({ file, slot: `additional-${i}`, additionalIndex: i });
+      });
 
-      for (let i = 0; i < additionalPhotos.length; i++) {
-        const file = additionalPhotos[i];
-        const objectPath = await uploadPhoto(file, `additional-${i}`);
-        additionalPaths.push(objectPath);
-        uploadedPaths.push(objectPath);
-      }
+      const orderedAdditional: string[] = new Array(additionalPhotos.length);
+      await uploadBatch(
+        photoJobs,
+        async (job) => {
+          const objectPath = await uploadPhoto(job.file, job.slot);
+          if (job.key) photoPathMap[job.key] = objectPath;
+          if (job.additionalIndex !== undefined) orderedAdditional[job.additionalIndex] = objectPath;
+          return objectPath;
+        },
+        uploadedPaths,
+      );
+      additionalPaths.push(...orderedAdditional);
 
       const payload = {
         user_id: user.id,
@@ -786,7 +796,7 @@ export default function DailyEquipmentInspectionForm() {
       <div className="max-w-5xl mx-auto px-3 sm:px-4 pb-10 space-y-4 sm:space-y-5">
         {/* Offline indicator */}
         <OfflineFormIndicator offlineCapable={true} />
-        <section className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#0a2218] via-[#031510] to-[#010407] p-4 sm:p-5 shadow-[0_25px_80px_rgba(0,0,0,0.55)]">
+        <section className="relative overflow-hidden rounded-leaf-sm border border-white/10 bg-gradient-to-br from-[#121A15] via-[#0B100D] to-[#040605] p-4 sm:p-5 shadow-[0_25px_80px_rgba(0,0,0,0.55)]">
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute -top-24 -right-6 h-48 w-48 bg-emerald-500/15 blur-[100px]" />
           </div>
@@ -794,7 +804,7 @@ export default function DailyEquipmentInspectionForm() {
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
-                  <p className="text-[9px] tracking-[0.4em] uppercase text-emerald-200/80">
+                  <p className="text-[9px] uppercase text-emerald-200/80 font-mono font-medium tracking-[0.14em]">
                     Safety First
                   </p>
                   {/* Auto-save indicator */}
@@ -807,7 +817,7 @@ export default function DailyEquipmentInspectionForm() {
                     />
                   )}
                 </div>
-                <h1 className="text-lg sm:text-xl font-semibold text-white">
+                <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">
                   Daily Equipment Inspection
                 </h1>
                 <p className="text-xs text-white/70 hidden sm:block max-w-xl">
@@ -815,7 +825,7 @@ export default function DailyEquipmentInspectionForm() {
                 </p>
               </div>
               <div className="hidden lg:block min-w-[180px] rounded-xl border border-white/15 bg-white/[0.04] px-3 py-3 text-[10px] text-white/75">
-                <p className="text-[9px] uppercase tracking-[0.3em] text-emerald-200 mb-2">Tips</p>
+                <p className="text-[9px] uppercase text-emerald-200 mb-2 font-mono font-medium tracking-[0.14em]">Tips</p>
                 <ul className="space-y-1 list-disc list-inside">
                   <li>Good lighting helps review</li>
                   <li>Capture today's attachments</li>
@@ -828,7 +838,7 @@ export default function DailyEquipmentInspectionForm() {
                   key={stat.label}
                   className="rounded-xl border border-white/10 bg-white/[0.05] px-3 py-3 text-white"
                 >
-                  <p className="text-[9px] uppercase tracking-[0.25em] text-white/60 truncate">
+                  <p className="text-[9px] uppercase text-white/60 truncate font-mono font-medium tracking-[0.14em]">
                     {stat.label}
                   </p>
                   <p className="text-lg sm:text-xl font-semibold mt-1">{stat.value}</p>
@@ -863,10 +873,10 @@ export default function DailyEquipmentInspectionForm() {
           )}
 
           {/* Card: Equipment Info */}
-          <section className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#07140f] via-[#050a0f] to-[#020205] p-4 sm:p-5 space-y-4 shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
+          <section className="rounded-leaf-sm border border-white/10 bg-gradient-to-br from-[#0B100D] via-[#0B100D] to-[#040605] p-4 sm:p-5 space-y-4 shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[9px] tracking-[0.3em] uppercase text-emerald-200/70">
+                <p className="text-[9px] uppercase text-emerald-200/70 font-mono font-medium tracking-[0.14em]">
                   Step 1 · Equipment
                 </p>
                 <h2 className="text-sm sm:text-base font-semibold text-white">Equipment Info</h2>
@@ -878,7 +888,7 @@ export default function DailyEquipmentInspectionForm() {
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
               <div className="col-span-2 sm:col-span-1">
-                <label htmlFor="submittedBy" className="block text-[10px] uppercase tracking-[0.25em] text-white/60 mb-1">
+                <label htmlFor="submittedBy" className="block text-[10px] uppercase text-white/60 mb-1 font-mono font-medium tracking-[0.14em]">
                   Submitted By *
                 </label>
                 <input
@@ -917,7 +927,7 @@ export default function DailyEquipmentInspectionForm() {
               </div>
 
               <div>
-                <label htmlFor="equipmentType" className="block text-[10px] uppercase tracking-[0.25em] text-white/60 mb-1">
+                <label htmlFor="equipmentType" className="block text-[10px] uppercase text-white/60 mb-1 font-mono font-medium tracking-[0.14em]">
                   Type *
                 </label>
                 <select
@@ -963,7 +973,7 @@ export default function DailyEquipmentInspectionForm() {
               </div>
 
               <div>
-                <label htmlFor="equipmentNumber" className="block text-[10px] uppercase tracking-[0.25em] text-white/60 mb-1">
+                <label htmlFor="equipmentNumber" className="block text-[10px] uppercase text-white/60 mb-1 font-mono font-medium tracking-[0.14em]">
                   Number *
                 </label>
                 <select
@@ -1018,7 +1028,7 @@ export default function DailyEquipmentInspectionForm() {
               />
 
               <div>
-                <label htmlFor="template" className="block text-[10px] uppercase tracking-[0.25em] text-white/60 mb-1">
+                <label htmlFor="template" className="block text-[10px] uppercase text-white/60 mb-1 font-mono font-medium tracking-[0.14em]">
                   Specific Checklist Template
                   {form.equipmentType && (
                     <span className="ml-2 text-[9px] normal-case text-emerald-400/80">
@@ -1059,14 +1069,14 @@ export default function DailyEquipmentInspectionForm() {
 
           {/* Card: General Checklist */}
           <section className={cn(
-            "rounded-2xl border bg-gradient-to-br from-[#050b0f] via-[#04080c] to-[#010205] p-4 sm:p-5 space-y-3 shadow-[0_20px_50px_rgba(0,0,0,0.45)]",
+            "rounded-leaf-sm border bg-gradient-to-br from-[#0B100D] via-[#040605] to-[#040605] p-4 sm:p-5 space-y-3 shadow-[0_20px_50px_rgba(0,0,0,0.45)]",
             shouldShowError('generalChecklist' as EquipmentFormFieldKey) && getFieldError('generalChecklist' as EquipmentFormFieldKey)
               ? "border-rose-500/30"
               : "border-white/10"
           )}>
             <div className="flex items-center justify-between gap-2">
               <div>
-                <p className="text-[9px] tracking-[0.3em] uppercase text-emerald-200/70">
+                <p className="text-[9px] uppercase text-emerald-200/70 font-mono font-medium tracking-[0.14em]">
                   Step 2 · General
                 </p>
                 <h2 className="text-sm sm:text-base font-semibold text-white">General Checklist</h2>
@@ -1102,7 +1112,7 @@ export default function DailyEquipmentInspectionForm() {
               <button
                 type="button"
                 onClick={handleMarkAllGeneralPass}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-[10px] font-medium hover:bg-emerald-500/20 transition-all touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
+                className="tap-44 relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-[10px] font-medium hover:bg-emerald-500/20 transition-all touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
                 All Pass
@@ -1110,7 +1120,7 @@ export default function DailyEquipmentInspectionForm() {
               <button
                 type="button"
                 onClick={handleMarkAllGeneralFail}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-300 text-[10px] font-medium hover:bg-rose-500/20 transition-all touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
+                className="tap-44 relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-300 text-[10px] font-medium hover:bg-rose-500/20 transition-all touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
               >
                 <XCircle className="w-3.5 h-3.5" />
                 All Fail
@@ -1119,7 +1129,7 @@ export default function DailyEquipmentInspectionForm() {
                 type="button"
                 onClick={handleClearGeneralChecklist}
                 disabled={generalCompleteCount === 0}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-white/60 text-[10px] font-medium hover:bg-white/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 disabled:focus-visible:ring-0"
+                className="tap-44 relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-white/60 text-[10px] font-medium hover:bg-white/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 disabled:focus-visible:ring-0"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 Clear
@@ -1139,7 +1149,7 @@ export default function DailyEquipmentInspectionForm() {
                         type="button"
                         onClick={() => handleChecklistChange("general", item.id, "P")}
                         aria-label={`Mark ${item.label} as Pass${value === "P" ? " - currently selected" : ""}`}
-                        className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 ${
+                        className={`min-h-[44px] min-w-[44px] px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 ${
                           value === "P"
                             ? "border-emerald-400 bg-emerald-500/20 text-emerald-100"
                             : "border-white/10 bg-white/5 text-white/60"
@@ -1151,7 +1161,7 @@ export default function DailyEquipmentInspectionForm() {
                         type="button"
                         onClick={() => handleChecklistChange("general", item.id, "F")}
                         aria-label={`Mark ${item.label} as Fail${value === "F" ? " - currently selected" : ""}`}
-                        className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 ${
+                        className={`min-h-[44px] min-w-[44px] px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 ${
                           value === "F"
                             ? "border-rose-400 bg-rose-500/20 text-rose-100"
                             : "border-white/10 bg-white/5 text-white/60"
@@ -1163,7 +1173,7 @@ export default function DailyEquipmentInspectionForm() {
                         type="button"
                         onClick={() => handleChecklistChange("general", item.id, "N/A")}
                         aria-label={`Mark ${item.label} as Not Applicable${value === "N/A" ? " - currently selected" : ""}`}
-                        className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 ${
+                        className={`min-h-[44px] min-w-[44px] px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 ${
                           value === "N/A"
                             ? "border-amber-400 bg-amber-500/20 text-amber-100"
                             : "border-white/10 bg-white/5 text-white/60"
@@ -1180,14 +1190,14 @@ export default function DailyEquipmentInspectionForm() {
 
           {/* Card: Specific Equipment Checklist */}
           <section className={cn(
-            "rounded-2xl border bg-gradient-to-br from-[#050b11] via-[#04070b] to-[#010204] p-4 sm:p-5 space-y-3 shadow-[0_20px_50px_rgba(0,0,0,0.45)]",
+            "rounded-leaf-sm border bg-gradient-to-br from-[#0B100D] via-[#040605] to-[#040605] p-4 sm:p-5 space-y-3 shadow-[0_20px_50px_rgba(0,0,0,0.45)]",
             shouldShowError('specificChecklist' as EquipmentFormFieldKey) && allErrors.specificChecklist
               ? "border-rose-500/30"
               : "border-white/10"
           )}>
             <div className="flex items-center justify-between gap-2">
               <div>
-                <p className="text-[9px] tracking-[0.3em] uppercase text-emerald-200/70">
+                <p className="text-[9px] uppercase text-emerald-200/70 font-mono font-medium tracking-[0.14em]">
                   Step 3 · Specific
                 </p>
                 <h2 className="text-sm sm:text-base font-semibold text-white">Equipment Specific</h2>
@@ -1237,7 +1247,7 @@ export default function DailyEquipmentInspectionForm() {
                   <button
                     type="button"
                     onClick={handleMarkAllSpecificPass}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-[10px] font-medium hover:bg-emerald-500/20 transition-all touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
+                    className="tap-44 relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-[10px] font-medium hover:bg-emerald-500/20 transition-all touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
                   >
                     <CheckCheck className="w-3.5 h-3.5" />
                     All Pass
@@ -1245,7 +1255,7 @@ export default function DailyEquipmentInspectionForm() {
                   <button
                     type="button"
                     onClick={handleMarkAllSpecificFail}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-300 text-[10px] font-medium hover:bg-rose-500/20 transition-all touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
+                    className="tap-44 relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-300 text-[10px] font-medium hover:bg-rose-500/20 transition-all touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
                   >
                     <XCircle className="w-3.5 h-3.5" />
                     All Fail
@@ -1254,7 +1264,7 @@ export default function DailyEquipmentInspectionForm() {
                     type="button"
                     onClick={handleClearSpecificChecklist}
                     disabled={specificCompleteCount === 0}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-white/60 text-[10px] font-medium hover:bg-white/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 disabled:focus-visible:ring-0"
+                    className="tap-44 relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-white/60 text-[10px] font-medium hover:bg-white/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 disabled:focus-visible:ring-0"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                     Clear
@@ -1274,7 +1284,7 @@ export default function DailyEquipmentInspectionForm() {
                           type="button"
                           onClick={() => handleChecklistChange("specific", item.id, "P")}
                           aria-label={`Mark ${item.label} as Pass${value === "P" ? " - currently selected" : ""}`}
-                          className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 ${
+                          className={`min-h-[44px] min-w-[44px] px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 ${
                             value === "P"
                               ? "border-emerald-400 bg-emerald-500/20 text-emerald-100"
                               : "border-white/10 bg-white/5 text-white/60"
@@ -1286,7 +1296,7 @@ export default function DailyEquipmentInspectionForm() {
                           type="button"
                           onClick={() => handleChecklistChange("specific", item.id, "F")}
                           aria-label={`Mark ${item.label} as Fail${value === "F" ? " - currently selected" : ""}`}
-                          className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 ${
+                          className={`min-h-[44px] min-w-[44px] px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 ${
                             value === "F"
                               ? "border-rose-400 bg-rose-500/20 text-rose-100"
                               : "border-white/10 bg-white/5 text-white/60"
@@ -1298,7 +1308,7 @@ export default function DailyEquipmentInspectionForm() {
                           type="button"
                           onClick={() => handleChecklistChange("specific", item.id, "N/A")}
                           aria-label={`Mark ${item.label} as Not Applicable${value === "N/A" ? " - currently selected" : ""}`}
-                          className={`px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 ${
+                          className={`min-h-[44px] min-w-[44px] px-2.5 py-1 rounded-lg border text-[10px] font-semibold transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 ${
                             value === "N/A"
                               ? "border-amber-400 bg-amber-500/20 text-amber-100"
                               : "border-white/10 bg-white/5 text-white/60"
@@ -1323,10 +1333,10 @@ export default function DailyEquipmentInspectionForm() {
           )}
 
           {/* Card: Photos (Camera Capture) */}
-          <section className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#051313] via-[#040909] to-[#020405] p-4 sm:p-5 space-y-3 shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
+          <section className="rounded-leaf-sm border border-white/10 bg-gradient-to-br from-[#0B100D] via-[#040605] to-[#040605] p-4 sm:p-5 space-y-3 shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
             <div className="flex items-center justify-between gap-2">
               <div>
-                <p className="text-[9px] tracking-[0.3em] uppercase text-emerald-200/70">
+                <p className="text-[9px] uppercase text-emerald-200/70 font-mono font-medium tracking-[0.14em]">
                   Step 4 · Photos
                 </p>
                 <h2 className="text-sm sm:text-base font-semibold text-white">Photo Evidence</h2>
@@ -1394,7 +1404,7 @@ export default function DailyEquipmentInspectionForm() {
                         {/* Success indicator badge */}
                         <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/90 backdrop-blur-sm">
                           <CheckCircle2 className="w-3 h-3 text-white" />
-                          <span className="text-[9px] font-bold text-white uppercase tracking-wide">Done</span>
+                          <span className="text-[9px] text-white uppercase font-mono font-medium tracking-[0.14em]">Done</span>
                         </div>
                         
                         {/* Photo label at bottom */}
@@ -1453,9 +1463,9 @@ export default function DailyEquipmentInspectionForm() {
           </section>
 
           {/* Card: Notes & Submit Combined */}
-          <section className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#070f12] via-[#05080a] to-[#020305] p-4 sm:p-5 space-y-3 shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
+          <section className="rounded-leaf-sm border border-white/10 bg-gradient-to-br from-[#0B100D] via-[#040605] to-[#040605] p-4 sm:p-5 space-y-3 shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
             <div>
-              <p className="text-[9px] tracking-[0.3em] uppercase text-emerald-200/70">
+              <p className="text-[9px] uppercase text-emerald-200/70 font-mono font-medium tracking-[0.14em]">
                 Optional
               </p>
               <h2 className="text-sm sm:text-base font-semibold text-white">Notes</h2>

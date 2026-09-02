@@ -59,11 +59,11 @@ export function RedeemConfirmModal({
             data-testid="redeem-confirm-modal"
           >
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-xl bg-[#f4c979]/15 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl bg-[#F4F7F2]/15 flex items-center justify-center">
                 {item.image_url ? (
                   <img src={item.image_url} alt="" className="w-full h-full object-cover rounded-xl" />
                 ) : (
-                  <Gift className="w-6 h-6 text-[#f4c979]" aria-hidden />
+                  <Gift className="w-6 h-6 text-[#F4F7F2]" aria-hidden />
                 )}
               </div>
               <div>
@@ -74,10 +74,10 @@ export function RedeemConfirmModal({
               </div>
             </div>
 
-            <div className={`space-y-2 mb-5 rounded-xl p-4 ${glass.subtle} border-[#f4c979]/10`}>
+            <div className={`space-y-2 mb-5 rounded-xl p-4 ${glass.subtle} border-[#F4F7F2]/10`}>
               <div className="flex justify-between text-sm">
                 <span className="text-white/60">Cost</span>
-                <span className="font-semibold text-[#f4c979] tabular-nums">{item.point_cost} pts</span>
+                <span className="font-semibold text-[#F4F7F2] tabular-nums">{item.point_cost} pts</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-white/60">Current balance</span>
@@ -117,7 +117,7 @@ export function RedeemConfirmModal({
                 type="button"
                 onClick={onConfirm}
                 disabled={isSubmitting}
-                className="px-4 py-2 text-sm font-semibold text-[#2d1c04] bg-gradient-to-r from-[#f4c979] to-[#d89d3e] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
+                className="px-4 py-2 text-sm font-semibold text-[#040605] bg-gradient-to-r from-[#F4F7F2] to-[#8DF5A8] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
                 data-testid="redeem-confirm-button"
               >
                 {isSubmitting ? 'Redeeming…' : 'Confirm redemption'}

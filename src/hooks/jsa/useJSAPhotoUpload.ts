@@ -3,6 +3,8 @@ import { supabase } from '../../lib/supabaseClient';
 import { logger } from '../../lib/logger';
 import { compressImage } from '../../lib/imageCompression';
 import { validators } from '../../lib/formValidation';
+import { getAuthUserFast } from '../../lib/authUser';
+import { mapSettledWithConcurrency, UPLOAD_CONCURRENCY } from '../../lib/asyncPool';
 
 /** Maximum number of paper JSA photos per record. */
 export const MAX_JSA_PHOTOS = 5;
@@ -62,9 +64,7 @@ export function useJSAPhotoUpload() {
       throw new Error(validationError);
     }
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getAuthUserFast();
     if (!user?.id) {
       logger.error('[JSA Photo] Upload requires an authenticated user');
       throw new Error('You must be signed in to upload photos. Please sign in and try again.');
@@ -94,9 +94,9 @@ export function useJSAPhotoUpload() {
   }, []);
 
   /**
-   * Upload multiple files sequentially.
-   * Returns partial results — successful uploads are kept even if later ones fail.
-   * Stops processing after a failure but retains successful paths.
+   * Upload multiple files with bounded concurrency (see UPLOAD_CONCURRENCY).
+   * Returns partial results — successful uploads are kept even if others fail.
+   * Page numbering follows the caller's file order regardless of completion order.
    */
   const uploadMultiple = useCallback(async (
     files: File[],
@@ -122,11 +122,8 @@ export function useJSAPhotoUpload() {
     // Track fingerprints for dedup (existing paths don't have File objects,
     // but we can at least dedup within the current batch)
     const seenFingerprints = new Set<string>();
-
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-
-      // Duplicate detection within batch
+    const toUpload: File[] = [];
+    for (const file of files) {
       const fp = getFileFingerprint(file);
       if (seenFingerprints.has(fp)) {
         failed.push({
@@ -136,17 +133,20 @@ export function useJSAPhotoUpload() {
         continue;
       }
       seenFingerprints.add(fp);
-
-      try {
-        const pageIndex = existingPaths.length + successful.length + 1;
-        const path = await uploadPhoto(file, pageIndex);
-        successful.push(path);
-      } catch (err) {
-        const error = err instanceof Error ? err : new Error(String(err));
-        failed.push({ file, error });
-        // Continue processing remaining files (don't break on failure)
-      }
+      toUpload.push(file);
     }
+
+    const settled = await mapSettledWithConcurrency(toUpload, UPLOAD_CONCURRENCY, (file, i) =>
+      uploadPhoto(file, existingPaths.length + i + 1),
+    );
+    settled.forEach((result, i) => {
+      if (result.status === 'fulfilled') {
+        successful.push(result.value);
+      } else {
+        const error = result.reason instanceof Error ? result.reason : new Error(String(result.reason));
+        failed.push({ file: toUpload[i], error });
+      }
+    });
 
     return { successful, failed };
   }, [uploadPhoto]);

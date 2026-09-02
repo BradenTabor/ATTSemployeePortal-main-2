@@ -33,7 +33,7 @@ export type GlowEffectProps = {
 export function GlowEffect({
   className,
   style,
-  colors = ['#FF5733', '#33FF57', '#3357FF', '#F1C40F'],
+  colors = ['#FF5733', '#5EE898', '#7DCDA2', '#AEDB3F'],
   blur = 'medium',
   scale = 1,
 }: GlowEffectProps) {

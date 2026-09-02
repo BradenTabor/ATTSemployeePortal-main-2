@@ -135,13 +135,13 @@ export default function FormHistory() {
             <button
               type="button"
               onClick={() => navigate("/forms")}
-              className="inline-flex items-center gap-1.5 text-sm text-white/50 hover:text-white/80 transition-colors mb-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-950 rounded-lg px-1 -ml-1"
+              className="tap-44 relative inline-flex items-center gap-1.5 text-sm text-white/50 hover:text-white/80 transition-colors mb-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-950 rounded-lg px-1 -ml-1"
             >
               <ArrowLeft className="w-4 h-4" aria-hidden />
               Back to Forms
             </button>
             <div className="flex flex-col gap-1">
-              <p className="text-xs uppercase tracking-[0.35em] font-medium text-emerald-200/80">
+              <p className="text-xs uppercase font-medium text-emerald-200/80 font-mono font-medium tracking-[0.14em]">
                 Compliance
               </p>
               <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
@@ -227,7 +227,7 @@ export default function FormHistory() {
                       />
                     )}
                   </div>
-                  <span className="text-[10px] sm:text-xs uppercase tracking-wider text-white/40 font-medium truncate">
+                  <span className="text-[10px] sm:text-xs uppercase text-white/40 font-medium truncate font-mono font-medium tracking-[0.14em]">
                     {stat.label}
                   </span>
                 </div>

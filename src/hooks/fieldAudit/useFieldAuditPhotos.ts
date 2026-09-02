@@ -15,6 +15,7 @@ import { supabase } from "../../lib/supabaseClient";
 import { logger } from "../../lib/logger";
 import { compressImage } from "../../lib/imageCompression";
 import { validators } from "../../lib/formValidation";
+import { getAuthUserFast } from "../../lib/authUser";
 
 export const FIELD_AUDIT_PHOTO_BUCKET = "field-audit-photos";
 
@@ -38,9 +39,7 @@ export function useFieldAuditPhotos() {
       const validationError = validators.photoFile(file);
       if (validationError) throw new Error(validationError);
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getAuthUserFast();
       if (!user?.id) {
         throw new Error(
           "You must be signed in to upload photos. Please sign in and try again.",

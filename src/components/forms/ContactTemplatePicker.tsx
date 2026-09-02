@@ -91,7 +91,7 @@ function SaveTemplateModal({ isOpen, onClose, onSave, isSaving }: SaveTemplateMo
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
           onClick={(e) => e.stopPropagation()}
-          className="w-full max-w-sm rounded-2xl border border-white/10 bg-gradient-to-b from-[#0a1a10] to-black p-5 shadow-2xl"
+          className="w-full max-w-sm rounded-leaf-sm border border-white/10 bg-gradient-to-b from-[#121A15] to-black p-5 shadow-2xl"
         >
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
@@ -113,7 +113,7 @@ function SaveTemplateModal({ isOpen, onClose, onSave, isSaving }: SaveTemplateMo
           {/* Form */}
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-white/70 mb-1.5 uppercase tracking-wide">
+              <label className="block text-xs font-medium text-white/70 mb-1.5 uppercase font-mono font-medium tracking-[0.14em]">
                 Template Name
               </label>
               <input
@@ -271,7 +271,7 @@ export function ContactTemplatePicker({
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <Users className="w-3.5 h-3.5 text-emerald-500/70" />
-          <p className="text-xs font-medium text-white/50 uppercase tracking-wider">
+          <p className="text-xs font-medium text-white/50 uppercase font-mono font-medium tracking-[0.14em]">
             Quick Fill Contacts
           </p>
         </div>

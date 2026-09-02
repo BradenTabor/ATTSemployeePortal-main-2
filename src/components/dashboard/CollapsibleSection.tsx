@@ -111,7 +111,7 @@ function CollapsibleSectionComponent({
   return (
     <section
       className={cn(
-        'rounded-3xl border border-[#1f5f46]/40 bg-[#04150f]/85 overflow-hidden transition-all',
+        'rounded-leaf border border-[#1F7A44]/40 bg-[#0B100D]/85 overflow-hidden transition-all',
         className
       )}
     >
@@ -128,7 +128,7 @@ function CollapsibleSectionComponent({
             aria-label={isOpen ? `Collapse ${title}` : `Expand ${title}`}
             className={cn(
               'flex-1 flex items-center gap-3 text-left',
-              'focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#04150f]',
+              'focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]',
               'rounded-lg -m-2 p-2 transition-colors hover:bg-white/5'
             )}
           >

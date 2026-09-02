@@ -51,7 +51,7 @@ export function useUserSignature() {
           .from('user_signatures')
           .select('*')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
         if (fetchError) {
           // No signature saved yet (not an error)

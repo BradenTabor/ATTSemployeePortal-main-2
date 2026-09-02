@@ -361,21 +361,21 @@ function AdminEmailRecipients() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="relative rounded-2xl sm:rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] overflow-hidden mb-4 sm:mb-6 shadow-[0_25px_50px_rgba(0,0,0,0.55)]"
+          className="relative rounded-leaf-sm sm:rounded-leaf border border-[#E4EAE1]/20 bg-gradient-to-br from-[#121A15] via-[#0B100D] to-[#040605] overflow-hidden mb-4 sm:mb-6 shadow-[0_25px_50px_rgba(0,0,0,0.55)]"
         >
-          <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 25% 0%, rgba(244, 201, 121, 0.2) 0%, transparent 45%)" }} />
+          <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 25% 0%, rgba(221,255,133, 0.2) 0%, transparent 45%)" }} />
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-white/5 via-white/25 to-white/5 rounded-t-[inherit]" />
           <div className="relative px-4 py-3 sm:px-6 sm:py-4">
             <div className="flex items-center gap-3 mb-2 flex-wrap">
-              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#f4c979]/15 border border-[#f4c979]/30">
-                <Mail className="w-3.5 h-3.5 text-[#f4c979]" />
-                <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#f8e5bb]">Admin • Email lists</span>
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#F4F7F2]/15 border border-[#F4F7F2]/30">
+                <Mail className="w-3.5 h-3.5 text-[#F4F7F2]" />
+                <span className="text-[10px] uppercase text-[#E4EAE1] font-mono font-medium tracking-[0.14em]">Admin • Email lists</span>
               </span>
             </div>
-            <h1 className="text-lg sm:text-xl md:text-2xl font-black tracking-tight bg-gradient-to-r from-white via-[#f8e5bb] to-white/90 bg-clip-text text-transparent">
+            <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">
               Email Recipients
             </h1>
-            <p className="mt-1 text-xs sm:text-sm text-[#c7b696] font-medium max-w-xl">
+            <p className="mt-1 text-xs sm:text-sm text-[#B8C4B6] font-medium max-w-xl">
               Manage compliance and safety forecast email lists. Add or remove addresses, bulk import, and send test emails.
             </p>
           </div>
@@ -385,10 +385,10 @@ function AdminEmailRecipients() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.05 }}
-          className="rounded-2xl sm:rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] p-3 sm:p-6 shadow-[0_25px_50px_rgba(0,0,0,0.55)]"
+          className="rounded-leaf-sm sm:rounded-leaf border border-[#E4EAE1]/20 bg-gradient-to-br from-[#121A15] via-[#0B100D] to-[#040605] p-3 sm:p-6 shadow-[0_25px_50px_rgba(0,0,0,0.55)]"
         >
           <h2 className="text-base sm:text-lg font-bold text-white mb-0.5">Automated email lists</h2>
-          <p className="text-xs sm:text-sm text-[#c7b696] mb-4">
+          <p className="text-xs sm:text-sm text-[#B8C4B6] mb-4">
             Choose a list below, then add addresses or use <strong>Send Test</strong> to verify delivery.
           </p>
 
@@ -407,10 +407,10 @@ function AdminEmailRecipients() {
                 aria-controls={tabPanelId}
                 tabIndex={listKey === l.key ? 0 : -1}
                 onClick={() => setListKey(l.key)}
-                className={`px-3 py-2 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-semibold transition-all flex-1 sm:flex-initial ${
+                className={`px-3 py-2 rounded-xl sm:rounded-leaf-sm text-xs sm:text-sm font-semibold transition-all flex-1 sm:flex-initial ${
                   listKey === l.key
-                    ? "bg-[#f4c979]/20 border border-[#f4c979]/40 text-[#fef3d1] shadow-[0_0_20px_rgba(244,201,121,0.15)]"
-                    : "border border-[#f6dcb2]/25 text-[#c7b696] hover:bg-white/5 hover:border-[#f6dcb2]/40"
+                    ? "bg-[#F4F7F2]/20 border border-[#F4F7F2]/40 text-[#F4F7F2] shadow-[0_0_20px_rgba(221,255,133,0.15)]"
+                    : "border border-[#E4EAE1]/25 text-[#B8C4B6] hover:bg-white/5 hover:border-[#E4EAE1]/40"
                 }`}
               >
                 {l.label}
@@ -425,7 +425,7 @@ function AdminEmailRecipients() {
             className="outline-none"
           >
             <div className="mb-3">
-              <p className="text-xs sm:text-sm text-[#c7b696] leading-snug">{current.description}</p>
+              <p className="text-xs sm:text-sm text-[#B8C4B6] leading-snug">{current.description}</p>
             </div>
 
           {/* Add row: input flex-1 min-w-0 so Add button never truncates */}
@@ -437,12 +437,12 @@ function AdminEmailRecipients() {
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-                className="flex-1 min-w-0 rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-3 sm:px-4 py-2 sm:py-2.5 text-sm text-[#fdf4db] placeholder:text-[#8a7a5c] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60"
+                className="flex-1 min-w-0 rounded-xl bg-[#040605]/70 border border-[#F4F7F2]/20 px-3 sm:px-4 py-2 sm:py-2.5 text-sm text-[#F4F7F2] placeholder:text-[#5A6B60] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/60"
               />
               <button
                 onClick={handleAdd}
                 disabled={addPending}
-                className="flex-shrink-0 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-[#f4c979]/20 border border-[#f4c979]/40 text-sm font-semibold text-[#fef3d1] hover:bg-[#f4c979]/30 disabled:opacity-50 flex items-center justify-center gap-1.5"
+                className="flex-shrink-0 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-[#F4F7F2]/20 border border-[#F4F7F2]/40 text-sm font-semibold text-[#F4F7F2] hover:bg-[#F4F7F2]/30 disabled:opacity-50 flex items-center justify-center gap-1.5"
                 aria-label="Add email"
               >
                 <Plus className="w-4 h-4" />
@@ -452,7 +452,7 @@ function AdminEmailRecipients() {
             <div className="flex gap-2 flex-wrap">
               <button
                 onClick={() => setBulkOpen(!bulkOpen)}
-                className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-[#f6dcb2]/25 text-xs sm:text-sm font-semibold text-[#fdf4db] hover:bg-white/5 flex items-center gap-1.5"
+                className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-[#E4EAE1]/25 text-xs sm:text-sm font-semibold text-[#F4F7F2] hover:bg-white/5 flex items-center gap-1.5"
                 aria-label="Bulk import emails"
               >
                 <Upload className="w-4 h-4 flex-shrink-0" />
@@ -474,9 +474,9 @@ function AdminEmailRecipients() {
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
-              className="mb-4 p-3 sm:p-4 rounded-xl bg-[#050402]/50 border border-[#f6dcb2]/15"
+              className="mb-4 p-3 sm:p-4 rounded-xl bg-[#040605]/50 border border-[#E4EAE1]/15"
             >
-              <label className="block text-xs font-semibold text-[#f4c979]/80 uppercase tracking-wider mb-2">
+              <label className="block text-xs text-[#F4F7F2]/80 uppercase mb-2 font-mono font-medium tracking-[0.14em]">
                 Paste emails (one per line or comma‑separated)
               </label>
               <textarea
@@ -484,19 +484,19 @@ function AdminEmailRecipients() {
                 onChange={(e) => setBulkText(e.target.value)}
                 rows={3}
                 placeholder="a@example.com, b@example.com"
-                className="w-full min-w-0 rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-3 sm:px-4 py-2 sm:py-3 text-sm text-[#fdf4db] placeholder:text-[#8a7a5c] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60 resize-none"
+                className="w-full min-w-0 rounded-xl bg-[#040605]/70 border border-[#F4F7F2]/20 px-3 sm:px-4 py-2 sm:py-3 text-sm text-[#F4F7F2] placeholder:text-[#5A6B60] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/60 resize-none"
               />
               <div className="flex gap-2 mt-2 flex-wrap">
                 <button
                   onClick={handleBulk}
                   disabled={bulkPending}
-                  className="px-3 sm:px-4 py-2 rounded-xl bg-[#f4c979]/20 border border-[#f4c979]/40 text-sm font-semibold text-[#fef3d1] hover:bg-[#f4c979]/30 disabled:opacity-50"
+                  className="px-3 sm:px-4 py-2 rounded-xl bg-[#F4F7F2]/20 border border-[#F4F7F2]/40 text-sm font-semibold text-[#F4F7F2] hover:bg-[#F4F7F2]/30 disabled:opacity-50"
                 >
                   {bulkPending ? "Importing…" : "Import"}
                 </button>
                 <button
                   onClick={() => { setBulkOpen(false); setBulkText(""); }}
-                  className="px-3 sm:px-4 py-2 rounded-xl border border-[#f6dcb2]/25 text-sm font-semibold text-[#fdf4db] hover:bg-white/5"
+                  className="px-3 sm:px-4 py-2 rounded-xl border border-[#E4EAE1]/25 text-sm font-semibold text-[#F4F7F2] hover:bg-white/5"
                 >
                   Cancel
                 </button>
@@ -506,32 +506,32 @@ function AdminEmailRecipients() {
 
           {/* List: email truncates on small screens; delete always visible */}
           <div className="mb-6 pb-4 sm:pb-0">
-            <h3 className="text-xs sm:text-sm font-semibold text-[#f4c979]/90 mb-2">
+            <h3 className="text-xs sm:text-sm font-semibold text-[#F4F7F2]/90 mb-2">
               Current recipients ({recipients.length})
             </h3>
             {loading ? (
-              <p className="text-xs sm:text-sm text-[#c7b696]">Loading…</p>
+              <p className="text-xs sm:text-sm text-[#B8C4B6]">Loading…</p>
             ) : recipients.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 px-4 rounded-xl sm:rounded-2xl border border-[#f6dcb2]/15 bg-[#050402]/30 text-center">
-                <Mail className="w-10 h-10 text-[#f4c979]/40 mb-3 flex-shrink-0" aria-hidden />
-                <p className="text-sm text-[#c7b696] font-medium">No recipients yet</p>
-                <p className="text-xs text-[#8a7a5c] mt-1 max-w-xs">Add an address above or use Bulk import to add multiple at once.</p>
+              <div className="flex flex-col items-center justify-center py-8 px-4 rounded-xl sm:rounded-leaf-sm border border-[#E4EAE1]/15 bg-[#040605]/30 text-center">
+                <Mail className="w-10 h-10 text-[#F4F7F2]/40 mb-3 flex-shrink-0" aria-hidden />
+                <p className="text-sm text-[#B8C4B6] font-medium">No recipients yet</p>
+                <p className="text-xs text-[#5A6B60] mt-1 max-w-xs">Add an address above or use Bulk import to add multiple at once.</p>
               </div>
             ) : (
               <ul className="space-y-1.5 sm:space-y-2" role="list">
                 {recipients.map((r) => (
                   <li
                     key={r.email}
-                    className="flex items-center gap-2 min-w-0 py-2 px-3 sm:px-4 rounded-xl sm:rounded-2xl bg-[#050402]/50 border border-[#f6dcb2]/25 backdrop-blur-sm transition-colors hover:border-[#f6dcb2]/35 hover:bg-[#0a0806]/60"
+                    className="flex items-center gap-2 min-w-0 py-2 px-3 sm:px-4 rounded-xl sm:rounded-leaf-sm bg-[#040605]/50 border border-[#E4EAE1]/25 backdrop-blur-sm transition-colors hover:border-[#E4EAE1]/35 hover:bg-[#040605]/60"
                   >
-                    <span className="flex items-center gap-2 min-w-0 flex-1 text-sm text-[#fdf4db]">
-                      <Mail className="w-4 h-4 flex-shrink-0 text-[#c7b696]" />
+                    <span className="flex items-center gap-2 min-w-0 flex-1 text-sm text-[#F4F7F2]">
+                      <Mail className="w-4 h-4 flex-shrink-0 text-[#B8C4B6]" />
                       <span className="truncate" title={r.email}>{r.email}</span>
                     </span>
                     <button
                       onClick={() => handleRemove(r.email)}
                       disabled={removePending === r.email || recipients.length <= 1}
-                      className="flex-shrink-0 p-2 rounded-lg text-[#c7b696] hover:bg-red-500/10 hover:text-red-300 disabled:opacity-40 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50"
+                      className="flex-shrink-0 p-2 rounded-lg text-[#B8C4B6] hover:bg-red-500/10 hover:text-red-300 disabled:opacity-40 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50"
                       aria-label={`Remove ${r.email}`}
                     >
                       {removePending === r.email ? (
@@ -547,14 +547,14 @@ function AdminEmailRecipients() {
           </div>
 
           {/* Email send log: compact on small screens */}
-          <div className="border-t border-[#f6dcb2]/15 pt-3 sm:pt-4">
+          <div className="border-t border-[#E4EAE1]/15 pt-3 sm:pt-4">
             <button
               onClick={() => setLogOpen(!logOpen)}
-              className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-[#f4c979]/90 hover:text-[#fef3d1] transition-colors"
+              className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-[#F4F7F2]/90 hover:text-[#F4F7F2] transition-colors"
             >
               <History className="w-4 h-4 flex-shrink-0" />
               Email send log
-              <span className="text-[#c7b696] font-normal">{logOpen ? "−" : "+"}</span>
+              <span className="text-[#B8C4B6] font-normal">{logOpen ? "−" : "+"}</span>
             </button>
             {logOpen && (
               <motion.div
@@ -563,29 +563,29 @@ function AdminEmailRecipients() {
                 className="mt-3 sm:mt-4 overflow-x-auto"
               >
                 {logLoading ? (
-                  <p className="text-xs sm:text-sm text-[#c7b696]">Loading…</p>
+                  <p className="text-xs sm:text-sm text-[#B8C4B6]">Loading…</p>
                 ) : logRows.length === 0 ? (
-                  <p className="text-xs sm:text-sm text-[#c7b696]">No send log entries yet.</p>
+                  <p className="text-xs sm:text-sm text-[#B8C4B6]">No send log entries yet.</p>
                 ) : (
-                  <div className="rounded-xl border border-[#f6dcb2]/10 overflow-x-auto min-w-0">
+                  <div className="rounded-xl border border-[#E4EAE1]/10 overflow-x-auto min-w-0">
                     <table className="w-full text-xs sm:text-sm min-w-[320px]">
-                      <thead className="bg-[#050402]/70 border-b border-[#f6dcb2]/10">
+                      <thead className="bg-[#040605]/70 border-b border-[#E4EAE1]/10">
                         <tr>
-                          <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left text-[#f4c979]/80 font-semibold">List</th>
-                          <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left text-[#f4c979]/80 font-semibold">#</th>
-                          <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left text-[#f4c979]/80 font-semibold">Sent</th>
-                          <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left text-[#f4c979]/80 font-semibold">Status</th>
-                          <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left text-[#f4c979]/80 font-semibold max-w-[100px] sm:max-w-[200px] truncate" title="Error">Error</th>
+                          <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left text-[#F4F7F2]/80 font-semibold">List</th>
+                          <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left text-[#F4F7F2]/80 font-semibold">#</th>
+                          <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left text-[#F4F7F2]/80 font-semibold">Sent</th>
+                          <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left text-[#F4F7F2]/80 font-semibold">Status</th>
+                          <th className="px-2 sm:px-3 py-1.5 sm:py-2 text-left text-[#F4F7F2]/80 font-semibold max-w-[100px] sm:max-w-[200px] truncate" title="Error">Error</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-[#f6dcb2]/5">
+                      <tbody className="divide-y divide-[#E4EAE1]/5">
                         {logRows.map((row, i) => (
                           <tr key={i} className="hover:bg-white/5">
-                            <td className="px-2 sm:px-3 py-1.5 sm:py-2 text-[#fdf4db]">{listKeyToLabel(row.list_key)}</td>
-                            <td className="px-2 sm:px-3 py-1.5 sm:py-2 text-[#c7b696]">
+                            <td className="px-2 sm:px-3 py-1.5 sm:py-2 text-[#F4F7F2]">{listKeyToLabel(row.list_key)}</td>
+                            <td className="px-2 sm:px-3 py-1.5 sm:py-2 text-[#B8C4B6]">
                               {Array.isArray(row.recipients) ? row.recipients.length : 0}
                             </td>
-                            <td className="px-2 sm:px-3 py-1.5 sm:py-2 text-[#c7b696] whitespace-nowrap">
+                            <td className="px-2 sm:px-3 py-1.5 sm:py-2 text-[#B8C4B6] whitespace-nowrap">
                               {new Date(row.sent_at).toLocaleString()}
                             </td>
                             <td className="px-2 sm:px-3 py-1.5 sm:py-2">
@@ -599,7 +599,7 @@ function AdminEmailRecipients() {
                                 </span>
                               )}
                             </td>
-                            <td className="px-2 sm:px-3 py-1.5 sm:py-2 text-[#c7b696] max-w-[100px] sm:max-w-[200px] truncate" title={row.error_message ?? ""}>
+                            <td className="px-2 sm:px-3 py-1.5 sm:py-2 text-[#B8C4B6] max-w-[100px] sm:max-w-[200px] truncate" title={row.error_message ?? ""}>
                               {row.error_message ?? "—"}
                             </td>
                           </tr>

@@ -216,7 +216,7 @@ function PullToRefreshComponent({
         }}
       >
         <motion.div
-          className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#041e15]/90 border border-emerald-500/30 shadow-lg"
+          className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#0B100D]/90 border border-emerald-500/30 shadow-lg"
           style={{ scale: indicatorScale }}
         >
           {refreshing ? (

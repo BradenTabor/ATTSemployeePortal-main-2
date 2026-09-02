@@ -199,8 +199,8 @@ export function ExpandableScreenContent({
               zIndex: 9999,
               backdropFilter: 'blur(12px)',
               WebkitBackdropFilter: 'blur(12px)',
-              backgroundColor: 'rgba(255, 255, 255, 0.15)',
-              color: 'rgba(255, 255, 255, 1)',
+              backgroundColor: 'rgba(255,255,255, 0.15)',
+              color: 'rgba(255,255,255, 1)',
             }}
           >
             {/* Morphing container with shared layoutId */}

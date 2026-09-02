@@ -98,8 +98,8 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
       animate={{ opacity: 1, y: 0 }}
       className="flex flex-col items-center justify-center py-16 px-4"
     >
-      <div className="w-16 h-16 rounded-2xl bg-[#f4c979]/10 border border-[#f4c979]/20 flex items-center justify-center mb-4">
-        <MapPinOff className="w-8 h-8 text-[#f4c979]/50" />
+      <div className="w-16 h-16 rounded-leaf-sm bg-[#F4F7F2]/10 border border-[#F4F7F2]/20 flex items-center justify-center mb-4">
+        <MapPinOff className="w-8 h-8 text-[#F4F7F2]/50" />
       </div>
       <h3 className="text-lg font-semibold text-white/90 mb-2">No Work Sites Yet</h3>
       <p className="text-sm text-white/50 text-center max-w-md mb-6">
@@ -108,7 +108,7 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
       </p>
       <button
         onClick={onAdd}
-        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#332308] font-semibold text-sm shadow-lg hover:scale-[1.02] transition-transform"
+        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#E4EAE1] via-[#F4F7F2] to-[#8DF5A8] text-[#040605] font-semibold text-sm shadow-lg hover:scale-[1.02] transition-transform"
       >
         <Plus className="w-4 h-4" />
         Add First Site
@@ -137,16 +137,16 @@ function MobileSiteCard({
       exit={{ opacity: 0, y: -8 }}
       className={`rounded-xl border p-4 ${
         site.is_active 
-          ? 'bg-gradient-to-br from-[#14110d] to-[#0b0906] border-[#f6dcb2]/20' 
-          : 'bg-[#0a0908] border-white/5 opacity-60'
+          ? 'bg-gradient-to-br from-[#0B100D] to-[#040605] border-[#E4EAE1]/20' 
+          : 'bg-[#040605] border-white/5 opacity-60'
       }`}
     >
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
           <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-            site.is_active ? 'bg-[#f4c979]/15' : 'bg-white/5'
+            site.is_active ? 'bg-[#F4F7F2]/15' : 'bg-white/5'
           }`}>
-            <MapPin className={`w-4 h-4 ${site.is_active ? 'text-[#f4c979]' : 'text-white/30'}`} />
+            <MapPin className={`w-4 h-4 ${site.is_active ? 'text-[#F4F7F2]' : 'text-white/30'}`} />
           </div>
           <div>
             <h4 className="font-semibold text-white/90 text-sm">{site.name}</h4>
@@ -499,13 +499,13 @@ function SiteFormModal({
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg rounded-2xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] shadow-2xl overflow-hidden my-auto"
+        className="w-full max-w-lg rounded-leaf-sm border border-[#E4EAE1]/20 bg-gradient-to-br from-[#0B100D] via-[#040605] to-[#040605] shadow-2xl overflow-hidden my-auto"
       >
         {/* Header */}
-        <div className="px-5 py-4 border-b border-[#f6dcb2]/10 flex items-center justify-between">
+        <div className="px-5 py-4 border-b border-[#E4EAE1]/10 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#f4c979]/15 flex items-center justify-center">
-              {isEdit ? <Pencil className="w-5 h-5 text-[#f4c979]" /> : <Plus className="w-5 h-5 text-[#f4c979]" />}
+            <div className="w-10 h-10 rounded-xl bg-[#F4F7F2]/15 flex items-center justify-center">
+              {isEdit ? <Pencil className="w-5 h-5 text-[#F4F7F2]" /> : <Plus className="w-5 h-5 text-[#F4F7F2]" />}
             </div>
             <div>
               <h3 className="font-semibold text-white">{isEdit ? 'Edit Work Site' : 'Add Work Site'}</h3>
@@ -533,7 +533,7 @@ function SiteFormModal({
               value={form.name}
               onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
               placeholder="e.g., Dallas Main Yard"
-              className="w-full px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus-visible:border-[#f4c979]/40"
+              className="w-full px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus-visible:border-[#F4F7F2]/40"
             />
           </div>
 
@@ -542,7 +542,7 @@ function SiteFormModal({
             <label className="block text-xs font-medium text-white/60 mb-1.5">
               Address
               {isLoaded && !isApiKeyMissing && (
-                <span className="ml-2 text-[#f4c979]/60">(Google Maps enabled)</span>
+                <span className="ml-2 text-[#F4F7F2]/60">(Google Maps enabled)</span>
               )}
             </label>
             <div className="flex gap-2">
@@ -553,11 +553,11 @@ function SiteFormModal({
                   onChange={(e) => handleAddressChange(e.target.value)}
                   onFocus={() => predictions.length > 0 && setShowPredictions(true)}
                   placeholder="Start typing to search..."
-                  className="w-full px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus-visible:border-[#f4c979]/40 pr-10"
+                  className="w-full px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus-visible:border-[#F4F7F2]/40 pr-10"
                 />
                 {isSearching && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <Loader2 className="w-4 h-4 text-[#f4c979] animate-spin" />
+                    <Loader2 className="w-4 h-4 text-[#F4F7F2] animate-spin" />
                   </div>
                 )}
                 
@@ -568,16 +568,16 @@ function SiteFormModal({
                       initial={{ opacity: 0, y: -5 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -5 }}
-                      className="absolute top-full left-0 right-0 mt-1 rounded-xl border border-[#f4c979]/20 bg-[#14110d] shadow-xl overflow-hidden"
+                      className="absolute top-full left-0 right-0 mt-1 rounded-xl border border-[#F4F7F2]/20 bg-[#0B100D] shadow-xl overflow-hidden"
                     >
                       {predictions.map((prediction) => (
                         <button
                           key={prediction.place_id}
                           type="button"
                           onClick={() => handleSelectPrediction(prediction)}
-                          className="w-full px-3 py-2.5 text-left hover:bg-[#f4c979]/10 transition-colors flex items-start gap-2"
+                          className="w-full px-3 py-2.5 text-left hover:bg-[#F4F7F2]/10 transition-colors flex items-start gap-2"
                         >
-                          <MapPin className="w-4 h-4 text-[#f4c979] flex-shrink-0 mt-0.5" />
+                          <MapPin className="w-4 h-4 text-[#F4F7F2] flex-shrink-0 mt-0.5" />
                           <div className="min-w-0">
                             <p className="text-sm text-white truncate">
                               {prediction.structured_formatting.main_text}
@@ -598,7 +598,7 @@ function SiteFormModal({
                 type="button"
                 onClick={handleGetCurrentLocation}
                 disabled={gettingCurrentLocation}
-                className="px-3 py-2.5 rounded-xl bg-[#f4c979]/15 border border-[#f4c979]/30 text-[#f4c979] hover:bg-[#f4c979]/25 transition-colors disabled:opacity-50"
+                className="px-3 py-2.5 rounded-xl bg-[#F4F7F2]/15 border border-[#F4F7F2]/30 text-[#F4F7F2] hover:bg-[#F4F7F2]/25 transition-colors disabled:opacity-50"
                 title="Use current location"
               >
                 {gettingCurrentLocation ? (
@@ -627,7 +627,7 @@ function SiteFormModal({
                   <button
                     type="button"
                     onClick={() => setShowMap(true)}
-                    className="text-xs text-[#f4c979] hover:text-[#f4c979]/80"
+                    className="text-xs text-[#F4F7F2] hover:text-[#F4F7F2]/80"
                   >
                     Show map
                   </button>
@@ -658,9 +658,9 @@ function SiteFormModal({
                           icon={{
                             path: google.maps.SymbolPath.CIRCLE,
                             scale: 10,
-                            fillColor: '#f4c979',
+                            fillColor: '#F4F7F2',
                             fillOpacity: 1,
-                            strokeColor: '#332308',
+                            strokeColor: '#040605',
                             strokeWeight: 2,
                           }}
                         />
@@ -684,7 +684,7 @@ function SiteFormModal({
                 value={form.latitude}
                 onChange={(e) => setForm(prev => ({ ...prev, latitude: e.target.value }))}
                 placeholder="32.7767"
-                className="w-full px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus-visible:border-[#f4c979]/40 font-mono"
+                className="w-full px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus-visible:border-[#F4F7F2]/40 font-mono"
               />
             </div>
             <div>
@@ -694,7 +694,7 @@ function SiteFormModal({
                 value={form.longitude}
                 onChange={(e) => setForm(prev => ({ ...prev, longitude: e.target.value }))}
                 placeholder="-96.7970"
-                className="w-full px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus-visible:border-[#f4c979]/40 font-mono"
+                className="w-full px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus-visible:border-[#F4F7F2]/40 font-mono"
               />
             </div>
           </div>
@@ -711,7 +711,7 @@ function SiteFormModal({
             <button
               type="submit"
               disabled={isLoading}
-              className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#332308] text-sm font-semibold hover:scale-[1.02] transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
+              className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-[#E4EAE1] via-[#F4F7F2] to-[#8DF5A8] text-[#040605] text-sm font-semibold hover:scale-[1.02] transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -886,14 +886,14 @@ export default function AdminWorkSites() {
         >
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#f4c979]/20 to-[#d79a32]/10 border border-[#f4c979]/30 flex items-center justify-center">
-                <Building2 className="w-6 h-6 text-[#f4c979]" />
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#F4F7F2]/20 to-[#8DF5A8]/10 border border-[#F4F7F2]/30 flex items-center justify-center">
+                <Building2 className="w-6 h-6 text-[#F4F7F2]" />
               </div>
               <div>
                 <TextEffect
                   as="h1"
                   preset="fade"
-                  className="text-xl sm:text-2xl font-bold text-white"
+                  className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]"
                 >
                   Work Sites
                 </TextEffect>
@@ -909,7 +909,7 @@ export default function AdminWorkSites() {
                 setEditingSite(null);
                 setShowModal(true);
               }}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#332308] font-semibold text-sm shadow-lg hover:scale-[1.02] transition-transform"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#E4EAE1] via-[#F4F7F2] to-[#8DF5A8] text-[#040605] font-semibold text-sm shadow-lg hover:scale-[1.02] transition-transform"
             >
               <Plus className="w-4 h-4" />
               Add Site
@@ -931,7 +931,7 @@ export default function AdminWorkSites() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search sites..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus-visible:border-[#f4c979]/40"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus-visible:border-[#F4F7F2]/40"
             />
           </div>
           
@@ -940,7 +940,7 @@ export default function AdminWorkSites() {
               onClick={() => setShowInactive(!showInactive)}
               className={`px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors ${
                 showInactive
-                  ? 'bg-[#f4c979]/15 border-[#f4c979]/30 text-[#f4c979]'
+                  ? 'bg-[#F4F7F2]/15 border-[#F4F7F2]/30 text-[#F4F7F2]'
                   : 'border-white/10 text-white/50 hover:text-white/70'
               }`}
             >
@@ -981,10 +981,10 @@ export default function AdminWorkSites() {
             </div>
 
             {/* Desktop Table */}
-            <div className="hidden sm:block rounded-xl border border-[#f6dcb2]/15 overflow-hidden">
+            <div className="hidden sm:block rounded-xl border border-[#E4EAE1]/15 overflow-hidden">
               <table className="w-full">
-                <thead className="bg-[#14110d]">
-                  <tr className="text-left text-xs text-white/50 uppercase tracking-wider">
+                <thead className="bg-[#0B100D]">
+                  <tr className="text-left text-xs text-white/50 uppercase font-mono font-medium tracking-[0.14em]">
                     <th className="px-4 py-3 font-medium">Site</th>
                     <th className="px-4 py-3 font-medium">Address</th>
                     <th className="px-4 py-3 font-medium">Coordinates</th>
@@ -1005,7 +1005,7 @@ export default function AdminWorkSites() {
                       >
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            <MapPin className={`w-4 h-4 ${site.is_active ? 'text-[#f4c979]' : 'text-white/30'}`} />
+                            <MapPin className={`w-4 h-4 ${site.is_active ? 'text-[#F4F7F2]' : 'text-white/30'}`} />
                             <span className="font-medium text-white/90 text-sm">{site.name}</span>
                           </div>
                         </td>
@@ -1068,10 +1068,10 @@ export default function AdminWorkSites() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="mt-6 p-4 rounded-xl border border-[#f4c979]/15 bg-[#f4c979]/5"
+          className="mt-6 p-4 rounded-xl border border-[#F4F7F2]/15 bg-[#F4F7F2]/5"
         >
           <div className="flex items-start gap-3">
-            <CloudSun className="w-5 h-5 text-[#f4c979] flex-shrink-0 mt-0.5" />
+            <CloudSun className="w-5 h-5 text-[#F4F7F2] flex-shrink-0 mt-0.5" />
             <div className="text-xs text-white/60 space-y-1">
               <p className="font-medium text-white/80">How Work Sites Are Used</p>
               <p>Active work sites are included in the daily <strong>Safety Forecast</strong> email at 6:30 AM.</p>

@@ -114,14 +114,14 @@ export function ExampleJobForm({ initialData, onSubmit, onCancel }: ExampleJobFo
           type="button"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="px-6 py-3 rounded-2xl border border-white/20 text-white/70 hover:text-white hover:border-white/40 transition-colors disabled:opacity-50"
+          className="px-6 py-3 rounded-leaf-sm border border-white/20 text-white/70 hover:text-white hover:border-white/40 transition-colors disabled:opacity-50"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="px-6 py-3 rounded-2xl bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#2e1b02] font-semibold disabled:opacity-50"
+          className="px-6 py-3 rounded-leaf-sm bg-gradient-to-r from-[#E4EAE1] via-[#F4F7F2] to-[#8DF5A8] text-[#040605] font-semibold disabled:opacity-50"
         >
           {isSubmitting ? 'Saving...' : 'Save Job'}
         </button>

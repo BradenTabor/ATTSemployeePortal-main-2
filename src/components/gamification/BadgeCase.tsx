@@ -73,7 +73,7 @@ export const BadgeCase = memo(function BadgeCase({ items, isLoading, className }
             </div>
 
             {maxEarned > 0 && (
-              <p className="mb-2 text-[10px] font-medium uppercase tracking-wider text-emerald-300/90">
+              <p className="mb-2 text-[10px] font-medium uppercase text-emerald-300/90 font-mono font-medium tracking-[0.14em]">
                 Earned · {getPrestigeLabel(maxEarned)}
                 {item.prestigeMax > 1 && ` (${maxEarned}/${item.prestigeMax})`}
               </p>

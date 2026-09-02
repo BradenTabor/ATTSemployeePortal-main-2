@@ -495,7 +495,7 @@ export function EquipmentInspectionControlCenter({
 
   if (authLoading && !hasRole) {
     return (
-      <div className="rounded-3xl border border-[#ff9350]/30 bg-[#2a0c02]/80 p-6 text-center text-sm text-white/70">
+      <div className="rounded-leaf border border-[#B8FF7A]/30 bg-[#121A15]/80 p-6 text-center text-sm text-white/70">
         Loading mechanic permissions...
       </div>
     );
@@ -503,7 +503,7 @@ export function EquipmentInspectionControlCenter({
 
   if (unauthorized) {
     return (
-      <div className="rounded-3xl border border-[#ff9350]/30 bg-[#2a0c02]/80 p-6 text-center text-sm text-white/70">
+      <div className="rounded-leaf border border-[#B8FF7A]/30 bg-[#121A15]/80 p-6 text-center text-sm text-white/70">
         You do not have permission to view equipment inspections.
       </div>
     );
@@ -513,7 +513,7 @@ export function EquipmentInspectionControlCenter({
     <div className="space-y-4">
       {/* Compact Filter Bar */}
       <ScrollRevealSection delay={0}>
-        <div className="rounded-xl border border-[#ff9350]/15 bg-gradient-to-r from-[#0c0402] to-[#120805] p-3">
+        <div className="rounded-xl border border-[#B8FF7A]/15 bg-gradient-to-r from-[#040605] to-[#0B100D] p-3">
           <div className="flex flex-col sm:flex-row gap-3">
             {/* Status dropdown - compact */}
             <div className="relative">
@@ -614,7 +614,7 @@ export function EquipmentInspectionControlCenter({
         {!loading && !error && (
           <div className="grid gap-4 lg:grid-cols-3">
             {/* Inspection List Panel - Compact */}
-            <div className="rounded-xl border border-white/10 bg-[#080403] overflow-hidden flex flex-col">
+            <div className="rounded-xl border border-white/10 bg-[#040605] overflow-hidden flex flex-col">
               {/* Compact header with inline pagination */}
               <div className="flex items-center justify-between px-3 py-2 bg-gradient-to-r from-white/5 to-transparent border-b border-white/5">
                 <div className="flex items-center gap-2">
@@ -630,7 +630,8 @@ export function EquipmentInspectionControlCenter({
                     <button
                       onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                       disabled={currentPage === 1}
-                      className="p-1 rounded text-white/40 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      aria-label="Previous page"
+                      className="tap-44 relative p-1 rounded text-white/40 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                     >
                       <ChevronLeft className="w-3.5 h-3.5" />
                     </button>
@@ -640,7 +641,8 @@ export function EquipmentInspectionControlCenter({
                     <button
                       onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                       disabled={currentPage === totalPages}
-                      className="p-1 rounded text-white/40 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      aria-label="Next page"
+                      className="tap-44 relative p-1 rounded text-white/40 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                     >
                       <ChevronRight className="w-3.5 h-3.5" />
                     </button>
@@ -727,7 +729,7 @@ export function EquipmentInspectionControlCenter({
                   <motion.div
                     key="empty-state"
                     {...(prefersReducedMotion ? detailTransitionReduced : detailTransition)}
-                    className="h-full min-h-[300px] rounded-xl border border-white/5 bg-[#050302] p-6 flex flex-col items-center justify-center text-center"
+                    className="h-full min-h-[300px] rounded-xl border border-white/5 bg-[#040605] p-6 flex flex-col items-center justify-center text-center"
                   >
                     <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 mb-3">
                       <ClipboardList className="w-5 h-5 text-amber-400/70" />
@@ -746,7 +748,7 @@ export function EquipmentInspectionControlCenter({
                     className="space-y-3"
                   >
                     {/* Inspection Summary Card - Compact */}
-                    <div className="rounded-xl border border-white/10 bg-[#050302] overflow-hidden">
+                    <div className="rounded-xl border border-white/10 bg-[#040605] overflow-hidden">
                       {/* Compact header */}
                       <div className="bg-gradient-to-r from-amber-500/8 to-transparent border-b border-white/5 px-4 py-3">
                         <div className="flex items-center justify-between gap-3">
@@ -800,11 +802,11 @@ export function EquipmentInspectionControlCenter({
                         {/* Quick summary row */}
                         <div className="grid gap-2 sm:grid-cols-2">
                           <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2.5">
-                            <div className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Submitted by</div>
+                            <div className="text-[10px] uppercase text-white/30 mb-1 font-mono font-medium tracking-[0.14em]">Submitted by</div>
                             <p className="text-xs text-white/70">{selectedInspection.submitted_by || "Unknown"}</p>
                           </div>
                           <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2.5">
-                            <div className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Notes</div>
+                            <div className="text-[10px] uppercase text-white/30 mb-1 font-mono font-medium tracking-[0.14em]">Notes</div>
                             <p className="text-xs text-white/60 line-clamp-2">
                               {selectedInspection.notes?.trim() || "No notes"}
                             </p>
@@ -823,7 +825,7 @@ export function EquipmentInspectionControlCenter({
                           <div className="grid gap-2 sm:grid-cols-2 pt-2">
                             {/* General Checklist */}
                             <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2.5">
-                              <div className="text-[10px] uppercase tracking-wider text-white/30 mb-2">General</div>
+                              <div className="text-[10px] uppercase text-white/30 mb-2 font-mono font-medium tracking-[0.14em]">General</div>
                               <div className="max-h-48 overflow-y-auto space-y-0.5">
                                 {GENERAL_ITEMS.map((item) => {
                                   const value = selectedInspection.general_checklist?.[item.id];
@@ -842,7 +844,7 @@ export function EquipmentInspectionControlCenter({
 
                             {/* Template-specific Checklist */}
                             <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2.5">
-                              <div className="text-[10px] uppercase tracking-wider text-white/30 mb-2">Template</div>
+                              <div className="text-[10px] uppercase text-white/30 mb-2 font-mono font-medium tracking-[0.14em]">Template</div>
                               {getSpecificItems(selectedInspection.template).length === 0 ? (
                                 <p className="text-[11px] text-white/40">No template</p>
                               ) : (
@@ -897,7 +899,7 @@ export function EquipmentInspectionControlCenter({
                     </div>
 
                     {/* Mechanic Fix Log - Compact */}
-                    <div className="rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-950/30 to-[#050302] overflow-hidden">
+                    <div className="rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-950/30 to-[#040605] overflow-hidden">
                       <div className="flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-amber-500/10 to-transparent border-b border-amber-500/10">
                         <div className="flex items-center gap-2">
                           <div className="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/25 flex items-center justify-center">

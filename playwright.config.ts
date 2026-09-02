@@ -7,6 +7,14 @@
 
 import os from 'node:os';
 import { defineConfig, devices } from '@playwright/test';
+import { assertSafeE2ETarget, E2E_BASE_URL, E2E_PORT } from './tests/setup/e2eEnv';
+
+/**
+ * Production guard. Loads .env.test(.local) ahead of .env and refuses to start
+ * when the resolved Supabase project is production — the suite seeds
+ * @atts.test users and fake submissions. See tests/setup/e2eEnv.ts.
+ */
+assertSafeE2ETarget('playwright');
 
 /** Number of workers: env override, or CI-optimized, or Playwright default (local). */
 function getWorkers(): number | undefined {
@@ -21,12 +29,6 @@ function getWorkers(): number | undefined {
   }
   return undefined;
 }
-
-/**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
- */
-// require('dotenv').config();
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -55,7 +57,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:5173',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || E2E_BASE_URL,
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
@@ -103,10 +105,15 @@ export default defineConfig({
     },
   ],
 
-  /* Run your local dev server before starting the tests (reuse if already running) */
+  /*
+   * Dev server for the app under test. `--mode test` makes Vite load
+   * .env.test(.local) over .env so the browser hits the same Supabase project the
+   * guard approved. Dedicated port + strictPort: a regular `npm run dev` on 5173
+   * (pointed at prod) is never picked up by reuseExistingServer.
+   */
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:5173',
+    command: `npx vite --mode test --port ${E2E_PORT} --strictPort`,
+    url: E2E_BASE_URL,
     reuseExistingServer: true,
     timeout: 120 * 1000,
   },

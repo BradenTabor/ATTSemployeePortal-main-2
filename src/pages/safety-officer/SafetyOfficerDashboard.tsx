@@ -1,7 +1,7 @@
 import { useMemo, useCallback, Suspense, lazy, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, Link } from "react-router-dom";
-import { Shield, FileText, ClipboardCheck, FileBarChart, ChevronDown } from "lucide-react";
+import { Shield, ShieldCheck, FileText, ClipboardCheck, FileBarChart, ChevronDown } from "lucide-react";
 import IncidentLoggingModal from "../../components/admin/IncidentLoggingModal";
 import SafetyIncidentsList from "../../components/admin/SafetyIncidentsList";
 import { motion, AnimatePresence } from "framer-motion";
@@ -9,7 +9,7 @@ import DashboardLayout from "../../layouts/DashboardLayout";
 import { SAFETY_OFFICER_NAV_CARDS, getCommonNavCards } from "../../components/admin/adminNavConfig";
 import { useAuth } from "../../contexts/AuthContext";
 import { getRoleDashboard } from "../../lib/navigation";
-import { WelcomeHeader } from "../../components/dashboard";
+import { WelcomeHeader } from "../../components/dashboard/WelcomeHeader";
 import BrandedNavCard from "../../components/BrandedNavCard";
 import { EnableNotificationsButton } from "../../components/notifications";
 import { getDeviceCapabilities } from "../../lib/mobilePerf";
@@ -35,18 +35,15 @@ import RapidReportingTimer from "../../components/safety/RapidReportingTimer";
 import CorrectiveActionList from "../../components/safety/CorrectiveActionList";
 import NearMissTrend from "../../components/safety/NearMissTrend";
 import NearMissCategoryBreakdown from "../../components/safety/NearMissCategoryBreakdown";
+import { SectionLabel } from "./components";
 
 const ThemedAnnouncementCard = lazy(() => import("../../components/ThemedAnnouncementCard"));
-
-/** Section label — uppercase, tracked, role-tinted */
-const SECTION_LABEL_CLASS =
-  "text-xs uppercase tracking-widest font-medium text-rose-200/60";
 
 const CURRENT_YEAR = new Date().getFullYear();
 
 const STATUS_DOT: Record<string, string> = {
-  compliant: "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]",
-  warning: "bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.4)]",
+  compliant: "bg-emerald-400 shadow-[0_0_6px_rgba(61,220,132,0.5)]",
+  warning: "bg-amber-400 shadow-[0_0_6px_rgba(174,219,63,0.4)]",
   "non-compliant": "bg-rose-400 shadow-[0_0_6px_rgba(251,113,133,0.5)]",
 };
 
@@ -84,14 +81,14 @@ export default function SafetyOfficerDashboard() {
             <div
               className="absolute top-1/2 left-1/2 w-96 h-96 rounded-full opacity-[0.06]"
               style={{
-                background: "radial-gradient(circle, #9f1239, transparent 65%)",
+                background: "radial-gradient(circle, #22895C, transparent 65%)",
                 filter: "blur(60px)",
                 transform: "translate(-50%, -50%)",
               }}
             />
           </div>
           <div className={`${glass.cardRed} p-8 sm:p-10 text-center max-w-sm`}>
-            <div className="w-16 h-16 rounded-2xl bg-rose-500/20 border border-rose-500/25 flex items-center justify-center mx-auto mb-5">
+            <div className="w-16 h-16 rounded-leaf-sm bg-rose-500/20 border border-rose-500/25 flex items-center justify-center mx-auto mb-5">
               <Shield className="w-8 h-8 text-rose-400" aria-hidden />
             </div>
             <h2 className="text-xl font-bold text-white mb-2">Access Denied</h2>
@@ -109,11 +106,11 @@ export default function SafetyOfficerDashboard() {
   }
 
   return (
-    <DashboardLayout title="Safety Officer Dashboard">
+    <DashboardLayout title="Safety Officer Dashboard" pageHeading>
       <div className="relative w-full max-w-7xl mx-auto px-2 sm:px-4 md:px-6 pb-6 pt-2 sm:pt-4 md:pt-6">
         {/* Layer 1 — atmospheric: deep rose glow (safety officer role) */}
         <div
-          className="absolute inset-0 pointer-events-none select-none overflow-hidden rounded-2xl"
+          className="absolute inset-0 pointer-events-none select-none overflow-hidden rounded-leaf-sm"
           style={{ zIndex: -1 }}
           aria-hidden
         >
@@ -128,7 +125,7 @@ export default function SafetyOfficerDashboard() {
           <div
             className="absolute bottom-1/4 left-0 w-64 h-64 rounded-full opacity-[0.04]"
             style={{
-              background: "radial-gradient(circle, #9f1239, transparent 65%)",
+              background: "radial-gradient(circle, #22895C, transparent 65%)",
               filter: "blur(50px)",
               transform: "translate(-30%, 0)",
             }}
@@ -142,93 +139,131 @@ export default function SafetyOfficerDashboard() {
               theme="redwhite"
               onSignOut={handleSignOut}
               subtitle="Monitor safety compliance, track incidents, and protocols"
-              roleBadgeText={role === "admin" ? "Admin Access" : "Safety Officer"}
+              roleBadgeText={role === "admin" ? "Safety Officer · admin access" : "Safety Officer"}
             />
           </div>
 
-          <div className="min-h-[400px] space-y-4">
-            {/* Command bar — spotlight quick access */}
-            <nav className={`${glass.commandBar} grid grid-cols-1 sm:grid-cols-3 gap-px overflow-hidden`} aria-label="Quick access">
-              <Link
-                to="/emergency-action-plan"
-                className="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.03] transition-colors duration-150 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-inset"
-              >
-                <FileText className="w-4 h-4 text-rose-400/80 shrink-0" aria-hidden />
-                <div className="min-w-0 flex-1">
-                  <span className="text-sm font-medium text-white block truncate">Emergency Action Plan</span>
-                  <span className="text-[11px] text-white/40">Reference doc</span>
-                </div>
-                <span className={`w-2 h-2 rounded-full shrink-0 ${STATUS_DOT.compliant}`} aria-label="Available" />
-              </Link>
-              <Link
-                to="/inspection-readiness"
-                className="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.03] border-t sm:border-t-0 sm:border-l border-white/[0.06] transition-colors duration-150 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-inset"
-              >
-                <ClipboardCheck className="w-4 h-4 text-rose-400/80 shrink-0" aria-hidden />
-                <div className="min-w-0 flex-1">
-                  <span className="text-sm font-medium text-white block truncate">Inspection Readiness</span>
-                  <span className="text-[11px] text-white/40 font-mono tabular-nums">
-                    {inspectionStatus.isLoading ? "..." : `${inspectionStatus.compliant}/${inspectionStatus.compliant + inspectionStatus.warning + inspectionStatus.nonCompliant}`}
-                  </span>
-                </div>
-                <span className={`w-2 h-2 rounded-full shrink-0 ${STATUS_DOT[inspectionStatus.aggregate]}`} aria-label={inspectionStatus.aggregate} />
-              </Link>
-              <Link
-                to="/safety-officer/osha-300a"
-                className="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.03] border-t sm:border-t-0 sm:border-l border-white/[0.06] transition-colors duration-150 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-inset"
-              >
-                <FileBarChart className="w-4 h-4 text-rose-400/80 shrink-0" aria-hidden />
-                <div className="min-w-0 flex-1">
-                  <span className="text-sm font-medium text-white block truncate">OSHA 300A Summary</span>
-                  <span className="text-[11px] text-white/40">
-                    {osha300aCert ? "Certified" : "Not certified"}
-                  </span>
-                </div>
-                <span className={`w-2 h-2 rounded-full shrink-0 ${osha300aCert ? STATUS_DOT.compliant : STATUS_DOT.warning}`} aria-label={osha300aCert ? "Certified" : "Not certified"} />
-              </Link>
-            </nav>
+          <div className="min-h-[400px] space-y-7 md:space-y-9">
+            {/* Quick access — spotlight command bar */}
+            <div className="space-y-3">
+              <SectionLabel className="px-0.5">Quick access</SectionLabel>
+              <nav className={`${glass.commandBar} grid grid-cols-1 sm:grid-cols-3 gap-px overflow-hidden`} aria-label="Quick access">
+                <Link
+                  to="/emergency-action-plan"
+                  className="flex items-center gap-3 px-4 py-3.5 hover:bg-white/[0.03] transition-colors duration-150 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-inset"
+                >
+                  <FileText className="w-4 h-4 text-rose-400/80 shrink-0" aria-hidden />
+                  <div className="min-w-0 flex-1">
+                    <span className="text-sm font-medium text-white block truncate">Emergency Action Plan</span>
+                    <span className="text-[11px] text-white/40">Reference doc</span>
+                  </div>
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${STATUS_DOT.compliant}`} aria-label="Available" />
+                </Link>
+                <Link
+                  to="/inspection-readiness"
+                  className="flex items-center gap-3 px-4 py-3.5 hover:bg-white/[0.03] border-t sm:border-t-0 sm:border-l border-white/[0.06] transition-colors duration-150 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-inset"
+                >
+                  <ClipboardCheck className="w-4 h-4 text-rose-400/80 shrink-0" aria-hidden />
+                  <div className="min-w-0 flex-1">
+                    <span className="text-sm font-medium text-white block truncate">Inspection Readiness</span>
+                    <span className="text-[11px] text-white/40 font-mono tabular-nums">
+                      {inspectionStatus.isLoading ? "..." : `${inspectionStatus.compliant}/${inspectionStatus.compliant + inspectionStatus.warning + inspectionStatus.nonCompliant}`}
+                    </span>
+                  </div>
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${STATUS_DOT[inspectionStatus.aggregate]}`} aria-label={inspectionStatus.aggregate} />
+                </Link>
+                <Link
+                  to="/safety-officer/osha-300a"
+                  className="flex items-center gap-3 px-4 py-3.5 hover:bg-white/[0.03] border-t sm:border-t-0 sm:border-l border-white/[0.06] transition-colors duration-150 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-inset"
+                >
+                  <FileBarChart className="w-4 h-4 text-rose-400/80 shrink-0" aria-hidden />
+                  <div className="min-w-0 flex-1">
+                    <span className="text-sm font-medium text-white block truncate">OSHA 300A Summary</span>
+                    <span className="text-[11px] text-white/40">
+                      {osha300aCert ? "Certified" : "Not certified"}
+                    </span>
+                  </div>
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${osha300aCert ? STATUS_DOT.compliant : STATUS_DOT.warning}`} aria-label={osha300aCert ? "Certified" : "Not certified"} />
+                </Link>
+              </nav>
+            </div>
 
-            {/* Critical alerts — full width */}
-            <section className="grid grid-cols-1 gap-2" aria-label="Critical alerts">
-              <RapidReportingTimer />
-              <PostingReminder />
-            </section>
-
-            {/* Bento metrics — asymmetric grid */}
-            <section
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[2fr_1fr] gap-2"
-              aria-label="Key metrics"
-            >
-              <DaysSinceIncident />
-              <RiskScoreWidget />
-              <ComplianceRatesWidget />
-              <SafetyFlagsWidget />
-              <div className="sm:col-span-2 lg:col-span-2">
-                <CertExpirationWarnings />
+            {/* Critical alerts — region always present (a11y + E2E). When both
+                widgets render nothing (no active deadlines / outside posting
+                window) the grid collapses via :empty and a calm "all clear"
+                line shows in its place — pure CSS, no duplicated query logic. */}
+            <section className="space-y-3" aria-label="Critical alerts">
+              <SectionLabel className="px-0.5">Critical alerts</SectionLabel>
+              <div className="peer grid grid-cols-1 gap-3 [&:empty]:hidden">
+                <RapidReportingTimer />
+                <PostingReminder />
+              </div>
+              <div className="hidden peer-[:empty]:flex items-center gap-2.5 rounded-xl border border-emerald-500/15 bg-emerald-500/[0.04] px-4 py-3">
+                <ShieldCheck className="w-4 h-4 text-emerald-400/80 shrink-0" aria-hidden />
+                <span className="text-sm text-white/70">No active reporting deadlines — all clear.</span>
               </div>
             </section>
 
-            {/* Actionable lists — 2 columns */}
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-2" aria-label="Actionable lists">
-              <OverdueFormAlerts />
-              <CorrectiveActionList />
+            {/* At a glance — hero KPI band (single deliberate motion moment) */}
+            <section className="space-y-3" aria-label="Key metrics">
+              <SectionLabel className="px-0.5">At a glance</SectionLabel>
+              <motion.div
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[2fr_1fr] gap-3"
+                variants={shouldReduceMotion ? undefined : variants.staggerContainer}
+                initial={shouldReduceMotion ? undefined : "hidden"}
+                animate={shouldReduceMotion ? undefined : "visible"}
+              >
+                <motion.div variants={shouldReduceMotion ? undefined : variants.staggerItem}>
+                  <DaysSinceIncident />
+                </motion.div>
+                <motion.div variants={shouldReduceMotion ? undefined : variants.staggerItem}>
+                  <RiskScoreWidget />
+                </motion.div>
+                <motion.div variants={shouldReduceMotion ? undefined : variants.staggerItem}>
+                  <ComplianceRatesWidget />
+                </motion.div>
+                <motion.div variants={shouldReduceMotion ? undefined : variants.staggerItem}>
+                  <SafetyFlagsWidget />
+                </motion.div>
+                <motion.div
+                  variants={shouldReduceMotion ? undefined : variants.staggerItem}
+                  className="sm:col-span-2 lg:col-span-2"
+                >
+                  <CertExpirationWarnings />
+                </motion.div>
+              </motion.div>
             </section>
 
-            {/* Analytics — 2 columns */}
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-2" aria-label="Analytics">
-              <IncidentTrendChart />
-              <div className="space-y-2">
-                <NearMissTrend />
-                <NearMissCategoryBreakdown />
+            {/* Action items */}
+            <section className="space-y-3" aria-label="Actionable lists">
+              <SectionLabel className="px-0.5">Action items</SectionLabel>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                <OverdueFormAlerts />
+                <CorrectiveActionList />
               </div>
             </section>
 
-            {/* Detailed views */}
-            <section className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-2" aria-label="Detailed views">
-              <CrewSiteOverview />
-              <BodyPartHeatMap />
-              <div className="lg:col-span-2 xl:col-span-1">
-                <SafetyIncidentsList onLogIncident={() => setShowIncidentModal(true)} />
+            {/* Trends & analytics */}
+            <section className="space-y-3" aria-label="Analytics">
+              <SectionLabel className="px-0.5">Trends &amp; analytics</SectionLabel>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                <IncidentTrendChart />
+                <div className="space-y-3">
+                  <NearMissTrend />
+                  <NearMissCategoryBreakdown />
+                </div>
+              </div>
+            </section>
+
+            {/* Operations — detailed views */}
+            <section className="space-y-3" aria-label="Detailed views">
+              <SectionLabel className="px-0.5">Operations</SectionLabel>
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+                <CrewSiteOverview />
+                <BodyPartHeatMap />
+                <div className="lg:col-span-2 xl:col-span-1">
+                  <SafetyIncidentsList onLogIncident={() => setShowIncidentModal(true)} />
+                </div>
               </div>
             </section>
 
@@ -246,9 +281,9 @@ export default function SafetyOfficerDashboard() {
 
             {/* Navigation — Safety Tools */}
             <div className="space-y-3">
-              <p className={SECTION_LABEL_CLASS}>Safety Tools</p>
+              <SectionLabel className="px-0.5">Safety Tools</SectionLabel>
               <motion.div
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
                 variants={shouldReduceMotion ? undefined : variants.staggerContainer}
                 initial="hidden"
                 animate="visible"
@@ -276,10 +311,7 @@ export default function SafetyOfficerDashboard() {
                 className="flex items-center gap-2 group focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 rounded-lg px-1 -mx-1"
                 aria-expanded={!commonCollapsed}
               >
-                <p className={SECTION_LABEL_CLASS}>Common Features</p>
-                <span className="text-[10px] font-mono tabular-nums text-white/30 bg-white/[0.04] px-1.5 py-0.5 rounded">
-                  {commonCards.length}
-                </span>
+                <SectionLabel className="px-0.5" count={commonCards.length}>Common Features</SectionLabel>
                 <ChevronDown
                   className={`w-3.5 h-3.5 text-white/30 transition-transform duration-200 ${commonCollapsed ? "" : "rotate-180"}`}
                   aria-hidden
@@ -295,7 +327,7 @@ export default function SafetyOfficerDashboard() {
                     className="overflow-hidden"
                   >
                     <motion.div
-                      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 pt-1"
+                      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1"
                       variants={shouldReduceMotion ? undefined : variants.staggerContainer}
                       initial="hidden"
                       animate="visible"

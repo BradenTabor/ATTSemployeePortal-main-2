@@ -12,6 +12,7 @@ import {
   useUpsertGamificationSeason,
 } from '@/hooks/gamification';
 import type { GamificationProgramSeason } from '@/lib/gamification/types';
+import { SectionInfo } from './SectionInfo';
 
 function toDatetimeLocalValue(iso: string): string {
   if (!iso) return '';
@@ -73,7 +74,7 @@ function SeasonEditor({ season, onSaved }: SeasonEditorProps) {
               type="button"
               disabled={setStatus.isPending}
               onClick={() => setStatus.mutate({ seasonKey: season.seasonKey, status: 'scheduled' }, { onSuccess: onSaved })}
-              className="px-2 py-1 rounded-md border border-blue-500/30 bg-blue-500/10 text-[10px] text-blue-200 hover:bg-blue-500/20"
+              className="tap-44 relative px-2 py-1 rounded-md border border-blue-500/30 bg-blue-500/10 text-[10px] text-blue-200 hover:bg-blue-500/20"
             >
               Schedule
             </button>
@@ -83,7 +84,7 @@ function SeasonEditor({ season, onSaved }: SeasonEditorProps) {
               type="button"
               disabled={setStatus.isPending}
               onClick={() => setStatus.mutate({ seasonKey: season.seasonKey, status: 'closed' }, { onSuccess: onSaved })}
-              className="px-2 py-1 rounded-md border border-red-500/30 bg-red-500/10 text-[10px] text-red-200 hover:bg-red-500/20"
+              className="tap-44 relative px-2 py-1 rounded-md border border-red-500/30 bg-red-500/10 text-[10px] text-red-200 hover:bg-red-500/20"
             >
               Close
             </button>
@@ -146,7 +147,7 @@ function SeasonEditor({ season, onSaved }: SeasonEditorProps) {
                   { onSuccess: onSaved },
                 )
               }
-              className="px-3 py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-100 text-xs font-medium hover:bg-amber-500/20"
+              className="min-h-[44px] px-3 py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-100 text-xs font-medium hover:bg-amber-500/20"
             >
               {upsert.isPending ? 'Saving…' : 'Save season'}
             </button>
@@ -206,6 +207,10 @@ export function GamificationProgramAdminSection() {
               Stage seasons and campaigns before kickoff. Staged rows stay inert until flags flip and you activate campaigns.
             </p>
           </div>
+          <SectionInfo tone="amber" title="Phase 2 Program Admin">
+            <p>Where you build the competitive layer — <b>seasons</b> and <b>campaigns</b> — ahead of launch.</p>
+            <p>Everything you create here is staged and does nothing until the feature flags are switched on. The chips show each flag's state: <b>dark</b> = off (prep only), <b>on/live</b> = active.</p>
+          </SectionInfo>
         </div>
         <div className="flex flex-wrap gap-1">
           <StatusChip
@@ -234,9 +239,14 @@ export function GamificationProgramAdminSection() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <section className="space-y-2">
-          <div className="flex items-center gap-2">
+          <div className="relative flex items-center gap-2">
             <CalendarRange className="w-4 h-4 text-blue-300" aria-hidden />
             <h4 className="text-xs font-semibold text-white">Seasons</h4>
+            <SectionInfo tone="blue" title="Seasons">
+              <p>Competition windows — like a sports season or themed quarter — with a name, optional theme, and start/end dates.</p>
+              <p>They move through <b>draft → scheduled → active → closed</b> automatically by date (a daily job flips them). At the close, top scorers get podium recognition.</p>
+              <p>Only draft/scheduled seasons are editable; active and closed ones are managed automatically. Nothing counts until the program is switched on.</p>
+            </SectionInfo>
           </div>
           {seasonsLoading ? (
             <div className="h-24 rounded-lg border border-white/10 bg-white/[0.03] animate-pulse" />
@@ -250,9 +260,14 @@ export function GamificationProgramAdminSection() {
         </section>
 
         <section className="space-y-2">
-          <div className="flex items-center gap-2">
+          <div className="relative flex items-center gap-2">
             <Megaphone className="w-4 h-4 text-emerald-300" aria-hidden />
             <h4 className="text-xs font-semibold text-white">Campaigns</h4>
+            <SectionInfo tone="emerald" title="Campaigns">
+              <p>Limited-time point boosts built on a challenge — for example, "double points for compliance this week."</p>
+              <p>Pick a challenge, set a window, and a <b>multiplier</b> (≥ 1.00). New campaigns start <b>staged</b> (inactive); click <b>Activate</b> when you're ready.</p>
+              <p>While active, finishing the challenge pays the base points plus the multiplier bonus, and the campaign takes priority over the normal weekly challenge.</p>
+            </SectionInfo>
           </div>
 
           <div className="rounded-lg border border-white/10 bg-white/[0.02] p-2 sm:p-3 space-y-2">
@@ -341,7 +356,7 @@ export function GamificationProgramAdminSection() {
                       },
                     )
                   }
-                  className="w-full px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-100 text-xs font-medium hover:bg-emerald-500/20 disabled:opacity-40"
+                  className="w-full min-h-[44px] px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-100 text-xs font-medium hover:bg-emerald-500/20 disabled:opacity-40"
                 >
                   {upsertCampaign.isPending ? 'Staging…' : 'Stage campaign'}
                 </button>
@@ -385,7 +400,7 @@ export function GamificationProgramAdminSection() {
                           { onSuccess: refresh },
                         )
                       }
-                      className="px-2 py-1 rounded-md border border-white/10 bg-white/5 text-[10px] text-white/70 hover:text-white"
+                      className="tap-44 relative px-2 py-1 rounded-md border border-white/10 bg-white/5 text-[10px] text-white/70 hover:text-white"
                     >
                       {campaign.isActive ? 'Deactivate' : 'Activate'}
                     </button>

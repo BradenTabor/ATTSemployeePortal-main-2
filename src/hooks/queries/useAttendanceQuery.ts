@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabaseClient';
+import { getAuthUserFast } from '../../lib/authUser';
 import { queryKeys } from '../../lib/queryKeys';
 import { toast } from '../../lib/toast';
 import { logger } from '../../lib/logger';
@@ -116,7 +117,7 @@ export function useMarkAttendance() {
 
   return useMutation({
     mutationFn: async (payload: MarkAttendancePayload) => {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const authUser = await getAuthUserFast();
       const currentUserId = authUser?.id;
 
       const { data, error } = await supabase
@@ -194,7 +195,7 @@ export function useBulkMarkAttendance() {
 
   return useMutation({
     mutationFn: async (payload: BulkMarkPayload) => {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const authUser = await getAuthUserFast();
       const currentUserId = authUser?.id;
 
       const rows = payload.userIds.map((uid) => ({

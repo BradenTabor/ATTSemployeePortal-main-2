@@ -64,7 +64,7 @@ export function GoodCatchPrompt() {
               </p>
               <Link
                 to="/dashboard/forms/near-miss"
-                className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-amber-400 hover:text-amber-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] rounded-lg"
+                className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-amber-400 hover:text-amber-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D] rounded-lg"
               >
                 Yes — tell us
               </Link>
@@ -73,7 +73,7 @@ export function GoodCatchPrompt() {
               type="button"
               onClick={handleDismiss}
               aria-label="Dismiss for today"
-              className="shrink-0 p-1.5 rounded-lg text-white/50 hover:text-white/70 hover:bg-white/[0.06] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+              className="shrink-0 p-1.5 rounded-lg text-white/50 hover:text-white/70 hover:bg-white/[0.06] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
             >
               <X className="h-4 w-4" aria-hidden />
             </button>

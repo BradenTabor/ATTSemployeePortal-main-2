@@ -50,24 +50,24 @@ interface RewardPointsCardProps {
 const themeConfig = {
   emerald: {
     border: 'border-emerald-400/20',
-    bg: 'rgba(4, 30, 21, 0.95)',
+    bg: 'rgba(11,16,13, 0.95)',
     headerBg: 'from-emerald-500/10 to-emerald-600/5',
     accent: 'text-emerald-400',
     accentBg: 'bg-emerald-500/10',
     accentBorder: 'border-emerald-500/30',
-    glow: 'rgba(16, 185, 129, 0.15)',
+    glow: 'rgba(47,164,90, 0.15)',
     gradientFrom: 'from-emerald-400',
     gradientTo: 'to-emerald-600',
     starColor: 'text-amber-400',
   },
   blue: {
     border: 'border-blue-400/20',
-    bg: 'rgba(10, 22, 40, 0.95)',
+    bg: 'rgba(18,26,21, 0.95)',
     headerBg: 'from-blue-500/10 to-blue-600/5',
     accent: 'text-blue-400',
     accentBg: 'bg-blue-500/10',
     accentBorder: 'border-blue-500/30',
-    glow: 'rgba(59, 130, 246, 0.15)',
+    glow: 'rgba(125,205,162, 0.15)',
     gradientFrom: 'from-blue-400',
     gradientTo: 'to-blue-600',
     starColor: 'text-amber-400',
@@ -148,7 +148,7 @@ function RewardPointsCardComponent({ theme = 'emerald', compact = false }: Rewar
   if (rewards.loading) {
     return (
       <div 
-        className={`rounded-2xl border ${themeStyles.border} p-4 animate-pulse`}
+        className={`rounded-leaf-sm border ${themeStyles.border} p-4 animate-pulse`}
         style={{ background: themeStyles.bg }}
       >
         <div className="flex items-center gap-3">
@@ -201,7 +201,7 @@ function RewardPointsCardComponent({ theme = 'emerald', compact = false }: Rewar
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className={`
-        relative overflow-hidden rounded-2xl border ${themeStyles.border}
+        relative overflow-hidden rounded-leaf-sm border ${themeStyles.border}
       `}
       style={{ 
         background: themeStyles.bg,
@@ -215,7 +215,7 @@ function RewardPointsCardComponent({ theme = 'emerald', compact = false }: Rewar
       <motion.div
         className="absolute -top-8 -right-8 w-24 h-24 rounded-full pointer-events-none opacity-30"
         style={{
-          background: 'radial-gradient(circle, rgba(251, 191, 36, 0.4) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(174,219,63, 0.4) 0%, transparent 70%)',
           filter: 'blur(15px)',
         }}
         animate={{
@@ -257,7 +257,7 @@ function RewardPointsCardComponent({ theme = 'emerald', compact = false }: Rewar
             <div className="flex items-baseline gap-2">
               <motion.span
                 key={rewards.totalPoints}
-                initial={{ scale: 1.2, color: '#fbbf24' }}
+                initial={{ scale: 1.2, color: '#B8FF7A' }}
                 animate={{ scale: 1, color: '#ffffff' }}
                 className="text-2xl font-black text-white"
               >

@@ -117,7 +117,7 @@ function SuggestionCard({
       {/* Field label with confidence dot */}
       <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-1.5">
         <span className={`w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full ${config.dotColor}`} />
-        <span className="text-[10px] sm:text-xs font-medium text-gray-300 uppercase tracking-wide truncate">
+        <span className="text-[10px] sm:text-xs font-medium text-gray-300 uppercase truncate font-mono font-medium tracking-[0.14em]">
           {label}
         </span>
       </div>
@@ -175,7 +175,7 @@ export function SmartDefaultsPanel({
         animate={{ opacity: 1, y: 0 }}
         className="mb-3 sm:mb-5"
       >
-        <div className="rounded-xl sm:rounded-2xl bg-gradient-to-r from-emerald-900/20 via-emerald-800/10 to-emerald-900/20 ring-1 ring-emerald-500/20 p-2.5 sm:p-3.5">
+        <div className="rounded-xl sm:rounded-leaf-sm bg-gradient-to-r from-emerald-900/20 via-emerald-800/10 to-emerald-900/20 ring-1 ring-emerald-500/20 p-2.5 sm:p-3.5">
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-emerald-500/20 animate-pulse">
               <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400/50" />
@@ -239,15 +239,15 @@ export function SmartDefaultsPanel({
       {/* Collapsed State - Compact Clickable Bar */}
       <motion.div
         onClick={() => setIsExpanded(!isExpanded)}
-        className={`relative cursor-pointer rounded-xl sm:rounded-2xl overflow-hidden transition-all duration-300 ${
+        className={`relative cursor-pointer rounded-xl sm:rounded-leaf-sm overflow-hidden transition-all duration-300 ${
           isExpanded
             ? 'bg-gradient-to-br from-emerald-900/40 via-emerald-800/20 to-emerald-900/30 ring-1 ring-emerald-500/30'
             : 'bg-gradient-to-r from-emerald-900/30 via-emerald-800/20 to-emerald-900/30 hover:from-emerald-900/40 hover:via-emerald-800/30 hover:to-emerald-900/40 ring-1 ring-emerald-500/20 hover:ring-emerald-500/40'
         }`}
         style={{
           boxShadow: isExpanded 
-            ? '0 8px 32px rgba(16, 185, 129, 0.15)' 
-            : '0 4px 16px rgba(0, 0, 0, 0.2)',
+            ? '0 8px 32px rgba(47,164,90, 0.15)' 
+            : '0 4px 16px rgba(0,0,0, 0.2)',
         }}
         layout
       >

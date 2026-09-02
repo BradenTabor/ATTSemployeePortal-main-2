@@ -22,6 +22,7 @@ import {
   getPhotoCount,
   clearQueue,
 } from './helpers/offline';
+import { E2E_BASE_URL } from '../setup/e2eEnv';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -84,7 +85,7 @@ test.describe('Offline Resilience', () => {
     // This test only works with Chromium's persistent context
     test.skip(browserName !== 'chromium', 'persistent context test only runs on Chromium');
 
-    const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:5173';
+    const baseURL = process.env.PLAYWRIGHT_BASE_URL || E2E_BASE_URL;
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pw-offline-'));
 
     try {

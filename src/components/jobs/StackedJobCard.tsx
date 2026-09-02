@@ -78,12 +78,12 @@ const StackedJobItem = memo(function StackedJobItem({
         'w-full text-left rounded-lg sm:rounded-xl border p-2.5 sm:p-3 transition-all min-h-[48px] touch-manipulation overflow-hidden',
         'bg-gradient-to-br active:scale-[0.98] active:brightness-110',
         isSelected
-          ? 'border-emerald-400/60 from-[#0a2a1f]/90 via-[#041812]/95 to-[#03120c]/90 shadow-lg shadow-emerald-500/20 ring-2 ring-emerald-400/40'
+          ? 'border-emerald-400/60 from-[#121A15]/90 via-[#0B100D]/95 to-[#0B100D]/90 shadow-lg shadow-emerald-500/20 ring-2 ring-emerald-400/40'
           : isSpanBased
-            ? 'border-blue-500/20 from-[#040815]/80 via-[#020509]/90 to-[#010204] active:border-blue-400/40'
+            ? 'border-blue-500/20 from-[#0B100D]/80 via-[#040605]/90 to-[#040605] active:border-blue-400/40'
             : isExceeded
-              ? 'border-red-500/30 from-[#1a0808]/80 via-[#0d0505]/90 to-[#050302] active:border-red-500/50'
-              : 'border-emerald-500/20 from-[#041510]/80 via-[#020d09]/90 to-[#010604] active:border-emerald-400/40'
+              ? 'border-red-500/30 from-[#132308]/80 via-[#040605]/90 to-[#040605] active:border-red-500/50'
+              : 'border-emerald-500/20 from-[#0B100D]/80 via-[#040605]/90 to-[#040605] active:border-emerald-400/40'
       )}
     >
       <div className="flex items-center justify-between gap-1.5 sm:gap-2">
@@ -95,7 +95,7 @@ const StackedJobItem = memo(function StackedJobItem({
                 isSelected ? 'text-emerald-300' : isExceeded && !isSpanBased ? 'text-red-400' : ''
               )}
               style={{
-                color: isSelected ? undefined : (isSpanBased ? 'rgb(231, 114, 4)' : isExceeded ? undefined : 'rgb(0, 219, 77)')
+                color: isSelected ? undefined : (isSpanBased ? 'rgb(141, 181, 42)' : isExceeded ? undefined : 'rgb(47, 164, 90)')
               }}
             />
             <h4 className="font-semibold text-[12px] sm:text-sm text-white truncate leading-snug flex-1 min-w-0">
@@ -205,7 +205,7 @@ function StackedJobCardComponent({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        'relative rounded-2xl overflow-hidden',
+        'relative rounded-leaf-sm overflow-hidden',
         className
       )}
     >
@@ -219,7 +219,7 @@ function StackedJobCardComponent({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="absolute inset-x-2 top-2 h-full rounded-2xl border border-emerald-500/10 bg-gradient-to-br from-[#041510]/40 via-[#020d09]/50 to-[#010604]/40"
+                className="absolute inset-x-2 top-2 h-full rounded-leaf-sm border border-emerald-500/10 bg-gradient-to-br from-[#0B100D]/40 via-[#040605]/50 to-[#040605]/40"
                 style={{ transform: 'translateY(8px)' }}
               />
             )}
@@ -228,7 +228,7 @@ function StackedJobCardComponent({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-x-1 top-1 h-full rounded-2xl border border-emerald-500/15 bg-gradient-to-br from-[#041510]/60 via-[#020d09]/70 to-[#010604]/60"
+              className="absolute inset-x-1 top-1 h-full rounded-leaf-sm border border-emerald-500/15 bg-gradient-to-br from-[#0B100D]/60 via-[#040605]/70 to-[#040605]/60"
               style={{ transform: 'translateY(4px)' }}
             />
           </>
@@ -239,13 +239,13 @@ function StackedJobCardComponent({
       <motion.div
         layout
         className={cn(
-          'relative rounded-2xl border overflow-hidden transition-all',
+          'relative rounded-leaf-sm border overflow-hidden transition-all',
           'bg-gradient-to-br',
           hasSelectedJob
-            ? 'border-emerald-400/50 from-[#0a2a1f]/95 via-[#041812]/90 to-[#03120c]/95 shadow-lg shadow-emerald-500/15'
+            ? 'border-emerald-400/50 from-[#121A15]/95 via-[#0B100D]/90 to-[#0B100D]/95 shadow-lg shadow-emerald-500/15'
             : aggregateProgress.hasExceeded
-              ? 'border-red-500/30 from-[#1a0808]/80 via-[#0d0505]/90 to-[#050302]'
-              : 'border-emerald-500/25 from-[#041510]/90 via-[#020d09]/95 to-[#010604]/90 active:border-emerald-400/40'
+              ? 'border-red-500/30 from-[#132308]/80 via-[#040605]/90 to-[#040605]'
+              : 'border-emerald-500/25 from-[#0B100D]/90 via-[#040605]/95 to-[#040605]/90 active:border-emerald-400/40'
         )}
       >
         {/* Header - Always visible - Ultra-compact for small screens */}
@@ -253,7 +253,7 @@ function StackedJobCardComponent({
           onClick={toggleExpanded}
           className="w-full text-left p-2.5 xs:p-3 sm:p-4 min-h-[60px] touch-manipulation active:brightness-110 overflow-hidden"
           style={{ 
-            background: 'radial-gradient(circle at 50% 50%, rgba(5, 77, 53, 0.8) 0%, rgba(10, 10, 10, 1) 100%)' 
+            background: 'radial-gradient(circle at 50% 50%, rgba(18,72,42, 0.8) 0%, rgba(11,16,13, 1) 100%)' 
           }}
         >
           {/* Row 1: Stack badge + progress + chevron */}
@@ -264,7 +264,7 @@ function StackedJobCardComponent({
                 <Layers className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-emerald-400" />
                 <span className="text-[10px] sm:text-xs font-bold text-emerald-300">{stackCount}</span>
               </div>
-              <span className="text-[9px] sm:text-[10px] text-white/50 uppercase tracking-wider hidden xs:inline">Stacked</span>
+              <span className="text-[9px] sm:text-[10px] text-white/50 uppercase hidden xs:inline font-mono font-medium tracking-[0.14em]">Stacked</span>
             </div>
             
             {/* Progress + Chevron */}
@@ -298,7 +298,7 @@ function StackedJobCardComponent({
           <div className="flex items-center gap-1.5 min-w-0">
             <Briefcase 
               className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0"
-              style={{ color: 'rgb(0, 219, 77)' }}
+              style={{ color: 'rgb(47, 164, 90)' }}
             />
             <h4 className="font-semibold text-[13px] sm:text-sm text-white truncate leading-snug flex-1 min-w-0">
               {primaryJob.job_name}
@@ -321,7 +321,7 @@ function StackedJobCardComponent({
           {/* Mixed type indicator */}
           {aggregateProgress.isMixedType && (
             <div className="mt-1 ml-4 sm:ml-5">
-              <span className="text-[8px] sm:text-[9px] text-white/40 uppercase tracking-wide">
+              <span className="text-[8px] sm:text-[9px] text-white/40 uppercase font-mono font-medium tracking-[0.14em]">
                 Mixed tracking
               </span>
             </div>
@@ -340,7 +340,7 @@ function StackedJobCardComponent({
             >
               <div className="px-3 sm:px-4 pb-3 sm:pb-4 space-y-2 border-t border-white/10 pt-2.5 sm:pt-3">
                 <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
-                  <span className="text-[10px] sm:text-xs text-emerald-300/70 uppercase tracking-wider font-medium">
+                  <span className="text-[10px] sm:text-xs text-emerald-300/70 uppercase font-medium font-mono font-medium tracking-[0.14em]">
                     Select a job
                   </span>
                 </div>

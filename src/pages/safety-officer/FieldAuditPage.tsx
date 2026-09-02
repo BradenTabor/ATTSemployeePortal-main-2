@@ -13,15 +13,15 @@
  *    "draft not saved" indicator (wired off the persistence save's `false`
  *    return).
  *
- * The subjects tray, per-subject checklist, escalation flow, field notes, and
- * review/submit land in later chunks. This page delivers the gated route, the
- * red-theme header, the Start-audit form (satisfying the
- * `work_site_id IS NOT NULL OR location_text IS NOT NULL` CHECK), and the
- * create / resume / discard draft lifecycle.
+ * Lifecycle on this page: Start (server insert) → draft card (site checks,
+ * subjects tray, Review & Submit) → receipt. Resume comes from the local pointer
+ * or a `?resume=<auditId>` deep link (history "Resume draft"). Discard is behind
+ * a confirm. Submission goes through `submit_field_audit` and lands on a receipt
+ * rendered from the server's rollup.
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "framer-motion";
 import { toZonedTime } from "date-fns-tz";
@@ -49,7 +49,14 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useFormPersistence } from "../../hooks/useFormPersistence";
 import { useWorkSitesQuery } from "../../hooks/queries/useWorkSites";
 import { useCrews } from "../../hooks/useCrews";
-import { SubjectsTray, StandaloneFieldNotes } from "./field-audit";
+import type { FieldAuditSubmitSummary } from "../../hooks/fieldAudit";
+import {
+  SubjectsTray,
+  StandaloneFieldNotes,
+  ReviewSubmitPanel,
+  SubmissionReceipt,
+  FieldAuditConfirmDialog,
+} from "./field-audit";
 
 const TZ = "America/Chicago";
 
@@ -66,8 +73,12 @@ interface FieldAuditRow {
   crew_id: string | null;
   crew_name: string | null;
   status: "draft" | "submitted";
+  notes: string | null;
   created_at: string;
 }
+
+const AUDIT_COLUMNS =
+  "id, audit_date, work_site_id, location_text, crew_id, crew_name, status, notes, created_at";
 
 /** Persistence primitive expects step/completed args; the pointer model uses neither. */
 const EMPTY_COMPLETED_STEPS: Set<number> = new Set();
@@ -113,9 +124,16 @@ export default function FieldAuditPage() {
     isEditMode: false,
   });
 
+  // `?resume=<auditId>` deep link (history → "Resume draft") wins over the
+  // stored pointer; it is consumed once and stripped from the URL.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const resumeParam = searchParams.get("resume");
+
   const [activeAuditId, setActiveAuditId] = useState<string | null>(
-    () => pointerDraft?.form?.auditId ?? null,
+    () => resumeParam ?? pointerDraft?.form?.auditId ?? null,
   );
+  const [receipt, setReceipt] = useState<FieldAuditSubmitSummary | null>(null);
+
   // Adopt a stored pointer once (covers the case where userId resolves after mount).
   const pointerAdoptedRef = useRef(activeAuditId !== null);
   useEffect(() => {
@@ -127,6 +145,23 @@ export default function FieldAuditPage() {
     }
   }, [pointerDraft]);
 
+  useEffect(() => {
+    if (!resumeParam) return;
+    pointerAdoptedRef.current = true;
+    setActiveAuditId(resumeParam);
+    setReceipt(null);
+    // Re-point local recovery at the deep-linked draft so a reload keeps it.
+    savePointer({ auditId: resumeParam }, 1, EMPTY_COMPLETED_STEPS);
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete("resume");
+        return next;
+      },
+      { replace: true },
+    );
+  }, [resumeParam, savePointer, setSearchParams]);
+
   // --- resume: re-fetch the server draft by id -----------------------------
   const auditQuery = useQuery({
     queryKey: queryKeys.fieldAudit.detail(activeAuditId ?? "none"),
@@ -135,9 +170,7 @@ export default function FieldAuditPage() {
     queryFn: async (): Promise<FieldAuditRow | null> => {
       const { data, error } = await supabase
         .from("field_audits")
-        .select(
-          "id, audit_date, work_site_id, location_text, crew_id, crew_name, status, created_at",
-        )
+        .select(AUDIT_COLUMNS)
         .eq("id", activeAuditId as string)
         .maybeSingle();
       if (error) throw new Error(error.message);
@@ -146,8 +179,10 @@ export default function FieldAuditPage() {
   });
 
   // Drop a stale pointer when the server draft is gone or already submitted.
+  // Skipped while a receipt is showing: the submit path already cleared state
+  // and the detail cache legitimately reads "submitted".
   useEffect(() => {
-    if (!activeAuditId) return;
+    if (!activeAuditId || receipt) return;
     if (auditQuery.isLoading || auditQuery.isFetching) return;
     const row = auditQuery.data;
     if (auditQuery.isError || !row || row.status !== "draft") {
@@ -156,13 +191,14 @@ export default function FieldAuditPage() {
       if (row?.status === "submitted") {
         formToast.info(
           "Audit already submitted",
-          "Your previous field audit was already submitted. Start a new one below.",
+          "That field audit is already on record. Open it from History, or start a new one below.",
         );
       } else if (auditQuery.isError) {
         logger.warn("field_audit_resume_failed", { hasAudit: Boolean(activeAuditId) });
       }
     }
   }, [
+    receipt,
     activeAuditId,
     auditQuery.isLoading,
     auditQuery.isFetching,
@@ -199,6 +235,7 @@ export default function FieldAuditPage() {
   const [showValidation, setShowValidation] = useState(false);
   const [starting, setStarting] = useState(false);
   const [discarding, setDiscarding] = useState(false);
+  const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false);
   const [draftNotSaved, setDraftNotSaved] = useState(false);
   const [online, setOnline] = useState<boolean>(() => isOnline());
 
@@ -243,13 +280,12 @@ export default function FieldAuditPage() {
           crew_id: crewId || null,
           status: "draft",
         })
-        .select(
-          "id, audit_date, work_site_id, location_text, crew_id, crew_name, status, created_at",
-        )
+        .select(AUDIT_COLUMNS)
         .single();
       if (error) throw error;
 
       const row = data as FieldAuditRow;
+      setReceipt(null);
       // Seed the resume cache so the in-progress view renders without a refetch.
       queryClient.setQueryData(queryKeys.fieldAudit.detail(row.id), row);
       queryClient.invalidateQueries({ queryKey: queryKeys.fieldAudit.all });
@@ -286,6 +322,7 @@ export default function FieldAuditPage() {
 
   const handleDiscard = useCallback(async () => {
     if (!activeAuditId) return;
+    setDiscardConfirmOpen(false);
     setDiscarding(true);
     formToast.submitting("Discarding draft…");
     try {
@@ -311,6 +348,26 @@ export default function FieldAuditPage() {
     }
   }, [activeAuditId, queryClient, clearPointer]);
 
+  const handleSubmitted = useCallback(
+    (summary: FieldAuditSubmitSummary) => {
+      // Receipt first so the stale-pointer effect stays quiet, then release the draft.
+      setReceipt(summary);
+      clearPointer();
+      setActiveAuditId(null);
+      setDraftNotSaved(false);
+    },
+    [clearPointer],
+  );
+
+  const handleStartAnother = useCallback(() => {
+    setReceipt(null);
+    setAuditDate(getTodayChicago());
+    setWorkSiteId("");
+    setCrewId("");
+    setLocationText("");
+    setShowValidation(false);
+  }, []);
+
   const showResuming =
     Boolean(activeAuditId) &&
     !resumedAudit &&
@@ -325,11 +382,11 @@ export default function FieldAuditPage() {
       };
 
   return (
-    <DashboardLayout title="Field Safety Audit">
+    <DashboardLayout title="Field Safety Audit" pageHeading>
       <div className="relative w-full max-w-3xl mx-auto px-3 sm:px-4 md:px-6 pb-12 pt-2 sm:pt-4">
         {/* Atmospheric rose glow (safety officer role) */}
         <div
-          className="absolute inset-0 pointer-events-none select-none overflow-hidden rounded-2xl"
+          className="absolute inset-0 pointer-events-none select-none overflow-hidden rounded-leaf-sm"
           style={{ zIndex: -1 }}
           aria-hidden
         >
@@ -348,11 +405,11 @@ export default function FieldAuditPage() {
           {/* Header */}
           <header className={`${glass.cardRed} p-5 sm:p-6`}>
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-rose-500/15 border border-rose-500/25 flex items-center justify-center shrink-0">
+              <div className="w-12 h-12 rounded-leaf-sm bg-rose-500/15 border border-rose-500/25 flex items-center justify-center shrink-0">
                 <ClipboardCheck className="w-6 h-6 text-rose-300" aria-hidden />
               </div>
               <div className="min-w-0 flex-1">
-                <h1 className="text-xl sm:text-2xl font-bold text-white">
+                <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">
                   Field Safety Audit
                 </h1>
                 <p className="text-sm text-white/60 mt-1">
@@ -363,7 +420,7 @@ export default function FieldAuditPage() {
               <Link
                 to="/safety-officer/field-audit/history"
                 data-testid="field-audit-history-link"
-                className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-medium text-white/70 hover:text-white hover:bg-white/[0.06] transition-colors shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50"
+                className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-medium text-white/70 hover:text-white hover:bg-white/[0.06] transition-colors shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50"
               >
                 <History className="w-4 h-4" aria-hidden />
                 <span className="hidden sm:inline">History</span>
@@ -388,7 +445,7 @@ export default function FieldAuditPage() {
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-500/25 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-300">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-500/25 px-2.5 py-1 text-[11px] uppercase text-amber-300 font-mono font-medium tracking-[0.14em]">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-400" aria-hidden />
                     Draft in progress
                   </span>
@@ -400,7 +457,7 @@ export default function FieldAuditPage() {
 
               <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className={`${glass.subtleRed} p-3.5`}>
-                  <dt className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-white/45">
+                  <dt className="flex items-center gap-2 text-[11px] uppercase text-white/45 font-mono font-medium tracking-[0.14em]">
                     <CalendarDays className="w-3.5 h-3.5 text-rose-400/80" aria-hidden />
                     Audit date
                   </dt>
@@ -409,7 +466,7 @@ export default function FieldAuditPage() {
                   </dd>
                 </div>
                 <div className={`${glass.subtleRed} p-3.5`}>
-                  <dt className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-white/45">
+                  <dt className="flex items-center gap-2 text-[11px] uppercase text-white/45 font-mono font-medium tracking-[0.14em]">
                     <MapPin className="w-3.5 h-3.5 text-rose-400/80" aria-hidden />
                     Location
                   </dt>
@@ -420,7 +477,7 @@ export default function FieldAuditPage() {
                   </dd>
                 </div>
                 <div className={`${glass.subtleRed} p-3.5`}>
-                  <dt className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-white/45">
+                  <dt className="flex items-center gap-2 text-[11px] uppercase text-white/45 font-mono font-medium tracking-[0.14em]">
                     <Users className="w-3.5 h-3.5 text-rose-400/80" aria-hidden />
                     Crew
                   </dt>
@@ -447,19 +504,27 @@ export default function FieldAuditPage() {
                 </div>
               )}
 
-              {/* Subjects tray + per-subject checklist (Chunk 3). */}
+              {/* Site checks + subjects tray + per-subject checklists. */}
               <SubjectsTray
                 auditId={resumedAudit.id}
                 crewId={resumedAudit.crew_id}
               />
 
-              <div className="flex items-center justify-between gap-3 pt-1">
+              {/* Review & submit — readiness, notes, sign-off, submit. */}
+              <ReviewSubmitPanel
+                key={resumedAudit.id}
+                auditId={resumedAudit.id}
+                initialNotes={resumedAudit.notes}
+                onSubmitted={handleSubmitted}
+              />
+
+              <div className="flex items-center justify-start gap-3 pt-1">
                 <button
                   type="button"
-                  onClick={handleDiscard}
+                  onClick={() => setDiscardConfirmOpen(true)}
                   disabled={discarding}
                   data-testid="field-audit-discard-btn"
-                  className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm font-medium text-white/70 hover:text-white hover:bg-white/[0.06] transition-colors disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50"
+                  className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm font-medium text-white/60 hover:text-rose-200 hover:border-rose-500/30 hover:bg-rose-500/[0.06] transition-colors disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50"
                 >
                   {discarding ? (
                     <Loader2 className="w-4 h-4 animate-spin" aria-hidden />
@@ -469,7 +534,26 @@ export default function FieldAuditPage() {
                   Discard draft
                 </button>
               </div>
+
+              <FieldAuditConfirmDialog
+                isOpen={discardConfirmOpen}
+                tone="danger"
+                title="Discard this draft?"
+                description="Every check, note and photo recorded in this audit will be deleted. Corrective actions already issued are kept."
+                confirmLabel="Discard draft"
+                cancelLabel="Keep draft"
+                confirmLoading={discarding}
+                testId="field-audit-discard-confirm"
+                onConfirm={() => void handleDiscard()}
+                onCancel={() => setDiscardConfirmOpen(false)}
+              />
             </motion.section>
+          ) : receipt ? (
+            <SubmissionReceipt
+              key={receipt.audit_id}
+              summary={receipt}
+              onStartAnother={handleStartAnother}
+            />
           ) : (
             <motion.section
               {...motionProps}
@@ -603,7 +687,7 @@ export default function FieldAuditPage() {
           )}
 
           {/* Standalone quick notes — no audit session required (Chunk 5). */}
-          {!resumedAudit && !showResuming && <StandaloneFieldNotes />}
+          {!resumedAudit && !showResuming && !receipt && <StandaloneFieldNotes />}
         </div>
       </div>
     </DashboardLayout>

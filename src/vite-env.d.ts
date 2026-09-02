@@ -17,6 +17,8 @@ interface ImportMetaEnv {
   readonly VITE_MAKE_DEN_WEBHOOK_URL?: string;
   /** Optional: app base URL (e.g. for email links) */
   readonly VITE_APP_BASE_URL?: string;
+  /** Optional (dev only): set to 'true' to mount the TanStack Query devtools toggle */
+  readonly VITE_QUERY_DEVTOOLS?: string;
   /** Optional: set to 'false' to disable telemetry */
   readonly VITE_TELEMETRY_ENABLED?: string;
   readonly DEV: boolean;

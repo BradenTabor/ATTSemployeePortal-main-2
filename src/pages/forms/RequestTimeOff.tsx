@@ -277,16 +277,16 @@ export default function RequestTimeOff() {
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
-        className="w-full max-w-2xl backdrop-blur-xl border rounded-3xl sm:rounded-[35px] p-5 sm:p-6 text-white"
+        className="w-full max-w-2xl backdrop-blur-xl border rounded-leaf sm:rounded-[35px] p-5 sm:p-6 text-white"
         style={{
-          background: 'linear-gradient(124.2deg, rgba(0, 0, 0, 0.7) 0%, rgba(16, 66, 42, 1) 100%)',
-          borderColor: 'rgba(18, 222, 93, 0.3)',
-          boxShadow: '0px 4px 25px 8px rgba(0, 0, 0, 0.85), 0px 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          background: 'linear-gradient(124.2deg, rgba(0,0,0, 0.7) 0%, rgba(18,72,42, 1) 100%)',
+          borderColor: 'rgba(47,164,90, 0.3)',
+          boxShadow: '0px 4px 25px 8px rgba(0,0,0, 0.85), 0px 25px 50px -12px rgba(0,0,0, 0.25)',
         }}
       >
         <h2 
           className="text-lg sm:text-xl font-semibold mb-4 text-center"
-          style={{ color: 'rgba(9, 225, 121, 1)' }}
+          style={{ color: 'rgba(47,164,90, 1)' }}
         >
           Submit a Time-Off Request
         </h2>
@@ -305,7 +305,7 @@ export default function RequestTimeOff() {
                 value={formData.fullName}
                 onChange={handleChange}
                 required
-                className="w-full rounded-xl sm:rounded-2xl px-3 py-2.5 text-base sm:text-sm bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600 transition-all"
+                className="w-full rounded-xl sm:rounded-leaf-sm px-3 py-2.5 text-base sm:text-sm bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600 transition-all"
                 placeholder="Your full name"
               />
             </div>
@@ -321,7 +321,7 @@ export default function RequestTimeOff() {
                 onChange={handleChange}
                 required
                 readOnly
-                className="w-full rounded-xl sm:rounded-2xl px-3 py-2.5 text-base sm:text-sm bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600 transition-all"
+                className="w-full rounded-xl sm:rounded-leaf-sm px-3 py-2.5 text-base sm:text-sm bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600 transition-all"
                 placeholder="you@atts.com"
               />
             </div>
@@ -336,7 +336,7 @@ export default function RequestTimeOff() {
                 value={formData.phoneNumber}
                 onChange={handleChange}
                 required
-                className="w-full rounded-xl sm:rounded-2xl px-3 py-2.5 text-base sm:text-sm bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600 transition-all"
+                className="w-full rounded-xl sm:rounded-leaf-sm px-3 py-2.5 text-base sm:text-sm bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600 transition-all"
                 placeholder="(555) 123-4567"
               />
             </div>
@@ -404,7 +404,7 @@ export default function RequestTimeOff() {
                   <CalendarDays className="w-4 h-4 text-emerald-200" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-emerald-200/70">
+                  <p className="text-[10px] uppercase text-emerald-200/70 font-mono font-medium tracking-[0.14em]">
                     Starts
                   </p>
                   <p className="text-xs sm:text-sm font-semibold text-white truncate">
@@ -417,7 +417,7 @@ export default function RequestTimeOff() {
                   <Clock className="w-4 h-4 text-emerald-200" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-emerald-200/70">
+                  <p className="text-[10px] uppercase text-emerald-200/70 font-mono font-medium tracking-[0.14em]">
                     Returns
                   </p>
                   <p className="text-xs sm:text-sm font-semibold text-white truncate">
@@ -452,7 +452,7 @@ export default function RequestTimeOff() {
                 onChange={handleChange}
                 rows={2}
                 required
-                className="w-full rounded-xl sm:rounded-2xl px-3 py-2.5 text-base bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600 resize-none transition-all"
+                className="w-full rounded-xl sm:rounded-leaf-sm px-3 py-2.5 text-base bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600 resize-none transition-all"
                 placeholder="Why you need time off"
               />
             </div>
@@ -465,7 +465,7 @@ export default function RequestTimeOff() {
                 value={formData.notes}
                 onChange={handleChange}
                 rows={2}
-                className="w-full rounded-xl sm:rounded-2xl px-3 py-2.5 text-base bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600 resize-none transition-all"
+                className="w-full rounded-xl sm:rounded-leaf-sm px-3 py-2.5 text-base bg-neutral-900 border border-green-700/40 text-white placeholder-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-600 resize-none transition-all"
                 placeholder="Extra details"
               />
             </div>
@@ -475,10 +475,10 @@ export default function RequestTimeOff() {
             type="submit"
             data-testid="rto-submit-button"
             disabled={status === "loading"}
-            className="w-full py-2.5 sm:py-3 rounded-2xl sm:rounded-[35px] font-semibold text-sm sm:text-base text-white shadow-md transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 touch-manipulation min-h-[44px]"
+            className="w-full py-2.5 sm:py-3 rounded-leaf-sm sm:rounded-[35px] font-semibold text-sm sm:text-base text-white shadow-md transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D] disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 touch-manipulation min-h-[44px]"
             aria-label={status === "loading" ? "Submitting request" : "Submit time-off request"}
             style={{
-              background: 'radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 1) 0%, rgba(16, 66, 42, 1) 100%)',
+              background: 'radial-gradient(circle at 50% 50%, rgba(0,0,0, 1) 0%, rgba(18,72,42, 1) 100%)',
             }}
           >
             {status === "loading"

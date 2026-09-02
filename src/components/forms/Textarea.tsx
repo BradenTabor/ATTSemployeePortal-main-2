@@ -21,17 +21,17 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         ref={ref}
         className={cn(
           MOBILE_SAFE_TEXTAREA,
-          'w-full bg-[#050402]/80 border rounded-2xl px-4 py-3 text-white resize-none',
+          'w-full bg-[#040605]/80 border rounded-leaf-sm px-4 py-3 text-white resize-none',
           // Improved placeholder contrast for accessibility (WCAG)
           'placeholder:text-white/50',
           // Visible focus ring for keyboard navigation (focus-visible only, not mouse clicks)
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#030201]',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#040605]',
           'transition-colors duration-200',
           // Minimum touch target height
           'min-h-[44px]',
           error
             ? 'border-red-500/50 focus-visible:ring-red-500/60'
-            : 'border-[#f6dcb2]/20 focus-visible:ring-[#f4c979]/60',
+            : 'border-[#E4EAE1]/20 focus-visible:ring-[#F4F7F2]/60',
           className
         )}
         {...props}

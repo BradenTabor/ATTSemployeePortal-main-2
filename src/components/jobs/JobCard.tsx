@@ -45,17 +45,17 @@ function JobCardComponent({ job, onClick, index = 0 }: JobCardProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
       onClick={onClick}
-      className="group cursor-pointer rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] p-5 space-y-4 shadow-[0_20px_40px_rgba(0,0,0,0.5)] hover:border-[#f6dcb2]/40 transition-all duration-300"
+      className="group cursor-pointer rounded-leaf border border-[#E4EAE1]/20 bg-gradient-to-br from-[#0B100D] via-[#040605] to-[#040605] p-5 space-y-4 shadow-[0_20px_40px_rgba(0,0,0,0.5)] hover:border-[#E4EAE1]/40 transition-all duration-300"
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-bold text-white truncate group-hover:text-[#f4c979] transition-colors">
+          <h3 className="text-lg font-bold text-white truncate group-hover:text-[#F4F7F2] transition-colors">
             {job.job_name}
           </h3>
           {(job.circuit || job.job_location) && (
             <p className="flex items-center gap-1.5 text-sm text-white/60 mt-1">
-              <MapPin className="w-3.5 h-3.5 text-[#f4c979]/60" />
+              <MapPin className="w-3.5 h-3.5 text-[#F4F7F2]/60" />
               <span className="truncate">{job.circuit || job.job_location}</span>
             </p>
           )}
@@ -118,10 +118,10 @@ function JobCardComponent({ job, onClick, index = 0 }: JobCardProps) {
               </div>
             </div>
             <div className="flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-[#f4c979]" />
+              <Calendar className="w-3.5 h-3.5 text-[#F4F7F2]" />
               <div>
                 <p className="text-white/60">Feet</p>
-                <p className="text-[#f4c979] font-semibold">{totalFeet.toLocaleString()}</p>
+                <p className="text-[#F4F7F2] font-semibold">{totalFeet.toLocaleString()}</p>
               </div>
             </div>
           </div>
@@ -135,7 +135,7 @@ function JobCardComponent({ job, onClick, index = 0 }: JobCardProps) {
             showExceededBadge={false}
           />
           <div className="flex items-center gap-2 text-xs text-white/50">
-            <Calendar className="w-3.5 h-3.5 text-[#f4c979]/60" />
+            <Calendar className="w-3.5 h-3.5 text-[#F4F7F2]/60" />
             <span>{formatDateRange(job.start_date, job.end_date)}</span>
           </div>
         </>
@@ -154,7 +154,7 @@ function JobCardComponent({ job, onClick, index = 0 }: JobCardProps) {
                   return (
                     <div
                       key={assignment.id}
-                      className="w-7 h-7 rounded-full bg-gradient-to-br from-[#f4c979] to-[#d89d3e] flex items-center justify-center text-[10px] font-bold text-[#2d1c04] border-2 border-[#0b0906]"
+                      className="w-7 h-7 rounded-full bg-gradient-to-br from-[#F4F7F2] to-[#8DF5A8] flex items-center justify-center text-[10px] font-bold text-[#040605] border-2 border-[#040605]"
                       style={{ zIndex: 4 - i }}
                       title={displayName}
                     >
@@ -180,7 +180,7 @@ function JobCardComponent({ job, onClick, index = 0 }: JobCardProps) {
         {/* Milestones summary */}
         {milestoneProgress.total > 0 && (
           <div className="flex items-center gap-1.5 text-xs text-white/50">
-            <Target className="w-3.5 h-3.5 text-[#f4c979]/60" />
+            <Target className="w-3.5 h-3.5 text-[#F4F7F2]/60" />
             <span>
               {milestoneProgress.completed}/{milestoneProgress.total} milestones
             </span>
@@ -188,7 +188,7 @@ function JobCardComponent({ job, onClick, index = 0 }: JobCardProps) {
         )}
 
         {/* Arrow indicator */}
-        <ChevronRight className="w-4 h-4 text-white/30 group-hover:text-[#f4c979] group-hover:translate-x-1 transition-all" />
+        <ChevronRight className="w-4 h-4 text-white/30 group-hover:text-[#F4F7F2] group-hover:translate-x-1 transition-all" />
       </div>
     </motion.article>
   );

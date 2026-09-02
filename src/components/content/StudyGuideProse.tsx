@@ -15,10 +15,10 @@ const BASE = "max-w-none";
 
 const DOC_H1_GRADIENT = {
   backgroundImage:
-    "linear-gradient(105deg, rgba(167, 243, 208, 1) 0%, rgba(110, 231, 183, 1) 25%, rgba(52, 211, 153, 1) 50%, rgba(16, 185, 129, 1) 75%, rgba(110, 231, 183, 1) 100%)",
+    "linear-gradient(105deg, rgba(141,245,168, 1) 0%, rgba(94,232,152, 1) 25%, rgba(61,220,132, 1) 50%, rgba(47,164,90, 1) 75%, rgba(94,232,152, 1) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
-  textShadow: "0 0 10px rgba(52, 211, 153, 0.35)",
+  textShadow: "0 0 10px rgba(61,220,132, 0.35)",
 } as const;
 
 function parseTermDefinition(children: React.ReactNode): React.ReactNode {

@@ -38,8 +38,8 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
       animate={{ opacity: 1, y: 0 }}
       className="flex flex-col items-center justify-center py-16 px-4"
     >
-      <div className="w-16 h-16 rounded-2xl bg-[#f4c979]/10 border border-[#f4c979]/20 flex items-center justify-center mb-4">
-        <Users className="w-8 h-8 text-[#f4c979]/50" />
+      <div className="w-16 h-16 rounded-leaf-sm bg-[#F4F7F2]/10 border border-[#F4F7F2]/20 flex items-center justify-center mb-4">
+        <Users className="w-8 h-8 text-[#F4F7F2]/50" />
       </div>
       <h3 className="text-lg font-semibold text-white/90 mb-2">No Crews Yet</h3>
       <p className="text-sm text-white/50 text-center max-w-md mb-6">
@@ -47,7 +47,7 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
       </p>
       <button
         onClick={onAdd}
-        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#332308] font-semibold text-sm shadow-lg hover:scale-[1.02] transition-transform"
+        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#E4EAE1] via-[#F4F7F2] to-[#8DF5A8] text-[#040605] font-semibold text-sm shadow-lg hover:scale-[1.02] transition-transform"
       >
         <Plus className="w-4 h-4" />
         Create First Crew
@@ -110,13 +110,13 @@ function CrewFormModal({
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg rounded-2xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] shadow-2xl overflow-y-auto overflow-x-hidden my-auto max-h-[90vh]"
+        className="w-full max-w-lg rounded-leaf-sm border border-[#E4EAE1]/20 bg-gradient-to-br from-[#0B100D] via-[#040605] to-[#040605] shadow-2xl overflow-y-auto overflow-x-hidden my-auto max-h-[90vh]"
       >
         {/* Header */}
-        <div className="px-5 py-4 border-b border-[#f6dcb2]/10 flex items-center justify-between">
+        <div className="px-5 py-4 border-b border-[#E4EAE1]/10 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#f4c979]/15 flex items-center justify-center">
-              {isEdit ? <Pencil className="w-5 h-5 text-[#f4c979]" /> : <UserPlus className="w-5 h-5 text-[#f4c979]" />}
+            <div className="w-10 h-10 rounded-xl bg-[#F4F7F2]/15 flex items-center justify-center">
+              {isEdit ? <Pencil className="w-5 h-5 text-[#F4F7F2]" /> : <UserPlus className="w-5 h-5 text-[#F4F7F2]" />}
             </div>
             <div>
               <h3 className="font-semibold text-white">{isEdit ? 'Edit Crew' : 'Create Crew'}</h3>
@@ -136,7 +136,7 @@ function CrewFormModal({
         <form onSubmit={handleSubmit} className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 text-[#f4c979] animate-spin" />
+              <Loader2 className="w-6 h-6 text-[#F4F7F2] animate-spin" />
             </div>
           ) : (
             <>
@@ -148,7 +148,7 @@ function CrewFormModal({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g., Crew A, North Team"
-                  className="w-full px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-base sm:text-sm placeholder:text-white/30 focus:outline-none focus-visible:border-[#f4c979]/40"
+                  className="w-full px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-base sm:text-sm placeholder:text-white/30 focus:outline-none focus-visible:border-[#F4F7F2]/40"
                 />
               </div>
 
@@ -160,7 +160,7 @@ function CrewFormModal({
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Optional description..."
                   rows={2}
-                  className="w-full px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-base placeholder:text-white/30 focus:outline-none focus-visible:border-[#f4c979]/40 resize-none"
+                  className="w-full px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-base placeholder:text-white/30 focus:outline-none focus-visible:border-[#F4F7F2]/40 resize-none"
                 />
               </div>
 
@@ -185,7 +185,7 @@ function CrewFormModal({
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#332308] text-sm font-semibold hover:scale-[1.02] transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-[#E4EAE1] via-[#F4F7F2] to-[#8DF5A8] text-[#040605] text-sm font-semibold hover:scale-[1.02] transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {isLoading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -228,8 +228,8 @@ function CrewCard({
       exit={{ opacity: 0, y: -8 }}
       className={`rounded-xl border overflow-hidden ${
         crew.is_active
-          ? 'bg-gradient-to-br from-[#14110d] to-[#0b0906] border-[#f6dcb2]/20'
-          : 'bg-[#0a0908] border-white/5 opacity-60'
+          ? 'bg-gradient-to-br from-[#0B100D] to-[#040605] border-[#E4EAE1]/20'
+          : 'bg-[#040605] border-white/5 opacity-60'
       }`}
     >
       {/* Header */}
@@ -237,9 +237,9 @@ function CrewCard({
         <div className="flex items-start justify-between mb-2">
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-              crew.is_active ? 'bg-[#f4c979]/15' : 'bg-white/5'
+              crew.is_active ? 'bg-[#F4F7F2]/15' : 'bg-white/5'
             }`}>
-              <Users className={`w-5 h-5 ${crew.is_active ? 'text-[#f4c979]' : 'text-white/30'}`} />
+              <Users className={`w-5 h-5 ${crew.is_active ? 'text-[#F4F7F2]' : 'text-white/30'}`} />
             </div>
             <div>
               <h4 className="font-semibold text-white/90">{crew.name}</h4>
@@ -277,7 +277,7 @@ function CrewCard({
           </button>
           <button
             onClick={onEdit}
-            className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-[#f4c979]/10 hover:bg-[#f4c979]/20 text-[#f4c979] text-xs font-medium transition-colors"
+            className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-[#F4F7F2]/10 hover:bg-[#F4F7F2]/20 text-[#F4F7F2] text-xs font-medium transition-colors"
           >
             <Pencil className="w-3 h-3" />
             Edit
@@ -304,7 +304,7 @@ function CrewCard({
             <div className="p-4 bg-black/20">
               {loading ? (
                 <div className="flex items-center justify-center py-4">
-                  <Loader2 className="w-5 h-5 text-[#f4c979] animate-spin" />
+                  <Loader2 className="w-5 h-5 text-[#F4F7F2] animate-spin" />
                 </div>
               ) : crewDetails?.members && crewDetails.members.length > 0 ? (
                 <div className="space-y-2">
@@ -313,7 +313,7 @@ function CrewCard({
                       key={member.id}
                       className="flex items-center gap-3 p-2 rounded-lg bg-white/5"
                     >
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#f4c979] to-[#d89d3e] flex items-center justify-center text-[#2d1c04] text-xs font-bold">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#F4F7F2] to-[#8DF5A8] flex items-center justify-center text-[#040605] text-xs font-bold">
                         {(member.full_name?.[0] || member.email?.[0] || '?').toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -451,7 +451,7 @@ export function CrewManager({ userId }: CrewManagerProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <Loader2 className="w-8 h-8 text-[#f4c979] animate-spin" />
+        <Loader2 className="w-8 h-8 text-[#F4F7F2] animate-spin" />
       </div>
     );
   }
@@ -461,8 +461,8 @@ export function CrewManager({ userId }: CrewManagerProps) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-[#f4c979]/10 border border-[#f4c979]/30">
-            <Users className="w-5 h-5 text-[#f4c979]" />
+          <div className="p-2 rounded-xl bg-[#F4F7F2]/10 border border-[#F4F7F2]/30">
+            <Users className="w-5 h-5 text-[#F4F7F2]" />
           </div>
           <div>
             <h3 className="text-lg font-bold text-white">Crews</h3>
@@ -475,7 +475,7 @@ export function CrewManager({ userId }: CrewManagerProps) {
             onClick={() => setShowInactive(!showInactive)}
             className={`px-3 py-2 rounded-xl border text-xs font-medium transition-colors ${
               showInactive
-                ? 'bg-[#f4c979]/15 border-[#f4c979]/30 text-[#f4c979]'
+                ? 'bg-[#F4F7F2]/15 border-[#F4F7F2]/30 text-[#F4F7F2]'
                 : 'border-white/10 text-white/50 hover:text-white/70'
             }`}
           >
@@ -483,7 +483,7 @@ export function CrewManager({ userId }: CrewManagerProps) {
           </button>
           <button
             onClick={handleCreateCrew}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#332308] font-semibold text-sm hover:scale-[1.02] transition-transform"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#E4EAE1] via-[#F4F7F2] to-[#8DF5A8] text-[#040605] font-semibold text-sm hover:scale-[1.02] transition-transform"
           >
             <Plus className="w-4 h-4" />
             New Crew

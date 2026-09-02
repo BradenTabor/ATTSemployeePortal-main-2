@@ -27,6 +27,7 @@ import {
 import { toast } from "sonner";
 import { archiveConflict } from "../lib/syncConflicts";
 import { logger } from "../lib/logger";
+import { mapWithConcurrency, UPLOAD_CONCURRENCY } from "../lib/asyncPool";
 import { OfflineQueueContext } from "./offlineQueueContextValue";
 
 // ---------------------------------------------------------------------------
@@ -67,10 +68,12 @@ async function uploadQueuePhotos(
   const photos = await getPhotosForQueue(queueId);
   const pathMap = new Map<string, string>();
 
-  for (const photo of photos) {
-    const path = await uploadOfflinePhoto(photo, bucket, userId);
-    pathMap.set(photo.fieldName, path);
-  }
+  // Bounded parallelism — a queued DVIR can hold five photos, and the sync
+  // usually happens the moment the truck gets one bar of LTE back.
+  const paths = await mapWithConcurrency(photos, UPLOAD_CONCURRENCY, (photo) =>
+    uploadOfflinePhoto(photo, bucket, userId),
+  );
+  photos.forEach((photo, i) => pathMap.set(photo.fieldName, paths[i]));
 
   return pathMap;
 }

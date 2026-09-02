@@ -292,10 +292,10 @@ function JobListComponent({
     return (
       <div className="space-y-6">
         {/* Filter skeleton */}
-        <div className="rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] p-6">
+        <div className="rounded-leaf border border-[#E4EAE1]/20 bg-gradient-to-br from-[#121A15] via-[#0B100D] to-[#040605] p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="h-12 rounded-2xl bg-white/5 animate-pulse" />
-            <div className="h-12 rounded-2xl bg-white/5 animate-pulse" />
+            <div className="h-12 rounded-leaf-sm bg-white/5 animate-pulse" />
+            <div className="h-12 rounded-leaf-sm bg-white/5 animate-pulse" />
           </div>
         </div>
 
@@ -304,7 +304,7 @@ function JobListComponent({
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className="rounded-3xl border border-white/10 bg-white/5 h-48 animate-pulse"
+              className="rounded-leaf border border-white/10 bg-white/5 h-48 animate-pulse"
             />
           ))}
         </div>
@@ -321,7 +321,7 @@ function JobListComponent({
             initial={{ opacity: 0, y: -10, height: 0 }}
             animate={{ opacity: 1, y: 0, height: 'auto' }}
             exit={{ opacity: 0, y: -10, height: 0 }}
-            className="rounded-2xl border border-emerald-500/30 bg-gradient-to-r from-emerald-900/20 via-emerald-800/10 to-emerald-900/20 p-4"
+            className="rounded-leaf-sm border border-emerald-500/30 bg-gradient-to-r from-emerald-900/20 via-emerald-800/10 to-emerald-900/20 p-4"
           >
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-3">
@@ -380,19 +380,19 @@ function JobListComponent({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] p-6 shadow-[0_25px_50px_rgba(0,0,0,0.55)]"
+        className="rounded-leaf border border-[#E4EAE1]/20 bg-gradient-to-br from-[#121A15] via-[#0B100D] to-[#040605] p-6 shadow-[0_25px_50px_rgba(0,0,0,0.55)]"
       >
         <div className="flex items-center justify-between gap-4 mb-4">
           <div className="flex items-center gap-2">
-            <SlidersHorizontal className="w-4 h-4 text-[#f4c979]" />
-            <span className="text-xs uppercase tracking-[0.3em] text-[#f4c979]/70">Filters</span>
+            <SlidersHorizontal className="w-4 h-4 text-[#F4F7F2]" />
+            <span className="text-xs uppercase text-[#F4F7F2]/70 font-mono font-medium tracking-[0.14em]">Filters</span>
           </div>
           
           {/* Stack Mode Toggle */}
           {onStackJobs && !selectionMode && (
             <button
               onClick={toggleSelectionMode}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 transition-colors"
+              className="tap-44 relative inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 transition-colors"
             >
               <Layers className="w-3.5 h-3.5" />
               Stack Jobs
@@ -403,23 +403,23 @@ function JobListComponent({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Search */}
           <div className="relative">
-            <Search className="w-4 h-4 text-[#b59d72] absolute left-4 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-[#8A9A8E] absolute left-4 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Search jobs..."
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="w-full rounded-2xl bg-[#050402]/70 border border-[#f4c979]/20 pl-11 pr-4 py-3 text-sm text-[#fdf4db] placeholder:text-[#bfa984] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60"
+              className="w-full rounded-leaf-sm bg-[#040605]/70 border border-[#F4F7F2]/20 pl-11 pr-4 py-3 text-sm text-[#F4F7F2] placeholder:text-[#8A9A8E] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/60"
             />
           </div>
 
           {/* Status filter */}
           <div className="relative">
-            <Filter className="w-4 h-4 text-[#b59d72] absolute left-4 top-1/2 -translate-y-1/2" />
+            <Filter className="w-4 h-4 text-[#8A9A8E] absolute left-4 top-1/2 -translate-y-1/2" />
             <select
               value={statusFilter}
               onChange={(e) => handleStatusChange(e.target.value as JobStatus | 'all')}
-              className="w-full rounded-2xl bg-[#050402]/70 border border-[#f4c979]/20 pl-11 pr-4 py-3 text-sm text-[#fdf4db] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60 appearance-none cursor-pointer"
+              className="w-full rounded-leaf-sm bg-[#040605]/70 border border-[#F4F7F2]/20 pl-11 pr-4 py-3 text-sm text-[#F4F7F2] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/60 appearance-none cursor-pointer"
             >
               {STATUS_OPTIONS.map(option => (
                 <option key={option.value} value={option.value}>
@@ -431,11 +431,11 @@ function JobListComponent({
 
           {/* Tracking filter */}
           <div className="relative">
-            <Filter className="w-4 h-4 text-[#b59d72] absolute left-4 top-1/2 -translate-y-1/2" />
+            <Filter className="w-4 h-4 text-[#8A9A8E] absolute left-4 top-1/2 -translate-y-1/2" />
             <select
               value={trackingFilter}
               onChange={(e) => handleTrackingChange(e.target.value as TrackingType | 'all')}
-              className="w-full rounded-2xl bg-[#050402]/70 border border-[#f4c979]/20 pl-11 pr-4 py-3 text-sm text-[#fdf4db] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60 appearance-none cursor-pointer"
+              className="w-full rounded-leaf-sm bg-[#040605]/70 border border-[#F4F7F2]/20 pl-11 pr-4 py-3 text-sm text-[#F4F7F2] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/60 appearance-none cursor-pointer"
             >
               {TRACKING_OPTIONS.map(option => (
                 <option key={option.value} value={option.value}>
@@ -454,7 +454,7 @@ function JobListComponent({
             className="flex flex-wrap gap-2 pt-4 mt-4 border-t border-white/5"
           >
             {searchQuery && (
-              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#f4c979]/30 bg-[#f4c979]/10 text-xs text-[#fef3d1]">
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#F4F7F2]/30 bg-[#F4F7F2]/10 text-xs text-[#F4F7F2]">
                 <span>Search: {searchQuery}</span>
                 <button
                   type="button"
@@ -466,7 +466,7 @@ function JobListComponent({
               </span>
             )}
             {statusFilter !== 'all' && (
-              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#f6dcb2]/30 bg-[#f6dcb2]/10 text-xs text-[#fef3d1]">
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#E4EAE1]/30 bg-[#E4EAE1]/10 text-xs text-[#F4F7F2]">
                 <span>Status: {statusFilter}</span>
                 <button
                   type="button"
@@ -478,7 +478,7 @@ function JobListComponent({
               </span>
             )}
             {trackingFilter !== 'all' && (
-              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#f6dcb2]/30 bg-[#f6dcb2]/10 text-xs text-[#fef3d1]">
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#E4EAE1]/30 bg-[#E4EAE1]/10 text-xs text-[#F4F7F2]">
                 <span>Mode: {trackingFilter === 'job_progress' ? 'Span-based' : 'Timeline'}</span>
                 <button
                   type="button"
@@ -498,14 +498,14 @@ function JobListComponent({
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] py-24"
+          className="rounded-leaf border border-[#E4EAE1]/20 bg-gradient-to-br from-[#0B100D] via-[#040605] to-[#040605] py-24"
         >
           <div className="text-center space-y-3">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#211c15] border border-[#f6dcb2]/30 mx-auto">
-              <Briefcase className="w-7 h-7 text-[#f4c979]" />
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-leaf-sm bg-[#121A15] border border-[#E4EAE1]/30 mx-auto">
+              <Briefcase className="w-7 h-7 text-[#F4F7F2]" />
             </div>
             <h3 className="text-xl font-semibold text-white">No Jobs Found</h3>
-            <p className="text-sm text-[#f8e5bb]/70 max-w-sm mx-auto">
+            <p className="text-sm text-[#E4EAE1]/70 max-w-sm mx-auto">
               {searchQuery || statusFilter !== 'all'
                 ? 'Adjust your filters to see more jobs.'
                 : 'Create your first job to get started.'}
@@ -534,16 +534,16 @@ function JobListComponent({
                     className="relative"
                   >
                     {/* Stacked cards visual effect */}
-                    <div className="absolute inset-x-2 top-2 h-full rounded-3xl border border-[#f4c979]/10 bg-gradient-to-br from-[#1b1914]/40 via-[#120f0c]/50 to-[#080705]/40" style={{ transform: 'translateY(8px)' }} />
-                    <div className="absolute inset-x-1 top-1 h-full rounded-3xl border border-[#f4c979]/15 bg-gradient-to-br from-[#1b1914]/60 via-[#120f0c]/70 to-[#080705]/60" style={{ transform: 'translateY(4px)' }} />
+                    <div className="absolute inset-x-2 top-2 h-full rounded-leaf border border-[#F4F7F2]/10 bg-gradient-to-br from-[#121A15]/40 via-[#0B100D]/50 to-[#040605]/40" style={{ transform: 'translateY(8px)' }} />
+                    <div className="absolute inset-x-1 top-1 h-full rounded-leaf border border-[#F4F7F2]/15 bg-gradient-to-br from-[#121A15]/60 via-[#0B100D]/70 to-[#040605]/60" style={{ transform: 'translateY(4px)' }} />
                     
                     {/* Main stacked card */}
-                    <div className="relative rounded-3xl border border-[#f4c979]/30 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] overflow-hidden shadow-lg shadow-[#f4c979]/5">
+                    <div className="relative rounded-leaf border border-[#F4F7F2]/30 bg-gradient-to-br from-[#121A15] via-[#0B100D] to-[#040605] overflow-hidden shadow-lg shadow-[#F4F7F2]/5">
                       {/* Stack badge */}
                       <div className="absolute -top-0 -right-0 z-10">
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-bl-xl bg-gradient-to-r from-[#f4c979]/20 to-[#d79a32]/20 border-l border-b border-[#f4c979]/30">
-                          <Layers className="w-4 h-4 text-[#f4c979]" />
-                          <span className="text-xs font-bold text-[#f4c979]">{groupJobs.length} STACKED</span>
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-bl-xl bg-gradient-to-r from-[#F4F7F2]/20 to-[#8DF5A8]/20 border-l border-b border-[#F4F7F2]/30">
+                          <Layers className="w-4 h-4 text-[#F4F7F2]" />
+                          <span className="text-xs font-bold text-[#F4F7F2]">{groupJobs.length} STACKED</span>
                         </div>
                       </div>
                       
@@ -554,7 +554,7 @@ function JobListComponent({
                             e.stopPropagation();
                             handleUnstackGroup(item.groupId);
                           }}
-                          className="absolute top-2 left-2 z-10 p-1.5 rounded-lg bg-[#1a1a1a]/80 border border-white/10 hover:border-red-400/50 hover:bg-red-500/10 transition-colors"
+                          className="tap-44 absolute top-2 left-2 z-10 p-1.5 rounded-lg bg-[#121A15]/80 border border-white/10 hover:border-red-400/50 hover:bg-red-500/10 transition-colors"
                           title="Unstack all jobs"
                         >
                           <Unlink className="w-3.5 h-3.5 text-white/50 hover:text-red-400" />
@@ -571,19 +571,19 @@ function JobListComponent({
                               className={cn(
                                 'w-full text-left p-3 rounded-xl border transition-all',
                                 jobIndex === 0
-                                  ? 'border-[#f4c979]/30 bg-gradient-to-r from-[#f4c979]/10 to-transparent'
-                                  : 'border-white/10 bg-white/5 hover:border-[#f4c979]/20'
+                                  ? 'border-[#F4F7F2]/30 bg-gradient-to-r from-[#F4F7F2]/10 to-transparent'
+                                  : 'border-white/10 bg-white/5 hover:border-[#F4F7F2]/20'
                               )}
                             >
                               <div className="flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-2 min-w-0">
-                                  <Briefcase className="w-4 h-4 text-[#f4c979] flex-shrink-0" />
+                                  <Briefcase className="w-4 h-4 text-[#F4F7F2] flex-shrink-0" />
                                   <span className="text-sm font-medium text-white truncate">{job.job_name}</span>
                                 </div>
                                 <span className={cn(
                                   'text-xs font-bold px-2 py-0.5 rounded',
                                   job.status === 'active' ? 'bg-emerald-500/20 text-emerald-400' :
-                                  job.status === 'completed' ? 'bg-[#f4c979]/20 text-[#f4c979]' :
+                                  job.status === 'completed' ? 'bg-[#F4F7F2]/20 text-[#F4F7F2]' :
                                   'bg-white/10 text-white/60'
                                 )}>
                                   {job.status}
@@ -611,7 +611,7 @@ function JobListComponent({
                           'absolute -top-2 -left-2 z-10 p-1.5 rounded-lg border transition-all',
                           selectedForStack.has(job.id)
                             ? 'bg-emerald-500 border-emerald-400 shadow-lg shadow-emerald-500/30'
-                            : 'bg-[#1a1a1a] border-white/20 hover:border-emerald-400/50'
+                            : 'bg-[#121A15] border-white/20 hover:border-emerald-400/50'
                         )}
                       >
                         {selectedForStack.has(job.id) ? (
@@ -624,7 +624,7 @@ function JobListComponent({
                     
                     <div className={cn(
                       selectionMode && 'transition-all',
-                      selectionMode && selectedForStack.has(job.id) && 'ring-2 ring-emerald-400/50 rounded-3xl'
+                      selectionMode && selectedForStack.has(job.id) && 'ring-2 ring-emerald-400/50 rounded-leaf'
                     )}>
                       <JobCard
                         job={job}

@@ -144,7 +144,7 @@ export function DVIRTab({
         <div
           role="search"
           aria-label="Filter DVIR reports"
-          className="rounded-xl sm:rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-900/40 via-purple-950/50 to-black/70 p-3 sm:p-4 shadow-lg shadow-purple-500/10"
+          className="rounded-xl sm:rounded-leaf-sm border border-purple-500/30 bg-gradient-to-br from-purple-900/40 via-purple-950/50 to-black/70 p-3 sm:p-4 shadow-lg shadow-purple-500/10"
         >
           <div className="flex flex-col gap-3 sm:gap-4">
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
@@ -245,7 +245,7 @@ export function DVIRTab({
         {!loading && !error && (
           <div className="grid gap-3 sm:gap-4 lg:grid-cols-3">
             {/* List Panel - compressed, mobile-optimized */}
-            <div className="rounded-xl sm:rounded-2xl border border-purple-500/30 bg-gradient-to-b from-purple-900/50 via-purple-950/60 to-black/80 overflow-hidden flex flex-col shadow-lg sm:shadow-xl shadow-purple-500/10 min-h-0">
+            <div className="rounded-xl sm:rounded-leaf-sm border border-purple-500/30 bg-gradient-to-b from-purple-900/50 via-purple-950/60 to-black/80 overflow-hidden flex flex-col shadow-lg sm:shadow-xl shadow-purple-500/10 min-h-0">
               <div className="px-3 py-2.5 sm:px-4 sm:py-3 bg-gradient-to-r from-purple-700/60 via-purple-800/50 to-violet-900/50 border-b border-purple-500/20 flex-shrink-0">
                 <div className="flex items-center gap-2 sm:gap-3">
                   <span className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full flex-shrink-0 ${status === "failed" ? "bg-rose-400" : "bg-purple-300"}`} aria-hidden />
@@ -342,7 +342,7 @@ export function DVIRTab({
                   <motion.div 
                     key="empty-state" 
                     {...(prefersReducedMotion ? detailTransitionReduced : detailTransition)} 
-                    className="h-full min-h-[200px] sm:min-h-[260px] rounded-xl sm:rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-900/40 via-purple-950/50 to-black/70 p-5 sm:p-8 flex flex-col items-center justify-center text-center shadow-lg sm:shadow-xl shadow-purple-500/10"
+                    className="h-full min-h-[200px] sm:min-h-[260px] rounded-xl sm:rounded-leaf-sm border border-purple-500/30 bg-gradient-to-br from-purple-900/40 via-purple-950/50 to-black/70 p-5 sm:p-8 flex flex-col items-center justify-center text-center shadow-lg sm:shadow-xl shadow-purple-500/10"
                   >
                     <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg sm:rounded-xl bg-purple-600/30 border border-purple-400/30 flex items-center justify-center mb-4 sm:mb-6" aria-hidden>
                       <ListChecks className="w-6 h-6 sm:w-8 sm:h-8 text-purple-300" />
@@ -352,7 +352,7 @@ export function DVIRTab({
                   </motion.div>
                 ) : (
                   <motion.div key={selectedId} {...(prefersReducedMotion ? detailTransitionReduced : detailTransition)} className="space-y-3 sm:space-y-4">
-                    <div className="rounded-xl sm:rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-900/50 via-purple-950/60 to-black/80 overflow-hidden shadow-lg sm:shadow-xl shadow-purple-500/10">
+                    <div className="rounded-xl sm:rounded-leaf-sm border border-purple-500/30 bg-gradient-to-br from-purple-900/50 via-purple-950/60 to-black/80 overflow-hidden shadow-lg sm:shadow-xl shadow-purple-500/10">
                       <div className="bg-gradient-to-r from-purple-700/60 via-violet-700/50 to-purple-800/50 border-b border-purple-400/20 px-3 py-3 sm:px-5 sm:py-4">
                         <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-3 sm:gap-4">
                           <div className="flex items-center gap-3 sm:gap-4 min-w-0">
@@ -400,7 +400,7 @@ export function DVIRTab({
                               <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
                                 {vehicleFails.length > 0 && (
                                   <div className="rounded-lg sm:rounded-xl border border-rose-500/30 bg-rose-600/10 p-3 sm:p-4 max-h-28 sm:max-h-36 overflow-y-auto">
-                                    <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-rose-200/90 mb-2">Vehicle / Trailer</div>
+                                    <div className="text-[10px] sm:text-xs uppercase text-rose-200/90 mb-2 font-mono font-medium tracking-[0.14em]">Vehicle / Trailer</div>
                                     <ul className="space-y-1.5 sm:space-y-2">{vehicleFails.map((label) => (
                                       <li key={label} className="flex items-start gap-1.5 sm:gap-2 text-xs sm:text-sm text-rose-100/90">
                                         <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-rose-400 rounded-full mt-1.5 flex-shrink-0" aria-hidden />
@@ -411,7 +411,7 @@ export function DVIRTab({
                                 )}
                                 {aerialFails.length > 0 && (
                                   <div className="rounded-lg sm:rounded-xl border border-amber-500/30 bg-amber-600/10 p-3 sm:p-4 max-h-28 sm:max-h-36 overflow-y-auto">
-                                    <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-amber-200/90 mb-2">Aerial Lift</div>
+                                    <div className="text-[10px] sm:text-xs uppercase text-amber-200/90 mb-2 font-mono font-medium tracking-[0.14em]">Aerial Lift</div>
                                     <ul className="space-y-1.5 sm:space-y-2">{aerialFails.map((label) => (
                                       <li key={label} className="flex items-start gap-1.5 sm:gap-2 text-xs sm:text-sm text-amber-100/90">
                                         <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-amber-400 rounded-full mt-1.5 flex-shrink-0" aria-hidden />
@@ -426,11 +426,11 @@ export function DVIRTab({
                         })()}
                         <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
                           <div className="rounded-lg sm:rounded-xl border border-purple-500/20 bg-purple-800/20 p-3 sm:p-4">
-                            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-purple-200/70 mb-1.5 sm:mb-2">Driver notes</div>
+                            <div className="text-[10px] sm:text-xs uppercase text-purple-200/70 mb-1.5 sm:mb-2 font-mono font-medium tracking-[0.14em]">Driver notes</div>
                             <p className="text-xs sm:text-sm text-white/80 line-clamp-2">{selectedDvir.notes?.trim() || "No notes"}</p>
                           </div>
                           <div className="rounded-lg sm:rounded-xl border border-purple-500/20 bg-purple-800/20 p-3 sm:p-4">
-                            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-purple-200/70 mb-1.5 sm:mb-2">Vehicle info</div>
+                            <div className="text-[10px] sm:text-xs uppercase text-purple-200/70 mb-1.5 sm:mb-2 font-mono font-medium tracking-[0.14em]">Vehicle info</div>
                             <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 sm:gap-x-4 sm:gap-y-1 text-xs sm:text-sm text-white/70">
                               <span>Chipper: <span className="font-semibold text-white/90">{selectedDvir.chipper_number || "—"}</span></span>
                               <span>Trailer: <span className="font-semibold text-white/90">{selectedDvir.trailer_number || "—"}</span></span>
@@ -439,7 +439,7 @@ export function DVIRTab({
                         </div>
                         {hasMechanicUpdate(selectedDvir) && (
                           <div className="rounded-lg sm:rounded-xl border border-emerald-500/40 bg-emerald-700/20 p-3 sm:p-5">
-                            <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-emerald-200 mb-2 sm:mb-3">
+                            <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs uppercase text-emerald-200 mb-2 sm:mb-3 font-mono font-medium tracking-[0.14em]">
                               <Wrench className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" aria-hidden /> Mechanic fix
                             </div>
                             <p className="text-xs sm:text-sm text-white/90 font-medium">{selectedDvir.deficiency_corrected || "—"}</p>
@@ -454,7 +454,7 @@ export function DVIRTab({
                           </summary>
                           <div className="grid gap-2 sm:gap-3 md:gap-4 sm:grid-cols-2 p-2.5 sm:p-3 md:p-4 border-t border-purple-500/20 bg-black/20">
                             <div className="rounded-lg sm:rounded-xl border border-purple-500/20 bg-purple-950/30 p-2.5 sm:p-3 md:p-4 min-w-0">
-                              <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-purple-200/70 mb-1.5 sm:mb-2 md:mb-3">Vehicle / Trailer</div>
+                              <div className="text-[10px] sm:text-xs uppercase text-purple-200/70 mb-1.5 sm:mb-2 md:mb-3 font-mono font-medium tracking-[0.14em]">Vehicle / Trailer</div>
                               <div className="max-h-24 xs:max-h-28 sm:max-h-32 md:max-h-40 overflow-y-auto space-y-0.5 sm:space-y-1 md:space-y-1.5 scroll-container">
                                 {VEHICLE_TRAILER_ITEMS.map((item) => {
                                   const value = selectedDvir.vehicle_trailer_checklist?.[item.id];
@@ -469,7 +469,7 @@ export function DVIRTab({
                               </div>
                             </div>
                             <div className="rounded-lg sm:rounded-xl border border-purple-500/20 bg-purple-950/30 p-2.5 sm:p-3 md:p-4 min-w-0">
-                              <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-purple-200/70 mb-1.5 sm:mb-2 md:mb-3">Aerial Lift</div>
+                              <div className="text-[10px] sm:text-xs uppercase text-purple-200/70 mb-1.5 sm:mb-2 md:mb-3 font-mono font-medium tracking-[0.14em]">Aerial Lift</div>
                               <div className="max-h-24 xs:max-h-28 sm:max-h-32 md:max-h-40 overflow-y-auto space-y-0.5 sm:space-y-1 md:space-y-1.5 scroll-container">
                                 {AERIAL_LIFT_ITEMS.map((item) => {
                                   const value = selectedDvir.aerial_checklist?.[item.id];

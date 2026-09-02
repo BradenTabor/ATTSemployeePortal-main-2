@@ -167,11 +167,11 @@ function CrewOversightJobListComponent({
     return (
       <div className="space-y-3 sm:space-y-4">
         {/* Filter skeleton */}
-        <div className="rounded-2xl sm:rounded-3xl border border-[#c084fc]/20 bg-gradient-to-br from-[#2d1b4e]/60 via-[#1a0f2e] to-[#0a0513] p-3 sm:p-4">
+        <div className="rounded-leaf-sm sm:rounded-leaf border border-[#5EE898]/20 bg-gradient-to-br from-[#12482A]/60 via-[#0A2A19] to-[#05170E] p-3 sm:p-4">
           <div className="space-y-2 sm:grid sm:grid-cols-3 sm:gap-3 sm:space-y-0">
-            <div className="h-10 rounded-xl bg-[#c084fc]/10 animate-pulse" />
-            <div className="h-10 rounded-xl bg-[#c084fc]/10 animate-pulse" />
-            <div className="h-10 rounded-xl bg-[#c084fc]/10 animate-pulse" />
+            <div className="h-10 rounded-xl bg-[#5EE898]/10 animate-pulse" />
+            <div className="h-10 rounded-xl bg-[#5EE898]/10 animate-pulse" />
+            <div className="h-10 rounded-xl bg-[#5EE898]/10 animate-pulse" />
           </div>
         </div>
 
@@ -180,7 +180,7 @@ function CrewOversightJobListComponent({
           {Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
-              className="rounded-2xl border border-[#c084fc]/15 bg-[#2d1b4e]/30 h-40 animate-pulse"
+              className="rounded-leaf-sm border border-[#5EE898]/15 bg-[#12482A]/30 h-40 animate-pulse"
             />
           ))}
         </div>
@@ -195,33 +195,33 @@ function CrewOversightJobListComponent({
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="rounded-2xl sm:rounded-3xl border border-[#c084fc]/25 bg-gradient-to-br from-[#2d1b4e]/60 via-[#1a0f2e] to-[#0a0513] p-3 sm:p-4 shadow-[0_15px_30px_rgba(0,0,0,0.4)]"
+        className="rounded-leaf-sm sm:rounded-leaf border border-[#5EE898]/25 bg-gradient-to-br from-[#12482A]/60 via-[#0A2A19] to-[#05170E] p-3 sm:p-4 shadow-[0_15px_30px_rgba(0,0,0,0.4)]"
       >
         <div className="flex items-center gap-1.5 mb-2.5 sm:mb-3">
-          <SlidersHorizontal className="w-3.5 h-3.5 text-[#c084fc]" />
-          <span className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-[#c084fc]/70">Filters</span>
+          <SlidersHorizontal className="w-3.5 h-3.5 text-[#5EE898]" />
+          <span className="text-[10px] sm:text-xs uppercase text-[#5EE898]/70 font-mono font-medium tracking-[0.14em]">Filters</span>
         </div>
 
         <div className="space-y-2 sm:grid sm:grid-cols-3 sm:gap-3 sm:space-y-0">
           {/* Search */}
           <div className="relative">
-            <Search className="w-3.5 h-3.5 text-[#c084fc] absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-[#5EE898] absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Search jobs..."
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="w-full rounded-xl bg-[#0a0513]/70 border border-[#c084fc]/25 pl-9 pr-3 py-2.5 text-xs sm:text-sm text-[#f3e8ff] placeholder:text-[#c084fc]/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c084fc]/60"
+              className="w-full rounded-xl bg-[#05170E]/70 border border-[#5EE898]/25 pl-9 pr-3 py-2.5 text-xs sm:text-sm text-[#D9FFE3] placeholder:text-[#5EE898]/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#5EE898]/60"
             />
           </div>
 
           {/* Status filter */}
           <div className="relative">
-            <Filter className="w-3.5 h-3.5 text-[#c084fc] absolute left-3 top-1/2 -translate-y-1/2" />
+            <Filter className="w-3.5 h-3.5 text-[#5EE898] absolute left-3 top-1/2 -translate-y-1/2" />
             <select
               value={statusFilter}
               onChange={(e) => handleStatusChange(e.target.value as JobStatus | 'all')}
-              className="w-full rounded-xl bg-[#0a0513]/70 border border-[#c084fc]/25 pl-9 pr-3 py-2.5 text-xs sm:text-sm text-[#f3e8ff] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c084fc]/60 appearance-none cursor-pointer"
+              className="w-full rounded-xl bg-[#05170E]/70 border border-[#5EE898]/25 pl-9 pr-3 py-2.5 text-xs sm:text-sm text-[#D9FFE3] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#5EE898]/60 appearance-none cursor-pointer"
             >
               {STATUS_OPTIONS.map(option => (
                 <option key={option.value} value={option.value}>
@@ -233,11 +233,11 @@ function CrewOversightJobListComponent({
 
           {/* Tracking filter */}
           <div className="relative">
-            <Filter className="w-3.5 h-3.5 text-[#c084fc] absolute left-3 top-1/2 -translate-y-1/2" />
+            <Filter className="w-3.5 h-3.5 text-[#5EE898] absolute left-3 top-1/2 -translate-y-1/2" />
             <select
               value={trackingFilter}
               onChange={(e) => handleTrackingChange(e.target.value as TrackingType | 'all')}
-              className="w-full rounded-xl bg-[#0a0513]/70 border border-[#c084fc]/25 pl-9 pr-3 py-2.5 text-xs sm:text-sm text-[#f3e8ff] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c084fc]/60 appearance-none cursor-pointer"
+              className="w-full rounded-xl bg-[#05170E]/70 border border-[#5EE898]/25 pl-9 pr-3 py-2.5 text-xs sm:text-sm text-[#D9FFE3] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#5EE898]/60 appearance-none cursor-pointer"
             >
               {TRACKING_OPTIONS.map(option => (
                 <option key={option.value} value={option.value}>
@@ -253,10 +253,10 @@ function CrewOversightJobListComponent({
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
-            className="flex flex-wrap gap-1.5 pt-2.5 mt-2.5 border-t border-[#c084fc]/10"
+            className="flex flex-wrap gap-1.5 pt-2.5 mt-2.5 border-t border-[#5EE898]/10"
           >
             {searchQuery && (
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-[#c084fc]/30 bg-[#c084fc]/10 text-[10px] sm:text-xs text-[#e9d5ff]">
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-[#5EE898]/30 bg-[#5EE898]/10 text-[10px] sm:text-xs text-[#C8FFD4]">
                 <span className="truncate max-w-[80px]">{searchQuery}</span>
                 <button
                   type="button"
@@ -268,7 +268,7 @@ function CrewOversightJobListComponent({
               </span>
             )}
             {statusFilter !== 'all' && (
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-[#c084fc]/30 bg-[#c084fc]/10 text-[10px] sm:text-xs text-[#e9d5ff]">
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-[#5EE898]/30 bg-[#5EE898]/10 text-[10px] sm:text-xs text-[#C8FFD4]">
                 <span>{statusFilter}</span>
                 <button
                   type="button"
@@ -280,7 +280,7 @@ function CrewOversightJobListComponent({
               </span>
             )}
             {trackingFilter !== 'all' && (
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-[#c084fc]/30 bg-[#c084fc]/10 text-[10px] sm:text-xs text-[#e9d5ff]">
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-[#5EE898]/30 bg-[#5EE898]/10 text-[10px] sm:text-xs text-[#C8FFD4]">
                 <span>{trackingFilter === 'job_progress' ? 'Span' : 'Time'}</span>
                 <button
                   type="button"
@@ -300,14 +300,14 @@ function CrewOversightJobListComponent({
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl sm:rounded-3xl border border-[#c084fc]/20 bg-gradient-to-br from-[#2d1b4e]/60 via-[#1a0f2e] to-[#0a0513] py-12 sm:py-16"
+          className="rounded-leaf-sm sm:rounded-leaf border border-[#5EE898]/20 bg-gradient-to-br from-[#12482A]/60 via-[#0A2A19] to-[#05170E] py-12 sm:py-16"
         >
           <div className="text-center space-y-2">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#2d1b4e] border border-[#c084fc]/30 mx-auto">
-              <Briefcase className="w-5 h-5 text-[#c084fc]" />
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#12482A] border border-[#5EE898]/30 mx-auto">
+              <Briefcase className="w-5 h-5 text-[#5EE898]" />
             </div>
             <h3 className="text-base sm:text-lg font-semibold text-white">No Jobs Found</h3>
-            <p className="text-xs sm:text-sm text-[#e9d5ff]/60 max-w-xs mx-auto px-4">
+            <p className="text-xs sm:text-sm text-[#C8FFD4]/60 max-w-xs mx-auto px-4">
               {searchQuery || statusFilter !== 'all' || trackingFilter !== 'all'
                 ? 'Adjust your filters to see more jobs.'
                 : 'No jobs are currently available.'}
@@ -335,11 +335,11 @@ function CrewOversightJobListComponent({
                     transition={{ delay: index * 0.02 }}
                   >
                     {/* Stacked group container */}
-                    <div className="rounded-2xl sm:rounded-3xl border border-[#c084fc]/30 bg-gradient-to-br from-[#2d1b4e]/50 via-[#1a0f2e]/70 to-[#0a0513]/80 overflow-hidden shadow-md shadow-[#c084fc]/5">
+                    <div className="rounded-leaf-sm sm:rounded-leaf border border-[#5EE898]/30 bg-gradient-to-br from-[#12482A]/50 via-[#0A2A19]/70 to-[#05170E]/80 overflow-hidden shadow-md shadow-[#5EE898]/5">
                       {/* Stack header */}
-                      <div className="flex items-center gap-1.5 px-3 py-2 border-b border-[#c084fc]/20 bg-[#c084fc]/5">
-                        <Layers className="w-3.5 h-3.5 text-[#c084fc]" />
-                        <span className="text-[10px] sm:text-xs font-bold text-[#c084fc] uppercase tracking-wide">
+                      <div className="flex items-center gap-1.5 px-3 py-2 border-b border-[#5EE898]/20 bg-[#5EE898]/5">
+                        <Layers className="w-3.5 h-3.5 text-[#5EE898]" />
+                        <span className="text-[10px] sm:text-xs text-[#5EE898] uppercase font-mono font-medium tracking-[0.14em]">
                           {groupJobs.length} Stacked
                         </span>
                       </div>
@@ -384,7 +384,7 @@ function CrewOversightJobListComponent({
       {(() => {
         const stackedCount = displayItems.filter(i => i.type === 'group').length;
         return (
-          <div className="text-center text-[10px] sm:text-xs text-[#e9d5ff]/40 pt-1">
+          <div className="text-center text-[10px] sm:text-xs text-[#C8FFD4]/40 pt-1">
             {filteredJobs.length} job{filteredJobs.length !== 1 ? 's' : ''}
             {stackedCount > 0 && <span> · {stackedCount} stacked</span>}
           </div>

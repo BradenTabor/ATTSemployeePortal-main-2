@@ -210,7 +210,7 @@ function JobDetailModalComponent({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] shadow-[0_40px_80px_rgba(0,0,0,0.7)]"
+        className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-leaf border border-[#E4EAE1]/20 bg-gradient-to-br from-[#0B100D] via-[#040605] to-[#040605] shadow-[0_40px_80px_rgba(0,0,0,0.7)]"
       >
         {isEditing ? (
           <div className="p-6">
@@ -226,7 +226,7 @@ function JobDetailModalComponent({
         ) : (
           <>
             {/* Header */}
-            <div className="sticky top-0 z-10 flex items-start justify-between gap-4 p-6 border-b border-white/10 bg-[#0b0906]/95 backdrop-blur-sm">
+            <div className="sticky top-0 z-10 flex items-start justify-between gap-4 p-6 border-b border-white/10 bg-[#040605]/95 backdrop-blur-sm">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 mb-2">
                   <span className={cn(
@@ -244,7 +244,7 @@ function JobDetailModalComponent({
                 <h2 id="job-detail-modal-title" className="text-2xl font-bold text-white">{job.job_name}</h2>
                 {job.job_location && (
                   <p className="flex items-center gap-2 text-sm text-white/60 mt-1">
-                    <MapPin className="w-4 h-4 text-[#f4c979]/60" />
+                    <MapPin className="w-4 h-4 text-[#F4F7F2]/60" />
                     {job.job_location}
                   </p>
                 )}
@@ -309,7 +309,7 @@ function JobDetailModalComponent({
                         </div>
                         <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-center">
                           <p className="text-xs text-white/50 mb-1">Estimated</p>
-                          <p className="text-lg font-bold text-[#f4c979]">
+                          <p className="text-lg font-bold text-[#F4F7F2]">
                             {spanProgress.total > 0 ? spanProgress.total.toLocaleString() : '—'}
                           </p>
                           <p className="text-[10px] text-white/40">{spanProgress.metricLabel}</p>
@@ -350,7 +350,7 @@ function JobDetailModalComponent({
                     size="lg"
                   />
                   <div className="flex items-center gap-2 mt-3 text-sm text-white/60">
-                    <Calendar className="w-4 h-4 text-[#f4c979]/60" />
+                    <Calendar className="w-4 h-4 text-[#F4F7F2]/60" />
                     <span>{formatDateRange(job.start_date, job.end_date)}</span>
                   </div>
                 </>
@@ -363,8 +363,8 @@ function JobDetailModalComponent({
               {(job.job_description || job.job_specs) && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {job.job_description && (
-                    <div className="rounded-2xl border border-white/10 bg-[#050402]/50 p-4">
-                      <h4 className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-[#f4c979]/70 mb-2">
+                    <div className="rounded-leaf-sm border border-white/10 bg-[#040605]/50 p-4">
+                      <h4 className="flex items-center gap-2 text-xs uppercase text-[#F4F7F2]/70 mb-2 font-mono font-medium tracking-[0.14em]">
                         <FileText className="w-4 h-4" />
                         Description
                       </h4>
@@ -372,8 +372,8 @@ function JobDetailModalComponent({
                     </div>
                   )}
                   {job.job_specs && (
-                    <div className="rounded-2xl border border-white/10 bg-[#050402]/50 p-4">
-                      <h4 className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-[#f4c979]/70 mb-2">
+                    <div className="rounded-leaf-sm border border-white/10 bg-[#040605]/50 p-4">
+                      <h4 className="flex items-center gap-2 text-xs uppercase text-[#F4F7F2]/70 mb-2 font-mono font-medium tracking-[0.14em]">
                         <ClipboardList className="w-4 h-4" />
                         Specifications
                       </h4>
@@ -384,8 +384,8 @@ function JobDetailModalComponent({
               )}
 
               {/* Crew */}
-              <div className="rounded-2xl border border-white/10 bg-[#050402]/50 p-4">
-                <h4 className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-[#f4c979]/70 mb-3">
+              <div className="rounded-leaf-sm border border-white/10 bg-[#040605]/50 p-4">
+                <h4 className="flex items-center gap-2 text-xs uppercase text-[#F4F7F2]/70 mb-3 font-mono font-medium tracking-[0.14em]">
                   <Users className="w-4 h-4" />
                   Assigned Crew ({crewAssignments.length})
                 </h4>
@@ -399,7 +399,7 @@ function JobDetailModalComponent({
                           key={assignment.id}
                           className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10"
                         >
-                          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#f4c979] to-[#d89d3e] flex items-center justify-center text-[10px] font-bold text-[#2d1c04]">
+                          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#F4F7F2] to-[#8DF5A8] flex items-center justify-center text-[10px] font-bold text-[#040605]">
                             {avatarInitial}
                           </div>
                           <div className="flex flex-col">
@@ -423,9 +423,9 @@ function JobDetailModalComponent({
 
               {/* Milestones */}
               {milestonesWithOptimistic.length > 0 && (
-                <div className="rounded-2xl border border-white/10 bg-[#050402]/50 p-4">
+                <div className="rounded-leaf-sm border border-white/10 bg-[#040605]/50 p-4">
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-[#f4c979]/70">
+                    <h4 className="flex items-center gap-2 text-xs uppercase text-[#F4F7F2]/70 font-mono font-medium tracking-[0.14em]">
                       <Target className="w-4 h-4" />
                       Milestones
                     </h4>
@@ -444,11 +444,11 @@ function JobDetailModalComponent({
                           'w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left',
                           milestone.is_completed
                             ? 'border-emerald-500/30 bg-emerald-500/10'
-                            : 'border-white/10 bg-white/5 hover:border-white/20 hover:border-[#f4c979]/30'
+                            : 'border-white/10 bg-white/5 hover:border-white/20 hover:border-[#F4F7F2]/30'
                         )}
                       >
                         {togglingMilestone === milestone.id ? (
-                          <Loader2 className="w-5 h-5 text-[#f4c979] animate-spin" />
+                          <Loader2 className="w-5 h-5 text-[#F4F7F2] animate-spin" />
                         ) : milestone.is_completed ? (
                           <motion.div
                             initial={{ scale: 0.8 }}
@@ -458,7 +458,7 @@ function JobDetailModalComponent({
                             <CheckCircle2 className="w-5 h-5 text-emerald-400" />
                           </motion.div>
                         ) : (
-                          <Circle className="w-5 h-5 text-white/30 group-hover:text-[#f4c979]/50" />
+                          <Circle className="w-5 h-5 text-white/30 group-hover:text-[#F4F7F2]/50" />
                         )}
                         <div className="flex-1 min-w-0">
                           <p className={cn(
@@ -486,8 +486,8 @@ function JobDetailModalComponent({
 
               {/* Notes */}
               {job.notes && (
-                <div className="rounded-2xl border border-white/10 bg-[#050402]/50 p-4">
-                  <h4 className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-[#f4c979]/70 mb-2">
+                <div className="rounded-leaf-sm border border-white/10 bg-[#040605]/50 p-4">
+                  <h4 className="flex items-center gap-2 text-xs uppercase text-[#F4F7F2]/70 mb-2 font-mono font-medium tracking-[0.14em]">
                     <StickyNote className="w-4 h-4" />
                     Notes
                   </h4>
@@ -497,7 +497,7 @@ function JobDetailModalComponent({
             </div>
 
             {/* Actions Footer */}
-            <div className="sticky bottom-0 flex items-center justify-between gap-4 p-6 border-t border-white/10 bg-[#0b0906]/95 backdrop-blur-sm">
+            <div className="sticky bottom-0 flex items-center justify-between gap-4 p-6 border-t border-white/10 bg-[#040605]/95 backdrop-blur-sm">
               {/* Status actions */}
               <div className="flex items-center gap-2">
                 {statusActions.map((action) => (
@@ -528,7 +528,7 @@ function JobDetailModalComponent({
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#f4c979]/30 text-[#f4c979] text-xs font-semibold hover:bg-[#f4c979]/10 transition-colors"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#F4F7F2]/30 text-[#F4F7F2] text-xs font-semibold hover:bg-[#F4F7F2]/10 transition-colors"
                 >
                   <Edit3 className="w-3.5 h-3.5" />
                   Edit
@@ -590,12 +590,12 @@ function JobDetailModalComponent({
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={{ type: 'spring', stiffness: 300, damping: 25 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-md rounded-2xl border border-[#f6dcb2]/30 bg-gradient-to-br from-[#1a1610] via-[#0f0d0a] to-[#080705] p-6 shadow-[0_30px_60px_rgba(0,0,0,0.8)]"
+              className="w-full max-w-md rounded-leaf-sm border border-[#E4EAE1]/30 bg-gradient-to-br from-[#121A15] via-[#0B100D] to-[#040605] p-6 shadow-[0_30px_60px_rgba(0,0,0,0.8)]"
             >
               {/* Icon */}
               <div className="flex justify-center mb-4">
                 <div className={cn(
-                  'w-14 h-14 rounded-2xl flex items-center justify-center',
+                  'w-14 h-14 rounded-leaf-sm flex items-center justify-center',
                   milestoneToToggle.isCompleted
                     ? 'bg-amber-500/15 border border-amber-500/30'
                     : 'bg-emerald-500/15 border border-emerald-500/30'
@@ -622,7 +622,7 @@ function JobDetailModalComponent({
 
               {/* Milestone name */}
               <div className="rounded-xl border border-white/10 bg-white/5 p-3 mb-6">
-                <p className="text-sm text-[#f4c979] font-medium text-center">
+                <p className="text-sm text-[#F4F7F2] font-medium text-center">
                   "{milestoneToToggle.title}"
                 </p>
               </div>
@@ -640,8 +640,8 @@ function JobDetailModalComponent({
                   className={cn(
                     'flex-1 px-4 py-3 rounded-xl text-sm font-semibold transition-all',
                     milestoneToToggle.isCompleted
-                      ? 'bg-gradient-to-r from-amber-600 to-amber-500 text-white hover:shadow-[0_0_20px_rgba(245,158,11,0.3)]'
-                      : 'bg-gradient-to-r from-emerald-600 to-emerald-500 text-white hover:shadow-[0_0_20px_rgba(16,185,129,0.3)]'
+                      ? 'bg-gradient-to-r from-amber-600 to-amber-500 text-white hover:shadow-[0_0_20px_rgba(174,219,63,0.3)]'
+                      : 'bg-gradient-to-r from-emerald-600 to-emerald-500 text-white hover:shadow-[0_0_20px_rgba(47,164,90,0.3)]'
                   )}
                 >
                   {milestoneToToggle.isCompleted ? 'Undo' : 'Complete'}

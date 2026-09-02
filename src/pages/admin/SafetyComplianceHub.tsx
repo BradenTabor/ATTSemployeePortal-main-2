@@ -93,7 +93,7 @@ export default function SafetyComplianceHub() {
                 <Shield className="w-6 h-6 sm:w-8 sm:h-8 text-amber-400" aria-hidden />
               </div>
               <div>
-                <h1 className="text-lg sm:text-xl font-semibold text-white">Safety & Compliance</h1>
+                <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">Safety & Compliance</h1>
                 <p className="text-xs sm:text-sm text-white/60">
                   Analytics · Risk Calibration · Compliance Audit · Briefing Compliance
                 </p>

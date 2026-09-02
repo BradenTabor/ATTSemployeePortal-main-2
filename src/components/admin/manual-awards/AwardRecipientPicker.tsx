@@ -73,10 +73,10 @@ export function AwardRecipientPicker({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-2">
-        <label className="text-xs font-medium text-[#f8e5bb]/70 uppercase tracking-wider">
+        <label className="text-xs font-medium text-[#E4EAE1]/70 uppercase font-mono font-medium tracking-[0.14em]">
           Recipients
           {selected.length > 0 && (
-            <span className="ml-1.5 text-[#f4c979] normal-case tracking-normal">
+            <span className="ml-1.5 text-[#F4F7F2] normal-case tracking-normal">
               ({selected.length})
             </span>
           )}
@@ -86,7 +86,7 @@ export function AwardRecipientPicker({
             type="button"
             onClick={clearAll}
             disabled={disabled}
-            className="text-xs text-[#f4c979]/80 hover:text-[#f4c979] focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400 rounded px-1.5 py-0.5"
+            className="text-xs text-[#F4F7F2]/80 hover:text-[#F4F7F2] focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400 rounded px-1.5 py-0.5"
           >
             Clear all
           </button>
@@ -98,7 +98,7 @@ export function AwardRecipientPicker({
           {selected.map((user) => (
             <span
               key={user.user_id}
-              className="inline-flex items-center gap-1 rounded-lg border border-[#f4c979]/30 bg-[#1b1914]/80 pl-2 pr-1 py-1 text-xs text-white max-w-full"
+              className="inline-flex items-center gap-1 rounded-lg border border-[#F4F7F2]/30 bg-[#121A15]/80 pl-2 pr-1 py-1 text-xs text-white max-w-full"
             >
               <span className="truncate max-w-[140px]">
                 {user.full_name || user.email}
@@ -107,7 +107,7 @@ export function AwardRecipientPicker({
                 type="button"
                 onClick={() => removeRecipient(user.user_id)}
                 disabled={disabled}
-                className="p-0.5 rounded text-[#c7b696] hover:text-white hover:bg-white/10 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400 flex-shrink-0"
+                className="p-0.5 rounded text-[#B8C4B6] hover:text-white hover:bg-white/10 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400 flex-shrink-0"
                 aria-label={`Remove ${user.full_name || user.email}`}
               >
                 <X className="w-3 h-3" aria-hidden />
@@ -119,7 +119,7 @@ export function AwardRecipientPicker({
 
       <div className="relative">
         <Search
-          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#c7b696]"
+          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#B8C4B6]"
           aria-hidden
         />
         <input
@@ -133,15 +133,15 @@ export function AwardRecipientPicker({
       </div>
 
       <div
-        className="max-h-40 overflow-y-auto rounded-xl border border-white/10 bg-[#0f0d0a]/60 divide-y divide-white/5"
+        className="max-h-40 overflow-y-auto rounded-xl border border-white/10 bg-[#0B100D]/60 divide-y divide-white/5"
         role="listbox"
         aria-label="Select recipients"
         aria-multiselectable="true"
       >
         {isLoading ? (
-          <p className="p-3 text-sm text-[#c7b696]">Loading users…</p>
+          <p className="p-3 text-sm text-[#B8C4B6]">Loading users…</p>
         ) : filtered.length === 0 ? (
-          <p className="p-3 text-sm text-[#c7b696]">No users match your search.</p>
+          <p className="p-3 text-sm text-[#B8C4B6]">No users match your search.</p>
         ) : (
           filtered.map((user) => {
             const isSelected = selectedIds.has(user.user_id);
@@ -157,29 +157,29 @@ export function AwardRecipientPicker({
                   'w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors min-h-[44px]',
                   'focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-inset',
                   isSelected
-                    ? 'bg-[#f4c979]/15 hover:bg-[#f4c979]/20'
-                    : 'hover:bg-[#f4c979]/10'
+                    ? 'bg-[#F4F7F2]/15 hover:bg-[#F4F7F2]/20'
+                    : 'hover:bg-[#F4F7F2]/10'
                 )}
               >
                 <div
                   className={cn(
                     'w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 transition-colors',
                     isSelected
-                      ? 'border-[#f4c979] bg-[#f4c979]/25'
+                      ? 'border-[#F4F7F2] bg-[#F4F7F2]/25'
                       : 'border-white/20 bg-white/5'
                   )}
                   aria-hidden
                 >
-                  {isSelected && <Check className="w-3 h-3 text-[#f4c979]" />}
+                  {isSelected && <Check className="w-3 h-3 text-[#F4F7F2]" />}
                 </div>
                 <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
-                  <span className="text-xs font-semibold text-[#f4c979]">
+                  <span className="text-xs font-semibold text-[#F4F7F2]">
                     {(user.full_name || user.email).charAt(0).toUpperCase()}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-white truncate">{user.full_name || 'Unknown'}</p>
-                  <p className="text-xs text-[#c7b696] truncate">{user.email}</p>
+                  <p className="text-xs text-[#B8C4B6] truncate">{user.email}</p>
                 </div>
               </button>
             );

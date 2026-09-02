@@ -1,6 +1,6 @@
 import { useMemo, useCallback, Suspense, lazy, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, AlertTriangle, RefreshCw } from "lucide-react";
+import { Users, AlertTriangle, RefreshCw, Briefcase, HardHat, LayoutGrid } from "lucide-react";
 import { motion } from "framer-motion";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { FOREMAN_NAV_CARDS, getCommonNavCards } from "../../components/admin/adminNavConfig";
@@ -250,7 +250,7 @@ export default function ForemanDashboard() {
   }
 
   return (
-    <DashboardLayout title="Foreman Dashboard">
+    <DashboardLayout title="Foreman Dashboard" pageHeading>
       <PullToRefresh onRefresh={handleRefresh} isRefreshing={isRefreshing}>
         <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 pb-4 pt-3 sm:pt-6">
           
@@ -261,6 +261,7 @@ export default function ForemanDashboard() {
             <Suspense fallback={<WelcomeHeaderSkeleton />}>
               <WelcomeHeader
                 theme="blue"
+                roleBadgeText="Foreman"
                 allFormsComplete={allFormsComplete}
                 activeJobsCount={assignedJobs.length}
                 currentJobName={currentJobName}
@@ -276,7 +277,7 @@ export default function ForemanDashboard() {
           <div className="mb-3 sm:mb-4">
             <ScrollReveal variant="fadeUp" delay={0.02}>
               <Suspense fallback={
-                <div className="rounded-3xl border border-blue-500/20 bg-[#0a1628]/70 p-5 space-y-3 animate-pulse">
+                <div className="rounded-leaf border border-blue-500/20 bg-[#0A2A19]/70 p-5 space-y-3 animate-pulse">
                   <div className="h-3 w-32 bg-white/10 rounded-full" />
                   <div className="space-y-2">
                     <div className="h-3 w-full bg-white/10 rounded-full" />
@@ -322,26 +323,7 @@ export default function ForemanDashboard() {
                               ? 'No assignments'
                               : `${assignedJobs.length} assignment${assignedJobs.length !== 1 ? 's' : ''}`
                       }
-                      transparentIconContainer
-                      icon={
-                        <div className="relative w-full h-full flex items-center justify-center overflow-visible min-w-[100px] min-h-[120px] md:min-w-[120px] md:min-h-[140px]">
-                          <img
-                            src="/assets/jobs-specialist.webp"
-                            alt=""
-                            width={312}
-                            height={384}
-                            decoding="async"
-                            fetchPriority="high"
-                            className="h-[120px] w-auto md:h-[140px] object-contain object-center select-none pointer-events-none [mix-blend-mode:screen]"
-                            style={{
-                              imageRendering: 'auto',
-                              WebkitBackfaceVisibility: 'hidden',
-                              backfaceVisibility: 'hidden',
-                              transform: 'translateZ(0)',
-                            }}
-                          />
-                        </div>
-                      }
+                      icon={<Briefcase className="h-5 w-5 text-glacier-300" aria-hidden />}
                       storageKey="foreman_active_jobs_expanded"
                       defaultOpen={true}
                       theme="blue"
@@ -349,7 +331,7 @@ export default function ForemanDashboard() {
                       headerAction={
                         <a
                           href="/assigned-jobs"
-                          className="text-[10px] sm:text-xs font-medium text-blue-400/70 hover:text-blue-300 transition-colors"
+                          className="tap-44 relative inline-block text-[10px] sm:text-xs font-medium text-blue-400/70 hover:text-blue-300 transition-colors"
                         >
                           View all →
                         </a>
@@ -377,9 +359,9 @@ export default function ForemanDashboard() {
                   <StackedLayout gap="sm">
                     {/* Rewards Card - Blue themed */}
                     <Suspense fallback={
-                      <div className="rounded-2xl border border-blue-400/20 bg-[#0a1628] p-4 animate-pulse h-[120px]">
+                      <div className="rounded-leaf border border-bone-50/[0.08] bg-ink-900/70 p-4 animate-pulse h-[120px]">
                         <div className="flex items-center gap-4">
-                          <div className="w-14 h-14 rounded-2xl bg-white/5" />
+                          <div className="w-14 h-14 rounded-leaf-sm bg-white/5" />
                           <div className="flex-1 space-y-2">
                             <div className="h-4 w-28 bg-white/10 rounded" />
                             <div className="h-3 w-40 bg-white/5 rounded" />
@@ -409,26 +391,7 @@ export default function ForemanDashboard() {
                 id="foreman-tools"
                 title="Foreman Tools"
                 subtitle="Crew management & reports"
-                transparentIconContainer
-                icon={
-                  <div className="relative w-full h-full flex items-center justify-center overflow-visible min-w-[130px] min-h-[156px] md:min-w-[156px] md:min-h-[192px]">
-                    <img
-                      src="/assets/foreman-creative.webp"
-                      alt=""
-                      width={312}
-                      height={384}
-                      decoding="async"
-                      fetchPriority="high"
-                      className="h-[156px] w-auto md:h-[192px] object-contain object-center select-none pointer-events-none [mix-blend-mode:screen]"
-                      style={{
-                        imageRendering: 'auto',
-                        WebkitBackfaceVisibility: 'hidden',
-                        backfaceVisibility: 'hidden',
-                        transform: 'translateZ(0)',
-                      }}
-                    />
-                  </div>
-                }
+                icon={<HardHat className="h-5 w-5 text-glacier-300" aria-hidden />}
                 storageKey={PERSISTENCE_KEYS.ALL_TOOLS}
                 defaultOpen={true}
                 ariaLabel="Foreman tools section. Expand to access crew management and reporting tools."
@@ -465,26 +428,7 @@ export default function ForemanDashboard() {
               id="foreman-all-tools"
               title="All Tools"
               subtitle="Forms, resources & more"
-              transparentIconContainer
-              icon={
-                <div className="relative w-full h-full flex items-center justify-center overflow-visible min-w-[130px] min-h-[156px] md:min-w-[156px] md:min-h-[192px]">
-                  <img
-                    src="/assets/all-tools.webp"
-                    alt=""
-                    width={312}
-                    height={384}
-                    decoding="async"
-                    fetchPriority="high"
-                    className="h-[156px] w-auto md:h-[192px] object-contain object-center select-none pointer-events-none"
-                    style={{
-                      imageRendering: 'auto',
-                      WebkitBackfaceVisibility: 'hidden',
-                      backfaceVisibility: 'hidden',
-                      transform: 'translateY(-16px) translateZ(0)',
-                    }}
-                  />
-                </div>
-              }
+              icon={<LayoutGrid className="h-5 w-5 text-glacier-300" aria-hidden />}
               storageKey="foreman_all_tools_expanded"
               defaultOpen={false}
               ariaLabel="All Tools section. Expand to browse forms and resources."
@@ -492,7 +436,7 @@ export default function ForemanDashboard() {
             >
               <div className="space-y-4">
                 {/* Pin hint message */}
-                <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-gradient-to-r from-blue-900/30 via-blue-950/20 to-transparent border border-blue-500/25">
+                <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-leaf-sm bg-ink-950/60 border border-bone-50/[0.08]">
                   <div className="w-7 h-7 rounded-lg bg-blue-500/15 border border-blue-400/30 flex items-center justify-center flex-shrink-0">
                     <svg className="w-3.5 h-3.5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />

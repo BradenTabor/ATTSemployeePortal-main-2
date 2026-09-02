@@ -121,7 +121,7 @@ export default function SubjectTimelineModal({
             ? { duration: 0.2 }
             : { type: "spring", damping: 28, stiffness: 300 }
         }
-        className={`relative z-10 w-full max-w-2xl max-h-[92vh] sm:max-h-[85vh] flex flex-col rounded-t-2xl sm:rounded-2xl overflow-hidden mx-0 sm:mx-4 ${glass.elevated}`}
+        className={`relative z-10 w-full max-w-2xl max-h-[92vh] sm:max-h-[85vh] flex flex-col rounded-t-2xl sm:rounded-leaf-sm overflow-hidden mx-0 sm:mx-4 ${glass.elevated}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Sticky header */}
@@ -215,11 +215,11 @@ export default function SubjectTimelineModal({
                         </p>
                       )}
                       <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                        <span className="inline-flex items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-rose-200">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/10 px-2 py-0.5 text-[10px] uppercase text-rose-200 font-mono font-medium tracking-[0.14em]">
                           Fail
                         </span>
                         {entry.escalated && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-200">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] uppercase text-amber-200 font-mono font-medium tracking-[0.14em]">
                             Escalated
                           </span>
                         )}
@@ -239,7 +239,7 @@ export default function SubjectTimelineModal({
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
                           <StickyNote className="w-4 h-4 text-rose-300/70 shrink-0" aria-hidden />
-                          <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.05] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/70">
+                          <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.05] px-2 py-0.5 text-[10px] uppercase text-white/70 font-mono font-medium tracking-[0.14em]">
                             {NOTE_KIND_LABEL.get(entry.noteKind) ?? "Note"}
                           </span>
                           {entry.itemTag && (

@@ -4,34 +4,34 @@ import type { ColorPalette, SpringConfig, GestureVariantSet, AvatarSize } from '
 export const AVATAR_COLORS: ColorPalette = {
   // Primary emerald theme
   emerald: {
-    light: '#6ee7b7',
-    base: '#10b981',
-    dark: '#059669',
-    darker: '#047857',
-    glow: '#34d399',
+    light: '#8DF5A8',
+    base: '#3DDC84',
+    dark: '#2FA45A',
+    darker: '#1F7A44',
+    glow: '#5EE898',
   },
   // Safety colors
   safety: {
-    orange: '#f97316',
-    orangeLight: '#fb923c',
-    orangeDark: '#ea580c',
-    orangeDeep: '#c2410c',
-    yellow: '#facc15',
-    yellowLight: '#fde047',
-    yellowBright: '#fef08a',
+    orange: '#9BEB5B',
+    orangeLight: '#B8FF7A',
+    orangeDark: '#7CC43F',
+    orangeDeep: '#5E9A2C',
+    yellow: '#D2FFA3',
+    yellowLight: '#E4FFC2',
+    yellowBright: '#DDFF85',
   },
   // Forest/Nature
   forest: {
-    light: '#22c55e',
-    base: '#166534',
-    dark: '#14532d',
+    light: '#2FA45A',
+    base: '#1F7A44',
+    dark: '#12482A',
   },
   // Skin tones with SSS undertones
   skin: {
-    highlight: '#fcd9bd',
-    base: '#e8b896',
-    shadow: '#c99a6b',
-    deep: '#a67c52',
+    highlight: '#ECFFAE',
+    base: '#E4FFC2',
+    shadow: '#AEDB3F',
+    deep: '#8A9A8E',
     // SSS colors - warm blood/translucency undertones
     sssWarm: '#ffb8a8',
     sssRed: '#e8a090',
@@ -39,30 +39,30 @@ export const AVATAR_COLORS: ColorPalette = {
   },
   // Materials - Enhanced
   metal: {
-    light: '#e5e7eb',
-    base: '#9ca3af',
-    dark: '#6b7280',
-    darker: '#4b5563',
+    light: '#E4EAE1',
+    base: '#8A9A8E',
+    dark: '#5A6B60',
+    darker: '#2F3F36',
     highlight: '#ffffff',
-    reflection: '#f8fafc',
+    reflection: '#F4FBF7',
   },
   plastic: {
-    highlight: '#fefefe',
-    base: '#f3f4f6',
+    highlight: '#F4F7F2',
+    base: '#F4F7F2',
     shine: '#ffffff',
   },
   fabric: {
-    vestGreen: '#16a34a',
-    vestGreenDark: '#15803d',
-    shirtTan: '#d6c4a8',
-    shirtTanDark: '#b8a88c',
-    shirtTanLight: '#e8dcc8',
+    vestGreen: '#2FA45A',
+    vestGreenDark: '#1F7A44',
+    shirtTan: '#DDFF85',
+    shirtTanDark: '#8A9A8E',
+    shirtTanLight: '#ECFFAE',
   },
   // Leather for boots/gloves
   leather: {
-    light: '#92400e',
-    base: '#78350f',
-    dark: '#451a03',
+    light: '#6B8A1F',
+    base: '#4A6116',
+    dark: '#1E2A23',
   },
 };
 

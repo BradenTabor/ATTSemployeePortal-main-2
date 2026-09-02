@@ -269,7 +269,7 @@ export default function MechanicEquipmentLogs() {
           <div className="mb-4 md:mb-6">
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="relative">
               {/* Main header card with solid background */}
-              <div className="relative overflow-hidden rounded-2xl md:rounded-3xl border-2 border-orange-500/40 shadow-2xl shadow-orange-500/20">
+              <div className="relative overflow-hidden rounded-leaf-sm md:rounded-leaf border-2 border-orange-500/40 shadow-2xl shadow-orange-500/20">
                 {/* Solid gradient background for better readability */}
                 <div className="absolute inset-0 bg-gradient-to-br from-orange-900 via-amber-950 to-orange-950" />
                 
@@ -280,9 +280,9 @@ export default function MechanicEquipmentLogs() {
                   transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
                   style={{
                     backgroundImage: `
-                      radial-gradient(ellipse at 20% 20%, rgba(251, 146, 60, 0.4) 0%, transparent 50%),
-                      radial-gradient(ellipse at 80% 80%, rgba(245, 158, 11, 0.3) 0%, transparent 50%),
-                      radial-gradient(ellipse at 40% 60%, rgba(234, 88, 12, 0.3) 0%, transparent 40%)
+                      radial-gradient(ellipse at 20% 20%, rgba(200,245,94, 0.4) 0%, transparent 50%),
+                      radial-gradient(ellipse at 80% 80%, rgba(174,219,63, 0.3) 0%, transparent 50%),
+                      radial-gradient(ellipse at 40% 60%, rgba(141,181,42, 0.3) 0%, transparent 40%)
                     `,
                     backgroundSize: '200% 200%',
                   }}
@@ -296,13 +296,13 @@ export default function MechanicEquipmentLogs() {
                   animate={{ x: [0, 20, 0], y: [0, -10, 0], scale: [1, 1.2, 1] }}
                   transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
                   className="absolute top-0 left-1/4 w-40 h-40 rounded-full pointer-events-none"
-                  style={{ background: 'radial-gradient(circle, rgba(251, 146, 60, 0.4) 0%, transparent 70%)', filter: 'blur(30px)' }}
+                  style={{ background: 'radial-gradient(circle, rgba(200,245,94, 0.4) 0%, transparent 70%)', filter: 'blur(30px)' }}
                 />
                 <motion.div
                   animate={{ x: [0, -15, 0], y: [0, 15, 0], scale: [1, 0.9, 1] }}
                   transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
                   className="absolute bottom-0 right-1/4 w-32 h-32 rounded-full pointer-events-none"
-                  style={{ background: 'radial-gradient(circle, rgba(245, 158, 11, 0.4) 0%, transparent 70%)', filter: 'blur(25px)' }}
+                  style={{ background: 'radial-gradient(circle, rgba(174,219,63, 0.4) 0%, transparent 70%)', filter: 'blur(25px)' }}
                 />
 
                 {/* Top accent line */}
@@ -321,7 +321,7 @@ export default function MechanicEquipmentLogs() {
                         <motion.div animate={{ rotate: [0, 15, -15, 0] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}>
                           <Wrench className="w-4 h-4 text-white" />
                         </motion.div>
-                        <span className="text-xs uppercase tracking-[0.15em] font-bold text-white">Mechanics Portal</span>
+                        <span className="text-xs uppercase text-white font-mono font-medium tracking-[0.14em]">Mechanics Portal</span>
                       </motion.div>
                       <motion.div 
                         initial={{ opacity: 0, scale: 0.8 }} 
@@ -330,7 +330,7 @@ export default function MechanicEquipmentLogs() {
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/30 border border-orange-500/30"
                       >
                         <div className="w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
-                        <span className="text-[10px] uppercase tracking-wider font-semibold text-orange-200">{role === "admin" ? "ADMIN ACCESS" : "MECHANIC"}</span>
+                        <span className="text-[10px] uppercase text-orange-200 font-mono font-medium tracking-[0.14em]">{role === "admin" ? "ADMIN ACCESS" : "MECHANIC"}</span>
                       </motion.div>
                     </div>
                   </div>
@@ -344,11 +344,11 @@ export default function MechanicEquipmentLogs() {
                     />
                     <div className="flex-1 min-w-0">
                       {enableAnimations ? (
-                        <TextEffect as="h1" preset="blurSlide" per="char" delay={0.15} className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight" segmentWrapperClassName="bg-gradient-to-r from-white via-orange-200 to-amber-100 bg-clip-text text-transparent drop-shadow-[0_4px_20px_rgba(251,146,60,0.5)]">
+                        <TextEffect as="h1" preset="blurSlide" per="char" delay={0.15} className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]" segmentWrapperClassName="text-glow">
                           Fleet & Equipment Center
                         </TextEffect>
                       ) : (
-                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight bg-gradient-to-r from-white via-orange-200 to-amber-100 bg-clip-text text-transparent">Fleet & Equipment Center</h1>
+                        <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">Fleet & Equipment Center</h1>
                       )}
                       <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.7 }} className="mt-2 md:mt-3 text-sm sm:text-base text-orange-100/80 font-medium leading-relaxed max-w-xl">
                         Review and repair DVIR reports and equipment inspections
@@ -370,7 +370,7 @@ export default function MechanicEquipmentLogs() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.5, type: "spring" }}
               whileHover={{ scale: 1.01, y: -2 }}
-              className="relative overflow-hidden rounded-2xl border-2 border-rose-500/50 bg-gradient-to-r from-rose-800 via-rose-900 to-red-950 p-5 shadow-2xl shadow-rose-500/20 mb-4"
+              className="relative overflow-hidden rounded-leaf-sm border-2 border-rose-500/50 bg-gradient-to-r from-rose-800 via-rose-900 to-red-950 p-5 shadow-2xl shadow-rose-500/20 mb-4"
             >
               {/* Animated background effects */}
               <motion.div 
@@ -379,8 +379,8 @@ export default function MechanicEquipmentLogs() {
                 transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
                 style={{
                   backgroundImage: `
-                    radial-gradient(ellipse at 20% 30%, rgba(244, 63, 94, 0.4) 0%, transparent 50%),
-                    radial-gradient(ellipse at 80% 70%, rgba(225, 29, 72, 0.3) 0%, transparent 50%)
+                    radial-gradient(ellipse at 20% 30%, rgba(244,63,94, 0.4) 0%, transparent 50%),
+                    radial-gradient(ellipse at 80% 70%, rgba(225,29,72, 0.3) 0%, transparent 50%)
                   `,
                   backgroundSize: '200% 200%',
                 }}
@@ -396,12 +396,12 @@ export default function MechanicEquipmentLogs() {
                   <motion.div
                     animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}
                     transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                    className="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500 to-red-600 flex items-center justify-center shadow-xl shadow-rose-500/40 border border-rose-400/30"
+                    className="w-14 h-14 rounded-leaf-sm bg-gradient-to-br from-rose-500 to-red-600 flex items-center justify-center shadow-xl shadow-rose-500/40 border border-rose-400/30"
                   >
                     <AlertTriangle className="w-7 h-7 text-white" />
                   </motion.div>
                   <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-rose-200/80 font-bold mb-1">Items Requiring Attention</p>
+                    <p className="text-xs uppercase text-rose-200/80 mb-1 font-mono font-medium tracking-[0.14em]">Items Requiring Attention</p>
                     <p className="text-sm text-rose-100/60">DVIR & Equipment issues pending review</p>
                   </div>
                 </div>
@@ -437,7 +437,7 @@ export default function MechanicEquipmentLogs() {
                   whileHover={{ scale: 1.03, y: -2 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`relative inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-3.5 rounded-2xl text-sm font-bold transition-all duration-300 ${
+                  className={`relative inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-3.5 rounded-leaf-sm text-sm font-bold transition-all duration-300 ${
                     activeTab === tab.id
                       ? `bg-gradient-to-r ${tab.gradient} text-white shadow-2xl shadow-orange-500/40 border-2 border-orange-400/50`
                       : "bg-gradient-to-br from-gray-900 to-gray-950 border-2 border-gray-700/50 text-gray-300 hover:border-orange-500/50 hover:text-white"
@@ -484,7 +484,7 @@ export default function MechanicEquipmentLogs() {
                 transition={{ delay: 0.4 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => setShowFilters(!showFilters)}
-                className={`inline-flex items-center gap-2 px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 border-2 ${
+                className={`inline-flex items-center gap-2 px-4 py-3 rounded-leaf-sm text-sm font-semibold transition-all duration-300 border-2 ${
                   showFilters
                     ? "bg-gradient-to-r from-orange-600/20 to-amber-600/20 border-orange-500/50 text-orange-300 shadow-lg shadow-orange-500/20"
                     : "bg-gray-900/80 border-gray-700/50 text-gray-400 hover:text-white hover:border-orange-500/50"

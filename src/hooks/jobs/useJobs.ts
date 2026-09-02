@@ -24,6 +24,120 @@ interface UseJobsReturn {
   unstackJobs: (jobIds: string[]) => Promise<{ success: boolean; error?: string }>;
 }
 
+type LoadJobsResult =
+  | { jobs: JobProgressTracker[]; error: null }
+  | { jobs: null; error: string };
+
+// Several components on one page (e.g. the Operations Hub stats strip and the
+// Job Tracker tab) each call useJobs(); share a single in-flight request so a
+// page mount or a realtime event fans out to one query instead of N.
+let inflightLoad: Promise<LoadJobsResult> | null = null;
+
+function loadJobs(): Promise<LoadJobsResult> {
+  if (inflightLoad) return inflightLoad;
+  inflightLoad = loadJobsFromApi().finally(() => {
+    inflightLoad = null;
+  });
+  return inflightLoad;
+}
+
+async function loadJobsFromApi(): Promise<LoadJobsResult> {
+  try {
+    const selectWithTitleCompleted = `
+        id, created_at, updated_at, created_by, job_name, job_location, job_description,
+        job_specs, start_date, end_date, status, notes, tracking_type, circuit,
+        estimated_total_spans, estimated_total_feet, span_progress_metric,
+        job_group_id, work_site_id, crew_id,
+        milestones:job_milestones(id, job_id, title, target_date, is_completed, sort_order),
+        crew_assignments:job_crew_assignments(id, job_id, user_id, assigned_at, assigned_by),
+        progress_updates:job_progress_updates(id, job_id, date, spans_completed, total_feet_completed, notes)
+      `;
+    const selectWithNameCompleted = `
+        id, created_at, updated_at, created_by, job_name, job_location, job_description,
+        job_specs, start_date, end_date, status, notes, tracking_type, circuit,
+        estimated_total_spans, estimated_total_feet, span_progress_metric,
+        job_group_id, work_site_id, crew_id,
+        milestones:job_milestones(id, job_id, name, target_date, completed, sort_order),
+        crew_assignments:job_crew_assignments(id, job_id, user_id, assigned_at, assigned_by),
+        progress_updates:job_progress_updates(id, job_id, date, spans_completed, total_feet_completed, notes)
+      `;
+
+    let jobsData: RawJobRow[] | null = null;
+    let jobsError: { message?: string; code?: string } | null = null;
+
+    const result = await supabase
+      .from('job_progress_trackers')
+      .select(selectWithTitleCompleted)
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    jobsData = result.data as RawJobRow[] | null;
+    jobsError = result.error;
+
+    // Only retry with legacy columns when the error says title or is_completed is missing.
+    // (Avoid retrying on other column errors, which would then fail with "name does not exist" on DBs that use title/is_completed.)
+    const suggestsLegacySchema = jobsError?.message && (
+      /\.title\s+does not exist|column.*title.*does not exist/i.test(jobsError.message) ||
+      /\.is_completed\s+does not exist|column.*is_completed.*does not exist/i.test(jobsError.message)
+    );
+    if (jobsError && suggestsLegacySchema) {
+      logger.warn('[useJobs] Milestone columns (title/is_completed) not found, retrying with name/completed');
+      const fallback = await supabase
+        .from('job_progress_trackers')
+        .select(selectWithNameCompleted)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      jobsData = fallback.data as RawJobRow[] | null;
+      jobsError = fallback.error;
+    }
+
+    if (jobsError) {
+      logger.error('Failed to fetch jobs:', jobsError);
+      const errorMsg = jobsError.message || jobsError.code || 'Unknown error';
+      return { jobs: null, error: `Failed to load jobs: ${errorMsg}` };
+    }
+
+    // Collect all unique user_ids from crew assignments
+    const userIds = new Set<string>();
+    (jobsData || []).forEach((job: RawJobRow) => {
+      job.crew_assignments?.forEach((a) => {
+        if (a.user_id) userIds.add(a.user_id);
+      });
+    });
+
+    // Fetch user profiles for all assigned users
+    let userMap: JobsUserMap = {};
+    if (userIds.size > 0) {
+      const { data: usersData } = await supabase
+        .from('user_profiles')
+        .select('user_id, email, full_name, role')
+        .in('user_id', Array.from(userIds));
+
+      if (usersData) {
+        userMap = usersData.reduce(
+          (acc, user) => {
+            acc[user.user_id] = {
+              email: user.email,
+              full_name: user.full_name,
+              role: user.role,
+            };
+            return acc;
+          },
+          {} as JobsUserMap
+        );
+      }
+    }
+
+    return {
+      jobs: transformJobsFromApi((jobsData || []) as RawJobRow[], userMap),
+      error: null,
+    };
+  } catch (err) {
+    logger.error('Unexpected error fetching jobs:', err);
+    return { jobs: null, error: 'Unable to load jobs. Please refresh the page or check your connection.' };
+  }
+}
+
 /**
  * Hook to manage jobs with full CRUD operations and realtime subscriptions
  */
@@ -33,107 +147,15 @@ export function useJobs(): UseJobsReturn {
   const [error, setError] = useState<string | null>(null);
 
   const fetchJobs = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const selectWithTitleCompleted = `
-          id, created_at, updated_at, created_by, job_name, job_location, job_description, 
-          job_specs, start_date, end_date, status, notes, tracking_type, circuit, 
-          estimated_total_spans, estimated_total_feet, span_progress_metric, 
-          job_group_id, work_site_id, crew_id,
-          milestones:job_milestones(id, job_id, title, target_date, is_completed, sort_order),
-          crew_assignments:job_crew_assignments(id, job_id, user_id, assigned_at, assigned_by),
-          progress_updates:job_progress_updates(id, job_id, date, spans_completed, total_feet_completed, notes)
-        `;
-      const selectWithNameCompleted = `
-          id, created_at, updated_at, created_by, job_name, job_location, job_description, 
-          job_specs, start_date, end_date, status, notes, tracking_type, circuit, 
-          estimated_total_spans, estimated_total_feet, span_progress_metric, 
-          job_group_id, work_site_id, crew_id,
-          milestones:job_milestones(id, job_id, name, target_date, completed, sort_order),
-          crew_assignments:job_crew_assignments(id, job_id, user_id, assigned_at, assigned_by),
-          progress_updates:job_progress_updates(id, job_id, date, spans_completed, total_feet_completed, notes)
-        `;
-
-      let jobsData: RawJobRow[] | null = null;
-      let jobsError: { message?: string; code?: string } | null = null;
-
-      const result = await supabase
-        .from('job_progress_trackers')
-        .select(selectWithTitleCompleted)
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      jobsData = result.data as RawJobRow[] | null;
-      jobsError = result.error;
-
-      // Only retry with legacy columns when the error says title or is_completed is missing.
-      // (Avoid retrying on other column errors, which would then fail with "name does not exist" on DBs that use title/is_completed.)
-      const suggestsLegacySchema = jobsError?.message && (
-        /\.title\s+does not exist|column.*title.*does not exist/i.test(jobsError.message) ||
-        /\.is_completed\s+does not exist|column.*is_completed.*does not exist/i.test(jobsError.message)
-      );
-      if (jobsError && suggestsLegacySchema) {
-        logger.warn('[useJobs] Milestone columns (title/is_completed) not found, retrying with name/completed');
-        const fallback = await supabase
-          .from('job_progress_trackers')
-          .select(selectWithNameCompleted)
-          .order('created_at', { ascending: false })
-          .limit(50);
-        jobsData = fallback.data as RawJobRow[] | null;
-        jobsError = fallback.error;
-      }
-
-      if (jobsError) {
-        logger.error('Failed to fetch jobs:', jobsError);
-        const errorMsg = jobsError.message || jobsError.code || 'Unknown error';
-        setError(`Failed to load jobs: ${errorMsg}`);
-        return;
-      }
-
-      // Collect all unique user_ids from crew assignments
-      const userIds = new Set<string>();
-      (jobsData || []).forEach((job: RawJobRow) => {
-        job.crew_assignments?.forEach((a) => {
-          if (a.user_id) userIds.add(a.user_id);
-        });
-      });
-
-      // Fetch user profiles for all assigned users
-      let userMap: JobsUserMap = {};
-      if (userIds.size > 0) {
-        const { data: usersData } = await supabase
-          .from('user_profiles')
-          .select('user_id, email, full_name, role')
-          .in('user_id', Array.from(userIds));
-
-        if (usersData) {
-          userMap = usersData.reduce(
-            (acc, user) => {
-              acc[user.user_id] = {
-                email: user.email,
-                full_name: user.full_name,
-                role: user.role,
-              };
-              return acc;
-            },
-            {} as JobsUserMap
-          );
-        }
-      }
-
-      const transformedJobs = transformJobsFromApi(
-        (jobsData || []) as RawJobRow[],
-        userMap
-      );
-      setJobs(transformedJobs);
-    } catch (err) {
-      logger.error('Unexpected error fetching jobs:', err);
-      setError('Unable to load jobs. Please refresh the page or check your connection.');
-    } finally {
-      setLoading(false);
+    setLoading(true);
+    setError(null);
+    const result = await loadJobs();
+    if (result.error !== null) {
+      setError(result.error);
+    } else {
+      setJobs(result.jobs);
     }
+    setLoading(false);
   }, []);
 
   const createJob = useCallback(async (

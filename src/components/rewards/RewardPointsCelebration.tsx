@@ -20,13 +20,13 @@ import { getDeviceCapabilities } from '../../lib/mobilePerf';
 import { Z } from "@/lib/zIndex";
 
 const CONFETTI_COLORS = [
-  '#10b981',
-  '#34d399',
-  '#6ee7b7',
-  '#fbbf24',
-  '#f59e0b',
+  '#3DDC84',
+  '#5EE898',
+  '#8DF5A8',
+  '#B8FF7A',
+  '#9BEB5B',
   '#ffffff',
-  '#a7f3d0',
+  '#C8FFD4',
 ];
 
 const PARTICLE_COUNT = 25;

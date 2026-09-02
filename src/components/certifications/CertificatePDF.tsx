@@ -1,6 +1,6 @@
 /**
  * Client-side PDF certificate generation with @react-pdf/renderer.
- * Brand colors: emerald (#059669, #10b981), dark (#042316).
+ * Brand colors: emerald (#2FA45A, #3DDC84), dark (#042316).
  *
  * If @react-pdf/renderer conflicts with the build (e.g. Node-only deps in Vite),
  * alternative: render certificate content in a hidden div with print-only CSS
@@ -26,14 +26,14 @@ const styles = StyleSheet.create({
   border: {
     flex: 1,
     borderWidth: 3,
-    borderColor: "#059669",
+    borderColor: "#2FA45A",
     borderRadius: 8,
     padding: 32,
   },
   innerBorder: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#6ee7b7",
+    borderColor: "#8DF5A8",
     borderRadius: 4,
     padding: 28,
   },
@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 12,
-    color: "#059669",
+    color: "#2FA45A",
     textAlign: "center",
     marginBottom: 32,
   },
@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
   },
   certName: {
     fontSize: 16,
-    color: "#065f46",
+    color: "#12482A",
     textAlign: "center",
     marginBottom: 20,
   },
@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 10,
-    color: "#6b7280",
+    color: "#5A6B60",
   },
   value: {
     fontSize: 11,
@@ -79,31 +79,31 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: "#d1fae5",
+    backgroundColor: "#D9FFE3",
     marginVertical: 20,
   },
   verification: {
     marginTop: 24,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: "#a7f3d0",
+    borderTopColor: "#C8FFD4",
   },
   verificationLabel: {
     fontSize: 9,
-    color: "#6b7280",
+    color: "#5A6B60",
     textAlign: "center",
     marginBottom: 4,
   },
   verificationCode: {
     fontSize: 12,
-    color: "#059669",
+    color: "#2FA45A",
     textAlign: "center",
     fontFamily: "Helvetica-Bold",
     marginBottom: 6,
   },
   verificationUrl: {
     fontSize: 9,
-    color: "#6b7280",
+    color: "#5A6B60",
     textAlign: "center",
   },
   footer: {
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     right: 48,
     textAlign: "center",
     fontSize: 8,
-    color: "#9ca3af",
+    color: "#8A9A8E",
   },
 });
 

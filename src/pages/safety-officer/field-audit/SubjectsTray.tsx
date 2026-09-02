@@ -8,9 +8,11 @@
  */
 
 import { useMemo, useState } from "react";
-import { Loader2, Users } from "lucide-react";
+import { Loader2, MapPinned, Users } from "lucide-react";
 import AddSubjectPanel, { type AddEquipmentInput } from "./AddSubjectPanel";
 import SubjectCard from "./SubjectCard";
+import SiteConditionsCard from "./SiteConditionsCard";
+import { describeSubject } from "./subjectDisplay";
 import { formToast } from "../../../lib/formToast";
 import { useCrewMembers } from "../../../hooks/jobs/useCrewMembers";
 import { useCrewDetails } from "../../../hooks/useCrews";
@@ -20,10 +22,7 @@ import {
   useFieldAuditPhotos,
   useFieldAuditSubjects,
 } from "../../../hooks/fieldAudit";
-import {
-  equipmentTypeLabel,
-  type FieldAuditItem,
-} from "../fieldAuditConstants";
+import type { FieldAuditItem } from "../fieldAuditConstants";
 
 interface SubjectsTrayProps {
   auditId: string;
@@ -78,15 +77,20 @@ export default function SubjectsTray({ auditId, crewId }: SubjectsTrayProps) {
     [subjects],
   );
 
-  const itemsBySubject = useMemo(() => {
+  // Subject rows keyed by subject; NULL-subject rows are the audit-wide site checks.
+  const { itemsBySubject, siteItems } = useMemo(() => {
     const map = new Map<string, FieldAuditItem[]>();
+    const site: FieldAuditItem[] = [];
     for (const it of items) {
-      if (!it.field_audit_subject_id) continue;
+      if (!it.field_audit_subject_id) {
+        site.push(it);
+        continue;
+      }
       const arr = map.get(it.field_audit_subject_id);
       if (arr) arr.push(it);
       else map.set(it.field_audit_subject_id, [it]);
     }
-    return map;
+    return { itemsBySubject: map, siteItems: site };
   }, [items]);
 
   const handleAddEquipment = async (input: AddEquipmentInput) => {
@@ -144,7 +148,24 @@ export default function SubjectsTray({ auditId, crewId }: SubjectsTrayProps) {
 
   return (
     <div className="space-y-4" data-testid="field-audit-subjects-tray">
+      {/* Audit-wide site checks — bound to the audit, not a person or unit. */}
       <div className="flex items-center gap-2">
+        <MapPinned className="w-4 h-4 text-rose-300/80" aria-hidden />
+        <h3 className="text-sm font-semibold text-white">Site</h3>
+      </div>
+      <SiteConditionsCard
+        auditId={auditId}
+        configItems={configItems}
+        siteItems={siteItems}
+        itemsLoading={itemsLoading}
+        saveItem={saveItem}
+        removeItem={removeItem}
+        uploadPhoto={uploadPhoto}
+        deletePhoto={deletePhoto}
+        getSignedUrl={getSignedUrl}
+      />
+
+      <div className="flex items-center gap-2 pt-1">
         <Users className="w-4 h-4 text-rose-300/80" aria-hidden />
         <h3 className="text-sm font-semibold text-white">Subjects</h3>
         <span className="text-[11px] font-mono tabular-nums text-white/35">
@@ -172,26 +193,17 @@ export default function SubjectsTray({ auditId, crewId }: SubjectsTrayProps) {
       ) : (
         <div className="space-y-3">
           {subjects.map((subject) => {
-            const isPerson = subject.subject_type === "person";
             const profile = subject.person_id
               ? profileById.get(subject.person_id)
               : undefined;
-            const displayName = isPerson
-              ? profile?.full_name || profile?.email || "Crew member"
-              : equipmentTypeLabel(subject.equipment_type) +
-                (subject.equipment_number ? ` · ${subject.equipment_number}` : "");
-            const subtitle = isPerson
-              ? profile?.role || "Person"
-              : subject.is_custom_equipment
-                ? "Custom equipment"
-                : "Equipment";
+            const display = describeSubject(subject, profile);
 
             return (
               <SubjectCard
                 key={subject.id}
                 subject={subject}
-                displayName={displayName}
-                subtitle={subtitle}
+                displayName={display.name}
+                subtitle={display.subtitle}
                 auditId={auditId}
                 configItems={configItems}
                 subjectItems={itemsBySubject.get(subject.id) ?? []}

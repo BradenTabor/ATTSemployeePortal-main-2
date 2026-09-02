@@ -14,7 +14,7 @@ export interface HistoryEmptyStateProps {
 }
 
 const defaultIcon = (
-  <div className={`w-14 h-14 rounded-2xl ${glass.subtle} flex items-center justify-center`}>
+  <div className={`w-14 h-14 rounded-leaf-sm ${glass.subtle} flex items-center justify-center`}>
     <FileSearch className="w-7 h-7 text-white/40" aria-hidden />
   </div>
 );

@@ -9,7 +9,7 @@ import type { IconInteractionProps } from './ExpandableSection';
 import { getGridExpandStyles, getGridContentStyles, springSnappy, instant } from '../../motion';
 
 // Ember glow color palette
-const GLOW_COLORS = ['#f6b78f', '#ff6f3c', '#ffa366', '#ff9350'];
+const GLOW_COLORS = ['#DDFF85', '#ff6f3c', '#C8F55E', '#B8FF7A'];
 
 interface EmberExpandableSectionProps {
   /** Unique ID for ARIA attributes */
@@ -156,24 +156,24 @@ function EmberExpandableSectionComponent({
         borderShimmer={true}
         surfaceShimmer={true}
         duration={4}
-        className="rounded-3xl"
-        borderColor="rgba(255, 147, 80, 0.15)"
+        className="rounded-leaf"
+        borderColor="rgba(200,245,94, 0.15)"
       >
         <section
           className={cn(
-            'relative rounded-3xl transition-all duration-300',
+            'relative rounded-leaf transition-all duration-300',
             // Premium ember glass morphism styling
-            'bg-gradient-to-br from-[#1a0a06]/95 via-[#140804]/90 to-[#0c0402]/95',
-            'border border-[#ff9350]/30',
+            'bg-gradient-to-br from-[#0B100D]/95 via-[#0B100D]/90 to-[#040605]/95',
+            'border border-[#B8FF7A]/30',
             // Enhanced shadow for depth
-            'shadow-[0_0_40px_-12px_rgba(255,147,80,0.25)]',
-            'shadow-[#ff9350]/10',
+            'shadow-[0_0_40px_-12px_rgba(200,245,94,0.25)]',
+            'shadow-[#B8FF7A]/10',
             // Backdrop blur for glass effect
             'backdrop-blur-sm'
           )}
         >
           {/* Inner glow accent */}
-          <div className="absolute inset-0 rounded-3xl bg-gradient-to-b from-[#ff9350]/5 via-transparent to-transparent pointer-events-none" />
+          <div className="absolute inset-0 rounded-leaf bg-gradient-to-b from-[#B8FF7A]/5 via-transparent to-transparent pointer-events-none" />
 
           {/* Header - clickable toggle area */}
           <div className="relative p-4 md:p-6">
@@ -190,34 +190,34 @@ function EmberExpandableSectionComponent({
                 aria-label={isOpen ? `Collapse ${title}` : `Expand ${title}`}
                 className={cn(
                   'flex-1 flex items-center gap-3 text-left',
-                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#ff9350]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#140804]',
+                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B8FF7A]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]',
                   'rounded-xl -m-2 p-2 transition-all duration-200',
-                  'hover:bg-[#ff9350]/5'
+                  'hover:bg-[#B8FF7A]/5'
                 )}
               >
                 {/* Icon/Avatar container with premium ember styling */}
                 {enhancedIcon && (
                   <motion.div
                     className={cn(
-                      'flex-shrink-0 w-16 h-20 md:w-18 md:h-22 rounded-2xl',
-                      'bg-gradient-to-br from-[#ff9350]/15 via-[#ff6f3c]/8 to-transparent',
-                      'border border-[#ffb48a]/30',
+                      'flex-shrink-0 w-16 h-20 md:w-18 md:h-22 rounded-leaf-sm',
+                      'bg-gradient-to-br from-[#B8FF7A]/15 via-[#ff6f3c]/8 to-transparent',
+                      'border border-[#D2FFA3]/30',
                       'flex items-center justify-center',
-                      'shadow-xl shadow-[#ff9350]/20',
-                      'ring-1 ring-inset ring-[#ffb48a]/5',
+                      'shadow-xl shadow-[#B8FF7A]/20',
+                      'ring-1 ring-inset ring-[#D2FFA3]/5',
                       'overflow-visible relative'
                     )}
                     animate={{
                       scale: isHovered && shouldAnimate ? 1.03 : 1,
                       boxShadow: isHovered 
-                        ? '0 0 50px rgba(255, 147, 80, 0.4)' 
-                        : '0 20px 25px -5px rgba(255, 147, 80, 0.2)',
+                        ? '0 0 50px rgba(200,245,94, 0.4)' 
+                        : '0 20px 25px -5px rgba(200,245,94, 0.2)',
                     }}
                     transition={hoverTransition}
                   >
                     {/* Inner glow effect - intensifies on hover */}
                     <motion.div 
-                      className="absolute inset-0 rounded-2xl bg-gradient-to-t from-[#ff9350]/8 via-transparent to-[#ffb48a]/3 pointer-events-none"
+                      className="absolute inset-0 rounded-leaf-sm bg-gradient-to-t from-[#B8FF7A]/8 via-transparent to-[#D2FFA3]/3 pointer-events-none"
                       animate={{
                         opacity: isHovered ? 1.5 : 1,
                       }}
@@ -225,7 +225,7 @@ function EmberExpandableSectionComponent({
                     />
                     {/* Subtle ambient light - pulses on toggle */}
                     <motion.div 
-                      className="absolute -inset-2 rounded-3xl bg-gradient-to-b from-[#ffb48a]/8 to-transparent blur-md pointer-events-none"
+                      className="absolute -inset-2 rounded-leaf bg-gradient-to-b from-[#D2FFA3]/8 to-transparent blur-md pointer-events-none"
                       animate={{
                         scale: wasJustToggled && shouldAnimate ? [1, 1.2, 1] : 1,
                         opacity: wasJustToggled && shouldAnimate ? [0.5, 1, 0.5] : 0.5,
@@ -242,12 +242,12 @@ function EmberExpandableSectionComponent({
                 {/* Title and subtitle */}
                 <div className="flex-1 min-w-0">
                   <h3 className="text-base md:text-lg font-bold text-white flex items-center gap-2">
-                    <span className="bg-gradient-to-r from-white via-[#ffe4c9] to-white/80 bg-clip-text text-transparent">
+                    <span className="bg-gradient-to-r from-white via-[#F5FFD1] to-white/80 bg-clip-text text-transparent">
                       {title}
                     </span>
                   </h3>
                   {subtitle && (
-                    <p className="text-xs md:text-sm text-[#ffd4b8]/60 mt-0.5 line-clamp-1">
+                    <p className="text-xs md:text-sm text-[#ECFFAE]/60 mt-0.5 line-clamp-1">
                       {subtitle}
                     </p>
                   )}
@@ -262,12 +262,12 @@ function EmberExpandableSectionComponent({
                   transition={chevronTransition}
                   className={cn(
                     'flex-shrink-0 w-8 h-8 rounded-lg',
-                    'bg-[#ff9350]/10 border border-[#ff9350]/20',
+                    'bg-[#B8FF7A]/10 border border-[#B8FF7A]/20',
                     'flex items-center justify-center'
                   )}
                 >
                   <ChevronDown
-                    className="w-4 h-4 text-[#ffb48a]/70"
+                    className="w-4 h-4 text-[#D2FFA3]/70"
                     aria-hidden="true"
                   />
                 </motion.div>
@@ -290,7 +290,7 @@ function EmberExpandableSectionComponent({
             <div className="overflow-hidden">
               <div style={contentOpacityStyles}>
                 {/* Divider line */}
-                <div className="mx-4 md:mx-6 h-px bg-gradient-to-r from-transparent via-[#ff9350]/30 to-transparent" />
+                <div className="mx-4 md:mx-6 h-px bg-gradient-to-r from-transparent via-[#B8FF7A]/30 to-transparent" />
                 
                 <div className="px-4 pb-4 md:px-6 md:pb-6 pt-4">
                   {/* Staggered content reveal */}

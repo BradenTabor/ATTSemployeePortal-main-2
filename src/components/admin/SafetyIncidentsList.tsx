@@ -74,7 +74,7 @@ const SEVERITY_CONFIG = {
     borderClass: "border-amber-500/25",
     textClass: "text-amber-300",
     dotClass: "bg-amber-400",
-    glowClass: "shadow-[0_0_8px_rgba(245,158,11,0.15)]",
+    glowClass: "shadow-[0_0_8px_rgba(174,219,63,0.15)]",
   },
   first_aid: {
     label: "First Aid",
@@ -82,7 +82,7 @@ const SEVERITY_CONFIG = {
     borderClass: "border-sky-500/25",
     textClass: "text-sky-300",
     dotClass: "bg-sky-400",
-    glowClass: "shadow-[0_0_8px_rgba(14,165,233,0.15)]",
+    glowClass: "shadow-[0_0_8px_rgba(95,175,134,0.15)]",
   },
   recordable: {
     label: "Recordable",
@@ -90,7 +90,7 @@ const SEVERITY_CONFIG = {
     borderClass: "border-orange-500/25",
     textClass: "text-orange-300",
     dotClass: "bg-orange-400",
-    glowClass: "shadow-[0_0_8px_rgba(249,115,22,0.15)]",
+    glowClass: "shadow-[0_0_8px_rgba(174,219,63,0.15)]",
   },
   lost_time: {
     label: "Lost Time",
@@ -292,14 +292,14 @@ function IncidentDetailModal({
             <div className="flex items-center gap-2">
               <Calendar className="w-3.5 h-3.5 text-red-400/60 flex-shrink-0" />
               <div className="min-w-0">
-                <p className="text-[9px] text-white/35 uppercase tracking-wider font-medium">Date</p>
+                <p className="text-[9px] text-white/35 uppercase font-medium font-mono font-medium tracking-[0.14em]">Date</p>
                 <p className="text-[11px] text-white/80 font-medium tabular-nums">{formatDate(incident.incident_date)}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <Clock className="w-3.5 h-3.5 text-red-400/60 flex-shrink-0" />
               <div className="min-w-0">
-                <p className="text-[9px] text-white/35 uppercase tracking-wider font-medium">Reported</p>
+                <p className="text-[9px] text-white/35 uppercase font-medium font-mono font-medium tracking-[0.14em]">Reported</p>
                 <p className="text-[11px] text-white/80 font-medium">{getRelativeTime(incident.reported_at)}</p>
               </div>
             </div>
@@ -307,7 +307,7 @@ function IncidentDetailModal({
               <div className="flex items-center gap-2 col-span-2">
                 <MapPin className="w-3.5 h-3.5 text-red-400/60 flex-shrink-0" />
                 <div className="min-w-0">
-                  <p className="text-[9px] text-white/35 uppercase tracking-wider font-medium">Work Site</p>
+                  <p className="text-[9px] text-white/35 uppercase font-medium font-mono font-medium tracking-[0.14em]">Work Site</p>
                   <p className="text-[11px] text-white/80 font-medium truncate">{incident.work_site_name}</p>
                 </div>
               </div>
@@ -322,7 +322,7 @@ function IncidentDetailModal({
           >
             <div className="flex items-center gap-1.5 mb-1.5">
               <FileText className="w-3.5 h-3.5 text-white/30" />
-              <p className="text-[10px] text-white/35 uppercase tracking-wider font-medium">Description</p>
+              <p className="text-[10px] text-white/35 uppercase font-medium font-mono font-medium tracking-[0.14em]">Description</p>
             </div>
             <p className="text-[12px] text-white/75 leading-relaxed bg-white/[0.03] rounded-xl p-3 border border-white/[0.06]">
               {incident.description}
@@ -336,7 +336,7 @@ function IncidentDetailModal({
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, ...itemSpring }}
             >
-              <p className="text-[10px] text-white/35 uppercase tracking-wider font-medium mb-2">Contributing Factors</p>
+              <p className="text-[10px] text-white/35 uppercase font-medium mb-2 font-mono font-medium tracking-[0.14em]">Contributing Factors</p>
               <div className="flex flex-wrap gap-1.5">
                 {incident.contributing_factors.map((factor) => (
                   <span
@@ -359,7 +359,7 @@ function IncidentDetailModal({
             >
               <div className="flex items-center gap-1.5 mb-2">
                 <Users className="w-3.5 h-3.5 text-white/30" />
-                <p className="text-[10px] text-white/35 uppercase tracking-wider font-medium">
+                <p className="text-[10px] text-white/35 uppercase font-medium font-mono font-medium tracking-[0.14em]">
                   Involved ({incident.involved_user_ids.length})
                 </p>
               </div>
@@ -527,7 +527,7 @@ export default function SafetyIncidentsList({ onLogIncident, className }: Safety
                   <AlertTriangle className="w-4.5 h-4.5 text-red-400" />
                 </div>
                 {stats.total > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-red-500 text-[9px] font-bold text-white flex items-center justify-center ring-2 ring-[#0d0505] tabular-nums">
+                  <span className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-red-500 text-[9px] font-bold text-white flex items-center justify-center ring-2 ring-[#040605] tabular-nums">
                     {stats.total > 99 ? "99+" : stats.total}
                   </span>
                 )}
@@ -882,7 +882,7 @@ export default function SafetyIncidentsList({ onLogIncident, className }: Safety
                     </div>
                   ) : osha300PreviewData?.rows.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-16 text-white/40 text-center max-w-sm mx-auto">
-                      <div className="w-14 h-14 rounded-2xl bg-white/[0.03] flex items-center justify-center mb-4">
+                      <div className="w-14 h-14 rounded-leaf-sm bg-white/[0.03] flex items-center justify-center mb-4">
                         <FileText className="w-7 h-7 opacity-30" />
                       </div>
                       <p className="text-sm font-semibold text-white/60 mb-2">No recordable incidents</p>
@@ -897,7 +897,7 @@ export default function SafetyIncidentsList({ onLogIncident, className }: Safety
                         <thead>
                           <tr className="border-b border-white/[0.08] bg-white/[0.02]">
                             {OSHA_300_PREVIEW_COLUMNS.map((col) => (
-                              <th key={col.key} className="py-2.5 px-3 font-semibold text-white/50 whitespace-nowrap text-[11px] uppercase tracking-wider">
+                              <th key={col.key} className="py-2.5 px-3 text-white/50 whitespace-nowrap text-[11px] uppercase font-mono font-medium tracking-[0.14em]">
                                 {col.label}
                               </th>
                             ))}

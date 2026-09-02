@@ -6,7 +6,7 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { MapPin, Loader2, ChevronDown, AlertCircle } from 'lucide-react';
+import { MapPin, Loader2, ChevronDown, AlertCircle, Camera } from 'lucide-react';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { glass } from '../../lib/glass';
 import { cn } from '../../lib/utils';
@@ -23,6 +23,7 @@ import type { NearMissCategory } from '../../types/nearMiss';
 import type { NearMissFormState } from '../../hooks/nearMiss/useNearMissValidation';
 import { formatInTimeZone } from 'date-fns-tz';
 import { formToast } from '../../lib/formToast';
+import { uploadBatch } from '../../lib/asyncPool';
 
 const TIMEZONE = 'America/Chicago';
 const CATEGORIES: { value: NearMissCategory; label: string }[] = [
@@ -240,11 +241,11 @@ export default function NearMissReportForm() {
 
     try {
       if (isOnline() && photoFiles.length > 0) {
-        for (let i = 0; i < photoFiles.length; i++) {
-          const path = await uploadPhoto(photoFiles[i], i + 1);
-          uploadedPaths.push(path);
-        }
-        state.photo_paths = uploadedPaths;
+        state.photo_paths = await uploadBatch(
+          photoFiles,
+          (file, i) => uploadPhoto(file, i + 1),
+          uploadedPaths,
+        );
       }
 
       const res = await submit(
@@ -293,16 +294,18 @@ export default function NearMissReportForm() {
         onRestore={restoreDraft}
         onDiscard={discardDraft}
       />
-      <div className="relative max-w-lg mx-auto">
+      {/* w-full: <main> is items-center, so without a definite width this
+          wrapper shrink-to-fits the <select>'s longest option and overflows. */}
+      <div className="relative w-full max-w-lg mx-auto">
         {/* Layer 1 — static atmospheric depth (no animation) */}
         <div
-          className="absolute inset-0 pointer-events-none select-none -z-[1] overflow-hidden rounded-2xl"
+          className="absolute inset-0 pointer-events-none select-none -z-[1] overflow-hidden rounded-leaf-sm"
           aria-hidden="true"
         >
           <div
             className="absolute -top-24 -right-24 w-80 h-80 rounded-full opacity-[0.06]"
             style={{
-              background: 'radial-gradient(circle, rgb(16, 185, 129), transparent 70%)',
+              background: 'radial-gradient(circle, rgb(47, 164, 90), transparent 70%)',
               filter: 'blur(60px)',
             }}
           />
@@ -315,7 +318,7 @@ export default function NearMissReportForm() {
           className={cn(glass.card, 'p-6 sm:p-8 space-y-6 relative z-0')}
         >
           <header className="space-y-1">
-            <h1 className="text-2xl font-bold text-white leading-tight">Report Near-Miss</h1>
+            <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">Report Near-Miss</h1>
             <p className="text-sm text-white/60 leading-relaxed">
               Your report helps prevent future incidents.
             </p>
@@ -334,14 +337,14 @@ export default function NearMissReportForm() {
                   type="date"
                   value={incidentDate}
                   readOnly
-                  className={cn(inputBase, 'flex-1 min-h-[48px]')}
+                  className={cn(inputBase, 'flex-1 min-w-0 min-h-[48px]')}
                   aria-readonly="true"
                 />
                 <input
                   type="time"
                   value={incidentTime}
                   readOnly
-                  className={cn(inputBase, 'flex-1 min-h-[48px]')}
+                  className={cn(inputBase, 'flex-1 min-w-0 min-h-[48px]')}
                   aria-readonly="true"
                 />
               </div>
@@ -446,31 +449,54 @@ export default function NearMissReportForm() {
 
             <div>
               <label className={labelClass}>Photos (optional)</label>
-              <div className="space-y-3">
-                {[0, 1, 2].map((i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        handlePhotoChange(i, f ?? null);
-                      }}
-                      className="flex-1 text-sm text-white/80 file:mr-3 file:rounded-lg file:border file:border-white/10 file:bg-gray-800 file:px-3 file:py-2 file:text-white/80 file:focus:outline-none file:focus-visible:ring-2 file:focus-visible:ring-emerald-500/50 file:cursor-pointer"
-                      aria-label={`Upload photo ${i + 1}`}
-                    />
-                    {pendingPhotos[i] && (
-                      <button
-                        type="button"
-                        onClick={() => handlePhotoChange(i, null)}
-                        className="text-xs text-red-400 hover:text-red-300 shrink-0 transition-colors duration-150"
-                        aria-label={`Remove photo ${i + 1}`}
+              {/* Same camera-button pattern as DVIR / Equipment: the native
+                  file input is visually hidden (its intrinsic width overflowed
+                  phone viewports) and a 44px label is the tap target. */}
+              <div className="space-y-2">
+                {[0, 1, 2].map((i) => {
+                  const inputId = `near-miss-photo-${i}`;
+                  const file = pendingPhotos[i];
+                  return (
+                    <div key={i} className="flex min-w-0 items-center gap-2">
+                      <input
+                        id={inputId}
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        className="sr-only"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          handlePhotoChange(i, f ?? null);
+                        }}
+                        aria-label={`Upload photo ${i + 1}`}
+                      />
+                      <label
+                        htmlFor={inputId}
+                        className={cn(
+                          'flex min-h-[44px] min-w-0 flex-1 cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2 text-sm transition-colors duration-150',
+                          file
+                            ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-100'
+                            : 'border-white/10 bg-black/40 text-white/70 hover:border-emerald-500/30 hover:text-white',
+                        )}
                       >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                ))}
+                        <Camera className="h-4 w-4 shrink-0 text-emerald-400" aria-hidden />
+                        <span className="min-w-0 flex-1 truncate">
+                          {file ? file.name : `Add photo ${i + 1}`}
+                        </span>
+                      </label>
+                      {file && (
+                        <button
+                          type="button"
+                          onClick={() => handlePhotoChange(i, null)}
+                          className="tap-44 relative shrink-0 rounded-md px-2 py-2 text-xs text-red-400 transition-colors duration-150 hover:text-red-300"
+                          aria-label={`Remove photo ${i + 1}`}
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 

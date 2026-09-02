@@ -231,6 +231,13 @@ export function itemAppliesToEquipment(
   return item.equipment_types.includes(token);
 }
 
+function sortBySection(items: AuditChecklistItem[]): AuditChecklistItem[] {
+  return [...items].sort(
+    (a, b) =>
+      a.section_key.localeCompare(b.section_key) || a.sort_order - b.sort_order,
+  );
+}
+
 /** Applicable seeded items for a subject, sorted by section then sort_order. */
 export function checklistItemsForSubject(
   items: AuditChecklistItem[],
@@ -240,11 +247,25 @@ export function checklistItemsForSubject(
     subject.subject_type === "person"
       ? items.filter((i) => i.subject_scope === "person")
       : items.filter((i) => itemAppliesToEquipment(i, subject.equipment_type));
-  return [...applicable].sort(
-    (a, b) =>
-      a.section_key.localeCompare(b.section_key) || a.sort_order - b.sort_order,
-  );
+  return sortBySection(applicable);
 }
+
+/**
+ * Audit-wide (site-scoped) seeded items — work zone, felling site, emergency
+ * preparedness, housekeeping. Stored on `field_audit_items` with a NULL
+ * `field_audit_subject_id` (bound to the audit, not a person or unit).
+ */
+export function checklistItemsForSite(items: AuditChecklistItem[]): AuditChecklistItem[] {
+  return sortBySection(items.filter((i) => i.subject_scope === "site"));
+}
+
+/** Scope a checklist renders against: one subject, or the audit itself. */
+export type ChecklistScope =
+  | { kind: "subject"; subject: FieldAuditSubject }
+  | { kind: "site" };
+
+/** Escalation branch a finding belongs to (drives the points-deduction affordance). */
+export type FindingSubjectType = "person" | "equipment" | "site";
 
 // ── Read-time rollup status (no denormalized column) ────────────────────────
 

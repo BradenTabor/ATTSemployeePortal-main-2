@@ -21,11 +21,11 @@ export interface ShimmerButtonProps extends React.ButtonHTMLAttributes<HTMLButto
 export const ShimmerButton = memo(forwardRef<HTMLButtonElement, ShimmerButtonProps>(
   function ShimmerButton(
     {
-      shimmerColor = '#10b981',
+      shimmerColor = '#3DDC84',
       shimmerSize = '0.05em',
       shimmerDuration = '3s',
       borderRadius = '12px',
-      background = 'rgba(16, 185, 129, 0.9)',
+      background = 'rgba(47,164,90, 0.9)',
       className,
       children,
       ...props

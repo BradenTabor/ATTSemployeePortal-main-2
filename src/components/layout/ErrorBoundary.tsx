@@ -13,7 +13,7 @@ function ErrorFallback({ error, resetErrorBoundary }: ErrorFallbackProps) {
   return (
     <div className="min-h-[400px] flex items-center justify-center p-8">
       <div className="max-w-md w-full text-center space-y-6">
-        <div className="w-16 h-16 mx-auto rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center">
+        <div className="w-16 h-16 mx-auto rounded-leaf-sm bg-red-500/10 border border-red-500/30 flex items-center justify-center">
           <AlertTriangle className="w-8 h-8 text-red-400" />
         </div>
 
@@ -32,7 +32,7 @@ function ErrorFallback({ error, resetErrorBoundary }: ErrorFallbackProps) {
 
         <button
           onClick={resetErrorBoundary}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-colors"
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-leaf-sm bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-colors"
         >
           <RefreshCw className="w-4 h-4" />
           Try Again

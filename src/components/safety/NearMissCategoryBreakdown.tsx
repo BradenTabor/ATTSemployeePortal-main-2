@@ -4,9 +4,10 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { Loader2, AlertTriangle, Layers } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { useDashboardCardTheme } from '../../contexts/dashboardCardTheme';
+import WidgetHeader from '../dashboard/WidgetHeader';
 import { startOfQuarter, endOfQuarter } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 
@@ -24,14 +25,14 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  fall_hazard: '#f59e0b',
+  fall_hazard: '#9BEB5B',
   struck_by: '#ef4444',
-  electrical: '#eab308',
-  caught_in: '#8b5cf6',
-  vehicle: '#3b82f6',
-  environmental: '#10b981',
-  ergonomic: '#06b6d4',
-  other: '#64748b',
+  electrical: '#9BEB5B',
+  caught_in: '#7DCDA2',
+  vehicle: '#8DF5A8',
+  environmental: '#3DDC84',
+  ergonomic: '#468A68',
+  other: '#5FAF86',
 };
 
 interface IncidentRow {
@@ -86,9 +87,9 @@ export default function NearMissCategoryBreakdown() {
   if (isLoading) {
     return (
       <div className={`${cardClass} p-4`}>
-        <h3 className="text-sm font-semibold text-white mb-3">Near-Miss by Category (this quarter)</h3>
+        <WidgetHeader title="Near-Miss by Category (this quarter)" icon={Layers} />
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="w-6 h-6 animate-spin text-emerald-400" aria-hidden />
+          <Loader2 className="w-6 h-6 animate-spin text-rose-300/80" aria-hidden />
         </div>
       </div>
     );
@@ -97,7 +98,7 @@ export default function NearMissCategoryBreakdown() {
   if (error) {
     return (
       <div className={`${cardClass} p-4`}>
-        <h3 className="text-sm font-semibold text-white mb-3">Near-Miss by Category (this quarter)</h3>
+        <WidgetHeader title="Near-Miss by Category (this quarter)" icon={Layers} />
         <div className="flex items-center gap-2 py-4 text-red-300 text-sm">
           <AlertTriangle className="w-5 h-5 flex-shrink-0" />
           <span>{error.message}</span>
@@ -109,7 +110,7 @@ export default function NearMissCategoryBreakdown() {
   if (sorted.length === 0) {
     return (
       <div className={`${cardClass} p-4`}>
-        <h3 className="text-sm font-semibold text-white mb-3">Near-Miss by Category (this quarter)</h3>
+        <WidgetHeader title="Near-Miss by Category (this quarter)" icon={Layers} />
         <p className="text-sm text-white/80 py-4">No near-misses reported this quarter.</p>
       </div>
     );
@@ -117,7 +118,7 @@ export default function NearMissCategoryBreakdown() {
 
   return (
     <div className={`${cardClass} p-4`}>
-      <h3 className="text-sm font-semibold text-white mb-3">Near-Miss by Category (this quarter)</h3>
+      <WidgetHeader title="Near-Miss by Category (this quarter)" icon={Layers} />
       <div className="flex flex-col gap-2">
         {sorted.map(([cat, count]) => {
           const widthPct = maxCount > 0 ? (count / maxCount) * 100 : 0;
@@ -137,7 +138,7 @@ export default function NearMissCategoryBreakdown() {
                     width: `${widthPct}%`,
                     minWidth: count > 0 ? 4 : 0,
                     height: '100%',
-                    backgroundColor: CATEGORY_COLORS[cat] ?? '#64748b',
+                    backgroundColor: CATEGORY_COLORS[cat] ?? '#5FAF86',
                   }}
                   title={`${count}`}
                 />

@@ -100,7 +100,7 @@ export function StepSiteHazards({
       <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 space-y-3">
         <div className="flex items-center gap-2">
           <Zap className="w-4 h-4 text-amber-400" />
-          <p className="text-xs font-semibold text-amber-200 uppercase tracking-wide">
+          <p className="text-xs text-amber-200 uppercase font-mono font-medium tracking-[0.14em]">
             Electrical Hazards
           </p>
         </div>
@@ -124,7 +124,7 @@ export function StepSiteHazards({
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <Car className="w-4 h-4 text-emerald-400" />
-          <p className="text-xs font-semibold text-white/70 uppercase tracking-wide">
+          <p className="text-xs text-white/70 uppercase font-mono font-medium tracking-[0.14em]">
             Traffic Hazards
           </p>
         </div>
@@ -139,7 +139,7 @@ export function StepSiteHazards({
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 text-emerald-400" />
-          <p className="text-xs font-semibold text-white/70 uppercase tracking-wide">
+          <p className="text-xs text-white/70 uppercase font-mono font-medium tracking-[0.14em]">
             Work Zone Setup
           </p>
         </div>

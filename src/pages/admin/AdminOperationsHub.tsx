@@ -158,8 +158,8 @@ function SitesEmptyState({ onAdd }: { onAdd: () => void }) {
       animate={{ opacity: 1, y: 0 }}
       className="flex flex-col items-center justify-center py-12 px-4"
     >
-      <div className="w-14 h-14 rounded-2xl bg-[#f4c979]/10 border border-[#f4c979]/20 flex items-center justify-center mb-4">
-        <MapPinOff className="w-7 h-7 text-[#f4c979]/50" />
+      <div className="w-14 h-14 rounded-leaf-sm bg-[#F4F7F2]/10 border border-[#F4F7F2]/20 flex items-center justify-center mb-4">
+        <MapPinOff className="w-7 h-7 text-[#F4F7F2]/50" />
       </div>
       <h3 className="text-base font-semibold text-white/90 mb-2">No Work Sites Yet</h3>
       <p className="text-sm text-white/50 text-center max-w-sm mb-5">
@@ -169,7 +169,7 @@ function SitesEmptyState({ onAdd }: { onAdd: () => void }) {
         type="button"
         onClick={onAdd}
         aria-label="Add first work site"
-        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#332308] font-semibold text-sm hover:scale-[1.02] transition-transform focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#E4EAE1] via-[#F4F7F2] to-[#8DF5A8] text-[#040605] font-semibold text-sm hover:scale-[1.02] transition-transform focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#F4F7F2] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
       >
         <Plus className="w-4 h-4" aria-hidden />
         Add First Site
@@ -438,19 +438,19 @@ function SiteFormModal({
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-2xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] shadow-2xl overflow-y-auto overflow-x-hidden my-auto max-h-[90vh]"
+        className="w-full max-w-md rounded-leaf-sm border border-[#E4EAE1]/20 bg-gradient-to-br from-[#0B100D] via-[#040605] to-[#040605] shadow-2xl overflow-y-auto overflow-x-hidden my-auto max-h-[90vh]"
       >
-        <div className="px-5 py-4 border-b border-[#f6dcb2]/10 flex items-center justify-between">
+        <div className="px-5 py-4 border-b border-[#E4EAE1]/10 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#f4c979]/15 flex items-center justify-center">
-              {isEdit ? <Pencil className="w-5 h-5 text-[#f4c979]" /> : <Plus className="w-5 h-5 text-[#f4c979]" />}
+            <div className="w-10 h-10 rounded-xl bg-[#F4F7F2]/15 flex items-center justify-center">
+              {isEdit ? <Pencil className="w-5 h-5 text-[#F4F7F2]" /> : <Plus className="w-5 h-5 text-[#F4F7F2]" />}
             </div>
             <div>
               <h3 className="font-semibold text-white">{isEdit ? 'Edit Site' : 'Add Work Site'}</h3>
               <p className="text-xs text-white/40">GPS location for forecasting</p>
             </div>
           </div>
-          <button type="button" onClick={onClose} className="p-2 rounded-lg hover:bg-white/5 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]" aria-label="Close site form">
+          <button type="button" onClick={onClose} className="p-2 rounded-lg hover:bg-white/5 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]" aria-label="Close site form">
             <X className="w-5 h-5 text-white/50" aria-hidden />
           </button>
         </div>
@@ -463,7 +463,7 @@ function SiteFormModal({
               value={form.name}
               onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
               placeholder="e.g., Main Yard"
-              className="w-full px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus-visible:border-[#f4c979]/40"
+              className="w-full px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus-visible:border-[#F4F7F2]/40"
             />
           </div>
 
@@ -477,11 +477,11 @@ function SiteFormModal({
                   onChange={(e) => handleAddressChange(e.target.value)}
                   onFocus={() => predictions.length > 0 && setShowPredictions(true)}
                   placeholder="Search address..."
-                  className="w-full px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus-visible:border-[#f4c979]/40 pr-10"
+                  className="w-full px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus-visible:border-[#F4F7F2]/40 pr-10"
                 />
                 {isSearching && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <Loader2 className="w-4 h-4 text-[#f4c979] animate-spin" />
+                    <Loader2 className="w-4 h-4 text-[#F4F7F2] animate-spin" />
                   </div>
                 )}
                 
@@ -491,16 +491,16 @@ function SiteFormModal({
                       initial={{ opacity: 0, y: -5 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -5 }}
-                      className="absolute z-50 top-full left-0 right-0 mt-1 rounded-xl border border-[#f4c979]/20 bg-[#14110d] shadow-xl overflow-hidden"
+                      className="absolute z-50 top-full left-0 right-0 mt-1 rounded-xl border border-[#F4F7F2]/20 bg-[#0B100D] shadow-xl overflow-hidden"
                     >
                       {predictions.map((prediction) => (
                         <button
                           key={prediction.place_id}
                           type="button"
                           onClick={() => handleSelectPrediction(prediction)}
-                          className="w-full px-3 py-2.5 text-left hover:bg-[#f4c979]/10 transition-colors flex items-start gap-2"
+                          className="w-full px-3 py-2.5 text-left hover:bg-[#F4F7F2]/10 transition-colors flex items-start gap-2"
                         >
-                          <MapPin className="w-4 h-4 text-[#f4c979] flex-shrink-0 mt-0.5" />
+                          <MapPin className="w-4 h-4 text-[#F4F7F2] flex-shrink-0 mt-0.5" />
                           <div className="min-w-0">
                             <p className="text-sm text-white truncate">{prediction.structured_formatting.main_text}</p>
                             <p className="text-xs text-white/50 truncate">{prediction.structured_formatting.secondary_text}</p>
@@ -517,7 +517,7 @@ function SiteFormModal({
                 onClick={handleGetCurrentLocation}
                 disabled={gettingCurrentLocation}
                 aria-label={gettingCurrentLocation ? "Getting current location..." : "Use current location"}
-                className="px-3 py-2.5 rounded-xl bg-[#f4c979]/15 border border-[#f4c979]/30 text-[#f4c979] hover:bg-[#f4c979]/25 transition-colors disabled:opacity-50 focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+                className="px-3 py-2.5 rounded-xl bg-[#F4F7F2]/15 border border-[#F4F7F2]/30 text-[#F4F7F2] hover:bg-[#F4F7F2]/25 transition-colors disabled:opacity-50 focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
                 title="Use current location"
               >
                 {gettingCurrentLocation ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden /> : <Crosshair className="w-4 h-4" aria-hidden />}
@@ -533,7 +533,7 @@ function SiteFormModal({
                   Map
                 </label>
                 {!showMap && !hasValidCoordinates && (
-                  <button type="button" onClick={() => setShowMap(true)} aria-label="Show map" className="text-xs text-[#f4c979] focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] rounded">
+                  <button type="button" onClick={() => setShowMap(true)} aria-label="Show map" className="text-xs text-[#F4F7F2] focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D] rounded">
                     Show map
                   </button>
                 )}
@@ -560,9 +560,9 @@ function SiteFormModal({
                           icon={{
                             path: google.maps.SymbolPath.CIRCLE,
                             scale: 10,
-                            fillColor: '#f4c979',
+                            fillColor: '#F4F7F2',
                             fillOpacity: 1,
-                            strokeColor: '#332308',
+                            strokeColor: '#040605',
                             strokeWeight: 2,
                           }}
                         />
@@ -585,7 +585,7 @@ function SiteFormModal({
                 value={form.latitude}
                 onChange={(e) => setForm(prev => ({ ...prev, latitude: e.target.value }))}
                 placeholder="32.7767"
-                className="w-full px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus-visible:border-[#f4c979]/40 font-mono"
+                className="w-full px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus-visible:border-[#F4F7F2]/40 font-mono"
               />
             </div>
             <div>
@@ -595,7 +595,7 @@ function SiteFormModal({
                 value={form.longitude}
                 onChange={(e) => setForm(prev => ({ ...prev, longitude: e.target.value }))}
                 placeholder="-96.7970"
-                className="w-full px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus-visible:border-[#f4c979]/40 font-mono"
+                className="w-full px-3 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus-visible:border-[#F4F7F2]/40 font-mono"
               />
             </div>
           </div>
@@ -605,7 +605,7 @@ function SiteFormModal({
               type="button"
               onClick={onClose}
               aria-label="Cancel and close form"
-              className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/70 text-sm font-medium hover:bg-white/5 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+              className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/70 text-sm font-medium hover:bg-white/5 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
             >
               Cancel
             </button>
@@ -613,7 +613,7 @@ function SiteFormModal({
               type="submit"
               disabled={isLoading}
               aria-label={isLoading ? "Saving site..." : isEdit ? "Save site" : "Add site"}
-              className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#332308] text-sm font-semibold hover:scale-[1.02] transition-transform disabled:opacity-50 flex items-center justify-center gap-2 focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+              className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-[#E4EAE1] via-[#F4F7F2] to-[#8DF5A8] text-[#040605] text-sm font-semibold hover:scale-[1.02] transition-transform disabled:opacity-50 flex items-center justify-center gap-2 focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#F4F7F2] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
             >
               {isLoading ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden /> : <><Check className="w-4 h-4" aria-hidden />{isEdit ? 'Save' : 'Add Site'}</>}
             </button>
@@ -724,7 +724,7 @@ function SitesTabContent() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search sites..."
-            className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl bg-black/40 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus-visible:border-[#f4c979]/40"
+            className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl bg-black/40 border border-white/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus-visible:border-[#F4F7F2]/40"
           />
         </div>
         <div className="flex gap-1.5 sm:gap-2 flex-wrap">
@@ -733,20 +733,20 @@ function SitesTabContent() {
             onClick={() => setShowInactive(!showInactive)}
             aria-label={showInactive ? "Hide inactive sites" : "Show inactive sites"}
             aria-pressed={showInactive}
-            className={`px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg sm:rounded-xl border text-xs sm:text-sm font-medium transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] min-h-[44px] ${
-              showInactive ? 'bg-[#f4c979]/15 border-[#f4c979]/30 text-[#f4c979]' : 'border-white/10 text-white/50 hover:text-white/70'
+            className={`px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg sm:rounded-xl border text-xs sm:text-sm font-medium transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D] min-h-[44px] ${
+              showInactive ? 'bg-[#F4F7F2]/15 border-[#F4F7F2]/30 text-[#F4F7F2]' : 'border-white/10 text-white/50 hover:text-white/70'
             }`}
           >
             {showInactive ? 'Hide' : 'Show'} Inactive
           </button>
-          <button type="button" onClick={() => refetchSites()} className="p-2 sm:p-2.5 rounded-lg sm:rounded-xl border border-white/10 text-white/50 hover:text-white/70 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] min-h-[44px]" aria-label="Refresh work sites">
+          <button type="button" onClick={() => refetchSites()} className="p-2 sm:p-2.5 rounded-lg sm:rounded-xl border border-white/10 text-white/50 hover:text-white/70 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D] min-h-[44px]" aria-label="Refresh work sites">
             <RefreshCw className="w-4 h-4" aria-hidden />
           </button>
           <button
             type="button"
             onClick={() => { setEditingSite(null); setShowModal(true); }}
             aria-label="Add work site"
-            className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg sm:rounded-xl bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#332308] font-semibold text-xs sm:text-sm hover:scale-[1.02] transition-transform focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] min-h-[44px]"
+            className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg sm:rounded-xl bg-gradient-to-r from-[#E4EAE1] via-[#F4F7F2] to-[#8DF5A8] text-[#040605] font-semibold text-xs sm:text-sm hover:scale-[1.02] transition-transform focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#F4F7F2] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D] min-h-[44px]"
           >
             <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" aria-hidden />
             Add Site
@@ -757,10 +757,10 @@ function SitesTabContent() {
       {filteredSites.length === 0 && !debouncedSearch ? (
         <SitesEmptyState onAdd={() => setShowModal(true)} />
       ) : (
-        <div className="rounded-xl border border-[#f6dcb2]/15 overflow-hidden">
+        <div className="rounded-xl border border-[#E4EAE1]/15 overflow-hidden">
           <table className="w-full">
-            <thead className="bg-[#14110d]">
-              <tr className="text-left text-xs text-white/50 uppercase tracking-wider">
+            <thead className="bg-[#0B100D]">
+              <tr className="text-left text-xs text-white/50 uppercase font-mono font-medium tracking-[0.14em]">
                 <th className="px-4 py-3 font-medium">Site</th>
                 <th className="px-4 py-3 font-medium hidden sm:table-cell">Address</th>
                 <th className="px-4 py-3 font-medium hidden md:table-cell">Coordinates</th>
@@ -773,7 +773,7 @@ function SitesTabContent() {
                 <tr key={site.id} className={site.is_active ? '' : 'opacity-50'}>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <MapPin className={`w-4 h-4 ${site.is_active ? 'text-[#f4c979]' : 'text-white/30'}`} />
+                      <MapPin className={`w-4 h-4 ${site.is_active ? 'text-[#F4F7F2]' : 'text-white/30'}`} />
                       <span className="font-medium text-white/90 text-sm">{site.name}</span>
                     </div>
                   </td>
@@ -789,7 +789,7 @@ function SitesTabContent() {
                       onClick={() => handleToggleActive(site)}
                       aria-label={site.is_active ? `Mark ${site.name} inactive` : `Mark ${site.name} active`}
                       aria-pressed={site.is_active}
-                      className={`px-2 py-1 rounded-lg text-xs font-medium transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-1 ${
+                      className={`px-2 py-1 rounded-lg text-xs font-medium transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/50 focus-visible:ring-offset-1 ${
                         site.is_active
                           ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25'
                           : 'bg-white/5 text-white/40 border border-white/10 hover:bg-white/10'
@@ -803,7 +803,7 @@ function SitesTabContent() {
                       <button
                         type="button"
                         onClick={() => { setEditingSite(site); setShowModal(true); }}
-                        className="p-2 rounded-lg hover:bg-white/5 text-white/50 hover:text-white/80 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-1"
+                        className="p-2 rounded-lg hover:bg-white/5 text-white/50 hover:text-white/80 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/50 focus-visible:ring-offset-1"
                         aria-label={`Edit site ${site.name}`}
                       >
                         <Pencil className="w-4 h-4" aria-hidden />
@@ -977,8 +977,8 @@ function JobsTabContent({ userId }: { userId: string }) {
 
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-[#f4c979]/10 border border-[#f4c979]/30 flex-shrink-0">
-              <Briefcase className="w-4 h-4 sm:w-5 sm:h-5 text-[#f4c979]" />
+            <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-[#F4F7F2]/10 border border-[#F4F7F2]/30 flex-shrink-0">
+              <Briefcase className="w-4 h-4 sm:w-5 sm:h-5 text-[#F4F7F2]" />
             </div>
             <div className="min-w-0">
               <h3 className="text-base sm:text-lg font-bold text-white truncate">All Jobs</h3>
@@ -989,7 +989,7 @@ function JobsTabContent({ userId }: { userId: string }) {
           <motion.button
             whileTap={{ scale: 0.98 }}
             onClick={() => setShowCreateForm(true)}
-            className="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg sm:rounded-xl bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#2e1b02] text-xs sm:text-sm font-semibold hover:shadow-[0_0_20px_rgba(244,201,121,0.3)] transition-shadow flex-shrink-0 min-h-[44px]"
+            className="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg sm:rounded-xl bg-gradient-to-r from-[#E4EAE1] via-[#F4F7F2] to-[#8DF5A8] text-[#040605] text-xs sm:text-sm font-semibold hover:shadow-[0_0_20px_rgba(221,255,133,0.3)] transition-shadow flex-shrink-0 min-h-[44px]"
           >
             <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             Create Job
@@ -1028,7 +1028,7 @@ function JobsTabContent({ userId }: { userId: string }) {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: 20 }}
                   onClick={(e) => e.stopPropagation()}
-                  className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] p-4 sm:p-6 shadow-[0_40px_80px_rgba(0,0,0,0.7)]"
+                  className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-leaf-sm sm:rounded-leaf border border-[#E4EAE1]/20 bg-gradient-to-br from-[#0B100D] via-[#040605] to-[#040605] p-4 sm:p-6 shadow-[0_40px_80px_rgba(0,0,0,0.7)]"
                 >
                   <JobCreationForm
                     crewMembers={crewMembers}
@@ -1114,52 +1114,52 @@ function AdminOperationsHub() {
             className="relative"
           >
             <div 
-              className="relative overflow-hidden rounded-xl sm:rounded-2xl md:rounded-3xl border border-white/[0.12] shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.1)]"
+              className="relative overflow-hidden rounded-xl sm:rounded-leaf-sm md:rounded-leaf border border-white/[0.12] shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.1)]"
               style={{
-                background: 'linear-gradient(145deg, rgba(244, 201, 121, 0.1) 0%, rgba(28, 28, 31, 0.65) 40%, rgba(15, 13, 9, 0.75) 100%)',
+                background: 'linear-gradient(145deg, rgba(221,255,133, 0.1) 0%, rgba(30,42,35, 0.65) 40%, rgba(11,16,13, 0.75) 100%)',
                 backdropFilter: 'blur(24px) saturate(1.6)',
                 WebkitBackdropFilter: 'blur(24px) saturate(1.6)',
               }}
             >
               <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(125deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 25%, transparent 50%)' }} />
-              <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 25% 0%, rgba(244, 201, 121, 0.2) 0%, transparent 45%)' }} />
+              <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 25% 0%, rgba(221,255,133, 0.2) 0%, transparent 45%)' }} />
               <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-white/5 via-white/25 to-white/5 rounded-t-[inherit]" />
 
               <div className="relative px-3 py-3 sm:px-5 sm:py-4 md:px-7 md:py-5">
                 <div className="flex items-center gap-2 mb-2 sm:gap-3 sm:mb-3 flex-wrap">
-                  <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.2 }} className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl bg-[#f4c979]/15 border border-[#f4c979]/30">
-                    <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#f4c979]" />
-                    <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-bold text-[#f8e5bb]">Admin Operations</span>
+                  <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.2 }} className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl bg-[#F4F7F2]/15 border border-[#F4F7F2]/30">
+                    <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#F4F7F2]" />
+                    <span className="text-[9px] sm:text-[10px] uppercase text-[#E4EAE1] font-mono font-medium tracking-[0.14em]">Admin Operations</span>
                   </motion.div>
                   <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                    <span className="flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg bg-[#1c1c1f]/60 border border-[#f4c979]/20 text-[8px] sm:text-[9px] uppercase tracking-wider font-semibold text-[#f8e5bb]/70">
-                      <MapPin className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#f4c979]" />
+                    <span className="flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg bg-[#121A15]/60 border border-[#F4F7F2]/20 text-[8px] sm:text-[9px] uppercase text-[#E4EAE1]/70 font-mono font-medium tracking-[0.14em]">
+                      <MapPin className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#F4F7F2]" />
                       {sitesCount} sites
                     </span>
-                    <span className="flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg bg-[#1c1c1f]/60 border border-[#f4c979]/20 text-[8px] sm:text-[9px] uppercase tracking-wider font-semibold text-[#f8e5bb]/70">
-                      <Users className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#f4c979]" />
+                    <span className="flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg bg-[#121A15]/60 border border-[#F4F7F2]/20 text-[8px] sm:text-[9px] uppercase text-[#E4EAE1]/70 font-mono font-medium tracking-[0.14em]">
+                      <Users className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#F4F7F2]" />
                       {activeCrewsCount} crews
                     </span>
-                    <span className="flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg bg-[#1c1c1f]/60 border border-[#f4c979]/20 text-[8px] sm:text-[9px] uppercase tracking-wider font-semibold text-[#f8e5bb]/70">
-                      <Briefcase className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#f4c979]" />
+                    <span className="flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg bg-[#121A15]/60 border border-[#F4F7F2]/20 text-[8px] sm:text-[9px] uppercase text-[#E4EAE1]/70 font-mono font-medium tracking-[0.14em]">
+                      <Briefcase className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#F4F7F2]" />
                       {activeJobsCount} jobs
                     </span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 sm:gap-4">
-                  <motion.div initial={{ scaleY: 0, opacity: 0 }} animate={{ scaleY: 1, opacity: 1 }} transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }} className="w-0.5 sm:w-1 h-8 sm:h-10 md:h-14 rounded-full bg-gradient-to-b from-[#f7e4bd] via-[#f4c979] to-[#d79a32] origin-top flex-shrink-0" style={{ boxShadow: '0 0 20px rgba(244, 201, 121, 0.5)' }} />
+                  <motion.div initial={{ scaleY: 0, opacity: 0 }} animate={{ scaleY: 1, opacity: 1 }} transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }} className="w-0.5 sm:w-1 h-8 sm:h-10 md:h-14 rounded-full bg-gradient-to-b from-[#E4EAE1] via-[#F4F7F2] to-[#8DF5A8] origin-top flex-shrink-0" style={{ boxShadow: '0 0 20px rgba(221,255,133, 0.5)' }} />
                   <div className="flex-1 min-w-0">
                     {enableAnimations ? (
-                      <TextEffect as="h1" preset="blurSlide" per="char" delay={0.15} className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black tracking-tight" segmentWrapperClassName="bg-gradient-to-r from-white via-[#f8e5bb] to-white/90 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(244,201,121,0.35)]">
+                      <TextEffect as="h1" preset="blurSlide" per="char" delay={0.15} className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]" segmentWrapperClassName="text-glow">
                         Operations Hub
                       </TextEffect>
                     ) : (
-                      <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black tracking-tight bg-gradient-to-r from-white via-[#f8e5bb] to-white/90 bg-clip-text text-transparent">
+                      <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">
                         Operations Hub
                       </h1>
                     )}
-                    <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.7 }} className="mt-0.5 sm:mt-1 text-[11px] sm:text-xs md:text-sm text-[#f8e5bb]/50 font-medium">
+                    <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.7 }} className="mt-0.5 sm:mt-1 text-[11px] sm:text-xs md:text-sm text-[#E4EAE1]/50 font-medium">
                       Manage work sites, crews, and job assignments
                     </motion.p>
                   </div>

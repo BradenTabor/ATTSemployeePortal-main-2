@@ -72,8 +72,8 @@ function CopyButton({ text, label, compact = false }: { text: string; label: str
     >
       {copied ? (
         <>
-          <Check className={compact ? 'w-3 h-3' : 'w-3.5 h-3.5'} style={{ color: '#4ade80' }} />
-          {!compact && <span style={{ color: '#4ade80' }}>Copied!</span>}
+          <Check className={compact ? 'w-3 h-3' : 'w-3.5 h-3.5'} style={{ color: '#3DDC84' }} />
+          {!compact && <span style={{ color: '#3DDC84' }}>Copied!</span>}
         </>
       ) : (
         <>
@@ -128,9 +128,9 @@ export function PowerSafeTrainingOverlay({ isOpen, onClose, onPinStickyNote }: P
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: isMobile ? '100%' : 40, scale: isMobile ? 1 : 0.97 }}
           transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-          className="relative w-full sm:max-w-xl max-h-[95vh] sm:max-h-[85vh] overflow-hidden rounded-t-2xl sm:rounded-2xl border-t sm:border border-purple-400/30 shadow-[0_-8px_40px_-10px_rgba(139,92,246,0.4)]"
+          className="relative w-full sm:max-w-xl max-h-[95vh] sm:max-h-[85vh] overflow-hidden rounded-t-2xl sm:rounded-leaf-sm border-t sm:border border-purple-400/30 shadow-[0_-8px_40px_-10px_rgba(125,205,162,0.4)]"
           style={{
-            background: 'linear-gradient(145deg, rgba(30, 10, 40, 0.99) 0%, rgba(15, 5, 25, 1) 50%, rgba(5, 2, 10, 1) 100%)',
+            background: 'linear-gradient(145deg, rgba(18,26,21, 0.99) 0%, rgba(11,16,13, 1) 50%, rgba(4,6,5, 1) 100%)',
           }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -147,7 +147,7 @@ export function PowerSafeTrainingOverlay({ isOpen, onClose, onPinStickyNote }: P
             <motion.div
               className="hidden sm:block absolute w-64 h-64 rounded-full pointer-events-none"
               style={{
-                background: 'radial-gradient(circle, rgba(139, 92, 246, 0.25) 0%, transparent 70%)',
+                background: 'radial-gradient(circle, rgba(125,205,162, 0.25) 0%, transparent 70%)',
                 top: '-15%',
                 left: '-10%',
                 filter: 'blur(40px)',
@@ -169,7 +169,7 @@ export function PowerSafeTrainingOverlay({ isOpen, onClose, onPinStickyNote }: P
                   id="power-safe-title"
                   className="text-base sm:text-lg font-black leading-tight"
                   style={{
-                    background: 'linear-gradient(135deg, #ffffff 0%, #e9d5ff 50%, #c4b5fd 100%)',
+                    background: 'linear-gradient(135deg, #ffffff 0%, #C8FFD4 50%, #CFEEDB 100%)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                     backgroundClip: 'text',
@@ -198,7 +198,7 @@ export function PowerSafeTrainingOverlay({ isOpen, onClose, onPinStickyNote }: P
                   rel="noopener noreferrer"
                   className="group flex items-center justify-center gap-2 w-full py-3 sm:py-3.5 px-4 rounded-lg sm:rounded-xl text-white font-bold text-sm sm:text-base shadow-lg transition-all duration-300 hover:scale-[1.02] focus-visible:outline focus-visible:ring-2 focus-visible:ring-purple-400"
                   style={{
-                    background: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 25%, #ec4899 50%, #3b82f6 75%, #7c3aed 100%)',
+                    background: 'linear-gradient(135deg, #1F7A44 0%, #2FA45A 25%, #4CCB8F 50%, #8DF5A8 75%, #1F7A44 100%)',
                     backgroundSize: '200% 200%',
                     animation: 'pulse-gradient 4s ease-in-out infinite',
                   }}
@@ -221,7 +221,7 @@ export function PowerSafeTrainingOverlay({ isOpen, onClose, onPinStickyNote }: P
 
               {/* Credentials box - compact */}
               <div className="mb-4 sm:mb-5 p-3 rounded-lg bg-purple-500/10 border border-purple-400/20">
-                <p className="text-[10px] sm:text-xs font-bold text-purple-300/80 uppercase tracking-wider mb-2">Login Credentials</p>
+                <p className="text-[10px] sm:text-xs text-purple-300/80 uppercase mb-2 font-mono font-medium tracking-[0.14em]">Login Credentials</p>
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-mono text-xs sm:text-sm">
@@ -242,7 +242,7 @@ export function PowerSafeTrainingOverlay({ isOpen, onClose, onPinStickyNote }: P
 
               {/* Instructions - compact numbered list */}
               <div className="space-y-3 sm:space-y-4">
-                <h3 className="text-[10px] sm:text-xs font-bold text-purple-200/80 uppercase tracking-wider">
+                <h3 className="text-[10px] sm:text-xs text-purple-200/80 uppercase font-mono font-medium tracking-[0.14em]">
                   Steps
                 </h3>
                 
@@ -344,7 +344,7 @@ function CopyField({ label, value }: { label: string; value: string }) {
       className="group flex items-center gap-2 w-full p-2 rounded-lg bg-white/5 border border-purple-400/20 hover:bg-purple-500/10 hover:border-purple-400/40 active:scale-[0.98] transition-all touch-manipulation text-left"
     >
       <div className="flex-1 min-w-0">
-        <p className="text-[9px] uppercase tracking-wider text-purple-300/60 font-medium mb-0.5">{label}</p>
+        <p className="text-[9px] uppercase text-purple-300/60 font-medium mb-0.5 font-mono font-medium tracking-[0.14em]">{label}</p>
         <p className="font-mono text-sm text-white font-semibold truncate">{value}</p>
       </div>
       <div className={`flex items-center justify-center w-7 h-7 rounded-md transition-all ${
@@ -386,17 +386,17 @@ export function PowerSafeStickyNote({ isVisible, onClose }: PowerSafeStickyNoteP
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 30, scale: 0.95 }}
           transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-          className="fixed bottom-20 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-auto z-40 sm:w-64 rounded-2xl overflow-hidden"
+          className="fixed bottom-20 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-auto z-40 sm:w-64 rounded-leaf-sm overflow-hidden"
           style={{
-            background: 'linear-gradient(165deg, rgba(45, 20, 60, 0.97) 0%, rgba(25, 10, 35, 0.98) 100%)',
-            boxShadow: '0 20px 50px -12px rgba(139, 92, 246, 0.35), 0 0 0 1px rgba(139, 92, 246, 0.2)',
+            background: 'linear-gradient(165deg, rgba(30,42,35, 0.97) 0%, rgba(18,26,21, 0.98) 100%)',
+            boxShadow: '0 20px 50px -12px rgba(125,205,162, 0.35), 0 0 0 1px rgba(125,205,162, 0.2)',
           }}
         >
           {/* Animated gradient border */}
           <div 
             className="absolute inset-0 rounded-[inherit] pointer-events-none"
             style={{
-              background: 'linear-gradient(135deg, rgba(139,92,246,0.3) 0%, rgba(236,72,153,0.2) 50%, rgba(59,130,246,0.3) 100%)',
+              background: 'linear-gradient(135deg, rgba(125,205,162,0.3) 0%, rgba(76,203,143,0.2) 50%, rgba(125,205,162,0.3) 100%)',
               padding: '1px',
               mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
               maskComposite: 'xor',
@@ -437,7 +437,7 @@ export function PowerSafeStickyNote({ isVisible, onClose }: PowerSafeStickyNoteP
               onClick={handleOpenPortal}
               className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl text-white text-xs font-bold shadow-lg transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline focus-visible:ring-2 focus-visible:ring-purple-400 mt-1"
               style={{
-                background: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 40%, #ec4899 100%)',
+                background: 'linear-gradient(135deg, #1F7A44 0%, #2FA45A 40%, #4CCB8F 100%)',
               }}
             >
               <ExternalLink className="w-3.5 h-3.5" />

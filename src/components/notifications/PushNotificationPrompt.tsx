@@ -222,9 +222,9 @@ function PushNotificationPromptComponent() {
         >
           {/* Premium glass card */}
           <div 
-            className="relative overflow-hidden rounded-3xl border border-white/[0.15] shadow-[0_20px_60px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.1)]"
+            className="relative overflow-hidden rounded-leaf border border-white/[0.15] shadow-[0_20px_60px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.1)]"
             style={{
-              background: 'linear-gradient(145deg, rgba(34, 197, 94, 0.08) 0%, rgba(10, 25, 18, 0.95) 50%, rgba(5, 12, 8, 0.98) 100%)',
+              background: 'linear-gradient(145deg, rgba(47,164,90, 0.08) 0%, rgba(11,16,13, 0.95) 50%, rgba(4,6,5, 0.98) 100%)',
               backdropFilter: 'blur(24px) saturate(1.4)',
               WebkitBackdropFilter: 'blur(24px) saturate(1.4)',
             }}
@@ -244,7 +244,7 @@ function PushNotificationPromptComponent() {
             <div 
               className="absolute inset-0 pointer-events-none"
               style={{
-                background: 'radial-gradient(ellipse at 50% 0%, rgba(34, 197, 94, 0.15) 0%, transparent 50%)',
+                background: 'radial-gradient(ellipse at 50% 0%, rgba(47,164,90, 0.15) 0%, transparent 50%)',
               }}
             />
 
@@ -292,7 +292,7 @@ function PushNotificationPromptComponent() {
                     transition={{ delay: 0.1 }}
                     className="mb-5"
                   >
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500/30 to-emerald-600/20 border border-emerald-500/40 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/20">
+                    <div className="w-16 h-16 rounded-leaf-sm bg-gradient-to-br from-emerald-500/30 to-emerald-600/20 border border-emerald-500/40 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/20">
                       <motion.div
                         animate={{ 
                           rotate: [0, -10, 10, -10, 0],

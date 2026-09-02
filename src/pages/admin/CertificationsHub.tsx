@@ -360,7 +360,7 @@ export default function CertificationsHub() {
                   type="button"
                   onClick={() => setTab("pending")}
                   data-testid="cert-hub-triage-awaiting"
-                  className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 ${
+                  className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 ${
                     awaitingCount > 0
                       ? "bg-amber-500/20 text-amber-300 ring-1 ring-amber-500/40 hover:bg-amber-500/30"
                       : "bg-white/5 text-gray-500 hover:bg-white/10"
@@ -375,7 +375,7 @@ export default function CertificationsHub() {
                   type="button"
                   onClick={() => setTab("certifications")}
                   data-testid="cert-hub-triage-expiring"
-                  className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 ${
+                  className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 ${
                     expiringThisWeekCount > 0
                       ? "bg-amber-500/20 text-amber-300 ring-1 ring-amber-500/40 hover:bg-amber-500/30"
                       : "bg-white/5 text-gray-500 hover:bg-white/10"
@@ -389,7 +389,7 @@ export default function CertificationsHub() {
                   type="button"
                   onClick={() => setTab("worker-qualifications")}
                   data-testid="cert-hub-triage-unqualified"
-                  className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 ${
+                  className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 ${
                     unqualifiedCount > 0
                       ? "bg-red-500/20 text-red-300 ring-1 ring-red-500/40 hover:bg-red-500/30"
                       : "bg-white/5 text-gray-500 hover:bg-white/10"
@@ -403,7 +403,7 @@ export default function CertificationsHub() {
                   type="button"
                   onClick={() => setTab("worker-qualifications")}
                   data-testid="cert-hub-triage-ext-certs-expiring"
-                  className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 ${
+                  className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 ${
                     extCertsExpiringSoonCount > 0
                       ? "bg-amber-500/20 text-amber-300 ring-1 ring-amber-500/40 hover:bg-amber-500/30"
                       : "bg-white/5 text-gray-500 hover:bg-white/10"
@@ -433,7 +433,7 @@ export default function CertificationsHub() {
                 id={`tab-${t.id}`}
                 data-testid={`cert-hub-tab-${t.id}`}
                 onClick={() => setTab(t.id)}
-                className={`rounded-lg px-4 py-2 text-sm font-medium transition focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 ${
+                className={`min-h-[44px] rounded-lg px-4 py-2 text-sm font-medium transition focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 ${
                   effectiveTab === t.id
                     ? "bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-500/40"
                     : "bg-white/5 text-white/80 hover:bg-white/10 hover:text-white"
@@ -445,7 +445,7 @@ export default function CertificationsHub() {
             <button
               type="button"
               onClick={handleRefreshCurrentTab}
-              className="ml-auto rounded-lg p-2 text-white/60 hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50"
+              className="ml-auto inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 text-white/60 hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50"
               aria-label={`Refresh ${visibleTabs.find((t) => t.id === effectiveTab)?.label ?? effectiveTab} tab`}
               title={`Refresh ${visibleTabs.find((t) => t.id === effectiveTab)?.label ?? effectiveTab}`}
               data-testid="cert-hub-refresh-tab"
@@ -492,7 +492,7 @@ export default function CertificationsHub() {
               {!reviewsLoading && displayedPendingReviews.length > 0 && (
                 <>
                   {/* Desktop (>= 768px): scrolling list */}
-                  <section className={`hidden md:block rounded-2xl border border-amber-500/25 p-4 sm:p-6 ${glass.card}`}>
+                  <section className={`hidden md:block rounded-leaf-sm border border-amber-500/25 p-4 sm:p-6 ${glass.card}`}>
                     <div className="mb-3 flex items-center gap-3">
                       <Clock className="h-5 w-5 text-amber-400 shrink-0" aria-hidden />
                       <h3 className="text-base font-semibold text-amber-400 sm:text-lg">
@@ -538,7 +538,7 @@ export default function CertificationsHub() {
                   {/* Mobile (< 768px): full-screen single-card or list */}
                   <div className="md:hidden">
                     {mobileGradingView === "list" ? (
-                      <section className={`rounded-2xl border border-amber-500/25 p-4 ${glass.card}`}>
+                      <section className={`rounded-leaf-sm border border-amber-500/25 p-4 ${glass.card}`}>
                         <div className="mb-3 flex items-center justify-between gap-2">
                           <h3 className="text-base font-semibold text-amber-400">
                             Pending Reviews ({displayedPendingReviews.length})

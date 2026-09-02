@@ -125,10 +125,10 @@ function FilterChip({
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#f4c979]/20 text-[#f4c979] text-[10px] font-medium"
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#F4F7F2]/20 text-[#F4F7F2] text-[10px] font-medium"
     >
       {label}
-      <button type="button" onClick={onRemove} className="hover:bg-white/10 rounded-full p-0.5 focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-1" aria-label={`Remove ${label} filter`}>
+      <button type="button" onClick={onRemove} className="hover:bg-white/10 rounded-full p-0.5 focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/50 focus-visible:ring-offset-1" aria-label={`Remove ${label} filter`}>
         <X className="w-2.5 h-2.5" aria-hidden />
       </button>
     </motion.span>
@@ -441,7 +441,7 @@ export default function AdminJobProgress() {
 
   const emptyState =
     !loading && jobRows.length === 0 ? (
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-white/60">
+      <div className="rounded-leaf-sm border border-white/10 bg-white/5 p-6 text-center text-white/60">
         <p className="text-base font-semibold text-white">No progress updates yet</p>
         <p className="text-xs mt-1">
           Create a span-based job and start logging updates to see analytics.
@@ -461,42 +461,42 @@ export default function AdminJobProgress() {
             className="relative"
           >
             <div 
-              className="relative overflow-hidden rounded-2xl md:rounded-3xl border border-white/[0.12] shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.1)]"
+              className="relative overflow-hidden rounded-leaf-sm md:rounded-leaf border border-white/[0.12] shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.1)]"
               style={{
-                background: 'linear-gradient(145deg, rgba(244, 201, 121, 0.1) 0%, rgba(28, 28, 31, 0.65) 40%, rgba(15, 13, 9, 0.75) 100%)',
+                background: 'linear-gradient(145deg, rgba(221,255,133, 0.1) 0%, rgba(30,42,35, 0.65) 40%, rgba(11,16,13, 0.75) 100%)',
                 backdropFilter: 'blur(24px) saturate(1.6)',
                 WebkitBackdropFilter: 'blur(24px) saturate(1.6)',
               }}
             >
               <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(125deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 25%, transparent 50%)' }} />
               <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 40%)' }} />
-              <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 25% 0%, rgba(244, 201, 121, 0.2) 0%, transparent 45%)' }} />
+              <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 25% 0%, rgba(221,255,133, 0.2) 0%, transparent 45%)' }} />
               <div className="absolute top-0 left-0 w-32 h-32 pointer-events-none" style={{ background: 'radial-gradient(circle at 20% 20%, rgba(255,255,255,0.12) 0%, transparent 50%)' }} />
               <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-white/5 via-white/25 to-white/5 rounded-t-[inherit]" />
               <div className="absolute top-0 left-0 bottom-0 w-[1px] bg-gradient-to-b from-white/20 via-white/5 to-transparent rounded-l-[inherit]" />
 
               <div className="relative px-5 py-4 md:px-7 md:py-5">
                 <div className="flex items-center gap-3 mb-3">
-                  <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.2 }} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#f4c979]/15 border border-[#f4c979]/30">
-                    <Sparkles className="w-3.5 h-3.5 text-[#f4c979]" />
-                    <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#f8e5bb]">Admin • Analytics</span>
+                  <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.2 }} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#F4F7F2]/15 border border-[#F4F7F2]/30">
+                    <Sparkles className="w-3.5 h-3.5 text-[#F4F7F2]" />
+                    <span className="text-[10px] uppercase text-[#E4EAE1] font-mono font-medium tracking-[0.14em]">Admin • Analytics</span>
                   </motion.div>
-                  <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.3 }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#1c1c1f]/60 border border-[#f4c979]/20">
-                    <Zap className="w-3 h-3 text-[#f4c979]" />
-                    <span className="text-[9px] uppercase tracking-wider font-semibold text-[#f8e5bb]/70">Live</span>
+                  <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.3 }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#121A15]/60 border border-[#F4F7F2]/20">
+                    <Zap className="w-3 h-3 text-[#F4F7F2]" />
+                    <span className="text-[9px] uppercase text-[#E4EAE1]/70 font-mono font-medium tracking-[0.14em]">Live</span>
                   </motion.div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <motion.div initial={{ scaleY: 0, opacity: 0 }} animate={{ scaleY: 1, opacity: 1 }} transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }} className="w-1 h-14 md:h-16 rounded-full bg-gradient-to-b from-[#f7e4bd] via-[#f4c979] to-[#d79a32] origin-top flex-shrink-0" style={{ boxShadow: '0 0 20px rgba(244, 201, 121, 0.5), 0 0 40px rgba(244, 201, 121, 0.25)' }} />
+                  <motion.div initial={{ scaleY: 0, opacity: 0 }} animate={{ scaleY: 1, opacity: 1 }} transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }} className="w-1 h-14 md:h-16 rounded-full bg-gradient-to-b from-[#E4EAE1] via-[#F4F7F2] to-[#8DF5A8] origin-top flex-shrink-0" style={{ boxShadow: '0 0 20px rgba(221,255,133, 0.5), 0 0 40px rgba(221,255,133, 0.25)' }} />
                   <div className="flex-1 min-w-0">
                     {enableAnimations ? (
-                      <TextEffect as="h1" preset="blurSlide" per="char" delay={0.15} className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight" segmentWrapperClassName="bg-gradient-to-r from-white via-[#f8e5bb] to-white/90 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(244,201,121,0.35)]">
+                      <TextEffect as="h1" preset="blurSlide" per="char" delay={0.15} className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]" segmentWrapperClassName="text-glow">
                         Job Progress Analytics
                       </TextEffect>
                     ) : (
-                      <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight bg-gradient-to-r from-white via-[#f8e5bb] to-white/90 bg-clip-text text-transparent">Job Progress Analytics</h1>
+                      <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">Job Progress Analytics</h1>
                     )}
-                    <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.7 }} className="mt-1.5 md:mt-2 text-xs sm:text-sm text-[#f8e5bb]/50 font-medium leading-relaxed max-w-xl">
+                    <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.7 }} className="mt-1.5 md:mt-2 text-xs sm:text-sm text-[#E4EAE1]/50 font-medium leading-relaxed max-w-xl">
                       Span-based performance trends with week-over-week deltas
                     </motion.p>
                   </div>
@@ -513,7 +513,7 @@ export default function AdminJobProgress() {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl border border-[#f6dcb2]/15 bg-gradient-to-br from-[#14110d]/90 via-[#0b0906]/90 to-[#050403]/90 backdrop-blur-sm shadow-lg"
+            className="rounded-leaf-sm border border-[#E4EAE1]/15 bg-gradient-to-br from-[#0B100D]/90 via-[#040605]/90 to-[#040605]/90 backdrop-blur-sm shadow-lg"
           >
             {/* Filter Header */}
             <button
@@ -521,13 +521,13 @@ export default function AdminJobProgress() {
               onClick={() => setShowFilters(!showFilters)}
               aria-label={showFilters ? "Hide filters" : "Show filters"}
               aria-expanded={showFilters}
-              className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-white/5 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] rounded-lg"
+              className="w-full flex min-h-[44px] items-center justify-between px-4 py-2.5 hover:bg-white/5 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D] rounded-lg"
             >
               <div className="flex items-center gap-2">
-                <Filter className="w-3.5 h-3.5 text-[#f4c979]" aria-hidden />
-                <span className="text-[11px] uppercase tracking-[0.2em] text-[#f4c979]/70 font-medium">Filters</span>
+                <Filter className="w-3.5 h-3.5 text-[#F4F7F2]" aria-hidden />
+                <span className="text-[11px] uppercase text-[#F4F7F2]/70 font-medium font-mono font-medium tracking-[0.14em]">Filters</span>
                 {hasActiveFilters && (
-                  <span className="ml-1 px-1.5 py-0.5 rounded-full bg-[#f4c979]/20 text-[#f4c979] text-[9px] font-bold">
+                  <span className="ml-1 px-1.5 py-0.5 rounded-full bg-[#F4F7F2]/20 text-[#F4F7F2] text-[9px] font-bold">
                     {selectedJobIds.length + selectedUserIds.length}
                   </span>
                 )}
@@ -602,7 +602,7 @@ export default function AdminJobProgress() {
                           className={cn(
                             "px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
                             dateRange === opt.value
-                              ? "bg-[#f4c979]/20 text-[#f4c979] border border-[#f4c979]/40"
+                              ? "bg-[#F4F7F2]/20 text-[#F4F7F2] border border-[#F4F7F2]/40"
                               : "bg-white/5 text-white/60 border border-white/10 hover:bg-white/10"
                           )}
                         >
@@ -618,14 +618,14 @@ export default function AdminJobProgress() {
                           type="date"
                           value={customStart}
                           onChange={(e) => setCustomStart(e.target.value)}
-                          className="flex-1 min-w-[130px] rounded-lg bg-[#050402]/70 border border-[#f4c979]/20 px-3 py-1.5 text-xs text-[#fdf4db] focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/60 [color-scheme:dark]"
+                          className="flex-1 min-w-[130px] rounded-lg bg-[#040605]/70 border border-[#F4F7F2]/20 px-3 py-1.5 text-xs text-[#F4F7F2] focus:outline-none focus-visible:ring-1 focus-visible:ring-[#F4F7F2]/60 [color-scheme:dark]"
                           placeholder="Start"
                         />
                         <input
                           type="date"
                           value={customEnd}
                           onChange={(e) => setCustomEnd(e.target.value)}
-                          className="flex-1 min-w-[130px] rounded-lg bg-[#050402]/70 border border-[#f4c979]/20 px-3 py-1.5 text-xs text-[#fdf4db] focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/60 [color-scheme:dark]"
+                          className="flex-1 min-w-[130px] rounded-lg bg-[#040605]/70 border border-[#F4F7F2]/20 px-3 py-1.5 text-xs text-[#F4F7F2] focus:outline-none focus-visible:ring-1 focus-visible:ring-[#F4F7F2]/60 [color-scheme:dark]"
                           placeholder="End"
                         />
                       </div>
@@ -637,9 +637,9 @@ export default function AdminJobProgress() {
                       <div className="relative">
                         <button
                           onClick={() => { setJobDropdownOpen(!jobDropdownOpen); setUserDropdownOpen(false); }}
-                          className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-[#050402]/70 border border-[#f4c979]/20 text-xs text-[#fdf4db] hover:bg-white/5 transition-colors"
+                          className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-[#040605]/70 border border-[#F4F7F2]/20 text-xs text-[#F4F7F2] hover:bg-white/5 transition-colors"
                         >
-                          <span className={selectedJobIds.length ? 'text-[#f4c979]' : 'text-white/50'}>
+                          <span className={selectedJobIds.length ? 'text-[#F4F7F2]' : 'text-white/50'}>
                             {selectedJobIds.length ? `${selectedJobIds.length} job${selectedJobIds.length > 1 ? 's' : ''} selected` : 'All Jobs'}
                           </span>
                           <ChevronDown className={cn("w-3.5 h-3.5 text-white/40 transition-transform", jobDropdownOpen && "rotate-180")} />
@@ -650,7 +650,7 @@ export default function AdminJobProgress() {
                               initial={{ opacity: 0, y: -5 }}
                               animate={{ opacity: 1, y: 0 }}
                               exit={{ opacity: 0, y: -5 }}
-                              className="absolute top-full left-0 right-0 mt-1 rounded-lg bg-[#0a0806] border border-[#f4c979]/30 shadow-2xl max-h-48 overflow-y-auto"
+                              className="absolute top-full left-0 right-0 mt-1 rounded-lg bg-[#040605] border border-[#F4F7F2]/30 shadow-2xl max-h-48 overflow-y-auto"
                             >
                               {jobOptions.length === 0 ? (
                                 <p className="px-3 py-2 text-xs text-white/40">No jobs available</p>
@@ -668,7 +668,7 @@ export default function AdminJobProgress() {
                                     <span className={cn(
                                       "w-3.5 h-3.5 rounded border flex items-center justify-center text-[9px]",
                                       selectedJobIds.includes(id)
-                                        ? "bg-[#f4c979] border-[#f4c979] text-black"
+                                        ? "bg-[#F4F7F2] border-[#F4F7F2] text-black"
                                         : "border-white/30"
                                     )}>
                                       {selectedJobIds.includes(id) && '✓'}
@@ -686,9 +686,9 @@ export default function AdminJobProgress() {
                       <div className="relative">
                         <button
                           onClick={() => { setUserDropdownOpen(!userDropdownOpen); setJobDropdownOpen(false); }}
-                          className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-[#050402]/70 border border-[#f4c979]/20 text-xs text-[#fdf4db] hover:bg-white/5 transition-colors"
+                          className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-[#040605]/70 border border-[#F4F7F2]/20 text-xs text-[#F4F7F2] hover:bg-white/5 transition-colors"
                         >
-                          <span className={selectedUserIds.length ? 'text-[#f4c979]' : 'text-white/50'}>
+                          <span className={selectedUserIds.length ? 'text-[#F4F7F2]' : 'text-white/50'}>
                             {selectedUserIds.length ? `${selectedUserIds.length} user${selectedUserIds.length > 1 ? 's' : ''} selected` : 'All Users'}
                           </span>
                           <ChevronDown className={cn("w-3.5 h-3.5 text-white/40 transition-transform", userDropdownOpen && "rotate-180")} />
@@ -699,7 +699,7 @@ export default function AdminJobProgress() {
                               initial={{ opacity: 0, y: -5 }}
                               animate={{ opacity: 1, y: 0 }}
                               exit={{ opacity: 0, y: -5 }}
-                              className="absolute top-full left-0 right-0 mt-1 rounded-lg bg-[#0a0806] border border-[#f4c979]/30 shadow-2xl max-h-48 overflow-y-auto"
+                              className="absolute top-full left-0 right-0 mt-1 rounded-lg bg-[#040605] border border-[#F4F7F2]/30 shadow-2xl max-h-48 overflow-y-auto"
                             >
                               {userOptions.length === 0 ? (
                                 <p className="px-3 py-2 text-xs text-white/40">No users available</p>
@@ -717,7 +717,7 @@ export default function AdminJobProgress() {
                                     <span className={cn(
                                       "w-3.5 h-3.5 rounded border flex items-center justify-center text-[9px]",
                                       selectedUserIds.includes(id)
-                                        ? "bg-[#f4c979] border-[#f4c979] text-black"
+                                        ? "bg-[#F4F7F2] border-[#F4F7F2] text-black"
                                         : "border-white/30"
                                     )}>
                                       {selectedUserIds.includes(id) && '✓'}
@@ -737,7 +737,7 @@ export default function AdminJobProgress() {
                         type="button"
                         onClick={clearFilters}
                         aria-label="Clear all filters"
-                        className="text-[11px] text-white/40 hover:text-[#f4c979] transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 rounded"
+                        className="text-[11px] text-white/40 hover:text-[#F4F7F2] transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/50 rounded"
                       >
                         Clear all filters
                       </button>
@@ -763,12 +763,12 @@ export default function AdminJobProgress() {
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#14110d]/90 via-[#0b0906]/90 to-[#050403]/90 overflow-hidden"
+                className="rounded-leaf-sm border border-white/10 bg-gradient-to-br from-[#0B100D]/90 via-[#040605]/90 to-[#040605]/90 overflow-hidden"
               >
                 <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/5 bg-white/[0.02]">
                   <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-[#f4c979]/10">
-                      <TrendingUp className="w-3.5 h-3.5 text-[#f4c979]" />
+                    <div className="p-1.5 rounded-lg bg-[#F4F7F2]/10">
+                      <TrendingUp className="w-3.5 h-3.5 text-[#F4F7F2]" />
                     </div>
                     <span className="text-xs font-semibold text-white">By Job</span>
                   </div>
@@ -778,7 +778,7 @@ export default function AdminJobProgress() {
                 {/* Scrollable Table */}
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs text-left text-white/80">
-                    <thead className="text-[10px] uppercase tracking-wider text-white/40 bg-black/20">
+                    <thead className="text-[10px] uppercase text-white/40 bg-black/20 font-mono font-medium tracking-[0.14em]">
                       <tr>
                         <th className="px-3 py-2 font-medium">#</th>
                         <th className="px-3 py-2 font-medium">Job</th>
@@ -794,7 +794,7 @@ export default function AdminJobProgress() {
                           <td className="px-3 py-2">
                             <span className={cn(
                               "text-[10px] font-bold",
-                              row.rank === 1 ? "text-[#f4c979]" : 
+                              row.rank === 1 ? "text-[#F4F7F2]" : 
                               row.rank === 2 ? "text-gray-300" : 
                               row.rank === 3 ? "text-amber-600" : "text-white/30"
                             )}>
@@ -832,7 +832,7 @@ export default function AdminJobProgress() {
                           </td>
                           <td className="px-3 py-2 text-right text-white/60 hidden md:table-cell">
                             <div className="flex items-center justify-end gap-1">
-                              <Zap className="w-2.5 h-2.5 text-[#f4c979]/60" />
+                              <Zap className="w-2.5 h-2.5 text-[#F4F7F2]/60" />
                               <span>{row.efficiency.toFixed(0)}</span>
                             </div>
                           </td>
@@ -879,12 +879,12 @@ export default function AdminJobProgress() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.05 }}
-                className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#14110d]/90 via-[#0b0906]/90 to-[#050403]/90 overflow-hidden"
+                className="rounded-leaf-sm border border-white/10 bg-gradient-to-br from-[#0B100D]/90 via-[#040605]/90 to-[#040605]/90 overflow-hidden"
               >
                 <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/5 bg-white/[0.02]">
                   <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-[#f4c979]/10">
-                      <Users className="w-3.5 h-3.5 text-[#f4c979]" />
+                    <div className="p-1.5 rounded-lg bg-[#F4F7F2]/10">
+                      <Users className="w-3.5 h-3.5 text-[#F4F7F2]" />
                     </div>
                     <span className="text-xs font-semibold text-white">By User</span>
                   </div>
@@ -894,7 +894,7 @@ export default function AdminJobProgress() {
                 {/* Scrollable Table */}
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs text-left text-white/80">
-                    <thead className="text-[10px] uppercase tracking-wider text-white/40 bg-black/20">
+                    <thead className="text-[10px] uppercase text-white/40 bg-black/20 font-mono font-medium tracking-[0.14em]">
                       <tr>
                         <th className="px-3 py-2 font-medium">#</th>
                         <th className="px-3 py-2 font-medium">User</th>
@@ -910,7 +910,7 @@ export default function AdminJobProgress() {
                           <td className="px-3 py-2">
                             <span className={cn(
                               "text-[10px] font-bold",
-                              row.rank === 1 ? "text-[#f4c979]" : 
+                              row.rank === 1 ? "text-[#F4F7F2]" : 
                               row.rank === 2 ? "text-gray-300" : 
                               row.rank === 3 ? "text-amber-600" : "text-white/30"
                             )}>
@@ -940,7 +940,7 @@ export default function AdminJobProgress() {
                           </td>
                           <td className="px-3 py-2 text-right text-white/60 hidden md:table-cell">
                             <div className="flex items-center justify-end gap-1">
-                              <Zap className="w-2.5 h-2.5 text-[#f4c979]/60" />
+                              <Zap className="w-2.5 h-2.5 text-[#F4F7F2]/60" />
                               <span>{row.efficiency.toFixed(0)}</span>
                             </div>
                           </td>

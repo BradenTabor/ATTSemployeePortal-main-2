@@ -88,7 +88,7 @@ function SafetyRewardsPage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center"
         >
-          <h1 className="text-2xl font-bold text-white">Safety Rewards</h1>
+          <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">Safety Rewards</h1>
           <p className="text-sm text-white/50 mt-1">
             {MONTHS[now.month - 1]} {now.year}
           </p>
@@ -118,18 +118,18 @@ function SafetyRewardsPage() {
           </Link>
           <Link
             to="/rewards-store"
-            className={`${cardClass} flex items-center justify-between gap-3 p-4 hover:border-[#f4c979]/30 transition-colors`}
+            className={`${cardClass} flex items-center justify-between gap-3 p-4 hover:border-[#F4F7F2]/30 transition-colors`}
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#f4c979]/15 flex items-center justify-center">
-                <ShoppingBag className="w-5 h-5 text-[#f4c979]" aria-hidden />
+              <div className="w-10 h-10 rounded-xl bg-[#F4F7F2]/15 flex items-center justify-center">
+                <ShoppingBag className="w-5 h-5 text-[#F4F7F2]" aria-hidden />
               </div>
               <div>
                 <p className="text-sm font-semibold text-white">Rewards Store</p>
                 <p className="text-xs text-white/50">Spend points on gear and gift cards</p>
               </div>
             </div>
-            <ChevronRight className="w-5 h-5 text-[#f4c979]/60" aria-hidden />
+            <ChevronRight className="w-5 h-5 text-[#F4F7F2]/60" aria-hidden />
           </Link>
         </motion.div>
 
@@ -155,12 +155,12 @@ function SafetyRewardsPage() {
                   />
                 </div>
               ) : (
-                <div className="w-full h-40 bg-gradient-to-br from-[#f6dcb2]/10 via-transparent to-emerald-500/10 flex items-center justify-center">
-                  <Trophy className="w-16 h-16 text-[#f6dcb2]/20" />
+                <div className="w-full h-40 bg-gradient-to-br from-[#E4EAE1]/10 via-transparent to-emerald-500/10 flex items-center justify-center">
+                  <Trophy className="w-16 h-16 text-[#E4EAE1]/20" />
                 </div>
               )}
               <div className="p-4 text-center">
-                <p className="text-xs text-[#f6dcb2]/60 font-medium uppercase tracking-wider mb-1">
+                <p className="text-xs text-[#E4EAE1]/60 font-medium uppercase mb-1 font-mono font-medium tracking-[0.14em]">
                   Grand Prize
                 </p>
                 <h2 className="text-lg font-bold text-white">
@@ -178,7 +178,7 @@ function SafetyRewardsPage() {
                 <div className="border-t border-white/[0.06] px-4 py-3 flex gap-3">
                   {reward.runner_up_1_name && (
                     <div className="flex-1 text-center">
-                      <p className="text-[10px] text-white/30 uppercase tracking-wider">
+                      <p className="text-[10px] text-white/30 uppercase font-mono font-medium tracking-[0.14em]">
                         Runner-up
                       </p>
                       <p className="text-sm text-white/70 font-medium mt-0.5">
@@ -188,7 +188,7 @@ function SafetyRewardsPage() {
                   )}
                   {reward.runner_up_2_name && (
                     <div className="flex-1 text-center">
-                      <p className="text-[10px] text-white/30 uppercase tracking-wider">
+                      <p className="text-[10px] text-white/30 uppercase font-mono font-medium tracking-[0.14em]">
                         Runner-up
                       </p>
                       <p className="text-sm text-white/70 font-medium mt-0.5">
@@ -279,7 +279,7 @@ function SafetyRewardsPage() {
             transition={{ delay: 0.2 }}
             className={`${cardClass} p-4 text-center`}
           >
-            <Trophy className="w-6 h-6 text-[#f6dcb2]/30 mx-auto mb-2" />
+            <Trophy className="w-6 h-6 text-[#E4EAE1]/30 mx-auto mb-2" />
             <p className="text-sm text-white/50">
               Watch the drawing at month end!
             </p>
@@ -340,7 +340,7 @@ function SafetyRewardsPage() {
             className={`${cardClass} p-5 text-center border-emerald-500/20`}
           >
             <PartyPopper className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
-            <p className="text-xs text-emerald-400/60 font-medium uppercase tracking-wider mb-1">
+            <p className="text-xs text-emerald-400/60 font-medium uppercase mb-1 font-mono font-medium tracking-[0.14em]">
               Winner
             </p>
             <p className="text-lg font-bold text-white">

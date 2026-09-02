@@ -9,6 +9,7 @@ import { supabase } from "../../lib/supabaseClient";
 import { fetchDvirMetrics } from "../../lib/dvirMetrics";
 import { toZonedTime } from "date-fns-tz";
 import { useDashboardCardTheme } from "../../contexts/dashboardCardTheme";
+import WidgetHeader from "./WidgetHeader";
 
 const TZ = "America/Chicago";
 
@@ -57,9 +58,9 @@ export default function CrewSiteOverview() {
   if (isLoading) {
     return (
       <div className={`${cardClass} p-4`}>
-        <h3 className="text-sm font-semibold text-white mb-3">Crew / site overview</h3>
+        <WidgetHeader title="Crew / site overview" icon={Users} />
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="w-6 h-6 animate-spin text-emerald-400" aria-hidden />
+          <Loader2 className="w-6 h-6 animate-spin text-rose-300/80" aria-hidden />
         </div>
       </div>
     );
@@ -68,7 +69,7 @@ export default function CrewSiteOverview() {
   if (error) {
     return (
       <div className={`${cardClass} p-4`}>
-        <h3 className="text-sm font-semibold text-white mb-3">Crew / site overview</h3>
+        <WidgetHeader title="Crew / site overview" icon={Users} />
         <div className="flex items-center gap-2 py-4 text-red-300 text-sm">
           <AlertTriangle className="w-5 h-5 flex-shrink-0" />
           <span>{error instanceof Error ? error.message : "Failed to load"}</span>
@@ -79,7 +80,7 @@ export default function CrewSiteOverview() {
 
   return (
     <div className={`${cardClass} p-4`}>
-      <h3 className="text-sm font-semibold text-white mb-3">Crew / site overview</h3>
+      <WidgetHeader title="Crew / site overview" icon={Users} />
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm min-w-[320px]">
           <thead>

@@ -46,13 +46,13 @@ interface CardThemeConfig {
 const cardThemeConfig: Record<DashboardCardTheme, CardThemeConfig> = {
   emerald: {
     default: {
-      bg: 'bg-[#041b14]/80',
+      bg: 'bg-[#0B100D]/80',
       border: 'border-white/[0.08]',
       hoverBorder: 'hover:border-emerald-500/30',
-      hoverBg: 'hover:bg-[#052a1d]/80',
+      hoverBg: 'hover:bg-[#121A15]/80',
     },
     elevated: {
-      gradient: 'bg-gradient-to-br from-[#062a1d]/95 via-[#041e15]/90 to-[#03150f]/95',
+      gradient: 'bg-gradient-to-br from-[#121A15]/95 via-[#0B100D]/90 to-[#0B100D]/95',
       border: 'border-emerald-500/30',
       shadow: 'shadow-lg shadow-emerald-900/20',
       hoverShadow: 'hover:shadow-emerald-500/20',
@@ -68,13 +68,13 @@ const cardThemeConfig: Record<DashboardCardTheme, CardThemeConfig> = {
   },
   blue: {
     default: {
-      bg: 'bg-[#041420]/80',
+      bg: 'bg-[#121A15]/80',
       border: 'border-white/[0.08]',
       hoverBorder: 'hover:border-blue-500/30',
-      hoverBg: 'hover:bg-[#052030]/80',
+      hoverBg: 'hover:bg-[#121A15]/80',
     },
     elevated: {
-      gradient: 'bg-gradient-to-br from-[#062a3d]/95 via-[#041e30]/90 to-[#030f1f]/95',
+      gradient: 'bg-gradient-to-br from-[#1E2A23]/95 via-[#121A15]/90 to-[#0B100D]/95',
       border: 'border-blue-500/30',
       shadow: 'shadow-lg shadow-blue-900/20',
       hoverShadow: 'hover:shadow-blue-500/20',
@@ -231,7 +231,7 @@ export const DashboardCard = memo(function DashboardCard({
   interactive = false,
   theme = 'emerald',
 }: DashboardCardProps) {
-  const baseStyles = 'rounded-2xl sm:rounded-3xl overflow-hidden';
+  const baseStyles = 'rounded-leaf-sm sm:rounded-leaf overflow-hidden';
   const themeStyles = cardThemeConfig[theme];
   
   const getVariantStyles = () => {
@@ -305,8 +305,8 @@ export const HorizontalScroll = memo(function HorizontalScroll({
       {/* Scroll hints (gradient fades on edges) */}
       {showScrollHints && (
         <>
-          <div className="absolute left-0 top-0 bottom-2 w-4 bg-gradient-to-r from-[#041b14] to-transparent pointer-events-none" />
-          <div className="absolute right-0 top-0 bottom-2 w-4 bg-gradient-to-l from-[#041b14] to-transparent pointer-events-none" />
+          <div className="absolute left-0 top-0 bottom-2 w-4 bg-gradient-to-r from-[#0B100D] to-transparent pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-2 w-4 bg-gradient-to-l from-[#0B100D] to-transparent pointer-events-none" />
         </>
       )}
     </div>

@@ -46,7 +46,7 @@ interface Particle {
   scalar: number;
 }
 
-const defaultColors = ['#10b981', '#34d399', '#6ee7b7', '#a7f3d0', '#059669', '#047857'];
+const defaultColors = ['#3DDC84', '#5EE898', '#8DF5A8', '#C8FFD4', '#2FA45A', '#1F7A44'];
 
 export const Confetti = memo(forwardRef<ConfettiRef, { className?: string }>(
   function Confetti({ className }, ref) {

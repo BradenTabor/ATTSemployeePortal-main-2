@@ -21,7 +21,7 @@ export default function AttendanceProgressBar({
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         />
       </div>
-      <span className="text-sm font-medium text-[#e9d5ff] tabular-nums min-w-[3ch] text-right">
+      <span className="text-sm font-medium text-[#C8FFD4] tabular-nums min-w-[3ch] text-right">
         {label ?? `${Math.round(clamped)}%`}
       </span>
     </div>

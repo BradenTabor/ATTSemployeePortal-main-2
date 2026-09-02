@@ -44,13 +44,13 @@ interface FullComplianceCelebrationProps {
 
 // Emerald-themed confetti colors
 const CONFETTI_COLORS = [
-  '#10b981', // emerald-500
-  '#34d399', // emerald-400
-  '#6ee7b7', // emerald-300
-  '#fbbf24', // amber-400
-  '#f59e0b', // amber-500
+  '#3DDC84', // emerald-500
+  '#5EE898', // emerald-400
+  '#8DF5A8', // emerald-300
+  '#B8FF7A', // amber-400
+  '#9BEB5B', // amber-500
   '#ffffff', // white
-  '#a7f3d0', // emerald-200
+  '#C8FFD4', // emerald-200
 ];
 
 // Pre-generate confetti particles to avoid runtime calculations
@@ -156,7 +156,7 @@ function ProgressRing() {
         cy="50"
         r="45"
         fill="none"
-        stroke="rgba(16, 185, 129, 0.15)"
+        stroke="rgba(47,164,90, 0.15)"
         strokeWidth="6"
       />
       {/* Animated progress ring */}
@@ -175,9 +175,9 @@ function ProgressRing() {
       />
       <defs>
         <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#10b981" />
-          <stop offset="50%" stopColor="#34d399" />
-          <stop offset="100%" stopColor="#fbbf24" />
+          <stop offset="0%" stopColor="#3DDC84" />
+          <stop offset="50%" stopColor="#5EE898" />
+          <stop offset="100%" stopColor="#B8FF7A" />
         </linearGradient>
       </defs>
     </svg>
@@ -276,10 +276,10 @@ export function FullComplianceCelebration({
             exit={{ opacity: 0 }}
             style={{
               background: `
-                radial-gradient(ellipse at 50% 0%, rgba(16, 185, 129, 0.15) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 80%, rgba(251, 191, 36, 0.1) 0%, transparent 40%),
-                radial-gradient(ellipse at 20% 80%, rgba(16, 185, 129, 0.1) 0%, transparent 40%),
-                rgba(0, 0, 0, 0.92)
+                radial-gradient(ellipse at 50% 0%, rgba(47,164,90, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(174,219,63, 0.1) 0%, transparent 40%),
+                radial-gradient(ellipse at 20% 80%, rgba(47,164,90, 0.1) 0%, transparent 40%),
+                rgba(0,0,0, 0.92)
               `,
               backdropFilter: 'blur(12px)',
             }}
@@ -412,7 +412,7 @@ export function FullComplianceCelebration({
 
             {/* Shield badge */}
             <motion.div
-              className="flex items-center gap-2.5 px-5 py-2.5 bg-gradient-to-r from-emerald-500/20 via-emerald-500/15 to-amber-500/10 border border-emerald-500/40 rounded-2xl mb-8"
+              className="flex items-center gap-2.5 px-5 py-2.5 bg-gradient-to-r from-emerald-500/20 via-emerald-500/15 to-amber-500/10 border border-emerald-500/40 rounded-leaf-sm mb-8"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 1.1, type: 'spring' }}

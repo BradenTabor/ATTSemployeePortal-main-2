@@ -97,8 +97,8 @@ export const TYPE_FILTERS = [
 // =============================================================================
 
 export const STATUS_BADGE: Record<string, string> = {
-  draft: "bg-[#2b1a07]/80 text-[#fcdca1] border border-[#f4c979]/40",
-  completed: "bg-[#0f2218]/80 text-[#9cf6d2] border border-[#6fe9b7]/35",
+  draft: "bg-[#121A15]/80 text-[#ECFFAE] border border-[#F4F7F2]/40",
+  completed: "bg-[#121A15]/80 text-[#8DF5A8] border border-[#5EE898]/35",
 };
 
 // =============================================================================

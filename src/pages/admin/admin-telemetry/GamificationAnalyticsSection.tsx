@@ -18,6 +18,7 @@ import {
 } from '@/hooks/gamification';
 import { itemVariants } from './constants';
 import { GamificationProgramAdminSection } from './GamificationProgramAdminSection';
+import { SectionInfo } from './SectionInfo';
 
 interface StatBoxProps {
   label: string;
@@ -37,7 +38,7 @@ function StatBox({ label, value, subValue, color = 'emerald' }: StatBoxProps) {
 
   return (
     <div className={cn('rounded-lg sm:rounded-xl border p-2 sm:p-3', colorClasses[color].split(' ').slice(0, 2))}>
-      <span className="text-[9px] sm:text-[10px] uppercase tracking-wide text-white/50">{label}</span>
+      <span className="text-[9px] sm:text-[10px] uppercase text-white/50 font-mono font-medium tracking-[0.14em]">{label}</span>
       <p className={cn('text-base sm:text-xl font-bold tabular-nums mt-0.5', colorClasses[color].split(' ')[2])}>
         {typeof value === 'number' ? value.toLocaleString() : value}
       </p>
@@ -74,7 +75,7 @@ export function GamificationAnalyticsSection({ days }: GamificationAnalyticsSect
 
   return (
     <motion.section variants={itemVariants} className="space-y-2 sm:space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div className="flex items-center gap-2">
           <Award className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" aria-hidden />
           <div>
@@ -83,12 +84,20 @@ export function GamificationAnalyticsSection({ days }: GamificationAnalyticsSect
               Long-tail activation, engagement, and launch readiness
             </p>
           </div>
+          <SectionInfo tone="amber" title="Gamification Program">
+            <p>The points &amp; rewards program for field workers. These metrics show whether it's driving real engagement and safe behavior — and whether it's healthy to launch.</p>
+            <p>
+              <b>Session users</b> = distinct people active in the window.
+              <b> Active days</b> and <b>Active weeks</b> count person-days and person-weeks of
+              activity (one person active on 3 days = 3 active days).
+            </p>
+          </SectionInfo>
         </div>
         <button
           type="button"
           onClick={() => refetch()}
           disabled={isRefetching}
-          className="self-start text-[10px] sm:text-xs px-2 py-1 rounded-lg border border-white/10 bg-white/5 text-white/60 hover:text-white/80"
+          className="tap-44 relative self-start text-[10px] sm:text-xs px-2 py-1 rounded-lg border border-white/10 bg-white/5 text-white/60 hover:text-white/80"
         >
           Refresh metrics
         </button>
@@ -172,9 +181,19 @@ export function GamificationAnalyticsSection({ days }: GamificationAnalyticsSect
                 : 'border-white/10 bg-white/[0.03]',
             )}
           >
-            <div className="flex items-center gap-2 mb-2">
+            <div className="relative flex items-center gap-2 mb-2">
               <Sparkles className="w-4 h-4 text-amber-400" aria-hidden />
               <h3 className="text-xs sm:text-sm font-semibold text-white">Long-tail activation</h3>
+              <SectionInfo tone="amber" title="Long-tail activation">
+                <p>Measures whether previously-inactive workers are "waking up" thanks to the program.</p>
+                <p>
+                  <b>Cohort</b> = the rarely-active workers captured in a one-time, pre-launch
+                  snapshot (2 or fewer active days in the prior 90).
+                  <b> Activated</b> = how many of them have earned points since.
+                  <b> Rate</b> = activated ÷ cohort.
+                </p>
+                <p>Needs a captured baseline first; until then it reads "baseline not captured."</p>
+              </SectionInfo>
             </div>
             {baselineReady ? (
               <div className="grid grid-cols-3 gap-2">
@@ -203,9 +222,13 @@ export function GamificationAnalyticsSection({ days }: GamificationAnalyticsSect
           </div>
 
           <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="relative flex items-center gap-2 mb-2">
               <Target className="w-4 h-4 text-emerald-400" aria-hidden />
               <h3 className="text-xs sm:text-sm font-semibold text-white">Target behaviors</h3>
+              <SectionInfo tone="emerald" title="Target behaviors">
+                <p>Counts of the safety actions the program is designed to reward.</p>
+                <p>The arrow compares this period to the period just before it — <b className="text-emerald-300">green</b> is up, <b className="text-amber-300">amber</b> is down, and "new" means there was nothing to compare against.</p>
+              </SectionInfo>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
               {(
@@ -228,9 +251,13 @@ export function GamificationAnalyticsSection({ days }: GamificationAnalyticsSect
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="relative flex items-center gap-2 mb-2">
                 <BarChart3 className="w-4 h-4 text-amber-400" aria-hidden />
                 <h3 className="text-xs sm:text-sm font-semibold text-white">Redemption cost</h3>
+                <SectionInfo tone="amber" title="Redemption cost">
+                  <p>Total points workers have cashed in for rewards during this period.</p>
+                  <p>Shows the number of redemptions and the prior period's total so you can gauge how fast points are being spent.</p>
+                </SectionInfo>
               </div>
               <p className="text-lg font-bold text-amber-300 tabular-nums">
                 {data.redemptionCost.totalPointsRedeemed.toLocaleString()} pts
@@ -240,9 +267,13 @@ export function GamificationAnalyticsSection({ days }: GamificationAnalyticsSect
               </p>
             </div>
             <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="relative flex items-center gap-2 mb-2">
                 <Flag className="w-4 h-4 text-red-400" aria-hidden />
                 <h3 className="text-xs sm:text-sm font-semibold text-white">Anomaly flags</h3>
+                <SectionInfo tone="red" title="Anomaly flags">
+                  <p>Workers whose point earnings this period look unusually high — more than 3 standard deviations above the group average.</p>
+                  <p>A quick check for gaming or data issues. A flag isn't proof of anything; it just means an account is worth a closer look.</p>
+                </SectionInfo>
               </div>
               <p className="text-lg font-bold text-red-300 tabular-nums">{data.anomalyFlag.flaggedUserCount}</p>
               <p className="text-[10px] text-white/40">{data.anomalyFlag.method.replace(/_/g, ' ')}</p>

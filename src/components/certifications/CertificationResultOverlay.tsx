@@ -187,7 +187,7 @@ export function CertificationResultOverlay() {
           isClosing && !prefersReducedMotion ? 'scale-95 opacity-0' : 'scale-100 opacity-100'
         }`}
       >
-        <div className={`rounded-2xl border-2 ${
+        <div className={`rounded-leaf-sm border-2 ${
           passed
             ? 'border-emerald-500/60 bg-gradient-to-b from-emerald-950/95 to-neutral-900/98'
             : 'border-red-500/60 bg-gradient-to-b from-red-950/95 to-neutral-900/98'

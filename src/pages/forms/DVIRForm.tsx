@@ -12,6 +12,7 @@ import DashboardLayout from "../../layouts/DashboardLayout";
 import { OfflineFormIndicator } from "../../components/OfflineFormIndicator";
 import { AlertTriangle } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
+import { getAuthUserFast } from "../../lib/authUser";
 import { logger, redactUserId } from "../../lib/logger"; 
 import { cn } from "../../lib/utils";
 import { useSmartDefaults } from "../../hooks/useSmartDefaults";
@@ -302,15 +303,7 @@ export default function DVIRForm() {
       if (form.driversName) return;
       
       try {
-        const {
-          data: { user: authUser },
-          error: userError,
-        } = await supabase.auth.getUser();
-
-        if (userError) {
-          logger.error("Error getting auth user:", userError);
-          return;
-        }
+        const authUser = await getAuthUserFast();
         if (!authUser) {
           logger.warn("No authenticated user found for DVIR form.");
           return;
@@ -720,13 +713,13 @@ export default function DVIRForm() {
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-4 rounded-3xl border-4 border-yellow-500 px-4 py-3 text-xs text-white bg-yellow-900/45 shadow-2xl shadow-black"
+          className="mb-4 rounded-leaf border border-lime-400/40 border-l-[3px] border-l-lime-400 px-4 py-3 text-xs text-bone-100 bg-lime-400/[0.08] shadow-slab"
         >
           <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+            <AlertTriangle className="w-5 h-5 text-lime-300 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-medium text-yellow-200 mb-1">Pre-Trip Inspection Required</p>
-              <p className="text-white/80">
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-lime-300 mb-1.5">Pre-Trip Inspection Required</p>
+              <p className="text-bone-300 leading-relaxed">
                 At the start of each shift, drivers must inspect their vehicles and
                 report any deficiency that could affect safety or result in a breakdown.
                 Complete all sections, capture the required photo, and sign off before operating.
@@ -826,7 +819,7 @@ export default function DVIRForm() {
                           active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900
                           ${
                             value === "P"
-                              ? "bg-emerald-600 border-emerald-400 text-white shadow-[0_0_10px_rgba(16,185,129,0.4)]"
+                              ? "bg-emerald-600 border-emerald-400 text-white shadow-[0_0_10px_rgba(47,164,90,0.4)]"
                               : "bg-black/70 border-gray-600 text-gray-300 hover:border-emerald-400/70 hover:text-emerald-200"
                           }
                         `}
@@ -864,7 +857,7 @@ export default function DVIRForm() {
                           active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900
                           ${
                             value === "N/A"
-                              ? "bg-amber-600 border-amber-400 text-white shadow-[0_0_10px_rgba(245,158,11,0.4)]"
+                              ? "bg-amber-600 border-amber-400 text-white shadow-[0_0_10px_rgba(174,219,63,0.4)]"
                               : "bg-black/70 border-gray-600 text-gray-300 hover:border-amber-400/70 hover:text-amber-200"
                           }
                         `}
@@ -1015,7 +1008,7 @@ export default function DVIRForm() {
                 value={form.notes}
                 onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
                 rows={6}
-                className="w-full rounded-2xl bg-black/60 border border-white/10 px-4 py-3 pr-14 text-sm text-white placeholder:text-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60"
+                className="w-full rounded-leaf-sm bg-black/60 border border-white/10 px-4 py-3 pr-14 text-sm text-white placeholder:text-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60"
                 placeholder="Example: Right tail light not functioning, noted during inspection."
               />
               <div className="absolute top-3 right-3">
@@ -1068,7 +1061,7 @@ export default function DVIRForm() {
                           active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900
                           ${
                             value === "P"
-                              ? "bg-emerald-600 border-emerald-400 text-white shadow-[0_0_10px_rgba(16,185,129,0.4)]"
+                              ? "bg-emerald-600 border-emerald-400 text-white shadow-[0_0_10px_rgba(47,164,90,0.4)]"
                               : "bg-black/70 border-gray-600 text-gray-300 hover:border-emerald-400/70 hover:text-emerald-200"
                           }
                         `}
@@ -1106,7 +1099,7 @@ export default function DVIRForm() {
                           active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900
                           ${
                             value === "N/A"
-                              ? "bg-amber-600 border-amber-400 text-white shadow-[0_0_10px_rgba(245,158,11,0.4)]"
+                              ? "bg-amber-600 border-amber-400 text-white shadow-[0_0_10px_rgba(174,219,63,0.4)]"
                               : "bg-black/70 border-gray-600 text-gray-300 hover:border-amber-400/70 hover:text-amber-200"
                           }
                         `}
@@ -1129,7 +1122,7 @@ export default function DVIRForm() {
                   onChange={(e) => setForm(prev => ({ ...prev, aerialNotes: e.target.value }))}
                   rows={3}
                   placeholder="Enter any aerial lift notes..."
-                  className="w-full rounded-2xl bg-black/60 border border-white/10 px-4 py-2 pr-14 text-sm text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60"
+                  className="w-full rounded-leaf-sm bg-black/60 border border-white/10 px-4 py-2 pr-14 text-sm text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60"
                 />
                 <div className="absolute top-2 right-3">
                   <VoiceInputButton
@@ -1166,7 +1159,7 @@ export default function DVIRForm() {
                     value={form.finalDriverSignature}
                     onChange={(e) => setForm(prev => ({ ...prev, finalDriverSignature: e.target.value }))}
                     placeholder="Type your full name"
-                    className="w-full rounded-2xl bg-black/60 border border-white/10 px-4 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60"
+                    className="w-full rounded-leaf-sm bg-black/60 border border-white/10 px-4 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60"
                   />
                 </div>
                 <div className="space-y-2">
@@ -1179,7 +1172,7 @@ export default function DVIRForm() {
                     value={form.generalForemanSignature}
                     onChange={(e) => setForm(prev => ({ ...prev, generalForemanSignature: e.target.value }))}
                     placeholder="Type foreman full name"
-                    className="w-full rounded-2xl bg-black/60 border border-white/10 px-4 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60"
+                    className="w-full rounded-leaf-sm bg-black/60 border border-white/10 px-4 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60"
                   />
                 </div>
               </div>
@@ -1208,7 +1201,7 @@ export default function DVIRForm() {
               type="button"
               onClick={() => setForm(prev => ({ ...prev, isMechanicOpen: !prev.isMechanicOpen }))}
               aria-label={form.isMechanicOpen ? "Hide mechanic form section" : "Show mechanic form section"}
-              className="w-full flex items-center justify-between rounded-2xl border border-white/5 bg-white/5 px-4 py-3 text-sm text-white/80 transition hover:border-emerald-400/30"
+              className="w-full flex items-center justify-between rounded-leaf-sm border border-white/5 bg-white/5 px-4 py-3 text-sm text-white/80 transition hover:border-emerald-400/30"
             >
               <span>{form.isMechanicOpen ? "Hide mechanic form" : "Open mechanic form"}</span>
               <span className="text-xs text-white/60" aria-hidden="true">{form.isMechanicOpen ? "▲" : "▼"}</span>
@@ -1225,7 +1218,7 @@ export default function DVIRForm() {
                       id="mechTruckNumber"
                       value={form.mechTruckNumber}
                       onChange={(e) => setForm(prev => ({ ...prev, mechTruckNumber: e.target.value }))}
-                      className="w-full rounded-2xl bg-black/60 border border-white/10 px-3 py-2 text-sm text-white"
+                      className="w-full rounded-leaf-sm bg-black/60 border border-white/10 px-3 py-2 text-sm text-white"
                     >
                       <option value="">Select Truck Number</option>
                       {TRUCK_NUMBERS.map((num) => (
@@ -1244,7 +1237,7 @@ export default function DVIRForm() {
                       value={form.mechanicDate}
                       onChange={(e) => setForm(prev => ({ ...prev, mechanicDate: e.target.value }))}
                       placeholder="MM/DD/YYYY"
-                      className="w-full rounded-2xl bg-black/60 border border-white/10 px-3 py-2 text-sm text-white"
+                      className="w-full rounded-leaf-sm bg-black/60 border border-white/10 px-3 py-2 text-sm text-white"
                     />
                   </div>
                 </div>
@@ -1258,7 +1251,7 @@ export default function DVIRForm() {
                     value={form.deficiencyCorrected}
                     onChange={(e) => setForm(prev => ({ ...prev, deficiencyCorrected: e.target.value }))}
                     placeholder="Describe corrected deficiencies"
-                    className="w-full rounded-2xl bg-black/60 border border-white/10 px-3 py-2 text-sm text-white"
+                    className="w-full rounded-leaf-sm bg-black/60 border border-white/10 px-3 py-2 text-sm text-white"
                   />
                 </div>
 
@@ -1328,7 +1321,7 @@ export default function DVIRForm() {
                     onChange={(e) => setForm(prev => ({ ...prev, mechanicRemarks: e.target.value }))}
                     rows={2}
                     placeholder="Enter mechanic remarks..."
-                    className="w-full rounded-2xl bg-black/60 border border-white/10 px-3 py-2 text-sm text-white"
+                    className="w-full rounded-leaf-sm bg-black/60 border border-white/10 px-3 py-2 text-sm text-white"
                   />
                 </div>
 
@@ -1343,7 +1336,7 @@ export default function DVIRForm() {
                       value={form.mechanicSignature}
                       onChange={(e) => setForm(prev => ({ ...prev, mechanicSignature: e.target.value }))}
                       placeholder="Type mechanic full name"
-                      className="w-full rounded-2xl bg-black/60 border border-white/10 px-4 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60"
+                      className="w-full rounded-leaf-sm bg-black/60 border border-white/10 px-4 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60"
                     />
                   </div>
                   <div className="space-y-2">
@@ -1356,7 +1349,7 @@ export default function DVIRForm() {
                       value={form.driverApprovalSignature}
                       onChange={(e) => setForm(prev => ({ ...prev, driverApprovalSignature: e.target.value }))}
                       placeholder="Type driver name (approval)"
-                      className="w-full rounded-2xl bg-black/60 border border-white/10 px-4 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60"
+                      className="w-full rounded-leaf-sm bg-black/60 border border-white/10 px-4 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60"
                     />
                   </div>
                 </div>

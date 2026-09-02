@@ -41,10 +41,10 @@ export default function StatusButton({
         'flex items-center justify-center gap-1 rounded-lg border font-medium transition-all duration-200',
         'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-400',
         compact
-          ? 'px-2 py-1.5 text-[11px]'
+          ? 'tap-44 relative px-2 py-1.5 text-[11px]'
           : mobile
-            ? 'flex-1 py-2 text-[11px] px-1'
-            : 'px-3 py-2 text-xs',
+            ? 'min-h-[44px] flex-1 py-2 text-[11px] px-1'
+            : 'min-h-[40px] px-3 py-2 text-xs',
         isActive
           ? cn(config.solidClass, 'border-transparent shadow-sm')
           : cn(

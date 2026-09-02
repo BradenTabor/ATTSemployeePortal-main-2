@@ -10,6 +10,8 @@ import { logger } from "../../lib/logger";
 import { supabase } from "../../lib/supabaseClient";
 import { AvatarDropdownPortal } from "../../components/dashboard/AvatarDropdownPortal";
 import { EnableNotificationsButton } from "../../components/notifications";
+import { canopy } from "../../lib/glass";
+import { Eyebrow } from "../../components/canopy/Eyebrow";
 import { getDeviceCapabilities } from "../../lib/mobilePerf";
 
 // Lazy-loaded components
@@ -55,20 +57,20 @@ const CompactNavCard = memo(function CompactNavCard({
 
   if (comingSoon) {
     return (
-      <div className="relative rounded-xl border border-orange-500/15 bg-gradient-to-r from-[#1a0c08]/50 to-[#0f0705]/40 overflow-hidden">
+      <div className="relative rounded-leaf-sm border border-bone-50/[0.06] bg-ink-950/40 overflow-hidden">
         <div className="flex items-center gap-3 px-3.5 py-3 opacity-75">
-          <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400/60 flex-shrink-0 [&>img]:max-w-[20px] [&>img]:max-h-[20px] [&>img]:object-contain">
+          <div className="w-10 h-10 rounded-leaf-sm bg-bone-50/[0.03] border border-bone-50/[0.08] flex items-center justify-center text-bone-500 flex-shrink-0 [&>img]:max-w-[20px] [&>img]:max-h-[20px] [&>img]:object-contain">
             {icon}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm font-semibold text-white/50 truncate">{title}</span>
-              <span className="text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-md bg-orange-500/20 text-orange-300/70 border border-orange-500/25 flex-shrink-0">
+              <span className="text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-md bg-bone-50/[0.06] text-bone-400 border border-bone-50/[0.1] font-mono flex-shrink-0">
                 Soon
               </span>
             </div>
             {description && (
-              <span className="text-[11px] text-orange-300/35 line-clamp-2 mt-0.5 block">{description}</span>
+              <span className="text-[11px] text-bone-500 line-clamp-2 mt-0.5 block">{description}</span>
             )}
           </div>
         </div>
@@ -79,19 +81,19 @@ const CompactNavCard = memo(function CompactNavCard({
   return (
     <motion.button
       onClick={() => navigate(to)}
-      className="group w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-left border-l-2 border-l-transparent bg-gradient-to-r from-[#1a0c08]/80 to-[#0f0705]/60 border border-orange-500/20 hover:border-orange-500/35 hover:border-l-orange-500/50 active:scale-[0.99] transition-all duration-200"
+      className="group w-full flex items-center gap-3 px-3.5 py-3 rounded-leaf-sm text-left bg-ink-950/60 border border-bone-50/[0.08] hover:border-lime-400/40 hover:bg-ink-900/80 active:scale-[0.99] transition-[border-color,background-color,transform] duration-500 ease-canopy focus:outline-none focus-visible:ring-2 focus-visible:ring-verdant-400/70"
       whileTap={{ scale: 0.99 }}
     >
-      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500/20 to-orange-600/10 border border-orange-500/20 flex items-center justify-center text-orange-400 group-hover:text-orange-300 transition-colors flex-shrink-0 [&>img]:max-w-[22px] [&>img]:max-h-[22px] [&>img]:object-contain">
+      <div className="w-10 h-10 rounded-leaf-sm bg-verdant-500/15 border border-verdant-400/25 flex items-center justify-center text-lime-300 group-hover:text-lime-200 transition-colors flex-shrink-0 [&>img]:max-w-[22px] [&>img]:max-h-[22px] [&>img]:object-contain">
         {icon}
       </div>
       <div className="flex-1 min-w-0">
         <span className="text-sm font-semibold text-white/95 group-hover:text-white truncate block">{title}</span>
         {description && (
-          <span className="text-[11px] text-orange-300/50 group-hover:text-orange-300/60 truncate block mt-0.5">{description}</span>
+          <span className="text-[11px] text-bone-400 group-hover:text-bone-300 truncate block mt-0.5">{description}</span>
         )}
       </div>
-      <ChevronRight className="w-4 h-4 text-orange-400/50 group-hover:text-orange-400 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+      <ChevronRight className="w-4 h-4 text-bone-500 group-hover:text-lime-300 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
     </motion.button>
   );
 });
@@ -121,22 +123,19 @@ const QuickActionGrid = memo(function QuickActionGrid() {
           key={action.to}
           onClick={() => navigate(action.to)}
           variants={shouldReduceMotion ? undefined : fadeUp}
-          className={`relative overflow-hidden rounded-xl px-3 py-3.5 font-bold text-sm transition-all active:scale-[0.97] ${
-            action.primary 
-              ? "bg-gradient-to-br from-orange-500 via-orange-600 to-amber-700 text-white shadow-lg shadow-orange-500/30" 
-              : "bg-gradient-to-br from-[#2b1810] to-[#1a0c08] text-orange-200 border border-orange-500/25 hover:border-orange-500/40"
+          className={`group relative overflow-hidden rounded-leaf-sm px-3 py-4 text-sm font-semibold transition-[border-color,background-color,transform] duration-500 ease-canopy active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-verdant-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950 ${
+            action.primary
+              ? "border border-bone-50/30 bg-[linear-gradient(135deg,#F4F7F2_0%,#D2FFA3_100%)] text-ink-950 shadow-[0_2px_6px_rgba(0,0,0,0.5),0_18px_36px_-18px_rgba(184,255,122,0.8)] hover:shadow-glow-lime"
+              : "border border-bone-50/[0.1] bg-ink-950/60 text-bone-100 hover:border-lime-400/50 hover:bg-ink-900/80"
           }`}
           whileTap={{ scale: 0.97 }}
         >
           <div className="flex flex-col items-center gap-1.5">
-            <div className={action.primary ? "text-white/90" : "text-orange-400"}>
+            <div className={action.primary ? "text-ink-950" : "text-lime-300"}>
               {action.icon}
             </div>
-            <span className="truncate">{action.label}</span>
+            <span className="truncate font-mono text-[10px] uppercase tracking-[0.18em]">{action.label}</span>
           </div>
-          {action.primary && (
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
-          )}
         </motion.button>
       ))}
     </motion.div>
@@ -157,11 +156,11 @@ const NavSection = memo(function NavSection({
   const shouldReduceMotion = caps.prefersReducedMotion || caps.isLowEnd;
 
   return (
-    <section className="rounded-2xl border border-orange-500/15 bg-gradient-to-b from-[#1a0c08]/30 to-transparent overflow-hidden">
-      <div className="px-3.5 pt-3 pb-2 border-b border-orange-500/10">
+    <section className="rounded-leaf border border-bone-50/[0.08] bg-ink-900/70 overflow-hidden shadow-slab">
+      <div className="px-4 pt-3.5 pb-2.5 border-b border-bone-50/[0.06]">
         <div className="flex items-center gap-2">
-          <div className="w-0.5 h-4 rounded-full bg-gradient-to-b from-orange-400 to-orange-600 flex-shrink-0" />
-          <p className="text-[10px] uppercase tracking-[0.18em] text-orange-400/70 font-bold">{title}</p>
+          <div className="w-0.5 h-4 rounded-full bg-lime-400 flex-shrink-0" />
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-lime-300/80">{title}</p>
         </div>
       </div>
       <div className="p-2.5 space-y-1.5">
@@ -280,27 +279,28 @@ export default function MechanicDashboard() {
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
           className="mb-4"
         >
-          <div className="relative overflow-hidden rounded-2xl border border-orange-500/20 bg-gradient-to-br from-[#1f0f09] via-[#150906]/90 to-[#0a0504] shadow-lg shadow-orange-900/20">
-            {/* Subtle glow */}
-            <div className="absolute top-0 left-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
-            
-            {/* Content */}
-            <div className="relative px-4 py-3.5 sm:py-4">
-              {/* Top row: badges + avatar */}
-              <div className="flex items-center justify-between gap-3 mb-2.5">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-orange-500/15 border border-orange-500/25">
-                    <Wrench className="w-3 h-3 text-orange-400" />
-                    <span className="text-[9px] uppercase tracking-wider font-bold text-orange-200">Mechanic</span>
-                  </div>
-                  {role === "admin" && (
-                    <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#1a0c08]/80 border border-orange-500/15">
-                      <Shield className="w-2.5 h-2.5 text-orange-400/70" />
-                      <span className="text-[8px] uppercase tracking-wider font-semibold text-orange-300/60">Admin</span>
-                    </div>
-                  )}
-                </div>
-                
+          <div className={`${canopy.hero} px-5 py-6 sm:px-7 sm:py-7`}>
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -left-20 -top-28 h-64 w-64 rounded-full blur-3xl"
+              style={{ background: 'radial-gradient(circle, rgba(210,255,163,0.26) 0%, transparent 70%)' }}
+            />
+
+            <div className="relative flex items-start justify-between gap-4">
+              <div className="min-w-0 flex-1">
+                <Eyebrow tone="lime" rule={false}>
+                  <span className="inline-flex items-center gap-2">
+                    <Wrench className="h-3 w-3" aria-hidden />
+                    Mechanic{role === "admin" ? " · admin access" : ""}
+                  </span>
+                </Eyebrow>
+                <h1 className="type-display mt-4 truncate text-[clamp(1.9rem,5vw,3rem)] font-light text-bone-50">
+                  Hey, <span className="italic text-lime-300 text-glow">{firstName}</span>
+                </h1>
+                <p className="mt-2 text-sm text-bone-300">Keep the fleet running smooth.</p>
+              </div>
+
+              <div className="relative z-10 shrink-0">
                 <AvatarDropdownPortal
                   email={user?.email}
                   role={role}
@@ -310,23 +310,7 @@ export default function MechanicDashboard() {
                   onSignOut={handleSignOut}
                 />
               </div>
-
-              {/* Welcome text - compact */}
-              <div className="flex items-center gap-3">
-                <div className="w-1 h-10 rounded-full bg-gradient-to-b from-orange-400 via-orange-500 to-orange-700 flex-shrink-0 shadow-[0_0_12px_rgba(249,115,22,0.5)]" />
-                <div className="min-w-0">
-                  <h1 className="text-lg sm:text-xl font-black text-white truncate">
-                    Hey, <span className="text-orange-300">{firstName}</span> 👋
-                  </h1>
-                  <p className="text-[11px] sm:text-xs text-orange-200/40 font-medium truncate">
-                    Keep the fleet running smooth
-                  </p>
-                </div>
-              </div>
             </div>
-            
-            {/* Bottom accent line */}
-            <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
           </div>
         </motion.header>
 
@@ -350,9 +334,9 @@ export default function MechanicDashboard() {
             transition={{ duration: 0.4, delay: 0.1 }}
           >
             <Suspense fallback={
-              <div className="rounded-xl border border-orange-500/15 bg-[#1a0c08]/60 p-4 animate-pulse">
+              <div className="rounded-leaf-sm border border-bone-50/[0.06] bg-ink-950/60 p-4 animate-pulse">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-4 h-4 rounded bg-orange-500/20" />
+                  <div className="w-4 h-4 rounded bg-bone-50/10" />
                   <div className="h-3 w-20 bg-white/10 rounded-full" />
                 </div>
                 <div className="space-y-1.5">
@@ -395,9 +379,9 @@ export default function MechanicDashboard() {
             transition={{ duration: 0.4, delay: 0.18 }}
           >
             <Suspense fallback={
-              <div className="rounded-xl border border-orange-500/15 bg-[#1a0c08]/60 p-4 animate-pulse">
+              <div className="rounded-leaf-sm border border-bone-50/[0.06] bg-ink-950/60 p-4 animate-pulse">
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="w-8 h-8 rounded-lg bg-orange-500/20" />
+                  <div className="w-8 h-8 rounded-lg bg-bone-50/10" />
                   <div className="h-4 w-32 bg-white/10 rounded-full" />
                 </div>
                 <div className="space-y-2">

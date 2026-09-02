@@ -41,28 +41,28 @@ export const IPhoneMockup = memo(function IPhoneMockup({
   // Frame color configurations
   const frameColors = {
     titanium: {
-      primary: '#3a3a3c',
-      secondary: '#2c2c2e',
-      highlight: '#5a5a5c',
-      edge: '#6a6a6c',
+      primary: '#2F3F36',
+      secondary: '#1E2A23',
+      highlight: '#5A6B60',
+      edge: '#5A6B60',
     },
     black: {
-      primary: '#1c1c1e',
-      secondary: '#151517',
-      highlight: '#3a3a3c',
-      edge: '#4a4a4c',
+      primary: '#1E2A23',
+      secondary: '#121A15',
+      highlight: '#2F3F36',
+      edge: '#2F3F36',
     },
     white: {
-      primary: '#e5e5e7',
-      secondary: '#d1d1d6',
+      primary: '#E4EAE1',
+      secondary: '#D3DCD1',
       highlight: '#ffffff',
-      edge: '#f5f5f7',
+      edge: '#F4F7F2',
     },
     blue: {
-      primary: '#2c3e50',
-      secondary: '#1a252f',
-      highlight: '#4a6278',
-      edge: '#5a7a98',
+      primary: '#2F5F48',
+      secondary: '#1E2A23',
+      highlight: '#468A68',
+      edge: '#5FAF86',
     },
   };
 
@@ -110,22 +110,22 @@ export const IPhoneMockup = memo(function IPhoneMockup({
         
         {/* Dynamic Island gradient */}
         <radialGradient id="dynamicIslandGradient" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#0a0a0a" />
+          <stop offset="0%" stopColor="#040605" />
           <stop offset="80%" stopColor="#000000" />
-          <stop offset="100%" stopColor="#0d0d0d" />
+          <stop offset="100%" stopColor="#0B100D" />
         </radialGradient>
         
         {/* Camera lens gradient */}
         <radialGradient id="cameraLensOuter" cx="50%" cy="30%" r="60%">
-          <stop offset="0%" stopColor="#2a2a3e" />
-          <stop offset="50%" stopColor="#1a1a2e" />
-          <stop offset="100%" stopColor="#0d0d1a" />
+          <stop offset="0%" stopColor="#1C3B2C" />
+          <stop offset="50%" stopColor="#1E2A23" />
+          <stop offset="100%" stopColor="#121A15" />
         </radialGradient>
         
         <radialGradient id="cameraLensInner" cx="40%" cy="40%" r="50%">
-          <stop offset="0%" stopColor="#1a1a2e" />
-          <stop offset="60%" stopColor="#0d0d15" />
-          <stop offset="100%" stopColor="#050508" />
+          <stop offset="0%" stopColor="#1E2A23" />
+          <stop offset="60%" stopColor="#0B100D" />
+          <stop offset="100%" stopColor="#040605" />
         </radialGradient>
         
         <radialGradient id="cameraLensReflection" cx="30%" cy="30%" r="40%">
@@ -282,13 +282,13 @@ export const IPhoneMockup = memo(function IPhoneMockup({
       {/* Inner bezel - slightly recessed */}
       <path
         d="M14 75C14 39.1015 43.1015 10 79 10H354C389.899 10 419 39.1015 419 75V807C419 842.899 389.899 872 354 872H79C43.1015 872 14 842.899 14 807V75Z"
-        fill="#0c0c0c"
+        fill="#0B100D"
       />
       
       {/* Screen bezel inner edge */}
       <path
         d="M21.25 75C21.25 43.519 46.769 18 78.25 18H354.75C386.231 18 411.75 43.519 411.75 75V807C411.75 838.481 386.231 864 354.75 864H78.25C46.769 864 21.25 838.481 21.25 807V75Z"
-        fill="#080808"
+        fill="#040605"
       />
       
       {/* Screen area with content */}
@@ -369,20 +369,20 @@ export const IPhoneMockup = memo(function IPhoneMockup({
         <path
           d="M164 40H269C274.523 40 279 44.4772 279 50C279 55.5228 274.523 60 269 60H164C158.477 60 154 55.5228 154 50C154 44.4772 158.477 40 164 40Z"
           fill="none"
-          stroke="#1a1a1a"
+          stroke="#121A15"
           strokeWidth="0.5"
           opacity="0.3"
         />
         
         {/* Face ID / TrueDepth sensor area (left side) */}
-        <circle cx="175" cy="50" r="4" fill="#0f0f12" />
-        <circle cx="175" cy="50" r="2" fill="#1a1a22" opacity="0.5" />
+        <circle cx="175" cy="50" r="4" fill="#0B100D" />
+        <circle cx="175" cy="50" r="2" fill="#1E2A23" opacity="0.5" />
         
         {/* Camera lens - outer ring */}
         <circle cx="253" cy="50" r="10" fill="url(#cameraLensOuter)" />
         
         {/* Camera lens - middle ring */}
-        <circle cx="253" cy="50" r="7" fill="#0d0d1a" />
+        <circle cx="253" cy="50" r="7" fill="#121A15" />
         
         {/* Camera lens - inner glass */}
         <circle cx="253" cy="50" r="5" fill="url(#cameraLensInner)" />
@@ -391,7 +391,7 @@ export const IPhoneMockup = memo(function IPhoneMockup({
         <circle cx="253" cy="50" r="5" fill="url(#cameraLensReflection)" />
         
         {/* Camera lens - center dot */}
-        <circle cx="253" cy="50" r="1.5" fill="#1a1a2e" />
+        <circle cx="253" cy="50" r="1.5" fill="#1E2A23" />
         
         {/* Tiny highlight on camera */}
         <circle cx="250" cy="47" r="1" fill="white" opacity="0.25" />
@@ -404,7 +404,7 @@ export const IPhoneMockup = memo(function IPhoneMockup({
         width="25"
         height="2"
         rx="1"
-        fill="#1a1a1a"
+        fill="#121A15"
         opacity="0.4"
       />
       

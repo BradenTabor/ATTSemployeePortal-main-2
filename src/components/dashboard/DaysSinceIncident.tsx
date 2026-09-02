@@ -1,5 +1,6 @@
 /**
  * DaysSinceIncident — Days since last recordable (recordable/lost_time/fatality) with milestones.
+ * Hero KPI for the Safety Officer dashboard: large count-up headline number + milestone ribbon.
  */
 
 import { useQuery } from "@tanstack/react-query";
@@ -7,6 +8,8 @@ import { useMemo } from "react";
 import { Shield, Loader2, AlertTriangle } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import { useDashboardCardTheme } from "../../contexts/dashboardCardTheme";
+import { useCountUp } from "../../motion";
+import WidgetHeader from "./WidgetHeader";
 import { differenceInDays } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 
@@ -51,12 +54,14 @@ export default function DaysSinceIncident() {
     return { days, label, intensity };
   }, [lastIncident]);
 
+  const animatedDays = useCountUp(days, { durationMs: 1100 });
+
   if (isLoading) {
     return (
-      <div className={`${cardClass} p-4`}>
-        <h3 className="text-sm font-semibold text-white mb-3">Days since last recordable</h3>
-        <div className="flex items-center justify-center py-6">
-          <Loader2 className="w-6 h-6 animate-spin text-emerald-400" aria-hidden />
+      <div className={`${cardClass} p-5 h-full`}>
+        <WidgetHeader title="Days since last recordable" icon={Shield} />
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="w-6 h-6 animate-spin text-rose-300/80" aria-hidden />
         </div>
       </div>
     );
@@ -64,8 +69,8 @@ export default function DaysSinceIncident() {
 
   if (error) {
     return (
-      <div className={`${cardClass} p-4`}>
-        <h3 className="text-sm font-semibold text-white mb-3">Days since last recordable</h3>
+      <div className={`${cardClass} p-5 h-full`}>
+        <WidgetHeader title="Days since last recordable" icon={Shield} />
         <div className="flex items-center gap-2 py-4 text-red-300 text-sm">
           <AlertTriangle className="w-5 h-5 flex-shrink-0" />
           <span>{error.message}</span>
@@ -75,35 +80,40 @@ export default function DaysSinceIncident() {
   }
 
   return (
-    <div className={`${cardClass} p-4`}>
-      <h3 className="text-sm font-semibold text-white mb-3">Days since last recordable</h3>
-      <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-          <Shield className="w-6 h-6 text-emerald-400" aria-hidden />
+    <div className={`${cardClass} p-5 h-full flex flex-col`}>
+      <WidgetHeader title="Days since last recordable" icon={Shield} />
+      {days !== null ? (
+        <div className="flex flex-col flex-1">
+          <div className="flex items-baseline gap-2">
+            <span className={`text-5xl sm:text-6xl font-bold leading-none tabular-nums ${intensity}`}>
+              {animatedDays}
+            </span>
+            <span className="text-sm font-medium text-white/40">days</span>
+          </div>
+          <div className="text-xs text-white/60 mt-2">{label}</div>
+          <div className="flex flex-wrap gap-1.5 mt-auto pt-4">
+            {MILESTONES.map((m) => (
+              <span
+                key={m}
+                className={`text-[10px] font-medium px-2 py-0.5 rounded-full border transition-colors ${
+                  days >= m
+                    ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/25"
+                    : "bg-white/[0.03] text-white/40 border-white/[0.06]"
+                }`}
+              >
+                {m}d
+              </span>
+            ))}
+          </div>
         </div>
-        <div>
-          {days !== null ? (
-            <>
-              <div className={`text-3xl font-bold ${intensity}`}>{days}</div>
-              <div className="text-xs text-white/80">{label}</div>
-              <div className="flex gap-1 mt-1">
-                {MILESTONES.map((m) => (
-                  <span
-                    key={m}
-                    className={`text-[10px] px-1.5 py-0.5 rounded ${
-                      days >= m ? "bg-emerald-500/20 text-emerald-300" : "bg-white/5 text-white/40"
-                    }`}
-                  >
-                    {m}d
-                  </span>
-                ))}
-              </div>
-            </>
-          ) : (
-            <p className="text-sm text-white/90">{label}</p>
-          )}
+      ) : (
+        <div className="flex items-center gap-3 flex-1">
+          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
+            <Shield className="w-6 h-6 text-emerald-400" aria-hidden />
+          </div>
+          <p className="text-sm text-white/90">{label}</p>
         </div>
-      </div>
+      )}
     </div>
   );
 }

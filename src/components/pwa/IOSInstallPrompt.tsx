@@ -98,12 +98,12 @@ export function IOSInstallPrompt() {
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: '100%', opacity: 0 }}
         transition={{ duration: 0.4, ease: 'easeOut' }}
-        className="fixed bottom-0 left-0 right-0 z-[100] p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent"
+        className="fixed bottom-0 left-0 right-0 z-[100] p-4 safe-area-inset-bottom bg-gradient-to-t from-black/80 via-black/40 to-transparent"
       >
         <div 
-          className="max-w-md mx-auto relative overflow-hidden rounded-2xl border border-white/[0.15] shadow-[0_20px_60px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.1)]"
+          className="max-w-md mx-auto relative overflow-hidden rounded-leaf-sm border border-white/[0.15] shadow-[0_20px_60px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.1)]"
           style={{
-            background: 'linear-gradient(145deg, rgba(34, 197, 94, 0.08) 0%, rgba(10, 25, 18, 0.95) 50%, rgba(5, 12, 8, 0.98) 100%)',
+            background: 'linear-gradient(145deg, rgba(47,164,90, 0.08) 0%, rgba(11,16,13, 0.95) 50%, rgba(4,6,5, 0.98) 100%)',
             backdropFilter: 'blur(24px) saturate(1.4)',
             WebkitBackdropFilter: 'blur(24px) saturate(1.4)',
           }}
@@ -123,14 +123,14 @@ export function IOSInstallPrompt() {
           <div 
             className="absolute inset-0 pointer-events-none"
             style={{
-              background: 'radial-gradient(ellipse at 50% 0%, rgba(34, 197, 94, 0.15) 0%, transparent 50%)',
+              background: 'radial-gradient(ellipse at 50% 0%, rgba(47,164,90, 0.15) 0%, transparent 50%)',
             }}
           />
 
           {/* Close button */}
           <button
             onClick={handleDismiss}
-            className="absolute top-4 right-4 p-2 rounded-xl text-white/40 hover:text-white hover:bg-white/10 transition-all z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
+            className="absolute top-3 right-3 flex h-11 w-11 items-center justify-center rounded-xl text-white/40 hover:text-white hover:bg-white/10 transition-all z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
             aria-label="Dismiss install prompt"
           >
             <X className="w-5 h-5" aria-hidden />
@@ -144,7 +144,7 @@ export function IOSInstallPrompt() {
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.1 }}
-                className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500/30 to-emerald-600/20 border border-emerald-500/40 flex items-center justify-center shadow-lg shadow-emerald-500/20"
+                className="w-14 h-14 rounded-leaf-sm bg-gradient-to-br from-emerald-500/30 to-emerald-600/20 border border-emerald-500/40 flex items-center justify-center shadow-lg shadow-emerald-500/20"
               >
                 <Smartphone className="w-7 h-7 text-emerald-400" />
               </motion.div>

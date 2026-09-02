@@ -68,7 +68,7 @@ export default function AnnouncementAlert() {
         exit={{ opacity: 0, scale: 0.8, y: 20 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
         onClick={handleClick}
-        className="fixed bottom-20 right-5 sm:bottom-8 sm:right-8 w-12 h-12 bg-green-600 text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform cursor-pointer z-[60]"
+        className="fixed bottom-safe-20 right-5 sm:bottom-8 sm:right-8 w-12 h-12 bg-green-600 text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform cursor-pointer z-[60]"
         whileTap={{ scale: 0.95 }}
       >
         <Bell className="w-5 h-5 animate-pulse" />

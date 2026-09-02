@@ -29,7 +29,7 @@ export function AwardAmountPicker({
     <div>
       <span
         id="award-amount-label"
-        className="text-xs font-medium text-[#f8e5bb]/70 uppercase tracking-wider"
+        className="text-xs font-medium text-[#E4EAE1]/70 uppercase font-mono font-medium tracking-[0.14em]"
       >
         Amount
       </span>
@@ -61,7 +61,7 @@ export function AwardAmountPicker({
 
           {negative.length > 0 && (
             <>
-              <p className="px-1 pt-0.5 text-[10px] font-semibold uppercase tracking-wider text-red-300/80">
+              <p className="px-1 pt-0.5 text-[10px] uppercase text-red-300/80 font-mono font-medium tracking-[0.14em]">
                 Deduct
               </p>
               {negative.map((preset) => (
@@ -107,8 +107,8 @@ function PresetOption({ preset, selected, disabled, onSelect, tone }: PresetOpti
         'disabled:cursor-not-allowed disabled:opacity-60',
         isPositive
           ? selected
-            ? 'border-[#f4c979]/50 bg-[#f4c979]/15 text-[#fef3d1]'
-            : 'border-white/10 bg-white/[0.03] text-white hover:border-[#f4c979]/30 hover:bg-[#f4c979]/10'
+            ? 'border-[#F4F7F2]/50 bg-[#F4F7F2]/15 text-[#F4F7F2]'
+            : 'border-white/10 bg-white/[0.03] text-white hover:border-[#F4F7F2]/30 hover:bg-[#F4F7F2]/10'
           : selected
             ? 'border-red-400/50 bg-red-500/15 text-red-100'
             : 'border-white/10 bg-white/[0.03] text-red-200/90 hover:border-red-400/30 hover:bg-red-500/10'

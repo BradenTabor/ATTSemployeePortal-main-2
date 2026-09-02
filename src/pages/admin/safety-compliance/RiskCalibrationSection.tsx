@@ -108,7 +108,7 @@ function StatBox({ label, value, subValue, color = "emerald", icon }: StatBoxPro
     <div className={cn("rounded-xl border p-3", colorClasses[color])}>
       <div className="flex items-center gap-2 mb-1">
         {icon && <span className={textClasses[color]}>{icon}</span>}
-        <span className="text-[10px] uppercase tracking-wide text-white/50">{label}</span>
+        <span className="text-[10px] uppercase text-white/50 font-mono font-medium tracking-[0.14em]">{label}</span>
       </div>
       <p className={cn("text-xl font-bold font-mono tabular-nums", textClasses[color])}>
         {typeof value === "number" ? value.toLocaleString() : value}
@@ -142,7 +142,7 @@ function AutoTuningStatusCard() {
     <motion.div
       variants={itemVariants}
       className={cn(
-        "rounded-xl sm:rounded-2xl border p-4 sm:p-5",
+        "rounded-xl sm:rounded-leaf-sm border p-4 sm:p-5",
         isEnabled
           ? "border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent"
           : "border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent"
@@ -223,7 +223,7 @@ function AccuracyMetricsCard({ days }: { days: number }) {
   return (
     <motion.div
       variants={itemVariants}
-      className="rounded-xl sm:rounded-2xl border border-blue-500/20 bg-gradient-to-br from-[#070a14] via-[#050508] to-[#020205] p-4 sm:p-5"
+      className="rounded-xl sm:rounded-leaf-sm border border-blue-500/20 bg-gradient-to-br from-[#0B100D] via-[#040605] to-[#040605] p-4 sm:p-5"
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
@@ -304,7 +304,7 @@ function TuningTimeline() {
   return (
     <motion.div
       variants={itemVariants}
-      className="rounded-xl sm:rounded-2xl border border-purple-500/20 bg-gradient-to-br from-[#0f071a] via-[#080510] to-[#020205] p-4 sm:p-5"
+      className="rounded-xl sm:rounded-leaf-sm border border-purple-500/20 bg-gradient-to-br from-[#0B100D] via-[#0B100D] to-[#040605] p-4 sm:p-5"
     >
       <div className="flex items-center gap-3 mb-4">
         <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400">
@@ -422,7 +422,7 @@ function RiskLevelDistribution({ dateRange }: { dateRange: { start: string; end:
   return (
     <motion.div
       variants={itemVariants}
-      className="rounded-xl sm:rounded-2xl border border-amber-500/20 bg-gradient-to-br from-[#14100a] via-[#0a0805] to-[#020205] p-4 sm:p-5"
+      className="rounded-xl sm:rounded-leaf-sm border border-amber-500/20 bg-gradient-to-br from-[#0B100D] via-[#040605] to-[#040605] p-4 sm:p-5"
     >
       <div className="flex items-center gap-3 mb-4">
         <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400">
@@ -551,11 +551,11 @@ function IncidentsSummary({
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-3.5 text-center">
                 <p className="text-2xl font-bold text-white tabular-nums">{summary.total}</p>
-                <p className="text-[9px] text-white/35 uppercase tracking-wider font-medium mt-0.5">Total Incidents</p>
+                <p className="text-[9px] text-white/35 uppercase font-medium mt-0.5 font-mono font-medium tracking-[0.14em]">Total Incidents</p>
               </div>
-              <div className="rounded-xl bg-emerald-500/8 border border-emerald-500/15 p-3.5 text-center shadow-[0_0_12px_rgba(16,185,129,0.06)]">
+              <div className="rounded-xl bg-emerald-500/8 border border-emerald-500/15 p-3.5 text-center shadow-[0_0_12px_rgba(47,164,90,0.06)]">
                 <p className="text-2xl font-bold text-emerald-400 tabular-nums">{forecastedRate}%</p>
-                <p className="text-[9px] text-white/35 uppercase tracking-wider font-medium mt-0.5">Forecasted</p>
+                <p className="text-[9px] text-white/35 uppercase font-medium mt-0.5 font-mono font-medium tracking-[0.14em]">Forecasted</p>
               </div>
             </div>
 

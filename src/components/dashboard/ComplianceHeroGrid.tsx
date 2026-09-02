@@ -117,7 +117,7 @@ const ComplianceCard = memo(function ComplianceCard({ form, index }: ComplianceC
     >
       <div
         className={`
-          relative overflow-hidden rounded-2xl p-4 h-full min-h-[140px]
+          relative overflow-hidden rounded-leaf-sm p-4 h-full min-h-[140px]
           border transition-all duration-300
           ${form.submitted 
             ? 'border-emerald-500/40 shadow-lg shadow-emerald-500/20' 
@@ -158,12 +158,12 @@ const ComplianceCard = memo(function ComplianceCard({ form, index }: ComplianceC
               {form.submitted ? (
                 <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/40">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-wider">Done</span>
+                  <span className="text-[10px] text-emerald-300 uppercase font-mono font-medium tracking-[0.14em]">Done</span>
                 </div>
               ) : (
                 <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-400/40">
                   <Clock className="w-3.5 h-3.5 text-amber-400" />
-                  <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider">Pending</span>
+                  <span className="text-[10px] text-amber-300 uppercase font-mono font-medium tracking-[0.14em]">Pending</span>
                 </div>
               )}
             </motion.div>
@@ -215,7 +215,7 @@ const ComplianceCard = memo(function ComplianceCard({ form, index }: ComplianceC
             animate={{ opacity: 1 }}
             className="absolute inset-0 pointer-events-none"
             style={{
-              background: 'radial-gradient(ellipse at 50% 0%, rgba(16, 185, 129, 0.15) 0%, transparent 60%)',
+              background: 'radial-gradient(ellipse at 50% 0%, rgba(47,164,90, 0.15) 0%, transparent 60%)',
             }}
           />
         )}
@@ -250,7 +250,7 @@ const ComplianceHeroSkeleton = memo(function ComplianceHeroSkeleton() {
       {/* Grid skeleton */}
       <div className="grid grid-cols-3 gap-3">
         {[1, 2, 3].map(i => (
-          <div key={i} className="rounded-2xl bg-white/5 h-[140px] animate-pulse" />
+          <div key={i} className="rounded-leaf-sm bg-white/5 h-[140px] animate-pulse" />
         ))}
       </div>
     </div>
@@ -266,13 +266,13 @@ const WeekendMode = memo(function WeekendMode() {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative overflow-hidden rounded-2xl border border-emerald-500/30 p-5"
+      className="relative overflow-hidden rounded-leaf-sm border border-emerald-500/30 p-5"
       style={{
-        background: 'linear-gradient(145deg, rgba(4, 30, 21, 0.95) 0%, rgba(2, 15, 10, 0.98) 100%)',
+        background: 'linear-gradient(145deg, rgba(11,16,13, 0.95) 0%, rgba(4,6,5, 0.98) 100%)',
       }}
     >
       <div className="flex items-center gap-4">
-        <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center">
+        <div className="w-14 h-14 rounded-leaf-sm bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center">
           <Sparkles className="w-7 h-7 text-emerald-400" />
         </div>
         <div>
@@ -315,8 +315,8 @@ function ComplianceHeroGridComponent({ onComplianceChange }: ComplianceHeroGridP
       icon: Truck,
       submitted: compliance.dvir,
       formPath: '/dashboard/forms/dvir',
-      gradient: 'linear-gradient(145deg, rgba(5, 150, 105, 0.2) 0%, rgba(4, 120, 87, 0.15) 50%, rgba(6, 95, 70, 0.1) 100%)',
-      completedGradient: 'linear-gradient(145deg, rgba(16, 185, 129, 0.25) 0%, rgba(5, 150, 105, 0.2) 50%, rgba(4, 120, 87, 0.15) 100%)',
+      gradient: 'linear-gradient(145deg, rgba(31,122,68, 0.2) 0%, rgba(31,122,68, 0.15) 50%, rgba(18,72,42, 0.1) 100%)',
+      completedGradient: 'linear-gradient(145deg, rgba(47,164,90, 0.25) 0%, rgba(31,122,68, 0.2) 50%, rgba(31,122,68, 0.15) 100%)',
       iconColor: 'text-emerald-400',
     },
     {
@@ -326,8 +326,8 @@ function ComplianceHeroGridComponent({ onComplianceChange }: ComplianceHeroGridP
       icon: Wrench,
       submitted: compliance.equipment,
       formPath: '/dashboard/forms/equipment-inspection',
-      gradient: 'linear-gradient(145deg, rgba(217, 119, 6, 0.2) 0%, rgba(180, 83, 9, 0.15) 50%, rgba(146, 64, 14, 0.1) 100%)',
-      completedGradient: 'linear-gradient(145deg, rgba(16, 185, 129, 0.25) 0%, rgba(5, 150, 105, 0.2) 50%, rgba(4, 120, 87, 0.15) 100%)',
+      gradient: 'linear-gradient(145deg, rgba(141,181,42, 0.2) 0%, rgba(107,138,31, 0.15) 50%, rgba(107,138,31, 0.1) 100%)',
+      completedGradient: 'linear-gradient(145deg, rgba(47,164,90, 0.25) 0%, rgba(31,122,68, 0.2) 50%, rgba(31,122,68, 0.15) 100%)',
       iconColor: 'text-amber-400',
     },
     {
@@ -337,8 +337,8 @@ function ComplianceHeroGridComponent({ onComplianceChange }: ComplianceHeroGridP
       icon: ClipboardCheck,
       submitted: compliance.jsa,
       formPath: '/forms/jsa',
-      gradient: 'linear-gradient(145deg, rgba(37, 99, 235, 0.2) 0%, rgba(29, 78, 216, 0.15) 50%, rgba(30, 64, 175, 0.1) 100%)',
-      completedGradient: 'linear-gradient(145deg, rgba(16, 185, 129, 0.25) 0%, rgba(5, 150, 105, 0.2) 50%, rgba(4, 120, 87, 0.15) 100%)',
+      gradient: 'linear-gradient(145deg, rgba(95,175,134, 0.2) 0%, rgba(95,175,134, 0.15) 50%, rgba(70,138,104, 0.1) 100%)',
+      completedGradient: 'linear-gradient(145deg, rgba(47,164,90, 0.25) 0%, rgba(31,122,68, 0.2) 50%, rgba(31,122,68, 0.15) 100%)',
       iconColor: 'text-blue-400',
     },
   ], [compliance]);

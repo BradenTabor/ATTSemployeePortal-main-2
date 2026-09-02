@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
+import { getAuthUserFast } from '../../lib/authUser';
 import { logger } from '../../lib/logger';
 
 export interface RTOUserProfile {
@@ -22,16 +23,7 @@ export function useRTOUserProfile() {
     try {
       setLoading(true);
       
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError) {
-        logger.error("Error fetching auth user:", userError);
-        setLoading(false);
-        return;
-      }
+      const user = await getAuthUserFast();
 
       if (!user) {
         logger.warn("No authenticated user found");

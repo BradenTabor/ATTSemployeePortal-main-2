@@ -44,7 +44,7 @@ const CircularProgress = memo(function CircularProgress({
   value,
   size = 64,
   strokeWidth = 5,
-  color = "#f4c979",
+  color = "#F4F7F2",
 }: {
   value: number;
   size?: number;
@@ -94,7 +94,7 @@ const StatPill = memo(function StatPill({
   color?: "gold" | "emerald" | "purple" | "amber";
 }) {
   const colors = {
-    gold: "text-[#f4c979] bg-[#f4c979]/10 border-[#f4c979]/20",
+    gold: "text-[#F4F7F2] bg-[#F4F7F2]/10 border-[#F4F7F2]/20",
     emerald: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
     purple: "text-purple-400 bg-purple-500/10 border-purple-500/20",
     amber: "text-amber-400 bg-amber-500/10 border-amber-500/20",
@@ -106,7 +106,7 @@ const StatPill = memo(function StatPill({
         <Icon className="w-4 h-4" />
       </div>
       <div className="min-w-0">
-        <div className="text-[9px] uppercase tracking-wider text-white/40">{label}</div>
+        <div className="text-[9px] uppercase text-white/40 font-mono font-medium tracking-[0.14em]">{label}</div>
         <div className="flex items-center gap-1">
           <span className="text-sm font-bold text-white font-mono tabular-nums">{value}</span>
           {trend !== undefined && trend !== 0 && (
@@ -144,7 +144,7 @@ const RankBadge = memo(function RankBadge({ rank }: { rank: number }) {
     );
   }
   return (
-    <div className="w-6 h-6 rounded-full bg-[#1a1408]/60 border border-[#f6dcb2]/20 flex items-center justify-center text-[10px] font-bold text-[#f6dcb2]/50">
+    <div className="w-6 h-6 rounded-full bg-[#0B100D]/60 border border-[#E4EAE1]/20 flex items-center justify-center text-[10px] font-bold text-[#E4EAE1]/50">
       {rank}
     </div>
   );
@@ -184,16 +184,16 @@ const LeaderboardRow = memo(function LeaderboardRow({
         "w-full flex items-center gap-2 p-2 rounded-lg border transition-all text-left group",
         entry.rank <= 3
           ? "bg-gradient-to-r from-amber-500/10 to-transparent border-amber-500/15 hover:border-amber-500/30"
-          : "bg-white/[0.02] border-white/5 hover:border-[#f6dcb2]/15 hover:bg-white/[0.03]"
+          : "bg-white/[0.02] border-white/5 hover:border-[#E4EAE1]/15 hover:bg-white/[0.03]"
       )}
     >
       <RankBadge rank={entry.rank} />
-      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#f4c979] to-[#d89d3e] flex items-center justify-center text-[#2d1c04] text-xs font-bold flex-shrink-0">
+      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#F4F7F2] to-[#8DF5A8] flex items-center justify-center text-[#040605] text-xs font-bold flex-shrink-0">
         {entry.full_name.charAt(0).toUpperCase()}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
-          <span className="text-xs font-semibold text-white truncate group-hover:text-[#fff6dd]">
+          <span className="text-xs font-semibold text-white truncate group-hover:text-[#F4F7F2]">
             {entry.full_name}
           </span>
           {entry.current_streak >= 3 && (
@@ -203,12 +203,12 @@ const LeaderboardRow = memo(function LeaderboardRow({
             </span>
           )}
         </div>
-        <div className="text-[9px] text-[#f6dcb2]/40">
+        <div className="text-[9px] text-[#E4EAE1]/40">
           {entry.compliance_rate}% • {entry.total_points} pts
         </div>
       </div>
       <SafetyScoreBadge score={entry.safety_score} />
-      <ChevronRight className="w-3 h-3 text-[#f6dcb2]/20 group-hover:text-[#f6dcb2]/40 transition-colors" />
+      <ChevronRight className="w-3 h-3 text-[#E4EAE1]/20 group-hover:text-[#E4EAE1]/40 transition-colors" />
     </motion.button>
   );
 });
@@ -237,10 +237,10 @@ const PeriodSelector = memo(function PeriodSelector({
           aria-selected={value === key}
           onClick={() => onChange(key)}
           className={cn(
-            "px-2 py-1 rounded text-[10px] font-medium transition-all focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-1",
+            "tap-44 relative px-2 py-1 rounded text-[10px] font-medium transition-all focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-1",
             value === key
               ? "bg-amber-500/20 text-amber-200 border border-amber-500/30"
-              : "text-[#f6dcb2]/40 hover:text-[#f6dcb2]/70"
+              : "text-[#E4EAE1]/40 hover:text-[#E4EAE1]/70"
           )}
         >
           {label}
@@ -286,7 +286,7 @@ const UserDetailModal = memo(function UserDetailModal({
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
           onClick={(e) => e.stopPropagation()}
-          className="w-full max-w-md max-h-[80vh] overflow-y-auto rounded-2xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] shadow-2xl"
+          className="w-full max-w-md max-h-[80vh] overflow-y-auto rounded-leaf-sm border border-[#E4EAE1]/20 bg-gradient-to-br from-[#121A15] via-[#0B100D] to-[#040605] shadow-2xl"
         >
           {isLoading || !userDetail ? (
             <div className="p-6 text-center">
@@ -295,21 +295,21 @@ const UserDetailModal = memo(function UserDetailModal({
             </div>
           ) : (
             <>
-              <div className="px-4 py-3 border-b border-[#f6dcb2]/10 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#f4c979] to-[#d89d3e] flex items-center justify-center text-[#2d1c04] font-bold">
+              <div className="px-4 py-3 border-b border-[#E4EAE1]/10 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#F4F7F2] to-[#8DF5A8] flex items-center justify-center text-[#040605] font-bold">
                   {userDetail.full_name.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1">
                   <h2 id="safety-user-detail-title" className="text-sm font-bold text-white">
                     {userDetail.full_name}
                   </h2>
-                  <p className="text-[10px] text-[#f6dcb2]/50 capitalize">{userDetail.role.replace("_", " ")}</p>
+                  <p className="text-[10px] text-[#E4EAE1]/50 capitalize">{userDetail.role.replace("_", " ")}</p>
                 </div>
                 <SafetyScoreBadge score={userDetail.safety_score} />
                 <button
                   type="button"
                   onClick={onClose}
-                  className="p-1.5 rounded-lg hover:bg-white/5 focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+                  className="p-1.5 rounded-lg hover:bg-white/5 focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
                   aria-label="Close user detail"
                 >
                   <X className="w-4 h-4 text-white/40" aria-hidden />
@@ -333,8 +333,8 @@ const UserDetailModal = memo(function UserDetailModal({
                     <div className="text-[8px] text-amber-300/70 uppercase">Total</div>
                   </div>
                 </div>
-                <div className="flex items-center gap-4 p-3 rounded-xl border border-[#f6dcb2]/10 bg-white/[0.02]">
-                  <CircularProgress value={userDetail.compliance_rate} color="#10b981" />
+                <div className="flex items-center gap-4 p-3 rounded-xl border border-[#E4EAE1]/10 bg-white/[0.02]">
+                  <CircularProgress value={userDetail.compliance_rate} color="#3DDC84" />
                   <div className="flex-1 grid grid-cols-2 gap-2">
                     <div>
                       <div className="text-lg font-bold text-white">{userDetail.full_compliance_days}</div>
@@ -355,9 +355,9 @@ const UserDetailModal = memo(function UserDetailModal({
                     </div>
                   </div>
                 )}
-                <div className="rounded-xl border border-[#f6dcb2]/10 bg-white/[0.02] p-3">
+                <div className="rounded-xl border border-[#E4EAE1]/10 bg-white/[0.02] p-3">
                   <h3 className="text-xs font-semibold text-white mb-2 flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-[#f4c979]" />
+                    <Calendar className="w-3.5 h-3.5 text-[#F4F7F2]" />
                     Recent Activity
                   </h3>
                   <div className="space-y-1.5 max-h-[150px] overflow-y-auto">
@@ -379,7 +379,7 @@ const UserDetailModal = memo(function UserDetailModal({
                           <p className="text-[10px] text-white truncate">{activity.details}</p>
                           <p className="text-[9px] text-white/40">{activity.date}</p>
                         </div>
-                        <span className="text-[10px] font-medium text-[#f4c979]">+{activity.points}</span>
+                        <span className="text-[10px] font-medium text-[#F4F7F2]">+{activity.points}</span>
                       </div>
                     ))}
                   </div>
@@ -401,9 +401,9 @@ const FormBreakdownMini = memo(function FormBreakdownMini({
   data: Array<{ form_type: string; submissions: number; percentage: number }>;
 }) {
   const formConfig = {
-    dvir: { name: "DVIR", color: "#10b981" },
-    equipment: { name: "Equip", color: "#f59e0b" },
-    jsa: { name: "JSA", color: "#8b5cf6" },
+    dvir: { name: "DVIR", color: "#3DDC84" },
+    equipment: { name: "Equip", color: "#9BEB5B" },
+    jsa: { name: "JSA", color: "#7DCDA2" },
   };
 
   return (
@@ -489,12 +489,12 @@ export default function SafetyAnalyticsSection() {
         <div className="mb-4">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#f4c979]/20 to-amber-600/10 border border-[#f4c979]/30 flex items-center justify-center">
-                <Award className="w-5 h-5 text-[#f4c979]" />
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#F4F7F2]/20 to-amber-600/10 border border-[#F4F7F2]/30 flex items-center justify-center">
+                <Award className="w-5 h-5 text-[#F4F7F2]" />
               </div>
               <div>
                 <h2 className="text-lg sm:text-xl font-bold text-white">Safety Analytics</h2>
-                <p className="text-[10px] text-[#f8e5bb]/40">Form compliance & engagement</p>
+                <p className="text-[10px] text-[#E4EAE1]/40">Form compliance & engagement</p>
               </div>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -504,7 +504,7 @@ export default function SafetyAnalyticsSection() {
                 onClick={handleExportOsha300}
                 disabled={!!exporting}
                 aria-label="Export OSHA 300 log (CSV)"
-                className="inline-flex items-center gap-1.5 px-2.5 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-xs font-medium text-white/80 disabled:opacity-50 focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+                className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-xs font-medium text-white/80 disabled:opacity-50 focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
               >
                 <Download className="w-3.5 h-3.5" aria-hidden />
                 <span className="hidden sm:inline">OSHA 300 (CSV)</span>
@@ -514,7 +514,7 @@ export default function SafetyAnalyticsSection() {
                 onClick={handleExportPdf}
                 disabled={!!exporting || !data}
                 aria-label="Export analytics report (PDF)"
-                className="inline-flex items-center gap-1.5 px-2.5 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-xs font-medium text-white/80 disabled:opacity-50 focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+                className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-xs font-medium text-white/80 disabled:opacity-50 focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
               >
                 <FileText className="w-3.5 h-3.5" aria-hidden />
                 <span className="hidden sm:inline">Report (PDF)</span>
@@ -523,7 +523,7 @@ export default function SafetyAnalyticsSection() {
                 type="button"
                 onClick={() => refetch()}
                 aria-label={isLoading ? "Refreshing analytics" : "Refresh safety analytics"}
-                className="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+                className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
               >
                 <RefreshCw className={cn("w-3.5 h-3.5 text-white/50", isLoading && "animate-spin")} aria-hidden />
               </button>
@@ -539,7 +539,7 @@ export default function SafetyAnalyticsSection() {
               type="button"
               onClick={() => refetch()}
               aria-label="Try again to load analytics"
-              className="mt-2 px-3 py-1.5 rounded-lg bg-red-500/20 border border-red-500/30 text-red-300 text-xs font-medium hover:bg-red-500/30 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+              className="mt-2 px-3 py-1.5 rounded-lg bg-red-500/20 border border-red-500/30 text-red-300 text-xs font-medium hover:bg-red-500/30 focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
             >
               Try Again
             </button>
@@ -578,13 +578,13 @@ export default function SafetyAnalyticsSection() {
                 <motion.div
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="rounded-xl border border-[#f6dcb2]/15 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] overflow-hidden"
+                  className="rounded-xl border border-[#E4EAE1]/15 bg-gradient-to-br from-[#0B100D] via-[#040605] to-[#040605] overflow-hidden"
                 >
-                  <div className="px-3 py-2 border-b border-[#f6dcb2]/10 flex items-center justify-between">
+                  <div className="px-3 py-2 border-b border-[#E4EAE1]/10 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Trophy className="w-4 h-4 text-amber-400" />
                       <span className="text-xs font-bold text-white">Safety Leaderboard</span>
-                      <span className="text-[9px] text-[#f6dcb2]/40">({filteredLeaderboard.length})</span>
+                      <span className="text-[9px] text-[#E4EAE1]/40">({filteredLeaderboard.length})</span>
                     </div>
                     <button
                       type="button"
@@ -592,8 +592,8 @@ export default function SafetyAnalyticsSection() {
                       aria-label={showSearch ? "Hide search" : "Show search"}
                       aria-pressed={showSearch}
                       className={cn(
-                        "p-1.5 rounded-lg transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-1",
-                        showSearch ? "bg-amber-500/20 text-amber-300" : "hover:bg-white/5 text-[#f6dcb2]/40"
+                        "tap-44 relative p-1.5 rounded-lg transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-1",
+                        showSearch ? "bg-amber-500/20 text-amber-300" : "hover:bg-white/5 text-[#E4EAE1]/40"
                       )}
                     >
                       {showSearch ? <X className="w-3.5 h-3.5" aria-hidden /> : <Filter className="w-3.5 h-3.5" aria-hidden />}
@@ -605,10 +605,10 @@ export default function SafetyAnalyticsSection() {
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        className="px-3 py-2 border-b border-[#f6dcb2]/5 bg-black/20"
+                        className="px-3 py-2 border-b border-[#E4EAE1]/5 bg-black/20"
                       >
                         <div className="relative">
-                          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#f6dcb2]/40" />
+                          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#E4EAE1]/40" />
                           <input
                             type="text"
                             placeholder="Search users..."
@@ -627,8 +627,8 @@ export default function SafetyAnalyticsSection() {
                       ))
                     ) : filteredLeaderboard.length === 0 ? (
                       <div className="py-8 text-center">
-                        <Award className="w-8 h-8 text-[#f6dcb2]/20 mx-auto mb-2" />
-                        <p className="text-xs text-[#f6dcb2]/50">{searchQuery ? "No matches" : "No data yet"}</p>
+                        <Award className="w-8 h-8 text-[#E4EAE1]/20 mx-auto mb-2" />
+                        <p className="text-xs text-[#E4EAE1]/50">{searchQuery ? "No matches" : "No data yet"}</p>
                       </div>
                     ) : (
                       filteredLeaderboard.map((entry, idx) => (
@@ -649,9 +649,9 @@ export default function SafetyAnalyticsSection() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
-                  className="rounded-xl border border-[#f6dcb2]/15 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] p-3"
+                  className="rounded-xl border border-[#E4EAE1]/15 bg-gradient-to-br from-[#0B100D] via-[#040605] to-[#040605] p-3"
                 >
-                  <div className="text-[10px] font-semibold text-white/60 uppercase tracking-wider mb-2">Points</div>
+                  <div className="text-[10px] text-white/60 uppercase mb-2 font-mono font-medium tracking-[0.14em]">Points</div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
@@ -670,10 +670,10 @@ export default function SafetyAnalyticsSection() {
                     <div className="h-px bg-white/10 my-1" />
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
-                        <Trophy className="w-3.5 h-3.5 text-[#f4c979]" />
+                        <Trophy className="w-3.5 h-3.5 text-[#F4F7F2]" />
                         <span className="text-[10px] text-white/80 font-medium">Total</span>
                       </div>
-                      <span className="text-sm font-bold text-[#f4c979] font-mono tabular-nums">{data?.stats.total_combined_points || 0}</span>
+                      <span className="text-sm font-bold text-[#F4F7F2] font-mono tabular-nums">{data?.stats.total_combined_points || 0}</span>
                     </div>
                   </div>
                 </motion.div>
@@ -681,9 +681,9 @@ export default function SafetyAnalyticsSection() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.15 }}
-                  className="rounded-xl border border-[#f6dcb2]/15 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] p-3"
+                  className="rounded-xl border border-[#E4EAE1]/15 bg-gradient-to-br from-[#0B100D] via-[#040605] to-[#040605] p-3"
                 >
-                  <div className="text-[10px] font-semibold text-white/60 uppercase tracking-wider mb-2">Form Breakdown</div>
+                  <div className="text-[10px] text-white/60 uppercase mb-2 font-mono font-medium tracking-[0.14em]">Form Breakdown</div>
                   {isLoading ? (
                     <div className="space-y-2">
                       {[1, 2, 3].map((i) => (
@@ -700,9 +700,9 @@ export default function SafetyAnalyticsSection() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="rounded-xl border border-[#f6dcb2]/15 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] p-3"
+                  className="rounded-xl border border-[#E4EAE1]/15 bg-gradient-to-br from-[#0B100D] via-[#040605] to-[#040605] p-3"
                 >
-                  <div className="text-[10px] font-semibold text-white/60 uppercase tracking-wider mb-2">Stats</div>
+                  <div className="text-[10px] text-white/60 uppercase mb-2 font-mono font-medium tracking-[0.14em]">Stats</div>
                   {(data?.stats.total_compliance_days ?? 0) === 0 && (data?.stats.full_compliance_users ?? 0) === 0 && !isLoading ? (
                     <p className="text-[10px] text-white/40 italic">No compliance days in this period</p>
                   ) : (

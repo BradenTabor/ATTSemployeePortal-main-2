@@ -16,8 +16,8 @@ const VARIANT_STYLES = {
   emerald: {
     iconColor: "text-emerald-300",
     focusRing: "focus-visible:ring-emerald-400/70",
-    shadow: "shadow-[0_0_20px_rgba(16,185,129,0.15)]",
-    background: "radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 1) 0%, rgba(21, 96, 60, 1) 100%)",
+    shadow: "shadow-[0_0_20px_rgba(47,164,90,0.15)]",
+    background: "radial-gradient(circle at 50% 50%, rgba(0,0,0, 1) 0%, rgba(18,72,42, 1) 100%)",
     helperHighlight: "text-emerald-200",
     badge: "text-emerald-200",
     border: "border-white/10",
@@ -26,22 +26,22 @@ const VARIANT_STYLES = {
   ember: {
     iconColor: "text-amber-400",
     focusRing: "focus-visible:ring-amber-500/50",
-    shadow: "shadow-[0_0_20px_rgba(245,158,11,0.12)]",
-    background: "linear-gradient(135deg, rgba(10, 5, 2, 1) 0%, rgba(80, 40, 15, 1) 50%, rgba(40, 20, 5, 1) 100%)",
+    shadow: "shadow-[0_0_20px_rgba(174,219,63,0.12)]",
+    background: "linear-gradient(135deg, rgba(4,6,5, 1) 0%, rgba(46,61,14, 1) 50%, rgba(18,26,21, 1) 100%)",
     helperHighlight: "text-amber-300",
     badge: "text-amber-300",
     border: "border-amber-500/25",
     hoverBorder: "hover:border-amber-400/40",
   },
   gold: {
-    iconColor: "text-[#f4c979]",
-    focusRing: "focus-visible:ring-[#f4c979]/60",
-    shadow: "shadow-[0_0_20px_rgba(244,201,121,0.15)]",
-    background: "radial-gradient(ellipse at 30% 30%, rgba(27, 25, 20, 0.95) 0%, rgba(12, 10, 8, 1) 60%, rgba(7, 6, 5, 1) 100%)",
-    helperHighlight: "text-[#f6dcb2]",
-    badge: "text-[#f4c979]",
-    border: "border-[#f4c979]/30",
-    hoverBorder: "hover:border-[#f4c979]/50",
+    iconColor: "text-[#F4F7F2]",
+    focusRing: "focus-visible:ring-[#F4F7F2]/60",
+    shadow: "shadow-[0_0_20px_rgba(221,255,133,0.15)]",
+    background: "radial-gradient(ellipse at 30% 30%, rgba(18,26,21, 0.95) 0%, rgba(11,16,13, 1) 60%, rgba(4,6,5, 1) 100%)",
+    helperHighlight: "text-[#E4EAE1]",
+    badge: "text-[#F4F7F2]",
+    border: "border-[#F4F7F2]/30",
+    hoverBorder: "hover:border-[#F4F7F2]/50",
   },
 };
 
@@ -122,7 +122,7 @@ const BasePicker = forwardRef<HTMLInputElement, InternalPickerProps>(
             type={pickerType}
             onChange={handleChange}
             className={cn(
-              "w-full rounded-xl sm:rounded-2xl border px-9 sm:px-12 py-2 sm:py-3 text-xs sm:text-sm text-white placeholder:text-gray-500 focus:outline-none focus-visible:ring-2 focus-visible:border-transparent transition-all [color-scheme:dark]",
+              "w-full rounded-xl sm:rounded-leaf-sm border px-9 sm:px-12 py-2 sm:py-3 text-xs sm:text-sm text-white placeholder:text-gray-500 focus:outline-none focus-visible:ring-2 focus-visible:border-transparent transition-all [color-scheme:dark]",
               theme.border,
               theme.hoverBorder,
               theme.focusRing,

@@ -48,7 +48,7 @@ export const EnhancedEmptyJobsState = memo(function EnhancedEmptyJobsState() {
         className="relative mb-4"
       >
         <div className="absolute -inset-3 rounded-full bg-emerald-500/10 blur-xl" />
-        <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 border border-emerald-500/30 flex items-center justify-center">
+        <div className="relative w-16 h-16 rounded-leaf-sm bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 border border-emerald-500/30 flex items-center justify-center">
           <Inbox className="w-8 h-8 text-emerald-400/60" />
         </div>
       </motion.div>
@@ -103,7 +103,7 @@ export const AllFormsCompleteState = memo(function AllFormsCompleteState() {
         className="relative mb-3"
       >
         <div className="absolute -inset-4 rounded-full bg-emerald-400/20 blur-xl" />
-        <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-400/30 to-emerald-500/20 border border-emerald-400/40 flex items-center justify-center">
+        <div className="relative w-14 h-14 rounded-leaf-sm bg-gradient-to-br from-emerald-400/30 to-emerald-500/20 border border-emerald-400/40 flex items-center justify-center">
           <CheckCircle2 className="w-7 h-7 text-emerald-400" />
         </div>
         {/* Sparkles */}
@@ -211,7 +211,7 @@ export const EmptyAnnouncementsState = memo(function EmptyAnnouncementsState() {
     >
       <div className="relative mb-4">
         <div className="absolute -inset-3 rounded-full bg-blue-500/10 blur-xl" />
-        <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/30 flex items-center justify-center">
+        <div className="relative w-14 h-14 rounded-leaf-sm bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/30 flex items-center justify-center">
           <FileText className="w-7 h-7 text-blue-400/60" />
         </div>
       </div>
@@ -243,7 +243,7 @@ export const LoadingErrorState = memo(function LoadingErrorState({
       animate={{ opacity: 1, y: 0 }}
       className="flex flex-col items-center justify-center py-6 text-center"
     >
-      <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center mb-3">
+      <div className="w-12 h-12 rounded-leaf-sm bg-red-500/10 border border-red-500/30 flex items-center justify-center mb-3">
         <span className="text-2xl">⚠️</span>
       </div>
       

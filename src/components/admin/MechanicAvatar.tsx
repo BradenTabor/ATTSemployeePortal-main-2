@@ -8,48 +8,48 @@ interface MechanicAvatarProps {
 const colors = {
   // Primary ember theme
   ember: {
-    bright: '#ffb48a',
-    base: '#ff9350',
-    dark: '#ea580c',
-    darker: '#c2410c',
-    glow: '#ffa366',
-    shimmer: '#ffe4c9',
+    bright: '#D2FFA3',
+    base: '#B8FF7A',
+    dark: '#7CC43F',
+    darker: '#5E9A2C',
+    glow: '#C8F55E',
+    shimmer: '#F5FFD1',
   },
   // Rich blacks for uniform
   black: {
-    rich: '#0a0a0a',
-    suit: '#1a1a1a',
-    accent: '#2a2a2a',
-    highlight: '#3a3a3a',
+    rich: '#040605',
+    suit: '#121A15',
+    accent: '#1E2A23',
+    highlight: '#2F3F36',
   },
   // Skin tones with SSS undertones
   skin: {
-    highlight: '#fcd9bd',
-    base: '#e8b896',
-    shadow: '#c99a6b',
-    deep: '#a67c52',
+    highlight: '#ECFFAE',
+    base: '#E4FFC2',
+    shadow: '#AEDB3F',
+    deep: '#8A9A8E',
     sssWarm: '#ffb8a8',
     sssRed: '#e8a090',
     sssPink: '#f0c8c0',
   },
   // Materials
   metal: {
-    light: '#e5e7eb',
-    base: '#9ca3af',
-    dark: '#6b7280',
-    darker: '#4b5563',
+    light: '#E4EAE1',
+    base: '#8A9A8E',
+    dark: '#5A6B60',
+    darker: '#2F3F36',
     highlight: '#ffffff',
-    reflection: '#f8fafc',
+    reflection: '#F4FBF7',
   },
   // Mechanic-specific
   grease: {
-    stain: '#2d2d2d',
-    smudge: '#1a1a1a',
+    stain: '#1E2A23',
+    smudge: '#121A15',
   },
   fabric: {
-    overalls: '#3b82f6',
-    overallsDark: '#2563eb',
-    patch: '#1e40af',
+    overalls: '#8DF5A8',
+    overallsDark: '#5EE898',
+    patch: '#468A68',
   },
 };
 
@@ -147,7 +147,7 @@ function MechanicAvatarComponent({ className = '' }: MechanicAvatarProps) {
 
             {/* Overalls gradient - blue mechanic style */}
             <linearGradient id={`${id}-overalls`} x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#60a5fa" />
+              <stop offset="0%" stopColor="#C8FFD4" />
               <stop offset="20%" stopColor={colors.fabric.overalls} />
               <stop offset="60%" stopColor={colors.fabric.overallsDark} />
               <stop offset="100%" stopColor={colors.fabric.patch} />
@@ -155,9 +155,9 @@ function MechanicAvatarComponent({ className = '' }: MechanicAvatarProps) {
 
             {/* Undershirt - dark gray */}
             <linearGradient id={`${id}-shirt`} x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#4a4a4a" />
-              <stop offset="50%" stopColor="#3a3a3a" />
-              <stop offset="100%" stopColor="#2a2a2a" />
+              <stop offset="0%" stopColor="#2F3F36" />
+              <stop offset="50%" stopColor="#2F3F36" />
+              <stop offset="100%" stopColor="#1E2A23" />
             </linearGradient>
 
             {/* Pants gradient */}
@@ -178,18 +178,18 @@ function MechanicAvatarComponent({ className = '' }: MechanicAvatarProps) {
 
             {/* Iris gradient */}
             <radialGradient id={`${id}-iris`} cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#1c1917" />
-              <stop offset="30%" stopColor="#3d2c1e" />
-              <stop offset="60%" stopColor="#5c4033" />
-              <stop offset="80%" stopColor="#4a3428" />
-              <stop offset="100%" stopColor="#3d2c1e" />
+              <stop offset="0%" stopColor="#121A15" />
+              <stop offset="30%" stopColor="#2F3F36" />
+              <stop offset="60%" stopColor="#2F3F36" />
+              <stop offset="80%" stopColor="#2F3F36" />
+              <stop offset="100%" stopColor="#2F3F36" />
             </radialGradient>
 
             {/* Hair gradient */}
             <linearGradient id={`${id}-hair`} x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#3a3530" />
-              <stop offset="40%" stopColor="#2a2520" />
-              <stop offset="100%" stopColor="#1a1510" />
+              <stop offset="0%" stopColor="#2F3F36" />
+              <stop offset="40%" stopColor="#1E2A23" />
+              <stop offset="100%" stopColor="#121A15" />
             </linearGradient>
 
             {/* Ember fresnel edge */}
@@ -275,15 +275,15 @@ function MechanicAvatarComponent({ className = '' }: MechanicAvatarProps) {
               fill={`url(#${id}-pants)`}
               filter={`url(#${id}-soft-shadow)`}
             />
-            <line x1="32" y1="70" x2="31" y2="88" stroke="#1e3a8a" strokeWidth="0.3" opacity="0.4" />
+            <line x1="32" y1="70" x2="31" y2="88" stroke="#2F5F48" strokeWidth="0.3" opacity="0.4" />
             
             {/* Left boot - work boots */}
             <path
               d="M 26 87 Q 24 91 26 94 L 39 94 Q 42 91 39 87 L 37 87 Q 35 89 33 89 Q 31 89 29 87 Z"
-              fill="#292524"
+              fill="#1E2A23"
               filter={`url(#${id}-contact-shadow)`}
             />
-            <path d="M 27 93 L 39 93 L 39 95 L 27 95 Z" fill="#1c1917" />
+            <path d="M 27 93 L 39 93 L 39 95 L 27 95 Z" fill="#121A15" />
             <ellipse cx="33" cy="89" rx="4" ry="1.5" fill="white" opacity="0.06" />
             {/* Steel toe cap */}
             <path d="M 27 91 Q 30 93 33 91" stroke={colors.metal.base} strokeWidth="1" fill="none" opacity="0.4" />
@@ -294,15 +294,15 @@ function MechanicAvatarComponent({ className = '' }: MechanicAvatarProps) {
               fill={`url(#${id}-pants)`}
               filter={`url(#${id}-soft-shadow)`}
             />
-            <line x1="48" y1="70" x2="49" y2="88" stroke="#1e3a8a" strokeWidth="0.3" opacity="0.4" />
+            <line x1="48" y1="70" x2="49" y2="88" stroke="#2F5F48" strokeWidth="0.3" opacity="0.4" />
             
             {/* Right boot */}
             <path
               d="M 41 87 Q 39 91 41 94 L 54 94 Q 57 91 54 87 L 52 87 Q 50 89 48 89 Q 46 89 44 87 Z"
-              fill="#292524"
+              fill="#1E2A23"
               filter={`url(#${id}-contact-shadow)`}
             />
-            <path d="M 42 93 L 54 93 L 54 95 L 42 95 Z" fill="#1c1917" />
+            <path d="M 42 93 L 54 93 L 54 95 L 42 95 Z" fill="#121A15" />
             <ellipse cx="48" cy="89" rx="4" ry="1.5" fill="white" opacity="0.06" />
             {/* Steel toe cap */}
             <path d="M 42 91 Q 45 93 48 91" stroke={colors.metal.base} strokeWidth="1" fill="none" opacity="0.4" />
@@ -331,16 +331,16 @@ function MechanicAvatarComponent({ className = '' }: MechanicAvatarProps) {
             />
 
             {/* Overall straps */}
-            <path d="M 30 42 L 28 72" stroke="#1e40af" strokeWidth="3" strokeLinecap="round" />
-            <path d="M 50 42 L 52 72" stroke="#1e40af" strokeWidth="3" strokeLinecap="round" />
+            <path d="M 30 42 L 28 72" stroke="#468A68" strokeWidth="3" strokeLinecap="round" />
+            <path d="M 50 42 L 52 72" stroke="#468A68" strokeWidth="3" strokeLinecap="round" />
             
             {/* Strap buckles - metal */}
             <rect x="27" y="44" width="4" height="3" rx="0.5" fill={`url(#${id}-metal)`} />
             <rect x="49" y="44" width="4" height="3" rx="0.5" fill={`url(#${id}-metal)`} />
 
             {/* Chest pocket */}
-            <rect x="44" y="50" width="10" height="8" rx="1" fill="#1e40af" stroke="#1e3a8a" strokeWidth="0.5" />
-            <rect x="45" y="51" width="8" height="1" rx="0.3" fill="#60a5fa" opacity="0.3" />
+            <rect x="44" y="50" width="10" height="8" rx="1" fill="#468A68" stroke="#2F5F48" strokeWidth="0.5" />
+            <rect x="45" y="51" width="8" height="1" rx="0.3" fill="#C8FFD4" opacity="0.3" />
             
             {/* Wrench sticking out of pocket */}
             <g filter={`url(#${id}-ember-glow)`}>
@@ -357,8 +357,8 @@ function MechanicAvatarComponent({ className = '' }: MechanicAvatarProps) {
             </g>
 
             {/* Tool belt */}
-            <rect x="22" y="66" width="36" height="5" rx="1" fill="#44403c" />
-            <rect x="22" y="66" width="36" height="2" rx="0.5" fill="#57534e" />
+            <rect x="22" y="66" width="36" height="5" rx="1" fill="#2F3F36" />
+            <rect x="22" y="66" width="36" height="2" rx="0.5" fill="#5A6B60" />
             
             {/* Belt buckle - ember */}
             <rect x="36" y="65" width="8" height="7" rx="1" fill={`url(#${id}-cap)`} filter={`url(#${id}-ember-glow)`} />
@@ -463,14 +463,14 @@ function MechanicAvatarComponent({ className = '' }: MechanicAvatarProps) {
             <g>
               <path 
                 d="M 31 21 Q 35 19.5 39 21.5" 
-                stroke="#3a3530" 
+                stroke="#2F3F36" 
                 strokeWidth="1.6" 
                 strokeLinecap="round" 
                 fill="none"
               />
               <path 
                 d="M 41 21.5 Q 45 19.5 49 21" 
-                stroke="#3a3530" 
+                stroke="#2F3F36" 
                 strokeWidth="1.6" 
                 strokeLinecap="round" 
                 fill="none"
@@ -482,7 +482,7 @@ function MechanicAvatarComponent({ className = '' }: MechanicAvatarProps) {
               {/* Left eye */}
               <ellipse cx="35" cy="25.5" rx="4.5" ry="5" fill={colors.skin.shadow} opacity="0.3" />
               <ellipse cx="35" cy="25" rx="4.5" ry="5" fill="white" />
-              <ellipse cx="35" cy="25" rx="4" ry="4.5" fill="#f8fafc" />
+              <ellipse cx="35" cy="25" rx="4" ry="4.5" fill="#F4FBF7" />
               
               <g>
                 <ellipse cx="36" cy="25.5" rx="2.8" ry="3.2" fill={`url(#${id}-iris)`} />
@@ -493,12 +493,12 @@ function MechanicAvatarComponent({ className = '' }: MechanicAvatarProps) {
                     y1="25.5"
                     x2={36 + Math.cos(i * Math.PI / 4) * 2}
                     y2={25.5 + Math.sin(i * Math.PI / 4) * 2.5}
-                    stroke="#6b5344"
+                    stroke="#5A6B60"
                     strokeWidth="0.2"
                     opacity="0.5"
                   />
                 ))}
-                <ellipse cx="36" cy="26" rx="1.6" ry="2" fill="#0f0f0f" />
+                <ellipse cx="36" cy="26" rx="1.6" ry="2" fill="#0B100D" />
                 <ellipse cx="36" cy="26" rx="1" ry="1.3" fill="#000000" />
               </g>
               
@@ -512,7 +512,7 @@ function MechanicAvatarComponent({ className = '' }: MechanicAvatarProps) {
               {/* Right eye */}
               <ellipse cx="45" cy="25.5" rx="4.5" ry="5" fill={colors.skin.shadow} opacity="0.3" />
               <ellipse cx="45" cy="25" rx="4.5" ry="5" fill="white" />
-              <ellipse cx="45" cy="25" rx="4" ry="4.5" fill="#f8fafc" />
+              <ellipse cx="45" cy="25" rx="4" ry="4.5" fill="#F4FBF7" />
               
               <g>
                 <ellipse cx="44" cy="25.5" rx="2.8" ry="3.2" fill={`url(#${id}-iris)`} />
@@ -523,12 +523,12 @@ function MechanicAvatarComponent({ className = '' }: MechanicAvatarProps) {
                     y1="25.5"
                     x2={44 + Math.cos(i * Math.PI / 4) * 2}
                     y2={25.5 + Math.sin(i * Math.PI / 4) * 2.5}
-                    stroke="#6b5344"
+                    stroke="#5A6B60"
                     strokeWidth="0.2"
                     opacity="0.5"
                   />
                 ))}
-                <ellipse cx="44" cy="26" rx="1.6" ry="2" fill="#0f0f0f" />
+                <ellipse cx="44" cy="26" rx="1.6" ry="2" fill="#0B100D" />
                 <ellipse cx="44" cy="26" rx="1" ry="1.3" fill="#000000" />
               </g>
               
@@ -546,7 +546,7 @@ function MechanicAvatarComponent({ className = '' }: MechanicAvatarProps) {
             {/* Mouth - slight determined grin */}
             <path
               d="M 35 34 Q 40 37 45 34"
-              stroke="#9a6b4a"
+              stroke="#8DB52A"
               strokeWidth="1.5"
               strokeLinecap="round"
               fill="none"

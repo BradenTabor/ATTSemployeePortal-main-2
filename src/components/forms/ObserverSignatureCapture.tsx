@@ -127,10 +127,10 @@ export function ObserverSignatureCapture({
             className="overflow-hidden"
           >
             <div 
-              className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 space-y-4"
-              style={{ boxShadow: 'inset 0px 2px 15px 8px rgba(0, 0, 0, 0.85)' }}
+              className="rounded-leaf-sm border border-emerald-500/30 bg-emerald-500/10 p-4 space-y-4"
+              style={{ boxShadow: 'inset 0px 2px 15px 8px rgba(0,0,0, 0.85)' }}
             >
-              <p className="text-xs uppercase tracking-[0.3em] text-emerald-300">
+              <p className="text-xs uppercase text-emerald-300 font-mono font-medium tracking-[0.14em]">
                 New Observer Signature
               </p>
 
@@ -241,7 +241,7 @@ export function ObserverSignatureCapture({
       {/* Existing Observers List */}
       {observers.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.3em] text-white/50">
+          <p className="text-xs uppercase text-white/50 font-mono font-medium tracking-[0.14em]">
             Added Observers ({observers.length})
           </p>
           <div className="grid gap-2 sm:grid-cols-2">
@@ -252,7 +252,7 @@ export function ObserverSignatureCapture({
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 className="rounded-xl border border-white/10 bg-white/5 p-3 space-y-2"
-                style={{ boxShadow: 'inset 0px 2px 10px 4px rgba(0, 0, 0, 0.85)' }}
+                style={{ boxShadow: 'inset 0px 2px 10px 4px rgba(0,0,0, 0.85)' }}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">

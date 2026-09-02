@@ -46,8 +46,8 @@ export const SeasonFinaleStrip = memo(function SeasonFinaleStrip({
       )}
       style={{
         background: isPodium
-          ? 'linear-gradient(135deg, rgba(180, 83, 9, 0.12) 0%, rgba(8, 12, 10, 0.95) 60%)'
-          : 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(8, 12, 10, 0.95) 60%)',
+          ? 'linear-gradient(135deg, rgba(107,138,31, 0.12) 0%, rgba(11,16,13, 0.95) 60%)'
+          : 'linear-gradient(135deg, rgba(47,164,90, 0.1) 0%, rgba(11,16,13, 0.95) 60%)',
       }}
       data-testid={`season-finale-${item.id}`}
     >

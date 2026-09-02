@@ -7,15 +7,15 @@ import {
 import { AnimatePresence } from "framer-motion";
 import { Suspense, useMemo } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import ReturnButton from "@/components/ReturnButton";
 import SessionOverlay from "@/components/SessionOverlay";
 import LoadingScreen from "@/components/LoadingScreen";
 import { AppErrorBoundary } from "@/components/layout/ErrorBoundary";
 import { useAuth } from "@/contexts/AuthContext";
 import { PageWrapper } from "@/motion";
 import { UserPresenceTracker } from "@/hooks/useUserPresence";
-// EAP: direct import — no lazy-load so it's ready immediately in an emergency
-import EmergencyActionPlan from "@/pages/safety-officer/EmergencyActionPlan";
 import {
+  EmergencyActionPlan,
   Home,
   ResetPassword,
   Dashboard,
@@ -114,6 +114,9 @@ export function AnimatedRoutes() {
       
       {/* Session Restoring Overlay */}
       <SessionOverlay isLoading={loading} />
+
+      {/* Sticky return dock — lives outside <Routes> so it persists across page transitions */}
+      <ReturnButton />
 
       {/* Main App Content — error boundary catches lazy-load and render failures so app shell stays usable */}
       <AnimatePresence mode="popLayout">
@@ -613,7 +616,7 @@ export function AnimatedRoutes() {
               }
             />
 
-            {/* Emergency Action Plan — PUBLIC for guest/emergency access */}
+            {/* Emergency Action Plan — PUBLIC for guest/emergency access. Chunk is preloaded on idle (App.tsx). */}
             <Route
               path="/emergency-action-plan"
               element={

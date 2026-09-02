@@ -63,9 +63,9 @@ const statusConfig: typeof JOB_STATUS_CONFIG = {
   },
   completed: {
     label: 'Completed',
-    bgColor: 'bg-[#f4c979]/15',
-    borderColor: 'border-[#f4c979]/30',
-    textColor: 'text-[#f4c979]',
+    bgColor: 'bg-[#F4F7F2]/15',
+    borderColor: 'border-[#F4F7F2]/30',
+    textColor: 'text-[#F4F7F2]',
   },
   paused: {
     label: 'Paused',
@@ -87,7 +87,7 @@ const statusConfig: typeof JOB_STATUS_CONFIG = {
 
 const JobCardSkeleton = memo(function JobCardSkeleton() {
   return (
-    <div className="rounded-xl border border-emerald-500/20 bg-[#041510]/80 p-3 sm:p-4 animate-pulse min-h-[60px]">
+    <div className="rounded-xl border border-emerald-500/20 bg-[#0B100D]/80 p-3 sm:p-4 animate-pulse min-h-[60px]">
       <div className="flex items-center justify-between gap-2 sm:gap-3">
         <div className="flex-1">
           <div className="h-4 w-28 sm:w-32 bg-white/10 rounded mb-1.5" />
@@ -187,7 +187,7 @@ const CircuitFilter = memo(function CircuitFilter({
           aria-pressed={activeCircuit === 'All'}
           className={cn(
             'flex items-center gap-1 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl border text-[11px] sm:text-sm font-medium transition-all min-h-[40px] sm:min-h-[44px] touch-manipulation whitespace-nowrap snap-start',
-            'active:scale-[0.97] active:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]',
+            'active:scale-[0.97] active:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]',
             activeCircuit === 'All'
               ? 'bg-emerald-500/25 text-emerald-300 border-emerald-500/50 shadow-lg shadow-emerald-500/10'
               : 'bg-white/5 text-white/60 border-white/10 active:bg-white/15'
@@ -205,7 +205,7 @@ const CircuitFilter = memo(function CircuitFilter({
             aria-pressed={activeCircuit === circuit}
             className={cn(
               'flex items-center gap-1 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl border text-[11px] sm:text-sm font-medium transition-all min-h-[40px] sm:min-h-[44px] touch-manipulation whitespace-nowrap snap-start',
-              'active:scale-[0.97] active:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]',
+              'active:scale-[0.97] active:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]',
               activeCircuit === circuit
                 ? 'bg-emerald-500/25 text-emerald-300 border-emerald-500/50 shadow-lg shadow-emerald-500/10'
                 : 'bg-white/5 text-white/60 border-white/10 active:bg-white/15'
@@ -258,7 +258,7 @@ const Pagination = memo(function Pagination({
           disabled={currentPage === 1}
           aria-label="Previous page"
           className={cn(
-            'p-2 sm:p-2.5 rounded-xl border transition-all min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] disabled:focus-visible:ring-0',
+            'p-2 sm:p-2.5 rounded-xl border transition-all min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D] disabled:focus-visible:ring-0',
             'active:scale-[0.95]',
             currentPage === 1
               ? 'border-white/5 text-white/20 cursor-not-allowed'
@@ -276,7 +276,7 @@ const Pagination = memo(function Pagination({
           disabled={currentPage === totalPages}
           aria-label="Next page"
           className={cn(
-            'p-2 sm:p-2.5 rounded-xl border transition-all min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] disabled:focus-visible:ring-0',
+            'p-2 sm:p-2.5 rounded-xl border transition-all min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D] disabled:focus-visible:ring-0',
             'active:scale-[0.95]',
             currentPage === totalPages
               ? 'border-white/5 text-white/20 cursor-not-allowed'
@@ -341,14 +341,14 @@ const JobListItem = memo(function JobListItem({
       aria-pressed={isSelected}
       className={cn(
         'w-full text-left rounded-lg sm:rounded-xl border p-2.5 sm:p-3 transition-all min-h-[52px] touch-manipulation overflow-hidden',
-        'bg-gradient-to-br active:scale-[0.98] active:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]',
+        'bg-gradient-to-br active:scale-[0.98] active:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]',
         isSelected
-          ? 'border-emerald-400/60 from-[#0a2a1f]/90 via-[#041812]/95 to-[#03120c]/90 shadow-lg shadow-emerald-500/20 ring-2 ring-emerald-400/40'
+          ? 'border-emerald-400/60 from-[#121A15]/90 via-[#0B100D]/95 to-[#0B100D]/90 shadow-lg shadow-emerald-500/20 ring-2 ring-emerald-400/40'
           : isSpanBased
-            ? 'border-blue-500/20 from-[#040815]/80 via-[#020509]/90 to-[#010204] active:border-blue-400/40'
+            ? 'border-blue-500/20 from-[#0B100D]/80 via-[#040605]/90 to-[#040605] active:border-blue-400/40'
             : isExceeded
-              ? 'border-red-500/30 from-[#1a0808]/80 via-[#0d0505]/90 to-[#050302] active:border-red-500/50'
-              : 'border-emerald-500/20 from-[#041510]/80 via-[#020d09]/90 to-[#010604] active:border-emerald-400/40'
+              ? 'border-red-500/30 from-[#132308]/80 via-[#040605]/90 to-[#040605] active:border-red-500/50'
+              : 'border-emerald-500/20 from-[#0B100D]/80 via-[#040605]/90 to-[#040605] active:border-emerald-400/40'
       )}
     >
       <div className="flex items-center justify-between gap-1.5 sm:gap-2">
@@ -360,7 +360,7 @@ const JobListItem = memo(function JobListItem({
                 isSelected ? 'text-emerald-300' : isExceeded && !isSpanBased ? 'text-red-400' : ''
               )}
               style={{
-                color: isSelected ? undefined : (isSpanBased ? 'rgb(231, 114, 4)' : isExceeded ? undefined : 'rgb(0, 219, 77)')
+                color: isSelected ? undefined : (isSpanBased ? 'rgb(141, 181, 42)' : isExceeded ? undefined : 'rgb(47, 164, 90)')
               }}
             />
             <h4 className="font-semibold text-[12px] sm:text-sm text-white truncate leading-snug flex-1 min-w-0">
@@ -484,16 +484,16 @@ const JobDetailPanel = memo(function JobDetailPanel({
         onClick={(e) => e.stopPropagation()}
         className={cn(
           'w-full max-w-md sm:max-w-lg overflow-hidden flex flex-col',
-          'rounded-2xl border shadow-2xl',
+          'rounded-leaf-sm border shadow-2xl',
           isSpanBased ? 'border-emerald-500/30' : isExceeded ? 'border-red-500/30' : 'border-emerald-500/30'
         )}
         style={{
           maxHeight: 'calc(100dvh - 48px)',
           background: isSpanBased
-            ? 'linear-gradient(135deg, rgba(4, 21, 15, 0.99) 0%, rgba(4, 24, 18, 0.98) 50%, rgba(3, 18, 12, 0.99) 100%)'
+            ? 'linear-gradient(135deg, rgba(11,16,13, 0.99) 0%, rgba(11,16,13, 0.98) 50%, rgba(11,16,13, 0.99) 100%)'
             : isExceeded
-              ? 'linear-gradient(to bottom right, #1a0808, #0d0606, #050303)'
-              : 'linear-gradient(to bottom right, #04150f, #041812, #03120c)',
+              ? 'linear-gradient(to bottom right, #132308, #0B100D, #040605)'
+              : 'linear-gradient(to bottom right, #0B100D, #0B100D, #0B100D)',
         }}
       >
         {/* Scrollable content */}
@@ -504,7 +504,7 @@ const JobDetailPanel = memo(function JobDetailPanel({
               <button
                 type="button"
                 onClick={onClose}
-                className="p-2 sm:p-2.5 rounded-xl bg-white/5 border border-white/10 active:bg-white/15 active:border-white/25 transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center touch-manipulation focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+                className="p-2 sm:p-2.5 rounded-xl bg-white/5 border border-white/10 active:bg-white/15 active:border-white/25 transition-colors min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center touch-manipulation focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
                 aria-label="Close job detail"
               >
                 <X className="w-4 h-4 sm:w-5 sm:h-5 text-white/60" aria-hidden />
@@ -577,7 +577,7 @@ const JobDetailPanel = memo(function JobDetailPanel({
                   </div>
                   <div className="text-center p-2 rounded-lg bg-white/5">
                     <p className="text-[11px] text-white/50 mb-0.5">Goal</p>
-                    <p className="text-base font-bold text-[#f4c979]">{spanProgress.total > 0 ? spanProgress.total.toLocaleString() : '—'}</p>
+                    <p className="text-base font-bold text-[#F4F7F2]">{spanProgress.total > 0 ? spanProgress.total.toLocaleString() : '—'}</p>
                   </div>
                   <div className="text-center p-2 rounded-lg bg-white/5">
                     <p className="text-[11px] text-white/50 mb-0.5">Left</p>
@@ -600,9 +600,9 @@ const JobDetailPanel = memo(function JobDetailPanel({
               onClick={() => setShowProgressForm(true)}
               className="w-full mt-4 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold min-h-[48px] touch-manipulation"
               style={{
-                background: 'linear-gradient(135deg, rgba(247, 228, 189, 1) 0%, rgba(244, 201, 121, 0.85) 50%, rgba(215, 154, 50, 1) 100%)',
-                color: '#2e1b02',
-                boxShadow: '0 4px 16px rgba(244, 201, 121, 0.3)',
+                background: 'linear-gradient(135deg, rgba(236,255,174, 1) 0%, rgba(221,255,133, 0.85) 50%, rgba(174,219,63, 1) 100%)',
+                color: '#040605',
+                boxShadow: '0 4px 16px rgba(221,255,133, 0.3)',
               }}
             >
               <Plus className="w-4 h-4" />
@@ -697,7 +697,7 @@ const JobDetailPanel = memo(function JobDetailPanel({
                   onClick={() => setShowAllMilestones(!showAllMilestones)}
                   aria-label={showAllMilestones ? "Show less milestones" : `Show ${job.milestones.length - 3} more milestones`}
                   aria-expanded={showAllMilestones}
-                  className="mt-3 text-xs text-emerald-400 active:text-emerald-300 min-h-[44px] px-3 -mx-3 touch-manipulation focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] rounded"
+                  className="mt-3 text-xs text-emerald-400 active:text-emerald-300 min-h-[44px] px-3 -mx-3 touch-manipulation focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D] rounded"
                 >
                   {showAllMilestones ? 'Show less' : `Show ${job.milestones.length - 3} more`}
                 </button>
@@ -906,17 +906,17 @@ function AssignedJobs() {
             className="relative"
           >
             <div 
-              className="relative overflow-hidden rounded-2xl md:rounded-3xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
+              className="relative overflow-hidden rounded-leaf-sm md:rounded-leaf border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
               style={{
                 backdropFilter: 'blur(24px) saturate(180%)',
                 WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-                background: 'linear-gradient(145deg, rgba(4, 30, 21, 0.6) 0%, rgba(2, 15, 10, 0.5) 50%, rgba(1, 8, 5, 0.4) 100%)',
-                boxShadow: 'inset 0 0 15px rgba(125, 225, 180, 0.05), 0 8px 32px rgba(0,0,0,0.4)',
+                background: 'linear-gradient(145deg, rgba(11,16,13, 0.6) 0%, rgba(4,6,5, 0.5) 50%, rgba(4,6,5, 0.4) 100%)',
+                boxShadow: 'inset 0 0 15px rgba(94,232,152, 0.05), 0 8px 32px rgba(0,0,0,0.4)',
               }}
             >
               <div className="absolute inset-0 opacity-70 pointer-events-none" style={{ background: 'linear-gradient(125deg, rgba(255,255,255,0.15) 0%, transparent 30%, transparent 70%, rgba(255,255,255,0.05) 100%)' }} />
               <div className="absolute inset-0 opacity-50 pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 50%)' }} />
-              <div className="absolute top-0 left-0 w-24 h-24 rounded-full opacity-30 pointer-events-none" style={{ background: 'radial-gradient(circle at 50% 50%, rgba(125,225,180,0.3) 0%, transparent 70%)', filter: 'blur(15px)' }} />
+              <div className="absolute top-0 left-0 w-24 h-24 rounded-full opacity-30 pointer-events-none" style={{ background: 'radial-gradient(circle at 50% 50%, rgba(94,232,152,0.3) 0%, transparent 70%)', filter: 'blur(15px)' }} />
               <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-white/[0.15] to-transparent" />
               <div className="absolute top-0 bottom-0 left-0 w-[1px] bg-gradient-to-b from-transparent via-white/[0.1] to-transparent" />
               <div className="absolute top-0 bottom-0 right-0 w-[1px] bg-gradient-to-b from-transparent via-black/[0.1] to-transparent" />
@@ -926,24 +926,24 @@ function AssignedJobs() {
                 <div className="flex items-center gap-3 mb-3">
                   <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.2 }} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30">
                     <Briefcase className="w-3.5 h-3.5 text-emerald-400" />
-                    <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-emerald-200">My Jobs</span>
+                    <span className="text-[10px] uppercase text-emerald-200 font-mono font-medium tracking-[0.14em]">My Jobs</span>
                   </motion.div>
                   {assignedJobs.length > 0 && (
-                    <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.3 }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#03150f]/60 border border-emerald-500/20">
+                    <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.3 }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0B100D]/60 border border-emerald-500/20">
                       <Sparkles className="w-3 h-3 text-emerald-400" />
-                      <span className="text-[9px] uppercase tracking-wider font-semibold text-emerald-200/70">{assignedJobs.length} Active</span>
+                      <span className="text-[9px] uppercase text-emerald-200/70 font-mono font-medium tracking-[0.14em]">{assignedJobs.length} Active</span>
                     </motion.div>
                   )}
                 </div>
                 <div className="flex items-center gap-4">
-                  <motion.div initial={{ scaleY: 0, opacity: 0 }} animate={{ scaleY: 1, opacity: 1 }} transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }} className="w-1 h-14 md:h-16 rounded-full bg-gradient-to-b from-emerald-400 via-emerald-500 to-emerald-600 origin-top flex-shrink-0" style={{ boxShadow: '0 0 20px rgba(16, 185, 129, 0.4), 0 0 40px rgba(16, 185, 129, 0.2)' }} />
+                  <motion.div initial={{ scaleY: 0, opacity: 0 }} animate={{ scaleY: 1, opacity: 1 }} transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }} className="w-1 h-14 md:h-16 rounded-full bg-gradient-to-b from-emerald-400 via-emerald-500 to-emerald-600 origin-top flex-shrink-0" style={{ boxShadow: '0 0 20px rgba(47,164,90, 0.4), 0 0 40px rgba(47,164,90, 0.2)' }} />
                   <div className="flex-1 min-w-0">
                     {enableAnimations ? (
-                      <TextEffect as="h1" preset="blurSlide" per="char" delay={0.15} className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight" segmentWrapperClassName="bg-gradient-to-r from-white via-emerald-100 to-white/90 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(125,225,180,0.3)]">
+                      <TextEffect as="h1" preset="blurSlide" per="char" delay={0.15} className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]" segmentWrapperClassName="text-glow">
                         Your Jobs
                       </TextEffect>
                     ) : (
-                      <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight bg-gradient-to-r from-white via-emerald-100 to-white/90 bg-clip-text text-transparent">Your Jobs</h1>
+                      <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">Your Jobs</h1>
                     )}
                     <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.7 }} className="mt-1.5 md:mt-2 text-xs sm:text-sm text-emerald-200/50 font-medium leading-relaxed max-w-xl">
                       View details and submit progress
@@ -958,9 +958,9 @@ function AssignedJobs() {
                     onClick={() => setShowQuickProgress(true)}
                     className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold min-h-[44px] touch-manipulation"
                     style={{
-                      background: 'linear-gradient(135deg, rgba(247, 228, 189, 1) 0%, rgba(244, 201, 121, 0.85) 50%, rgba(215, 154, 50, 1) 100%)',
-                      color: '#2e1b02',
-                      boxShadow: '0 4px 16px rgba(244, 201, 121, 0.3)',
+                      background: 'linear-gradient(135deg, rgba(236,255,174, 1) 0%, rgba(221,255,133, 0.85) 50%, rgba(174,219,63, 1) 100%)',
+                      color: '#040605',
+                      boxShadow: '0 4px 16px rgba(221,255,133, 0.3)',
                     }}
                   >
                     <Plus className="w-4 h-4" />
@@ -998,11 +998,11 @@ function AssignedJobs() {
               )}
 
               {/* Job List Container - Ultra compact on small screens */}
-              <div className="rounded-lg sm:rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-[#04150f]/95 via-[#041812]/90 to-[#03120c]/95 p-2.5 sm:p-4">
+              <div className="rounded-lg sm:rounded-leaf-sm border border-emerald-500/20 bg-gradient-to-br from-[#0B100D]/95 via-[#0B100D]/90 to-[#0B100D]/95 p-2.5 sm:p-4">
                 <div className="flex items-center justify-between mb-2 sm:mb-3">
                   <div className="flex items-center gap-1 sm:gap-2">
                     <Briefcase className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-400" />
-                    <span className="text-[9px] sm:text-xs uppercase tracking-widest text-emerald-200/70 font-medium">
+                    <span className="text-[9px] sm:text-xs uppercase text-emerald-200/70 font-medium font-mono font-medium tracking-[0.14em]">
                       Select Job
                     </span>
                   </div>

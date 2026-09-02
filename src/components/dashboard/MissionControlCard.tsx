@@ -171,11 +171,11 @@ const ProgressRing = memo(function ProgressRing({
 
   // Color based on urgency/completion
   const colors = {
-    calm: { stroke: '#10b981', glow: 'rgba(16, 185, 129, 0.4)' },
-    warning: { stroke: '#f59e0b', glow: 'rgba(245, 158, 11, 0.4)' },
-    urgent: { stroke: '#ef4444', glow: 'rgba(239, 68, 68, 0.4)' },
-    missed: { stroke: '#6b7280', glow: 'rgba(107, 114, 128, 0.2)' },
-    complete: { stroke: '#10b981', glow: 'rgba(16, 185, 129, 0.5)' },
+    calm: { stroke: '#3DDC84', glow: 'rgba(47,164,90, 0.4)' },
+    warning: { stroke: '#9BEB5B', glow: 'rgba(174,219,63, 0.4)' },
+    urgent: { stroke: '#ef4444', glow: 'rgba(239,68,68, 0.4)' },
+    missed: { stroke: '#5A6B60', glow: 'rgba(90,107,96, 0.2)' },
+    complete: { stroke: '#3DDC84', glow: 'rgba(47,164,90, 0.5)' },
   };
 
   const color = progress === 1 ? colors.complete : colors[urgencyLevel];
@@ -230,7 +230,7 @@ const ProgressRing = memo(function ProgressRing({
         ) : (
           <>
             <span className="text-sm sm:text-lg font-black text-white">{Math.round(progress * 100)}%</span>
-            <span className="text-[7px] sm:text-[8px] text-white/50 uppercase tracking-wider">Ready</span>
+            <span className="text-[7px] sm:text-[8px] text-white/50 uppercase font-mono font-medium tracking-[0.14em]">Ready</span>
           </>
         )}
       </div>
@@ -478,7 +478,7 @@ const WeekendModeCard = memo(function WeekendModeCard({ userId, firstName }: Wee
       animate={{ opacity: 1, y: 0 }}
       className="relative overflow-hidden rounded-xl border border-emerald-500/25"
       style={{
-        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(4, 30, 21, 0.95) 100%)',
+        background: 'linear-gradient(135deg, rgba(47,164,90, 0.12) 0%, rgba(11,16,13, 0.95) 100%)',
       }}
     >
       {/* Subtle shine */}
@@ -510,7 +510,7 @@ const WeekendModeCard = memo(function WeekendModeCard({ userId, firstName }: Wee
               onClick={() => setShowStats(!showStats)}
               aria-label={showStats ? "Hide stats" : "Show week stats"}
               aria-expanded={showStats}
-              className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex-shrink-0 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+              className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex-shrink-0 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
             >
               <Trophy className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-400" aria-hidden />
               <span className="text-[10px] sm:text-xs font-semibold text-emerald-400">{totalForms}</span>
@@ -594,19 +594,19 @@ const CompactComplianceCard = memo(function CompactComplianceCard({
       bg: 'bg-emerald-500/10',
       border: 'border-emerald-500/25',
       accent: 'text-emerald-400',
-      glow: 'rgba(16, 185, 129, 0.15)',
+      glow: 'rgba(47,164,90, 0.15)',
     },
     encourage: {
       bg: 'bg-amber-500/10',
       border: 'border-amber-500/25',
       accent: 'text-amber-400',
-      glow: 'rgba(245, 158, 11, 0.15)',
+      glow: 'rgba(174,219,63, 0.15)',
     },
     urgent: {
       bg: 'bg-red-500/10',
       border: 'border-red-500/25',
       accent: 'text-red-400',
-      glow: 'rgba(239, 68, 68, 0.15)',
+      glow: 'rgba(239,68,68, 0.15)',
     },
   };
   
@@ -618,7 +618,7 @@ const CompactComplianceCard = memo(function CompactComplianceCard({
       animate={{ opacity: 1, y: 0 }}
       className={`relative overflow-hidden rounded-xl border ${style.border}`}
       style={{
-        background: `linear-gradient(135deg, ${style.glow} 0%, rgba(4, 30, 21, 0.95) 100%)`,
+        background: `linear-gradient(135deg, ${style.glow} 0%, rgba(11,16,13, 0.95) 100%)`,
       }}
     >
       {/* Top shine */}
@@ -855,7 +855,7 @@ function MissionControlCardComponent({ onComplianceChange }: MissionControlCardP
           type="button"
           onClick={() => setCompactMode(false)}
           aria-label="Show full mission view"
-          className="w-full text-xs text-white/30 hover:text-white/50 transition-colors py-1 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] rounded"
+          className="w-full text-xs text-white/30 hover:text-white/50 transition-colors py-1 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D] rounded"
         >
           Show full view
         </button>
@@ -866,7 +866,7 @@ function MissionControlCardComponent({ onComplianceChange }: MissionControlCardP
   // Loading state
   if (mission.loading) {
     return (
-      <div className="rounded-2xl border border-emerald-400/20 p-4 animate-pulse" style={{ background: 'rgba(4, 30, 21, 0.95)' }}>
+      <div className="rounded-leaf-sm border border-emerald-400/20 p-4 animate-pulse" style={{ background: 'rgba(11,16,13, 0.95)' }}>
         <div className="flex items-center gap-4">
           <div className="w-20 h-20 rounded-full bg-white/5" />
           <div className="flex-1 space-y-2">
@@ -882,10 +882,10 @@ function MissionControlCardComponent({ onComplianceChange }: MissionControlCardP
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative overflow-hidden rounded-2xl border border-emerald-400/20"
+      className="relative overflow-hidden rounded-leaf-sm border border-emerald-400/20"
       style={{
-        background: 'linear-gradient(145deg, rgba(4, 30, 21, 0.98) 0%, rgba(2, 15, 10, 1) 100%)',
-        boxShadow: '0px 0px 0px 0px rgba(0, 0, 0, 0), 0px 0px 0px 0px rgba(0, 0, 0, 0), 0px 10px 15px -3px rgba(0, 0, 0, 0.3), 0px 4px 6px -4px rgba(0, 0, 0, 0.6)',
+        background: 'linear-gradient(145deg, rgba(11,16,13, 0.98) 0%, rgba(4,6,5, 1) 100%)',
+        boxShadow: '0px 0px 0px 0px rgba(0,0,0, 0), 0px 0px 0px 0px rgba(0,0,0, 0), 0px 10px 15px -3px rgba(0,0,0, 0.3), 0px 4px 6px -4px rgba(0,0,0, 0.6)',
       }}
     >
       {/* Top shine */}
@@ -952,7 +952,7 @@ function MissionControlCardComponent({ onComplianceChange }: MissionControlCardP
           onClick={() => setIsExpanded(!isExpanded)}
           aria-label={isExpanded ? "Hide form details" : "Show form details"}
           aria-expanded={isExpanded}
-          className="w-full mt-3 pt-3 border-t border-white/5 flex items-center justify-between text-xs text-white/50 hover:text-white/70 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] rounded"
+          className="w-full mt-3 pt-3 border-t border-white/5 flex items-center justify-between text-xs text-white/50 hover:text-white/70 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D] rounded"
         >
           <span className="font-medium">
             {isExpanded ? 'Hide details' : 'Show form details'}

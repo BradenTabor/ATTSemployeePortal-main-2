@@ -322,7 +322,7 @@ export default function TreeFellingJSAForm() {
 
   const isLoading = isEditMode && loadingRecord;
   const baseInputClass =
-    "w-full rounded-lg border bg-black/20 px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] disabled:opacity-60";
+    "w-full rounded-lg border bg-black/20 px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D] disabled:opacity-60";
   const inputClass = baseInputClass + " border-white/10";
   const inputErrorClass = (field: string) =>
     baseInputClass + (shouldShowError(field) ? " border-red-500/50" : " border-white/10");

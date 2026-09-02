@@ -38,8 +38,8 @@ export function ScrollRevealSection({
 
 export const animationStyles = `
   @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 20px rgba(251, 146, 60, 0.3), 0 0 40px rgba(251, 146, 60, 0.1); }
-    50% { box-shadow: 0 0 30px rgba(251, 146, 60, 0.5), 0 0 60px rgba(251, 146, 60, 0.2); }
+    0%, 100% { box-shadow: 0 0 20px rgba(200,245,94, 0.3), 0 0 40px rgba(200,245,94, 0.1); }
+    50% { box-shadow: 0 0 30px rgba(200,245,94, 0.5), 0 0 60px rgba(200,245,94, 0.2); }
   }
   @keyframes gradient-shift {
     0% { background-position: 0% 50%; }

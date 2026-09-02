@@ -121,8 +121,8 @@ const lerpColor = (
  */
 function EnhancedCanvasParticles({
   count = 80,
-  color = 'rgba(247, 228, 189, 1)',
-  accentColor = 'rgba(255, 215, 120, 1)',
+  color = 'rgba(236,255,174, 1)',
+  accentColor = 'rgba(221,255,133, 1)',
   minSize = 1,
   maxSize = 4,
   className = '',
@@ -305,7 +305,7 @@ function EnhancedCanvasParticles({
       ctx.rotate(rotation);
       
       const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 2);
-      gradient.addColorStop(0, `rgba(255, 255, 255, ${opacity})`);
+      gradient.addColorStop(0, `rgba(255,255,255, ${opacity})`);
       gradient.addColorStop(0.3, `rgba(${starColor.r}, ${starColor.g}, ${starColor.b}, ${opacity * 0.8})`);
       gradient.addColorStop(1, `rgba(${starColor.r}, ${starColor.g}, ${starColor.b}, 0)`);
       
@@ -332,7 +332,7 @@ function EnhancedCanvasParticles({
       // Center glow
       ctx.beginPath();
       ctx.arc(0, 0, size * 0.5, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+      ctx.fillStyle = `rgba(255,255,255, ${opacity})`;
       ctx.fill();
       
       ctx.restore();
@@ -459,10 +459,10 @@ function EnhancedCanvasParticles({
         const tailY = star.y - Math.sin(star.angle) * star.length;
         
         const gradient = ctx.createLinearGradient(star.x, star.y, tailX, tailY);
-        gradient.addColorStop(0, `rgba(255, 255, 255, ${star.opacity})`);
+        gradient.addColorStop(0, `rgba(255,255,255, ${star.opacity})`);
         gradient.addColorStop(0.15, `rgba(${highlight.r}, ${highlight.g}, ${highlight.b}, ${star.opacity * 0.9})`);
         gradient.addColorStop(0.4, `rgba(${baseColor.r}, ${baseColor.g}, ${baseColor.b}, ${star.opacity * 0.5})`);
-        gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        gradient.addColorStop(1, 'rgba(255,255,255, 0)');
 
         ctx.beginPath();
         ctx.moveTo(star.x, star.y);
@@ -474,9 +474,9 @@ function EnhancedCanvasParticles({
 
         // Bright glowing head
         const headGradient = ctx.createRadialGradient(star.x, star.y, 0, star.x, star.y, 8);
-        headGradient.addColorStop(0, `rgba(255, 255, 255, ${star.opacity})`);
+        headGradient.addColorStop(0, `rgba(255,255,255, ${star.opacity})`);
         headGradient.addColorStop(0.5, `rgba(${highlight.r}, ${highlight.g}, ${highlight.b}, ${star.opacity * 0.5})`);
-        headGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        headGradient.addColorStop(1, 'rgba(255,255,255, 0)');
         
         ctx.beginPath();
         ctx.arc(star.x, star.y, 8, 0, Math.PI * 2);
@@ -638,8 +638,8 @@ function EnhancedCanvasParticles({
         // Draw bright core with inner highlight
         const coreSize = particle.size * 0.7 * pulse;
         const coreGradient = ctx.createRadialGradient(drawX, drawY, 0, drawX, drawY, coreSize);
-        coreGradient.addColorStop(0, `rgba(255, 255, 255, ${currentOpacity})`);
-        coreGradient.addColorStop(0.5, `rgba(255, 255, 255, ${currentOpacity * 0.6})`);
+        coreGradient.addColorStop(0, `rgba(255,255,255, ${currentOpacity})`);
+        coreGradient.addColorStop(0.5, `rgba(255,255,255, ${currentOpacity * 0.6})`);
         coreGradient.addColorStop(1, `rgba(${shiftedColor.r}, ${shiftedColor.g}, ${shiftedColor.b}, ${currentOpacity * 0.3})`);
         
         ctx.beginPath();

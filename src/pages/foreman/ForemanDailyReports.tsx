@@ -72,10 +72,10 @@ const PAGE_SIZE = 6;
 
 // Blue theme input styling
 const baseInput =
-  "w-full bg-[#020810]/80 border border-[#3b82f6]/25 rounded-lg px-3 py-2.5 text-white text-sm placeholder:text-white/40 focus:outline-none focus-visible:ring-1 focus-visible:ring-[#3b82f6]/50 focus-visible:border-[#3b82f6]/40 disabled:opacity-50 disabled:cursor-not-allowed min-h-[42px] touch-manipulation transition-all";
+  "w-full bg-[#040605]/80 border border-[#8DF5A8]/25 rounded-lg px-3 py-2.5 text-white text-sm placeholder:text-white/40 focus:outline-none focus-visible:ring-1 focus-visible:ring-[#8DF5A8]/50 focus-visible:border-[#8DF5A8]/40 disabled:opacity-50 disabled:cursor-not-allowed min-h-[42px] touch-manipulation transition-all";
 
 const labelClass =
-  "text-[10px] uppercase tracking-widest text-[#bfdbfe]/60 flex items-center gap-1.5 mb-1 font-medium";
+  "text-[10px] uppercase tracking-widest text-[#D9FFE3]/60 flex items-center gap-1.5 mb-1 font-medium";
 
 // Animation variants
 const containerVariants = {
@@ -236,15 +236,15 @@ function SubmitProgressForm({ assignedJobs, onSubmitSuccess }: SubmitFormProps) 
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl border border-[#3b82f6]/25 bg-gradient-to-br from-[#0a1628]/90 via-[#060d18]/90 to-[#020408]/90 overflow-hidden"
+      className="rounded-leaf-sm border border-[#8DF5A8]/25 bg-gradient-to-br from-[#0A2A19]/90 via-[#0B100D]/90 to-[#040605]/90 overflow-hidden"
     >
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-[#3b82f6]/15 bg-[#0a1628]/50">
-        <div className="p-2 rounded-xl bg-[#3b82f6]/15 border border-[#3b82f6]/30">
-          <Plus className="w-5 h-5 text-[#bfdbfe]" />
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-[#8DF5A8]/15 bg-[#0A2A19]/50">
+        <div className="p-2 rounded-xl bg-[#8DF5A8]/15 border border-[#8DF5A8]/30">
+          <Plus className="w-5 h-5 text-[#D9FFE3]" />
         </div>
         <div>
           <h3 className="text-base font-bold text-white">Submit Progress Report</h3>
-          <p className="text-xs text-[#bfdbfe]/50">Log your daily work progress</p>
+          <p className="text-xs text-[#D9FFE3]/50">Log your daily work progress</p>
         </div>
       </div>
 
@@ -270,11 +270,11 @@ function SubmitProgressForm({ assignedJobs, onSubmitSuccess }: SubmitFormProps) 
             className={cn(baseInput, "pr-8 appearance-none cursor-pointer")}
             disabled={submitting}
           >
-            <option value="" className="bg-[#0a1628]">
+            <option value="" className="bg-[#0A2A19]">
               -- Select a job --
             </option>
             {spanBasedJobs.map((job) => (
-              <option key={job.id} value={job.id} className="bg-[#0a1628]">
+              <option key={job.id} value={job.id} className="bg-[#0A2A19]">
                 {job.job_name} {job.circuit ? `(${job.circuit})` : ""}
               </option>
             ))}
@@ -290,9 +290,9 @@ function SubmitProgressForm({ assignedJobs, onSubmitSuccess }: SubmitFormProps) 
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
-            className="rounded-xl border border-[#3b82f6]/20 bg-[#3b82f6]/5 p-3"
+            className="rounded-xl border border-[#8DF5A8]/20 bg-[#8DF5A8]/5 p-3"
           >
-            <div className="flex items-center gap-2 text-xs text-[#bfdbfe]/70">
+            <div className="flex items-center gap-2 text-xs text-[#D9FFE3]/70">
               <MapPin className="w-3.5 h-3.5" />
               <span>{selectedJob.circuit || selectedJob.job_location || "No location"}</span>
             </div>
@@ -344,7 +344,7 @@ function SubmitProgressForm({ assignedJobs, onSubmitSuccess }: SubmitFormProps) 
                 className={cn(
                   "px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
                   formData.equipment === opt.value
-                    ? "bg-[#3b82f6]/25 text-[#bfdbfe] border border-[#3b82f6]/50 ring-1 ring-[#3b82f6]/30"
+                    ? "bg-[#8DF5A8]/25 text-[#D9FFE3] border border-[#8DF5A8]/50 ring-1 ring-[#8DF5A8]/30"
                     : "bg-white/5 text-white/60 border border-white/10 hover:bg-white/10"
                 )}
               >
@@ -355,7 +355,7 @@ function SubmitProgressForm({ assignedJobs, onSubmitSuccess }: SubmitFormProps) 
         </div>
 
         {/* Spans Input */}
-        <div className="rounded-xl border border-[#3b82f6]/20 bg-[#3b82f6]/5 p-4">
+        <div className="rounded-xl border border-[#8DF5A8]/20 bg-[#8DF5A8]/5 p-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex-1">
               <label className={labelClass}>
@@ -377,15 +377,15 @@ function SubmitProgressForm({ assignedJobs, onSubmitSuccess }: SubmitFormProps) 
               <span className="text-white/40 text-lg">×</span>
             </div>
             <div className="flex-1 text-center">
-              <p className="text-[10px] uppercase tracking-widest text-[#bfdbfe]/60 mb-1">Per Span</p>
-              <p className="text-xl font-bold text-[#3b82f6]">{spanLengthFeet}</p>
+              <p className="text-[10px] uppercase text-[#D9FFE3]/60 mb-1 font-mono font-medium tracking-[0.14em]">Per Span</p>
+              <p className="text-xl font-bold text-[#8DF5A8]">{spanLengthFeet}</p>
               <p className="text-[10px] text-white/40">feet</p>
             </div>
             <div className="text-center px-2">
               <span className="text-white/40 text-lg">=</span>
             </div>
             <div className="flex-1 text-center">
-              <p className="text-[10px] uppercase tracking-widest text-[#bfdbfe]/60 mb-1">Total</p>
+              <p className="text-[10px] uppercase text-[#D9FFE3]/60 mb-1 font-mono font-medium tracking-[0.14em]">Total</p>
               <p className="text-xl font-bold text-white">{totalFeet.toLocaleString()}</p>
               <p className="text-[10px] text-white/40">feet</p>
             </div>
@@ -412,10 +412,10 @@ function SubmitProgressForm({ assignedJobs, onSubmitSuccess }: SubmitFormProps) 
           whileTap={{ scale: 0.97 }}
           className={cn(
             "w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold min-h-[48px] touch-manipulation",
-            "bg-gradient-to-r from-[#3b82f6] via-[#60a5fa] to-[#3b82f6] text-white",
-            "shadow-lg shadow-[#3b82f6]/25",
+            "bg-gradient-to-r from-[#8DF5A8] via-[#C8FFD4] to-[#8DF5A8] text-white",
+            "shadow-lg shadow-[#8DF5A8]/25",
             "disabled:opacity-50 disabled:cursor-not-allowed",
-            "hover:shadow-[#3b82f6]/40 transition-shadow"
+            "hover:shadow-[#8DF5A8]/40 transition-shadow"
           )}
         >
           {submitting ? (
@@ -510,22 +510,22 @@ function ReportHistory({
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl border border-[#3b82f6]/25 bg-gradient-to-br from-[#0a1628]/90 via-[#060d18]/90 to-[#020408]/90 overflow-hidden"
+      className="rounded-leaf-sm border border-[#8DF5A8]/25 bg-gradient-to-br from-[#0A2A19]/90 via-[#0B100D]/90 to-[#040605]/90 overflow-hidden"
     >
-      <div className="flex items-center justify-between px-5 py-4 border-b border-[#3b82f6]/15 bg-[#0a1628]/50">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-[#8DF5A8]/15 bg-[#0A2A19]/50">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-[#3b82f6]/15 border border-[#3b82f6]/30">
-            <ClipboardList className="w-5 h-5 text-[#bfdbfe]" />
+          <div className="p-2 rounded-xl bg-[#8DF5A8]/15 border border-[#8DF5A8]/30">
+            <ClipboardList className="w-5 h-5 text-[#D9FFE3]" />
           </div>
           <div>
             <h3 className="text-base font-bold text-white">Report History</h3>
-            <p className="text-xs text-[#bfdbfe]/50">{filteredReports.length} reports</p>
+            <p className="text-xs text-[#D9FFE3]/50">{filteredReports.length} reports</p>
           </div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="px-5 py-3 border-b border-[#3b82f6]/10 space-y-3">
+      <div className="px-5 py-3 border-b border-[#8DF5A8]/10 space-y-3">
         {/* Date Range Pills */}
         <div className="flex flex-wrap gap-2">
           {[
@@ -541,9 +541,9 @@ function ReportHistory({
               aria-label={`Filter by ${opt.label}`}
               aria-pressed={dateRange === opt.value}
               className={cn(
-                "px-3 py-1.5 rounded-lg text-xs font-medium transition-all focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#3b82f6]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]",
+                "px-3 py-1.5 rounded-lg text-xs font-medium transition-all focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#8DF5A8]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]",
                 dateRange === opt.value
-                  ? "bg-[#3b82f6]/25 text-[#bfdbfe] border border-[#3b82f6]/50"
+                  ? "bg-[#8DF5A8]/25 text-[#D9FFE3] border border-[#8DF5A8]/50"
                   : "bg-white/5 text-white/60 border border-white/10 hover:bg-white/10"
               )}
             >
@@ -558,11 +558,11 @@ function ReportHistory({
           onChange={(e) => handleJobFilterChange(e.target.value)}
           className={cn(baseInput, "text-xs py-2")}
         >
-          <option value="" className="bg-[#0a1628]">
+          <option value="" className="bg-[#0A2A19]">
             All Jobs
           </option>
           {jobOptions.map(([id, name]) => (
-            <option key={id} value={id} className="bg-[#0a1628]">
+            <option key={id} value={id} className="bg-[#0A2A19]">
               {name}
             </option>
           ))}
@@ -573,7 +573,7 @@ function ReportHistory({
       <div className="divide-y divide-white/5">
         {loading ? (
           <div className="p-8 text-center">
-            <Loader2 className="w-6 h-6 animate-spin text-[#3b82f6] mx-auto mb-2" />
+            <Loader2 className="w-6 h-6 animate-spin text-[#8DF5A8] mx-auto mb-2" />
             <p className="text-xs text-white/40">Loading reports...</p>
           </div>
         ) : pagedReports.length === 0 ? (
@@ -622,7 +622,7 @@ function ReportHistory({
                   )}
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <p className="text-lg font-bold text-[#3b82f6]">{report.spans_completed}</p>
+                  <p className="text-lg font-bold text-[#8DF5A8]">{report.spans_completed}</p>
                   <p className="text-[10px] text-white/40">spans</p>
                   <p className="text-xs text-white/50 mt-0.5">
                     {report.total_feet_completed?.toLocaleString()} ft
@@ -646,7 +646,7 @@ function ReportHistory({
               disabled={currentPage === 1}
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               aria-label="Previous page"
-              className="p-1.5 rounded-lg bg-white/5 text-white/60 hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#3b82f6]/50 focus-visible:ring-offset-1"
+              className="p-1.5 rounded-lg bg-white/5 text-white/60 hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#8DF5A8]/50 focus-visible:ring-offset-1"
             >
               <ChevronLeft className="w-3.5 h-3.5" aria-hidden />
             </button>
@@ -658,7 +658,7 @@ function ReportHistory({
               disabled={currentPage >= totalPages}
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               aria-label="Next page"
-              className="p-1.5 rounded-lg bg-white/5 text-white/60 hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#3b82f6]/50 focus-visible:ring-offset-1"
+              className="p-1.5 rounded-lg bg-white/5 text-white/60 hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#8DF5A8]/50 focus-visible:ring-offset-1"
             >
               <ChevronRight className="w-3.5 h-3.5" aria-hidden />
             </button>
@@ -684,10 +684,10 @@ function JobProgressAnalytics({ analytics, loading }: AnalyticsProps) {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-2xl border border-[#3b82f6]/25 bg-gradient-to-br from-[#0a1628]/90 via-[#060d18]/90 to-[#020408]/90 p-8"
+        className="rounded-leaf-sm border border-[#8DF5A8]/25 bg-gradient-to-br from-[#0A2A19]/90 via-[#0B100D]/90 to-[#040605]/90 p-8"
       >
         <div className="flex items-center justify-center">
-          <Loader2 className="w-6 h-6 animate-spin text-[#3b82f6]" />
+          <Loader2 className="w-6 h-6 animate-spin text-[#8DF5A8]" />
         </div>
       </motion.div>
     );
@@ -698,7 +698,7 @@ function JobProgressAnalytics({ analytics, loading }: AnalyticsProps) {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-2xl border border-[#3b82f6]/25 bg-gradient-to-br from-[#0a1628]/90 via-[#060d18]/90 to-[#020408]/90 p-8 text-center"
+        className="rounded-leaf-sm border border-[#8DF5A8]/25 bg-gradient-to-br from-[#0A2A19]/90 via-[#0B100D]/90 to-[#040605]/90 p-8 text-center"
       >
         <BarChart3 className="w-10 h-10 text-white/20 mx-auto mb-3" />
         <p className="text-sm text-white/60">No analytics data yet</p>
@@ -728,35 +728,35 @@ function JobProgressAnalytics({ analytics, loading }: AnalyticsProps) {
       >
         <motion.div
           variants={itemVariants}
-          className="rounded-xl border border-[#3b82f6]/25 bg-gradient-to-br from-[#0a1628]/90 to-[#020408]/90 p-4 text-center"
+          className="rounded-xl border border-[#8DF5A8]/25 bg-gradient-to-br from-[#0A2A19]/90 to-[#040605]/90 p-4 text-center"
         >
-          <div className="w-10 h-10 rounded-xl bg-[#3b82f6]/15 border border-[#3b82f6]/30 flex items-center justify-center mx-auto mb-2">
-            <Ruler className="w-5 h-5 text-[#bfdbfe]" />
+          <div className="w-10 h-10 rounded-xl bg-[#8DF5A8]/15 border border-[#8DF5A8]/30 flex items-center justify-center mx-auto mb-2">
+            <Ruler className="w-5 h-5 text-[#D9FFE3]" />
           </div>
           <p className="text-2xl font-bold text-white">{totals.spans.toLocaleString()}</p>
-          <p className="text-[10px] uppercase tracking-wider text-white/40 mt-1">Total Spans</p>
+          <p className="text-[10px] uppercase text-white/40 mt-1 font-mono font-medium tracking-[0.14em]">Total Spans</p>
         </motion.div>
 
         <motion.div
           variants={itemVariants}
-          className="rounded-xl border border-[#3b82f6]/25 bg-gradient-to-br from-[#0a1628]/90 to-[#020408]/90 p-4 text-center"
+          className="rounded-xl border border-[#8DF5A8]/25 bg-gradient-to-br from-[#0A2A19]/90 to-[#040605]/90 p-4 text-center"
         >
           <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mx-auto mb-2">
             <TrendingUp className="w-5 h-5 text-emerald-400" />
           </div>
           <p className="text-2xl font-bold text-white">{totals.feet.toLocaleString()}</p>
-          <p className="text-[10px] uppercase tracking-wider text-white/40 mt-1">Total Feet</p>
+          <p className="text-[10px] uppercase text-white/40 mt-1 font-mono font-medium tracking-[0.14em]">Total Feet</p>
         </motion.div>
 
         <motion.div
           variants={itemVariants}
-          className="rounded-xl border border-[#3b82f6]/25 bg-gradient-to-br from-[#0a1628]/90 to-[#020408]/90 p-4 text-center"
+          className="rounded-xl border border-[#8DF5A8]/25 bg-gradient-to-br from-[#0A2A19]/90 to-[#040605]/90 p-4 text-center"
         >
           <div className="w-10 h-10 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center mx-auto mb-2">
             <ClipboardList className="w-5 h-5 text-purple-400" />
           </div>
           <p className="text-2xl font-bold text-white">{totals.reports}</p>
-          <p className="text-[10px] uppercase tracking-wider text-white/40 mt-1">Reports</p>
+          <p className="text-[10px] uppercase text-white/40 mt-1 font-mono font-medium tracking-[0.14em]">Reports</p>
         </motion.div>
       </motion.div>
 
@@ -764,21 +764,21 @@ function JobProgressAnalytics({ analytics, loading }: AnalyticsProps) {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-2xl border border-[#3b82f6]/25 bg-gradient-to-br from-[#0a1628]/90 via-[#060d18]/90 to-[#020408]/90 overflow-hidden"
+        className="rounded-leaf-sm border border-[#8DF5A8]/25 bg-gradient-to-br from-[#0A2A19]/90 via-[#0B100D]/90 to-[#040605]/90 overflow-hidden"
       >
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-[#3b82f6]/15 bg-[#0a1628]/50">
-          <div className="p-2 rounded-xl bg-[#3b82f6]/15 border border-[#3b82f6]/30">
-            <BarChart3 className="w-5 h-5 text-[#bfdbfe]" />
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-[#8DF5A8]/15 bg-[#0A2A19]/50">
+          <div className="p-2 rounded-xl bg-[#8DF5A8]/15 border border-[#8DF5A8]/30">
+            <BarChart3 className="w-5 h-5 text-[#D9FFE3]" />
           </div>
           <div>
             <h3 className="text-base font-bold text-white">Job Progress Analytics</h3>
-            <p className="text-xs text-[#bfdbfe]/50">Overall job performance stats</p>
+            <p className="text-xs text-[#D9FFE3]/50">Overall job performance stats</p>
           </div>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left text-white/80">
-            <thead className="text-[10px] uppercase tracking-wider text-white/40 bg-black/20">
+            <thead className="text-[10px] uppercase text-white/40 bg-black/20 font-mono font-medium tracking-[0.14em]">
               <tr>
                 <th className="px-4 py-3 font-medium">Job</th>
                 <th className="px-4 py-3 text-right font-medium">Spans</th>
@@ -804,7 +804,7 @@ function JobProgressAnalytics({ analytics, loading }: AnalyticsProps) {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <span className="font-semibold text-[#3b82f6]">{job.totalSpans.toLocaleString()}</span>
+                    <span className="font-semibold text-[#8DF5A8]">{job.totalSpans.toLocaleString()}</span>
                   </td>
                   <td className="px-4 py-3 text-right hidden sm:table-cell">
                     <span className="text-white/70">{job.totalFeet.toLocaleString()}</span>
@@ -825,8 +825,8 @@ function JobProgressAnalytics({ analytics, loading }: AnalyticsProps) {
         </div>
 
         {/* Equipment Breakdown */}
-        <div className="px-5 py-4 border-t border-[#3b82f6]/10">
-          <p className="text-[10px] uppercase tracking-widest text-white/40 mb-3">Equipment Usage (All Jobs)</p>
+        <div className="px-5 py-4 border-t border-[#8DF5A8]/10">
+          <p className="text-[10px] uppercase text-white/40 mb-3 font-mono font-medium tracking-[0.14em]">Equipment Usage (All Jobs)</p>
           <div className="grid grid-cols-3 gap-3">
             {["jerraff", "bucket", "mulcher"].map((equip) => {
               const totals = analytics.reduce(
@@ -1061,10 +1061,10 @@ export default function ForemanDailyReports() {
             className="relative"
           >
             <div
-              className="relative overflow-hidden rounded-2xl md:rounded-3xl border border-white/[0.12] shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.1)]"
+              className="relative overflow-hidden rounded-leaf-sm md:rounded-leaf border border-white/[0.12] shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.1)]"
               style={{
                 background:
-                  "linear-gradient(145deg, rgba(59, 130, 246, 0.1) 0%, rgba(10, 22, 40, 0.65) 40%, rgba(2, 4, 8, 0.75) 100%)",
+                  "linear-gradient(145deg, rgba(125,205,162, 0.1) 0%, rgba(18,26,21, 0.65) 40%, rgba(4,6,5, 0.75) 100%)",
                 backdropFilter: "blur(24px) saturate(1.6)",
                 WebkitBackdropFilter: "blur(24px) saturate(1.6)",
               }}
@@ -1084,7 +1084,7 @@ export default function ForemanDailyReports() {
               <div
                 className="absolute inset-0 pointer-events-none"
                 style={{
-                  background: "radial-gradient(ellipse at 25% 0%, rgba(59, 130, 246, 0.2) 0%, transparent 45%)",
+                  background: "radial-gradient(ellipse at 25% 0%, rgba(125,205,162, 0.2) 0%, transparent 45%)",
                 }}
               />
               <div
@@ -1103,10 +1103,10 @@ export default function ForemanDailyReports() {
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.4, delay: 0.2 }}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#3b82f6]/15 border border-[#3b82f6]/30"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#8DF5A8]/15 border border-[#8DF5A8]/30"
                   >
-                    <ClipboardList className="w-3.5 h-3.5 text-[#bfdbfe]" />
-                    <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#f0f9ff]">
+                    <ClipboardList className="w-3.5 h-3.5 text-[#D9FFE3]" />
+                    <span className="text-[10px] uppercase text-[#F4FBF7] font-mono font-medium tracking-[0.14em]">
                       Foreman • Reports
                     </span>
                   </motion.div>
@@ -1114,10 +1114,10 @@ export default function ForemanDailyReports() {
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.4, delay: 0.3 }}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0a1628]/60 border border-[#3b82f6]/20"
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0A2A19]/60 border border-[#8DF5A8]/20"
                   >
-                    <Activity className="w-3 h-3 text-[#bfdbfe]" />
-                    <span className="text-[9px] uppercase tracking-wider font-semibold text-[#f0f9ff]/70">
+                    <Activity className="w-3 h-3 text-[#D9FFE3]" />
+                    <span className="text-[9px] uppercase text-[#F4FBF7]/70 font-mono font-medium tracking-[0.14em]">
                       {reports.length} Reports
                     </span>
                   </motion.div>
@@ -1129,9 +1129,9 @@ export default function ForemanDailyReports() {
                     initial={{ scaleY: 0, opacity: 0 }}
                     animate={{ scaleY: 1, opacity: 1 }}
                     transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                    className="w-1 h-14 md:h-16 rounded-full bg-gradient-to-b from-[#bfdbfe] via-[#3b82f6] to-[#1d4ed8] origin-top flex-shrink-0"
+                    className="w-1 h-14 md:h-16 rounded-full bg-gradient-to-b from-[#D9FFE3] via-[#8DF5A8] to-[#2FA45A] origin-top flex-shrink-0"
                     style={{
-                      boxShadow: "0 0 20px rgba(59, 130, 246, 0.5), 0 0 40px rgba(59, 130, 246, 0.25)",
+                      boxShadow: "0 0 20px rgba(125,205,162, 0.5), 0 0 40px rgba(125,205,162, 0.25)",
                     }}
                   />
 
@@ -1142,13 +1142,13 @@ export default function ForemanDailyReports() {
                         preset="blurSlide"
                         per="char"
                         delay={0.15}
-                        className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight"
-                        segmentWrapperClassName="bg-gradient-to-r from-white via-[#bfdbfe] to-white/90 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(59,130,246,0.35)]"
+                        className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]"
+                        segmentWrapperClassName="text-glow"
                       >
                         Daily Progress Reports
                       </TextEffect>
                     ) : (
-                      <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight bg-gradient-to-r from-white via-[#bfdbfe] to-white/90 bg-clip-text text-transparent">
+                      <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">
                         Daily Progress Reports
                       </h1>
                     )}
@@ -1156,7 +1156,7 @@ export default function ForemanDailyReports() {
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ duration: 0.5, delay: 0.7, ease: "easeOut" }}
-                      className="mt-1.5 md:mt-2 text-xs sm:text-sm text-[#bfdbfe]/50 font-medium leading-relaxed max-w-xl"
+                      className="mt-1.5 md:mt-2 text-xs sm:text-sm text-[#D9FFE3]/50 font-medium leading-relaxed max-w-xl"
                     >
                       Submit and track your daily job progress reports
                     </motion.p>
@@ -1173,15 +1173,15 @@ export default function ForemanDailyReports() {
         {/* Tab Navigation */}
         <ScrollReveal variant="fadeUp" delay={0}>
           <div className="mb-5">
-            <div className="flex gap-2 p-1 rounded-xl bg-[#0a1628]/60 border border-[#3b82f6]/20 backdrop-blur-sm">
+            <div className="flex gap-2 p-1 rounded-xl bg-[#0A2A19]/60 border border-[#8DF5A8]/20 backdrop-blur-sm">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={cn(
-                    "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all",
+                    "flex-1 flex min-h-[44px] items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all",
                     activeTab === tab.id
-                      ? "bg-[#3b82f6]/25 text-[#bfdbfe] border border-[#3b82f6]/40 shadow-lg shadow-[#3b82f6]/10"
+                      ? "bg-[#8DF5A8]/25 text-[#D9FFE3] border border-[#8DF5A8]/40 shadow-lg shadow-[#8DF5A8]/10"
                       : "text-white/60 hover:text-white/80 hover:bg-white/5"
                   )}
                 >
@@ -1210,7 +1210,7 @@ export default function ForemanDailyReports() {
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="rounded-2xl border border-[#3b82f6]/25 bg-gradient-to-br from-[#0a1628]/90 via-[#060d18]/90 to-[#020408]/90 p-5"
+                    className="rounded-leaf-sm border border-[#8DF5A8]/25 bg-gradient-to-br from-[#0A2A19]/90 via-[#0B100D]/90 to-[#040605]/90 p-5"
                   >
                     <div className="flex items-center gap-3 mb-4">
                       <div className="p-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30">
@@ -1218,7 +1218,7 @@ export default function ForemanDailyReports() {
                       </div>
                       <div>
                         <h3 className="text-base font-bold text-white">This Week's Progress</h3>
-                        <p className="text-xs text-[#bfdbfe]/50">
+                        <p className="text-xs text-[#D9FFE3]/50">
                           {format(startOfWeek(new Date(), { weekStartsOn: 1 }), "MMM d")} -{" "}
                           {format(endOfWeek(new Date(), { weekStartsOn: 1 }), "MMM d")}
                         </p>
@@ -1236,8 +1236,8 @@ export default function ForemanDailyReports() {
 
                       return (
                         <div className="grid grid-cols-2 gap-4">
-                          <div className="rounded-xl border border-[#3b82f6]/20 bg-[#3b82f6]/5 p-4 text-center">
-                            <p className="text-3xl font-bold text-[#3b82f6]">{weekSpans}</p>
+                          <div className="rounded-xl border border-[#8DF5A8]/20 bg-[#8DF5A8]/5 p-4 text-center">
+                            <p className="text-3xl font-bold text-[#8DF5A8]">{weekSpans}</p>
                             <p className="text-xs text-white/50 mt-1">Spans</p>
                           </div>
                           <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-center">
@@ -1254,9 +1254,9 @@ export default function ForemanDailyReports() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
-                    className="rounded-2xl border border-[#3b82f6]/25 bg-gradient-to-br from-[#0a1628]/90 via-[#060d18]/90 to-[#020408]/90 overflow-hidden"
+                    className="rounded-leaf-sm border border-[#8DF5A8]/25 bg-gradient-to-br from-[#0A2A19]/90 via-[#0B100D]/90 to-[#040605]/90 overflow-hidden"
                   >
-                    <div className="flex items-center gap-3 px-5 py-4 border-b border-[#3b82f6]/15">
+                    <div className="flex items-center gap-3 px-5 py-4 border-b border-[#8DF5A8]/15">
                       <div className="p-2 rounded-xl bg-purple-500/15 border border-purple-500/30">
                         <Activity className="w-5 h-5 text-purple-400" />
                       </div>
@@ -1270,7 +1270,7 @@ export default function ForemanDailyReports() {
                             <p className="text-xs text-white/40">{formatDateForDisplay(report.date)}</p>
                           </div>
                           <div className="text-right flex-shrink-0 ml-3">
-                            <p className="text-sm font-bold text-[#3b82f6]">{report.spans_completed} spans</p>
+                            <p className="text-sm font-bold text-[#8DF5A8]">{report.spans_completed} spans</p>
                           </div>
                         </div>
                       ))}

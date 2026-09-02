@@ -214,7 +214,7 @@ const FormCard = ({ form, index, onJsaPickerOpen, complianceStatus }: FormCardPr
         whileTap={{ scale: 0.98 }}
         className="relative h-full rounded-xl p-[1.5px] overflow-hidden shadow-[0_0_18px_6px_rgba(0,0,0,0.75)] transition-all duration-300 group touch-manipulation"
         style={{
-          background: "linear-gradient(135deg, rgba(28, 130, 93, 0.8) 0%, rgba(0, 0, 0, 0.8) 49%, rgba(52, 211, 153, 1) 100%)"
+          background: "linear-gradient(135deg, rgba(31,122,68, 0.8) 0%, rgba(0,0,0, 0.8) 49%, rgba(61,220,132, 1) 100%)"
         }}
       >
         <div className="relative h-full rounded-[0.65rem] bg-black/35 border border-white/5 px-3 sm:px-3.5 py-2.5 sm:py-3 flex flex-col gap-2 sm:gap-2.5 backdrop-blur-2xl min-h-[100px]">
@@ -227,17 +227,17 @@ const FormCard = ({ form, index, onJsaPickerOpen, complianceStatus }: FormCardPr
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[13px] sm:text-sm font-semibold text-white leading-tight truncate">{form.title}</p>
-                <p className="text-[9px] sm:text-[10px] uppercase tracking-wide text-white/50 truncate">{form.category}</p>
+                <p className="text-[9px] sm:text-[10px] uppercase text-white/50 truncate font-mono font-medium tracking-[0.14em]">{form.category}</p>
               </div>
             </div>
             <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
               <span
-                className="text-[8px] sm:text-[9px] uppercase tracking-wider sm:tracking-widest px-1.5 py-0.5 rounded-full border bg-sky-500/10 border-sky-400/30 text-sky-100"
+                className="text-[8px] sm:text-[9px] uppercase sm:tracking-widest px-1.5 py-0.5 rounded-full border bg-sky-500/10 border-sky-400/30 text-sky-100 font-mono font-medium tracking-[0.14em]"
               >
                 {isExternal ? "Ext" : "Int"}
               </span>
               {form.tag && (
-                <span className="text-[8px] sm:text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-white/70">
+                <span className="text-[8px] sm:text-[9px] uppercase px-1.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-white/70 font-mono font-medium tracking-[0.14em]">
                   {form.tag}
                 </span>
               )}
@@ -251,7 +251,7 @@ const FormCard = ({ form, index, onJsaPickerOpen, complianceStatus }: FormCardPr
                   
                   return isComplete ? (
                     <span 
-                      className="text-[8px] sm:text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 flex items-center gap-0.5"
+                      className="text-[8px] sm:text-[9px] uppercase px-1.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 flex items-center gap-0.5 font-mono font-medium tracking-[0.14em]"
                       title="Completed today"
                       aria-label="Form completed today"
                     >
@@ -260,7 +260,7 @@ const FormCard = ({ form, index, onJsaPickerOpen, complianceStatus }: FormCardPr
                     </span>
                   ) : (
                     <span 
-                      className="text-[8px] sm:text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-200 flex items-center gap-0.5"
+                      className="text-[8px] sm:text-[9px] uppercase px-1.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-200 flex items-center gap-0.5 font-mono font-medium tracking-[0.14em]"
                       title="Required - not completed today"
                       aria-label="Form required but not completed today"
                     >
@@ -322,7 +322,7 @@ const FormCard = ({ form, index, onJsaPickerOpen, complianceStatus }: FormCardPr
         <button
           type="button"
           onClick={onJsaPickerOpen}
-          className="block h-full w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] rounded-xl"
+          className="block h-full w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D] rounded-xl"
           aria-label={`Open ${form.title} form`}
         >
           {cardContent}
@@ -330,7 +330,7 @@ const FormCard = ({ form, index, onJsaPickerOpen, complianceStatus }: FormCardPr
       ) : (
         <Link
           to={form.to ?? "/"}
-          className="block h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] rounded-xl"
+          className="block h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D] rounded-xl"
           aria-label={`Open ${form.title} form`}
         >
           {cardContent}
@@ -360,7 +360,7 @@ const FormCategorySection = ({ category, forms, startIndex, onJsaPickerOpen, com
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <span className={cn("h-2 w-2 rounded-full flex-shrink-0", meta.dot)} />
-          <span className="text-[11px] sm:text-xs uppercase tracking-[0.2em] sm:tracking-[0.3em] text-white/50 truncate">{category}</span>
+          <span className="text-[11px] sm:text-xs uppercase sm:tracking-[0.3em] text-white/50 truncate font-mono font-medium tracking-[0.14em]">{category}</span>
         </div>
         <span className="text-[10px] sm:text-xs text-white/50 flex-shrink-0">{forms.length} form{forms.length !== 1 ? 's' : ''}</span>
       </div>
@@ -403,7 +403,7 @@ const SearchBar = ({ value, onChange, totalCount, filteredCount }: SearchBarProp
           onChange={(event) => onChange(event.target.value)}
           placeholder="Search forms..."
           aria-label="Search forms"
-          className="w-full rounded-xl sm:rounded-2xl bg-black/50 border border-white/10 pl-10 sm:pl-11 pr-3 sm:pr-4 py-3 min-h-[48px] text-base sm:text-sm text-white placeholder:text-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60 focus-visible:border-transparent transition-all shadow-inner touch-manipulation"
+          className="w-full rounded-xl sm:rounded-leaf-sm bg-black/50 border border-white/10 pl-10 sm:pl-11 pr-3 sm:pr-4 py-3 min-h-[48px] text-base sm:text-sm text-white placeholder:text-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60 focus-visible:border-transparent transition-all shadow-inner touch-manipulation"
         />
       </label>
       <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] sm:text-xs text-white/60">
@@ -443,7 +443,7 @@ const CategoryFilter = ({ activeCategory, onChange }: CategoryFilterProps) => (
           aria-label={category === "All" ? "Show all forms" : `Filter by ${category}`}
           aria-pressed={isActive}
           className={cn(
-            "flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 min-h-[44px] rounded-full border text-xs sm:text-sm font-medium transition-all backdrop-blur-md touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]",
+            "flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 min-h-[44px] rounded-full border text-xs sm:text-sm font-medium transition-all backdrop-blur-md touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]",
             isActive
               ? "bg-white text-slate-900 border-white shadow-lg shadow-emerald-500/20"
               : "bg-white/5 text-white/70 border-white/10 active:bg-white/10"
@@ -473,7 +473,7 @@ const EmptyState = ({ query }: EmptyStateProps) => (
     transition={{ duration: 0.3 }}
     className="w-full"
   >
-    <div className="border border-white/10 rounded-2xl sm:rounded-3xl bg-white/5 backdrop-blur-2xl p-5 sm:p-8 text-center space-y-3 sm:space-y-4 shadow-xl">
+    <div className="border border-white/10 rounded-leaf-sm sm:rounded-leaf bg-white/5 backdrop-blur-2xl p-5 sm:p-8 text-center space-y-3 sm:space-y-4 shadow-xl">
       <FileText className="w-8 h-8 sm:w-10 sm:h-10 text-white/50 mx-auto" />
       <h3 className="text-lg sm:text-xl font-semibold text-white">No forms found</h3>
       <p className="text-xs sm:text-sm text-white/70">
@@ -577,17 +577,17 @@ export default function Forms() {
             className="relative"
           >
             <div 
-              className="relative overflow-hidden rounded-2xl md:rounded-3xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
+              className="relative overflow-hidden rounded-leaf-sm md:rounded-leaf border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
               style={{
                 backdropFilter: 'blur(24px) saturate(180%)',
                 WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-                background: 'linear-gradient(145deg, rgba(4, 30, 21, 0.6) 0%, rgba(2, 15, 10, 0.5) 50%, rgba(1, 8, 5, 0.4) 100%)',
-                boxShadow: 'inset 0 0 15px rgba(125, 225, 180, 0.05), 0 8px 32px rgba(0,0,0,0.4)',
+                background: 'linear-gradient(145deg, rgba(11,16,13, 0.6) 0%, rgba(4,6,5, 0.5) 50%, rgba(4,6,5, 0.4) 100%)',
+                boxShadow: 'inset 0 0 15px rgba(94,232,152, 0.05), 0 8px 32px rgba(0,0,0,0.4)',
               }}
             >
               <div className="absolute inset-0 opacity-70 pointer-events-none" style={{ background: 'linear-gradient(125deg, rgba(255,255,255,0.15) 0%, transparent 30%, transparent 70%, rgba(255,255,255,0.05) 100%)' }} />
               <div className="absolute inset-0 opacity-50 pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 50%)' }} />
-              <div className="absolute top-0 left-0 w-24 h-24 rounded-full opacity-30 pointer-events-none" style={{ background: 'radial-gradient(circle at 50% 50%, rgba(125,225,180,0.3) 0%, transparent 70%)', filter: 'blur(15px)' }} />
+              <div className="absolute top-0 left-0 w-24 h-24 rounded-full opacity-30 pointer-events-none" style={{ background: 'radial-gradient(circle at 50% 50%, rgba(94,232,152,0.3) 0%, transparent 70%)', filter: 'blur(15px)' }} />
               <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-white/[0.15] to-transparent" />
               <div className="absolute top-0 bottom-0 left-0 w-[1px] bg-gradient-to-b from-transparent via-white/[0.1] to-transparent" />
               <div className="absolute top-0 bottom-0 right-0 w-[1px] bg-gradient-to-b from-transparent via-black/[0.1] to-transparent" />
@@ -597,18 +597,18 @@ export default function Forms() {
                 <div className="flex items-center gap-3 mb-3">
                   <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.2 }} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30">
                     <FileText className="w-3.5 h-3.5 text-emerald-400" />
-                    <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-emerald-200">Company Forms</span>
+                    <span className="text-[10px] uppercase text-emerald-200 font-mono font-medium tracking-[0.14em]">Company Forms</span>
                   </motion.div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <motion.div initial={{ scaleY: 0, opacity: 0 }} animate={{ scaleY: 1, opacity: 1 }} transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }} className="w-1 h-14 md:h-16 rounded-full bg-gradient-to-b from-emerald-400 via-emerald-500 to-emerald-600 origin-top flex-shrink-0" style={{ boxShadow: '0 0 20px rgba(16, 185, 129, 0.4), 0 0 40px rgba(16, 185, 129, 0.2)' }} />
+                  <motion.div initial={{ scaleY: 0, opacity: 0 }} animate={{ scaleY: 1, opacity: 1 }} transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }} className="w-1 h-14 md:h-16 rounded-full bg-gradient-to-b from-emerald-400 via-emerald-500 to-emerald-600 origin-top flex-shrink-0" style={{ boxShadow: '0 0 20px rgba(47,164,90, 0.4), 0 0 40px rgba(47,164,90, 0.2)' }} />
                   <div className="flex-1 min-w-0">
                     {enableAnimations ? (
-                      <TextEffect as="h1" preset="blurSlide" per="char" delay={0.15} className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight" segmentWrapperClassName="bg-gradient-to-r from-white via-emerald-100 to-white/90 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(125,225,180,0.3)]">
+                      <TextEffect as="h1" preset="blurSlide" per="char" delay={0.15} className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]" segmentWrapperClassName="text-glow">
                         Pick the Form you need
                       </TextEffect>
                     ) : (
-                      <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight bg-gradient-to-r from-white via-emerald-100 to-white/90 bg-clip-text text-transparent">Pick the Form you need</h1>
+                      <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">Pick the Form you need</h1>
                     )}
                     <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.7 }} className="mt-1.5 md:mt-2 text-xs sm:text-sm text-emerald-200/50 font-medium leading-relaxed max-w-xl">
                       Organized categories, instant search, and easy access
@@ -622,7 +622,7 @@ export default function Forms() {
 
         <div className="w-full space-y-4 sm:space-y-6 md:space-y-8">
           {/* Search & Filters */}
-          <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#03150f]/60 backdrop-blur-xl p-4 sm:p-5 md:p-6 space-y-3 sm:space-y-4">
+          <div className="rounded-leaf-sm sm:rounded-leaf border border-white/10 bg-[#0B100D]/60 backdrop-blur-xl p-4 sm:p-5 md:p-6 space-y-3 sm:space-y-4">
             <SearchBar
               value={searchQuery}
               onChange={setSearchQuery}

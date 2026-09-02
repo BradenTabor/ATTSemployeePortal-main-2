@@ -217,8 +217,8 @@ export default function EmployeeAttendance() {
       <DashboardLayout title="Access Denied" pageHeading>
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
-            <div className="w-20 h-20 rounded-full bg-[#c084fc]/10 flex items-center justify-center mx-auto mb-4">
-              <Users className="w-10 h-10 text-[#c084fc]" />
+            <div className="w-20 h-20 rounded-full bg-[#5EE898]/10 flex items-center justify-center mx-auto mb-4">
+              <Users className="w-10 h-10 text-[#5EE898]" />
             </div>
             <h2 className="text-2xl font-bold text-white mb-2">
               Access Denied
@@ -243,7 +243,7 @@ export default function EmployeeAttendance() {
                 <div className="flex items-center gap-3">
                   <div className="w-1 h-10 sm:h-12 rounded-full bg-gradient-to-b from-purple-400 via-violet-500 to-purple-600 flex-shrink-0" aria-hidden />
                   <div>
-                    <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+                    <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">
                       Employee Attendance
                     </h1>
                     <p className="text-xs sm:text-sm text-white/50 mt-0.5">
@@ -289,7 +289,7 @@ export default function EmployeeAttendance() {
                       <button
                         type="button"
                         onClick={handlePrevDay}
-                        className="p-1 hover:bg-white/[0.06] rounded-lg transition-colors"
+                        className="tap-44 relative p-1 hover:bg-white/[0.06] rounded-lg transition-colors"
                         aria-label="Previous day"
                       >
                         <ChevronLeft className="w-4 h-4 text-gray-400" />
@@ -302,7 +302,7 @@ export default function EmployeeAttendance() {
                         onClick={handleNextDay}
                         disabled={isToday}
                         className={cn(
-                          'p-1 rounded-lg transition-colors',
+                          'tap-44 relative p-1 rounded-lg transition-colors',
                           isToday
                             ? 'opacity-30 cursor-not-allowed'
                             : 'hover:bg-white/[0.06]'
@@ -334,7 +334,7 @@ export default function EmployeeAttendance() {
                 placeholder="Search by name..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-8 py-2 sm:py-2.5 text-sm bg-white/[0.03] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:outline-none focus-visible:border-[#c084fc]/40 transition-colors"
+                className="w-full pl-9 pr-8 py-2 sm:py-2.5 text-sm bg-white/[0.03] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:outline-none focus-visible:border-[#5EE898]/40 transition-colors"
               />
               {searchQuery && (
                 <button
@@ -352,7 +352,7 @@ export default function EmployeeAttendance() {
               <select
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value as RoleFilter)}
-                className="flex-1 px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm bg-white/[0.03] border border-white/10 rounded-xl text-white focus:outline-none focus-visible:border-[#c084fc]/40 transition-colors appearance-none cursor-pointer"
+                className="flex-1 px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm bg-white/[0.03] border border-white/10 rounded-xl text-white focus:outline-none focus-visible:border-[#5EE898]/40 transition-colors appearance-none cursor-pointer"
               >
                 <option value="all">All Roles</option>
                 <option value="employee">Employee</option>
@@ -364,7 +364,7 @@ export default function EmployeeAttendance() {
                 onChange={(e) =>
                   setStatusFilter(e.target.value as StatusFilter)
                 }
-                className="flex-1 px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm bg-white/[0.03] border border-white/10 rounded-xl text-white focus:outline-none focus-visible:border-[#c084fc]/40 transition-colors appearance-none cursor-pointer"
+                className="flex-1 px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm bg-white/[0.03] border border-white/10 rounded-xl text-white focus:outline-none focus-visible:border-[#5EE898]/40 transition-colors appearance-none cursor-pointer"
               >
                 <option value="all">All Statuses</option>
                 <option value="present">Present</option>
@@ -411,11 +411,11 @@ export default function EmployeeAttendance() {
 
         {/* Employee list */}
         <ScrollReveal variant="fadeUp" delay={0.1}>
-          <div className="bg-gray-900 border border-white/[0.06] rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.5),0_4px_16px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.04)] overflow-hidden">
+          <div className="bg-gray-900 border border-white/[0.06] rounded-leaf-sm shadow-[0_1px_3px_rgba(0,0,0,0.5),0_4px_16px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.04)] overflow-hidden">
             {/* Select all header */}
             {!isLoading && filteredUsers.length > 0 && (
               <div className="flex items-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3 border-b border-white/[0.06] bg-white/[0.02]">
-                <label className="flex items-center gap-2 cursor-pointer">
+                <label className="flex min-h-[44px] items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={allSelected}
@@ -429,7 +429,7 @@ export default function EmployeeAttendance() {
                   </span>
                 </label>
 
-                <div className="hidden lg:flex items-center ml-auto gap-2 text-[10px] text-gray-600 uppercase tracking-wider">
+                <div className="hidden lg:flex items-center ml-auto gap-2 text-[10px] text-gray-600 uppercase font-mono font-medium tracking-[0.14em]">
                   <span className="w-[72px] text-center">Present</span>
                   <span className="w-[72px] text-center">Absent</span>
                   <span className="w-[72px] text-center">NCNS</span>
@@ -466,8 +466,8 @@ export default function EmployeeAttendance() {
             {/* Empty: no users */}
             {!isLoading && !isError && usersWithAttendance?.length === 0 && (
               <div className="flex flex-col items-center justify-center py-16 px-4">
-                <div className="w-14 h-14 rounded-full bg-[#c084fc]/10 flex items-center justify-center mb-3">
-                  <Users className="w-7 h-7 text-[#c084fc]" />
+                <div className="w-14 h-14 rounded-full bg-[#5EE898]/10 flex items-center justify-center mb-3">
+                  <Users className="w-7 h-7 text-[#5EE898]" />
                 </div>
                 <p className="text-sm font-medium text-white mb-1">
                   No active employees found
@@ -485,8 +485,8 @@ export default function EmployeeAttendance() {
               usersWithAttendance.length > 0 &&
               filteredUsers.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-16 px-4">
-                  <div className="w-14 h-14 rounded-full bg-[#c084fc]/10 flex items-center justify-center mb-3">
-                    <Search className="w-7 h-7 text-[#c084fc]" />
+                  <div className="w-14 h-14 rounded-full bg-[#5EE898]/10 flex items-center justify-center mb-3">
+                    <Search className="w-7 h-7 text-[#5EE898]" />
                   </div>
                   <p className="text-sm font-medium text-white mb-1">
                     No employees match your filters
@@ -497,7 +497,7 @@ export default function EmployeeAttendance() {
                   <button
                     type="button"
                     onClick={handleClearFilters}
-                    className="text-xs text-[#c084fc] hover:text-[#e9d5ff] transition-colors"
+                    className="text-xs text-[#5EE898] hover:text-[#C8FFD4] transition-colors"
                   >
                     Clear filters
                   </button>
@@ -583,12 +583,14 @@ function EmployeeRow({
     >
       {/* Top row: checkbox, avatar, name, status pill, chevron */}
       <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3">
-        <input
-          type="checkbox"
-          checked={isSelected}
-          onChange={onToggleSelect}
-          className="w-4 h-4 rounded border-white/20 bg-white/[0.04] text-purple-500 focus-visible:ring-purple-500/30 focus-visible:ring-offset-0 cursor-pointer flex-shrink-0"
-        />
+        <label className="tap-44 relative flex shrink-0 items-center justify-center" aria-label={`Select ${user.full_name ?? 'employee'}`}>
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={onToggleSelect}
+            className="w-4 h-4 rounded border-white/20 bg-white/[0.04] text-purple-500 focus-visible:ring-purple-500/30 focus-visible:ring-offset-0 cursor-pointer flex-shrink-0"
+          />
+        </label>
 
         <UserAvatar
           avatarUrl={user.avatar_url}
@@ -639,7 +641,7 @@ function EmployeeRow({
         <button
           type="button"
           onClick={onToggleExpand}
-          className="p-1 sm:p-1.5 hover:bg-white/[0.06] rounded-lg transition-colors flex-shrink-0"
+          className="tap-44 relative p-1 sm:p-1.5 hover:bg-white/[0.06] rounded-lg transition-colors flex-shrink-0"
           aria-label={isExpanded ? 'Collapse weekly stats' : 'Expand weekly stats'}
           aria-expanded={isExpanded}
         >

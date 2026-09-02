@@ -110,7 +110,7 @@ export default function MyPointsPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={pageEnter}
         >
-          <h1 className="text-2xl font-bold text-white">My Progress</h1>
+          <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">My Progress</h1>
           <p className="text-sm text-white/60 mt-1">
             Wallet, tier ladder, badges, and crew recognition — one hub.
           </p>
@@ -194,7 +194,7 @@ export default function MyPointsPage() {
           data-testid="my-progress-progression"
           style={{
             ...GROWTH_TEXTURE_STYLE,
-            backgroundColor: 'rgba(8, 12, 10, 0.85)',
+            backgroundColor: 'rgba(11,16,13, 0.85)',
           }}
         >
           <div className="p-4">
@@ -474,7 +474,7 @@ export default function MyPointsPage() {
           </h2>
           <Link
             to="/rewards-store"
-            className={`${cardClass} flex items-center justify-between gap-3 p-4 hover:border-amber-400/30 transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400 rounded-2xl`}
+            className={`${cardClass} flex items-center justify-between gap-3 p-4 hover:border-amber-400/30 transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400 rounded-leaf-sm`}
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-amber-400/15 flex items-center justify-center">
@@ -489,7 +489,7 @@ export default function MyPointsPage() {
           </Link>
           <Link
             to="/safety-rewards#ways-to-earn-heading"
-            className={`${cardClass} flex items-center justify-between gap-3 p-4 hover:border-amber-500/30 transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400 rounded-2xl`}
+            className={`${cardClass} flex items-center justify-between gap-3 p-4 hover:border-amber-500/30 transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400 rounded-leaf-sm`}
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center">

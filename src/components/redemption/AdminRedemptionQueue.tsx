@@ -161,7 +161,7 @@ export const AdminRedemptionQueue = memo(function AdminRedemptionQueue({
         <h2 id="pending-queue-heading" className="text-lg font-semibold text-white mb-3">
           Pending requests
           {pending.length > 0 && (
-            <span className="ml-2 text-sm font-normal text-[#f4c979]">({pending.length})</span>
+            <span className="ml-2 text-sm font-normal text-[#F4F7F2]">({pending.length})</span>
           )}
         </h2>
 
@@ -177,13 +177,13 @@ export const AdminRedemptionQueue = memo(function AdminRedemptionQueue({
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.03 }}
-                className="rounded-xl border border-[#f4c979]/20 bg-white/[0.03] p-4"
+                className="rounded-xl border border-[#F4F7F2]/20 bg-white/[0.03] p-4"
                 data-testid={`admin-pending-${row.id}`}
               >
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                   <div className="flex items-start gap-3 flex-1 min-w-0">
-                    <div className="w-10 h-10 rounded-lg bg-[#f4c979]/10 flex items-center justify-center flex-shrink-0">
-                      <Gift className="w-5 h-5 text-[#f4c979]" aria-hidden />
+                    <div className="w-10 h-10 rounded-lg bg-[#F4F7F2]/10 flex items-center justify-center flex-shrink-0">
+                      <Gift className="w-5 h-5 text-[#F4F7F2]" aria-hidden />
                     </div>
                     <div className="min-w-0">
                       <p className="font-medium text-white">{row.item_name}</p>
@@ -244,7 +244,7 @@ export const AdminRedemptionQueue = memo(function AdminRedemptionQueue({
                 onClick={() => onStatusFilterChange(opt.value)}
                 className={`px-2.5 py-1 text-xs font-medium rounded-lg border transition-colors ${
                   statusFilter === opt.value
-                    ? 'bg-[#f4c979]/15 border-[#f4c979]/30 text-[#f4c979]'
+                    ? 'bg-[#F4F7F2]/15 border-[#F4F7F2]/30 text-[#F4F7F2]'
                     : 'border-white/10 text-white/50 hover:text-white/80'
                 }`}
               >
@@ -270,7 +270,7 @@ export const AdminRedemptionQueue = memo(function AdminRedemptionQueue({
                 <span className="text-white/50 truncate">
                   {row.requester_name || row.requester_email}
                 </span>
-                <span className="text-[#f4c979]">{row.point_cost} pts</span>
+                <span className="text-[#F4F7F2]">{row.point_cost} pts</span>
                 <span className="text-white/40 text-xs">{REDEMPTION_STATUS_LABELS[row.status]}</span>
                 <span className="text-white/30 text-xs ml-auto">
                   {formatDateTime(row.decided_at ?? row.requested_at)}

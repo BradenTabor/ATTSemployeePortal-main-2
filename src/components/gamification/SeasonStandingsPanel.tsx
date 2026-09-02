@@ -85,7 +85,7 @@ export const SeasonStandingsPanel = memo(function SeasonStandingsPanel({
           )}
           data-testid="season-standings-own-card"
         >
-          <p className="text-[10px] font-medium uppercase tracking-wide text-violet-300/70">
+          <p className="text-[10px] font-medium uppercase text-violet-300/70 font-mono font-medium tracking-[0.14em]">
             Your season
           </p>
           <p className="mt-1 text-2xl font-bold tabular-nums text-violet-100">

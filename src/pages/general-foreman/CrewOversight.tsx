@@ -70,8 +70,8 @@ function CrewOversight() {
       <DashboardLayout title="Crew Oversight" pageHeading>
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
-            <div className="w-20 h-20 rounded-full bg-[#c084fc]/10 flex items-center justify-center mx-auto mb-4">
-              <HardHat className="w-10 h-10 text-[#c084fc]" />
+            <div className="w-20 h-20 rounded-full bg-[#5EE898]/10 flex items-center justify-center mx-auto mb-4">
+              <HardHat className="w-10 h-10 text-[#5EE898]" />
             </div>
             <h2 className="text-2xl font-bold text-white mb-2">Access Denied</h2>
             <p className="text-gray-400">
@@ -95,7 +95,7 @@ function CrewOversight() {
             className={`${glass.cardPurple} px-5 py-4 sm:px-6 sm:py-5`}
           >
             <div className="flex items-center gap-2 mb-3">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-500/20 border border-purple-400/25 text-[10px] font-semibold uppercase tracking-wider text-purple-200">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-500/20 border border-purple-400/25 text-[10px] uppercase text-purple-200 font-mono font-medium tracking-[0.14em]">
                 <HardHat className="w-3.5 h-3.5" aria-hidden />
                 General Foreman
               </span>
@@ -111,7 +111,7 @@ function CrewOversight() {
             <div className="flex items-center gap-3">
               <div className="w-1 h-10 sm:h-12 rounded-full bg-gradient-to-b from-purple-400 via-violet-500 to-purple-600 flex-shrink-0" aria-hidden />
               <div>
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+                <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">
                   Crew Oversight
                 </h1>
                 <p className="text-xs sm:text-sm text-white/50 mt-0.5">
@@ -131,7 +131,7 @@ function CrewOversight() {
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="rounded-xl sm:rounded-2xl border border-red-500/30 bg-red-500/10 p-2.5 sm:p-3"
+                  className="rounded-xl sm:rounded-leaf-sm border border-red-500/30 bg-red-500/10 p-2.5 sm:p-3"
                 >
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0" />
@@ -154,8 +154,8 @@ function CrewOversight() {
               animate={{ opacity: 1, y: 0 }}
               className="flex items-center gap-2"
             >
-              <div className="p-1.5 rounded-lg bg-[#c084fc]/10 border border-[#c084fc]/30">
-                <Briefcase className="w-4 h-4 text-[#c084fc]" />
+              <div className="p-1.5 rounded-lg bg-[#5EE898]/10 border border-[#5EE898]/30">
+                <Briefcase className="w-4 h-4 text-[#5EE898]" />
               </div>
               <div>
                 <h3 className="text-sm sm:text-base font-bold text-white">All Jobs</h3>

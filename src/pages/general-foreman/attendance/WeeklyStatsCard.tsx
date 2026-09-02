@@ -110,7 +110,7 @@ export default function WeeklyStatsCard({
                           : 'border-dashed border-white/10 bg-white/[0.02]'
                     )}
                   >
-                    <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">
+                    <span className="text-[10px] font-medium text-gray-500 uppercase font-mono font-medium tracking-[0.14em]">
                       {format(day, 'EEE')}
                     </span>
                     <StatusIcon
@@ -129,7 +129,7 @@ export default function WeeklyStatsCard({
 
             {/* Progress bar */}
             <div className="space-y-1.5">
-              <p className="text-[11px] text-gray-500 uppercase tracking-wider font-medium">
+              <p className="text-[11px] text-gray-500 uppercase font-medium font-mono font-medium tracking-[0.14em]">
                 Weekly Attendance
               </p>
               {stats.total > 0 ? (
@@ -157,7 +157,7 @@ export default function WeeklyStatsCard({
                   <span className="text-base font-bold text-white tabular-nums">
                     {stat.value}
                   </span>
-                  <span className="text-[9px] text-gray-500 uppercase tracking-wider">
+                  <span className="text-[9px] text-gray-500 uppercase font-mono font-medium tracking-[0.14em]">
                     {stat.label}
                   </span>
                 </div>

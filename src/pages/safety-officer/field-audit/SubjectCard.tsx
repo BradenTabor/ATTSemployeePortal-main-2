@@ -97,7 +97,7 @@ export default function SubjectCard({
   const Icon = subject.subject_type === "person" ? User : Wrench;
 
   return (
-    <div className="rounded-xl border border-rose-500/15 bg-gradient-to-br from-rose-950/20 to-[#0f1216] shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
+    <div className="rounded-xl border border-rose-500/15 bg-gradient-to-br from-rose-950/20 to-[#121A15] shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
       {/* Header */}
       <div className="flex items-center gap-3 p-3.5">
         <span
@@ -183,7 +183,7 @@ export default function SubjectCard({
 
           {/* Read-only recent notes (memory layer) */}
           <div className="rounded-xl border border-white/[0.06] bg-white/[0.01] p-2.5">
-            <p className="px-1 pb-1.5 text-[10px] uppercase tracking-widest text-rose-200/50">
+            <p className="px-1 pb-1.5 text-[10px] uppercase text-rose-200/50 font-mono font-medium tracking-[0.14em]">
               Recent notes
             </p>
             <RecentNotesStrip subject={notesSubject} />
@@ -191,7 +191,7 @@ export default function SubjectCard({
 
           <SubjectChecklist
             auditId={auditId}
-            subject={subject}
+            scope={{ kind: "subject", subject }}
             configItems={configItems}
             subjectItems={subjectItems}
             itemsLoading={itemsLoading}

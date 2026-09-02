@@ -144,7 +144,7 @@ function FloatingActionButtonComponent({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.8, y: 20 }}
           transition={{ duration: 0.2, type: 'spring', stiffness: 300 }}
-          className="fixed bottom-6 right-4 z-50 flex flex-col items-end gap-3"
+          className="fixed bottom-safe-6 right-4 z-50 flex flex-col items-end gap-3"
         >
           {/* Expanded actions menu */}
           <AnimatePresence>
@@ -207,7 +207,7 @@ function FloatingActionButtonComponent({
             aria-label={isExpanded ? "Close quick actions menu" : "Open quick actions menu"}
             aria-expanded={isExpanded}
             className={`
-              relative w-14 h-14 rounded-2xl
+              relative w-14 h-14 rounded-leaf-sm
               bg-gradient-to-br from-emerald-400 via-emerald-500 to-emerald-700
               shadow-lg shadow-emerald-500/30
               flex items-center justify-center
@@ -217,7 +217,7 @@ function FloatingActionButtonComponent({
             `}
           >
             {/* Glow effect */}
-            <div className="absolute -inset-1 rounded-2xl bg-emerald-400/30 blur-md -z-10" />
+            <div className="absolute -inset-1 rounded-leaf-sm bg-emerald-400/30 blur-md -z-10" />
             
             {/* Icon with rotation */}
             <motion.div
@@ -234,7 +234,7 @@ function FloatingActionButtonComponent({
             {/* Pulse animation when collapsed */}
             {!isExpanded && (
               <motion.div
-                className="absolute inset-0 rounded-2xl bg-emerald-400/20"
+                className="absolute inset-0 rounded-leaf-sm bg-emerald-400/20"
                 animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0, 0.5] }}
                 transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
               />

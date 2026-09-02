@@ -58,7 +58,7 @@ export default function AdminUsersHub() {
       <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 pb-4 pt-3 sm:pt-6 space-y-4 sm:space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
           <div>
-            <h1 className="text-lg sm:text-xl font-semibold text-white">Users & Activity</h1>
+            <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">Users & Activity</h1>
             <p className="text-xs sm:text-sm text-white/60 mt-0.5">
               Manage accounts and view live engagement
             </p>

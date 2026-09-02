@@ -301,13 +301,13 @@ function JobCreationFormComponent({
   }, [onCancel]);
 
   const inputClassName = cn(
-    'w-full bg-[#050402]/80 border border-[#f6dcb2]/20 rounded-xl sm:rounded-2xl px-3 py-2.5 sm:px-4 sm:py-3',
+    'w-full bg-[#040605]/80 border border-[#E4EAE1]/20 rounded-xl sm:rounded-leaf-sm px-3 py-2.5 sm:px-4 sm:py-3',
     'text-white placeholder:text-white/30 text-sm',
-    'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60',
+    'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/60',
     'disabled:opacity-50 disabled:cursor-not-allowed'
   );
 
-  const labelClassName = 'text-[11px] sm:text-xs uppercase tracking-[0.25em] sm:tracking-[0.3em] text-[#f3d9a4]/70 flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2';
+  const labelClassName = 'text-[11px] sm:text-xs uppercase tracking-[0.25em] sm:tracking-[0.3em] text-[#DDFF85]/70 flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2';
 
   return (
     <>
@@ -333,7 +333,7 @@ function JobCreationFormComponent({
       {/* Header */}
       <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-white/10">
         <h3 className="text-lg sm:text-xl font-bold text-white flex items-center gap-1.5 sm:gap-2 min-w-0">
-          <Briefcase className="w-4 h-4 sm:w-5 sm:h-5 text-[#f4c979] flex-shrink-0" />
+          <Briefcase className="w-4 h-4 sm:w-5 sm:h-5 text-[#F4F7F2] flex-shrink-0" />
           <span className="truncate">{isEditing ? 'Edit Job' : 'Create New Job'}</span>
         </h3>
         <button
@@ -360,7 +360,7 @@ function JobCreationFormComponent({
       {/* Job Name */}
       <div>
         <label className={labelClassName}>
-          <Briefcase className="w-4 h-4 text-[#f4c979]" />
+          <Briefcase className="w-4 h-4 text-[#F4F7F2]" />
           Job Name *
         </label>
         <input
@@ -381,9 +381,9 @@ function JobCreationFormComponent({
         <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
-          className="rounded-xl sm:rounded-2xl border border-[#f4c979]/20 bg-[#f4c979]/5 p-3 sm:p-4 space-y-3 sm:space-y-4"
+          className="rounded-xl sm:rounded-leaf-sm border border-[#F4F7F2]/20 bg-[#F4F7F2]/5 p-3 sm:p-4 space-y-3 sm:space-y-4"
         >
-          <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs uppercase tracking-[0.25em] sm:tracking-[0.3em] text-[#f4c979]/80">
+          <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs uppercase sm:tracking-[0.3em] text-[#F4F7F2]/80 font-mono font-medium tracking-[0.14em]">
             <Target className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             Quick Assignment (Optional)
           </div>
@@ -395,7 +395,7 @@ function JobCreationFormComponent({
             {/* Work Site Dropdown */}
             <div>
               <label className={labelClassName}>
-                <Building2 className="w-4 h-4 text-[#f4c979]" />
+                <Building2 className="w-4 h-4 text-[#F4F7F2]" />
                 Work Site
               </label>
               <div className="relative">
@@ -416,7 +416,7 @@ function JobCreationFormComponent({
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#f4c979]/60 pointer-events-none" />
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#F4F7F2]/60 pointer-events-none" />
               </div>
               {selectedSiteId && (
                 <p className="mt-1 text-xs text-emerald-400/80">
@@ -428,7 +428,7 @@ function JobCreationFormComponent({
             {/* Crew Dropdown */}
             <div>
               <label className={labelClassName}>
-                <Users className="w-4 h-4 text-[#f4c979]" />
+                <Users className="w-4 h-4 text-[#F4F7F2]" />
                 Assign Crew
               </label>
               <div className="relative">
@@ -449,7 +449,7 @@ function JobCreationFormComponent({
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#f4c979]/60 pointer-events-none" />
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#F4F7F2]/60 pointer-events-none" />
               </div>
               {selectedCrewId && selectedCrewDetails && (
                 <p className="mt-1 text-xs text-emerald-400/80">
@@ -464,7 +464,7 @@ function JobCreationFormComponent({
       {/* Tracking Mode */}
       <div>
         <label className={labelClassName}>
-          <Target className="w-4 h-4 text-[#f4c979]" />
+          <Target className="w-4 h-4 text-[#F4F7F2]" />
           Tracking Mode *
         </label>
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-1.5 sm:mt-2">
@@ -476,7 +476,7 @@ function JobCreationFormComponent({
               checked={formData.tracking_type === 'timeline'}
               onChange={() => updateField('tracking_type', 'timeline')}
               disabled={submitting}
-              className="w-4 h-4 text-[#f4c979] border-white/20 bg-[#050402]"
+              className="w-4 h-4 text-[#F4F7F2] border-white/20 bg-[#040605]"
             />
             <span className="text-xs sm:text-sm text-white/80">Timeline Progress (Date-based)</span>
           </label>
@@ -488,7 +488,7 @@ function JobCreationFormComponent({
               checked={formData.tracking_type === 'job_progress'}
               onChange={() => updateField('tracking_type', 'job_progress')}
               disabled={submitting}
-              className="w-4 h-4 text-[#f4c979] border-white/20 bg-[#050402]"
+              className="w-4 h-4 text-[#F4F7F2] border-white/20 bg-[#040605]"
             />
             <span className="text-xs sm:text-sm text-white/80">Job Progress (Span-based)</span>
           </label>
@@ -506,9 +506,9 @@ function JobCreationFormComponent({
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
           exit={{ opacity: 0, height: 0 }}
-          className="rounded-xl sm:rounded-2xl border border-blue-500/20 bg-blue-500/5 p-3 sm:p-4 space-y-3 sm:space-y-4"
+          className="rounded-xl sm:rounded-leaf-sm border border-blue-500/20 bg-blue-500/5 p-3 sm:p-4 space-y-3 sm:space-y-4"
         >
-          <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs uppercase tracking-[0.25em] sm:tracking-[0.3em] text-blue-300/80">
+          <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs uppercase sm:tracking-[0.3em] text-blue-300/80 font-mono font-medium tracking-[0.14em]">
             <Ruler className="w-4 h-4" />
             Span Progress Configuration
           </div>
@@ -516,7 +516,7 @@ function JobCreationFormComponent({
           {/* Progress Metric Selection */}
           <div>
             <label className={labelClassName}>
-              <Target className="w-4 h-4 text-[#f4c979]" />
+              <Target className="w-4 h-4 text-[#F4F7F2]" />
               Progress Metric *
             </label>
             <div className="flex flex-col sm:flex-row gap-3 mt-2">
@@ -528,7 +528,7 @@ function JobCreationFormComponent({
                   checked={formData.span_progress_metric === 'spans'}
                   onChange={() => updateField('span_progress_metric', 'spans' as SpanProgressMetric)}
                   disabled={submitting}
-                  className="w-4 h-4 text-[#f4c979] border-white/20 bg-[#050402]"
+                  className="w-4 h-4 text-[#F4F7F2] border-white/20 bg-[#040605]"
                 />
                 <span className="text-sm text-white/80">Track by # of Spans</span>
               </label>
@@ -540,7 +540,7 @@ function JobCreationFormComponent({
                   checked={formData.span_progress_metric === 'feet'}
                   onChange={() => updateField('span_progress_metric', 'feet' as SpanProgressMetric)}
                   disabled={submitting}
-                  className="w-4 h-4 text-[#f4c979] border-white/20 bg-[#050402]"
+                  className="w-4 h-4 text-[#F4F7F2] border-white/20 bg-[#040605]"
                 />
                 <span className="text-sm text-white/80">Track by Total Feet</span>
               </label>
@@ -551,7 +551,7 @@ function JobCreationFormComponent({
           {formData.span_progress_metric === 'spans' && (
             <div>
               <label className={labelClassName}>
-                <Target className="w-4 h-4 text-[#f4c979]" />
+                <Target className="w-4 h-4 text-[#F4F7F2]" />
                 Estimated Total Spans *
               </label>
               <input
@@ -577,7 +577,7 @@ function JobCreationFormComponent({
           {formData.span_progress_metric === 'feet' && (
             <div>
               <label className={labelClassName}>
-                <Ruler className="w-4 h-4 text-[#f4c979]" />
+                <Ruler className="w-4 h-4 text-[#F4F7F2]" />
                 Estimated Total Feet *
               </label>
               <input
@@ -604,7 +604,7 @@ function JobCreationFormComponent({
       {/* Circuit */}
       <div>
         <label className={labelClassName}>
-          <MapPin className="w-4 h-4 text-[#f4c979]" />
+          <MapPin className="w-4 h-4 text-[#F4F7F2]" />
           Circuit
         </label>
         <input
@@ -641,7 +641,7 @@ function JobCreationFormComponent({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <div>
             <label className={labelClassName}>
-              <Calendar className="w-4 h-4 text-[#f4c979]" />
+              <Calendar className="w-4 h-4 text-[#F4F7F2]" />
               Start Date *
             </label>
             <input
@@ -661,7 +661,7 @@ function JobCreationFormComponent({
           </div>
           <div>
             <label className={labelClassName}>
-              <Calendar className="w-4 h-4 text-[#f4c979]" />
+              <Calendar className="w-4 h-4 text-[#F4F7F2]" />
               End Date *
             </label>
             <input
@@ -686,7 +686,7 @@ function JobCreationFormComponent({
       {/* Description */}
       <div>
         <label className={labelClassName}>
-          <FileText className="w-4 h-4 text-[#f4c979]" />
+          <FileText className="w-4 h-4 text-[#F4F7F2]" />
           Description
         </label>
         <textarea
@@ -702,7 +702,7 @@ function JobCreationFormComponent({
       {/* Specs */}
       <div>
         <label className={labelClassName}>
-          <ClipboardList className="w-4 h-4 text-[#f4c979]" />
+          <ClipboardList className="w-4 h-4 text-[#F4F7F2]" />
           Specifications
         </label>
         <textarea
@@ -739,7 +739,7 @@ function JobCreationFormComponent({
       {/* Notes */}
       <div>
         <label className={labelClassName}>
-          <StickyNote className="w-4 h-4 text-[#f4c979]" />
+          <StickyNote className="w-4 h-4 text-[#F4F7F2]" />
           Notes
         </label>
         <textarea
@@ -768,8 +768,8 @@ function JobCreationFormComponent({
           whileTap={{ scale: 0.98 }}
           className={cn(
             'w-full sm:w-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-4 py-2.5 sm:px-6 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all min-h-[44px]',
-            'bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#2e1b02]',
-            'hover:shadow-[0_0_20px_rgba(244,201,121,0.3)]',
+            'bg-gradient-to-r from-[#E4EAE1] via-[#F4F7F2] to-[#8DF5A8] text-[#040605]',
+            'hover:shadow-[0_0_20px_rgba(221,255,133,0.3)]',
             'disabled:opacity-50 disabled:cursor-not-allowed'
           )}
         >

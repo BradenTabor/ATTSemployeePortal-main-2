@@ -118,7 +118,7 @@ export function EquipmentTab({
         <div
           role="search"
           aria-label="Filter equipment inspections"
-          className="rounded-xl sm:rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-900/40 via-purple-950/50 to-black/70 p-3 sm:p-4 shadow-lg shadow-purple-500/10"
+          className="rounded-xl sm:rounded-leaf-sm border border-purple-500/30 bg-gradient-to-br from-purple-900/40 via-purple-950/50 to-black/70 p-3 sm:p-4 shadow-lg shadow-purple-500/10"
         >
           <div className="flex flex-col gap-3 sm:gap-4">
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
@@ -221,7 +221,7 @@ export function EquipmentTab({
         )}
         {!loading && !error && (
           <div className="grid gap-3 sm:gap-4 lg:grid-cols-3">
-            <div className="rounded-xl sm:rounded-2xl border border-purple-500/30 bg-gradient-to-b from-purple-900/50 via-purple-950/60 to-black/80 overflow-hidden flex flex-col shadow-lg sm:shadow-xl shadow-purple-500/10 min-h-0">
+            <div className="rounded-xl sm:rounded-leaf-sm border border-purple-500/30 bg-gradient-to-b from-purple-900/50 via-purple-950/60 to-black/80 overflow-hidden flex flex-col shadow-lg sm:shadow-xl shadow-purple-500/10 min-h-0">
               <div className="px-3 py-2.5 sm:px-4 sm:py-3 bg-gradient-to-r from-purple-700/60 via-purple-800/50 to-violet-900/50 border-b border-purple-500/20 flex-shrink-0">
                 <div className="flex items-center gap-2 sm:gap-3">
                   <span className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full flex-shrink-0 ${status === "attention" ? "bg-rose-400" : status === "passed" ? "bg-purple-300" : "bg-violet-300"}`} aria-hidden />
@@ -307,7 +307,7 @@ export function EquipmentTab({
                   <motion.div 
                     key="empty-state" 
                     {...(prefersReducedMotion ? detailTransitionReduced : detailTransition)} 
-                    className="h-full min-h-[200px] sm:min-h-[260px] rounded-xl sm:rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-900/40 via-purple-950/50 to-black/70 p-5 sm:p-8 flex flex-col items-center justify-center text-center shadow-lg sm:shadow-xl shadow-purple-500/10"
+                    className="h-full min-h-[200px] sm:min-h-[260px] rounded-xl sm:rounded-leaf-sm border border-purple-500/30 bg-gradient-to-br from-purple-900/40 via-purple-950/50 to-black/70 p-5 sm:p-8 flex flex-col items-center justify-center text-center shadow-lg sm:shadow-xl shadow-purple-500/10"
                   >
                     <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg sm:rounded-xl bg-purple-600/30 border border-purple-400/30 flex items-center justify-center mb-4 sm:mb-6" aria-hidden>
                       <ClipboardList className="w-6 h-6 sm:w-8 sm:h-8 text-purple-300" />
@@ -317,7 +317,7 @@ export function EquipmentTab({
                   </motion.div>
                 ) : (
                   <motion.div key={selectedId} {...(prefersReducedMotion ? detailTransitionReduced : detailTransition)} className="space-y-3 sm:space-y-4">
-                    <div className="rounded-xl sm:rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-900/50 via-purple-950/60 to-black/80 overflow-hidden shadow-lg sm:shadow-xl shadow-purple-500/10">
+                    <div className="rounded-xl sm:rounded-leaf-sm border border-purple-500/30 bg-gradient-to-br from-purple-900/50 via-purple-950/60 to-black/80 overflow-hidden shadow-lg sm:shadow-xl shadow-purple-500/10">
                       <div className="bg-gradient-to-r from-purple-700/60 via-violet-700/50 to-purple-800/50 border-b border-purple-400/20 px-3 py-3 sm:px-5 sm:py-4">
                         <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-3 sm:gap-4">
                           <div className="flex items-center gap-3 sm:gap-4 min-w-0">
@@ -348,17 +348,17 @@ export function EquipmentTab({
                       <div className="px-3 py-3 sm:px-5 sm:py-4 space-y-3 sm:space-y-4">
                         <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
                           <div className="rounded-lg sm:rounded-xl border border-purple-500/20 bg-purple-800/20 p-3 sm:p-4">
-                            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-purple-200/70 mb-1.5 sm:mb-2">Submitted by</div>
+                            <div className="text-[10px] sm:text-xs uppercase text-purple-200/70 mb-1.5 sm:mb-2 font-mono font-medium tracking-[0.14em]">Submitted by</div>
                             <p className="text-xs sm:text-sm text-white/90 font-medium">{selectedEquipment.submitted_by || "Unknown"}</p>
                           </div>
                           <div className="rounded-lg sm:rounded-xl border border-purple-500/20 bg-purple-800/20 p-3 sm:p-4">
-                            <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-purple-200/70 mb-1.5 sm:mb-2">Notes</div>
+                            <div className="text-[10px] sm:text-xs uppercase text-purple-200/70 mb-1.5 sm:mb-2 font-mono font-medium tracking-[0.14em]">Notes</div>
                             <p className="text-xs sm:text-sm text-white/80 line-clamp-2">{selectedEquipment.notes?.trim() || "No notes"}</p>
                           </div>
                         </div>
                         {selectedEquipment.mechanic_fixes && (
                           <div className="rounded-lg sm:rounded-xl border border-emerald-500/40 bg-emerald-700/20 p-3 sm:p-5">
-                            <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-emerald-200 mb-2 sm:mb-3">
+                            <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs uppercase text-emerald-200 mb-2 sm:mb-3 font-mono font-medium tracking-[0.14em]">
                               <Wrench className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" aria-hidden /> Mechanic fix
                             </div>
                             <p className="text-xs sm:text-sm text-white/90 font-medium">{selectedEquipment.mechanic_fixes}</p>
@@ -372,7 +372,7 @@ export function EquipmentTab({
                           </summary>
                           <div className="grid gap-2 sm:gap-3 md:gap-4 sm:grid-cols-2 p-2.5 sm:p-3 md:p-4 border-t border-purple-500/20 bg-black/20">
                             <div className="rounded-lg sm:rounded-xl border border-purple-500/20 bg-purple-950/30 p-2.5 sm:p-3 md:p-4 min-w-0">
-                              <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-purple-200/70 mb-1.5 sm:mb-2 md:mb-3">General</div>
+                              <div className="text-[10px] sm:text-xs uppercase text-purple-200/70 mb-1.5 sm:mb-2 md:mb-3 font-mono font-medium tracking-[0.14em]">General</div>
                               <div className="max-h-24 xs:max-h-28 sm:max-h-32 md:max-h-40 overflow-y-auto space-y-0.5 sm:space-y-1 md:space-y-1.5 scroll-container">
                                 {GENERAL_EQUIPMENT_ITEMS.map((item) => {
                                   const value = selectedEquipment.general_checklist?.[item.id];
@@ -387,7 +387,7 @@ export function EquipmentTab({
                               </div>
                             </div>
                             <div className="rounded-lg sm:rounded-xl border border-purple-500/20 bg-purple-950/30 p-2.5 sm:p-3 md:p-4 min-w-0">
-                              <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-purple-200/70 mb-1.5 sm:mb-2 md:mb-3">Template</div>
+                              <div className="text-[10px] sm:text-xs uppercase text-purple-200/70 mb-1.5 sm:mb-2 md:mb-3 font-mono font-medium tracking-[0.14em]">Template</div>
                               {getSpecificItems(selectedEquipment.template).length === 0 ? <p className="text-[11px] sm:text-xs md:text-sm text-purple-200/50 py-1">No template</p> : (
                                 <div className="max-h-24 xs:max-h-28 sm:max-h-32 md:max-h-40 overflow-y-auto space-y-0.5 sm:space-y-1 md:space-y-1.5 scroll-container">
                                   {getSpecificItems(selectedEquipment.template).map((item) => {

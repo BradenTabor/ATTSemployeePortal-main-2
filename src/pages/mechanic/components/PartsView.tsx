@@ -106,7 +106,7 @@ function FixRow({ fix, isSelected, onSelect, index }: FixRowProps) {
       onClick={onSelect}
       className={`w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 transition-all duration-150 flex items-start gap-2 sm:gap-3 group border-b border-white/[0.03] active:bg-white/[0.05] min-h-[64px] ${
         isSelected
-          ? 'bg-gradient-to-r from-[#ff9350]/20 to-[#ff9350]/5 border-l-2 border-l-[#ff9350]'
+          ? 'bg-gradient-to-r from-[#B8FF7A]/20 to-[#B8FF7A]/5 border-l-2 border-l-[#B8FF7A]'
           : 'border-l-2 border-l-transparent hover:bg-white/[0.03]'
       }`}
     >
@@ -156,7 +156,7 @@ function FixRow({ fix, isSelected, onSelect, index }: FixRowProps) {
       </div>
       
       <ChevronRight className={`w-3.5 h-3.5 sm:w-4 sm:h-4 transition-all flex-shrink-0 mt-1.5 sm:mt-2 ${
-        isSelected ? 'text-[#ff9350]' : 'text-white/20 group-hover:text-white/40'
+        isSelected ? 'text-[#B8FF7A]' : 'text-white/20 group-hover:text-white/40'
       }`} />
     </motion.button>
   );
@@ -173,9 +173,9 @@ interface FixDetailPanelProps {
 function FixDetailPanel({ fix }: FixDetailPanelProps) {
   if (!fix) {
     return (
-      <div className="h-full min-h-[400px] rounded-xl border border-white/5 bg-[#050302] p-6 flex flex-col items-center justify-center text-center">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-[#ff9350]/10 border border-[#ff9350]/20 mb-4">
-          <Package className="w-6 h-6 text-[#ff9350]/70" />
+      <div className="h-full min-h-[400px] rounded-xl border border-white/5 bg-[#040605] p-6 flex flex-col items-center justify-center text-center">
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-[#B8FF7A]/10 border border-[#B8FF7A]/20 mb-4">
+          <Package className="w-6 h-6 text-[#B8FF7A]/70" />
         </div>
         <p className="text-sm font-medium text-white/80 mb-1">Select a Fix Record</p>
         <p className="text-xs text-white/40 max-w-xs">
@@ -197,7 +197,7 @@ function FixDetailPanel({ fix }: FixDetailPanelProps) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.2 }}
-      className="rounded-xl border border-white/10 bg-[#050302] overflow-hidden"
+      className="rounded-xl border border-white/10 bg-[#040605] overflow-hidden"
     >
       {/* Header */}
       <div className="px-4 py-3 bg-gradient-to-r from-white/5 to-transparent border-b border-white/5">
@@ -221,7 +221,7 @@ function FixDetailPanel({ fix }: FixDetailPanelProps) {
       <div className="p-4 space-y-4">
         {/* Description */}
         <div>
-          <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">
+          <label className="block text-[10px] uppercase text-white/40 mb-1 font-mono font-medium tracking-[0.14em]">
             Fix Description
           </label>
           <p className="text-sm text-white/80">{fix.description}</p>
@@ -230,7 +230,7 @@ function FixDetailPanel({ fix }: FixDetailPanelProps) {
         {/* Deficiencies Corrected */}
         {fix.deficiencies_corrected && fix.deficiencies_corrected.length > 0 && (
           <div>
-            <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-2">
+            <label className="block text-[10px] uppercase text-white/40 mb-2 font-mono font-medium tracking-[0.14em]">
               Issues Corrected
             </label>
             <div className="flex flex-wrap gap-1.5">
@@ -249,7 +249,7 @@ function FixDetailPanel({ fix }: FixDetailPanelProps) {
         {/* Parts Used */}
         {fix.parts_used && fix.parts_used.length > 0 && (
           <div>
-            <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-2">
+            <label className="block text-[10px] uppercase text-white/40 mb-2 font-mono font-medium tracking-[0.14em]">
               Parts Used
             </label>
             <div className="space-y-1.5">
@@ -282,7 +282,7 @@ function FixDetailPanel({ fix }: FixDetailPanelProps) {
           <div className="rounded-lg border border-white/10 bg-black/20 p-3">
             <div className="flex items-center gap-2 mb-1">
               <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="text-[10px] uppercase tracking-wider text-white/40">
+              <span className="text-[10px] uppercase text-white/40 font-mono font-medium tracking-[0.14em]">
                 {isEstimated ? 'Est. Cost' : 'Cost'}
               </span>
             </div>
@@ -295,7 +295,7 @@ function FixDetailPanel({ fix }: FixDetailPanelProps) {
           <div className="rounded-lg border border-white/10 bg-black/20 p-3">
             <div className="flex items-center gap-2 mb-1">
               <Truck className="w-3.5 h-3.5 text-amber-400" />
-              <span className="text-[10px] uppercase tracking-wider text-white/40">Mileage</span>
+              <span className="text-[10px] uppercase text-white/40 font-mono font-medium tracking-[0.14em]">Mileage</span>
             </div>
             <p className="text-lg font-bold text-white">{formatMileage(fix.mileage_at_fix)}</p>
           </div>
@@ -304,7 +304,7 @@ function FixDetailPanel({ fix }: FixDetailPanelProps) {
           <div className="rounded-lg border border-white/10 bg-black/20 p-3">
             <div className="flex items-center gap-2 mb-1">
               <FileText className="w-3.5 h-3.5 text-blue-400" />
-              <span className="text-[10px] uppercase tracking-wider text-white/40">Source</span>
+              <span className="text-[10px] uppercase text-white/40 font-mono font-medium tracking-[0.14em]">Source</span>
             </div>
             <p className="text-sm font-medium text-white">{sourceConfig.label}</p>
           </div>
@@ -313,7 +313,7 @@ function FixDetailPanel({ fix }: FixDetailPanelProps) {
           <div className="rounded-lg border border-white/10 bg-black/20 p-3">
             <div className="flex items-center gap-2 mb-1">
               <Wrench className="w-3.5 h-3.5 text-purple-400" />
-              <span className="text-[10px] uppercase tracking-wider text-white/40">Performed By</span>
+              <span className="text-[10px] uppercase text-white/40 font-mono font-medium tracking-[0.14em]">Performed By</span>
             </div>
             <p className="text-sm font-medium text-white truncate">{fix.performed_by || 'Unknown'}</p>
           </div>
@@ -322,7 +322,7 @@ function FixDetailPanel({ fix }: FixDetailPanelProps) {
         {/* Notes */}
         {fix.notes && (
           <div>
-            <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Notes</label>
+            <label className="block text-[10px] uppercase text-white/40 mb-1 font-mono font-medium tracking-[0.14em]">Notes</label>
             <p className="text-xs text-white/60 p-3 rounded-lg bg-black/30 border border-white/5">{fix.notes}</p>
           </div>
         )}
@@ -348,7 +348,7 @@ function FilterBar({ filters, onFiltersChange, onClear }: FilterBarProps) {
     filters.date_from || filters.date_to;
   
   return (
-    <div className="rounded-lg sm:rounded-xl border border-[#ff9350]/15 bg-gradient-to-r from-[#0c0402] to-[#120805] p-2.5 sm:p-3 mb-4 sm:mb-5">
+    <div className="rounded-lg sm:rounded-xl border border-[#B8FF7A]/15 bg-gradient-to-r from-[#040605] to-[#0B100D] p-2.5 sm:p-3 mb-4 sm:mb-5">
       <div className="flex flex-col gap-2 sm:gap-3">
         {/* Search */}
         <div className="relative">
@@ -358,7 +358,7 @@ function FilterBar({ filters, onFiltersChange, onClear }: FilterBarProps) {
             placeholder="Search by asset #, description..."
             value={filters.search || ''}
             onChange={(e) => onFiltersChange({ ...filters, search: e.target.value })}
-            className="w-full bg-black/30 border border-white/10 rounded-lg pl-8 sm:pl-9 pr-8 py-2.5 sm:py-2 text-xs sm:text-sm text-white placeholder:text-white/30 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#ff9350]/50 transition-all min-h-[44px] sm:min-h-[38px]"
+            className="w-full bg-black/30 border border-white/10 rounded-lg pl-8 sm:pl-9 pr-8 py-2.5 sm:py-2 text-xs sm:text-sm text-white placeholder:text-white/30 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#B8FF7A]/50 transition-all min-h-[44px] sm:min-h-[38px]"
           />
           {filters.search && (
             <button
@@ -377,7 +377,7 @@ function FilterBar({ filters, onFiltersChange, onClear }: FilterBarProps) {
           <select
             value={filters.asset_type || 'all'}
             onChange={(e) => onFiltersChange({ ...filters, asset_type: e.target.value as AssetType | 'all' })}
-            className="bg-black/30 border border-white/10 rounded-lg px-2.5 sm:px-3 py-2 text-xs sm:text-sm text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#ff9350]/50 min-h-[44px] sm:min-h-[38px]"
+            className="bg-black/30 border border-white/10 rounded-lg px-2.5 sm:px-3 py-2 text-xs sm:text-sm text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#B8FF7A]/50 min-h-[44px] sm:min-h-[38px]"
           >
             <option value="all">All Assets</option>
             <option value="truck">Trucks</option>
@@ -390,7 +390,7 @@ function FilterBar({ filters, onFiltersChange, onClear }: FilterBarProps) {
           <select
             value={filters.source || 'all'}
             onChange={(e) => onFiltersChange({ ...filters, source: e.target.value as FixSource | 'all' })}
-            className="bg-black/30 border border-white/10 rounded-lg px-2.5 sm:px-3 py-2 text-xs sm:text-sm text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#ff9350]/50 min-h-[44px] sm:min-h-[38px]"
+            className="bg-black/30 border border-white/10 rounded-lg px-2.5 sm:px-3 py-2 text-xs sm:text-sm text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#B8FF7A]/50 min-h-[44px] sm:min-h-[38px]"
           >
             <option value="all">All Sources</option>
             <option value="repairs_log">Repair Logs</option>
@@ -435,49 +435,49 @@ function FilterBar({ filters, onFiltersChange, onClear }: FilterBarProps) {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 mt-3 border-t border-white/5">
               {/* Date From */}
               <div>
-                <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">From</label>
+                <label className="block text-[10px] uppercase text-white/40 mb-1 font-mono font-medium tracking-[0.14em]">From</label>
                 <input
                   type="date"
                   value={filters.date_from || ''}
                   onChange={(e) => onFiltersChange({ ...filters, date_from: e.target.value })}
-                  className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#ff9350]/50 [color-scheme:dark]"
+                  className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#B8FF7A]/50 [color-scheme:dark]"
                 />
               </div>
               
               {/* Date To */}
               <div>
-                <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">To</label>
+                <label className="block text-[10px] uppercase text-white/40 mb-1 font-mono font-medium tracking-[0.14em]">To</label>
                 <input
                   type="date"
                   value={filters.date_to || ''}
                   onChange={(e) => onFiltersChange({ ...filters, date_to: e.target.value })}
-                  className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#ff9350]/50 [color-scheme:dark]"
+                  className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#B8FF7A]/50 [color-scheme:dark]"
                 />
               </div>
               
               {/* Min Cost */}
               <div>
-                <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Min Cost</label>
+                <label className="block text-[10px] uppercase text-white/40 mb-1 font-mono font-medium tracking-[0.14em]">Min Cost</label>
                 <input
                   type="number"
                   min="0"
                   placeholder="$0"
                   value={filters.cost_min || ''}
                   onChange={(e) => onFiltersChange({ ...filters, cost_min: e.target.value ? Number(e.target.value) : undefined })}
-                  className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#ff9350]/50"
+                  className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#B8FF7A]/50"
                 />
               </div>
               
               {/* Max Cost */}
               <div>
-                <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Max Cost</label>
+                <label className="block text-[10px] uppercase text-white/40 mb-1 font-mono font-medium tracking-[0.14em]">Max Cost</label>
                 <input
                   type="number"
                   min="0"
                   placeholder="$∞"
                   value={filters.cost_max || ''}
                   onChange={(e) => onFiltersChange({ ...filters, cost_max: e.target.value ? Number(e.target.value) : undefined })}
-                  className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#ff9350]/50"
+                  className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#B8FF7A]/50"
                 />
               </div>
             </div>
@@ -581,11 +581,11 @@ export default function PartsView() {
       {!isLoading && !error && (
         <div className="grid gap-4 lg:grid-cols-3">
           {/* Fix List */}
-          <div className="rounded-xl border border-white/10 bg-[#080403] overflow-hidden flex flex-col">
+          <div className="rounded-xl border border-white/10 bg-[#040605] overflow-hidden flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-white/5 to-transparent border-b border-white/5">
               <div className="flex items-center gap-2">
-                <Package className="w-4 h-4 text-[#ff9350]" />
+                <Package className="w-4 h-4 text-[#B8FF7A]" />
                 <span className="text-xs font-medium text-white/80">Fix History</span>
                 <span className="text-[10px] text-white/40">({totalCount})</span>
               </div>
@@ -595,7 +595,8 @@ export default function PartsView() {
                   <button
                     onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                     disabled={currentPage === 1}
-                    className="p-1 rounded text-white/40 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    aria-label="Previous page"
+                            className="tap-44 relative p-1 rounded text-white/40 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   >
                     <ChevronLeft className="w-3.5 h-3.5" />
                   </button>
@@ -605,7 +606,8 @@ export default function PartsView() {
                   <button
                     onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                     disabled={currentPage === totalPages}
-                    className="p-1 rounded text-white/40 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    aria-label="Next page"
+                            className="tap-44 relative p-1 rounded text-white/40 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   >
                     <ChevronRight className="w-3.5 h-3.5" />
                   </button>

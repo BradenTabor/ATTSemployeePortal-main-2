@@ -25,7 +25,7 @@ interface JobProgressUpdateFormProps {
 
 // Compact emerald-themed input styling
 const baseInput =
-  'w-full bg-[#020d09]/80 border border-emerald-500/25 rounded-lg px-3 py-2.5 text-white text-sm placeholder:text-white/40 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-400/50 focus-visible:border-emerald-400/40 disabled:opacity-50 disabled:cursor-not-allowed min-h-[42px] touch-manipulation transition-all';
+  'w-full bg-[#040605]/80 border border-emerald-500/25 rounded-lg px-3 py-2.5 text-white text-sm placeholder:text-white/40 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-400/50 focus-visible:border-emerald-400/40 disabled:opacity-50 disabled:cursor-not-allowed min-h-[42px] touch-manipulation transition-all';
 
 const labelClass =
   'text-[10px] uppercase tracking-widest text-emerald-300/60 flex items-center gap-1.5 mb-1 font-medium';
@@ -200,11 +200,11 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
           exit={{ opacity: 0, y: 50, scale: 0.95 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
           className={cn(
-            'w-full max-w-md rounded-t-2xl sm:rounded-2xl border border-emerald-500/30',
+            'w-full max-w-md rounded-t-2xl sm:rounded-leaf-sm border border-emerald-500/30',
             'shadow-2xl shadow-emerald-900/20 overflow-hidden flex flex-col',
             'max-h-[85vh] sm:max-h-[80vh]'
           )}
-          style={{ background: 'linear-gradient(180deg, #04150f 0%, #041812 50%, #03120c 100%)' }}
+          style={{ background: 'linear-gradient(180deg, #0B100D 0%, #0B100D 50%, #0B100D 100%)' }}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Compact Header */}
@@ -212,7 +212,7 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[10px] uppercase tracking-widest text-emerald-400/80 font-semibold">
+                <span className="text-[10px] uppercase text-emerald-400/80 font-mono font-medium tracking-[0.14em]">
                   Progress Update
                 </span>
               </div>
@@ -287,7 +287,7 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
                     disabled={submitting}
                   >
                     {equipmentOptions.map(opt => (
-                      <option key={opt.value} value={opt.value} className="bg-[#041812]">
+                      <option key={opt.value} value={opt.value} className="bg-[#0B100D]">
                         {opt.label}
                       </option>
                     ))}
@@ -329,7 +329,7 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
                     <span className="text-white/40 text-lg">×</span>
                   </div>
                   <div className="flex-1 text-center">
-                    <p className="text-[10px] uppercase tracking-widest text-emerald-300/60 mb-1">Per Span</p>
+                    <p className="text-[10px] uppercase text-emerald-300/60 mb-1 font-mono font-medium tracking-[0.14em]">Per Span</p>
                     <p className="text-xl font-bold text-emerald-400">{spanLengthFeet}</p>
                     <p className="text-[10px] text-white/40">feet</p>
                   </div>
@@ -337,7 +337,7 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
                     <span className="text-white/40 text-lg">=</span>
                   </div>
                   <div className="flex-1 text-center">
-                    <p className="text-[10px] uppercase tracking-widest text-emerald-300/60 mb-1">Total</p>
+                    <p className="text-[10px] uppercase text-emerald-300/60 mb-1 font-mono font-medium tracking-[0.14em]">Total</p>
                     <p className="text-xl font-bold text-white">{totalFeet.toLocaleString()}</p>
                     <p className="text-[10px] text-white/40">feet</p>
                   </div>
@@ -360,7 +360,7 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
           </form>
 
           {/* Fixed Footer */}
-          <div className="flex items-center gap-2 p-3 border-t border-emerald-500/20 bg-[#020d09]/80">
+          <div className="flex items-center gap-2 p-3 border-t border-emerald-500/20 bg-[#040605]/80">
             <button
               type="button"
               onClick={onCancel}
@@ -376,7 +376,7 @@ export function JobProgressUpdateForm({ job, onSubmit, onCancel }: JobProgressUp
               onClick={handleSubmit}
               className={cn(
                 'flex-[1.5] inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold min-h-[44px] touch-manipulation',
-                'bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-500 text-[#041812]',
+                'bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-500 text-[#0B100D]',
                 'shadow-lg shadow-emerald-500/20',
                 'disabled:opacity-50 disabled:cursor-not-allowed'
               )}

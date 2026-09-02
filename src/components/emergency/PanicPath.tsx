@@ -39,9 +39,9 @@ export default function PanicPath({
           block w-full py-7 px-6
           bg-[linear-gradient(to_bottom,#ef4444_0%,#dc2626_40%,#b91c1c_100%)]
           text-white text-3xl sm:text-4xl font-extrabold text-center tracking-tight
-          rounded-2xl
+          rounded-leaf-sm
           min-h-[80px]
-          shadow-[0_0_30px_rgba(220,38,38,0.35),0_2px_4px_rgba(0,0,0,0.3),0_8px_24px_rgba(153,27,27,0.4),inset_0_-6px_12px_8px_rgba(0,0,0,0.45),inset_0_-4px_6px_3px_rgba(34,2,2,0.65)]
+          shadow-[0_0_30px_rgba(220,38,38,0.35),0_2px_4px_rgba(0,0,0,0.3),0_8px_24px_rgba(153,27,27,0.4),inset_0_-6px_12px_8px_rgba(0,0,0,0.45),inset_0_-4px_6px_3px_rgba(18,26,21,0.65)]
           transition-shadow duration-200
           ${FOCUS_RING}
         `}
@@ -59,7 +59,7 @@ export default function PanicPath({
 
       {/* ── LOCATION CARD ── */}
       <div
-        className={`bg-[linear-gradient(180deg,rgba(15,8,0,1)_0%,rgba(102,44,5,1)_50%,rgba(23,12,2,1)_100%)] border border-slate-700/80 rounded-2xl overflow-hidden ${LAYERED_SHADOW_LG}`}
+        className={`bg-[linear-gradient(180deg,rgba(4,6,5,1)_0%,rgba(74,97,22,1)_50%,rgba(11,16,13,1)_100%)] border border-slate-700/80 rounded-leaf-sm overflow-hidden ${LAYERED_SHADOW_LG}`}
         role="region"
         aria-label="Your location for 911 dispatch"
       >
@@ -102,7 +102,7 @@ export default function PanicPath({
                     <button
                       type="button"
                       onClick={onRetryLocation}
-                      className="inline-flex items-center gap-1.5 text-red-300 hover:text-red-200 text-sm font-medium underline underline-offset-2 decoration-red-400/40 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded"
+                      className="tap-44 relative inline-flex items-center gap-1.5 text-red-300 hover:text-red-200 text-sm font-medium underline underline-offset-2 decoration-red-400/40 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded"
                     >
                       Try GPS again
                     </button>
@@ -130,7 +130,7 @@ export default function PanicPath({
         </div>
 
         {site.text911Available && (
-          <div className="bg-[rgba(10,0,0,0.6)] border-t border-slate-700/60 px-5 py-3">
+          <div className="bg-[rgba(4,6,5,0.6)] border-t border-slate-700/60 px-5 py-3">
             <p className="text-slate-300 text-xs leading-relaxed">
               <span aria-hidden="true" className="mr-1.5">💬</span>
               Text-to-911 is available in this area.{' '}
@@ -179,7 +179,7 @@ export default function PanicPath({
             onClick={onShowSupervisor}
             className={`
               block w-full py-4 px-5
-              bg-[linear-gradient(180deg,rgba(150,138,3,0.9)_0%,rgba(30,41,59,0)_100%)]
+              bg-[linear-gradient(180deg,rgba(107,138,31,0.9)_0%,rgba(28,59,44,0)_100%)]
               border border-slate-700/80
               text-slate-200 text-base font-medium text-center
               rounded-xl min-h-[52px]

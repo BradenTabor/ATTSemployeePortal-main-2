@@ -137,8 +137,8 @@ export default function MonthlyCalendarGrid({
 
         {/* Trophy cell after last day */}
         <div className="flex items-center justify-center">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#f6dcb2]/10 border border-[#f6dcb2]/20 flex items-center justify-center">
-            <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#f6dcb2]" />
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#E4EAE1]/10 border border-[#E4EAE1]/20 flex items-center justify-center">
+            <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#E4EAE1]" />
           </div>
         </div>
       </div>
@@ -163,7 +163,7 @@ function DayCell({
         <div
           className={`${base} ${
             inStreak
-              ? 'bg-emerald-500/25 border-2 border-emerald-400/50 shadow-[0_0_8px_rgba(16,185,129,0.2)]'
+              ? 'bg-emerald-500/25 border-2 border-emerald-400/50 shadow-[0_0_8px_rgba(47,164,90,0.2)]'
               : 'bg-emerald-500/20 border border-emerald-500/40'
           } text-emerald-300`}
         >
@@ -199,7 +199,7 @@ function DayCell({
     case 'today':
       return (
         <motion.div
-          animate={{ boxShadow: ['0 0 0 0 rgba(16,185,129,0.3)', '0 0 0 6px rgba(16,185,129,0)', '0 0 0 0 rgba(16,185,129,0.3)'] }}
+          animate={{ boxShadow: ['0 0 0 0 rgba(47,164,90,0.3)', '0 0 0 6px rgba(47,164,90,0)', '0 0 0 0 rgba(47,164,90,0.3)'] }}
           transition={{ duration: 2, repeat: Infinity }}
           className={`${base} border-2 border-emerald-400 text-white font-bold`}
         >

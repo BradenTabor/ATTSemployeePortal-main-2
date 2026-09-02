@@ -106,7 +106,7 @@ export function GamificationCelebration() {
           <h2 className="mb-2 text-2xl font-bold tracking-tight text-white">{state.title}</h2>
           <p className="mb-2 text-sm text-white/65">{state.subtitle}</p>
           {prestigeNote && (
-            <p className="mb-6 text-xs font-semibold uppercase tracking-wider text-amber-300/90">
+            <p className="mb-6 text-xs uppercase text-amber-300/90 font-mono font-medium tracking-[0.14em]">
               {prestigeNote} tier
             </p>
           )}

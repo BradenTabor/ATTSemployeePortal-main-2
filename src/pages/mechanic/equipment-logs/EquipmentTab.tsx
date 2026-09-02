@@ -286,7 +286,7 @@ export function EquipmentTab({
       <ScrollRevealSection delay={0}>
         <motion.div 
           layout
-          className="rounded-2xl border-2 border-amber-600/40 bg-gradient-to-br from-gray-900 via-amber-950/50 to-gray-900 p-4 shadow-xl shadow-amber-500/10"
+          className="rounded-leaf-sm border-2 border-amber-600/40 bg-gradient-to-br from-gray-900 via-amber-950/50 to-gray-900 p-4 shadow-xl shadow-amber-500/10"
         >
           <div className="flex flex-col gap-4">
             {/* Primary filters row */}
@@ -434,7 +434,7 @@ export function EquipmentTab({
             {/* EQUIPMENT LIST PANEL */}
             <motion.div 
               layout
-              className="rounded-2xl border-2 border-amber-600/40 bg-gradient-to-b from-gray-900 via-amber-950/40 to-gray-950 overflow-hidden flex flex-col shadow-2xl shadow-amber-500/10"
+              className="rounded-leaf-sm border-2 border-amber-600/40 bg-gradient-to-b from-gray-900 via-amber-950/40 to-gray-950 overflow-hidden flex flex-col shadow-2xl shadow-amber-500/10"
             >
               {/* Panel Header */}
               <div className={`flex items-center justify-between px-4 py-3 ${
@@ -474,7 +474,7 @@ export function EquipmentTab({
                     <motion.div
                       animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}
                       transition={{ duration: 4, repeat: Infinity }}
-                      className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-amber-700 to-yellow-800 border-2 border-amber-500/50 flex items-center justify-center shadow-lg shadow-amber-500/30"
+                      className="w-20 h-20 mx-auto mb-4 rounded-leaf-sm bg-gradient-to-br from-amber-700 to-yellow-800 border-2 border-amber-500/50 flex items-center justify-center shadow-lg shadow-amber-500/30"
                     >
                       <Wrench className="w-9 h-9 text-white" />
                     </motion.div>
@@ -493,7 +493,7 @@ export function EquipmentTab({
                         variants={prefersReducedMotion ? listItemVariantsReduced : listItemVariants}
                         initial="hidden"
                         animate="visible"
-                        whileHover={{ backgroundColor: "rgba(16, 185, 129, 0.05)" }}
+                        whileHover={{ backgroundColor: "rgba(47,164,90, 0.05)" }}
                         onClick={() => setSelectedEquipmentId(isSelected ? null : inspection.id)}
                         className={`w-full text-left px-4 py-3 transition-all duration-200 flex items-center gap-3 group ${
                           isSelected 
@@ -557,12 +557,12 @@ export function EquipmentTab({
                   <motion.div 
                     key="empty-state" 
                     {...(prefersReducedMotion ? detailTransitionReduced : detailTransition)} 
-                    className="h-full min-h-[300px] rounded-2xl border border-orange-500/20 bg-gradient-to-br from-orange-950/20 to-black/60 p-8 flex flex-col items-center justify-center text-center"
+                    className="h-full min-h-[300px] rounded-leaf-sm border border-orange-500/20 bg-gradient-to-br from-orange-950/20 to-black/60 p-8 flex flex-col items-center justify-center text-center"
                   >
                     <motion.div 
                       animate={{ scale: [1, 1.05, 1], rotate: [0, 5, -5, 0] }}
                       transition={{ duration: 4, repeat: Infinity }}
-                      className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-orange-500/10 border border-orange-500/20 mb-4 shadow-lg shadow-orange-500/10"
+                      className="inline-flex items-center justify-center w-16 h-16 rounded-leaf-sm bg-orange-500/10 border border-orange-500/20 mb-4 shadow-lg shadow-orange-500/10"
                     >
                       <ClipboardList className="w-7 h-7 text-orange-400/70" />
                     </motion.div>
@@ -575,7 +575,7 @@ export function EquipmentTab({
                     <motion.div 
                       initial={{ opacity: 0, scale: 0.98 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="rounded-2xl border border-orange-500/20 bg-gradient-to-br from-orange-950/30 to-black/60 overflow-hidden shadow-xl shadow-orange-500/5"
+                      className="rounded-leaf-sm border border-orange-500/20 bg-gradient-to-br from-orange-950/30 to-black/60 overflow-hidden shadow-xl shadow-orange-500/5"
                     >
                       {/* Detail Header */}
                       <div className="bg-gradient-to-r from-orange-500/10 via-orange-500/5 to-transparent border-b border-orange-500/15 px-5 py-4">
@@ -625,19 +625,19 @@ export function EquipmentTab({
                         {/* Info */}
                         <div className="grid gap-2 sm:grid-cols-2">
                           <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2.5">
-                            <div className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Submitted by</div>
+                            <div className="text-[10px] uppercase text-white/30 mb-1 font-mono font-medium tracking-[0.14em]">Submitted by</div>
                             <p className="text-xs text-white/70">{selectedEquipment.submitted_by || "Unknown"}</p>
                           </div>
                           <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2.5">
-                            <div className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Notes</div>
+                            <div className="text-[10px] uppercase text-white/30 mb-1 font-mono font-medium tracking-[0.14em]">Notes</div>
                             <p className="text-xs text-white/60 line-clamp-2">{selectedEquipment.notes?.trim() || "No notes"}</p>
                           </div>
                         </div>
                         
                         {/* Existing Fix */}
                         {selectedEquipment.mechanic_fixes && (
-                          <div className="rounded-lg border border-[#ff9350]/20 bg-[#ff9350]/5 p-2.5">
-                            <div className="text-[10px] uppercase tracking-wider text-[#ff9350]/70 mb-1.5">Mechanic Fix</div>
+                          <div className="rounded-lg border border-[#B8FF7A]/20 bg-[#B8FF7A]/5 p-2.5">
+                            <div className="text-[10px] uppercase text-[#B8FF7A]/70 mb-1.5 font-mono font-medium tracking-[0.14em]">Mechanic Fix</div>
                             <p className="text-xs text-white/70">{selectedEquipment.mechanic_fixes}</p>
                             {selectedEquipment.last_mechanic_updated_at && <p className="text-[10px] text-white/40 mt-1">Updated {new Date(selectedEquipment.last_mechanic_updated_at).toLocaleDateString()}</p>}
                           </div>
@@ -646,12 +646,12 @@ export function EquipmentTab({
                         {/* Checklists */}
                         <details className="group" open>
                           <summary className="flex items-center justify-between cursor-pointer py-2 text-xs font-medium text-white/60 hover:text-white/80 transition-colors">
-                            <span className="flex items-center gap-1.5"><ClipboardList className="w-3.5 h-3.5 text-[#ff9350]/70" />Checklists</span>
+                            <span className="flex items-center gap-1.5"><ClipboardList className="w-3.5 h-3.5 text-[#B8FF7A]/70" />Checklists</span>
                             <ChevronRight className="w-3.5 h-3.5 transition-transform group-open:rotate-90" />
                           </summary>
                           <div className="grid gap-2 sm:grid-cols-2 pt-2">
                             <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2.5">
-                              <div className="text-[10px] uppercase tracking-wider text-white/30 mb-2">General</div>
+                              <div className="text-[10px] uppercase text-white/30 mb-2 font-mono font-medium tracking-[0.14em]">General</div>
                               <div className="max-h-48 overflow-y-auto space-y-0.5">
                                 {GENERAL_EQUIPMENT_ITEMS.map((item) => {
                                   const value = selectedEquipment.general_checklist?.[item.id];
@@ -666,7 +666,7 @@ export function EquipmentTab({
                               </div>
                             </div>
                             <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2.5">
-                              <div className="text-[10px] uppercase tracking-wider text-white/30 mb-2">Template</div>
+                              <div className="text-[10px] uppercase text-white/30 mb-2 font-mono font-medium tracking-[0.14em]">Template</div>
                               {getSpecificItems(selectedEquipment.template).length === 0 ? <p className="text-[11px] text-white/40">No template</p> : (
                                 <div className="max-h-48 overflow-y-auto space-y-0.5">
                                   {getSpecificItems(selectedEquipment.template).map((item) => {
@@ -688,13 +688,13 @@ export function EquipmentTab({
                         {/* Photos */}
                         <details className="group">
                           <summary className="flex items-center justify-between cursor-pointer py-2 text-xs font-medium text-white/60 hover:text-white/80 transition-colors">
-                            <span className="flex items-center gap-1.5"><Camera className="w-3.5 h-3.5 text-[#ff9350]/70" />Photos ({equipmentPhotoEntries.length})</span>
+                            <span className="flex items-center gap-1.5"><Camera className="w-3.5 h-3.5 text-[#B8FF7A]/70" />Photos ({equipmentPhotoEntries.length})</span>
                             <ChevronRight className="w-3.5 h-3.5 transition-transform group-open:rotate-90" />
                           </summary>
                           {equipmentPhotoEntries.length === 0 ? <p className="text-[11px] text-white/40 pt-1">No photos uploaded</p> : (
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
                               {equipmentPhotoEntries.map((photo) => (
-                                <a key={photo.label} href={photo.url} target="_blank" rel="noopener noreferrer" className="group/img block rounded-lg border border-white/5 bg-black/30 overflow-hidden transition-all hover:border-[#ff9350]/30">
+                                <a key={photo.label} href={photo.url} target="_blank" rel="noopener noreferrer" className="group/img block rounded-lg border border-white/5 bg-black/30 overflow-hidden transition-all hover:border-[#B8FF7A]/30">
                                   <img loading="lazy" src={photo.url} alt={photo.label} className="h-16 w-full object-cover transition-transform duration-200 group-hover/img:scale-105" />
                                   <div className="px-1.5 py-1 text-[9px] text-white/40 truncate">{photo.label}</div>
                                 </a>
@@ -710,7 +710,7 @@ export function EquipmentTab({
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.2 }}
-                      className="rounded-2xl border border-orange-500/25 bg-gradient-to-br from-orange-950/40 to-black/70 overflow-hidden shadow-xl shadow-orange-500/5"
+                      className="rounded-leaf-sm border border-orange-500/25 bg-gradient-to-br from-orange-950/40 to-black/70 overflow-hidden shadow-xl shadow-orange-500/5"
                     >
                       <div className="flex items-center justify-between px-5 py-3 bg-gradient-to-r from-orange-500/15 to-transparent border-b border-orange-500/15">
                         <div className="flex items-center gap-3">
@@ -729,13 +729,13 @@ export function EquipmentTab({
                       <div className="px-5 py-4 space-y-4">
                         {/* Fix Description */}
                         <div>
-                          <label className="block text-[10px] uppercase tracking-wider text-orange-300/50 mb-1.5 font-medium">Fix Applied *</label>
+                          <label className="block text-[10px] uppercase text-orange-300/50 mb-1.5 font-medium font-mono font-medium tracking-[0.14em]">Fix Applied *</label>
                           <textarea value={equipmentMechanicNotes} onChange={(e) => setEquipmentMechanicNotes(e.target.value)} rows={2} placeholder="What was done? E.g., Replaced fuel filter..." className="w-full bg-black/40 border border-orange-500/20 text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 focus-visible:border-orange-500/40 transition-all resize-none placeholder:text-white/25" />
                         </div>
                         
                         {/* Cost */}
                         <div>
-                          <label className="block text-[10px] uppercase tracking-wider text-orange-300/50 mb-1.5 font-medium">Cost (Optional)</label>
+                          <label className="block text-[10px] uppercase text-orange-300/50 mb-1.5 font-medium font-mono font-medium tracking-[0.14em]">Cost (Optional)</label>
                           <div className="relative">
                             <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-400/50" />
                             <input type="number" step="0.01" min="0" value={equipmentUpdateCost} onChange={(e) => setEquipmentUpdateCost(e.target.value)} placeholder="0.00" className="w-full bg-black/40 border border-orange-500/20 text-white text-sm rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 focus-visible:border-orange-500/40 transition-all placeholder:text-white/25" />
@@ -745,7 +745,7 @@ export function EquipmentTab({
                         {/* Parts */}
                         <div>
                           <div className="flex items-center justify-between mb-2">
-                            <label className="text-[10px] uppercase tracking-wider text-orange-300/50 font-medium hover:scale-105">Parts Used (Optional)</label>
+                            <label className="text-[10px] uppercase text-orange-300/50 font-medium hover:scale-105 font-mono font-medium tracking-[0.14em]">Parts Used (Optional)</label>
                             <motion.button 
                               whileTap={{ scale: 0.95 }}
                               type="button" 
@@ -816,7 +816,7 @@ export function EquipmentTab({
                         
                         {/* Save Button */}
                         <motion.button 
-                          whileHover={{ scale: 1.01, boxShadow: "0 10px 40px rgba(16, 185, 129, 0.3)" }}
+                          whileHover={{ scale: 1.01, boxShadow: "0 10px 40px rgba(47,164,90, 0.3)" }}
                           whileTap={{ scale: 0.99 }}
                           type="button" 
                           onClick={handleSaveEquipmentFix} 

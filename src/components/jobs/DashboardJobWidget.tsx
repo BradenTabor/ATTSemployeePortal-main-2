@@ -69,16 +69,16 @@ function JobWidgetCard({ job, defaultExpanded = false }: JobWidgetCardProps) {
 
   // Card styling - span-based jobs use blue accent, never red
   const cardColors = isSpanBased
-    ? 'border-blue-500/20 from-[#040815] via-[#020509] to-[#010204]'
+    ? 'border-blue-500/20 from-[#0B100D] via-[#040605] to-[#040605]'
     : isExceeded
-      ? 'border-red-500/30 from-[#1a0808] via-[#0d0505] to-[#050302]'
-      : 'border-emerald-500/20 from-[#041510] via-[#020d09] to-[#010604]';
+      ? 'border-red-500/30 from-[#132308] via-[#040605] to-[#040605]'
+      : 'border-emerald-500/20 from-[#0B100D] via-[#040605] to-[#040605]';
 
   return (
     <motion.div
       layout
       className={cn(
-        'rounded-2xl border bg-gradient-to-br overflow-hidden transition-colors',
+        'rounded-leaf-sm border bg-gradient-to-br overflow-hidden transition-colors',
         cardColors
       )}
     >
@@ -96,7 +96,7 @@ function JobWidgetCard({ job, defaultExpanded = false }: JobWidgetCardProps) {
                   isExceeded && !isSpanBased && 'text-red-400'
                 )}
                 style={{
-                  color: isSpanBased ? 'rgb(231, 114, 4)' : isExceeded ? undefined : 'rgb(0, 219, 77)'
+                  color: isSpanBased ? 'rgb(141, 181, 42)' : isExceeded ? undefined : 'rgb(47, 164, 90)'
                 }}
               />
               <h4 className="font-semibold text-white truncate">{job.job_name}</h4>
@@ -262,7 +262,7 @@ function DashboardJobWidgetComponent({
   // Loading skeleton
   if (loading) {
     return (
-      <div className="rounded-3xl border border-emerald-500/20 bg-[#041510]/80 p-5 space-y-4">
+      <div className="rounded-leaf border border-emerald-500/20 bg-[#0B100D]/80 p-5 space-y-4">
         <div className="flex items-center gap-2">
           <Briefcase className="w-4 h-4 text-emerald-300" />
           <div className="h-3 w-32 bg-white/10 rounded-full animate-pulse" />
@@ -271,7 +271,7 @@ function DashboardJobWidgetComponent({
           {Array.from({ length: 2 }).map((_, i) => (
             <div
               key={i}
-              className="rounded-2xl border border-white/5 bg-white/5 h-24 animate-pulse"
+              className="rounded-leaf-sm border border-white/5 bg-white/5 h-24 animate-pulse"
             />
           ))}
         </div>
@@ -282,7 +282,7 @@ function DashboardJobWidgetComponent({
   // Error state
   if (error) {
     return (
-      <div className="rounded-3xl border border-red-500/20 bg-[#1a0808]/80 p-5">
+      <div className="rounded-leaf border border-red-500/20 bg-[#132308]/80 p-5">
         <div className="flex items-center gap-2 text-red-400">
           <AlertTriangle className="w-4 h-4" />
           <span className="text-sm">{error}</span>
@@ -297,11 +297,11 @@ function DashboardJobWidgetComponent({
   }
 
   return (
-    <div className="rounded-3xl border border-emerald-500/20 bg-[#041510]/80 p-5 space-y-4">
+    <div className="rounded-leaf border border-emerald-500/20 bg-[#0B100D]/80 p-5 space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Briefcase className="w-4 h-4 text-emerald-300" />
-          <p className="text-xs uppercase tracking-[0.35em] text-emerald-200/70">
+          <p className="text-xs uppercase text-emerald-200/70 font-mono font-medium tracking-[0.14em]">
             Your Assigned Jobs
           </p>
         </div>

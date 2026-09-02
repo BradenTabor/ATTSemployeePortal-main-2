@@ -121,7 +121,7 @@ export function AdminCatalogTable({
                         type="button"
                         onClick={() => onToggleActive(item)}
                         disabled={busy}
-                        className="p-2 rounded-lg text-white/60 hover:text-[#f4c979] hover:bg-white/10 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-400"
+                        className="p-2 rounded-lg text-white/60 hover:text-[#F4F7F2] hover:bg-white/10 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-400"
                         aria-label={item.is_active ? `Deactivate ${item.name}` : `Activate ${item.name}`}
                       >
                         <Power className="w-4 h-4" aria-hidden />
@@ -246,7 +246,7 @@ function DeleteConfirmDialog({
       <div
         role="alertdialog"
         aria-labelledby="delete-dialog-title"
-        className="w-full max-w-md rounded-2xl border border-white/10 bg-neutral-900 p-5 shadow-2xl"
+        className="w-full max-w-md rounded-leaf-sm border border-white/10 bg-neutral-900 p-5 shadow-2xl"
       >
         <h3 id="delete-dialog-title" className="text-lg font-semibold text-white mb-2">
           {blocked ? 'Cannot delete item' : `Delete ${item.name}?`}

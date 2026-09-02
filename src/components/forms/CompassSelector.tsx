@@ -78,7 +78,7 @@ export function CompassSelector({
             onClick={() => onChange(dir)}
             className={cn(
               "absolute w-8 h-8 rounded-full text-xs font-medium transition-colors",
-              "focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]",
+              "focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]",
               value === dir
                 ? "bg-emerald-500/30 text-emerald-300 border border-emerald-400/50"
                 : "bg-white/10 text-white/80 border border-white/10 hover:bg-white/20"

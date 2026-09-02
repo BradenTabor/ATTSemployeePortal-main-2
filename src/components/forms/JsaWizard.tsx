@@ -51,6 +51,12 @@ interface JsaWizardProps {
   validationErrors?: Record<string, string | undefined>;
   /** Optional content for the top bar right side (e.g. mode switch link) */
   headerRight?: ReactNode;
+  /**
+   * Optional in-flow content rendered at the top of the scrollable step area,
+   * directly below the header. Use for phone-width notices that must not
+   * overlap the header (e.g. the compact validation summary).
+   */
+  banner?: ReactNode;
 }
 
 export function JsaWizard({
@@ -72,6 +78,7 @@ export function JsaWizard({
   stepCompletionStatus,
   validationErrors = {},
   headerRight,
+  banner,
 }: JsaWizardProps) {
   const [direction, setDirection] = useState(0);
   const [completeError, setCompleteError] = useState<string | null>(null);
@@ -190,7 +197,7 @@ export function JsaWizard({
         className="flex-shrink-0 border-b border-emerald-500/20"
         style={{
           background:
-            "linear-gradient(180deg, rgba(5,30,18,0.98) 0%, rgba(0,15,8,0.95) 100%)",
+            "linear-gradient(180deg, rgba(11,16,13,0.98) 0%, rgba(4,6,5,0.95) 100%)",
         }}
       >
         {/* Top bar - Enhanced for mobile visibility */}
@@ -201,7 +208,7 @@ export function JsaWizard({
             onClick={onBack}
             whileTap={{ scale: 0.95 }}
             data-testid="jsa-back"
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg bg-white/5 border border-white/10 text-white/80 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all touch-manipulation active:bg-white/15"
+            className="tap-44 relative inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg bg-white/5 border border-white/10 text-white/80 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all touch-manipulation active:bg-white/15"
           >
             <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
             <span className="text-xs sm:text-sm font-medium">Back</span>
@@ -215,7 +222,7 @@ export function JsaWizard({
             </div>
             <div className="flex flex-col items-center sm:items-start">
               <div className="flex items-center gap-2">
-                <h1 className="text-xs sm:text-sm font-bold text-white truncate">{title}</h1>
+                <h1 className="font-display text-sm font-medium tracking-tight text-bone-50 truncate">{title}</h1>
                 {isEditMode && (
                   <span
                     className={cn(
@@ -341,11 +348,12 @@ export function JsaWizard({
         <div
           className="max-w-2xl mx-auto px-3 py-3 sm:px-6 sm:py-5 pb-20"
           style={{
-            backgroundColor: 'rgba(192, 168, 135, 1)',
-            background: 'radial-gradient(circle at 50% 50%, rgba(87, 76, 61, 1) 17%, rgba(80, 67, 47, 1) 35%, rgba(68, 58, 44, 1) 56%, rgba(44, 37, 28, 1) 74%, rgba(18, 18, 18, 1) 100%)',
-            boxShadow: 'inset 0px 4px 45px 25px rgba(0, 0, 0, 0.65)',
+            backgroundColor: 'rgba(138,154,142, 1)',
+            background: 'radial-gradient(circle at 50% 50%, rgba(47,63,54, 1) 17%, rgba(47,63,54, 1) 35%, rgba(47,63,54, 1) 56%, rgba(30,42,35, 1) 74%, rgba(18,26,21, 1) 100%)',
+            boxShadow: 'inset 0px 4px 45px 25px rgba(0,0,0, 0.65)',
           }}
         >
+          {banner != null && <div className="mb-3 flex justify-end">{banner}</div>}
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
               key={currentStep}
@@ -362,7 +370,7 @@ export function JsaWizard({
               {/* Step Header - Compact on mobile */}
               <div className="mb-3 sm:mb-5">
                 <div className="flex items-center gap-2 mb-0.5 sm:mb-1">
-                  <span className="text-xs font-bold text-emerald-400 uppercase tracking-wide">
+                  <span className="text-xs text-emerald-400 uppercase font-mono font-medium tracking-[0.14em]">
                     Step {currentStep} of {totalSteps}
                   </span>
                 </div>
@@ -382,7 +390,7 @@ export function JsaWizard({
         className="relative z-10 flex-shrink-0 border-t border-white/10 pointer-events-auto"
         style={{
           background:
-            "linear-gradient(0deg, rgba(0,10,5,0.98) 0%, rgba(0,20,10,0.95) 100%)",
+            "linear-gradient(0deg, rgba(4,6,5,0.98) 0%, rgba(11,16,13,0.95) 100%)",
           paddingBottom: "max(env(safe-area-inset-bottom, 0px), 0.5rem)",
         }}
       >
@@ -399,7 +407,7 @@ export function JsaWizard({
             disabled={isFirstStep}
             aria-disabled={isFirstStep}
             className={cn(
-              "inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-medium transition-all touch-manipulation min-w-[80px]",
+              "inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-medium transition-all touch-manipulation min-w-[80px]",
               isFirstStep
                 ? "opacity-30 cursor-not-allowed text-white/40"
                 : "bg-white/10 text-white hover:bg-white/15 border border-white/10"
@@ -418,7 +426,7 @@ export function JsaWizard({
               disabled={saving}
               data-testid="save-button"
               className={cn(
-                "inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all touch-manipulation",
+                "inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all touch-manipulation",
                 saving
                   ? "opacity-60 cursor-not-allowed bg-emerald-700/50 text-white/70"
                   : "bg-emerald-600 text-white hover:bg-emerald-500 shadow-lg shadow-emerald-900/30"
@@ -449,7 +457,7 @@ export function JsaWizard({
                   <div className="bg-gray-900/98 backdrop-blur-xl border border-white/15 rounded-xl shadow-2xl shadow-black/50 overflow-hidden">
                     {/* Header */}
                     <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 bg-white/5">
-                      <span className="text-[10px] font-semibold text-white/80 uppercase tracking-wide">
+                      <span className="text-[10px] text-white/80 uppercase font-mono font-medium tracking-[0.14em]">
                         Choose Save Type
                       </span>
                       <button
@@ -554,7 +562,7 @@ export function JsaWizard({
                 }}
                 disabled={saving || !isValid}
                 className={cn(
-                  "inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all touch-manipulation min-w-[80px]",
+                  "inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all touch-manipulation min-w-[80px]",
                   saving || !isValid
                     ? "opacity-40 cursor-not-allowed bg-amber-700/30 text-white/50"
                     : "bg-gradient-to-r from-amber-600 to-amber-700 text-white hover:from-amber-500 hover:to-amber-600"
@@ -581,7 +589,7 @@ export function JsaWizard({
                 e.stopPropagation();
                 handleNext();
               }}
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600/80 px-3 py-2.5 text-sm font-semibold text-white hover:bg-emerald-500 transition-all touch-manipulation min-w-[80px] border border-emerald-500/30"
+              className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl bg-emerald-600/80 px-3 py-2.5 text-sm font-semibold text-white hover:bg-emerald-500 transition-all touch-manipulation min-w-[80px] border border-emerald-500/30"
             >
               <span className="hidden sm:inline">Next</span>
               <ArrowRight className="w-4 h-4" />

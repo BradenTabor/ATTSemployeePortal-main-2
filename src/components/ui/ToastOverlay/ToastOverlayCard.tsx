@@ -78,14 +78,14 @@ export function ToastOverlayCard({ state, onDismiss }: ToastOverlayCardProps) {
     <motion.div
       layout
       className={cn(
-        'relative overflow-hidden rounded-2xl sm:rounded-3xl',
+        'relative overflow-hidden rounded-leaf-sm sm:rounded-leaf',
         'border',
         config.borderClass,
         'shadow-2xl',
         config.glowClass,
       )}
       style={{
-        background: 'linear-gradient(145deg, #0c0a07 0%, #0a1a12 50%, #0c0a07 100%)',
+        background: 'linear-gradient(145deg, #0B100D 0%, #121A15 50%, #0B100D 100%)',
         // Safe area padding
         padding: 'max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left))',
       }}
@@ -148,7 +148,7 @@ export function ToastOverlayCard({ state, onDismiss }: ToastOverlayCardProps) {
             duration: ANIMATION_DURATION.stateChange / 1000,
           }}
           className={cn(
-            'w-16 h-16 sm:w-20 sm:h-20 rounded-2xl',
+            'w-16 h-16 sm:w-20 sm:h-20 rounded-leaf-sm',
             'flex items-center justify-center',
             'bg-gradient-to-br from-white/5 to-white/[0.02]',
             'border border-white/10',

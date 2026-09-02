@@ -57,6 +57,12 @@ export const queryKeys = {
       ['contactRequests', 'list', filters] as const,
   },
 
+  // Admin dashboard overview (lightweight KPI counts)
+  adminOverview: {
+    all: ['adminOverview'] as const,
+    stats: () => ['adminOverview', 'stats'] as const,
+  },
+
   // Work Sites (admin Operations Hub)
   workSites: {
     all: ['workSites'] as const,

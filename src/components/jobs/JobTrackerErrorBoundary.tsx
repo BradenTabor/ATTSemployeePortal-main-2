@@ -41,9 +41,9 @@ export class JobTrackerErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="rounded-3xl border border-red-500/20 bg-gradient-to-br from-[#1a0808] via-[#0b0403] to-[#050302] p-8 shadow-[0_25px_50px_rgba(0,0,0,0.55)]">
+        <div className="rounded-leaf border border-red-500/20 bg-gradient-to-br from-[#132308] via-[#040605] to-[#040605] p-8 shadow-[0_25px_50px_rgba(0,0,0,0.55)]">
           <div className="flex flex-col items-center justify-center text-center space-y-4">
-            <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-leaf-sm bg-red-500/10 border border-red-500/30 flex items-center justify-center">
               <AlertTriangle className="w-8 h-8 text-red-400" />
             </div>
             <div>

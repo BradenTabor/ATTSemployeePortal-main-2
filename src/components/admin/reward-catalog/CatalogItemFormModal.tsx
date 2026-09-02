@@ -173,12 +173,12 @@ export function CatalogItemFormModal({ isOpen, item, onClose }: CatalogItemFormM
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 24 }}
-          className="relative w-full sm:max-w-lg max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl border border-white/10 bg-neutral-900 shadow-2xl"
+          className="relative w-full sm:max-w-lg max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-leaf-sm border border-white/10 bg-neutral-900 shadow-2xl"
           data-testid="catalog-item-form-modal"
         >
           <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-white/10 bg-neutral-900/95 px-4 py-3 backdrop-blur">
             <div className="flex items-center gap-2">
-              <Package className="w-5 h-5 text-[#f4c979]" aria-hidden />
+              <Package className="w-5 h-5 text-[#F4F7F2]" aria-hidden />
               <h2 id="catalog-item-form-title" className="text-lg font-semibold text-white">
                 {isEdit ? 'Edit catalog item' : 'Add catalog item'}
               </h2>
@@ -322,7 +322,7 @@ export function CatalogItemFormModal({ isOpen, item, onClose }: CatalogItemFormM
                   type="button"
                   onClick={() => fileRef.current?.click()}
                   disabled={uploading || saving}
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-[#f4c979]/30 bg-[#f4c979]/10 text-sm text-[#f4c979] hover:bg-[#f4c979]/20 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-400"
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-[#F4F7F2]/30 bg-[#F4F7F2]/10 text-sm text-[#F4F7F2] hover:bg-[#F4F7F2]/20 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-400"
                 >
                   {uploading ? (
                     <Loader2 className="w-4 h-4 animate-spin" aria-hidden />
@@ -364,7 +364,7 @@ export function CatalogItemFormModal({ isOpen, item, onClose }: CatalogItemFormM
               <button
                 type="submit"
                 disabled={saving || uploading}
-                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#f4c979] text-black font-medium hover:bg-[#e5ba6a] disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-400"
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#F4F7F2] text-black font-medium hover:bg-[#C8F55E] disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-400"
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden /> : null}
                 {isEdit ? 'Save changes' : 'Create item'}

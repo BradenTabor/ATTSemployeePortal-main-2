@@ -77,7 +77,7 @@ function SectionHeader({
   return (
     <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/[0.06]">
       <Icon className={`w-4 h-4 ${accent}`} />
-      <h3 className="text-xs uppercase tracking-wider text-white/50 font-semibold">
+      <h3 className="text-xs uppercase text-white/50 font-mono font-medium tracking-[0.14em]">
         {label}
       </h3>
     </div>
@@ -157,7 +157,7 @@ export const DvirDetailModal = memo(function DvirDetailModal({
             ? { duration: 0.2 }
             : { type: "spring", damping: 28, stiffness: 300 }
         }
-        className={`relative z-10 w-full max-w-3xl max-h-[92vh] sm:max-h-[85vh] flex flex-col rounded-t-2xl sm:rounded-2xl overflow-hidden mx-0 sm:mx-4 ${glass.elevated}`}
+        className={`relative z-10 w-full max-w-3xl max-h-[92vh] sm:max-h-[85vh] flex flex-col rounded-t-2xl sm:rounded-leaf-sm overflow-hidden mx-0 sm:mx-4 ${glass.elevated}`}
       >
         {/* Sticky header */}
         <div className="sticky top-0 z-10 bg-gray-800 border-b border-white/[0.06] px-5 sm:px-6 py-4">
@@ -290,7 +290,7 @@ export const DvirDetailModal = memo(function DvirDetailModal({
               <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 space-y-3 text-sm max-h-56 overflow-y-auto">
                 {vehicleFails.length > 0 && (
                   <div>
-                    <p className="text-xs uppercase tracking-wider text-red-200/70 mb-1.5 font-semibold">
+                    <p className="text-xs uppercase text-red-200/70 mb-1.5 font-mono font-medium tracking-[0.14em]">
                       Vehicle / Trailer
                     </p>
                     <ul className="space-y-1">
@@ -314,7 +314,7 @@ export const DvirDetailModal = memo(function DvirDetailModal({
                         : ""
                     }
                   >
-                    <p className="text-xs uppercase tracking-wider text-red-200/70 mb-1.5 font-semibold">
+                    <p className="text-xs uppercase text-red-200/70 mb-1.5 font-mono font-medium tracking-[0.14em]">
                       Aerial Lift
                     </p>
                     <ul className="space-y-1">
@@ -337,7 +337,7 @@ export const DvirDetailModal = memo(function DvirDetailModal({
           {/* Notes */}
           <div className="grid gap-4 sm:grid-cols-2">
             <div className={sectionCard}>
-              <p className="text-xs uppercase tracking-wider text-white/40 mb-2">
+              <p className="text-xs uppercase text-white/40 mb-2 font-mono font-medium tracking-[0.14em]">
                 Driver Notes
               </p>
               <p className="text-sm text-white/70 leading-relaxed min-h-[40px]">
@@ -347,7 +347,7 @@ export const DvirDetailModal = memo(function DvirDetailModal({
               </p>
             </div>
             <div className={sectionCard}>
-              <p className="text-xs uppercase tracking-wider text-white/40 mb-2">
+              <p className="text-xs uppercase text-white/40 mb-2 font-mono font-medium tracking-[0.14em]">
                 Aerial Notes
               </p>
               <p className="text-sm text-white/70 leading-relaxed min-h-[40px]">
@@ -420,7 +420,7 @@ export const DvirDetailModal = memo(function DvirDetailModal({
                       rel="noopener noreferrer"
                       className={`${sectionCard} flex flex-col gap-2 hover:border-emerald-400/30 transition-colors`}
                     >
-                      <p className="text-xs uppercase tracking-wider text-white/40">
+                      <p className="text-xs uppercase text-white/40 font-mono font-medium tracking-[0.14em]">
                         {sig.label}
                       </p>
                       <img
@@ -434,7 +434,7 @@ export const DvirDetailModal = memo(function DvirDetailModal({
                       key={sig.label}
                       className={`${sectionCard} flex flex-col gap-2`}
                     >
-                      <p className="text-xs uppercase tracking-wider text-white/40">
+                      <p className="text-xs uppercase text-white/40 font-mono font-medium tracking-[0.14em]">
                         {sig.label}
                       </p>
                       <p className="text-sm text-white">{sig.text ?? "—"}</p>

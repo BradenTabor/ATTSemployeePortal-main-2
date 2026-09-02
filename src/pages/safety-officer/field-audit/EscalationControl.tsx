@@ -22,12 +22,13 @@ import {
   FIELD_AUDIT_ACTION_TYPES,
   defaultCorrectiveDueDate,
   type FieldAuditActionType,
+  type FindingSubjectType,
 } from "../fieldAuditConstants";
 
 interface EscalationControlProps {
   auditId: string;
   itemId: string;
-  subjectType: "person" | "equipment";
+  subjectType: FindingSubjectType;
   correctiveActionId: string | null;
   /** Non-null when the required note/photo is still missing (blocks escalation). */
   disabledReason: string | null;
@@ -108,7 +109,7 @@ export default function EscalationControl({
       className="mt-2 rounded-xl border border-amber-500/20 bg-amber-500/[0.04] p-3 space-y-3"
       data-testid="field-audit-escalation-form"
     >
-      <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-amber-200/80">
+      <div className="flex items-center gap-1.5 text-[11px] uppercase text-amber-200/80 font-mono font-medium tracking-[0.14em]">
         <ShieldAlert className="w-3.5 h-3.5" aria-hidden />
         Corrective action
       </div>
@@ -154,6 +155,14 @@ export default function EscalationControl({
           />
         </div>
       </div>
+
+      {subjectType !== "person" && (
+        <p className="text-[11px] text-white/45">
+          {subjectType === "site"
+            ? "Site findings are assigned to the crew foreman."
+            : "Equipment findings are assigned to the crew foreman."}
+        </p>
+      )}
 
       {subjectType === "person" && (
         <label className="flex items-center gap-2 text-xs text-white/70 cursor-pointer select-none">

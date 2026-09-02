@@ -103,10 +103,25 @@ export function useUserPresence() {
   const isIdleRef = useRef(false);
   // lastActivityRef will be initialized in useEffect to avoid impure function during render
   const lastActivityRef = useRef<number>(0);
-  
-  // Ref to hold createSession to break circular dependency
-  const createSessionRef = useRef<(() => Promise<void>) | null>(null);
-  
+
+  // Read through refs so the callbacks below stay referentially stable and
+  // the init effect does not tear down / recreate the session on every
+  // route change (that used to cost 3 extra network round-trips per nav).
+  const pathnameRef = useRef(location.pathname);
+  const lastReportedPathRef = useRef<string | null>(null);
+  const accessTokenRef = useRef<string | null>(null);
+  useEffect(() => {
+    pathnameRef.current = location.pathname;
+  }, [location.pathname]);
+  useEffect(() => {
+    accessTokenRef.current = session?.access_token ?? null;
+  }, [session]);
+
+  const userId = user?.id ?? null;
+  // Gate on presence of a session, not the object: hourly token refreshes
+  // swap the session object and must not restart tracking.
+  const hasSession = !!session;
+
   // Get or create session ID
   const getSessionId = useCallback(() => {
     if (!sessionIdRef.current) {
@@ -114,23 +129,24 @@ export function useUserPresence() {
     }
     return sessionIdRef.current;
   }, []);
-  
-  // Create a new session - defined before updateSession to avoid circular dependency
+
+  // Create a new session
   const createSession = useCallback(async () => {
-    if (!user?.id) return;
-    
+    if (!userId) return;
+
     const sessionId = getSessionId();
     const deviceInfo = getDeviceInfo();
-    
+    lastReportedPathRef.current = pathnameRef.current;
+
     try {
       const { error } = await supabase
         .from("user_activity_sessions")
         .upsert(
           {
-            user_id: user.id,
+            user_id: userId,
             session_id: sessionId,
             status: "active",
-            current_page: location.pathname,
+            current_page: pathnameRef.current,
             device_info: deviceInfo,
             started_at: new Date().toISOString(),
             last_seen_at: new Date().toISOString(),
@@ -139,7 +155,7 @@ export function useUserPresence() {
             onConflict: "user_id,session_id",
           }
         );
-      
+
       if (error) {
         logger.error("Failed to create presence session:", error);
       } else {
@@ -148,44 +164,39 @@ export function useUserPresence() {
     } catch (err) {
       logger.error("Unexpected error creating presence session:", err);
     }
-  }, [user, location.pathname, getSessionId]);
-  
-  // Update the ref so updateSession can access it - must be in an effect
-  useEffect(() => {
-    createSessionRef.current = createSession;
-  }, [createSession]);
-  
+  }, [userId, getSessionId]);
+
   // Update session status
   const updateSession = useCallback(
     async (status: "active" | "idle" | "offline", currentPage?: string) => {
-      if (!user?.id) return;
-      
+      if (!userId) return;
+
       const sessionId = getSessionId();
-      
+
       try {
         const updateData: Record<string, unknown> = {
           status,
           last_seen_at: new Date().toISOString(),
         };
-        
+
         if (currentPage !== undefined) {
           updateData.current_page = currentPage;
         }
-        
+
         if (status === "offline") {
           updateData.ended_at = new Date().toISOString();
         }
-        
+
         const { error } = await supabase
           .from("user_activity_sessions")
           .update(updateData)
-          .eq("user_id", user.id)
+          .eq("user_id", userId)
           .eq("session_id", sessionId);
-        
+
         if (error) {
           // If update fails (session doesn't exist), try to create it
           if (error.code === "PGRST116") {
-            await createSessionRef.current?.();
+            await createSession();
           } else {
             logger.error("Failed to update presence:", error);
           }
@@ -194,61 +205,61 @@ export function useUserPresence() {
         logger.error("Unexpected error updating presence:", err);
       }
     },
-    [user, getSessionId]
+    [userId, getSessionId, createSession]
   );
-  
+
   // Handle user activity (mouse, keyboard, touch)
   const handleActivity = useCallback(() => {
     lastActivityRef.current = Date.now();
-    
+
     // If user was idle, mark them as active again
     if (isIdleRef.current) {
       isIdleRef.current = false;
-      updateSession("active", location.pathname);
+      updateSession("active", pathnameRef.current);
     }
-    
+
     // Reset idle timeout
     if (idleTimeoutRef.current) {
       clearTimeout(idleTimeoutRef.current);
     }
-    
+
     idleTimeoutRef.current = setTimeout(() => {
       isIdleRef.current = true;
       updateSession("idle");
     }, IDLE_TIMEOUT);
-  }, [updateSession, location.pathname]);
-  
+  }, [updateSession]);
+
   // Heartbeat function
   const sendHeartbeat = useCallback(() => {
     const status = isIdleRef.current ? "idle" : "active";
-    updateSession(status, location.pathname);
-  }, [updateSession, location.pathname]);
-  
+    updateSession(status, pathnameRef.current);
+  }, [updateSession]);
+
   // Initialize presence tracking when user logs in
   useEffect(() => {
-    if (!session || !user?.id) return;
-    
+    if (!hasSession || !userId) return;
+
     // Initialize lastActivityRef with current time
     lastActivityRef.current = Date.now();
-    
+
     // Create initial session
     createSession();
-    
+
     // Start heartbeat interval
     heartbeatIntervalRef.current = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL);
-    
+
     // Set up activity listeners
     const activityEvents = ["mousedown", "mousemove", "keydown", "touchstart", "scroll"];
     activityEvents.forEach((event) => {
       window.addEventListener(event, handleActivity, { passive: true });
     });
-    
+
     // Set initial idle timeout
     idleTimeoutRef.current = setTimeout(() => {
       isIdleRef.current = true;
       updateSession("idle");
     }, IDLE_TIMEOUT);
-    
+
     // Handle page visibility changes
     const handleVisibilityChange = () => {
       if (document.hidden) {
@@ -259,30 +270,41 @@ export function useUserPresence() {
         // Page is visible again, mark as active
         isIdleRef.current = false;
         handleActivity();
-        updateSession("active", location.pathname);
+        updateSession("active", pathnameRef.current);
       }
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
-    
-    // Handle beforeunload to mark session as offline
-    const handleBeforeUnload = () => {
-      // Use sendBeacon for reliable delivery on page close
+
+    // Mark the session offline when the tab/PWA is closed. A keepalive PATCH
+    // survives page teardown and, unlike sendBeacon, can carry the apikey and
+    // bearer token PostgREST requires (sendBeacon POSTs without headers were
+    // rejected by CORS and never reached the table).
+    const handlePageHide = () => {
+      const token = accessTokenRef.current;
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+      if (!token || !anonKey) return;
       const sessionId = getSessionId();
-      const payload = JSON.stringify({
-        status: "offline",
-        ended_at: new Date().toISOString(),
-      });
-      
-      // Try to update via sendBeacon (more reliable on page close)
-      if (navigator.sendBeacon) {
-        const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/user_activity_sessions?user_id=eq.${user.id}&session_id=eq.${sessionId}`;
-        const blob = new Blob([payload], { type: "application/json" });
-        // Note: sendBeacon with Blob doesn't support custom headers, but it's sufficient for this use case
-        navigator.sendBeacon(url, blob);
+      const url =
+        `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/user_activity_sessions` +
+        `?user_id=eq.${encodeURIComponent(userId)}&session_id=eq.${encodeURIComponent(sessionId)}`;
+      try {
+        void fetch(url, {
+          method: "PATCH",
+          keepalive: true,
+          headers: {
+            "Content-Type": "application/json",
+            apikey: anonKey,
+            Authorization: `Bearer ${token}`,
+            Prefer: "return=minimal",
+          },
+          body: JSON.stringify({ status: "offline", ended_at: new Date().toISOString() }),
+        }).catch(() => {});
+      } catch {
+        // Page is going away; nothing useful to do with a failure here.
       }
     };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    
+    window.addEventListener("pagehide", handlePageHide);
+
     // Cleanup
     return () => {
       // Clear intervals and timeouts
@@ -292,29 +314,33 @@ export function useUserPresence() {
       if (idleTimeoutRef.current) {
         clearTimeout(idleTimeoutRef.current);
       }
-      
+
       // Remove event listeners
       activityEvents.forEach((event) => {
         window.removeEventListener(event, handleActivity);
       });
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-      
-      // Mark session as offline
+      window.removeEventListener("pagehide", handlePageHide);
+
+      // Mark session as offline (sign-out / user change)
       updateSession("offline");
     };
-  }, [session, user, createSession, sendHeartbeat, handleActivity, updateSession, getSessionId, location.pathname]);
-  
-  // Update current page when location changes
+  }, [hasSession, userId, createSession, sendHeartbeat, handleActivity, updateSession, getSessionId]);
+
+  // Update current page when location changes (one PATCH per navigation)
   useEffect(() => {
-    if (!session || !user?.id) return;
-    
+    if (!hasSession || !userId) return;
+
+    // The initial upsert already recorded this page; don't PATCH it again.
+    if (lastReportedPathRef.current === location.pathname) return;
+    lastReportedPathRef.current = location.pathname;
+
     // Navigation is itself activity - always mark as active when navigating
     // This fixes the issue where user appears idle after navigating from a hidden tab
     isIdleRef.current = false;
     lastActivityRef.current = Date.now();
     updateSession("active", location.pathname);
-    
+
     // Reset idle timeout on navigation
     if (idleTimeoutRef.current) {
       clearTimeout(idleTimeoutRef.current);
@@ -323,8 +349,8 @@ export function useUserPresence() {
       isIdleRef.current = true;
       updateSession("idle");
     }, IDLE_TIMEOUT);
-  }, [location.pathname, session, user, updateSession]);
-  
+  }, [location.pathname, hasSession, userId, updateSession]);
+
   return null;
 }
 

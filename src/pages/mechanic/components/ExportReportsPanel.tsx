@@ -406,7 +406,7 @@ export default function ExportReportsPanel({
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.1 }}
-      className="rounded-lg sm:rounded-xl border border-white/10 bg-gradient-to-r from-[#0c0402] to-[#120805] overflow-hidden mb-4 sm:mb-5"
+      className="rounded-lg sm:rounded-xl border border-white/10 bg-gradient-to-r from-[#040605] to-[#0B100D] overflow-hidden mb-4 sm:mb-5"
     >
       {/* Header */}
       <button
@@ -457,7 +457,7 @@ export default function ExportReportsPanel({
               {/* Date Range Filter */}
               <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 <div>
-                  <label className="block text-[9px] sm:text-[10px] uppercase tracking-wider text-white/40 mb-1">
+                  <label className="block text-[9px] sm:text-[10px] uppercase text-white/40 mb-1 font-mono font-medium tracking-[0.14em]">
                     From Date
                   </label>
                   <div className="relative">
@@ -471,7 +471,7 @@ export default function ExportReportsPanel({
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[9px] sm:text-[10px] uppercase tracking-wider text-white/40 mb-1">
+                  <label className="block text-[9px] sm:text-[10px] uppercase text-white/40 mb-1 font-mono font-medium tracking-[0.14em]">
                     To Date
                   </label>
                   <div className="relative">

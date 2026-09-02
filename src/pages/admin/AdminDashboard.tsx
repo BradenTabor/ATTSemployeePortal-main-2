@@ -1,17 +1,14 @@
-import { useMemo, useState, FormEvent, useEffect, useCallback } from "react";
+import { useMemo, useState, FormEvent, useEffect, useCallback, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { useModalOverlay } from "../../hooks/useModalOverlay";
-import { Shield, Megaphone, Inbox, X, Filter, Pencil, Bell, ChevronDown } from "lucide-react";
+import { Shield, Megaphone, Inbox, X, Filter, Pencil, Bell, ChevronDown, Radio } from "lucide-react";
 import IncidentLoggingModal from "../../components/admin/IncidentLoggingModal";
 import SafetyIncidentsList from "../../components/admin/SafetyIncidentsList";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { ADMIN_CORE_NAV_CARDS, ADMIN_ROLE_DASHBOARDS_NAV_CARDS } from "../../components/admin/adminNavConfig";
-import { TextEffect } from "../../components/ui/TextEffect";
 import { getDeviceCapabilities } from "../../lib/mobilePerf";
-import { GoldCollapsibleSection } from "../../components/admin/GoldCollapsibleSection";
-import { AdminSegmentedControl, type SegmentTab } from "../../components/admin/AdminSegmentedControl";
 import { AdminManualNotifications } from "../../components/admin/AdminManualNotifications";
 import { EnableNotificationsButton } from "../../components/notifications";
 import BrandedNavCard from "../../components/BrandedNavCard";
@@ -21,6 +18,34 @@ import { supabase } from "../../lib/supabaseClient";
 import { subscribeToTableChanges } from "../../lib/realtime";
 import { logger } from "../../lib/logger";
 import { DateField } from "../../components/forms/GlassyPickers";
+import { glass, canopy } from "../../lib/glass";
+import AdminKpiBand from "../../components/dashboard/AdminKpiBand";
+import AdminQuickAccess from "../../components/dashboard/AdminQuickAccess";
+import { Eyebrow } from "../../components/canopy/Eyebrow";
+import { SectionRail } from "../../components/canopy/SectionRail";
+import { useActiveSection } from "../../components/canopy/useActiveSection";
+import { TiltCard } from "../../components/canopy/TiltCard";
+import {
+  EASE_CANOPY,
+  riseThroughBlur,
+  unfurlContainer,
+  staggerItem,
+  reducedMotionFade,
+  scrollFadeUp,
+  tweenMedium,
+} from "../../motion/presets";
+
+/** Entrance for control-panel cards revealed by "+N more" (staggered via `custom` index). */
+const revealedNavCard: Variants = {
+  hidden: staggerItem.hidden,
+  visible: (i: number = 0) => ({
+    opacity: 1,
+    y: 0,
+    filter: "blur(0px)",
+    transition: { ...tweenMedium, delay: i * 0.06 },
+  }),
+  exit: staggerItem.exit,
+};
 import {
   useAnnouncementsQuery,
   useCreateAnnouncement,
@@ -28,64 +53,30 @@ import {
   type Announcement,
 } from "../../hooks/queries/useAnnouncementsQuery";
 
-// Storage key for persisting active tab
-const ACTIVE_TAB_STORAGE_KEY = "atts:admin:dashboard:activeTab";
+// ---------------------------------------------------------------------------
+// Sections of the Command Canopy (one scroll, one rail)
+// ---------------------------------------------------------------------------
+const SECTION_IDS = {
+  glance: "cc-glance",
+  quick: "cc-quick",
+  navigate: "cc-navigate",
+  control: "cc-control",
+  broadcast: "cc-broadcast",
+  inbox: "cc-inbox",
+  push: "cc-push",
+  incidents: "cc-incidents",
+} as const;
 
-// Base tab configuration (counts added dynamically)
-// Tab icons use inline width/height so size applies even if Tailwind is cached
-const TAB_ICON_SIZE = 44;
-const BASE_DASHBOARD_TABS = [
-  { id: "control-panel", label: "Control Panel", shortLabel: "Control", icon: <img loading="lazy" src="/assets/control-panel.webp" alt="" className="object-contain flex-shrink-0" style={{ width: TAB_ICON_SIZE, height: TAB_ICON_SIZE, minWidth: TAB_ICON_SIZE, minHeight: TAB_ICON_SIZE }} /> },
-  { id: "announcements", label: "Announcements", shortLabel: "News", icon: <img loading="lazy" src="/assets/news-announcements.webp" alt="" className="object-contain flex-shrink-0" style={{ width: TAB_ICON_SIZE, height: TAB_ICON_SIZE, minWidth: TAB_ICON_SIZE, minHeight: TAB_ICON_SIZE }} /> },
-  { id: "requests", label: "Contact Requests", shortLabel: "Requests", icon: <img loading="lazy" src="/assets/contact-requests.webp" alt="" className="object-contain flex-shrink-0" style={{ width: TAB_ICON_SIZE, height: TAB_ICON_SIZE, minWidth: TAB_ICON_SIZE, minHeight: TAB_ICON_SIZE }} /> },
-  { id: "notifications", label: "Push Notifications", shortLabel: "Push", icon: <img loading="lazy" src="/assets/push-notifications.webp" alt="" className="object-contain flex-shrink-0" style={{ width: TAB_ICON_SIZE, height: TAB_ICON_SIZE, minWidth: TAB_ICON_SIZE, minHeight: TAB_ICON_SIZE }} /> },
+const RAIL_IDS = [
+  SECTION_IDS.glance,
+  SECTION_IDS.quick,
+  SECTION_IDS.navigate,
+  SECTION_IDS.control,
+  SECTION_IDS.broadcast,
+  SECTION_IDS.inbox,
+  SECTION_IDS.push,
+  SECTION_IDS.incidents,
 ];
-
-// Animation variants - spring physics per taste-skill (stiffness: 100, damping: 20)
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.06,
-      delayChildren: 0.04,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 16 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      type: "spring" as const,
-      stiffness: 100,
-      damping: 20,
-    },
-  },
-};
-
-// Tab content animation variants
-const tabContentVariants = {
-  initial: { opacity: 0, y: 10 },
-  animate: { 
-    opacity: 1, 
-    y: 0,
-    transition: {
-      type: "spring" as const,
-      stiffness: 120,
-      damping: 22,
-    }
-  },
-  exit: { 
-    opacity: 0, 
-    y: -6,
-    transition: {
-      duration: 0.15,
-    }
-  },
-};
 
 type ContactRequest = {
   id: string;
@@ -103,13 +94,11 @@ const CONTACT_TOPIC_LABELS: Record<string, string> = {
   payroll: "Payroll",
 };
 
-function ContactRequestModalContent({
-  request,
-  onClose,
-}: {
-  request: ContactRequest;
-  onClose: () => void;
-}) {
+const FIELD =
+  "w-full rounded-leaf-xs border border-bone-50/[0.12] bg-ink-950/80 px-3.5 py-3 text-sm text-bone-50 placeholder:text-ink-400 " +
+  "outline-none transition-[border-color,box-shadow] duration-300 ease-canopy focus:border-verdant-400/70 focus:shadow-glow min-h-[44px]";
+
+function ContactRequestModalContent({ request, onClose }: { request: ContactRequest; onClose: () => void }) {
   const { modalRef, zIndex } = useModalOverlay({ isOpen: true, onClose, zIndex: 100 });
   return (
     <AnimatePresence>
@@ -123,68 +112,49 @@ function ContactRequestModalContent({
         aria-hidden
         onClick={(e) => e.target === e.currentTarget && onClose()}
       >
-        <motion.div
-          className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-          onClick={onClose}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        />
+        <motion.div className="absolute inset-0 bg-ink-950/80 backdrop-blur-sm" onClick={onClose} />
         <motion.div
           ref={modalRef}
           role="dialog"
           aria-modal="true"
           aria-labelledby="contact-request-title"
-          className="relative w-full max-w-lg rounded-2xl border border-[#f4c979]/15 bg-[#0e0c09]/95 backdrop-blur-xl p-5 text-white shadow-[0_30px_60px_rgba(0,0,0,0.6)] space-y-4"
-          initial={{ opacity: 0, scale: 0.96, y: 16 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
+          className={`${glass.elevated} relative w-full max-w-lg space-y-4 p-6 text-bone-100`}
+          initial={{ opacity: 0, scale: 0.96, y: 16, filter: "blur(8px)" }}
+          animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
           exit={{ opacity: 0, scale: 0.96, y: 16 }}
-          transition={{ type: "spring", stiffness: 200, damping: 25 }}
+          transition={{ duration: 0.5, ease: EASE_CANOPY }}
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p
-                id="contact-request-title"
-                className="text-[10px] font-semibold tracking-[0.25em] uppercase text-[#f4c979]/80"
-              >
+              <p id="contact-request-title" className="type-instrument text-verdant-300">
                 Contact message
               </p>
-              <p className="text-xl font-bold tracking-tight text-white mt-1">{request.name}</p>
-              <a
-                href={`mailto:${request.email}`}
-                className="text-xs text-[#f4c979]/70 hover:text-white transition-colors"
-              >
+              <p className="type-display mt-1 text-2xl text-bone-50">{request.name}</p>
+              <a href={`mailto:${request.email}`} className="text-xs text-bone-300 transition-colors hover:text-verdant-300">
                 {request.email}
               </a>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-white/8 bg-white/[0.04] p-2 text-white/50 hover:text-white hover:bg-white/8 transition"
+              className="rounded-leaf-xs border border-bone-50/[0.1] bg-bone-50/[0.04] p-2 text-bone-300 transition hover:bg-bone-50/[0.08] hover:text-bone-50"
               aria-label="Close full message"
             >
-              <X className="w-4 h-4" />
+              <X className="h-4 w-4" aria-hidden />
             </button>
           </div>
-          <div className="rounded-xl border border-white/8 bg-white/[0.03] p-3.5 space-y-2.5">
-            <div className="flex items-center justify-between text-[10px] text-white/50 uppercase tracking-[0.2em]">
+          <div className={`${glass.subtle} space-y-2.5 p-4`}>
+            <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-bone-400">
               <span>{CONTACT_TOPIC_LABELS[request.topic] ?? request.topic}</span>
               <span>{new Date(request.submitted_at).toLocaleString()}</span>
             </div>
-            <p className="text-sm text-white/80 leading-relaxed whitespace-pre-line">
-              {request.message}
-            </p>
+            <p className="whitespace-pre-line text-sm leading-relaxed text-bone-200">{request.message}</p>
           </div>
-          <div className="flex justify-end hover:scale-[1.02]">
-            <motion.button
-              type="button"
-              onClick={onClose}
-              whileTap={{ scale: 0.97 }}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-transparent bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] px-4 py-2 text-sm font-semibold text-[#2e1b02] shadow-[0_6px_16px_rgba(244,201,121,0.2)] transition"
-            >
+          <div className="flex justify-end">
+            <button type="button" onClick={onClose} className={`${canopy.buttonPrimary} px-5 py-2.5 text-sm`}>
               Close
-            </motion.button>
+            </button>
           </div>
         </motion.div>
       </motion.div>
@@ -192,45 +162,47 @@ function ContactRequestModalContent({
   );
 }
 
-// Helper to get persisted tab or default
-function getPersistedTab(): string {
-  if (typeof window === 'undefined') return "control-panel";
-  try {
-    const stored = localStorage.getItem(ACTIVE_TAB_STORAGE_KEY);
-    if (stored && BASE_DASHBOARD_TABS.some((t: { id: string }) => t.id === stored)) {
-      return stored;
-    }
-  } catch {
-    // localStorage disabled
-  }
-  return "control-panel";
-}
-
-// Helper to persist tab selection
-function persistTab(tabId: string): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(ACTIVE_TAB_STORAGE_KEY, tabId);
-  } catch {
-    // localStorage disabled
-  }
+function SectionShell({
+  id,
+  index,
+  label,
+  action,
+  children,
+  reduce,
+}: {
+  id: string;
+  index: number;
+  label: string;
+  action?: ReactNode;
+  children: ReactNode;
+  reduce: boolean;
+}) {
+  return (
+    <motion.section
+      id={id}
+      className="scroll-mt-6 space-y-4"
+      aria-label={label}
+      variants={reduce ? reducedMotionFade : scrollFadeUp}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, amount: 0.05 }}
+    >
+      <div className="flex items-center gap-3">
+        <Eyebrow index={index} tone="bone" className="flex-1">
+          {label}
+        </Eyebrow>
+        {action}
+      </div>
+      {children}
+    </motion.section>
+  );
 }
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const { session, role, signOut, setSession, avatarUrl } = useAuth();
+  const { session, role, signOut, setSession, avatarUrl, fullName } = useAuth();
   const isAdmin = role === "admin";
 
-  // Active tab state with persistence
-  const [activeTab, setActiveTab] = useState(() => getPersistedTab());
-
-  // Handle tab change with persistence
-  const handleTabChange = useCallback((tabId: string) => {
-    setActiveTab(tabId);
-    persistTab(tabId);
-  }, []);
-
-  // Sign out handler
   const handleSignOut = useCallback(async () => {
     try {
       setSession(null);
@@ -248,9 +220,7 @@ export default function AdminDashboard() {
   const [publishDate, setPublishDate] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [composerOpen, setComposerOpen] = useState(false);
-  const [feedback, setFeedback] = useState<
-    { type: "success" | "error"; message: string } | null
-  >(null);
+  const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   // Contact requests state
   const [contactRequests, setContactRequests] = useState<ContactRequest[]>([]);
@@ -259,43 +229,41 @@ export default function AdminDashboard() {
   const [expandedRequest, setExpandedRequest] = useState<ContactRequest | null>(null);
   const [contactTopicFilter, setContactTopicFilter] = useState<string>("all");
 
-  // Edit mode state for announcements
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
-  
-  // Incident logging modal state
   const [showIncidentModal, setShowIncidentModal] = useState(false);
-
-  // Nav cards expand/collapse state
   const [showAllNavCards, setShowAllNavCards] = useState(false);
   const VISIBLE_NAV_CARD_COUNT = 6;
 
-  // Announcement hooks
   const { data: announcements, isLoading: announcementsLoading } = useAnnouncementsQuery(10);
   const createAnnouncement = useCreateAnnouncement();
   const updateAnnouncement = useUpdateAnnouncement();
 
-  // Device capabilities for animation decisions
   const caps = useMemo(() => getDeviceCapabilities(), []);
-  const enableAnimations = !caps.prefersReducedMotion && !caps.isMobile;
-  
-  // Display name
-  const displayName = useMemo(() => session?.user?.email?.split("@")[0] || "Admin", [session?.user?.email]);
+  const reduce = caps.prefersReducedMotion || caps.isLowEnd;
 
-  // Dynamic tabs with badge counts
-  const DASHBOARD_TABS: SegmentTab[] = useMemo(() => {
-    return BASE_DASHBOARD_TABS.map(tab => {
-      if (tab.id === "requests" && contactRequests.length > 0) {
-        return { ...tab, badgeCount: contactRequests.length };
-      }
-      if (tab.id === "announcements" && composerOpen) {
-        return { ...tab, hasNotification: true };
-      }
-      return tab;
-    });
-  }, [contactRequests.length, composerOpen]);
+  const displayName = useMemo(
+    () => fullName?.split(" ")[0] || session?.user?.email?.split("@")[0] || "Admin",
+    [fullName, session?.user?.email]
+  );
 
-  // Fetch contact requests
+  const [activeSection, jumpTo] = useActiveSection(RAIL_IDS);
+
+  const railSections = useMemo(
+    () => [
+      { id: SECTION_IDS.glance, label: "At a glance" },
+      { id: SECTION_IDS.quick, label: "Quick access" },
+      { id: SECTION_IDS.navigate, label: "Navigate" },
+      { id: SECTION_IDS.control, label: "Control panel" },
+      { id: SECTION_IDS.broadcast, label: "Broadcast" },
+      { id: SECTION_IDS.inbox, label: "Inbox", count: contactRequests.length },
+      { id: SECTION_IDS.push, label: "Push" },
+      { id: SECTION_IDS.incidents, label: "Incidents" },
+    ],
+    [contactRequests.length]
+  );
+
+  // Fetch contact requests + realtime
   useEffect(() => {
     if (!isAdmin) return;
     let isMounted = true;
@@ -324,27 +292,18 @@ export default function AdminDashboard() {
         setContactError("Something went wrong while fetching contact requests.");
         setContactRequests([]);
       } finally {
-        if (isMounted) {
-          setContactLoading(false);
-        }
+        if (isMounted) setContactLoading(false);
       }
     };
 
     fetchContactRequests();
-    
-    // Use realtime subscription instead of polling for better performance
+
     const unsubscribe = subscribeToTableChanges({
       channelName: "admin-contact-requests",
       table: "contact_requests",
-      onInsert: () => {
-        if (isMounted) fetchContactRequests();
-      },
-      onUpdate: () => {
-        if (isMounted) fetchContactRequests();
-      },
-      onDelete: () => {
-        if (isMounted) fetchContactRequests();
-      },
+      onInsert: () => isMounted && fetchContactRequests(),
+      onUpdate: () => isMounted && fetchContactRequests(),
+      onDelete: () => isMounted && fetchContactRequests(),
       onError: (err) => logger.error("Contact requests realtime error:", err),
     });
 
@@ -356,7 +315,6 @@ export default function AdminDashboard() {
 
   const isValid = title.trim().length > 0 && message.trim().length > 0;
 
-  // Reset form to create mode
   const resetToCreateMode = () => {
     setIsEditMode(false);
     setEditingAnnouncement(null);
@@ -367,14 +325,12 @@ export default function AdminDashboard() {
     setFeedback(null);
   };
 
-  // Load announcement into form for editing
   const handleEditAnnouncement = (announcement: Announcement) => {
     setComposerOpen(true);
     setIsEditMode(true);
     setEditingAnnouncement(announcement);
     setTitle(announcement.title);
     setMessage(announcement.message);
-    // Handle date: check if it differs from today
     const today = new Date().toISOString().slice(0, 10);
     if (announcement.date !== today) {
       setScheduleLater(true);
@@ -397,10 +353,7 @@ export default function AdminDashboard() {
       title: title.trim(),
       message: message.trim(),
       author: session?.user?.email ?? "Admin Team",
-      date:
-        scheduleLater && publishDate
-          ? publishDate
-          : new Date().toISOString().slice(0, 10),
+      date: scheduleLater && publishDate ? publishDate : new Date().toISOString().slice(0, 10),
     };
 
     try {
@@ -408,23 +361,12 @@ export default function AdminDashboard() {
       setFeedback(null);
 
       if (isEditMode && editingAnnouncement) {
-        // UPDATE existing announcement
-        await updateAnnouncement.mutateAsync({
-          id: editingAnnouncement.id,
-          ...payload,
-        });
-        setFeedback({
-          type: "success",
-          message: "Announcement updated successfully.",
-        });
+        await updateAnnouncement.mutateAsync({ id: editingAnnouncement.id, ...payload });
+        setFeedback({ type: "success", message: "Announcement updated successfully." });
         resetToCreateMode();
       } else {
-        // CREATE new announcement (hook handles notification + toast)
         await createAnnouncement.mutateAsync(payload);
-        setFeedback({
-          type: "success",
-          message: "Announcement published successfully.",
-        });
+        setFeedback({ type: "success", message: "Announcement published successfully." });
         setTitle("");
         setMessage("");
         setScheduleLater(false);
@@ -432,10 +374,7 @@ export default function AdminDashboard() {
       }
     } catch (err) {
       logger.error("Failed to save announcement:", err);
-      setFeedback({
-        type: "error",
-        message: "Something went wrong. Please try again shortly.",
-      });
+      setFeedback({ type: "error", message: "Something went wrong. Please try again shortly." });
     } finally {
       setSubmitting(false);
     }
@@ -446,704 +385,528 @@ export default function AdminDashboard() {
     return contactRequests.filter((request) => request.topic === contactTopicFilter);
   }, [contactRequests, contactTopicFilter]);
 
-  // ============================================================
-  // TAB CONTENT RENDERERS
-  // ============================================================
-
-  // Control Panel Tab Content
-  const renderControlPanelTab = () => {
-    const visibleCards = showAllNavCards 
-      ? ADMIN_CORE_NAV_CARDS 
-      : ADMIN_CORE_NAV_CARDS.slice(0, VISIBLE_NAV_CARD_COUNT);
-    const hiddenCount = ADMIN_CORE_NAV_CARDS.length - VISIBLE_NAV_CARD_COUNT;
-
-    return (
-      <motion.div
-        key="control-panel"
-        variants={tabContentVariants}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-        className="space-y-4"
-      >
-        {/* Role dashboards — horizontal scroll on mobile, compact row on desktop */}
-        <motion.div
-          variants={itemVariants}
-          initial="hidden"
-          animate="visible"
-          className="space-y-1.5"
-        >
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-[#f8e5bb]/60 px-0.5">
-            Navigate app
-          </p>
-          <div className="flex gap-2 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-1 sm:grid sm:grid-cols-3 lg:grid-cols-5 sm:overflow-visible sm:pb-0">
-            {ADMIN_ROLE_DASHBOARDS_NAV_CARDS.map((card, index) => (
-              <motion.div 
-                key={card.to} 
-                variants={itemVariants} 
-                custom={index}
-                className="snap-center flex-none w-[65%] sm:w-auto sm:flex-auto"
-              >
-                <BrandedNavCard
-                  title={card.title}
-                  description={card.description}
-                  icon={card.icon}
-                  to={card.to}
-                  variant={card.variant ?? "gold"}
-                  compact
-                  iconAsImage={card.iconAsImage}
-                />
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Admin core nav cards — bento grid on desktop, stacked on mobile */}
-        <motion.div 
-          className="grid gap-2.5 sm:gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          {visibleCards.map((card, index) => (
-            <motion.div
-              key={card.to}
-              variants={itemVariants}
-              custom={index}
-            >
-              <BrandedNavCard
-                title={card.title}
-                description={card.description}
-                icon={card.icon}
-                to={card.to}
-                variant={card.variant ?? "gold"}
-                iconAsImage={card.iconAsImage}
-              />
-            </motion.div>
-          ))}
-        </motion.div>
-
-        {/* Show more / Show less toggle */}
-        {hiddenCount > 0 && (
-          <motion.div
-            variants={itemVariants}
-            initial="hidden"
-            animate="visible"
-            className="flex justify-center hover:scale-[1.03]"
-          >
-            <motion.button
-              type="button"
-              onClick={() => setShowAllNavCards(prev => !prev)}
-              whileTap={{ scale: 0.97 }}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#f4c979]/25 text-[#f8e5bb]/70 text-xs sm:text-sm font-medium transition-colors hover:text-[#f8e5bb] hover:border-[#f4c979]/40 hover:bg-white/[0.03]"
-            >
-              {showAllNavCards ? "Show less" : `Show ${hiddenCount} more`}
-              <motion.span
-                animate={{ rotate: showAllNavCards ? 180 : 0 }}
-                transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              >
-                <ChevronDown className="w-3.5 h-3.5" />
-              </motion.span>
-            </motion.button>
-          </motion.div>
-        )}
-        
-        {/* Safety Incidents Section */}
-        <motion.div
-          variants={itemVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <SafetyIncidentsList onLogIncident={() => setShowIncidentModal(true)} />
-        </motion.div>
-      </motion.div>
-    );
-  };
-
-  // Announcements Tab Content
-  const renderAnnouncementsTab = () => (
-    <motion.div
-      key="announcements"
-      variants={tabContentVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-    >
-      <section className="rounded-2xl sm:rounded-3xl border border-[#f6dcb2]/15 bg-gradient-to-br from-[#14110d]/95 via-[#0b0906]/95 to-[#050403]/95 p-3 sm:p-5 md:p-6 space-y-3 sm:space-y-4 shadow-[0_20px_40px_rgba(0,0,0,0.5)] relative overflow-hidden backdrop-blur-xl">
-        {/* Single ambient glow overlay */}
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(247,228,189,0.05),transparent_50%)]" />
-        
-        <div className="relative flex flex-col gap-2.5 sm:gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0 flex-1">
-            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 sm:px-3 sm:py-1 bg-[#fef3d1]/8 border border-[#f6dcb2]/30 rounded-full text-[0.6rem] sm:text-[0.65rem] font-semibold tracking-[0.2em] uppercase text-[#f8dfb3] mb-1.5 sm:mb-3">
-              {isEditMode ? (
-                <Pencil className="w-3 h-3 text-[#f5cf82]" />
-              ) : (
-                <Megaphone className="w-3 h-3 text-[#f5cf82]" />
-              )}
-              {isEditMode ? "Edit" : "Publish"}
-            </div>
-            <h3 className="text-sm sm:text-lg md:text-xl font-bold tracking-tight text-white">
-              {isEditMode ? "Edit Announcement" : "Create Announcement"}
-            </h3>
-            <p className="hidden sm:block text-xs sm:text-sm text-[#f8e5bb]/60 mt-0.5 leading-relaxed max-w-lg hover:scale-[1.02]">
-              {isEditMode
-                ? "Update the details below and save your changes."
-                : "Publish news that appears instantly on the announcements page."}
-            </p>
-          </div>
-          <motion.button
-            type="button"
-            onClick={() => setComposerOpen(true)}
-            disabled={composerOpen}
-            whileTap={{ scale: 0.97 }}
-            className="inline-flex items-center justify-center whitespace-nowrap rounded-xl border border-transparent bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] px-3 sm:px-5 py-2 text-xs sm:text-sm font-semibold text-[#332308] shadow-[0_8px_20px_rgba(0,0,0,0.3)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c0b09] disabled:cursor-not-allowed disabled:opacity-60 min-h-[44px]"
-            aria-expanded={composerOpen ? "true" : "false"}
-          >
-            <span className="sm:hidden">+ New</span>
-            <span className="hidden sm:inline">Create New Announcement</span>
-          </motion.button>
-        </div>
-
-        {composerOpen ? (
-          <div className="relative space-y-3">
-            {feedback && (
-              <div
-                className={`rounded-xl px-3 py-2 text-xs sm:text-sm ${
-                  feedback.type === "success"
-                    ? "bg-[#1d1a14] text-[#f4d589] border border-[#f4d589]/40"
-                    : "bg-[#2b1414] text-[#f2a4a4] border border-[#f47373]/30"
-                }`}
-              >
-                {feedback.message}
-              </div>
-            )}
-
-            <form
-              aria-label={isEditMode ? "Edit announcement form" : "Create announcement form"}
-              className={`space-y-3 ${isEditMode ? "ring-1 ring-[#f4c979]/40 rounded-xl p-3 sm:p-4" : ""}`}
-              onSubmit={handleCreateAnnouncement}
-            >
-              {isEditMode && editingAnnouncement && (
-                <div className="flex items-center gap-2 text-xs text-[#f4c979] pb-2 border-b border-[#f4c979]/15">
-                  <Pencil className="w-3 h-3" />
-                  <span className="truncate">Editing: <strong>{editingAnnouncement.title}</strong></span>
-                </div>
-              )}
-              <div className="space-y-2.5 sm:grid sm:grid-cols-2 sm:gap-3 sm:space-y-0">
-                <div className="sm:col-span-2 lg:col-span-1">
-                  <label className="text-[10px] uppercase tracking-[0.25em] text-[#f3d9a4]/60 block mb-1.5">
-                    Title
-                  </label>
-                  <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="e.g. New safety protocols"
-                    className="w-full bg-[#050402]/80 border border-[#f6dcb2]/15 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#030201] min-h-[44px]"
-                  />
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label className="text-[10px] uppercase tracking-[0.25em] text-[#f3d9a4]/60 block mb-1.5">
-                    Message
-                  </label>
-                  <textarea
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Share the details your team should know..."
-                    rows={3}
-                    className="w-full bg-[#050402]/80 border border-[#f6dcb2]/15 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#030201] resize-none"
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
-                <label className="inline-flex items-center gap-2 text-xs text-[#f8e5bb]/70">
-                  <input
-                    type="checkbox"
-                    checked={scheduleLater}
-                    onChange={(e) => setScheduleLater(e.target.checked)}
-                    className="accent-[#f4c979] w-4 h-4"
-                  />
-                  Schedule publish date
-                </label>
-                {scheduleLater && (
-                  <div className="flex-1 max-w-xs">
-                    <DateField
-                      label="Publish Date"
-                      value={publishDate}
-                      onChange={(e) => setPublishDate(e.target.value)}
-                      helperText="Goes live at 12:01 AM"
-                      containerClassName="text-white"
-                      labelClassName="text-[0.65rem] uppercase tracking-[0.3em] text-[#f3d9a4]/60"
-                      variant="gold"
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div className="flex gap-2 pt-1 hover:scale-[1.01]">
-                <motion.button
-                  type="submit"
-                  disabled={!isValid || submitting || (isEditMode && updateAnnouncement.isPending)}
-                  whileTap={{ scale: 0.98 }}
-                  className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#2e1b02] text-sm font-semibold transition border border-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#050301] disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px]"
-                >
-                  {submitting || (isEditMode && updateAnnouncement.isPending)
-                    ? (isEditMode ? "Updating..." : "Publishing...")
-                    : (isEditMode ? "Update" : "Publish")}
-                </motion.button>
-                <motion.button
-                  type="button"
-                  onClick={() => {
-                    setComposerOpen(false);
-                    if (isEditMode) resetToCreateMode();
-                  }}
-                  whileTap={{ scale: 0.97 }}
-                  className="inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-[#f4c979]/25 text-[#f4c979] text-sm font-semibold transition hover:bg-[#f4c979]/8 focus-visible:outline-none min-h-[44px]"
-                >
-                  {isEditMode ? "Cancel" : "Hide"}
-                </motion.button>
-              </div>
-              {(submitting || (isEditMode && updateAnnouncement.isPending)) && (
-                <div className="h-0.5 w-full rounded-full bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] animate-pulse" />
-              )}
-            </form>
-          </div>
-        ) : (
-          <p className="relative text-xs text-[#f8e5bb]/50 border-t border-white/5 pt-3">
-            Open composer to publish an update.
-          </p>
-        )}
-
-        {/* Recent Announcements List */}
-        <div className="relative border-t border-white/5 pt-3 sm:pt-5 mt-1">
-          <GoldCollapsibleSection
-            id="recent-announcements"
-            title="Recent Announcements"
-            subtitle="Edit or manage past broadcasts"
-            storageKey="recent-announcements-collapsed"
-            defaultOpen={true}
-            icon={<Megaphone className="w-4 h-4 text-[#f4c979]" />}
-          >
-            {announcementsLoading ? (
-              <div className="space-y-2 sm:grid sm:grid-cols-2 sm:gap-2.5 sm:space-y-0 lg:grid-cols-3">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="h-14 rounded-lg bg-white/5 animate-pulse" />
-                ))}
-              </div>
-            ) : !announcements || announcements.length === 0 ? (
-              <p className="text-xs text-[#f8e5bb]/50">No announcements yet.</p>
-            ) : (
-              <div className="space-y-1.5 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-2 lg:grid-cols-3 max-h-[50vh] overflow-y-auto pr-1 -mr-1 scrollbar-thin scrollbar-thumb-[#f4c979]/15 scrollbar-track-transparent hover:scale-[1.01]">
-                {announcements.map((announcement) => {
-                  const isEditing = editingAnnouncement?.id === announcement.id;
-                  const authorDisplay = announcement.author.includes('@') 
-                    ? announcement.author.split('@')[0] 
-                    : announcement.author;
-                  
-                  return (
-                    <motion.div
-                      key={announcement.id}
-                      className={`group relative rounded-lg border transition-all ${
-                        isEditing
-                          ? "border-[#f4c979]/40 bg-[#f4c979]/8 ring-1 ring-[#f4c979]/25"
-                          : "border-white/8 bg-black/20 hover:border-[#f4c979]/25 hover:bg-black/30"
-                      }`}
-                      whileTap={{ scale: 0.99 }}
-                    >
-                      <div className="flex items-center p-2 sm:p-2.5 gap-2">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs sm:text-sm font-medium text-white truncate leading-snug">
-                            {announcement.title}
-                          </p>
-                          <div className="flex items-center gap-1.5 mt-0.5 text-[9px] sm:text-[10px] text-[#f8e5bb]/50">
-                            <span className="shrink-0">{announcement.date}</span>
-                            <span className="text-[#f4c979]/30">·</span>
-                            <span className="truncate">{authorDisplay}</span>
-                          </div>
-                        </div>
-                        
-                        <motion.button
-                          type="button"
-                          onClick={() => handleEditAnnouncement(announcement)}
-                          whileTap={{ scale: 0.95 }}
-                          className={`shrink-0 flex items-center justify-center rounded-lg border transition-all min-w-[36px] min-h-[36px] p-1.5 ${
-                            isEditing
-                              ? "border-[#f4c979]/40 bg-[#f4c979]/15 text-[#f4c979]"
-                              : "border-[#f4c979]/20 text-[#f4c979]/70 hover:bg-[#f4c979]/8 active:bg-[#f4c979]/15"
-                          }`}
-                          aria-label={`Edit announcement: ${announcement.title}`}
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </motion.button>
-                      </div>
-                      
-                      {isEditing && (
-                        <div className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#f4c979] shadow-[0_0_6px_rgba(244,201,121,0.7)]">
-                          <span className="absolute inset-0 rounded-full bg-[#f4c979] animate-ping opacity-75" />
-                        </div>
-                      )}
-                    </motion.div>
-                  );
-                })}
-              </div>
-            )}
-          </GoldCollapsibleSection>
-        </div>
-      </section>
-    </motion.div>
-  );
-
-  // Contact Requests Tab Content
-  const renderContactRequestsTab = () => (
-    <motion.div
-      key="requests"
-      variants={tabContentVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-    >
-      <section className="rounded-2xl sm:rounded-3xl border border-[#f6dcb2]/15 bg-gradient-to-br from-[#14110d]/95 via-[#0b0906]/95 to-[#050403]/95 p-3 sm:p-5 md:p-6 space-y-3 sm:space-y-4 shadow-[0_20px_40px_rgba(0,0,0,0.5)] relative overflow-hidden backdrop-blur-xl">
-        {/* Single ambient glow */}
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(247,228,189,0.05),transparent_50%)]" />
-        
-        <div className="relative flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 sm:px-3 sm:py-1 bg-[#fef3d1]/8 border border-[#f6dcb2]/30 rounded-full text-[0.6rem] font-semibold tracking-[0.2em] uppercase text-[#f8dfb3] mb-1.5 sm:mb-3">
-              <Inbox className="w-3 h-3 text-[#f5cf82]" />
-              Inbox
-            </div>
-            <h3 className="text-sm sm:text-lg md:text-xl font-bold tracking-tight text-white">
-              Contact Requests
-            </h3>
-            <p className="hidden sm:block text-xs text-[#f8e5bb]/50 mt-0.5 leading-relaxed max-w-lg">
-              Messages from the Contact page routed here for follow-up.
-            </p>
-          </div>
-          <span className="text-[10px] text-[#f8e5bb]/50 whitespace-nowrap px-2 py-1 rounded-lg bg-white/[0.04] border border-white/8 shrink-0">
-            {contactRequests.length} · live
-          </span>
-        </div>
-
-        {/* Topic filter pills */}
-        {contactRequests.length > 0 && (
-          <div className="relative flex items-center gap-2 overflow-x-auto scrollbar-none pb-0.5">
-            <Filter className="w-3 h-3 text-[#f4c979]/70 shrink-0" />
-            <div className="flex gap-1.5">
-              {["all", "general", "hr", "safety", "payroll"].map((topic) => (
-                <motion.button
-                  key={topic}
-                  type="button"
-                  onClick={() => setContactTopicFilter(topic)}
-                  whileTap={{ scale: 0.95 }}
-                  className={`rounded-lg px-2.5 py-1 text-[10px] sm:text-xs font-semibold transition-all whitespace-nowrap ${
-                    contactTopicFilter === topic
-                      ? "bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] text-[#2e1b02]"
-                      : "border border-white/8 text-[#f8e5bb]/60 hover:text-white hover:border-[#f4c979]/30"
-                  }`}
-                >
-                  {topic === "all" ? "All" : CONTACT_TOPIC_LABELS[topic] ?? topic}
-                </motion.button>
-              ))}
-            </div>
-            {contactTopicFilter !== "all" && (
-              <motion.button
-                type="button"
-                onClick={() => setContactTopicFilter("all")}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                whileTap={{ scale: 0.95 }}
-                className="text-[10px] font-semibold text-[#f8e5bb]/50 hover:text-white transition-colors inline-flex items-center gap-0.5 shrink-0"
-              >
-                <X className="w-2.5 h-2.5" />
-                Reset
-              </motion.button>
-            )}
-          </div>
-        )}
-
-        {contactError && (
-          <div className="rounded-xl border border-[#f47373]/30 bg-[#2b1414]/60 text-[#f2a4a4] px-3 py-2 text-xs">
-            {contactError}
-          </div>
-        )}
-
-        {contactLoading ? (
-          <div className="space-y-2 sm:grid sm:grid-cols-2 sm:gap-2.5 sm:space-y-0">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <div
-                key={index}
-                className="rounded-xl border border-white/5 bg-white/[0.03] h-20 sm:h-24 animate-pulse"
-              />
-            ))}
-          </div>
-        ) : filteredContactRequests.length === 0 ? (
-          <p className="text-xs text-[#f8e5bb]/50 py-2">
-            {contactRequests.length === 0
-              ? "No contact requests yet."
-              : "No requests match this filter."}
-          </p>
-        ) : (
-          <div className="space-y-2 sm:grid sm:grid-cols-2 sm:gap-2.5 sm:space-y-0">
-            {filteredContactRequests.map((request, index) => (
-              <motion.article
-                key={request.id}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ 
-                  type: "spring", 
-                  stiffness: 100, 
-                  damping: 20, 
-                  delay: index * 0.04 
-                }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setExpandedRequest(request)}
-                className="rounded-xl border border-white/8 bg-black/20 p-3 text-white/85 space-y-1.5 transition-all hover:border-[#f4c979]/25 hover:bg-black/30 cursor-pointer active:bg-black/40"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm font-semibold text-white truncate">{request.name}</p>
-                    <a
-                      href={`mailto:${request.email}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="text-[10px] text-[#f4c979]/80 hover:text-[#ffe6bc] transition-colors truncate block"
-                    >
-                      {request.email}
-                    </a>
-                  </div>
-                  <span className="text-[8px] uppercase tracking-[0.15em] px-1.5 py-0.5 rounded-md border border-[#f6dcb2]/20 text-[#f8e5bb]/60 shrink-0">
-                    {CONTACT_TOPIC_LABELS[request.topic] ?? request.topic}
-                  </span>
-                </div>
-                <p className="text-xs text-white/60 leading-relaxed line-clamp-2">
-                  {request.message}
-                </p>
-                <div className="flex items-center justify-between">
-                  <p className="text-[9px] text-[#f8e5bb]/40">
-                    {new Date(request.submitted_at).toLocaleString()}
-                  </p>
-                  <span className="text-[10px] font-medium text-[#f4c979]/60">
-                    View →
-                  </span>
-                </div>
-              </motion.article>
-            ))}
-          </div>
-        )}
-      </section>
-    </motion.div>
-  );
-
-  // Notifications Tab Content
-  const renderNotificationsTab = () => (
-    <motion.div
-      key="notifications"
-      variants={tabContentVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      className="space-y-3 sm:space-y-5"
-    >
-      <section className="rounded-2xl sm:rounded-3xl border border-[#f6dcb2]/15 bg-gradient-to-br from-[#14110d]/95 via-[#0b0906]/95 to-[#050403]/95 p-3 sm:p-5 md:p-6 space-y-3 sm:space-y-4 shadow-[0_20px_40px_rgba(0,0,0,0.5)] relative overflow-hidden backdrop-blur-xl">
-        {/* Single ambient glow */}
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(247,228,189,0.05),transparent_50%)]" />
-        
-        <div className="relative">
-          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 sm:px-3 sm:py-1 bg-[#fef3d1]/8 border border-[#f6dcb2]/30 rounded-full text-[0.6rem] font-semibold tracking-[0.2em] uppercase text-[#f8dfb3] mb-1.5 sm:mb-3">
-            <Bell className="w-3 h-3 text-[#f5cf82]" />
-            Push
-          </div>
-          <h3 className="text-sm sm:text-lg md:text-xl font-bold tracking-tight text-white">
-            Send Push Notification
-          </h3>
-          <p className="hidden sm:block text-xs text-[#f8e5bb]/50 mt-0.5 leading-relaxed max-w-lg">
-            Broadcast important messages directly to users' devices. Target all users, specific roles, or job crews.
-          </p>
-        </div>
-        
-        <div className="relative border-t border-white/5 pt-3 sm:pt-5">
-          <AdminManualNotifications />
-        </div>
-      </section>
-      
-      <div className="flex justify-center">
-        <EnableNotificationsButton variant="gold" />
-      </div>
-    </motion.div>
-  );
-
-  // ============================================================
-  // MAIN RENDER
-  // ============================================================
+  const visibleCards = showAllNavCards ? ADMIN_CORE_NAV_CARDS : ADMIN_CORE_NAV_CARDS.slice(0, VISIBLE_NAV_CARD_COUNT);
+  const hiddenCount = ADMIN_CORE_NAV_CARDS.length - VISIBLE_NAV_CARD_COUNT;
+  const isSaving = submitting || (isEditMode && updateAnnouncement.isPending);
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-ink-950">
         <div className="text-center">
-          <Shield className="w-16 h-16 text-red-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-white mb-2">Access Denied</h2>
-          <p className="text-gray-400">You do not have permission to view this page.</p>
+          <Shield className="mx-auto mb-4 h-16 w-16 text-rose-400" aria-hidden />
+          <h2 className="type-display mb-2 text-3xl text-bone-50">Access Denied</h2>
+          <p className="text-bone-400">You do not have permission to view this page.</p>
         </div>
       </div>
     );
   }
 
+  const headline = `Welcome back, ${displayName}`;
+  const headlineWords = headline.split(" ");
+
   return (
     <DashboardLayout title="Admin Panel" pageHeading>
       <>
-        <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 md:px-6 pb-4 pt-2 sm:pt-4 md:pt-6">
-          {/* Premium Animated Welcome Section with Glass Backdrop - Gold Theme */}
-          <div className="mb-3 sm:mb-5 md:mb-6">
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ type: "spring", stiffness: 100, damping: 20 }}
-              className="relative"
-            >
-              {/* Glass backdrop container - Gold theme */}
-              <div 
-                className="relative overflow-hidden rounded-2xl md:rounded-3xl border border-white/[0.12] shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.1)]"
-                style={{
-                  background: 'linear-gradient(145deg, rgba(244, 201, 121, 0.08) 0%, rgba(28, 28, 31, 0.65) 40%, rgba(15, 13, 9, 0.75) 100%)',
-                  backdropFilter: 'blur(24px) saturate(1.6)',
-                  WebkitBackdropFilter: 'blur(24px) saturate(1.6)',
-                }}
-              >
-                {/* Glass gloss - single combined layer for performance */}
-                <div 
-                  className="absolute inset-0 pointer-events-none"
-                  style={{
-                    background: 'linear-gradient(125deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 20%, transparent 45%), radial-gradient(ellipse at 25% 0%, rgba(244, 201, 121, 0.15) 0%, transparent 45%)',
-                  }}
-                />
-                
-                {/* Top edge highlight */}
-                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-white/5 via-white/20 to-white/5 rounded-t-[inherit]" />
+        <div className="relative mx-auto w-full max-w-[1400px] pb-6">
+          <div className="lg:grid lg:grid-cols-[200px_minmax(0,1fr)] lg:gap-10">
+            {/* Section rail */}
+            <aside className="sticky top-0 z-20 -mx-4 mb-4 bg-ink-950/60 px-4 py-2 backdrop-blur-md lg:static lg:mx-0 lg:mb-0 lg:bg-transparent lg:px-0 lg:py-0 lg:backdrop-blur-none">
+              <div className="lg:sticky lg:top-2">
+                <p className="type-instrument mb-3 hidden text-bone-50/40 lg:block">Command Canopy</p>
+                <SectionRail sections={railSections} active={activeSection} onJump={jumpTo} />
+              </div>
+            </aside>
 
-                {/* Content area - tighter mobile padding */}
-                <div className="relative px-3 py-2.5 sm:px-5 sm:py-4 md:px-7 md:py-5">
-                  {/* Eyebrow - single row with role badge + avatar */}
-                  <div className="flex items-center justify-between gap-2 mb-1.5 sm:mb-3">
-                    <div className="flex items-center gap-1.5">
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ type: "spring", stiffness: 300, damping: 25, delay: 0.15 }}
-                        className="flex items-center gap-1.5 px-2 py-0.5 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl bg-[#f4c979]/12 border border-[#f4c979]/25"
-                      >
-                        <Shield className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 text-[#f4c979]" />
-                        <span className="text-[8px] sm:text-[10px] uppercase tracking-[0.15em] font-bold text-[#f8e5bb]/90">
-                          {role || "Admin"}
-                        </span>
-                      </motion.div>
-                    </div>
-                    
-                    <AvatarDropdownPortal
-                      email={session?.user?.email}
-                      role={role}
-                      fullName={displayName}
-                      avatarUrl={avatarUrl}
-                      theme="gold"
-                      onSignOut={handleSignOut}
-                    />
-                  </div>
-
-                  {/* Title area - gold accent line + heading */}
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <motion.div
-                      initial={{ scaleY: 0, opacity: 0 }}
-                      animate={{ scaleY: 1, opacity: 1 }}
-                      transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.2 }}
-                      className="w-0.5 sm:w-1 h-8 sm:h-12 md:h-14 rounded-full bg-gradient-to-b from-[#f7e4bd] via-[#f4c979] to-[#d79a32] origin-top flex-shrink-0"
+            <div className="space-y-12 md:space-y-16">
+              {/* ------------------------------------------------------------ */}
+              {/* 01 · Hero + At a glance                                        */}
+              {/* ------------------------------------------------------------ */}
+              <section id={SECTION_IDS.glance} className="scroll-mt-6" aria-label="At a glance">
+                <motion.div
+                  className={`${canopy.hero} p-6 sm:p-8 lg:p-10`}
+                  initial={reduce ? false : { opacity: 0, y: 28, filter: "blur(12px)" }}
+                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                  transition={{ duration: 1, ease: EASE_CANOPY }}
+                >
+                  {/* seed orb — 3D hero object */}
+                  {!caps.isLowEnd && !caps.isMobile && (
+                    <motion.img
+                      src="/assets/canopy/orb.webp"
+                      alt=""
+                      aria-hidden
+                      width={1024}
+                      height={1024}
+                      decoding="async"
+                      className={`pointer-events-none absolute -right-24 -top-24 hidden w-[420px] select-none mix-blend-screen md:block lg:-right-16 lg:-top-28 lg:w-[500px] ${reduce ? "" : "animate-drift"}`}
                       style={{
-                        boxShadow: '0 0 16px rgba(244, 201, 121, 0.4)',
+                        maskImage: "radial-gradient(50% 50% at 50% 50%, black 45%, transparent 100%)",
+                        WebkitMaskImage: "radial-gradient(50% 50% at 50% 50%, black 45%, transparent 100%)",
                       }}
+                      initial={reduce ? false : { opacity: 0, scale: 0.85, rotate: 8 }}
+                      animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                      transition={{ duration: 1.8, ease: EASE_CANOPY, delay: 0.2 }}
                     />
-                    
-                    <div className="flex-1 min-w-0">
-                      {enableAnimations ? (
-                        <TextEffect
-                          as="h1"
-                          preset="blurSlide"
-                          per="char"
-                          delay={0.15}
-                          className="text-base sm:text-2xl md:text-3xl font-black tracking-tighter"
-                          segmentWrapperClassName="bg-gradient-to-r from-white via-[#f8e5bb] to-white/90 bg-clip-text text-transparent"
-                        >
-                          {`Welcome back, ${displayName}`}
-                        </TextEffect>
-                      ) : (
-                        <h1 
-                          className="text-base sm:text-2xl md:text-3xl font-black tracking-tighter bg-gradient-to-r from-white via-[#f8e5bb] to-white/90 bg-clip-text text-transparent"
-                        >
-                          {`Welcome back, ${displayName}`}
-                        </h1>
-                      )}
-                      
+                  )}
+
+                  <div className="relative flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <Eyebrow tone="verdant" rule={false}>
+                        <span className="inline-flex items-center gap-2">
+                          <Radio className="h-3 w-3 animate-pulse" aria-hidden />
+                          Command Canopy · {role}
+                        </span>
+                      </Eyebrow>
+
+                      <h1 className="type-display mt-5 max-w-3xl text-balance text-[clamp(2.25rem,6vw,4.75rem)] font-light text-bone-50">
+                        {headlineWords.map((w, i) => (
+                          <motion.span
+                            key={`${w}-${i}`}
+                            className={`inline-block ${i === headlineWords.length - 1 ? "italic text-verdant-300 text-glow" : ""}`}
+                            variants={reduce ? reducedMotionFade : riseThroughBlur}
+                            initial="hidden"
+                            animate="visible"
+                            transition={{ delay: reduce ? 0 : 0.2 + i * 0.08 }}
+                          >
+                            {w}
+                            {i < headlineWords.length - 1 && "\u00A0"}
+                          </motion.span>
+                        ))}
+                      </h1>
+
                       <motion.p
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.5, delay: 0.5, ease: 'easeOut' }}
-                        className="hidden sm:block mt-1 md:mt-1.5 text-xs sm:text-sm text-[#f8e5bb]/45 font-medium leading-relaxed max-w-xl"
+                        className="mt-4 max-w-xl text-pretty text-base text-bone-300 sm:text-lg"
+                        initial={reduce ? false : { opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8, ease: EASE_CANOPY, delay: 0.55 }}
                       >
-                        Manage users, broadcast announcements, and track mission-critical tools
+                        Every instrument of the operation on one surface — people, broadcasts, requests and safety.
                       </motion.p>
                     </div>
+
+                    <div className="relative z-10 shrink-0">
+                      <AvatarDropdownPortal
+                        email={session?.user?.email}
+                        role={role}
+                        fullName={displayName}
+                        avatarUrl={avatarUrl}
+                        theme="gold"
+                        onSignOut={handleSignOut}
+                      />
+                    </div>
                   </div>
 
-                  {/* Segmented Control */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ type: "spring", stiffness: 200, damping: 25, delay: 0.35 }}
-                    className="mt-2 sm:mt-4 md:mt-5"
+                  <div className="relative mt-8">
+                    <AdminKpiBand pendingRequests={contactRequests.length} onShowRequests={() => jumpTo(SECTION_IDS.inbox)} />
+                  </div>
+                </motion.div>
+              </section>
+
+              {/* 02 · Quick access */}
+              <SectionShell id={SECTION_IDS.quick} index={2} label="Quick access" reduce={reduce}>
+                <AdminQuickAccess />
+              </SectionShell>
+
+              {/* 03 · Navigate */}
+              <SectionShell id={SECTION_IDS.navigate} index={3} label="Navigate the app" reduce={reduce}>
+                <motion.div
+                  className="flex snap-x snap-mandatory gap-2.5 overflow-x-auto pb-1 [scrollbar-width:none] sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0 lg:grid-cols-5 [&::-webkit-scrollbar]:hidden"
+                  variants={reduce ? reducedMotionFade : unfurlContainer}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true, amount: 0.2 }}
+                >
+                  {ADMIN_ROLE_DASHBOARDS_NAV_CARDS.map((card) => (
+                    <motion.div key={card.to} variants={reduce ? reducedMotionFade : staggerItem} className="w-[68%] flex-none snap-center sm:w-auto">
+                      <BrandedNavCard
+                        title={card.title.replace(/ Dashboard$/, "")}
+                        description={card.description}
+                        icon={card.icon}
+                        to={card.to}
+                        variant={card.variant ?? "gold"}
+                        compact
+                      />
+                    </motion.div>
+                  ))}
+                </motion.div>
+              </SectionShell>
+
+              {/* 04 · Control panel */}
+              <SectionShell
+                id={SECTION_IDS.control}
+                index={4}
+                label="Control panel"
+                reduce={reduce}
+                action={
+                  hiddenCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllNavCards((p) => !p)}
+                      className="tap-44 relative inline-flex items-center gap-1.5 rounded-full border border-bone-50/[0.12] px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.15em] text-bone-300 transition-colors hover:border-verdant-400/50 hover:text-verdant-200"
+                    >
+                      {showAllNavCards ? "Show less" : `+${hiddenCount} more`}
+                      <motion.span animate={{ rotate: showAllNavCards ? 180 : 0 }} transition={{ duration: 0.4, ease: EASE_CANOPY }}>
+                        <ChevronDown className="h-3 w-3" aria-hidden />
+                      </motion.span>
+                    </button>
+                  )
+                }
+              >
+                <motion.div
+                  className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
+                  variants={reduce ? reducedMotionFade : unfurlContainer}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true, amount: 0.1 }}
+                >
+                  <AnimatePresence initial={false}>
+                    {visibleCards.map((card, index) => {
+                      // Cards revealed via "+N more" mount after the container's
+                      // whileInView (once) has fired, so the "visible" variant never
+                      // propagates to them. Drive their entrance explicitly.
+                      const revealedLater = index >= VISIBLE_NAV_CARD_COUNT;
+                      return (
+                        <motion.div
+                          key={card.to}
+                          variants={reduce ? reducedMotionFade : revealedLater ? revealedNavCard : staggerItem}
+                          {...(revealedLater
+                            ? { initial: "hidden", animate: "visible", custom: index - VISIBLE_NAV_CARD_COUNT }
+                            : {})}
+                          layout
+                          exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.2 } }}
+                        >
+                          <TiltCard max={5} className="h-full rounded-leaf">
+                            <BrandedNavCard title={card.title} description={card.description} icon={card.icon} to={card.to} variant={card.variant ?? "gold"} />
+                          </TiltCard>
+                        </motion.div>
+                      );
+                    })}
+                  </AnimatePresence>
+                </motion.div>
+              </SectionShell>
+
+              {/* 05 · Broadcast */}
+              <SectionShell
+                id={SECTION_IDS.broadcast}
+                index={5}
+                label="Broadcast"
+                reduce={reduce}
+                action={
+                  <button
+                    type="button"
+                    onClick={() => setComposerOpen(true)}
+                    disabled={composerOpen}
+                    aria-expanded={composerOpen}
+                    className={`${canopy.buttonPrimary} px-4 py-2 text-xs`}
                   >
-                    <AdminSegmentedControl
-                      tabs={DASHBOARD_TABS}
-                      activeTab={activeTab}
-                      onChange={handleTabChange}
-                    />
-                  </motion.div>
+                    <Megaphone className="h-3.5 w-3.5" aria-hidden />
+                    <span className="sm:hidden">New</span>
+                    <span className="hidden sm:inline">New announcement</span>
+                  </button>
+                }
+              >
+                <div className="grid items-start gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+                  {/* Composer */}
+                  <div className={`${glass.cardGold} relative self-start p-5 sm:p-6`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="type-instrument text-verdant-300">{isEditMode ? "Edit" : "Publish"}</p>
+                        <h3 className="type-display mt-1 text-2xl text-bone-50 sm:text-3xl">{isEditMode ? "Edit announcement" : "Create announcement"}</h3>
+                        <p className="mt-2 max-w-md text-sm text-bone-300">
+                          {isEditMode ? "Update the details below and save your changes." : "Publish news that appears instantly on the announcements page."}
+                        </p>
+                      </div>
+                    </div>
+
+                    <AnimatePresence initial={false} mode="wait">
+                      {composerOpen ? (
+                        <motion.div
+                          key="composer"
+                          initial={reduce ? false : { opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.5, ease: EASE_CANOPY }}
+                          className="overflow-hidden"
+                        >
+                          <div className="mt-5 space-y-4">
+                            {feedback && (
+                              <div
+                                role={feedback.type === "error" ? "alert" : "status"}
+                                className={`rounded-leaf-xs border px-3.5 py-2.5 text-sm ${
+                                  feedback.type === "success"
+                                    ? "border-verdant-500/30 bg-verdant-500/10 text-verdant-100"
+                                    : "border-rose-500/30 bg-rose-500/10 text-rose-100"
+                                }`}
+                              >
+                                {feedback.message}
+                              </div>
+                            )}
+
+                            <form aria-label={isEditMode ? "Edit announcement form" : "Create announcement form"} className="space-y-4" onSubmit={handleCreateAnnouncement}>
+                              {isEditMode && editingAnnouncement && (
+                                <div className="flex items-center gap-2 border-b border-bone-50/[0.08] pb-2 font-mono text-[11px] text-verdant-300">
+                                  <Pencil className="h-3 w-3" aria-hidden />
+                                  <span className="truncate">
+                                    Editing: <strong className="text-bone-50">{editingAnnouncement.title}</strong>
+                                  </span>
+                                </div>
+                              )}
+                              <div className="space-y-2">
+                                <label htmlFor="ann-title" className="type-instrument block text-bone-300">
+                                  Title
+                                </label>
+                                <input id="ann-title" type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. New safety protocols" className={FIELD} />
+                              </div>
+                              <div className="space-y-2">
+                                <label htmlFor="ann-message" className="type-instrument block text-bone-300">
+                                  Message
+                                </label>
+                                <textarea
+                                  id="ann-message"
+                                  value={message}
+                                  onChange={(e) => setMessage(e.target.value)}
+                                  placeholder="Share the details your team should know..."
+                                  rows={4}
+                                  className={`${FIELD} resize-none`}
+                                />
+                              </div>
+
+                              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                                <label className="inline-flex items-center gap-2 text-xs text-bone-300">
+                                  <input type="checkbox" checked={scheduleLater} onChange={(e) => setScheduleLater(e.target.checked)} className="h-4 w-4 accent-verdant-400" />
+                                  Schedule publish date
+                                </label>
+                                {scheduleLater && (
+                                  <div className="max-w-xs flex-1">
+                                    <DateField
+                                      label="Publish Date"
+                                      value={publishDate}
+                                      onChange={(e) => setPublishDate(e.target.value)}
+                                      helperText="Goes live at 12:01 AM"
+                                      containerClassName="text-bone-50"
+                                      labelClassName="type-instrument text-bone-300"
+                                      variant="gold"
+                                    />
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="flex gap-2 pt-1">
+                                <button type="submit" disabled={!isValid || isSaving} className={`${canopy.buttonPrimary} flex-1 text-sm`}>
+                                  {isSaving ? (isEditMode ? "Updating..." : "Publishing...") : isEditMode ? "Update" : "Publish"}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setComposerOpen(false);
+                                    if (isEditMode) resetToCreateMode();
+                                  }}
+                                  className={`${canopy.buttonGhost} text-sm`}
+                                >
+                                  {isEditMode ? "Cancel" : "Hide"}
+                                </button>
+                              </div>
+                              {isSaving && <div className="vein" />}
+                            </form>
+                          </div>
+                        </motion.div>
+                      ) : (
+                        <motion.p key="closed" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="mt-5 border-t border-bone-50/[0.08] pt-4 text-xs text-bone-400">
+                          Open the composer to publish an update.
+                        </motion.p>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* Recent */}
+                  <div className={`${glass.card} flex flex-col p-5 sm:p-6`}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="type-instrument text-bone-300">Recent</p>
+                        <h3 className="type-display mt-1 text-2xl text-bone-50">Broadcast log</h3>
+                      </div>
+                      <Megaphone className="h-4 w-4 text-verdant-300" aria-hidden />
+                    </div>
+                    <div className="mt-4 flex-1">
+                      {announcementsLoading ? (
+                        <div className="space-y-2">
+                          {Array.from({ length: 4 }).map((_, i) => (
+                            <div key={i} className="h-14 animate-pulse rounded-leaf-xs bg-bone-50/5" />
+                          ))}
+                        </div>
+                      ) : !announcements || announcements.length === 0 ? (
+                        <p className="text-xs text-bone-400">No announcements yet.</p>
+                      ) : (
+                        <ul className="max-h-[420px] space-y-1.5 overflow-y-auto pr-1">
+                          {announcements.map((announcement, i) => {
+                            const isEditing = editingAnnouncement?.id === announcement.id;
+                            const authorDisplay = announcement.author.includes("@") ? announcement.author.split("@")[0] : announcement.author;
+                            return (
+                              <li
+                                key={announcement.id}
+                                className={`group relative flex items-center gap-3 rounded-leaf-xs border px-3 py-2.5 transition-colors duration-300 ${
+                                  isEditing ? "border-verdant-400/50 bg-verdant-500/10" : "border-bone-50/[0.06] bg-ink-950/50 hover:border-verdant-400/30"
+                                }`}
+                              >
+                                <span className="type-instrument w-5 text-bone-50/30">{String(i + 1).padStart(2, "0")}</span>
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate text-sm font-medium text-bone-50">{announcement.title}</p>
+                                  <p className="mt-0.5 truncate font-mono text-[10px] text-bone-400">
+                                    {announcement.date} · {authorDisplay}
+                                  </p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleEditAnnouncement(announcement)}
+                                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-leaf-xs border transition-colors ${
+                                    isEditing ? "border-verdant-400/50 bg-verdant-500/20 text-verdant-200" : "border-bone-50/[0.1] text-bone-300 hover:border-verdant-400/40 hover:text-verdant-200"
+                                  }`}
+                                  aria-label={`Edit announcement: ${announcement.title}`}
+                                >
+                                  <Pencil className="h-3.5 w-3.5" aria-hidden />
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                
-                {/* Bottom edge */}
-                <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-black/20 to-transparent" />
-              </div>
-            </motion.div>
-          </div>
+              </SectionShell>
 
-          {/* Tab Content Area */}
-          <div className="min-h-[400px]">
-            <AnimatePresence mode="wait">
-              {activeTab === "control-panel" && renderControlPanelTab()}
-              {activeTab === "announcements" && renderAnnouncementsTab()}
-              {activeTab === "requests" && renderContactRequestsTab()}
-              {activeTab === "notifications" && renderNotificationsTab()}
-            </AnimatePresence>
-          </div>
+              {/* 06 · Inbox */}
+              <SectionShell
+                id={SECTION_IDS.inbox}
+                index={6}
+                label="Inbox"
+                reduce={reduce}
+                action={
+                  <span className={canopy.pillLive}>
+                    <span className="h-1.5 w-1.5 rounded-full bg-verdant-400 animate-pulse" />
+                    <span className="font-mono text-[10px] uppercase tracking-[0.15em]">{contactRequests.length} live</span>
+                  </span>
+                }
+              >
+                <div className={`${glass.cardGold} space-y-4 p-5 sm:p-6`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="type-instrument text-verdant-300">Contact requests</p>
+                      <h3 className="type-display mt-1 text-2xl text-bone-50 sm:text-3xl">Messages from the field</h3>
+                      <p className="mt-2 max-w-lg text-sm text-bone-300">Routed here from the Contact page for follow-up.</p>
+                    </div>
+                    <Inbox className="hidden h-5 w-5 text-verdant-300 sm:block" aria-hidden />
+                  </div>
 
+                  {contactRequests.length > 0 && (
+                    <div className="flex items-center gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                      <Filter className="h-3 w-3 shrink-0 text-bone-400" aria-hidden />
+                      <div className="flex gap-1.5">
+                        {["all", "general", "hr", "safety", "payroll"].map((topic) => {
+                          const active = contactTopicFilter === topic;
+                          return (
+                            <button
+                              key={topic}
+                              type="button"
+                              onClick={() => setContactTopicFilter(topic)}
+                              aria-pressed={active}
+                              className={`tap-44 relative whitespace-nowrap rounded-full border px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.15em] transition-colors duration-300 ${
+                                active ? "border-verdant-400 bg-verdant-400 text-ink-950" : "border-bone-50/[0.12] text-bone-300 hover:border-verdant-400/40 hover:text-bone-50"
+                              }`}
+                            >
+                              {topic === "all" ? "All" : CONTACT_TOPIC_LABELS[topic] ?? topic}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {contactTopicFilter !== "all" && (
+                        <button type="button" onClick={() => setContactTopicFilter("all")} className="inline-flex shrink-0 items-center gap-1 font-mono text-[10px] uppercase tracking-[0.15em] text-bone-400 hover:text-bone-50">
+                          <X className="h-3 w-3" aria-hidden />
+                          Reset
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {contactError && (
+                    <div role="alert" className="rounded-leaf-xs border border-rose-500/30 bg-rose-500/10 px-3.5 py-2.5 text-sm text-rose-100">
+                      {contactError}
+                    </div>
+                  )}
+
+                  {contactLoading ? (
+                    <div className="grid gap-2.5 sm:grid-cols-2">
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="h-28 animate-pulse rounded-leaf-sm bg-bone-50/5" />
+                      ))}
+                    </div>
+                  ) : filteredContactRequests.length === 0 ? (
+                    <p className="py-2 text-sm text-bone-400">{contactRequests.length === 0 ? "No contact requests yet." : "No requests match this filter."}</p>
+                  ) : (
+                    <div className="grid gap-2.5 sm:grid-cols-2">
+                      {filteredContactRequests.map((request, index) => (
+                        <motion.article
+                          key={request.id}
+                          initial={reduce ? false : { opacity: 0, y: 14, filter: "blur(4px)" }}
+                          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                          transition={{ duration: 0.6, ease: EASE_CANOPY, delay: index * 0.05 }}
+                          whileTap={{ scale: 0.985 }}
+                          onClick={() => setExpandedRequest(request)}
+                          className="group cursor-pointer space-y-2 rounded-leaf-sm border border-bone-50/[0.08] bg-ink-950/50 p-4 transition-colors duration-300 hover:border-verdant-400/40 hover:bg-ink-900/70"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-semibold text-bone-50">{request.name}</p>
+                              <a href={`mailto:${request.email}`} onClick={(e) => e.stopPropagation()} className="block truncate text-[11px] text-bone-400 transition-colors hover:text-verdant-300">
+                                {request.email}
+                              </a>
+                            </div>
+                            <span className="shrink-0 rounded-full border border-bone-50/[0.12] px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.15em] text-bone-300">
+                              {CONTACT_TOPIC_LABELS[request.topic] ?? request.topic}
+                            </span>
+                          </div>
+                          <p className="line-clamp-2 text-xs leading-relaxed text-bone-300">{request.message}</p>
+                          <div className="flex items-center justify-between font-mono text-[10px]">
+                            <span className="text-bone-400">{new Date(request.submitted_at).toLocaleString()}</span>
+                            <span className="text-verdant-300 opacity-70 transition-opacity group-hover:opacity-100">Open ↗</span>
+                          </div>
+                        </motion.article>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </SectionShell>
+
+              {/* 07 · Push */}
+              <SectionShell id={SECTION_IDS.push} index={7} label="Push notifications" reduce={reduce}>
+                <div className={`${glass.cardGold} space-y-5 p-5 sm:p-6`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="type-instrument text-verdant-300">Push</p>
+                      <h3 className="type-display mt-1 text-2xl text-bone-50 sm:text-3xl">Send a push notification</h3>
+                      <p className="mt-2 max-w-lg text-sm text-bone-300">Broadcast directly to users' devices. Target everyone, specific roles, or job crews.</p>
+                    </div>
+                    <Bell className="hidden h-5 w-5 text-verdant-300 sm:block" aria-hidden />
+                  </div>
+                  <div className="border-t border-bone-50/[0.08] pt-5">
+                    <AdminManualNotifications />
+                  </div>
+                </div>
+                <div className="flex justify-center">
+                  <EnableNotificationsButton variant="gold" />
+                </div>
+              </SectionShell>
+
+              {/* 08 · Incidents */}
+              <SectionShell id={SECTION_IDS.incidents} index={8} label="Safety incidents" reduce={reduce}>
+                <SafetyIncidentsList onLogIncident={() => setShowIncidentModal(true)} />
+              </SectionShell>
+            </div>
+          </div>
         </div>
 
-        {/* Incident Logging Modal - portaled so it sits above layout and is clickable */}
-        {createPortal(
-          <IncidentLoggingModal
-            isOpen={showIncidentModal}
-            onClose={() => setShowIncidentModal(false)}
-          />,
-          document.body
-        )}
+        {createPortal(<IncidentLoggingModal isOpen={showIncidentModal} onClose={() => setShowIncidentModal(false)} />, document.body)}
 
-        {/* Contact Request Modal - portaled so it sits above layout */}
-        {expandedRequest &&
-          createPortal(
-            <ContactRequestModalContent
-              request={expandedRequest}
-              onClose={() => setExpandedRequest(null)}
-            />,
-            document.body
-          )}
+        {expandedRequest && createPortal(<ContactRequestModalContent request={expandedRequest} onClose={() => setExpandedRequest(null)} />, document.body)}
       </>
     </DashboardLayout>
   );

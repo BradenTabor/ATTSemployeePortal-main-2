@@ -93,7 +93,7 @@ export function ValidatedField({
       {/* Label */}
       <label
         htmlFor={fieldId}
-        className="block text-xs font-semibold text-white/80 uppercase tracking-wide"
+        className="block text-xs text-white/80 uppercase font-mono font-medium tracking-[0.14em]"
       >
         {label}
         {required && <span className="text-amber-400 ml-1">*</span>}

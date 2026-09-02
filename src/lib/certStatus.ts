@@ -96,7 +96,7 @@ const STATUS_CONFIG: Record<CertDisplayStatus, CertStatusColorConfig> = {
     badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
     label: 'Active',
     color: 'text-emerald-400',
-    glow: 'rgba(16, 185, 129, 0.15)',
+    glow: 'rgba(16,185,129, 0.15)',
   },
   expiring: {
     border: 'border-amber-500/30',
@@ -104,7 +104,7 @@ const STATUS_CONFIG: Record<CertDisplayStatus, CertStatusColorConfig> = {
     badge: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
     label: 'Expiring Soon',
     color: 'text-amber-400',
-    glow: 'rgba(245, 158, 11, 0.15)',
+    glow: 'rgba(245,158,11, 0.15)',
   },
   expired: {
     border: 'border-red-500/30',
@@ -112,7 +112,7 @@ const STATUS_CONFIG: Record<CertDisplayStatus, CertStatusColorConfig> = {
     badge: 'bg-red-500/20 text-red-300 border-red-500/40',
     label: 'Expired',
     color: 'text-red-400',
-    glow: 'rgba(239, 68, 68, 0.2)',
+    glow: 'rgba(239,68,68, 0.2)',
   },
   missing: {
     border: 'border-white/10',
@@ -120,7 +120,7 @@ const STATUS_CONFIG: Record<CertDisplayStatus, CertStatusColorConfig> = {
     badge: 'bg-white/10 text-white/50 border-white/20',
     label: 'Not Set',
     color: 'text-white/40',
-    glow: 'rgba(255, 255, 255, 0.05)',
+    glow: 'rgba(255,255,255, 0.05)',
   },
   pending_verification: {
     border: 'border-amber-500/30',
@@ -128,7 +128,7 @@ const STATUS_CONFIG: Record<CertDisplayStatus, CertStatusColorConfig> = {
     badge: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
     label: 'Pending Verification',
     color: 'text-amber-400',
-    glow: 'rgba(245, 158, 11, 0.15)',
+    glow: 'rgba(245,158,11, 0.15)',
   },
   revoked: {
     border: 'border-red-500/30',
@@ -136,7 +136,7 @@ const STATUS_CONFIG: Record<CertDisplayStatus, CertStatusColorConfig> = {
     badge: 'bg-red-500/20 text-red-300 border-red-500/40',
     label: 'Revoked',
     color: 'text-red-400',
-    glow: 'rgba(239, 68, 68, 0.2)',
+    glow: 'rgba(239,68,68, 0.2)',
   },
   written_passed: {
     border: 'border-emerald-500/30',
@@ -144,7 +144,7 @@ const STATUS_CONFIG: Record<CertDisplayStatus, CertStatusColorConfig> = {
     badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
     label: 'Written passed',
     color: 'text-emerald-400',
-    glow: 'rgba(16, 185, 129, 0.15)',
+    glow: 'rgba(16,185,129, 0.15)',
   },
 };
 

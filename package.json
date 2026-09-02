@@ -47,6 +47,7 @@
     "fd:fix:hover-scale": "node scripts/fd-fix-hover-scale.mjs",
     "fd:fix:quote-corruption": "node scripts/fd-fix-quote-corruption.mjs",
     "bundle:check": "node scripts/checkBundleSize.mjs",
+    "fonts:sync": "node scripts/sync-fonts.mjs",
     "lighthouse": "npm run build && lhci autorun",
     "accessibility": "start-server-and-test preview:ci http://127.0.0.1:4173 pa11y-ci",
     "verify:ios": "node scripts/verify-ios-pwa.mjs",
@@ -96,6 +97,9 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.11.0",
     "@eslint/js": "^9.9.1",
+    "@fontsource-variable/bricolage-grotesque": "^5.3.0",
+    "@fontsource-variable/fraunces": "^5.3.0",
+    "@fontsource-variable/martian-mono": "^5.3.0",
     "@lhci/cli": "^0.15.1",
     "@playwright/test": "^1.57.0",
     "@tanstack/react-query-devtools": "^5.91.1",

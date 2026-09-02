@@ -75,22 +75,22 @@ const CATEGORY_ICONS: Record<NotificationCategory, React.ReactNode> = {
 // Severity color mapping
 const SEVERITY_STYLES: Record<NotificationSeverity, { bg: string; border: string; text: string; glow: string }> = {
   low: { 
-    bg: 'bg-[#1a1814]/80', 
-    border: 'border-[#f4c979]/30', 
-    text: 'text-[#f8e5bb]',
+    bg: 'bg-[#121A15]/80', 
+    border: 'border-[#F4F7F2]/30', 
+    text: 'text-[#E4EAE1]',
     glow: '',
   },
   medium: { 
     bg: 'bg-amber-500/10', 
     border: 'border-amber-500/40', 
     text: 'text-amber-300',
-    glow: 'shadow-[0_0_15px_rgba(245,158,11,0.15)]',
+    glow: 'shadow-[0_0_15px_rgba(174,219,63,0.15)]',
   },
   high: { 
     bg: 'bg-orange-500/15', 
     border: 'border-orange-500/50', 
     text: 'text-orange-300',
-    glow: 'shadow-[0_0_20px_rgba(249,115,22,0.2)]',
+    glow: 'shadow-[0_0_20px_rgba(174,219,63,0.2)]',
   },
   critical: { 
     bg: 'bg-red-500/15', 
@@ -217,16 +217,16 @@ function AdminManualNotificationsComponent() {
           </span>
         </div>
         
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#1a1814]/60 border border-[#f4c979]/20">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#121A15]/60 border border-[#F4F7F2]/20">
           {categoryIcon}
-          <span className="text-xs font-medium text-[#f8e5bb]/80">
+          <span className="text-xs font-medium text-[#E4EAE1]/80">
             {NOTIFICATION_CATEGORIES.find(c => c.value === formState.category)?.label}
           </span>
         </div>
         
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#1a1814]/60 border border-[#f4c979]/20">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#121A15]/60 border border-[#F4F7F2]/20">
           {getTargetIcon(formState.targetType)}
-          <span className="text-xs font-medium text-[#f8e5bb]/80">
+          <span className="text-xs font-medium text-[#E4EAE1]/80">
             {getTargetLabel(formState.targetType)}
           </span>
         </div>
@@ -238,10 +238,10 @@ function AdminManualNotificationsComponent() {
         <div className="space-y-2">
           <label 
             htmlFor="notification-title" 
-            className="flex items-center gap-2 text-sm font-semibold text-[#f8e5bb]"
+            className="flex items-center gap-2 text-sm font-semibold text-[#E4EAE1]"
           >
             <span>Notification Title</span>
-            <span className="text-[#f4c979]">*</span>
+            <span className="text-[#F4F7F2]">*</span>
           </label>
           <input
             id="notification-title"
@@ -251,9 +251,9 @@ function AdminManualNotificationsComponent() {
             placeholder="Enter a clear, concise title..."
             required
             maxLength={100}
-            className="w-full px-4 py-3.5 rounded-2xl bg-[#0c0a08]/80 border border-[#f4c979]/25 text-[#fff6dd] placeholder-[#f8e5bb]/35 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:border-[#f4c979]/50 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]"
+            className="w-full px-4 py-3.5 rounded-leaf-sm bg-[#0B100D]/80 border border-[#F4F7F2]/25 text-[#F4F7F2] placeholder-[#E4EAE1]/35 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/50 focus-visible:border-[#F4F7F2]/50 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]"
           />
-          <p className="text-[10px] text-[#f8e5bb]/40 pl-1">
+          <p className="text-[10px] text-[#E4EAE1]/40 pl-1">
             {formState.title.length}/100 characters
           </p>
         </div>
@@ -262,10 +262,10 @@ function AdminManualNotificationsComponent() {
         <div className="space-y-2">
           <label 
             htmlFor="notification-body" 
-            className="flex items-center gap-2 text-sm font-semibold text-[#f8e5bb]"
+            className="flex items-center gap-2 text-sm font-semibold text-[#E4EAE1]"
           >
             <span>Message Body</span>
-            <span className="text-[#f8e5bb]/40 text-xs font-normal">(optional)</span>
+            <span className="text-[#E4EAE1]/40 text-xs font-normal">(optional)</span>
           </label>
           <textarea
             id="notification-body"
@@ -274,16 +274,16 @@ function AdminManualNotificationsComponent() {
             placeholder="Add additional details or context..."
             rows={3}
             maxLength={500}
-            className="w-full px-4 py-3.5 rounded-2xl bg-[#0c0a08]/80 border border-[#f4c979]/25 text-[#fff6dd] placeholder-[#f8e5bb]/35 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:border-[#f4c979]/50 transition-all resize-none shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]"
+            className="w-full px-4 py-3.5 rounded-leaf-sm bg-[#0B100D]/80 border border-[#F4F7F2]/25 text-[#F4F7F2] placeholder-[#E4EAE1]/35 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/50 focus-visible:border-[#F4F7F2]/50 transition-all resize-none shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]"
           />
-          <p className="text-[10px] text-[#f8e5bb]/40 pl-1">
+          <p className="text-[10px] text-[#E4EAE1]/40 pl-1">
             {formState.body.length}/500 characters
           </p>
         </div>
 
         {/* Category Pills */}
         <div className="space-y-3">
-          <label className="block text-sm font-semibold text-[#f8e5bb]">
+          <label className="block text-sm font-semibold text-[#E4EAE1]">
             Category
           </label>
           <div className="flex flex-wrap gap-2">
@@ -294,8 +294,8 @@ function AdminManualNotificationsComponent() {
                 onClick={() => updateField('category', cat.value)}
                 className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all ${
                   formState.category === cat.value
-                    ? 'bg-gradient-to-br from-[#f4c979]/25 to-[#d79a32]/15 border-[#f4c979]/50 text-[#f4c979] shadow-[0_0_20px_rgba(244,201,121,0.15)]'
-                    : 'bg-[#0c0a08]/60 border-[#f4c979]/15 text-[#f8e5bb]/60 hover:border-[#f4c979]/30 hover:text-[#f8e5bb]/80 hover:bg-[#0c0a08]/80'
+                    ? 'bg-gradient-to-br from-[#F4F7F2]/25 to-[#8DF5A8]/15 border-[#F4F7F2]/50 text-[#F4F7F2] shadow-[0_0_20px_rgba(221,255,133,0.15)]'
+                    : 'bg-[#0B100D]/60 border-[#F4F7F2]/15 text-[#E4EAE1]/60 hover:border-[#F4F7F2]/30 hover:text-[#E4EAE1]/80 hover:bg-[#0B100D]/80'
                 }`}
               >
                 {CATEGORY_ICONS[cat.value]}
@@ -307,7 +307,7 @@ function AdminManualNotificationsComponent() {
 
         {/* Severity Selection */}
         <div className="space-y-3">
-          <label className="block text-sm font-semibold text-[#f8e5bb]">
+          <label className="block text-sm font-semibold text-[#E4EAE1]">
             Priority Level
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -323,12 +323,12 @@ function AdminManualNotificationsComponent() {
                   className={`flex flex-col items-center justify-center gap-1 px-3 py-3 rounded-xl border transition-all ${
                     isSelected
                       ? `${style.bg} ${style.border} ${style.text} ${style.glow}`
-                      : 'bg-[#0c0a08]/60 border-[#f4c979]/15 text-[#f8e5bb]/50 hover:border-[#f4c979]/25'
+                      : 'bg-[#0B100D]/60 border-[#F4F7F2]/15 text-[#E4EAE1]/50 hover:border-[#F4F7F2]/25'
                   }`}
                 >
                   <span className="text-sm font-semibold">{sev.label}</span>
                   {sev.value === 'critical' && (
-                    <span className="text-[9px] uppercase tracking-wider opacity-70">Urgent</span>
+                    <span className="text-[9px] uppercase opacity-70 font-mono font-medium tracking-[0.14em]">Urgent</span>
                   )}
                 </button>
               );
@@ -338,7 +338,7 @@ function AdminManualNotificationsComponent() {
 
         {/* Target Audience */}
         <div className="space-y-3">
-          <label className="block text-sm font-semibold text-[#f8e5bb]">
+          <label className="block text-sm font-semibold text-[#E4EAE1]">
             Target Audience
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -352,8 +352,8 @@ function AdminManualNotificationsComponent() {
                 }}
                 className={`flex items-center justify-center gap-2 px-3 py-3 rounded-xl border transition-all ${
                   formState.targetType === target.value
-                    ? 'bg-gradient-to-br from-[#f4c979]/25 to-[#d79a32]/15 border-[#f4c979]/50 text-[#f4c979] shadow-[0_0_20px_rgba(244,201,121,0.15)]'
-                    : 'bg-[#0c0a08]/60 border-[#f4c979]/15 text-[#f8e5bb]/60 hover:border-[#f4c979]/30 hover:text-[#f8e5bb]/80'
+                    ? 'bg-gradient-to-br from-[#F4F7F2]/25 to-[#8DF5A8]/15 border-[#F4F7F2]/50 text-[#F4F7F2] shadow-[0_0_20px_rgba(221,255,133,0.15)]'
+                    : 'bg-[#0B100D]/60 border-[#F4F7F2]/15 text-[#E4EAE1]/60 hover:border-[#F4F7F2]/30 hover:text-[#E4EAE1]/80'
                 }`}
               >
                 {getTargetIcon(target.value)}
@@ -376,7 +376,7 @@ function AdminManualNotificationsComponent() {
             >
               <label 
                 htmlFor="notification-role" 
-                className="block text-sm font-semibold text-[#f8e5bb]"
+                className="block text-sm font-semibold text-[#E4EAE1]"
               >
                 Select Role
               </label>
@@ -388,8 +388,8 @@ function AdminManualNotificationsComponent() {
                     onClick={() => updateField('targetRef', roleOption.value)}
                     className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border transition-all text-sm ${
                       formState.targetRef === roleOption.value
-                        ? 'bg-[#f4c979]/15 border-[#f4c979]/50 text-[#f4c979]'
-                        : 'bg-[#0c0a08]/60 border-[#f4c979]/15 text-[#f8e5bb]/60 hover:border-[#f4c979]/30'
+                        ? 'bg-[#F4F7F2]/15 border-[#F4F7F2]/50 text-[#F4F7F2]'
+                        : 'bg-[#0B100D]/60 border-[#F4F7F2]/15 text-[#E4EAE1]/60 hover:border-[#F4F7F2]/30'
                     }`}
                   >
                     {roleOption.label}
@@ -410,7 +410,7 @@ function AdminManualNotificationsComponent() {
             >
               <label 
                 htmlFor="notification-job" 
-                className="block text-sm font-semibold text-[#f8e5bb]"
+                className="block text-sm font-semibold text-[#E4EAE1]"
               >
                 Job ID
               </label>
@@ -421,9 +421,9 @@ function AdminManualNotificationsComponent() {
                 onChange={(e) => updateField('targetRef', e.target.value)}
                 placeholder="Enter job UUID..."
                 required
-                className="w-full px-4 py-3 rounded-xl bg-[#0c0a08]/80 border border-[#f4c979]/25 text-[#fff6dd] placeholder-[#f8e5bb]/35 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:border-[#f4c979]/50 transition-all"
+                className="w-full px-4 py-3 rounded-xl bg-[#0B100D]/80 border border-[#F4F7F2]/25 text-[#F4F7F2] placeholder-[#E4EAE1]/35 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/50 focus-visible:border-[#F4F7F2]/50 transition-all"
               />
-              <p className="text-xs text-[#f8e5bb]/40 pl-1">
+              <p className="text-xs text-[#E4EAE1]/40 pl-1">
                 All crew members assigned to this job will receive the notification
               </p>
             </motion.div>
@@ -439,9 +439,9 @@ function AdminManualNotificationsComponent() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.98 }}
               transition={{ duration: 0.2 }}
-              className={`p-5 rounded-2xl border ${
+              className={`p-5 rounded-leaf-sm border ${
                 result.type === 'success'
-                  ? 'bg-gradient-to-br from-emerald-500/15 to-emerald-600/10 border-emerald-500/40 shadow-[0_0_25px_rgba(16,185,129,0.15)]'
+                  ? 'bg-gradient-to-br from-emerald-500/15 to-emerald-600/10 border-emerald-500/40 shadow-[0_0_25px_rgba(47,164,90,0.15)]'
                   : 'bg-gradient-to-br from-red-500/15 to-red-600/10 border-red-500/40 shadow-[0_0_25px_rgba(239,68,68,0.15)]'
               }`}
             >
@@ -486,14 +486,14 @@ function AdminManualNotificationsComponent() {
           disabled={loading || !formState.title.trim()}
           whileHover={{ scale: loading ? 1 : 1.01 }}
           whileTap={{ scale: loading ? 1 : 0.99 }}
-          className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-bold text-[#0c0b09] bg-gradient-to-r from-[#f7e4bd] via-[#f4c979] to-[#d79a32] hover:from-[#fff6dd] hover:via-[#f8e5bb] hover:to-[#f4c979] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c0b09] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_15px_40px_rgba(244,201,121,0.25)] hover:shadow-[0_20px_50px_rgba(244,201,121,0.35)]"
+          className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-leaf-sm font-bold text-[#0B100D] bg-gradient-to-r from-[#E4EAE1] via-[#F4F7F2] to-[#8DF5A8] hover:from-[#F4F7F2] hover:via-[#E4EAE1] hover:to-[#F4F7F2] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_15px_40px_rgba(221,255,133,0.25)] hover:shadow-[0_20px_50px_rgba(221,255,133,0.35)]"
         >
           {loading ? (
             <>
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                className="w-5 h-5 border-2 border-[#0c0b09]/30 border-t-[#0c0b09] rounded-full"
+                className="w-5 h-5 border-2 border-[#0B100D]/30 border-t-[#0B100D] rounded-full"
               />
               <span>Sending Notification...</span>
             </>
@@ -507,7 +507,7 @@ function AdminManualNotificationsComponent() {
         </motion.button>
 
         {/* Footer Notice */}
-        <p className="text-[10px] text-[#f8e5bb]/30 text-center leading-relaxed">
+        <p className="text-[10px] text-[#E4EAE1]/30 text-center leading-relaxed">
           Notifications are delivered instantly via push. All actions are logged for audit purposes.
           <br />
           Users with notifications disabled will not receive this message.

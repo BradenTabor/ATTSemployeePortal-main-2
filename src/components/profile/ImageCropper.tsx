@@ -244,7 +244,7 @@ export default function ImageCropper({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-[9999] flex flex-col"
-        style={{ background: 'linear-gradient(180deg, #030d08 0%, #010604 100%)' }}
+        style={{ background: 'linear-gradient(180deg, #040605 0%, #040605 100%)' }}
       >
         {/* Full-page backdrop with blur */}
         <motion.div
@@ -253,7 +253,7 @@ export default function ImageCropper({
           exit={{ opacity: 0 }}
           className="absolute inset-0"
           style={{
-            background: 'radial-gradient(ellipse at 50% 0%, rgba(16, 185, 129, 0.15) 0%, transparent 50%)',
+            background: 'radial-gradient(ellipse at 50% 0%, rgba(47,164,90, 0.15) 0%, transparent 50%)',
           }}
         />
         
@@ -267,7 +267,7 @@ export default function ImageCropper({
           }}
           transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
           style={{
-            background: 'radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(47,164,90, 0.2) 0%, transparent 70%)',
             filter: 'blur(40px)',
           }}
         />
@@ -280,7 +280,7 @@ export default function ImageCropper({
           }}
           transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
           style={{
-            background: 'radial-gradient(circle, rgba(52, 211, 153, 0.15) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(61,220,132, 0.15) 0%, transparent 70%)',
             filter: 'blur(35px)',
           }}
         />
@@ -348,18 +348,18 @@ export default function ImageCropper({
           <div className="relative max-w-2xl w-full">
             {/* Frame glow */}
             <div 
-              className="absolute -inset-4 rounded-3xl pointer-events-none"
+              className="absolute -inset-4 rounded-leaf pointer-events-none"
               style={{
-                background: 'linear-gradient(145deg, rgba(16, 185, 129, 0.15) 0%, transparent 50%, rgba(52, 211, 153, 0.1) 100%)',
+                background: 'linear-gradient(145deg, rgba(47,164,90, 0.15) 0%, transparent 50%, rgba(61,220,132, 0.1) 100%)',
                 filter: 'blur(20px)',
               }}
             />
             
             {/* Crop area frame */}
             <div 
-              className="relative rounded-2xl overflow-hidden border border-emerald-500/30 shadow-2xl shadow-emerald-900/50"
+              className="relative rounded-leaf-sm overflow-hidden border border-emerald-500/30 shadow-2xl shadow-emerald-900/50"
               style={{
-                background: 'linear-gradient(145deg, rgba(4, 30, 21, 0.9) 0%, rgba(2, 15, 10, 0.95) 100%)',
+                background: 'linear-gradient(145deg, rgba(11,16,13, 0.9) 0%, rgba(4,6,5, 0.95) 100%)',
               }}
             >
               {/* Top shine */}
@@ -439,9 +439,9 @@ export default function ImageCropper({
               className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
               style={{
                 background: isProcessing 
-                  ? 'linear-gradient(135deg, #047857 0%, #065f46 100%)'
-                  : 'linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%)',
-                boxShadow: '0 10px 30px -10px rgba(16, 185, 129, 0.5), 0 0 0 1px rgba(16, 185, 129, 0.2)',
+                  ? 'linear-gradient(135deg, #1F7A44 0%, #12482A 100%)'
+                  : 'linear-gradient(135deg, #3DDC84 0%, #2FA45A 50%, #1F7A44 100%)',
+                boxShadow: '0 10px 30px -10px rgba(47,164,90, 0.5), 0 0 0 1px rgba(47,164,90, 0.2)',
               }}
               aria-label={isProcessing ? 'Processing...' : 'Confirm crop'}
             >

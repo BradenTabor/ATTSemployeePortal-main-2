@@ -34,7 +34,7 @@ export function FormField({
     <div className={cn('space-y-2', className)}>
       <label 
         htmlFor={fieldId}
-        className="text-xs uppercase tracking-[0.3em] text-[#f3d9a4]/70 flex items-center gap-1"
+        className="text-xs uppercase text-[#DDFF85]/70 flex items-center gap-1 font-mono font-medium tracking-[0.14em]"
       >
         {label}
         {required && <span className="text-amber-400" aria-label="required">*</span>}

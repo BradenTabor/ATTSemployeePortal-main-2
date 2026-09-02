@@ -72,7 +72,7 @@ function MonthCard({ year, month, reward, hasDrawing, now, onEdit, onDraw }: Mon
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       className={`bg-gray-900 border rounded-xl p-4 flex flex-col gap-3 ${
-        isCurrent ? 'border-[#f6dcb2]/30 ring-1 ring-[#f6dcb2]/10' : 'border-white/[0.06]'
+        isCurrent ? 'border-[#E4EAE1]/30 ring-1 ring-[#E4EAE1]/10' : 'border-white/[0.06]'
       }`}
     >
       <div className="flex items-center justify-between">
@@ -107,7 +107,7 @@ function MonthCard({ year, month, reward, hasDrawing, now, onEdit, onDraw }: Mon
         {status !== 'drawing-complete' && (
           <button
             onClick={() => onEdit(year, month, reward)}
-            className="flex-1 text-xs py-1.5 rounded-lg bg-[#f6dcb2]/10 text-[#f6dcb2] hover:bg-[#f6dcb2]/20 transition-colors font-medium"
+            className="flex-1 text-xs py-1.5 rounded-lg bg-[#E4EAE1]/10 text-[#E4EAE1] hover:bg-[#E4EAE1]/20 transition-colors font-medium"
           >
             {reward ? 'Edit' : 'Set Up'}
           </button>
@@ -263,7 +263,7 @@ function EditModal({ year, month, existing, onClose }: EditModalProps) {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="relative w-full max-w-lg max-h-[85vh] overflow-y-auto bg-gray-900 border border-white/[0.08] rounded-2xl p-5 shadow-2xl"
+        className="relative w-full max-w-lg max-h-[85vh] overflow-y-auto bg-gray-900 border border-white/[0.08] rounded-leaf-sm p-5 shadow-2xl"
       >
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-white">
@@ -290,7 +290,7 @@ function EditModal({ year, month, existing, onClose }: EditModalProps) {
               type="text"
               value={form.grand_prize_name}
               onChange={(e) => handleField('grand_prize_name', e.target.value)}
-              className="mt-1 w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus-visible:border-[#f6dcb2]/40"
+              className="mt-1 w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus-visible:border-[#E4EAE1]/40"
               placeholder="e.g. $100 Gift Card"
             />
           </label>
@@ -301,7 +301,7 @@ function EditModal({ year, month, existing, onClose }: EditModalProps) {
               value={form.grand_prize_description}
               onChange={(e) => handleField('grand_prize_description', e.target.value)}
               rows={2}
-              className="mt-1 w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus-visible:border-[#f6dcb2]/40 resize-none"
+              className="mt-1 w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus-visible:border-[#E4EAE1]/40 resize-none"
               placeholder="Optional description"
             />
           </label>
@@ -341,7 +341,7 @@ function EditModal({ year, month, existing, onClose }: EditModalProps) {
           {!showRunnerUp1 ? (
             <button
               onClick={() => setShowRunnerUp1(true)}
-              className="text-xs text-[#f6dcb2]/70 hover:text-[#f6dcb2] flex items-center gap-1"
+              className="text-xs text-[#E4EAE1]/70 hover:text-[#E4EAE1] flex items-center gap-1"
             >
               <Plus className="w-3.5 h-3.5" /> Add runner-up prize
             </button>
@@ -369,14 +369,14 @@ function EditModal({ year, month, existing, onClose }: EditModalProps) {
                 type="text"
                 value={form.runner_up_1_name}
                 onChange={(e) => handleField('runner_up_1_name', e.target.value)}
-                className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus-visible:border-[#f6dcb2]/40"
+                className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus-visible:border-[#E4EAE1]/40"
                 placeholder="Prize name"
               />
               <textarea
                 value={form.runner_up_1_description}
                 onChange={(e) => handleField('runner_up_1_description', e.target.value)}
                 rows={2}
-                className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus-visible:border-[#f6dcb2]/40 resize-none"
+                className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus-visible:border-[#E4EAE1]/40 resize-none"
                 placeholder="Optional description"
               />
               <button
@@ -401,7 +401,7 @@ function EditModal({ year, month, existing, onClose }: EditModalProps) {
             {!showRunnerUp2 ? (
               <button
                 onClick={() => setShowRunnerUp2(true)}
-                className="text-xs text-[#f6dcb2]/70 hover:text-[#f6dcb2] flex items-center gap-1"
+                className="text-xs text-[#E4EAE1]/70 hover:text-[#E4EAE1] flex items-center gap-1"
               >
                 <Plus className="w-3.5 h-3.5" /> Add second runner-up
               </button>
@@ -425,14 +425,14 @@ function EditModal({ year, month, existing, onClose }: EditModalProps) {
                   type="text"
                   value={form.runner_up_2_name}
                   onChange={(e) => handleField('runner_up_2_name', e.target.value)}
-                  className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus-visible:border-[#f6dcb2]/40"
+                  className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus-visible:border-[#E4EAE1]/40"
                   placeholder="Prize name"
                 />
                 <textarea
                   value={form.runner_up_2_description}
                   onChange={(e) => handleField('runner_up_2_description', e.target.value)}
                   rows={2}
-                  className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus-visible:border-[#f6dcb2]/40 resize-none"
+                  className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus-visible:border-[#E4EAE1]/40 resize-none"
                   placeholder="Optional description"
                 />
                 <button
@@ -463,7 +463,7 @@ function EditModal({ year, month, existing, onClose }: EditModalProps) {
           <button
             onClick={handleSave}
             disabled={isSaving || !form.grand_prize_name.trim()}
-            className="flex-1 text-sm py-2 rounded-lg bg-[#f6dcb2]/20 text-[#f6dcb2] hover:bg-[#f6dcb2]/30 transition-colors font-semibold disabled:opacity-40 flex items-center justify-center gap-2"
+            className="flex-1 text-sm py-2 rounded-lg bg-[#E4EAE1]/20 text-[#E4EAE1] hover:bg-[#E4EAE1]/30 transition-colors font-semibold disabled:opacity-40 flex items-center justify-center gap-2"
           >
             {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
             Save Reward
@@ -522,7 +522,7 @@ function DrawModal({ year, month, isRedraw, onClose }: DrawModalProps) {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="relative w-full max-w-sm bg-gray-900 border border-white/[0.08] rounded-2xl p-5 shadow-2xl"
+        className="relative w-full max-w-sm bg-gray-900 border border-white/[0.08] rounded-leaf-sm p-5 shadow-2xl"
       >
         <div className="flex items-center gap-3 mb-4">
           {isRedraw ? (
@@ -636,7 +636,7 @@ function AdminSafetyRewardsPage() {
         >
           <img loading="lazy" src="/assets/safety-rewards.webp" alt="" className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 object-contain flex-shrink-0" />
           <div>
-            <h1 className="text-xl font-bold text-white">Safety Rewards</h1>
+            <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">Safety Rewards</h1>
             <p className="text-sm text-white/50">
               Manage monthly raffle prizes and run drawings
             </p>
@@ -719,7 +719,7 @@ function AdminSafetyRewardsPage() {
             </p>
             <button
               onClick={() => handleEdit(now.getFullYear(), now.getMonth() + 1)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#f6dcb2]/20 text-[#f6dcb2] hover:bg-[#f6dcb2]/30 transition-colors font-semibold text-sm"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#E4EAE1]/20 text-[#E4EAE1] hover:bg-[#E4EAE1]/30 transition-colors font-semibold text-sm"
             >
               <Plus className="w-4 h-4" /> Add Reward
             </button>

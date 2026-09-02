@@ -53,6 +53,8 @@ export {
   useScrollReveal,
 } from './hooks';
 
+export { useCountUp } from './useCountUp';
+
 // Types
 export type {
   MotionConfig,

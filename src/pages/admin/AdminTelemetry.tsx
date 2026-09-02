@@ -60,6 +60,7 @@ import {
   containerVariants,
   itemVariants,
   GamificationAnalyticsSection,
+  SectionInfo,
 } from "./admin-telemetry";
 
 // ============================================================================
@@ -103,7 +104,7 @@ function StatBox({ label, value, subValue, color = "emerald", icon }: StatBoxPro
     <div className={cn("rounded-lg sm:rounded-xl border p-2 sm:p-3", colorClasses[color])}>
       <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
         {icon && <span className={cn(textClasses[color], "w-3 h-3 sm:w-3.5 sm:h-3.5")}>{icon}</span>}
-        <span className="text-[9px] sm:text-[10px] uppercase tracking-wide text-white/50">{label}</span>
+        <span className="text-[9px] sm:text-[10px] uppercase text-white/50 font-mono font-medium tracking-[0.14em]">{label}</span>
       </div>
       <p className={cn("text-base sm:text-xl font-bold tabular-nums", textClasses[color])}>
         {typeof value === "number" ? value.toLocaleString() : value}
@@ -156,6 +157,19 @@ function SummarySection({ data }: SummarySectionProps) {
 
   return (
     <motion.div variants={itemVariants}>
+      <div className="relative flex items-center gap-1.5 mb-1.5 sm:mb-2.5">
+        <Activity className="w-3.5 h-3.5 text-emerald-400" aria-hidden />
+        <h3 className="text-[11px] sm:text-sm font-semibold text-white">Summary</h3>
+        <SectionInfo tone="emerald" title="Summary">
+          <p>A quick snapshot of overall activity for the selected time range.</p>
+          <p>
+            <b>Events</b> = every tracked action. <b>Sessions</b> = unique app visits.
+            <b> Users</b> = distinct people. The rest count forms started, forms submitted,
+            form errors, announcement views, and duplicate submissions that were caught.
+          </p>
+        </SectionInfo>
+      </div>
+
       {/* Mobile: Horizontal scrolling compact strip — break out to viewport edges */}
       <div className="sm:hidden overflow-x-auto -mx-2.5 px-2.5 pb-1 sm:-mx-4 sm:px-4">
         <div className="flex gap-1">
@@ -277,10 +291,10 @@ function FormPerformanceSection({ completionTimes, byType }: FormPerformanceSect
   return (
     <motion.div
       variants={itemVariants}
-      className="rounded-lg sm:rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-[#07140f] via-[#050a0f] to-[#020205] p-2 sm:p-5"
+      className="rounded-lg sm:rounded-leaf-sm border border-emerald-500/20 bg-gradient-to-br from-[#0B100D] via-[#0B100D] to-[#040605] p-2 sm:p-5"
     >
       {/* Compact mobile header */}
-      <div className="flex items-center justify-between mb-2 sm:mb-4">
+      <div className="relative flex items-center justify-between mb-2 sm:mb-4">
         <div className="flex items-center gap-1.5 sm:gap-2">
           <div className="p-1 sm:p-2 rounded-md sm:rounded-lg bg-emerald-500/10 text-emerald-400">
             <Clock className="w-3 sm:w-4 h-3 sm:h-4" />
@@ -289,6 +303,17 @@ function FormPerformanceSection({ completionTimes, byType }: FormPerformanceSect
             <h3 className="text-xs sm:text-base font-semibold text-white">Form Performance</h3>
             <p className="hidden sm:block text-xs text-white/40 mt-0.5">Completion times, submission rates, and error tracking</p>
           </div>
+          <SectionInfo tone="emerald" title="Form Performance">
+            <p>How each safety form is doing.</p>
+            <p>
+              <b>Started</b> vs <b>Submitted</b> shows how many people finish.
+              <b> Complete %</b> is submitted ÷ started — higher is better.
+            </p>
+            <p>
+              <b>p50 / p90</b> are completion times: half of users finish faster than p50,
+              and 90% finish faster than p90. Lower means a quicker, smoother form.
+            </p>
+          </SectionInfo>
         </div>
       </div>
 
@@ -443,10 +468,10 @@ function AnnouncementSection({ data }: AnnouncementSectionProps) {
   return (
     <motion.div
       variants={itemVariants}
-      className="rounded-lg sm:rounded-2xl border border-purple-500/20 bg-gradient-to-br from-[#0f071a] via-[#080510] to-[#020205] p-2 sm:p-5"
+      className="rounded-lg sm:rounded-leaf-sm border border-purple-500/20 bg-gradient-to-br from-[#0B100D] via-[#0B100D] to-[#040605] p-2 sm:p-5"
     >
       {/* Compact mobile header */}
-      <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-4">
+      <div className="relative flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-4">
         <div className="p-1 sm:p-2 rounded-md sm:rounded-lg bg-purple-500/10 text-purple-400">
           <Eye className="w-3 sm:w-4 h-3 sm:h-4" />
         </div>
@@ -454,6 +479,13 @@ function AnnouncementSection({ data }: AnnouncementSectionProps) {
           <h3 className="text-xs sm:text-base font-semibold text-white">Announcements</h3>
           <p className="hidden sm:block text-xs text-white/40 mt-0.5">Views and engagement metrics</p>
         </div>
+        <SectionInfo tone="purple" title="Announcements">
+          <p>How often announcements are opened and read.</p>
+          <p>
+            <b>AI-generated</b> vs <b>Human-authored</b> shows what share of views came from
+            AI-written posts versus ones a person wrote. The bar visualizes that split.
+          </p>
+        </SectionInfo>
       </div>
 
       {/* Mobile: Inline compact stats */}
@@ -548,10 +580,10 @@ function DuplicateSection({ data }: DuplicateSectionProps) {
   return (
     <motion.div
       variants={itemVariants}
-      className="rounded-lg sm:rounded-2xl border border-amber-500/20 bg-gradient-to-br from-[#14100a] via-[#0a0805] to-[#020205] p-2 sm:p-5"
+      className="rounded-lg sm:rounded-leaf-sm border border-amber-500/20 bg-gradient-to-br from-[#0B100D] via-[#040605] to-[#040605] p-2 sm:p-5"
     >
       {/* Compact mobile header */}
-      <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-4">
+      <div className="relative flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-4">
         <div className="p-1 sm:p-2 rounded-md sm:rounded-lg bg-amber-500/10 text-amber-400">
           <Shield className="w-3 sm:w-4 h-3 sm:h-4" />
         </div>
@@ -559,6 +591,14 @@ function DuplicateSection({ data }: DuplicateSectionProps) {
           <h3 className="text-xs sm:text-base font-semibold text-white">Duplicate Detection</h3>
           <p className="hidden sm:block text-xs text-white/40 mt-0.5">Preventing duplicate submissions</p>
         </div>
+        <SectionInfo tone="amber" title="Duplicate Detection">
+          <p>Tracks accidental duplicate form submissions.</p>
+          <p>
+            <b>Detected</b> = caught. <b>Prevented</b> = blocked before saving.
+            <b> Overridden</b> = the user chose to submit anyway. A higher prevention rate
+            means cleaner data and less wasted time.
+          </p>
+        </SectionInfo>
       </div>
 
       {/* Mobile: Compact inline stats */}
@@ -696,10 +736,10 @@ function TimelineSection({ data }: TimelineSectionProps) {
   return (
     <motion.div
       variants={itemVariants}
-      className="rounded-lg sm:rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-[#07140f] via-[#050a0f] to-[#020205] p-2 sm:p-5"
+      className="rounded-lg sm:rounded-leaf-sm border border-emerald-500/20 bg-gradient-to-br from-[#0B100D] via-[#0B100D] to-[#040605] p-2 sm:p-5"
     >
       {/* Compact mobile header with inline filter */}
-      <div className="flex items-center justify-between gap-1.5 sm:gap-2 mb-2 sm:mb-4">
+      <div className="relative flex items-center justify-between gap-1.5 sm:gap-2 mb-2 sm:mb-4">
         <div className="flex items-center gap-1.5 sm:gap-2">
           <div className="p-1 sm:p-2 rounded-md sm:rounded-lg bg-emerald-500/10 text-emerald-400">
             <BarChart3 className="w-3 sm:w-4 h-3 sm:h-4" />
@@ -708,6 +748,15 @@ function TimelineSection({ data }: TimelineSectionProps) {
             <h3 className="text-xs sm:text-base font-semibold text-white">Activity Timeline</h3>
             <p className="hidden sm:block text-xs text-white/40 mt-0.5">Events over the last 14 days</p>
           </div>
+          <SectionInfo tone="emerald" title="Activity Timeline">
+            <p>Daily trend over the last 14 days.</p>
+            <p>
+              <b className="text-emerald-300">Green</b> = form submissions,
+              <b className="text-blue-300"> blue</b> = announcement views,
+              <b className="text-red-300"> red</b> = form errors.
+            </p>
+            <p>Tap a metric chip to focus just that line, or hover a day for exact counts.</p>
+          </SectionInfo>
         </div>
         <div className="flex items-center gap-0.5 p-0.5 rounded-md sm:rounded-lg bg-white/5 border border-white/10">
           {[
@@ -800,12 +849,12 @@ function TimelineSection({ data }: TimelineSectionProps) {
           <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 bottom-5 w-full h-full overflow-visible">
             <defs>
               <linearGradient id="subGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="rgb(52, 211, 153)" stopOpacity="0.4" />
-                <stop offset="100%" stopColor="rgb(52, 211, 153)" stopOpacity="0.05" />
+                <stop offset="0%" stopColor="rgb(61, 220, 132)" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="rgb(61, 220, 132)" stopOpacity="0.05" />
               </linearGradient>
               <linearGradient id="viewGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="rgb(96, 165, 250)" stopOpacity="0.3" />
-                <stop offset="100%" stopColor="rgb(96, 165, 250)" stopOpacity="0.02" />
+                <stop offset="0%" stopColor="rgb(125, 205, 162)" stopOpacity="0.3" />
+                <stop offset="100%" stopColor="rgb(125, 205, 162)" stopOpacity="0.02" />
               </linearGradient>
               <linearGradient id="errGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="rgb(248, 113, 113)" stopOpacity="0.3" />
@@ -824,13 +873,13 @@ function TimelineSection({ data }: TimelineSectionProps) {
                 <motion.path d={submissionPaths.areaPath} fill="url(#subGrad)" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
               )}
               {(activeMetric === 'views' || activeMetric === 'all') && (
-                <motion.path d={viewPaths.linePath} fill="none" stroke="rgb(96, 165, 250)" strokeWidth="0.5" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1 }} />
+                <motion.path d={viewPaths.linePath} fill="none" stroke="rgb(125, 205, 162)" strokeWidth="0.5" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1 }} />
               )}
               {(activeMetric === 'errors' || activeMetric === 'all') && (
                 <motion.path d={errorPaths.linePath} fill="none" stroke="rgb(248, 113, 113)" strokeWidth="0.5" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1 }} />
               )}
               {(activeMetric === 'submissions' || activeMetric === 'all') && (
-                <motion.path d={submissionPaths.linePath} fill="none" stroke="rgb(52, 211, 153)" strokeWidth="0.5" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1 }} />
+                <motion.path d={submissionPaths.linePath} fill="none" stroke="rgb(61, 220, 132)" strokeWidth="0.5" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1 }} />
               )}
             </AnimatePresence>
           </svg>
@@ -926,9 +975,9 @@ function RawEventsLog({ events, isLoading }: RawEventsLogProps) {
   return (
     <motion.div
       variants={itemVariants}
-      className="rounded-lg sm:rounded-2xl border border-white/10 bg-gradient-to-br from-[#0a0a0f] via-[#050508] to-[#020205] p-2 sm:p-5"
+      className="rounded-lg sm:rounded-leaf-sm border border-white/10 bg-gradient-to-br from-[#0B100D] via-[#040605] to-[#040605] p-2 sm:p-5"
     >
-      <div className="flex items-center justify-between gap-1.5 sm:gap-2 mb-1.5 sm:mb-4">
+      <div className="relative flex items-center justify-between gap-1.5 sm:gap-2 mb-1.5 sm:mb-4">
         <div className="flex items-center gap-1.5 sm:gap-2">
           <div className="p-1 sm:p-2 rounded-md sm:rounded-lg bg-white/5 text-white/60">
             <List className="w-3 sm:w-4 h-3 sm:h-4" />
@@ -937,6 +986,10 @@ function RawEventsLog({ events, isLoading }: RawEventsLogProps) {
             <h3 className="text-xs sm:text-base font-semibold text-white">Events</h3>
             <p className="hidden sm:block text-xs text-white/40 mt-0.5">{events.length} recent</p>
           </div>
+          <SectionInfo tone="neutral" title="Events">
+            <p>A live log of the most recent tracked actions across the app.</p>
+            <p>Use the dropdown to filter by type, and tap any row to expand its session, user, and technical details.</p>
+          </SectionInfo>
         </div>
         <select
           value={filter}
@@ -1057,9 +1110,9 @@ function RouteAnalytics({ routes, isLoading }: RouteAnalyticsProps) {
   return (
     <motion.div
       variants={itemVariants}
-      className="rounded-lg sm:rounded-2xl border border-blue-500/20 bg-gradient-to-br from-[#070a14] via-[#050508] to-[#020205] p-2 sm:p-5"
+      className="rounded-lg sm:rounded-leaf-sm border border-blue-500/20 bg-gradient-to-br from-[#0B100D] via-[#040605] to-[#040605] p-2 sm:p-5"
     >
-      <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-4">
+      <div className="relative flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-4">
         <div className="p-1 sm:p-2 rounded-md sm:rounded-lg bg-blue-500/10 text-blue-400">
           <MapPin className="w-3 sm:w-4 h-3 sm:h-4" />
         </div>
@@ -1067,6 +1120,10 @@ function RouteAnalytics({ routes, isLoading }: RouteAnalyticsProps) {
           <h3 className="text-xs sm:text-base font-semibold text-white">Routes</h3>
           <p className="hidden sm:block text-xs text-white/40 mt-0.5">Events by page</p>
         </div>
+        <SectionInfo tone="blue" title="Routes">
+          <p>Which pages generate the most activity.</p>
+          <p>A longer bar means more tracked events happened on that page during the window.</p>
+        </SectionInfo>
       </div>
 
       {isLoading ? (
@@ -1126,15 +1183,21 @@ function ErrorBreakdownSection({ errors, isLoading }: ErrorBreakdownSectionProps
   return (
     <motion.div
       variants={itemVariants}
-      className="rounded-lg sm:rounded-2xl border border-red-500/20 bg-gradient-to-br from-[#140a0a] via-[#0a0505] to-[#020205] p-2 sm:p-5"
+      className="rounded-lg sm:rounded-leaf-sm border border-red-500/20 bg-gradient-to-br from-[#0B100D] via-[#040605] to-[#040605] p-2 sm:p-5"
     >
-      <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-4">
+      <div className="relative flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-4">
         <div className="p-1 sm:p-2 rounded-md sm:rounded-lg bg-red-500/10 text-red-400">
           <AlertTriangle className="w-3 sm:w-4 h-3 sm:h-4" />
         </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="text-xs sm:text-base font-semibold text-white">Errors</h3>
-          <p className="hidden sm:block text-xs text-white/40 mt-0.5">Form submission errors</p>
+        <div className="flex-1 min-w-0 flex items-center gap-1.5">
+          <div className="min-w-0">
+            <h3 className="text-xs sm:text-base font-semibold text-white">Errors</h3>
+            <p className="hidden sm:block text-xs text-white/40 mt-0.5">Form submission errors</p>
+          </div>
+          <SectionInfo tone="red" title="Errors">
+            <p>Form submission errors grouped by type and field.</p>
+            <p>Tap a row to see the form, the error code, and how many times it happened — a fast way to spot fields that trip people up.</p>
+          </SectionInfo>
         </div>
         {errors.length > 0 && (
           <div className="text-right shrink-0">
@@ -1302,14 +1365,14 @@ export default function AdminTelemetry() {
           {/* Mobile: short title row + date row */}
           <div className="flex sm:hidden items-center gap-2 min-w-0">
             <Database className="w-4 h-4 text-emerald-400 shrink-0" />
-            <h1 className="text-base font-bold text-white truncate">Telemetry</h1>
+            <p className="type-display font-light text-bone-50 text-base truncate" aria-hidden="true">Telemetry</p>
           </div>
 
           {/* Title - hidden on mobile (we show short title above) */}
-          <div className="hidden sm:block">
+          <div className="sr-only sm:not-sr-only">
             <div className="flex items-center gap-2">
-              <Database className="w-5 h-5 text-emerald-400" />
-              <h1 className="text-xl sm:text-2xl font-bold text-white">Telemetry Dashboard</h1>
+              <Database className="w-5 h-5 text-emerald-400" aria-hidden />
+              <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">Telemetry Dashboard</h1>
             </div>
             <p className="text-sm text-white/50 mt-1">
               Complete analytics for forms, announcements, and system health
@@ -1323,7 +1386,7 @@ export default function AdminTelemetry() {
                 key={option.days}
                 onClick={() => setSelectedDays(option.days)}
                 className={cn(
-                  "px-1.5 py-0.5 rounded text-[9px] font-medium transition-all whitespace-nowrap shrink-0",
+                  "min-h-[40px] min-w-[44px] px-2.5 py-1 rounded text-xs font-medium transition-all whitespace-nowrap shrink-0",
                   selectedDays === option.days
                     ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
                     : "text-white/50"
@@ -1342,7 +1405,7 @@ export default function AdminTelemetry() {
                   key={option.days}
                   onClick={() => setSelectedDays(option.days)}
                   className={cn(
-                    "px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
+                    "min-h-[40px] px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
                     selectedDays === option.days
                       ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
                       : "text-white/50 hover:text-white/70 hover:bg-white/5"
@@ -1353,28 +1416,28 @@ export default function AdminTelemetry() {
               ))}
             </div>
             <button
+              type="button"
               onClick={() => refetch()}
               disabled={isRefetching}
+              aria-label="Refresh telemetry"
               className={cn(
-                "p-2 rounded-xl bg-white/5 border border-white/10 text-white/50",
-                "hover:text-white/70 hover:bg-white/10 transition-all",
-                isRefetching && "animate-spin"
+                "inline-flex min-h-[40px] min-w-[40px] items-center justify-center p-2 rounded-xl bg-white/5 border border-white/10 text-white/50",
+                "hover:text-white/70 hover:bg-white/10 transition-all"
               )}
             >
-              <RefreshCw className="w-4 h-4" />
+              <RefreshCw className={cn("w-4 h-4", isRefetching && "animate-spin")} aria-hidden />
             </button>
           </div>
 
           {/* Mobile refresh button */}
           <button
+            type="button"
             onClick={() => refetch()}
             disabled={isRefetching}
-            className={cn(
-              "sm:hidden p-1 rounded-md bg-white/5 border border-white/10 text-white/50 shrink-0",
-              isRefetching && "animate-spin"
-            )}
+            aria-label="Refresh telemetry"
+            className="sm:hidden inline-flex min-h-[44px] min-w-[44px] self-start items-center justify-center rounded-md bg-white/5 border border-white/10 text-white/50 shrink-0"
           >
-            <RefreshCw className="w-3 h-3" />
+            <RefreshCw className={cn("w-4 h-4", isRefetching && "animate-spin")} aria-hidden />
           </button>
         </motion.div>
 
@@ -1388,7 +1451,7 @@ export default function AdminTelemetry() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="rounded-xl sm:rounded-2xl border border-red-500/30 bg-red-500/10 p-4 sm:p-6 text-center"
+            className="rounded-xl sm:rounded-leaf-sm border border-red-500/30 bg-red-500/10 p-4 sm:p-6 text-center"
           >
             <AlertTriangle className="w-6 h-6 sm:w-8 sm:h-8 text-red-400 mx-auto mb-2 sm:mb-3" />
             <h3 className="text-base sm:text-lg font-semibold text-white mb-1.5 sm:mb-2">Error Loading Data</h3>
@@ -1406,7 +1469,7 @@ export default function AdminTelemetry() {
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center justify-center py-8 sm:py-16 text-center px-2"
           >
-            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-3 sm:mb-4">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-leaf-sm bg-emerald-500/10 flex items-center justify-center mb-3 sm:mb-4">
               <Activity className="w-6 h-6 sm:w-8 sm:h-8 text-emerald-400/60" />
             </div>
             <h3 className="text-base sm:text-lg font-semibold text-white mb-1.5 sm:mb-2">No Telemetry Data Yet</h3>

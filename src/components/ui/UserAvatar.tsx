@@ -91,7 +91,7 @@ const AvatarSkeleton = memo(function AvatarSkeleton({
     <div 
       className={`${config.container} rounded-full animate-pulse`}
       style={{
-        background: 'linear-gradient(145deg, rgba(16, 185, 129, 0.2) 0%, rgba(4, 40, 28, 0.4) 100%)',
+        background: 'linear-gradient(145deg, rgba(47,164,90, 0.2) 0%, rgba(18,26,21, 0.4) 100%)',
       }}
     />
   );
@@ -123,8 +123,8 @@ const InitialsAvatar = memo(function InitialsAvatar({
         ${onClick ? 'cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent' : ''}
       `}
       style={{
-        background: 'linear-gradient(145deg, rgba(4, 40, 28, 0.95) 0%, rgba(2, 25, 18, 0.98) 100%)',
-        boxShadow: '0 0 20px rgba(16, 185, 129, 0.2), inset 0 0 10px rgba(16, 185, 129, 0.08)',
+        background: 'linear-gradient(145deg, rgba(18,26,21, 0.95) 0%, rgba(11,16,13, 0.98) 100%)',
+        boxShadow: '0 0 20px rgba(47,164,90, 0.2), inset 0 0 10px rgba(47,164,90, 0.08)',
       }}
       whileHover={onClick ? { scale: 1.05 } : undefined}
       whileTap={onClick ? { scale: 0.95 } : undefined}
@@ -136,7 +136,7 @@ const InitialsAvatar = memo(function InitialsAvatar({
       <div 
         className="absolute inset-0 opacity-40 pointer-events-none"
         style={{
-          background: 'linear-gradient(145deg, rgba(16, 185, 129, 0.2) 0%, transparent 50%, rgba(5, 150, 105, 0.1) 100%)',
+          background: 'linear-gradient(145deg, rgba(47,164,90, 0.2) 0%, transparent 50%, rgba(31,122,68, 0.1) 100%)',
         }}
       />
       
@@ -189,7 +189,7 @@ const ImageAvatar = memo(function ImageAvatar({
         ${onClick ? 'cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent' : ''}
       `}
       style={{
-        boxShadow: '0 0 20px rgba(16, 185, 129, 0.2)',
+        boxShadow: '0 0 20px rgba(47,164,90, 0.2)',
       }}
       {...(onClick && { type: 'button' as const })}
     >
@@ -198,7 +198,7 @@ const ImageAvatar = memo(function ImageAvatar({
         <div 
           className="absolute inset-0 animate-pulse"
           style={{
-            background: 'linear-gradient(145deg, rgba(16, 185, 129, 0.2) 0%, rgba(4, 40, 28, 0.4) 100%)',
+            background: 'linear-gradient(145deg, rgba(47,164,90, 0.2) 0%, rgba(18,26,21, 0.4) 100%)',
           }}
         />
       )}
@@ -220,7 +220,7 @@ const ImageAvatar = memo(function ImageAvatar({
       <div 
         className="absolute inset-0 pointer-events-none"
         style={{
-          boxShadow: 'inset 0 0 15px rgba(0, 0, 0, 0.2)',
+          boxShadow: 'inset 0 0 15px rgba(0,0,0, 0.2)',
         }}
       />
     </Component>

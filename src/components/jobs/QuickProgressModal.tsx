@@ -79,11 +79,11 @@ function QuickProgressModalComponent({
           exit={{ opacity: 0, y: 50, scale: 0.95 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
           className={cn(
-            'w-full max-w-md rounded-t-2xl sm:rounded-2xl border border-emerald-500/30',
+            'w-full max-w-md rounded-t-2xl sm:rounded-leaf-sm border border-emerald-500/30',
             'shadow-2xl shadow-emerald-900/20 overflow-hidden flex flex-col',
             'max-h-[85vh] sm:max-h-[80vh]'
           )}
-          style={{ background: 'linear-gradient(180deg, #04150f 0%, #041812 50%, #03120c 100%)' }}
+          style={{ background: 'linear-gradient(180deg, #0B100D 0%, #0B100D 50%, #0B100D 100%)' }}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -91,7 +91,7 @@ function QuickProgressModalComponent({
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[10px] uppercase tracking-widest text-emerald-400/80 font-semibold">
+                <span className="text-[10px] uppercase text-emerald-400/80 font-mono font-medium tracking-[0.14em]">
                   Quick Progress Update
                 </span>
               </div>
@@ -182,14 +182,14 @@ const JobSelectionCard = memo(function JobSelectionCard({
       className={cn(
         'w-full text-left rounded-xl border p-3 transition-all touch-manipulation',
         'bg-gradient-to-br active:brightness-110',
-        'border-emerald-500/20 from-[#041510]/80 via-[#020d09]/90 to-[#010604]',
+        'border-emerald-500/20 from-[#0B100D]/80 via-[#040605]/90 to-[#040605]',
         'hover:border-emerald-400/40 hover:shadow-lg hover:shadow-emerald-900/20'
       )}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <Briefcase className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgb(231, 114, 4)' }} />
+            <Briefcase className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgb(141, 181, 42)' }} />
             <h4 className="font-semibold text-sm text-white truncate">{job.job_name}</h4>
           </div>
           {job.job_location && (

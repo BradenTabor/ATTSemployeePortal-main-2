@@ -4,9 +4,10 @@
 
 import { useMemo, useState } from "react";
 import { useRiskScoreHistory } from "../../hooks/queries/useRiskCalibration";
-import { Loader2, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, AlertTriangle, ChevronDown, ChevronUp, Gauge } from "lucide-react";
 import type { RiskScoreHistory } from "../../hooks/queries/useRiskCalibration";
 import { useDashboardCardTheme } from "../../contexts/dashboardCardTheme";
+import WidgetHeader from "./WidgetHeader";
 import { toZonedTime } from "date-fns-tz";
 
 const TZ = "America/Chicago";
@@ -61,9 +62,9 @@ export default function RiskScoreWidget() {
   if (isLoading) {
     return (
       <div className={`${cardClass} p-4`}>
-        <h3 className="text-sm font-semibold text-white mb-3">Risk score by site</h3>
+        <WidgetHeader title="Risk score by site" icon={Gauge} />
         <div className="flex items-center justify-center py-6">
-          <Loader2 className="w-6 h-6 animate-spin text-emerald-400" aria-hidden />
+          <Loader2 className="w-6 h-6 animate-spin text-rose-300/80" aria-hidden />
         </div>
       </div>
     );
@@ -72,7 +73,7 @@ export default function RiskScoreWidget() {
   if (error) {
     return (
       <div className={`${cardClass} p-4`}>
-        <h3 className="text-sm font-semibold text-white mb-3">Risk score by site</h3>
+        <WidgetHeader title="Risk score by site" icon={Gauge} />
         <div className="flex items-center gap-2 py-4 text-red-300 text-sm">
           <AlertTriangle className="w-5 h-5 flex-shrink-0" />
           <span>{error.message}</span>
@@ -84,7 +85,7 @@ export default function RiskScoreWidget() {
   if (latestBySite.length === 0) {
     return (
       <div className={`${cardClass} p-4`}>
-        <h3 className="text-sm font-semibold text-white mb-3">Risk score by site</h3>
+        <WidgetHeader title="Risk score by site" icon={Gauge} />
         <p className="text-sm text-white/80 py-4">No risk score data for the last 7 days.</p>
       </div>
     );
@@ -92,7 +93,7 @@ export default function RiskScoreWidget() {
 
   return (
     <div className={`${cardClass} p-4`}>
-      <h3 className="text-sm font-semibold text-white mb-3">Risk score by site</h3>
+      <WidgetHeader title="Risk score by site" icon={Gauge} />
       <ul className="space-y-2">
         {latestBySite.map((row) => {
           const isExpanded = expandedId === row.id;
@@ -105,7 +106,7 @@ export default function RiskScoreWidget() {
                 onClick={() => setExpandedId(isExpanded ? null : row.id)}
                 className={`
                   w-full flex items-center justify-between gap-2 rounded-lg border p-2.5 text-left
-                  focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]
+                  focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]
                   ${riskColor(row.risk_level)}
                 `}
               >

@@ -212,7 +212,7 @@ export default function GeneralForemanEquipmentLogs() {
       <DashboardLayout title="Equipment Logs" pageHeading>
         <div className="min-h-[60vh] flex items-center justify-center px-4">
           <div className="text-center max-w-md">
-            <div className="w-16 h-16 rounded-2xl bg-purple-500/10 flex items-center justify-center mx-auto mb-6 border border-purple-500/20" aria-hidden>
+            <div className="w-16 h-16 rounded-leaf-sm bg-purple-500/10 flex items-center justify-center mx-auto mb-6 border border-purple-500/20" aria-hidden>
               <Shield className="w-8 h-8 text-purple-400" />
             </div>
             <h2 className="text-xl font-bold text-white mb-2">Access Denied</h2>
@@ -239,7 +239,7 @@ export default function GeneralForemanEquipmentLogs() {
             className={`${glass.cardPurple} px-5 py-4 sm:px-6 sm:py-5`}
           >
             <div className="flex items-center gap-2 mb-3">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-500/20 border border-purple-400/25 text-[10px] font-semibold uppercase tracking-wider text-purple-200">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-500/20 border border-purple-400/25 text-[10px] uppercase text-purple-200 font-mono font-medium tracking-[0.14em]">
                 <HardHat className="w-3.5 h-3.5" aria-hidden />
                 General Foreman
               </span>
@@ -250,7 +250,7 @@ export default function GeneralForemanEquipmentLogs() {
             <div className="flex items-center gap-3">
               <div className="w-1 h-10 sm:h-12 rounded-full bg-gradient-to-b from-purple-400 via-violet-500 to-purple-600 flex-shrink-0" aria-hidden />
               <div>
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+                <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">
                   Equipment Logs
                 </h1>
                 <p className="text-xs sm:text-sm text-white/50 mt-0.5">
@@ -268,7 +268,7 @@ export default function GeneralForemanEquipmentLogs() {
               initial={prefersReducedMotion ? false : { opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2, delay: 0.05 }}
-              className={`${glass.card} p-4 sm:p-5 transition-shadow duration-200 hover:shadow-[0_4px_20px_rgba(147,51,234,0.1)]`}
+              className={`${glass.card} p-4 sm:p-5 transition-shadow duration-200 hover:shadow-[0_4px_20px_rgba(76,203,143,0.1)]`}
             >
               <div className="flex flex-wrap items-center justify-between gap-4 sm:gap-5 md:gap-6">
                 <div className="flex items-center gap-3 sm:gap-4">
@@ -276,7 +276,7 @@ export default function GeneralForemanEquipmentLogs() {
                     <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 text-purple-200" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-purple-200/80 mb-0.5 sm:mb-1">Needs Review</p>
+                    <p className="text-[10px] sm:text-xs uppercase text-purple-200/80 mb-0.5 sm:mb-1 font-mono font-medium tracking-[0.14em]">Needs Review</p>
                     <p className="text-2xl xs:text-3xl sm:text-4xl font-bold text-white tabular-nums leading-tight">
                       {stats.needsReview}
                       <span className="ml-1.5 sm:ml-2 text-sm sm:text-base font-medium text-purple-200/60">items</span>
@@ -286,13 +286,13 @@ export default function GeneralForemanEquipmentLogs() {
                 <div className="hidden sm:flex items-center gap-4 md:gap-6">
                   <div className="flex items-center gap-1.5 sm:gap-2">
                     <Truck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-300/70" aria-hidden />
-                    <span className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200/50">DVIR</span>
+                    <span className="text-[10px] sm:text-xs uppercase text-purple-200/50 font-mono font-medium tracking-[0.14em]">DVIR</span>
                     <span className="text-lg sm:text-xl font-bold text-white/90 tabular-nums">{failedDvirCount}</span>
                   </div>
                   <div className="w-px h-6 sm:h-8 bg-purple-400/20" aria-hidden />
                   <div className="flex items-center gap-1.5 sm:gap-2">
                     <Wrench className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-300/70" aria-hidden />
-                    <span className="text-[10px] sm:text-xs uppercase tracking-wider text-purple-200/50">Equipment</span>
+                    <span className="text-[10px] sm:text-xs uppercase text-purple-200/50 font-mono font-medium tracking-[0.14em]">Equipment</span>
                     <span className="text-lg sm:text-xl font-bold text-white/90 tabular-nums">
                       {equipmentInspections.filter((i) => inspectionHasFailures(i)).length}
                     </span>
@@ -314,7 +314,7 @@ export default function GeneralForemanEquipmentLogs() {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`inline-flex items-center gap-1.5 sm:gap-2 px-3 py-2.5 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c0a1d] min-h-[44px] touch-target ${
+                className={`inline-flex items-center gap-1.5 sm:gap-2 px-3 py-2.5 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#121A15] min-h-[44px] touch-target ${
                   activeTab === tab.id
                     ? "bg-gradient-to-r from-purple-500 to-violet-500 text-white shadow-lg shadow-purple-500/25"
                     : "bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:border-purple-500/30 hover:text-white"
@@ -333,7 +333,7 @@ export default function GeneralForemanEquipmentLogs() {
             <button
               type="button"
               onClick={() => setShowFilters(!showFilters)}
-              className={`ml-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 py-2.5 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c0a1d] min-h-[44px] min-w-[44px] touch-target ${
+              className={`ml-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 py-2.5 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#121A15] min-h-[44px] min-w-[44px] touch-target ${
                 showFilters
                   ? "bg-purple-500/20 border border-purple-500/40 text-purple-200"
                   : "bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:border-purple-500/20 hover:text-white/80"

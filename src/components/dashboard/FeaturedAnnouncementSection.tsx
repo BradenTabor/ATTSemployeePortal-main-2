@@ -1,14 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { memo, useState, useCallback } from "react";
-import { 
-  Megaphone, 
-  ArrowRight, 
-  Sparkles, 
-  ChevronDown,
-  Bell,
-  Clock,
-  User,
-} from "lucide-react";
+import { Megaphone, ArrowUpRight, Sparkles, ChevronDown, Bell, Clock, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useLatestAnnouncementQuery } from "../../hooks/queries/useAnnouncementsQuery";
 import { getDeviceCapabilities } from "../../lib/mobilePerf";
@@ -16,6 +8,9 @@ import { useAnnouncementTracking } from "../../hooks/useAnnouncementTracking";
 import { AnnouncementDetailModal } from "../AnnouncementDetailModal";
 import { CollectPointsButton } from "../CollectPointsButton";
 import { isRewardEligible } from "../../hooks/useAnnouncementRewards";
+import { canopy } from "../../lib/glass";
+import { Eyebrow } from "../canopy/Eyebrow";
+import { EASE_CANOPY } from "../../motion/presets";
 
 /**
  * FeaturedAnnouncementSection - Ultra Premium announcement section for dashboard hero area
@@ -84,359 +79,180 @@ function FeaturedAnnouncementSectionComponent() {
 
   const enableAnimations = !caps.prefersReducedMotion;
 
-  // Loading state with elegant skeleton
+  const header = (
+    <div className="mb-3 flex items-center justify-between gap-3 px-1">
+      <Eyebrow tone="verdant" rule={false}>
+        <span className="inline-flex items-center gap-2">
+          <Megaphone className="h-3 w-3" aria-hidden />
+          Broadcast · latest
+        </span>
+      </Eyebrow>
+      <button
+        type="button"
+        onClick={handleViewAll}
+        className="tap-44 group relative inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.15em] text-bone-300 transition-colors hover:text-verdant-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-verdant-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950 rounded"
+      >
+        View all
+        <ArrowUpRight className="h-3 w-3 transition-transform duration-300 ease-canopy group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden />
+      </button>
+    </div>
+  );
+
   if (isLoading) {
     return (
       <div className="relative">
-        {/* Section header skeleton */}
-        <div className="flex items-center justify-between mb-3 px-1">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 animate-pulse" />
-            <div className="h-4 w-32 bg-white/10 rounded-full animate-pulse" />
-          </div>
-          <div className="h-3 w-16 bg-white/5 rounded-full animate-pulse" />
-        </div>
-        
-        {/* Card skeleton */}
-        <div className="rounded-2xl border border-emerald-400/20 bg-[#041b14]/80 p-5 space-y-4 animate-pulse">
+        {header}
+        <div className={`${canopy.instrument} animate-pulse p-5 sm:p-6`} aria-busy>
           <div className="flex items-center gap-2">
-            <div className="h-5 w-16 bg-emerald-500/20 rounded-full" />
-            <div className="h-3 w-24 bg-white/10 rounded-full" />
+            <div className="h-5 w-14 rounded-full bg-verdant-500/20" />
+            <div className="h-3 w-28 rounded bg-bone-50/[0.08]" />
           </div>
-          <div className="space-y-2">
-            <div className="h-5 w-3/4 bg-white/10 rounded-lg" />
-            <div className="h-3 w-full bg-white/5 rounded-full" />
-            <div className="h-3 w-2/3 bg-white/5 rounded-full" />
-          </div>
-          <div className="flex justify-between items-center pt-2">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/20" />
-              <div className="h-3 w-20 bg-white/10 rounded-full" />
-            </div>
-          </div>
+          <div className="mt-4 h-7 w-3/4 rounded bg-bone-50/[0.1]" />
+          <div className="mt-3 h-3 w-full rounded bg-bone-50/[0.06]" />
+          <div className="mt-2 h-3 w-2/3 rounded bg-bone-50/[0.06]" />
         </div>
       </div>
     );
   }
 
-  // No announcement state
   if (!latestAnnouncement) {
     return (
       <div className="relative">
-        {/* Section header */}
-        <div className="flex items-center justify-between mb-3 px-1">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 border border-emerald-400/30 flex items-center justify-center">
-              <Megaphone className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
-            </div>
-            <span className="text-xs sm:text-sm font-semibold tracking-tight text-white">Latest Update</span>
-          </div>
-        </div>
-
-        {/* Empty state */}
-        <div className="rounded-2xl border border-emerald-400/15 bg-gradient-to-br from-[#041b14]/60 to-[#020f0a]/80 p-6 text-center">
-          <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-emerald-500/10 border border-emerald-400/20 flex items-center justify-center">
-            <Bell className="w-5 h-5 text-emerald-400/50" />
-          </div>
-          <p className="text-sm text-white/50">No announcements yet</p>
-          <p className="text-xs text-emerald-400/40 mt-1">Check back later for updates</p>
+        {header}
+        <div className={`${canopy.instrument} p-8 text-center`}>
+          <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-leaf-xs border border-bone-50/[0.1] bg-ink-950/70">
+            <Bell className="h-5 w-5 text-bone-400" aria-hidden />
+          </span>
+          <p className="type-display text-lg text-bone-200">Quiet canopy</p>
+          <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.15em] text-bone-500">No announcements yet</p>
         </div>
       </div>
     );
   }
 
   const displayDate = latestAnnouncement.date || latestAnnouncement.created_at;
-  const messagePreview = latestAnnouncement.message.length > 120 
-    ? `${latestAnnouncement.message.slice(0, 120)}...`
-    : latestAnnouncement.message;
+  const isLong = latestAnnouncement.message.length > 160;
+  const messagePreview = isLong ? `${latestAnnouncement.message.slice(0, 160)}…` : latestAnnouncement.message;
+  const author = latestAnnouncement.author || 'ATTS Leadership';
 
   return (
     <>
       <div className="relative">
-        {/* Section Header - Premium Styling */}
-        <motion.div 
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-          className="flex items-center justify-between mb-3 px-1"
-        >
-          <div className="flex items-center gap-2.5">
-            {/* Icon container with glow */}
-            <div className="relative">
-              <div className="absolute inset-0 rounded-lg bg-emerald-400/25 blur-md" />
-              <div className="relative w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-emerald-500/25 to-emerald-600/15 border border-emerald-400/40 flex items-center justify-center shadow-lg shadow-emerald-500/10">
-                <Megaphone className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-300" />
-              </div>
-            </div>
-            <div>
-              <h3 className="text-xs sm:text-sm font-semibold tracking-tight text-white">Latest Update</h3>
-              <p className="text-[10px] sm:text-xs text-emerald-400/40 font-medium tracking-wide">
-                Stay informed
-              </p>
-            </div>
-          </div>
-          
-          {/* View all link */}
-          <motion.button
-            onClick={handleViewAll}
-            whileHover={enableAnimations ? { x: 2 } : undefined}
-            whileTap={{ scale: 0.97 }}
-            className="flex items-center gap-1 text-xs font-medium text-emerald-400/70 hover:text-emerald-300 transition-colors group focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] rounded"
-          >
-            <span>View all</span>
-            <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-          </motion.button>
-        </motion.div>
+        {header}
 
-        {/* Main Announcement Card - Ultra Premium */}
         <motion.article
           ref={trackingRef}
-          initial={{ opacity: 0, y: 16, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ 
-            duration: 0.5, 
-            ease: [0.22, 1, 0.36, 1],
-            delay: 0.05
-          }}
-          whileHover={enableAnimations ? { y: -3, scale: 1.005 } : undefined}
+          initial={enableAnimations ? { opacity: 0, y: 16, filter: 'blur(8px)' } : false}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          transition={{ duration: 0.8, ease: EASE_CANOPY, delay: 0.05 }}
           onClick={handleOpenModal}
-          className="group relative overflow-hidden rounded-2xl md:rounded-3xl cursor-pointer"
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleOpenModal();
+            }
+          }}
+          aria-label={`Open announcement: ${latestAnnouncement.title}`}
+          className={`${canopy.instrument} group cursor-pointer transition-[border-color,transform] duration-500 ease-canopy hover:-translate-y-0.5 hover:border-verdant-400/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-verdant-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950`}
         >
-          {/* Multi-layer glow system */}
-          <div className="absolute -inset-[2px] rounded-[inherit] bg-gradient-to-br from-emerald-400/50 via-emerald-500/25 to-emerald-600/40 opacity-60 blur-sm pointer-events-none" />
-          <div className="absolute -inset-[1px] rounded-[inherit] bg-gradient-to-br from-emerald-400/30 via-transparent to-emerald-500/30 pointer-events-none" />
-          
-          {/* Animated border glow on hover */}
-          <motion.div
-            className="absolute -inset-[2px] rounded-[inherit] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-            style={{
-              background: 'conic-gradient(from 180deg, transparent 0%, rgba(16, 185, 129, 0.6) 10%, transparent 25%, transparent 50%, rgba(52, 211, 153, 0.4) 60%, transparent 75%)',
-            }}
-            animate={enableAnimations ? { rotate: 360 } : undefined}
-            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+          {/* Bloom */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -left-16 -top-24 h-56 w-56 rounded-full bg-verdant-400/20 blur-3xl transition-opacity duration-700 group-hover:opacity-80"
+          />
+          {/* Sheen sweep */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 -translate-x-full bg-[linear-gradient(105deg,transparent_35%,rgba(244,247,242,0.06)_50%,transparent_65%)] transition-transform duration-[1400ms] ease-canopy group-hover:translate-x-full"
           />
 
-          {/* Inner card */}
-          <div 
-            className="relative rounded-[inherit] border border-emerald-400/[0.15] overflow-hidden"
-            style={{
-              background: 'linear-gradient(145deg, rgba(6, 31, 22, 0.98) 0%, rgba(4, 24, 15, 1) 50%, rgba(2, 14, 9, 1) 100%)',
-              boxShadow: '0 4px_24px -8px rgba(16, 185, 129, 0.2), 0 8px 32px -4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(167, 243, 208, 0.04)',
-            }}
-          >
-            {/* Top shine line */}
-            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-300/60 to-transparent" />
-            
-            {/* Ambient lighting orbs */}
-            {enableAnimations && (
-              <>
-                <motion.div
-                  className="absolute w-40 h-40 rounded-full pointer-events-none"
-                  style={{
-                    background: 'radial-gradient(circle, rgba(16, 185, 129, 0.18) 0%, transparent 70%)',
-                    top: '-20%',
-                    left: '-8%',
-                    filter: 'blur(25px)',
-                  }}
-                  animate={{ 
-                    x: [0, 12, 0],
-                    y: [0, 8, 0],
-                    scale: [1, 1.08, 1],
-                  }}
-                  transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                />
-                <motion.div
-                  className="absolute w-32 h-32 rounded-full pointer-events-none"
-                  style={{
-                    background: 'radial-gradient(circle, rgba(52, 211, 153, 0.12) 0%, transparent 70%)',
-                    bottom: '-12%',
-                    right: '-5%',
-                    filter: 'blur(20px)',
-                  }}
-                  animate={{ 
-                    x: [0, -8, 0],
-                    y: [0, -6, 0],
-                    scale: [1, 1.1, 1],
-                  }}
-                  transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-                />
-              </>
+          <div className="relative p-5 sm:p-6">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className={canopy.pillLive}>
+                <Sparkles className="h-3 w-3" aria-hidden />
+                <span className="font-mono text-[10px] uppercase tracking-[0.18em]">New</span>
+              </span>
+              <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.15em] text-bone-400">
+                <Clock className="h-3 w-3" aria-hidden />
+                {formatDate(displayDate)}
+              </span>
+            </div>
+
+            <h4 className="type-display mt-4 text-balance text-[1.5rem] leading-[1.05] text-bone-50 sm:text-[1.9rem] md:text-[2.2rem]">
+              {latestAnnouncement.title}
+            </h4>
+
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.p
+                key={isExpanded ? 'expanded' : 'collapsed'}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                className={`mt-3 max-w-2xl text-pretty text-sm leading-relaxed text-bone-300 sm:text-[15px] ${isExpanded ? '' : 'line-clamp-2'}`}
+              >
+                {isExpanded ? latestAnnouncement.message : messagePreview}
+              </motion.p>
+            </AnimatePresence>
+
+            {isLong && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsExpanded((v) => !v);
+                }}
+                className="tap-44 relative mt-2 inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.15em] text-verdant-300/80 transition-colors hover:text-verdant-200"
+              >
+                {isExpanded ? 'Show less' : 'Read more'}
+                <motion.span animate={{ rotate: isExpanded ? 180 : 0 }} transition={{ duration: 0.3 }} className="flex">
+                  <ChevronDown className="h-3 w-3" aria-hidden />
+                </motion.span>
+              </button>
             )}
-            
-            {/* Subtle grid pattern */}
-            <div 
-              className="absolute inset-0 opacity-[0.015] pointer-events-none"
-              style={{
-                backgroundImage: `
-                  linear-gradient(rgba(16, 185, 129, 0.6) 1px, transparent 1px),
-                  linear-gradient(90deg, rgba(16, 185, 129, 0.6) 1px, transparent 1px)
-                `,
-                backgroundSize: '32px 32px',
-              }}
-            />
-            
-            {/* Corner accents */}
-            <div className="absolute top-3 right-3 w-10 h-10 pointer-events-none opacity-35">
-              <div className="absolute top-0 right-0 w-5 h-[1px] bg-gradient-to-l from-emerald-400/80 to-transparent" />
-              <div className="absolute top-0 right-0 w-[1px] h-5 bg-gradient-to-b from-emerald-400/80 to-transparent" />
-            </div>
-            <div className="absolute bottom-3 left-3 w-10 h-10 pointer-events-none opacity-35">
-              <div className="absolute bottom-0 left-0 w-5 h-[1px] bg-gradient-to-r from-emerald-400/80 to-transparent" />
-              <div className="absolute bottom-0 left-0 w-[1px] h-5 bg-gradient-to-t from-emerald-400/80 to-transparent" />
-            </div>
 
-            {/* Hover shine sweep */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.04] to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
-
-            {/* Content */}
-            <div className="relative p-4 sm:p-5">
-              {/* Header row */}
-              <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3">
-                {/* Badge */}
-                <motion.div 
-                  className="relative"
-                  initial={{ scale: 0.85, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: 0.15, type: "spring", stiffness: 200, damping: 15 }}
-                >
-                  <div className="absolute -inset-1 rounded-full bg-emerald-400/30 blur-md" />
-                  <span className="relative inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-emerald-300/50 text-[9px] sm:text-[10px] font-bold tracking-[0.2em] text-emerald-100 bg-gradient-to-r from-emerald-500/30 via-emerald-400/20 to-emerald-500/30 shadow-lg shadow-emerald-500/20 backdrop-blur-sm">
-                    <motion.div
-                      animate={enableAnimations ? { rotate: [0, 12, -12, 0] } : undefined}
-                      transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-                    >
-                      <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-emerald-200" />
-                    </motion.div>
-                    NEW
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-bone-50/[0.08] pt-4">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-leaf-xs bg-[linear-gradient(135deg,#8DF5A8,#1F7A44)] font-display text-xs font-semibold text-ink-950">
+                  {author.charAt(0).toUpperCase()}
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate text-xs font-medium text-bone-100">{author}</span>
+                  <span className="mt-0.5 flex items-center gap-1 font-mono text-[9px] uppercase tracking-[0.18em] text-bone-500">
+                    <User className="h-2.5 w-2.5" aria-hidden />
+                    Originator
                   </span>
-                </motion.div>
-                
-                {/* Time indicator */}
-                <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-emerald-300/50 font-medium">
-                  <Clock className="w-3 h-3" />
-                  <span>{formatDate(displayDate)}</span>
-                </div>
+                </span>
               </div>
 
-              {/* Title */}
-              <motion.h4
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2, duration: 0.4 }}
-                className="text-base sm:text-lg md:text-xl font-bold tracking-tight leading-tight mb-2 line-clamp-2 group-hover:brightness-110 transition-all"
-                style={{
-                  background: 'linear-gradient(135deg, #ffffff 0%, #d1fae5 40%, #a7f3d0 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}
-              >
-                {latestAnnouncement.title}
-              </motion.h4>
-              
-              {/* Preview text */}
-              <AnimatePresence mode="wait">
-                <motion.p
-                  key={isExpanded ? 'expanded' : 'collapsed'}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className={`text-xs sm:text-sm text-white/55 leading-relaxed font-light group-hover:text-white/65 transition-colors ${
-                    isExpanded ? '' : 'line-clamp-2'
-                  }`}
-                >
-                  {isExpanded ? latestAnnouncement.message : messagePreview}
-                </motion.p>
-              </AnimatePresence>
-
-              {/* Expand toggle for long messages */}
-              {latestAnnouncement.message.length > 120 && (
-                <motion.button
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsExpanded(!isExpanded);
-                  }}
-                  className="flex items-center gap-1 mt-2 text-[10px] sm:text-xs font-medium text-emerald-400/60 hover:text-emerald-300 transition-colors"
-                >
-                  <span>{isExpanded ? 'Show less' : 'Read more'}</span>
-                  <motion.div
-                    animate={{ rotate: isExpanded ? 180 : 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <ChevronDown className="w-3 h-3" />
-                  </motion.div>
-                </motion.button>
-              )}
-
-              {/* Footer */}
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.25 }}
-                className="flex items-center justify-between pt-3 mt-3 border-t border-emerald-500/15"
-              >
-                {/* Author */}
-                <div className="flex items-center gap-2.5">
-                  {latestAnnouncement.author && (
-                    <div className="relative">
-                      <div className="absolute -inset-0.5 rounded-lg bg-gradient-to-br from-emerald-400/35 to-emerald-600/35 blur-sm" />
-                      <div className="relative w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-emerald-300 via-emerald-500 to-emerald-700 flex items-center justify-center text-white font-bold text-[10px] sm:text-xs shadow-lg shadow-emerald-500/25 ring-1 ring-emerald-300/25">
-                        {latestAnnouncement.author.charAt(0).toUpperCase()}
-                      </div>
-                    </div>
-                  )}
-                  <div className="min-w-0">
-                    <p className="text-[11px] sm:text-xs font-medium text-white/75 truncate max-w-[100px] sm:max-w-[140px]">
-                      {latestAnnouncement.author || "ATTS Leadership"}
-                    </p>
-                    <div className="flex items-center gap-1 text-[8px] sm:text-[9px] text-emerald-400/40 font-semibold tracking-wider uppercase">
-                      <User className="w-2.5 h-2.5" />
-                      <span>Originator</span>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Action area - Collect Points for Safety AI, or Tap to read */}
-                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                  {isRewardEligible(latestAnnouncement.author) ? (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.35, type: "spring", stiffness: 200, damping: 18 }}
-                    >
-                      <CollectPointsButton
-                        announcementId={latestAnnouncement.id}
-                        author={latestAnnouncement.author}
-                        compact
-                        isClaimable={true}
-                      />
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.4 }}
-                      whileHover={enableAnimations ? { x: 3 } : undefined}
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 group-hover:bg-emerald-500/15 group-hover:border-emerald-400/30 transition-all"
-                    >
-                      <span className="text-[10px] sm:text-xs font-medium text-emerald-300/70 group-hover:text-emerald-200 transition-colors">
-                        Tap to read
-                      </span>
-                      <ArrowRight className="w-3 h-3 text-emerald-400/60 group-hover:text-emerald-300 group-hover:translate-x-0.5 transition-all" />
-                    </motion.div>
-                  )}
-                </div>
-              </motion.div>
+              <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                {isRewardEligible(latestAnnouncement.author) ? (
+                  <CollectPointsButton
+                    announcementId={latestAnnouncement.id}
+                    author={latestAnnouncement.author}
+                    compact
+                    isClaimable={true}
+                  />
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.15em] text-bone-300 transition-colors group-hover:text-verdant-200">
+                    Read
+                    <ArrowUpRight className="h-3 w-3 transition-transform duration-300 ease-canopy group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden />
+                  </span>
+                )}
+              </div>
             </div>
           </div>
+
+          {/* Bottom vein */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-x-5 bottom-0 h-px origin-left scale-x-0 bg-[linear-gradient(90deg,#3DDC84,#B8FF7A)] transition-transform duration-700 ease-canopy group-hover:scale-x-100 sm:inset-x-6"
+          />
         </motion.article>
       </div>
 
-      {/* Detail Modal */}
       <AnnouncementDetailModal
         announcement={latestAnnouncement}
         isOpen={isModalOpen}

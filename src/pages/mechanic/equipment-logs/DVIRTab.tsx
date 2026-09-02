@@ -333,7 +333,7 @@ export function DVIRTab({
       <ScrollRevealSection delay={0}>
         <motion.div 
           layout
-          className="rounded-2xl border-2 border-orange-600/40 bg-gradient-to-br from-gray-900 via-orange-950/50 to-gray-900 p-4 shadow-xl shadow-orange-500/10"
+          className="rounded-leaf-sm border-2 border-orange-600/40 bg-gradient-to-br from-gray-900 via-orange-950/50 to-gray-900 p-4 shadow-xl shadow-orange-500/10"
         >
           <div className="flex flex-col gap-4">
             {/* Primary filters row */}
@@ -486,7 +486,7 @@ export function DVIRTab({
             {/* DVIR LIST PANEL */}
             <motion.div 
               layout
-              className="rounded-2xl border-2 border-orange-600/40 bg-gradient-to-b from-gray-900 via-orange-950/40 to-gray-950 overflow-hidden flex flex-col shadow-2xl shadow-orange-500/10"
+              className="rounded-leaf-sm border-2 border-orange-600/40 bg-gradient-to-b from-gray-900 via-orange-950/40 to-gray-950 overflow-hidden flex flex-col shadow-2xl shadow-orange-500/10"
             >
               {/* Panel Header */}
               <div className={`flex items-center justify-between px-4 py-3 ${
@@ -518,7 +518,7 @@ export function DVIRTab({
                     <motion.div
                       animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}
                       transition={{ duration: 4, repeat: Infinity }}
-                      className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-orange-700 to-amber-800 border-2 border-orange-500/50 flex items-center justify-center shadow-lg shadow-orange-500/30"
+                      className="w-20 h-20 mx-auto mb-4 rounded-leaf-sm bg-gradient-to-br from-orange-700 to-amber-800 border-2 border-orange-500/50 flex items-center justify-center shadow-lg shadow-orange-500/30"
                     >
                       {dvirSearch ? <Search className="w-9 h-9 text-white/70" /> : dvirStatus === "failed" ? <CheckCircle2 className="w-9 h-9 text-white" /> : <ClipboardList className="w-9 h-9 text-white/70" />}
                     </motion.div>
@@ -542,7 +542,7 @@ export function DVIRTab({
                         variants={prefersReducedMotion ? listItemVariantsReduced : listItemVariants}
                         initial="hidden"
                         animate="visible"
-                        whileHover={{ backgroundColor: "rgba(251, 146, 60, 0.15)" }}
+                        whileHover={{ backgroundColor: "rgba(200,245,94, 0.15)" }}
                         onClick={() => setSelectedDvirId(isSelected ? null : report.id)}
                         className={`w-full text-left px-4 py-3.5 transition-all duration-200 flex items-center gap-3 group border-b border-gray-800/50 ${
                           isSelected 
@@ -615,12 +615,12 @@ export function DVIRTab({
                   <motion.div 
                     key="empty-state" 
                     {...(prefersReducedMotion ? detailTransitionReduced : detailTransition)} 
-                    className="h-full min-h-[300px] rounded-2xl border-2 border-orange-600/30 bg-gradient-to-br from-gray-900 via-orange-950/30 to-gray-950 p-8 flex flex-col items-center justify-center text-center shadow-xl"
+                    className="h-full min-h-[300px] rounded-leaf-sm border-2 border-orange-600/30 bg-gradient-to-br from-gray-900 via-orange-950/30 to-gray-950 p-8 flex flex-col items-center justify-center text-center shadow-xl"
                   >
                     <motion.div 
                       animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}
                       transition={{ duration: 4, repeat: Infinity }}
-                      className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-orange-700 to-amber-800 border-2 border-orange-500/50 mb-5 shadow-xl shadow-orange-500/30"
+                      className="inline-flex items-center justify-center w-20 h-20 rounded-leaf-sm bg-gradient-to-br from-orange-700 to-amber-800 border-2 border-orange-500/50 mb-5 shadow-xl shadow-orange-500/30"
                     >
                       <ClipboardList className="w-9 h-9 text-white" />
                     </motion.div>
@@ -633,7 +633,7 @@ export function DVIRTab({
                     <motion.div 
                       initial={{ opacity: 0, scale: 0.98 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="relative rounded-2xl border-2 border-orange-500/50 bg-gradient-to-br from-orange-950 via-amber-950/80 to-gray-950 overflow-hidden shadow-2xl shadow-orange-500/20"
+                      className="relative rounded-leaf-sm border-2 border-orange-500/50 bg-gradient-to-br from-orange-950 via-amber-950/80 to-gray-950 overflow-hidden shadow-2xl shadow-orange-500/20"
                     >
                       {/* Detail Header */}
                       <div className={`relative px-5 py-5 ${
@@ -645,7 +645,7 @@ export function DVIRTab({
                           <div className="flex items-center gap-4 min-w-0">
                             <motion.div 
                               whileHover={{ rotate: 15, scale: 1.15 }}
-                              className="w-16 h-16 rounded-2xl bg-gradient-to-br from-white/30 to-white/10 border-2 border-white/40 flex items-center justify-center flex-shrink-0 shadow-2xl backdrop-blur-sm"
+                              className="w-16 h-16 rounded-leaf-sm bg-gradient-to-br from-white/30 to-white/10 border-2 border-white/40 flex items-center justify-center flex-shrink-0 shadow-2xl backdrop-blur-sm"
                             >
                               <Truck className="w-8 h-8 text-white drop-shadow-lg" />
                             </motion.div>
@@ -727,7 +727,7 @@ export function DVIRTab({
                                     transition={{ delay: 0.1 }}
                                     className="rounded-xl border-2 border-rose-500/40 bg-gradient-to-br from-rose-950/80 to-red-950/60 p-4 max-h-48 overflow-y-auto"
                                   >
-                                    <div className="text-xs uppercase tracking-wider text-rose-300 font-bold mb-3 flex items-center gap-2">
+                                    <div className="text-xs uppercase text-rose-300 mb-3 flex items-center gap-2 font-mono font-medium tracking-[0.14em]">
                                       <div className="w-2 h-2 rounded-full bg-rose-400 animate-pulse" />
                                       Vehicle / Trailer
                                     </div>
@@ -741,7 +741,7 @@ export function DVIRTab({
                                     transition={{ delay: 0.15 }}
                                     className="rounded-xl border-2 border-amber-500/40 bg-gradient-to-br from-amber-950/80 to-orange-950/60 p-4 max-h-48 overflow-y-auto"
                                   >
-                                    <div className="text-xs uppercase tracking-wider text-amber-300 font-bold mb-3 flex items-center gap-2">
+                                    <div className="text-xs uppercase text-amber-300 mb-3 flex items-center gap-2 font-mono font-medium tracking-[0.14em]">
                                       <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
                                       Aerial Lift
                                     </div>
@@ -756,13 +756,13 @@ export function DVIRTab({
                         {/* Notes and Info */}
                         <div className="grid gap-4 sm:grid-cols-2">
                           <div className="rounded-xl border-2 border-orange-600/30 bg-gradient-to-br from-orange-950/60 to-gray-950 p-4">
-                            <div className="text-xs uppercase tracking-wider text-orange-300 font-bold mb-2 flex items-center gap-2">
+                            <div className="text-xs uppercase text-orange-300 mb-2 flex items-center gap-2 font-mono font-medium tracking-[0.14em]">
                               <ClipboardList className="w-3.5 h-3.5" />Driver Notes
                             </div>
                             <p className="text-sm text-gray-200 line-clamp-2">{selectedDvir.notes?.trim() || "No notes provided"}</p>
                           </div>
                           <div className="rounded-xl border-2 border-orange-600/30 bg-gradient-to-br from-orange-950/60 to-gray-950 p-4">
-                            <div className="text-xs uppercase tracking-wider text-orange-300 font-bold mb-2 flex items-center gap-2">
+                            <div className="text-xs uppercase text-orange-300 mb-2 flex items-center gap-2 font-mono font-medium tracking-[0.14em]">
                               <Truck className="w-3.5 h-3.5" />Vehicle Info
                             </div>
                             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
@@ -779,7 +779,7 @@ export function DVIRTab({
                             animate={{ opacity: 1, y: 0 }}
                             className="rounded-xl border-2 border-emerald-500/40 bg-gradient-to-br from-emerald-950/70 to-green-950/50 p-5"
                           >
-                            <div className="text-xs uppercase tracking-wider text-emerald-300 font-bold mb-3 flex items-center gap-2">
+                            <div className="text-xs uppercase text-emerald-300 mb-3 flex items-center gap-2 font-mono font-medium tracking-[0.14em]">
                               <div className="w-6 h-6 rounded-lg bg-emerald-500 flex items-center justify-center">
                                 <Wrench className="w-3.5 h-3.5 text-white" />
                               </div>
@@ -799,7 +799,7 @@ export function DVIRTab({
                           </summary>
                           <div className="grid gap-3 sm:grid-cols-2 p-3 bg-gray-950/80">
                             <div className="rounded-xl border border-gray-800 bg-gray-900 p-3">
-                              <div className="text-[10px] uppercase tracking-wider text-orange-300 font-bold mb-3">Vehicle / Trailer</div>
+                              <div className="text-[10px] uppercase text-orange-300 mb-3 font-mono font-medium tracking-[0.14em]">Vehicle / Trailer</div>
                               <div className="max-h-52 overflow-y-auto space-y-1">
                                 {VEHICLE_TRAILER_ITEMS.map((item) => {
                                   const value = selectedDvir.vehicle_trailer_checklist?.[item.id];
@@ -814,7 +814,7 @@ export function DVIRTab({
                               </div>
                             </div>
                             <div className="rounded-xl border border-gray-800 bg-gray-900 p-3">
-                              <div className="text-[10px] uppercase tracking-wider text-orange-300 font-bold mb-3">Aerial Lift</div>
+                              <div className="text-[10px] uppercase text-orange-300 mb-3 font-mono font-medium tracking-[0.14em]">Aerial Lift</div>
                               <div className="max-h-52 overflow-y-auto space-y-1">
                                 {AERIAL_LIFT_ITEMS.map((item) => {
                                   const value = selectedDvir.aerial_checklist?.[item.id];
@@ -881,7 +881,7 @@ export function DVIRTab({
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.2 }}
-                      className="rounded-2xl border-2 border-orange-600/40 bg-gradient-to-br from-gray-900 via-orange-950/40 to-gray-950 overflow-hidden shadow-2xl shadow-orange-500/10"
+                      className="rounded-leaf-sm border-2 border-orange-600/40 bg-gradient-to-br from-gray-900 via-orange-950/40 to-gray-950 overflow-hidden shadow-2xl shadow-orange-500/10"
                     >
                       <div className="px-5 py-4 bg-gradient-to-r from-orange-700 to-amber-800">
                         <div className="flex items-center gap-3">
@@ -901,24 +901,24 @@ export function DVIRTab({
                         {/* Truck # & Date */}
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-xs uppercase tracking-wider text-orange-300 mb-2 font-bold">Truck #</label>
+                            <label className="block text-xs uppercase text-orange-300 mb-2 font-mono font-medium tracking-[0.14em]">Truck #</label>
                             <input value={dvirUpdateTruckNumber} onChange={(e) => setDvirUpdateTruckNumber(e.target.value)} placeholder="e.g., 101" className="w-full bg-gray-950 border-2 border-gray-700 text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50 focus-visible:border-orange-500/50 transition-all placeholder:text-gray-600" />
                           </div>
                           <div>
-                            <label className="block text-xs uppercase tracking-wider text-orange-300 mb-2 font-bold">Date</label>
+                            <label className="block text-xs uppercase text-orange-300 mb-2 font-mono font-medium tracking-[0.14em]">Date</label>
                             <input type="date" value={dvirUpdateDate} onChange={(e) => setDvirUpdateDate(e.target.value)} className="w-full bg-gray-950 border-2 border-gray-700 text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50 focus-visible:border-orange-500/50 transition-all [color-scheme:dark]" />
                           </div>
                         </div>
                         
                         {/* Fix Description */}
                         <div>
-                          <label className="block text-xs uppercase tracking-wider text-orange-300 mb-2 font-bold">Fix Applied <span className="text-rose-400">*</span></label>
+                          <label className="block text-xs uppercase text-orange-300 mb-2 font-mono font-medium tracking-[0.14em]">Fix Applied <span className="text-rose-400">*</span></label>
                           <textarea value={dvirUpdateDeficiency} onChange={(e) => setDvirUpdateDeficiency(e.target.value)} rows={2} placeholder="What was done? E.g., Replaced brake pads..." className="w-full bg-gray-950 border-2 border-gray-700 text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50 focus-visible:border-orange-500/50 transition-all resize-none placeholder:text-gray-600" />
                         </div>
                         
                         {/* Cost */}
                         <div>
-                          <label className="block text-xs uppercase tracking-wider text-orange-300 mb-2 font-bold">Repair Cost <span className="text-gray-500">(Optional)</span></label>
+                          <label className="block text-xs uppercase text-orange-300 mb-2 font-mono font-medium tracking-[0.14em]">Repair Cost <span className="text-gray-500">(Optional)</span></label>
                           <div className="relative">
                             <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-orange-400" />
                             <input type="number" step="0.01" min="0" value={dvirUpdateCost} onChange={(e) => setDvirUpdateCost(e.target.value)} placeholder="0.00" className="w-full bg-gray-950 border-2 border-gray-700 text-white text-sm rounded-xl pl-12 pr-4 py-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50 focus-visible:border-orange-500/50 transition-all placeholder:text-gray-600" />
@@ -928,7 +928,7 @@ export function DVIRTab({
                         {/* Parts */}
                         <div>
                           <div className="flex items-center justify-between mb-3">
-                            <label className="text-xs uppercase tracking-wider text-orange-300 font-bold hover:scale-105">Parts Used <span className="text-gray-500">(Optional)</span></label>
+                            <label className="text-xs uppercase text-orange-300 hover:scale-105 font-mono font-medium tracking-[0.14em]">Parts Used <span className="text-gray-500">(Optional)</span></label>
                             <motion.button 
                               whileTap={{ scale: 0.95 }}
                               type="button" 
@@ -980,7 +980,7 @@ export function DVIRTab({
                         
                         {/* Remarks */}
                         <div>
-                          <label className="block text-xs uppercase tracking-wider text-orange-300 mb-2 font-bold">Additional Notes <span className="text-gray-500">(Optional)</span></label>
+                          <label className="block text-xs uppercase text-orange-300 mb-2 font-mono font-medium tracking-[0.14em]">Additional Notes <span className="text-gray-500">(Optional)</span></label>
                           <textarea value={dvirUpdateRemarks} onChange={(e) => setDvirUpdateRemarks(e.target.value)} rows={2} placeholder="Any additional details..." className="w-full bg-gray-950 border-2 border-gray-700 text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50 focus-visible:border-orange-500/50 transition-all resize-none placeholder:text-gray-600" />
                         </div>
                         

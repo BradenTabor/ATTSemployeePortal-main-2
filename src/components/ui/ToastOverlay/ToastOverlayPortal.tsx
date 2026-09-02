@@ -191,8 +191,8 @@ export function ToastOverlayPortal({
             style={{
               // Solid fallback for reduced motion (no expensive blur)
               background: prefersReducedMotion 
-                ? 'rgba(0, 0, 0, 0.85)' 
-                : 'rgba(0, 0, 0, 0.75)',
+                ? 'rgba(0,0,0, 0.85)' 
+                : 'rgba(0,0,0, 0.75)',
               backdropFilter: prefersReducedMotion ? 'none' : 'blur(8px)',
               WebkitBackdropFilter: prefersReducedMotion ? 'none' : 'blur(8px)',
             }}

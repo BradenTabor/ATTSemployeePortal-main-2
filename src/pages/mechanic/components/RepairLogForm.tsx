@@ -200,7 +200,7 @@ export default function RepairLogForm({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.2 }}
-      className="rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-950/30 to-[#050302] overflow-hidden"
+      className="rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-950/30 to-[#040605] overflow-hidden"
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-amber-500/10 to-transparent border-b border-amber-500/10">
@@ -229,7 +229,7 @@ export default function RepairLogForm({
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="absolute inset-0 bg-[#050302]/95 flex items-center justify-center z-10"
+            className="absolute inset-0 bg-[#040605]/95 flex items-center justify-center z-10"
           >
             <div className="text-center">
               <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-3">
@@ -246,7 +246,7 @@ export default function RepairLogForm({
       <form onSubmit={handleSubmit} className="p-3 sm:p-4 space-y-3 sm:space-y-4">
         {/* Maintenance Type */}
         <div>
-          <label className="block text-[9px] sm:text-[10px] uppercase tracking-wider text-white/40 mb-1.5 sm:mb-2">
+          <label className="block text-[9px] sm:text-[10px] uppercase text-white/40 mb-1.5 sm:mb-2 font-mono font-medium tracking-[0.14em]">
             Maintenance Type
           </label>
           <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
@@ -273,7 +273,7 @@ export default function RepairLogForm({
         
         {/* Description */}
         <div>
-          <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">
+          <label className="block text-[10px] uppercase text-white/40 mb-1 font-mono font-medium tracking-[0.14em]">
             Description *
           </label>
           <textarea
@@ -288,7 +288,7 @@ export default function RepairLogForm({
         {/* Mileage & Date Row */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">
+            <label className="block text-[10px] uppercase text-white/40 mb-1 font-mono font-medium tracking-[0.14em]">
               Mileage at Service *
             </label>
             <div className="relative">
@@ -306,7 +306,7 @@ export default function RepairLogForm({
             </p>
           </div>
           <div>
-            <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">
+            <label className="block text-[10px] uppercase text-white/40 mb-1 font-mono font-medium tracking-[0.14em]">
               Service Date *
             </label>
             <div className="relative">
@@ -323,7 +323,7 @@ export default function RepairLogForm({
         
         {/* Cost (Optional) */}
         <div>
-          <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">
+          <label className="block text-[10px] uppercase text-white/40 mb-1 font-mono font-medium tracking-[0.14em]">
             Cost (Optional)
           </label>
           <div className="relative">
@@ -343,7 +343,7 @@ export default function RepairLogForm({
         {/* Parts Used */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="text-[10px] uppercase tracking-wider text-white/40">
+            <label className="text-[10px] uppercase text-white/40 font-mono font-medium tracking-[0.14em]">
               Parts Used (Optional)
             </label>
             <button
@@ -380,7 +380,7 @@ export default function RepairLogForm({
         
         {/* Notes */}
         <div>
-          <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">
+          <label className="block text-[10px] uppercase text-white/40 mb-1 font-mono font-medium tracking-[0.14em]">
             Additional Notes (Optional)
           </label>
           <div className="relative">

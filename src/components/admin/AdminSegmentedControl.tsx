@@ -161,11 +161,11 @@ function AdminSegmentedControlComponent({
           'relative',
           isLarge ? 'p-2 gap-2' : 'p-1.5',
           // Glass morphism background
-          'bg-[#0c0a08]/90 backdrop-blur-xl',
+          'bg-[#0B100D]/90 backdrop-blur-xl',
           // Border with subtle gold glow
-          'border border-[#f4c979]/25',
+          'border border-[#F4F7F2]/25',
           // Rounded corners
-          'rounded-2xl',
+          'rounded-leaf-sm',
           // Shadow for depth
           'shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.06)]',
           // Mobile: horizontal scroll with snap; Desktop: inline flex
@@ -175,7 +175,7 @@ function AdminSegmentedControlComponent({
         )}
       >
         {/* Ambient glow overlay */}
-        <div className="pointer-events-none absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_50%_0%,rgba(244,201,121,0.1),transparent_60%)]" />
+        <div className="pointer-events-none absolute inset-0 rounded-leaf-sm bg-[radial-gradient(circle_at_50%_0%,rgba(221,255,133,0.1),transparent_60%)]" />
         
         {/* Sliding indicator with glow - only on desktop/non-wrapped layout */}
         {!isMobileLayout && indicatorStyle && indicatorStyle.width > 0 && (
@@ -183,11 +183,11 @@ function AdminSegmentedControlComponent({
             className={cn(
               'absolute rounded-xl pointer-events-none',
               // Enhanced gold gradient background
-              'bg-gradient-to-br from-[#f7e4bd]/25 via-[#f4c979]/20 to-[#d79a32]/15',
+              'bg-gradient-to-br from-[#E4EAE1]/25 via-[#F4F7F2]/20 to-[#8DF5A8]/15',
               // Inner border glow
-              'border border-[#f4c979]/50',
+              'border border-[#F4F7F2]/50',
               // Enhanced glow shadow
-              'shadow-[0_0_25px_rgba(244,201,121,0.3),0_0_50px_rgba(244,201,121,0.15),inset_0_1px_0_rgba(255,255,255,0.15)]'
+              'shadow-[0_0_25px_rgba(221,255,133,0.3),0_0_50px_rgba(221,255,133,0.15),inset_0_1px_0_rgba(255,255,255,0.15)]'
             )}
             initial={false}
             animate={{
@@ -256,17 +256,17 @@ function AdminSegmentedControlComponent({
                 isMobileLayout ? 'text-xs' : 'text-sm',
                 'font-semibold',
                 'transition-all duration-200',
-                'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c0a08]',
+                'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]',
                 // Touch target minimum
                 'min-h-[44px]',
                 // Active state styling differs between mobile/tablet and desktop
                 isMobileLayout
                   ? isActive
-                    ? 'bg-gradient-to-br from-[#f7e4bd]/25 via-[#f4c979]/20 to-[#d79a32]/15 border border-[#f4c979]/50 text-[#fff6dd] shadow-[0_0_20px_rgba(244,201,121,0.25),inset_0_1px_0_rgba(255,255,255,0.15)]'
-                    : 'border border-transparent text-[#f8e5bb]/50 hover:text-[#f8e5bb]/90 hover:bg-white/5 active:bg-white/10'
+                    ? 'bg-gradient-to-br from-[#E4EAE1]/25 via-[#F4F7F2]/20 to-[#8DF5A8]/15 border border-[#F4F7F2]/50 text-[#F4F7F2] shadow-[0_0_20px_rgba(221,255,133,0.25),inset_0_1px_0_rgba(255,255,255,0.15)]'
+                    : 'border border-transparent text-[#E4EAE1]/50 hover:text-[#E4EAE1]/90 hover:bg-white/5 active:bg-white/10'
                   : isActive
-                    ? 'text-[#fff6dd]'
-                    : 'text-[#f8e5bb]/50 hover:text-[#f8e5bb]/90 hover:bg-white/5',
+                    ? 'text-[#F4F7F2]'
+                    : 'text-[#E4EAE1]/50 hover:text-[#E4EAE1]/90 hover:bg-white/5',
                 // Ensure proper z-index for active state
                 'z-10'
               )}
@@ -276,10 +276,10 @@ function AdminSegmentedControlComponent({
                 className={cn(
                   'relative flex-shrink-0 transition-all duration-300',
                   isActive 
-                    ? 'text-[#f4c979] drop-shadow-[0_0_8px_rgba(244,201,121,0.6)]' 
+                    ? 'text-[#F4F7F2] drop-shadow-[0_0_8px_rgba(221,255,133,0.6)]' 
                     : isHovered 
-                      ? 'text-[#f8e5bb]/70' 
-                      : 'text-[#f8e5bb]/40'
+                      ? 'text-[#E4EAE1]/70' 
+                      : 'text-[#E4EAE1]/40'
                 )}
               >
                 {tab.icon}
@@ -308,8 +308,8 @@ function AdminSegmentedControlComponent({
                       'px-1.5 py-0.5 rounded-full font-bold leading-none',
                       isMobileLayout ? 'ml-0.5 text-[9px]' : 'ml-1 text-[10px]',
                       isActive
-                        ? 'bg-[#f4c979] text-[#2e1b02]'
-                        : 'bg-white/10 text-[#f8e5bb]/80'
+                        ? 'bg-[#F4F7F2] text-[#040605]'
+                        : 'bg-white/10 text-[#E4EAE1]/80'
                     )}
                   >
                     {(tab.badgeCount ?? 0) > 99 ? '99+' : tab.badgeCount}
@@ -323,12 +323,12 @@ function AdminSegmentedControlComponent({
                     animate="animate"
                     exit="exit"
                     className={cn(
-                      'absolute -top-0.5 -right-0.5 rounded-full bg-[#f4c979] shadow-[0_0_8px_rgba(244,201,121,0.8)]',
+                      'absolute -top-0.5 -right-0.5 rounded-full bg-[#F4F7F2] shadow-[0_0_8px_rgba(221,255,133,0.8)]',
                       isMobileLayout ? 'w-2 h-2' : 'w-2.5 h-2.5'
                     )}
                   >
                     {shouldAnimate && (
-                      <span className="absolute inset-0 rounded-full bg-[#f4c979] animate-ping opacity-75" />
+                      <span className="absolute inset-0 rounded-full bg-[#F4F7F2] animate-ping opacity-75" />
                     )}
                   </motion.span>
                 )}

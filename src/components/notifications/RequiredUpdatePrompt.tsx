@@ -201,7 +201,7 @@ function RequiredUpdatePromptComponent({ required = true, testMode = false }: Re
           transition={{ type: 'spring', stiffness: 300, damping: 30, delay: 0.1 }}
           className="relative z-10 w-full max-w-md mx-4"
         >
-          <div className="relative rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-[#0a1f16] via-[#0d2a1c] to-[#051510] shadow-[0_20px_60px_rgba(0,0,0,0.5),0_0_100px_rgba(16,185,129,0.1)] overflow-hidden">
+          <div className="relative rounded-leaf border border-emerald-500/30 bg-gradient-to-br from-[#121A15] via-[#121A15] to-[#0B100D] shadow-[0_20px_60px_rgba(0,0,0,0.5),0_0_100px_rgba(47,164,90,0.1)] overflow-hidden">
             {/* Top gradient line */}
             <div className="h-1 bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-400" />
 
@@ -226,7 +226,7 @@ function RequiredUpdatePromptComponent({ required = true, testMode = false }: Re
                 className="flex justify-center"
               >
                 <div className="relative">
-                  <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 border border-emerald-500/30 flex items-center justify-center overflow-hidden shadow-lg shadow-emerald-500/20">
+                  <div className="w-24 h-24 rounded-leaf-sm bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 border border-emerald-500/30 flex items-center justify-center overflow-hidden shadow-lg shadow-emerald-500/20">
                     <img 
                       src="/icon-192.png" 
                       alt="ATTS Logo" 
@@ -237,7 +237,7 @@ function RequiredUpdatePromptComponent({ required = true, testMode = false }: Re
                   <motion.div
                     animate={{ scale: [1, 1.15, 1], opacity: [0.5, 0, 0.5] }}
                     transition={{ duration: 2, repeat: Infinity }}
-                    className="absolute inset-0 rounded-2xl border-2 border-emerald-400/50"
+                    className="absolute inset-0 rounded-leaf-sm border-2 border-emerald-400/50"
                   />
                 </div>
               </motion.div>

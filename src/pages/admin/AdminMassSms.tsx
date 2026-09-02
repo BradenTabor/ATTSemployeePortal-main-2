@@ -154,7 +154,7 @@ function AdminMassSms() {
         <motion.div
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="rounded-2xl border border-[#f6dcb2]/25 bg-[#14110d] shadow-xl max-w-md w-full max-h-[80vh] flex flex-col overflow-hidden"
+          className="rounded-leaf-sm border border-[#E4EAE1]/25 bg-[#0B100D] shadow-xl max-w-md w-full max-h-[80vh] flex flex-col overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center justify-between p-4 border-b border-white/10">
@@ -164,7 +164,7 @@ function AdminMassSms() {
             <button
               type="button"
               onClick={() => setPickerOpen(false)}
-              className="p-1.5 rounded-lg text-[#c7b696] hover:bg-white/10 hover:text-white"
+              className="p-1.5 rounded-lg text-[#B8C4B6] hover:bg-white/10 hover:text-white"
               aria-label="Close"
             >
               <X className="w-5 h-5" />
@@ -172,19 +172,19 @@ function AdminMassSms() {
           </div>
           <div className="p-2 border-b border-white/10">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8a7a5c]" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5A6B60]" />
               <input
                 type="search"
                 value={pickerSearch}
                 onChange={(e) => setPickerSearch(e.target.value)}
                 placeholder="Search by name or email…"
-                className="w-full pl-9 pr-3 py-2 rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 text-sm text-[#fdf4db] placeholder:text-[#8a7a5c] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60"
+                className="w-full pl-9 pr-3 py-2 rounded-xl bg-[#040605]/70 border border-[#F4F7F2]/20 text-sm text-[#F4F7F2] placeholder:text-[#5A6B60] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/60"
               />
             </div>
           </div>
           <div className="flex-1 overflow-y-auto p-2 min-h-0">
             {pickerLoading ? (
-              <p className="text-sm text-[#c7b696] py-4 text-center">Loading users…</p>
+              <p className="text-sm text-[#B8C4B6] py-4 text-center">Loading users…</p>
             ) : (
               <ul className="space-y-1">
                 {pickerFiltered.map((u) => {
@@ -197,14 +197,14 @@ function AdminMassSms() {
                         disabled={isSelected}
                         className={`w-full text-left px-3 py-2 rounded-xl text-sm flex items-center justify-between ${
                           isSelected
-                            ? "bg-[#f4c979]/15 text-[#f4c979] cursor-default"
-                            : "text-[#c7b696] hover:bg-white/5"
+                            ? "bg-[#F4F7F2]/15 text-[#F4F7F2] cursor-default"
+                            : "text-[#B8C4B6] hover:bg-white/5"
                         }`}
                       >
                         <span className="truncate">
                           {u.full_name || u.email || "No name"}
                           {u.email && u.full_name && (
-                            <span className="text-[#8a7a5c] ml-1 truncate">({u.email})</span>
+                            <span className="text-[#5A6B60] ml-1 truncate">({u.email})</span>
                           )}
                         </span>
                         {isSelected && <span className="text-xs">Added</span>}
@@ -219,7 +219,7 @@ function AdminMassSms() {
             <button
               type="button"
               onClick={() => setPickerOpen(false)}
-              className="w-full px-4 py-2.5 rounded-xl bg-[#f4c979]/20 border border-[#f4c979]/40 text-sm font-semibold text-[#fef3d1] hover:bg-[#f4c979]/30"
+              className="w-full px-4 py-2.5 rounded-xl bg-[#F4F7F2]/20 border border-[#F4F7F2]/40 text-sm font-semibold text-[#F4F7F2] hover:bg-[#F4F7F2]/30"
             >
               Done ({selectedUsers.length} selected)
             </button>
@@ -255,7 +255,7 @@ function AdminMassSms() {
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.96 }}
-          className="rounded-2xl border border-[#f6dcb2]/25 bg-[#14110d] shadow-xl max-w-md w-full p-4 sm:p-6"
+          className="rounded-leaf-sm border border-[#E4EAE1]/25 bg-[#0B100D] shadow-xl max-w-md w-full p-4 sm:p-6"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center justify-between mb-4">
@@ -266,17 +266,17 @@ function AdminMassSms() {
               type="button"
               onClick={handleCloseConfirm}
               disabled={sendLoading}
-              className="p-1.5 rounded-lg text-[#c7b696] hover:bg-white/10 hover:text-white disabled:opacity-50"
+              className="p-1.5 rounded-lg text-[#B8C4B6] hover:bg-white/10 hover:text-white disabled:opacity-50"
               aria-label="Close"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
-          <p className="text-sm text-[#c7b696] mb-3">
-            This will send the message to <strong className="text-[#f4c979]">{countWithPhone}</strong> user
+          <p className="text-sm text-[#B8C4B6] mb-3">
+            This will send the message to <strong className="text-[#F4F7F2]">{countWithPhone}</strong> user
             {countWithPhone !== 1 ? "s" : ""}. This cannot be undone.
           </p>
-          <p className="text-xs text-[#8a7a5c] mb-2">
+          <p className="text-xs text-[#5A6B60] mb-2">
             Type <strong>{countWithPhone}</strong> below to enable Send.
           </p>
           <input
@@ -285,7 +285,7 @@ function AdminMassSms() {
             value={confirmInput}
             onChange={(e) => setConfirmInput(e.target.value)}
             placeholder={String(countWithPhone)}
-            className="w-full rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-3 py-2.5 text-sm text-[#fdf4db] placeholder:text-[#8a7a5c] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60 mb-4"
+            className="w-full rounded-xl bg-[#040605]/70 border border-[#F4F7F2]/20 px-3 py-2.5 text-sm text-[#F4F7F2] placeholder:text-[#5A6B60] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/60 mb-4"
             aria-label="Type recipient count to confirm"
           />
           <div className="flex gap-2 justify-end">
@@ -293,7 +293,7 @@ function AdminMassSms() {
               type="button"
               onClick={handleCloseConfirm}
               disabled={sendLoading}
-              className="px-4 py-2 rounded-xl border border-[#f6dcb2]/25 text-sm font-semibold text-[#fdf4db] hover:bg-white/5 disabled:opacity-50"
+              className="px-4 py-2 rounded-xl border border-[#E4EAE1]/25 text-sm font-semibold text-[#F4F7F2] hover:bg-white/5 disabled:opacity-50"
             >
               Cancel
             </button>
@@ -301,7 +301,7 @@ function AdminMassSms() {
               type="button"
               onClick={handleConfirmSend}
               disabled={!confirmMatch || sendLoading}
-              className="px-4 py-2 rounded-xl bg-[#f4c979]/20 border border-[#f4c979]/40 text-sm font-semibold text-[#fef3d1] hover:bg-[#f4c979]/30 disabled:opacity-50 flex items-center gap-2"
+              className="px-4 py-2 rounded-xl bg-[#F4F7F2]/20 border border-[#F4F7F2]/40 text-sm font-semibold text-[#F4F7F2] hover:bg-[#F4F7F2]/30 disabled:opacity-50 flex items-center gap-2"
             >
               {sendLoading ? "Sending…" : isSendToAll ? "Send to all" : `Send to ${countWithPhone} user${countWithPhone !== 1 ? "s" : ""}`}
               <Send className="w-4 h-4" />
@@ -319,26 +319,26 @@ function AdminMassSms() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="relative rounded-2xl sm:rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] overflow-hidden mb-4 sm:mb-6 shadow-[0_25px_50px_rgba(0,0,0,0.55)]"
+          className="relative rounded-leaf-sm sm:rounded-leaf border border-[#E4EAE1]/20 bg-gradient-to-br from-[#121A15] via-[#0B100D] to-[#040605] overflow-hidden mb-4 sm:mb-6 shadow-[0_25px_50px_rgba(0,0,0,0.55)]"
         >
           <div
             className="absolute inset-0 pointer-events-none"
-            style={{ background: "radial-gradient(ellipse at 25% 0%, rgba(244, 201, 121, 0.2) 0%, transparent 45%)" }}
+            style={{ background: "radial-gradient(ellipse at 25% 0%, rgba(221,255,133, 0.2) 0%, transparent 45%)" }}
           />
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-white/5 via-white/25 to-white/5 rounded-t-[inherit]" />
           <div className="relative px-4 py-3 sm:px-6 sm:py-4">
             <div className="flex items-center gap-3 mb-2 flex-wrap">
-              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#f4c979]/15 border border-[#f4c979]/30">
-                <MessageSquare className="w-3.5 h-3.5 text-[#f4c979]" />
-                <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#f8e5bb]">
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#F4F7F2]/15 border border-[#F4F7F2]/30">
+                <MessageSquare className="w-3.5 h-3.5 text-[#F4F7F2]" />
+                <span className="text-[10px] uppercase text-[#E4EAE1] font-mono font-medium tracking-[0.14em]">
                   Admin • Broadcast
                 </span>
               </span>
             </div>
-            <h1 className="text-lg sm:text-xl md:text-2xl font-black tracking-tight bg-gradient-to-r from-white via-[#f8e5bb] to-white/90 bg-clip-text text-transparent">
+            <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">
               Mass SMS to All Users
             </h1>
-            <p className="mt-1 text-xs sm:text-sm text-[#c7b696] font-medium max-w-xl">
+            <p className="mt-1 text-xs sm:text-sm text-[#B8C4B6] font-medium max-w-xl">
               Send one message to every app user with a phone number who has not opted out. Use for
               operational or safety-related announcements only.
             </p>
@@ -349,10 +349,10 @@ function AdminMassSms() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.05 }}
-          className="rounded-2xl sm:rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] p-3 sm:p-6 shadow-[0_25px_50px_rgba(0,0,0,0.55)]"
+          className="rounded-leaf-sm sm:rounded-leaf border border-[#E4EAE1]/20 bg-gradient-to-br from-[#121A15] via-[#0B100D] to-[#040605] p-3 sm:p-6 shadow-[0_25px_50px_rgba(0,0,0,0.55)]"
         >
           {previewLoading && (
-            <p className="text-sm text-[#c7b696] mb-4">Loading recipient count…</p>
+            <p className="text-sm text-[#B8C4B6] mb-4">Loading recipient count…</p>
           )}
           {previewError && (
             <div className="flex items-center gap-2 mb-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-sm">
@@ -361,14 +361,14 @@ function AdminMassSms() {
               <button
                 type="button"
                 onClick={() => (recipientMode === "all" ? refetchPreview() : refetchPreview(selectedUserIds))}
-                className="ml-auto text-[#f4c979] hover:underline text-xs font-semibold"
+                className="ml-auto text-[#F4F7F2] hover:underline text-xs font-semibold"
               >
                 Retry
               </button>
             </div>
           )}
           <div className="mb-4">
-            <p className="text-xs font-semibold text-[#f4c979]/80 uppercase tracking-wider mb-2">
+            <p className="text-xs text-[#F4F7F2]/80 uppercase mb-2 font-mono font-medium tracking-[0.14em]">
               Recipients
             </p>
             <div className="flex flex-wrap gap-2 mb-2">
@@ -377,8 +377,8 @@ function AdminMassSms() {
                 onClick={() => setRecipientMode("all")}
                 className={`px-3 py-2 rounded-xl text-sm font-medium flex items-center gap-2 ${
                   recipientMode === "all"
-                    ? "bg-[#f4c979]/20 border border-[#f4c979]/40 text-[#fef3d1]"
-                    : "border border-[#f6dcb2]/25 text-[#c7b696] hover:bg-white/5"
+                    ? "bg-[#F4F7F2]/20 border border-[#F4F7F2]/40 text-[#F4F7F2]"
+                    : "border border-[#E4EAE1]/25 text-[#B8C4B6] hover:bg-white/5"
                 }`}
               >
                 <Users className="w-4 h-4" />
@@ -392,8 +392,8 @@ function AdminMassSms() {
                 }}
                 className={`px-3 py-2 rounded-xl text-sm font-medium flex items-center gap-2 ${
                   recipientMode === "selected"
-                    ? "bg-[#f4c979]/20 border border-[#f4c979]/40 text-[#fef3d1]"
-                    : "border border-[#f6dcb2]/25 text-[#c7b696] hover:bg-white/5"
+                    ? "bg-[#F4F7F2]/20 border border-[#F4F7F2]/40 text-[#F4F7F2]"
+                    : "border border-[#E4EAE1]/25 text-[#B8C4B6] hover:bg-white/5"
                 }`}
               >
                 <UserPlus className="w-4 h-4" />
@@ -405,7 +405,7 @@ function AdminMassSms() {
                 <button
                   type="button"
                   onClick={() => setPickerOpen(true)}
-                  className="px-3 py-2 rounded-xl border border-[#f4c979]/30 text-sm font-medium text-[#f4c979] hover:bg-[#f4c979]/10 flex items-center gap-2"
+                  className="px-3 py-2 rounded-xl border border-[#F4F7F2]/30 text-sm font-medium text-[#F4F7F2] hover:bg-[#F4F7F2]/10 flex items-center gap-2"
                   data-testid="mass-sms-choose-users"
                   aria-haspopup="dialog"
                   aria-expanded={pickerOpen}
@@ -420,7 +420,7 @@ function AdminMassSms() {
                     {selectedUsers.map((u) => (
                       <span
                         key={u.user_id}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-xs text-[#c7b696]"
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-xs text-[#B8C4B6]"
                       >
                         {u.full_name || u.email || u.user_id.slice(0, 8)}
                         <button
@@ -428,7 +428,7 @@ function AdminMassSms() {
                           onClick={() =>
                             setSelectedUsers((prev) => prev.filter((p) => p.user_id !== u.user_id))
                           }
-                          className="p-0.5 rounded hover:bg-white/10 text-[#8a7a5c]"
+                          className="p-0.5 rounded hover:bg-white/10 text-[#5A6B60]"
                           aria-label={`Remove ${u.full_name || u.email}`}
                         >
                           <X className="w-3 h-3" />
@@ -443,11 +443,11 @@ function AdminMassSms() {
 
           {!previewLoading && !previewError && preview != null && (
             <>
-              <p className="text-sm text-[#c7b696] mb-1">
-                <strong className="text-[#f4c979]">{countWithPhone}</strong> user
+              <p className="text-sm text-[#B8C4B6] mb-1">
+                <strong className="text-[#F4F7F2]">{countWithPhone}</strong> user
                 {countWithPhone !== 1 ? "s" : ""} will receive this message
                 {isSendToAll && totalUsers > 0 && (
-                  <span className="text-[#8a7a5c]"> (of {totalUsers} total app users)</span>
+                  <span className="text-[#5A6B60]"> (of {totalUsers} total app users)</span>
                 )}
                 .
               </p>
@@ -463,15 +463,15 @@ function AdminMassSms() {
                 </p>
               )}
               {fromNumber && (
-                <p className="text-xs text-[#8a7a5c] mb-4">
-                  Recipients will see messages from: <span className="text-[#c7b696]">{fromNumber}</span>
+                <p className="text-xs text-[#5A6B60] mb-4">
+                  Recipients will see messages from: <span className="text-[#B8C4B6]">{fromNumber}</span>
                   . Same number as safety briefing reminders.
                 </p>
               )}
             </>
           )}
 
-          <label className="block text-xs font-semibold text-[#f4c979]/80 uppercase tracking-wider mb-2">
+          <label className="block text-xs text-[#F4F7F2]/80 uppercase mb-2 font-mono font-medium tracking-[0.14em]">
             Message
           </label>
           <textarea
@@ -480,19 +480,19 @@ function AdminMassSms() {
             placeholder="Enter your message…"
             rows={4}
             maxLength={MAX_MESSAGE_LENGTH}
-            className="w-full min-w-0 rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 px-3 sm:px-4 py-2 sm:py-3 text-sm text-[#fdf4db] placeholder:text-[#8a7a5c] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60 resize-y mb-2"
+            className="w-full min-w-0 rounded-xl bg-[#040605]/70 border border-[#F4F7F2]/20 px-3 sm:px-4 py-2 sm:py-3 text-sm text-[#F4F7F2] placeholder:text-[#5A6B60] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/60 resize-y mb-2"
             aria-describedby="mass-sms-char-desc"
           />
-          <p id="mass-sms-char-desc" className="text-xs text-[#8a7a5c] mb-2">
+          <p id="mass-sms-char-desc" className="text-xs text-[#5A6B60] mb-2">
             {message.length} / {MAX_MESSAGE_LENGTH} chars. 160 chars = 1 SMS (GSM-7). Non-GSM characters
             (emoji, curly quotes) use 70 chars per segment and are stripped before send.
           </p>
 
           {lastResult && (
-            <div className="mb-4 p-3 rounded-xl bg-white/5 border border-white/10 text-sm text-[#c7b696]">
+            <div className="mb-4 p-3 rounded-xl bg-white/5 border border-white/10 text-sm text-[#B8C4B6]">
               <p>
                 Last send: <strong className="text-emerald-400">{lastResult.sent}</strong> sent,{" "}
-                <strong className={lastResult.failed > 0 ? "text-amber-400" : "text-[#c7b696]"}>
+                <strong className={lastResult.failed > 0 ? "text-amber-400" : "text-[#B8C4B6]"}>
                   {lastResult.failed}
                 </strong>{" "}
                 failed.
@@ -518,7 +518,7 @@ function AdminMassSms() {
                 sendLoading ||
                 (recipientMode === "selected" && selectedUsers.length === 0)
               }
-              className="px-4 py-2.5 rounded-xl bg-[#f4c979]/20 border border-[#f4c979]/40 text-sm font-semibold text-[#fef3d1] hover:bg-[#f4c979]/30 disabled:opacity-50 flex items-center gap-2"
+              className="px-4 py-2.5 rounded-xl bg-[#F4F7F2]/20 border border-[#F4F7F2]/40 text-sm font-semibold text-[#F4F7F2] hover:bg-[#F4F7F2]/30 disabled:opacity-50 flex items-center gap-2"
             >
               <Send className="w-4 h-4" />
               {isSendToAll ? "Send to all" : `Send to ${countWithPhone} user${countWithPhone !== 1 ? "s" : ""}`}

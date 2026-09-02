@@ -30,7 +30,7 @@ export function LOTOSection({ value, onChange, disabled }: LOTOSectionProps) {
 
   return (
     <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 space-y-3" role="group" aria-label="LOTO (Lockout/Tagout) section">
-      <p className="text-xs font-semibold text-amber-200 uppercase tracking-wide">
+      <p className="text-xs text-amber-200 uppercase font-mono font-medium tracking-[0.14em]">
         LOTO (29 CFR 1910.147)
       </p>
       <div className="space-y-2">

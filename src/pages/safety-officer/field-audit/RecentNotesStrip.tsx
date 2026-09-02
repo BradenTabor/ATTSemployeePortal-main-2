@@ -51,7 +51,7 @@ export default function RecentNotesStrip({ subject }: RecentNotesStripProps) {
           />
           <div className="min-w-0 flex-1">
             <p className="text-xs text-white/80 leading-snug">{note.note}</p>
-            <p className="mt-0.5 text-[10px] uppercase tracking-wide text-white/35">
+            <p className="mt-0.5 text-[10px] uppercase text-white/35 font-mono font-medium tracking-[0.14em]">
               {relativeDate(note.created_at)}
             </p>
           </div>

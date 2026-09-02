@@ -106,7 +106,7 @@ export function SignatureCanvas({
     ctx.scale(dpr, dpr);
 
     // Style setup
-    ctx.strokeStyle = '#10b981'; // emerald-500
+    ctx.strokeStyle = '#3DDC84'; // emerald-500
     ctx.lineWidth = 2;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -224,7 +224,7 @@ export function SignatureCanvas({
     <div className={cn("space-y-2", className)}>
       {/* Label */}
       <div className="flex items-center justify-between">
-        <label className="block text-[10px] font-medium text-white/50 uppercase tracking-wide">
+        <label className="block text-[10px] font-medium text-white/50 uppercase font-mono font-medium tracking-[0.14em]">
           Signature {required && <span className="text-emerald-400">*</span>}
         </label>
         {hasDrawn && !signatureLoading && (

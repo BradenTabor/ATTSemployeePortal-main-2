@@ -9,8 +9,8 @@
  * interleaved with field_notes) is one click away.
  */
 
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   AlertTriangle,
@@ -73,7 +73,7 @@ function formatAuditDate(d: string): string {
 function HistoryRollup({ rollup }: { rollup: RollupCounts }) {
   if (rollup.total === 0) {
     return (
-      <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/45">
+      <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] uppercase text-white/45 font-mono font-medium tracking-[0.14em]">
         No checks
       </span>
     );
@@ -128,7 +128,25 @@ export default function FieldAuditHistoryPage() {
   const [personId, setPersonId] = useState("");
   const [openFailsOnly, setOpenFailsOnly] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  // `?audit=<id>` deep link (submission receipt → "View in history") opens the
+  // detail modal directly; closing it strips the param so back/refresh behave.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [selectedId, setSelectedId] = useState<string | null>(
+    () => searchParams.get("audit"),
+  );
+  const closeDetail = useCallback(() => {
+    setSelectedId(null);
+    if (searchParams.has("audit")) {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.delete("audit");
+          return next;
+        },
+        { replace: true },
+      );
+    }
+  }, [searchParams, setSearchParams]);
 
   const { crewMembers } = useCrewMembers();
   const { crews } = useCrews();
@@ -207,7 +225,7 @@ export default function FieldAuditHistoryPage() {
       <div className="relative w-full max-w-5xl mx-auto px-3 sm:px-4 md:px-6 pb-12 pt-2 sm:pt-4">
         {/* Atmospheric rose glow (safety officer role) */}
         <div
-          className="absolute inset-0 pointer-events-none select-none overflow-hidden rounded-2xl"
+          className="absolute inset-0 pointer-events-none select-none overflow-hidden rounded-leaf-sm"
           style={{ zIndex: -1 }}
           aria-hidden
         >
@@ -233,11 +251,11 @@ export default function FieldAuditHistoryPage() {
               Back to Field Audit
             </Link>
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-rose-500/15 border border-rose-500/25 flex items-center justify-center shrink-0">
+              <div className="w-12 h-12 rounded-leaf-sm bg-rose-500/15 border border-rose-500/25 flex items-center justify-center shrink-0">
                 <History className="w-6 h-6 text-rose-300" aria-hidden />
               </div>
               <div className="min-w-0">
-                <h1 className="text-xl sm:text-2xl font-bold text-white">
+                <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">
                   Field Audit History
                 </h1>
                 <p className="text-sm text-white/60 mt-1">
@@ -256,7 +274,7 @@ export default function FieldAuditHistoryPage() {
               aria-expanded={showFilters}
               className="w-full flex items-center justify-between gap-2 px-4 sm:px-5 py-3.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50"
             >
-              <span className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-rose-200/80">
+              <span className="inline-flex items-center gap-2 text-xs uppercase text-rose-200/80 font-mono font-medium tracking-[0.14em]">
                 <Filter className="w-4 h-4" aria-hidden />
                 Filters
               </span>
@@ -449,7 +467,7 @@ export default function FieldAuditHistoryPage() {
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-left">
                     <thead>
-                      <tr className="text-[0.65rem] uppercase tracking-[0.2em] text-rose-200/70 border-b border-white/[0.06]">
+                      <tr className="text-[0.65rem] uppercase text-rose-200/70 border-b border-white/[0.06] font-mono font-medium tracking-[0.14em]">
                         <th className="px-4 py-3">Date</th>
                         <th className="px-4 py-3">Location</th>
                         <th className="px-4 py-3">Crew</th>
@@ -581,7 +599,7 @@ export default function FieldAuditHistoryPage() {
         </div>
 
         {selectedId && (
-          <FieldAuditDetailModal auditId={selectedId} onClose={() => setSelectedId(null)} />
+          <FieldAuditDetailModal auditId={selectedId} onClose={closeDetail} />
         )}
       </div>
     </DashboardLayout>

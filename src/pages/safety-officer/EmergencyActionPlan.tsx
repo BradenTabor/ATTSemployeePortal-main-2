@@ -121,7 +121,7 @@ export default function EmergencyActionPlan() {
           {phase === 'actions' && selectedProtocols.length > 0 && (
             <motion.div
               key="action-steps"
-              className="mb-10 bg-gradient-to-b from-stone-900 via-stone-900 to-stone-950 border border-rose-800/20 rounded-2xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.3),0_12px_40px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.03)]"
+              className="mb-10 bg-gradient-to-b from-stone-900 via-stone-900 to-stone-950 border border-rose-800/20 rounded-leaf-sm p-6 shadow-[0_2px_8px_rgba(0,0,0,0.3),0_12px_40px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.03)]"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}

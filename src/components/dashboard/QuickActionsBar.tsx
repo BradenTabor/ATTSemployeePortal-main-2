@@ -61,60 +61,60 @@ const quickActions: QuickAction[] = [
     label: 'DVIR',
     icon: Truck,
     path: '/dashboard/forms/dvir',
-    gradient: 'linear-gradient(135deg, #059669 0%, #047857 50%, #065f46 100%)',
-    glowColor: 'rgba(16, 185, 129, 0.6)',
-    borderColor: 'rgba(52, 211, 153, 0.5)',
-    iconBg: 'rgba(52, 211, 153, 0.25)',
-    textColor: '#d1fae5',
-    shadowColor: 'rgba(16, 185, 129, 0.4)',
+    gradient: 'linear-gradient(135deg, #2FA45A 0%, #1F7A44 50%, #12482A 100%)',
+    glowColor: 'rgba(47,164,90, 0.6)',
+    borderColor: 'rgba(61,220,132, 0.5)',
+    iconBg: 'rgba(61,220,132, 0.25)',
+    textColor: '#D9FFE3',
+    shadowColor: 'rgba(47,164,90, 0.4)',
   },
   {
     id: 'equipment',
     label: 'Equipment',
     icon: Wrench,
     path: '/dashboard/forms/equipment-inspection',
-    gradient: 'linear-gradient(135deg, #d97706 0%, #b45309 50%, #92400e 100%)',
-    glowColor: 'rgba(251, 191, 36, 0.6)',
-    borderColor: 'rgba(251, 191, 36, 0.5)',
-    iconBg: 'rgba(251, 191, 36, 0.25)',
-    textColor: '#fef3c7',
-    shadowColor: 'rgba(251, 191, 36, 0.4)',
+    gradient: 'linear-gradient(135deg, #7CC43F 0%, #5E9A2C 50%, #6B8A1F 100%)',
+    glowColor: 'rgba(174,219,63, 0.6)',
+    borderColor: 'rgba(174,219,63, 0.5)',
+    iconBg: 'rgba(174,219,63, 0.25)',
+    textColor: '#F6FFE6',
+    shadowColor: 'rgba(174,219,63, 0.4)',
   },
   {
     id: 'jsa',
     label: 'JSA',
     icon: ClipboardCheck,
     path: '/forms/jsa',
-    gradient: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #1e40af 100%)',
-    glowColor: 'rgba(96, 165, 250, 0.6)',
-    borderColor: 'rgba(96, 165, 250, 0.5)',
-    iconBg: 'rgba(96, 165, 250, 0.25)',
-    textColor: '#dbeafe',
-    shadowColor: 'rgba(96, 165, 250, 0.4)',
+    gradient: 'linear-gradient(135deg, #5EE898 0%, #2FA45A 50%, #468A68 100%)',
+    glowColor: 'rgba(125,205,162, 0.6)',
+    borderColor: 'rgba(125,205,162, 0.5)',
+    iconBg: 'rgba(125,205,162, 0.25)',
+    textColor: '#EFFFF3',
+    shadowColor: 'rgba(125,205,162, 0.4)',
   },
   {
     id: 'jobs',
     label: 'Jobs',
     icon: Briefcase,
     path: '/assigned-jobs',
-    gradient: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 50%, #5b21b6 100%)',
-    glowColor: 'rgba(167, 139, 250, 0.6)',
-    borderColor: 'rgba(167, 139, 250, 0.5)',
-    iconBg: 'rgba(167, 139, 250, 0.25)',
-    textColor: '#ede9fe',
-    shadowColor: 'rgba(167, 139, 250, 0.4)',
+    gradient: 'linear-gradient(135deg, #1F7A44 0%, #12482A 50%, #468A68 100%)',
+    glowColor: 'rgba(154,221,183, 0.6)',
+    borderColor: 'rgba(154,221,183, 0.5)',
+    iconBg: 'rgba(154,221,183, 0.25)',
+    textColor: '#F4FBF7',
+    shadowColor: 'rgba(154,221,183, 0.4)',
   },
   {
     id: 'forms',
     label: 'All Forms',
     icon: FileText,
     path: '/forms',
-    gradient: 'linear-gradient(135deg, #0891b2 0%, #0e7490 50%, #155e75 100%)',
-    glowColor: 'rgba(34, 211, 238, 0.6)',
-    borderColor: 'rgba(34, 211, 238, 0.5)',
-    iconBg: 'rgba(34, 211, 238, 0.25)',
-    textColor: '#cffafe',
-    shadowColor: 'rgba(34, 211, 238, 0.4)',
+    gradient: 'linear-gradient(135deg, #468A68 0%, #2F5F48 50%, #2F5F48 100%)',
+    glowColor: 'rgba(95,175,134, 0.6)',
+    borderColor: 'rgba(95,175,134, 0.5)',
+    iconBg: 'rgba(95,175,134, 0.25)',
+    textColor: '#E6F6EC',
+    shadowColor: 'rgba(95,175,134, 0.4)',
   },
 ];
 
@@ -219,7 +219,7 @@ const QuickActionCard = memo(function QuickActionCard({
           onTapStart={() => setIsPressed(true)}
           onTap={() => setIsPressed(false)}
           onTapCancel={() => setIsPressed(false)}
-          className="relative flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2 sm:py-3 rounded-xl sm:rounded-2xl cursor-pointer overflow-hidden"
+          className="relative flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2 sm:py-3 rounded-xl sm:rounded-leaf-sm cursor-pointer overflow-hidden"
           style={{ 
             background: action.gradient,
             border: `1px solid ${action.borderColor}`,
@@ -283,7 +283,7 @@ const QuickActionCard = memo(function QuickActionCard({
                   exit={{ scale: 0, rotate: 180 }}
                   transition={{ type: 'spring', stiffness: 500, damping: 20 }}
                   className="absolute -top-1 -right-1 sm:-top-1.5 sm:-right-1.5 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-emerald-400 flex items-center justify-center shadow-md sm:shadow-lg"
-                  style={{ boxShadow: '0 0 8px rgba(52, 211, 153, 0.8)' }}
+                  style={{ boxShadow: '0 0 8px rgba(61,220,132, 0.8)' }}
                 >
                   <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-emerald-900" strokeWidth={3} />
                 </motion.div>
@@ -495,7 +495,7 @@ function QuickActionsBarComponent({
       <div 
         className="absolute inset-0 -z-10 blur-3xl opacity-30 pointer-events-none"
         style={{
-          background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.3) 0%, rgba(96, 165, 250, 0.3) 50%, rgba(167, 139, 250, 0.3) 100%)',
+          background: 'linear-gradient(90deg, rgba(47,164,90, 0.3) 0%, rgba(125,205,162, 0.3) 50%, rgba(154,221,183, 0.3) 100%)',
         }}
       />
 
@@ -503,13 +503,13 @@ function QuickActionsBarComponent({
       {/* Gradient fade masks */}
       <motion.div 
         className="absolute left-0 top-0 bottom-0 w-12 pointer-events-none z-10"
-        style={{ background: 'linear-gradient(270deg, rgba(4, 30, 21, 1) 0%, rgba(4, 30, 21, 0.8) 0%, rgba(0, 0, 0, 0) 0%)' }}
+        style={{ background: 'linear-gradient(270deg, rgba(11,16,13, 1) 0%, rgba(11,16,13, 0.8) 0%, rgba(0,0,0, 0) 0%)' }}
         animate={{ opacity: canScrollLeft ? 1 : 0 }}
         transition={{ duration: 0.2 }}
       />
       <motion.div 
         className="absolute right-0 top-0 bottom-0 w-12 pointer-events-none z-10 rounded-[10px]"
-        style={{ background: 'linear-gradient(270deg, rgba(4, 30, 21, 1) 0%, rgba(4, 30, 21, 0.8) 0%, rgba(0, 0, 0, 0) 0%)' }}
+        style={{ background: 'linear-gradient(270deg, rgba(11,16,13, 1) 0%, rgba(11,16,13, 0.8) 0%, rgba(0,0,0, 0) 0%)' }}
         animate={{ opacity: canScrollRight ? 1 : 0 }}
         transition={{ duration: 0.2 }}
       />

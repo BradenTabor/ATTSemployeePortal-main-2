@@ -2,95 +2,140 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================================
+ * CANOPY — webfonts (self-hosted, same origin)
+ * Files live in public/fonts and are synced from @fontsource-variable/* by
+ * `npm run fonts:sync`. Same-origin fonts skip two third-party connections on
+ * first load, get precached by the service worker for offline use, and the two
+ * critical faces are preloaded from index.html. Latin subset only — accented
+ * Latin-1 glyphs (é, ñ, ü) are included; rarer glyphs fall back to system fonts.
+ * ========================================================================== */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url(/fonts/fraunces-latin-wght-normal.woff2) format('woff2-variations');
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face {
+  font-family: 'Fraunces';
+  font-style: italic;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url(/fonts/fraunces-latin-wght-italic.woff2) format('woff2-variations');
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 800;
+  src: url(/fonts/bricolage-grotesque-latin-wght-normal.woff2) format('woff2-variations');
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face {
+  font-family: 'Martian Mono';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 800;
+  src: url(/fonts/martian-mono-latin-wght-normal.woff2) format('woff2-variations');
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+
+/* ============================================================================
+ * CANOPY — design tokens
+ * green · white · black.  Botanical brutalism meets bioluminescent instruments.
+ * ========================================================================== */
+:root {
+  --ink-950: #040605;
+  --ink-900: #0b100d;
+  --ink-800: #121a15;
+  --ink-700: #1e2a23;
+  --ink-600: #2f3f36;
+  --ink-500: #5a6b60;
+  --ink-400: #8a9a8e;
+  --ink-300: #b8c4b6;
+  --ink-200: #d3dcd1;
+  --ink-100: #e4eae1;
+  --ink-50: #f4f7f2;
+
+  --verdant-300: #8df5a8;
+  --verdant-400: #5ee898;
+  --verdant-500: #3ddc84;
+  --verdant-600: #2fa45a;
+  --verdant-700: #1f7a44;
+  --verdant-800: #12482a;
+  --verdant-900: #0a2a19;
+
+  --lime-400: #b8ff7a;
+  --lime-500: #9beb5b;
+
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-sans: 'Bricolage Grotesque', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Martian Mono', ui-monospace, SFMono-Regular, monospace;
+
+  --ease-canopy: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-canopy-in: cubic-bezier(0.7, 0, 0.84, 0);
+
+  --radius-leaf: 28px 8px 28px 8px;
+  --radius-leaf-sm: 18px 6px 18px 6px;
+
+  color-scheme: dark;
+}
+
+/* ----------------------------------------------------------------------------
+ * Keyframes
+ * -------------------------------------------------------------------------- */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
-/* Avatar illustrations (AdminAvatar, MechanicAvatar): gentle vertical float */
+/* Avatar illustrations: gentle vertical float */
 @keyframes mechanicFloat {
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-6px);
-  }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
 }
-
 @keyframes adminFloat {
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-6px);
-  }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
 }
 
 @keyframes pulse-gradient {
-  0%, 100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 
 @keyframes ping {
-  0% {
-    transform: scale(1);
-    opacity: 0.8;
-  }
-  75%, 100% {
-    transform: scale(2);
-    opacity: 0;
-  }
+  0% { transform: scale(1); opacity: 0.8; }
+  75%, 100% { transform: scale(2); opacity: 0; }
 }
 
 @keyframes aurora {
-  from {
-    background-position: 0% 50%;
-  }
-  to {
-    background-position: 100% 50%;
-  }
+  from { background-position: 0% 50%; }
+  to { background-position: 100% 50%; }
 }
 
 @keyframes validation-highlight {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(244, 63, 94, 0);
-  }
-  50% {
-    box-shadow: 0 0 0 4px rgba(244, 63, 94, 0.4);
-  }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
+  50% { box-shadow: 0 0 0 4px rgba(244, 63, 94, 0.4); }
 }
 
-/* Incident danger pulse — soft red glow heartbeat for the severity indicator */
 @keyframes incident-pulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
   50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
 }
 
-/* Incident card border shimmer — subtle red sweep on the outer shell */
 @keyframes incident-border-glow {
   0%, 100% { opacity: 0.08; }
   50% { opacity: 0.18; }
 }
 
-/* Design-system shimmer: subtle sweep for premium surfaces. Disabled in prefers-reduced-motion. */
 @keyframes shimmer-sweep {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
@@ -101,190 +146,211 @@
   50% { opacity: 1; }
 }
 
-/* LoadingScreen (Suspense fallback) — pure CSS animations */
-@keyframes loadingBreath {
-  0%, 100% { transform: scale(1); opacity: 0.5; }
-  50% { transform: scale(1.25); opacity: 0.8; }
-}
-
-@keyframes loadingCardIn {
-  from { opacity: 0; transform: translateY(12px) scale(0.96); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@keyframes loadingRingSpin {
-  to { transform: rotate(360deg); }
-}
-
-@keyframes loadingLogoPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.02); }
-}
-
-@keyframes loadingTextPulse {
-  0%, 100% { opacity: 0.9; }
-  50% { opacity: 1; }
-}
-
-@keyframes loadingProgress {
-  0%   { width: 0%; }
-  60%  { width: 70%; }
-  80%  { width: 85%; }
-  100% { width: 95%; }
-}
-
-@keyframes loadingShimmer {
-  0%   { background-position: 0% 0%; }
+/* Canopy: living vein of light that travels along a hairline */
+@keyframes vein {
+  0% { background-position: 0% 0%; }
   100% { background-position: 200% 0%; }
 }
 
-@keyframes loadingCenterDot {
-  0%, 100% { transform: scale(1); opacity: 0.6; }
-  50% { transform: scale(1.3); opacity: 1; }
+/* Canopy: LoadingScreen leaf pulse */
+@keyframes leaf-pulse {
+  0%, 100% { transform: scale(1) rotate(-8deg); filter: drop-shadow(0 0 12px rgba(61, 220, 132, 0.35)); }
+  50% { transform: scale(1.04) rotate(-6deg); filter: drop-shadow(0 0 28px rgba(61, 220, 132, 0.65)); }
+}
+@keyframes loading-sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
 }
 
-@keyframes loadingOrbit {
-  0%   { offset-distance: 0%; opacity: 0.4; transform: scale(0.8); }
-  50%  { opacity: 1; transform: scale(1.2); }
-  100% { offset-distance: 100%; opacity: 0.4; transform: scale(0.8); }
-}
-
-@keyframes loadingParticle {
-  0%   { opacity: 0; transform: scale(0) translateY(0); }
-  50%  { opacity: 0.6; transform: scale(1) translateY(-15px); }
-  100% { opacity: 0; transform: scale(0) translateY(-40px); }
-}
-
-@keyframes loadingFadeUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 0.4; transform: translateY(0); }
-}
-
+/* ----------------------------------------------------------------------------
+ * Base
+ * -------------------------------------------------------------------------- */
 @layer base {
-  /* Global font family and smooth scrolling */
   html {
-    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+    font-family: var(--font-sans);
+    font-optical-sizing: auto;
     scroll-behavior: smooth;
-    background-color: #010604;
+    background-color: var(--ink-950);
+    color: var(--ink-100);
     touch-action: manipulation;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
-  
+
   body {
-    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
-    background-color: #010604;
+    font-family: var(--font-sans);
+    background-color: var(--ink-950);
     min-height: 100vh;
+    min-height: 100dvh;
     touch-action: manipulation;
   }
 
-  /* Root element background - premium dark gradient matching dashboard theme */
   #root {
-    background: linear-gradient(180deg, #041b14 0%, #03120c 50%, #010604 100%);
+    background: var(--ink-950);
     min-height: 100vh;
+    min-height: 100dvh;
   }
 
-  /* Prevent word breaks in headings by default */
   h1, h2, h3, h4, h5, h6 {
     overflow-wrap: break-word;
     word-break: break-word;
     hyphens: none;
-    letter-spacing: -0.015em;
+    letter-spacing: -0.02em;
   }
 
-  /* Tabular figures for numeric content — prevents layout shift */
-  .font-mono, [data-testid] span[class*="tabular"] {
+  ::selection {
+    background: rgba(61, 220, 132, 0.28);
+    color: var(--ink-50);
+  }
+
+  /* Tabular figures for numeric content */
+  .font-mono,
+  .tabular,
+  [data-testid] span[class*="tabular"] {
     font-variant-numeric: tabular-nums;
+  }
+
+  input, select, textarea {
+    font-family: var(--font-sans);
+  }
+
+  /* `grid sm:grid-cols-2` has no explicit template below the breakpoint, so
+   * the single implicit column defaults to `auto` and grows to the widest
+   * unwrapped line inside it — overflowing a 375px phone. Size implicit
+   * columns to the container instead. (No horizontal `grid-flow-col` grids
+   * exist in the app, so this only affects that fallback case.) */
+  .grid {
+    grid-auto-columns: minmax(0, 1fr);
   }
 }
 
+/* iOS Safari zooms the whole page into any focused field whose computed
+ * font-size is below 16px, and does not zoom back out on blur. Forms in this
+ * app use text-sm (14px) controls, so on phones we clamp every text control to
+ * 16px. `!important` is required to beat the Tailwind utility on the element. */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  select,
+  textarea {
+    font-size: max(16px, 1em) !important;
+  }
+  /* Single-line controls also get the 44px touch minimum. py-2.5 + 16px text
+   * lands at ~38px, which is fiddly with a gloved thumb. Textareas are already
+   * taller; checkboxes/radios keep their intrinsic size (their <label> is the
+   * tap target). */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="hidden"]),
+  select {
+    min-height: 44px;
+  }
+}
+
+/* Native file/date/time inputs have an intrinsic width (button + filename, or
+ * the picker's segments) that ignores flex/grid shrinking and pushes narrow
+ * viewports into horizontal scroll. */
+input[type="file"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* ----------------------------------------------------------------------------
+ * Components — Canopy primitives usable from any className string
+ * -------------------------------------------------------------------------- */
+@layer components {
+  /* Display serif with optical sizing for hero copy */
+  .type-display {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    font-variation-settings: 'SOFT' 30, 'WONK' 1;
+    letter-spacing: -0.035em;
+    line-height: 0.95;
+  }
+
+  /* Monospace instrument label: eyebrows, axis labels, IDs */
+  .type-instrument {
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  /* Hairline with a slowly travelling vein of light */
+  .vein {
+    position: relative;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(184, 255, 122, 0.55) 30%, rgba(61, 220, 132, 0.9) 50%, rgba(184, 255, 122, 0.55) 70%, transparent);
+    background-size: 200% 100%;
+    animation: vein 6s linear infinite;
+  }
+
+  /* Static film grain overlay for atmosphere */
+  .grain::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    opacity: 0.06;
+    mix-blend-mode: soft-light;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* Bioluminescent text */
+  .text-glow {
+    text-shadow: 0 0 24px rgba(61, 220, 132, 0.45), 0 0 2px rgba(200, 255, 212, 0.6);
+  }
+}
+
+/* ----------------------------------------------------------------------------
+ * Utilities
+ * -------------------------------------------------------------------------- */
 @layer utilities {
-  .animate-aurora {
-    animation: aurora 20s linear infinite alternate;
-  }
-
-  .animate-incident-pulse {
-    animation: incident-pulse 2.5s ease-in-out infinite;
-  }
-
-  .animate-incident-border-glow {
-    animation: incident-border-glow 3s ease-in-out infinite;
-  }
+  .animate-aurora { animation: aurora 20s linear infinite alternate; }
+  .animate-incident-pulse { animation: incident-pulse 2.5s ease-in-out infinite; }
+  .animate-incident-border-glow { animation: incident-border-glow 3s ease-in-out infinite; }
 
   .animate-shimmer {
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+    background: linear-gradient(90deg, transparent, rgba(244, 247, 242, 0.06), transparent);
     background-size: 200% 100%;
     animation: shimmer-sweep 4s ease-in-out infinite;
   }
 
-  /* Text wrapping utilities */
-  .text-balance {
-    text-wrap: balance;
+  .text-balance { text-wrap: balance; }
+  .text-pretty { text-wrap: pretty; }
+  .break-keep { word-break: keep-all; overflow-wrap: normal; }
+  .break-normal { word-break: normal; overflow-wrap: break-word; }
+
+  /* Extend a compact control's hit area to the 44px WCAG/iOS minimum
+   * without changing its visual size. Requires `position: relative`. */
+  .tap-44::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
   }
 
-  .text-pretty {
-    text-wrap: pretty;
-  }
-
-  /* Prevent word breaks - keep words together */
-  .break-keep {
-    word-break: keep-all;
-    overflow-wrap: normal;
-  }
-
-  /* Break words only when necessary (at word boundaries) */
-  .break-normal {
-    word-break: normal;
-    overflow-wrap: break-word;
-  }
-
-  /* ============================================================================
-   * MOBILE PERFORMANCE UTILITIES
-   * Optimizations for iOS Safari/WebKit and Android Chrome
-   * ============================================================================ */
-
-  /* Layout containment - isolates rendering to prevent cascading repaints */
-  .contain-layout {
-    contain: layout;
-  }
-
-  .contain-paint {
-    contain: paint;
-  }
-
-  .contain-strict {
-    contain: strict;
-  }
-
-  /* Content visibility for off-screen optimization */
-  .content-auto {
-    content-visibility: auto;
-  }
-
-  /* GPU layer promotion for smooth animations */
-  .gpu-layer {
-    transform: translateZ(0);
-    backface-visibility: hidden;
-  }
-
-  /* Optimized scroll container for smooth scrolling performance */
+  /* Mobile performance */
+  .contain-layout { contain: layout; }
+  .contain-paint { contain: paint; }
+  .contain-strict { contain: strict; }
+  .content-auto { content-visibility: auto; }
+  .gpu-layer { transform: translateZ(0); backface-visibility: hidden; }
   .scroll-container {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
     contain: layout style paint;
   }
+  .gpu-accelerated { transform: translateZ(0); will-change: transform; backface-visibility: hidden; }
 
-  /* GPU acceleration utility for elements that animate frequently */
-  .gpu-accelerated {
-    transform: translateZ(0);
-    will-change: transform;
-    backface-visibility: hidden;
-  }
-
-  .emergency-glow-pulse {
-    position: relative;
-  }
+  .emergency-glow-pulse { position: relative; }
   .emergency-glow-pulse::after {
     content: '';
     position: absolute;
@@ -296,7 +362,11 @@
     pointer-events: none;
   }
 
-  /* Reduce motion - respect user preferences */
+  .perspective-1200 { perspective: 1200px; }
+  .preserve-3d { transform-style: preserve-3d; }
+  .mask-fade-b { mask-image: linear-gradient(to bottom, black 70%, transparent); }
+  .mask-fade-x { mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent); }
+
   @media (prefers-reduced-motion: reduce) {
     .motion-safe\:animate-none,
     .animate-aurora,
@@ -306,180 +376,105 @@
     .animate-ping,
     .animate-spin,
     .animate-shimmer,
+    .animate-unfurl,
+    .animate-drift,
+    .animate-breathe,
+    .animate-sheen,
+    .animate-grain,
+    .animate-pulse-ring,
+    .animate-marquee,
+    .vein,
     .gradient-animated {
       animation: none !important;
       transition: none !important;
     }
-    .emergency-glow-pulse::after {
-      animation: none !important;
-      opacity: 0 !important;
-    }
-    /* Disable LoadingScreen animations */
-    [style*="loadingBreath"],
-    [style*="loadingCardIn"],
-    [style*="loadingRingSpin"],
-    [style*="loadingLogoPulse"],
-    [style*="loadingTextPulse"],
-    [style*="loadingProgress"],
-    [style*="loadingShimmer"],
-    [style*="loadingCenterDot"],
-    [style*="loadingOrbit"],
-    [style*="loadingParticle"],
-    [style*="loadingFadeUp"] {
-      animation: none !important;
-      opacity: 1 !important;
-    }
+    .emergency-glow-pulse::after { animation: none !important; opacity: 0 !important; }
+    [style*="leaf-pulse"], [style*="loading-sweep"] { animation: none !important; }
   }
 
-  /* Mobile-specific shadow reductions */
   @media (max-width: 768px) {
-    .mobile-shadow-sm {
-      box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    }
-
-    .mobile-shadow-none {
-      box-shadow: none;
-    }
-
-    /* Reduce backdrop blur on mobile (expensive on low-end devices) */
-    .mobile-backdrop-none {
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
-    }
+    .mobile-shadow-sm { box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); }
+    .mobile-shadow-none { box-shadow: none; }
+    .mobile-backdrop-none { backdrop-filter: none; -webkit-backdrop-filter: none; }
   }
 
-  /* Touch-friendly minimum target sizes */
-  .touch-target {
-    min-height: 44px;
-    min-width: 44px;
-  }
+  /* Dynamic viewport height with a 100vh fallback for older WebKit (iOS < 15.4).
+     Prevents content from hiding behind the mobile browser toolbar. */
+  .h-dvh-safe { height: 100vh; height: 100dvh; }
+  .min-h-dvh-safe { min-height: 100vh; min-height: 100dvh; }
+  .max-h-dvh-safe { max-height: 100vh; max-height: 100dvh; }
 
-  /* Smooth scrolling with momentum (iOS) */
-  .scroll-smooth-touch {
-    -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
-  }
+  .touch-target { min-height: 44px; min-width: 44px; }
+  .scroll-smooth-touch { -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
+  .select-none-touch { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  .safe-area-inset-bottom { padding-bottom: env(safe-area-inset-bottom, 0); }
+  /* Fixed-position offsets that clear the iOS home indicator in standalone mode. */
+  .bottom-safe-4 { bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); }
+  .bottom-safe-6 { bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px)); }
+  .bottom-safe-20 { bottom: calc(5rem + env(safe-area-inset-bottom, 0px)); }
+  .safe-area-inset-top { padding-top: env(safe-area-inset-top, 0); }
 
-  /* Prevent text selection on interactive elements (mobile UX) */
-  .select-none-touch {
-    -webkit-user-select: none;
-    user-select: none;
-    -webkit-touch-callout: none;
-  }
-
-  /* Safe area insets for notched devices */
-  .safe-area-inset-bottom {
-    padding-bottom: env(safe-area-inset-bottom, 0);
-  }
-
-  .safe-area-inset-top {
-    padding-top: env(safe-area-inset-top, 0);
-  }
-
-  /* ============================================================================
-   * ACCESSIBILITY UTILITIES
-   * Screen reader support and focus management
-   * ============================================================================ */
-
-  /* Visually hidden but accessible to screen readers */
+  /* Accessibility */
   .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
   }
-
-  /* Make element visible again when focused (for skip links) */
   .sr-only-focusable:focus,
   .sr-only-focusable:focus-within {
-    position: static;
-    width: auto;
-    height: auto;
-    padding: inherit;
-    margin: inherit;
-    overflow: visible;
-    clip: auto;
-    white-space: normal;
+    position: static; width: auto; height: auto; padding: inherit; margin: inherit;
+    overflow: visible; clip: auto; white-space: normal;
   }
-
-  /* Enhanced focus ring for keyboard navigation */
-  .focus-visible-ring:focus-visible {
-    outline: 2px solid rgba(16, 185, 129, 0.8);
-    outline-offset: 2px;
-  }
-
-  /* Remove focus ring for mouse users but keep for keyboard */
-  .focus-visible-only:focus:not(:focus-visible) {
-    outline: none;
-  }
-
-  /* Skip to main content link (accessibility) */
+  .focus-visible-ring:focus-visible { outline: 2px solid rgba(61, 220, 132, 0.9); outline-offset: 2px; }
+  .focus-visible-only:focus:not(:focus-visible) { outline: none; }
   .skip-link {
-    position: absolute;
-    top: -40px;
-    left: 0;
-    background: #000;
-    color: #fff;
-    padding: 8px 16px;
-    z-index: 100;
-    transition: top 0.3s;
+    position: absolute; top: -40px; left: 0; background: var(--ink-950); color: var(--ink-50);
+    padding: 8px 16px; z-index: 100; transition: top 0.3s;
   }
-
-  .skip-link:focus {
-    top: 0;
-  }
-
-  /* Improved contrast for helper text */
-  .text-accessible-muted {
-    color: rgba(255, 255, 255, 0.6);
-  }
+  .skip-link:focus { top: 0; }
+  .text-accessible-muted { color: var(--ink-300); }
 }
 
-.animate-fadeIn {
-  animation: fadeIn 0.4s ease forwards;
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-
-.animate-ping {
-  animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
-}
+.animate-fadeIn { animation: fadeIn 0.4s var(--ease-canopy) forwards; }
+.animate-spin { animation: spin 1s linear infinite; }
+.animate-ping { animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite; }
 
 .gradient-animated {
   background-size: 200% 200%;
   animation: pulse-gradient 10s ease infinite;
 }
 
+/* Legacy hook kept for compatibility: the "gold" title is now a platinum-mint slab. */
 .title-gradient-gold {
   background-image: linear-gradient(
-    90deg,
-    rgba(247, 228, 189, 1) 0%,
-    rgba(138, 99, 30, 1) 20%,
-    rgba(244, 201, 121, 1) 50%,
-    rgba(138, 99, 30, 1) 75%,
-    rgba(215, 154, 50, 1) 100%
+    100deg,
+    #f4f7f2 0%,
+    #c8ffd4 30%,
+    #8df5a8 55%,
+    #e4eae1 80%,
+    #f4f7f2 100%
   );
 }
 
-/* Study guide / doc view: green gradient, no shimmer. Use with bg-clip-text. */
 .title-gradient-green {
   background-image: linear-gradient(
     105deg,
-    rgba(167, 243, 208, 1) 0%,
-    rgba(110, 231, 183, 1) 25%,
-    rgba(52, 211, 153, 1) 50%,
-    rgba(16, 185, 129, 1) 75%,
-    rgba(110, 231, 183, 1) 100%
+    #c8ffd4 0%,
+    #8df5a8 25%,
+    #5ee898 50%,
+    #3ddc84 75%,
+    #8df5a8 100%
   );
 }
 
 .validation-highlight {
   animation: validation-highlight 0.6s ease-in-out 3;
 }
+
+/* Native scrollbars tuned to the ink palette */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(61, 220, 132, 0.25) transparent;
+}
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-thumb { background: rgba(61, 220, 132, 0.22); border-radius: 999px; }
+*::-webkit-scrollbar-track { background: transparent; }

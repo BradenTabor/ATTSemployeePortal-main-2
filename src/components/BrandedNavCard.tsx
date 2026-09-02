@@ -1,9 +1,11 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
-import { cn } from "../lib/utils";
 import React, { ReactNode, useMemo, useState, useCallback, useRef, isValidElement } from "react";
+import { ArrowUpRight, Pin, PinOff, Star } from "lucide-react";
+import { cn } from "../lib/utils";
 import { getDeviceCapabilities } from "../lib/mobilePerf";
-import { ChevronRight, Pin, PinOff, Star } from "lucide-react";
+import { LeafGlyph, type LeafTone } from "./canopy/LeafGlyph";
+import { EASE_CANOPY, springSnappy } from "../motion/presets";
 
 type CardVariant = "emerald" | "gold" | "ember" | "purple" | "redwhite" | "bluewhite";
 
@@ -25,152 +27,79 @@ interface BrandedNavCardProps {
   canPinMore?: boolean;
   /** Callback when user pins/unpins this item */
   onTogglePin?: (itemId: string) => void;
-  /** When true, icon is an image (no background, larger size) */
+  /** When true, icon is an image (rendered raw, no glyph tile) */
   iconAsImage?: boolean;
 }
 
-// Premium gradient styles with enhanced icon treatment
-const VARIANT_STYLES = {
+/**
+ * Role tint → Canopy tone.
+ * All within green · white · black except safety (red) which is a justified exception.
+ */
+const VARIANT: Record<
+  CardVariant,
+  { tone: LeafTone; border: string; hoverBorder: string; glow: string; title: string; desc: string; vein: string }
+> = {
   emerald: {
-    // Outer wrapper gradient border
-    outer: "bg-gradient-to-br from-green-600/70 via-black/80 to-green-800/80",
-    outerHover: "hover:from-green-500 hover:via-black hover:to-green-700",
-    // Inner card gradient background
-    innerStyle: {
-      background: "linear-gradient(90deg, rgba(0, 0, 0, 0.7) 0%, rgba(11, 132, 92, 1) 50%, rgba(12, 39, 19, 1) 100%)",
-    },
-    innerBorder: "border-[rgba(11,132,92,0.3)]",
-    // Premium icon styling
-    iconGradient: "from-emerald-500/30 via-emerald-400/20 to-emerald-600/30",
-    iconBorderGradient: "from-emerald-400/60 via-emerald-500/40 to-emerald-400/60",
-    iconGlow: "shadow-[0_0_20px_rgba(16,185,129,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)]",
-    iconGlowHover: "group-hover:shadow-[0_0_25px_rgba(16,185,129,0.5),inset_0_1px_2px_rgba(255,255,255,0.15)]",
-    iconColor: "text-emerald-300",
-    iconColorHover: "group-hover:text-emerald-200",
-    // Text colors
-    title: "text-white",
-    description: "text-white/80",
-    // Effects
-    glow: "group-hover:shadow-[0_0_35px_rgba(16,185,129,0.2)]",
-    shimmer: "from-green-400/0 via-green-400/40 to-green-400/0",
-    accent: "bg-gradient-to-r from-green-400 to-green-600",
-    arrow: "text-green-400/50",
+    tone: "verdant",
+    border: "border-verdant-500/[0.18]",
+    hoverBorder: "group-hover:border-verdant-400/60",
+    glow: "rgba(61,220,132,0.35)",
+    title: "text-bone-50",
+    desc: "text-bone-300",
+    vein: "from-verdant-400 to-lime-400",
   },
   gold: {
-    outer: "bg-gradient-to-br from-[#f9e7c4]/20 via-[#0b0a07] to-[#1b150e]",
-    outerHover: "hover:border-[#f6dcb2]/60 hover:shadow-[0_25px_50px_rgba(0,0,0,0.6)]",
-    innerStyle: {
-      background: "linear-gradient(51.63deg, rgba(0, 0, 0, 1) 5%, rgba(147, 98, 6, 1) 11.25%, rgba(84, 55, 3, 1) 17.5%, rgba(104, 69, 3, 1) 30%, rgba(147, 98, 6, 1) 42%, rgba(189, 126, 10, 1) 54%, rgba(234, 216, 123, 1) 66.5%, rgba(244, 159, 1, 1) 79%, rgba(245, 245, 245, 1) 90%, rgba(251, 190, 75, 1) 100%)",
-    },
-    innerBorder: "border-[#f6dcb2]/25",
-    // Premium icon styling
-    iconGradient: "from-amber-500/30 via-yellow-400/25 to-amber-600/30",
-    iconBorderGradient: "from-amber-300/70 via-yellow-400/50 to-amber-400/70",
-    iconGlow: "shadow-[0_0_20px_rgba(251,191,36,0.25),inset_0_1px_1px_rgba(255,255,255,0.15)]",
-    iconGlowHover: "group-hover:shadow-[0_0_28px_rgba(251,191,36,0.45),inset_0_1px_2px_rgba(255,255,255,0.2)]",
-    iconColor: "text-amber-300",
-    iconColorHover: "group-hover:text-amber-200",
-    title: "text-[#fff6dd]",
-    description: "text-[#f8e5bb]/80",
-    glow: "group-hover:shadow-[0_0_35px_rgba(244,201,121,0.15)]",
-    shimmer: "from-amber-400/0 via-amber-400/35 to-amber-400/0",
-    accent: "bg-gradient-to-r from-[#f4c979] to-[#d4a84a]",
-    arrow: "text-[#f4c979]/50",
+    tone: "platinum",
+    border: "border-bone-50/[0.14]",
+    hoverBorder: "group-hover:border-bone-50/50",
+    glow: "rgba(244,247,242,0.28)",
+    title: "text-bone-50",
+    desc: "text-bone-300",
+    vein: "from-bone-50 to-lime-400",
   },
   ember: {
-    outer: "bg-gradient-to-br from-[#341109]/80 via-[#120504] to-[#050201]",
-    outerHover: "hover:border-[#ffb089]/60 hover:shadow-[0_25px_45px_rgba(0,0,0,0.65)]",
-    innerStyle: {
-      background: "linear-gradient(36.85deg, rgba(0, 0, 0, 1) 0%, rgba(71, 28, 6, 1) 12.5%, rgba(101, 39, 6, 1) 25%, rgba(137, 53, 11, 1) 37.5%, rgba(158, 59, 5, 1) 50%, rgba(228, 84, 7, 1) 62.5%, rgba(255, 129, 61, 1) 75%, rgba(255, 209, 184, 1) 100%)",
-    },
-    innerBorder: "border-[#f38d57]/35",
-    // Premium icon styling
-    iconGradient: "from-orange-500/30 via-orange-400/25 to-red-500/30",
-    iconBorderGradient: "from-orange-400/70 via-orange-500/50 to-red-400/70",
-    iconGlow: "shadow-[0_0_20px_rgba(249,115,22,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)]",
-    iconGlowHover: "group-hover:shadow-[0_0_28px_rgba(249,115,22,0.5),inset_0_1px_2px_rgba(255,255,255,0.15)]",
-    iconColor: "text-orange-300",
-    iconColorHover: "group-hover:text-orange-200",
-    title: "text-[#ffe4c9]",
-    description: "text-[#ffd4b8]/80",
-    glow: "group-hover:shadow-[0_0_35px_rgba(255,143,87,0.15)]",
-    shimmer: "from-orange-400/0 via-orange-400/35 to-orange-400/0",
-    accent: "bg-gradient-to-r from-[#ff9350] to-[#e85a07]",
-    arrow: "text-[#ff9d5f]/50",
+    tone: "sap",
+    border: "border-lime-400/25",
+    hoverBorder: "group-hover:border-lime-400/70",
+    glow: "rgba(184,255,122,0.32)",
+    title: "text-bone-50",
+    desc: "text-bone-300",
+    vein: "from-lime-400 to-verdant-400",
   },
   purple: {
-    outer: "bg-gradient-to-br from-[#2d1b4e]/80 via-[#1a0f2e] to-[#0a0513]",
-    outerHover: "hover:border-[#c084fc]/60 hover:shadow-[0_25px_45px_rgba(0,0,0,0.65)]",
-    innerStyle: {
-      background: "linear-gradient(90deg, rgba(10, 5, 19, 0.9) 0%, rgba(45, 27, 78, 1) 50%, rgba(26, 15, 46, 1) 100%)",
-    },
-    innerBorder: "border-[#c084fc]/35",
-    // Premium icon styling
-    iconGradient: "from-purple-500/30 via-purple-400/25 to-violet-500/30",
-    iconBorderGradient: "from-purple-400/70 via-purple-500/50 to-violet-400/70",
-    iconGlow: "shadow-[0_0_20px_rgba(192,132,252,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)]",
-    iconGlowHover: "group-hover:shadow-[0_0_28px_rgba(192,132,252,0.5),inset_0_1px_2px_rgba(255,255,255,0.15)]",
-    iconColor: "text-purple-300",
-    iconColorHover: "group-hover:text-purple-200",
-    title: "text-[#f3e8ff]",
-    description: "text-[#e9d5ff]/80",
-    glow: "group-hover:shadow-[0_0_35px_rgba(192,132,252,0.2)]",
-    shimmer: "from-purple-400/0 via-purple-400/35 to-purple-400/0",
-    accent: "bg-gradient-to-r from-[#c084fc] to-[#9333ea]",
-    arrow: "text-[#c084fc]/50",
+    tone: "moss",
+    border: "border-verdant-400/25",
+    hoverBorder: "group-hover:border-verdant-300/70",
+    glow: "rgba(61,220,132,0.4)",
+    title: "text-bone-50",
+    desc: "text-bone-300",
+    vein: "from-verdant-500 to-verdant-300",
   },
   redwhite: {
-    outer: "bg-gradient-to-br from-[#450a0a]/80 via-[#1c0a0a] to-[#0a0202]",
-    outerHover: "hover:border-[#fecaca]/60 hover:shadow-[0_25px_45px_rgba(0,0,0,0.65)]",
-    innerStyle: {
-      background: "linear-gradient(90deg, rgba(10, 2, 2, 0.9) 0%, rgba(69, 10, 10, 1) 50%, rgba(28, 10, 10, 1) 100%)",
-    },
-    innerBorder: "border-[#fecaca]/35",
-    // Premium icon styling
-    iconGradient: "from-red-500/30 via-red-400/25 to-rose-500/30",
-    iconBorderGradient: "from-red-400/70 via-red-300/50 to-rose-400/70",
-    iconGlow: "shadow-[0_0_20px_rgba(254,202,202,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)]",
-    iconGlowHover: "group-hover:shadow-[0_0_28px_rgba(254,202,202,0.5),inset_0_1px_2px_rgba(255,255,255,0.15)]",
-    iconColor: "text-red-200",
-    iconColorHover: "group-hover:text-red-100",
-    title: "text-[#fef2f2]",
-    description: "text-[#fecaca]/85",
-    glow: "group-hover:shadow-[0_0_35px_rgba(254,202,202,0.2)]",
-    shimmer: "from-red-300/0 via-red-300/35 to-red-300/0",
-    accent: "bg-gradient-to-r from-[#fecaca] to-[#dc2626]",
-    arrow: "text-[#fecaca]/50",
+    tone: "safety",
+    border: "border-rose-400/30",
+    hoverBorder: "group-hover:border-rose-300/70",
+    glow: "rgba(254,202,202,0.35)",
+    title: "text-bone-50",
+    desc: "text-rose-100/80",
+    vein: "from-rose-300 to-rose-500",
   },
   bluewhite: {
-    outer: "bg-gradient-to-br from-[#0a1628]/80 via-[#0a1020] to-[#020408]",
-    outerHover: "hover:border-[#bfdbfe]/60 hover:shadow-[0_25px_45px_rgba(0,0,0,0.65)]",
-    innerStyle: {
-      background: "linear-gradient(90deg, rgba(2, 4, 8, 0.9) 0%, rgba(30, 64, 175, 1) 50%, rgba(15, 23, 42, 1) 100%)",
-    },
-    innerBorder: "border-[#bfdbfe]/35",
-    // Premium icon styling
-    iconGradient: "from-blue-500/30 via-blue-400/25 to-sky-500/30",
-    iconBorderGradient: "from-blue-400/70 via-blue-300/50 to-sky-400/70",
-    iconGlow: "shadow-[0_0_20px_rgba(191,219,254,0.3),inset_0_1px_1px_rgba(255,255,255,0.1)]",
-    iconGlowHover: "group-hover:shadow-[0_0_28px_rgba(191,219,254,0.5),inset_0_1px_2px_rgba(255,255,255,0.15)]",
-    iconColor: "text-blue-200",
-    iconColorHover: "group-hover:text-blue-100",
-    title: "text-[#f0f9ff]",
-    description: "text-[#bfdbfe]/85",
-    glow: "group-hover:shadow-[0_0_35px_rgba(191,219,254,0.2)]",
-    shimmer: "from-blue-300/0 via-blue-300/35 to-blue-300/0",
-    accent: "bg-gradient-to-r from-[#bfdbfe] to-[#2563eb]",
-    arrow: "text-[#bfdbfe]/50",
+    tone: "glacier",
+    border: "border-verdant-200/20",
+    hoverBorder: "group-hover:border-verdant-200/60",
+    glow: "rgba(200,255,212,0.3)",
+    title: "text-bone-50",
+    desc: "text-bone-300",
+    vein: "from-bone-100 to-verdant-300",
   },
 };
 
 /**
- * BrandedNavCard - Compact navigation card with original premium styling
- * 
- * Features:
- * - Original gradient colors and styling restored
- * - Compact horizontal layout
- * - Premium hover animations (shimmer, glow, accent line)
- * - Mobile-optimized touch states
+ * BrandedNavCard — the CANOPY leaf tile.
+ *
+ * A slab with the signature asymmetric radius, a LeafGlyph icon tile, and a
+ * living vein that draws along the base on hover. Lifts and tilts on desktop.
  */
 export default function BrandedNavCard({
   title,
@@ -186,30 +115,23 @@ export default function BrandedNavCard({
   onTogglePin,
   iconAsImage = false,
 }: BrandedNavCardProps) {
-  const selected = VARIANT_STYLES[variant] ?? VARIANT_STYLES.emerald;
+  const v = VARIANT[variant] ?? VARIANT.emerald;
   const [isHovered, setIsHovered] = useState(false);
   const [showPinOverlay, setShowPinOverlay] = useState(false);
-  
-  // Use ref for timer ID to avoid race condition with async state updates
-  // This provides immediate, synchronous access to the latest value
   const pressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  
-  // Get device capabilities (cached)
+
   const caps = useMemo(() => getDeviceCapabilities(), []);
-  
   const canAnimate = !caps.prefersReducedMotion;
   const canHover = !caps.isMobile && canAnimate && !comingSoon;
   const isMobile = caps.isMobile;
   const hasPinSupport = !!itemId && !!onTogglePin;
 
-  // Long press detection for mobile pinning
   const handleTouchStart = useCallback(() => {
     if (!hasPinSupport) return;
-    const timer = setTimeout(() => {
+    pressTimerRef.current = setTimeout(() => {
       setShowPinOverlay(true);
-      if ('vibrate' in navigator) navigator.vibrate(10);
+      if ("vibrate" in navigator) navigator.vibrate(10);
     }, 500);
-    pressTimerRef.current = timer;
   }, [hasPinSupport]);
 
   const handleTouchEnd = useCallback(() => {
@@ -219,280 +141,190 @@ export default function BrandedNavCard({
     }
   }, []);
 
-  // Right-click for desktop pinning
-  const handleContextMenu = useCallback((e: React.MouseEvent) => {
-    if (!hasPinSupport) return;
-    e.preventDefault();
-    setShowPinOverlay(true);
-  }, [hasPinSupport]);
-
-  // Handle pin toggle
-  const handleTogglePin = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (itemId && onTogglePin) {
-      onTogglePin(itemId);
-      if ('vibrate' in navigator) navigator.vibrate(5);
-    }
-    setShowPinOverlay(false);
-  }, [itemId, onTogglePin]);
-
-  // Common event handlers
-  const mouseHandlers = {
-    onMouseEnter: () => canHover && setIsHovered(true),
-    onMouseLeave: () => { setIsHovered(false); setShowPinOverlay(false); },
-  };
-
-  // Render content
-  const cardContent = (
-    <>
-      <motion.div
-        className="group relative"
-        whileHover={canHover ? { y: -3, scale: 1.02 } : undefined}
-        whileTap={canAnimate ? { scale: 0.97 } : undefined}
-        transition={{ type: "spring", stiffness: 400, damping: 25 }}
-      >
-        {/* Coming Soon Badge */}
-        {comingSoon && (
-          <div className="absolute -top-1 -right-1 z-20">
-            <div className={cn(
-              "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
-              "bg-gradient-to-r from-slate-800/95 to-slate-900/95",
-              "border border-slate-500/40",
-              "text-slate-300 shadow-lg",
-              "backdrop-blur-sm"
-            )}>
-              Coming Soon
-            </div>
-          </div>
-        )}
-
-        {/* Outer wrapper with gradient border - RESTORED ORIGINAL STYLING */}
-        <div
-          className={cn(
-            "relative w-full p-[2px] shadow-lg transition-all duration-300 ease-out",
-            iconAsImage ? "overflow-visible" : "overflow-hidden",
-            compact ? "rounded-xl" : "rounded-2xl",
-            selected.outer,
-            !comingSoon && selected.outerHover,
-            !comingSoon && selected.glow,
-            comingSoon && "opacity-70",
-            isMobile && !comingSoon && "active:scale-[0.98] active:opacity-95"
-          )}
-        >
-          {/* Animated shimmer overlay - desktop only */}
-          {!caps.isLowEnd && !isMobile && (
-            <motion.div
-              className={cn(
-                "absolute inset-0 bg-gradient-to-r opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none",
-                selected.shimmer
-              )}
-              animate={isHovered ? {
-                backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-              } : {}}
-              transition={{
-                duration: 2.5,
-                repeat: Infinity,
-                ease: "linear"
-              }}
-              style={{
-                backgroundSize: "200% 100%",
-              }}
-            />
-          )}
-          
-          {/* Inner card with gradient background - RESTORED ORIGINAL STYLING */}
-          <div
-            className={cn(
-              "relative h-full w-full flex items-center border transition-all duration-300",
-              compact
-                ? "rounded-[10px] px-2.5 py-2 sm:px-3 sm:py-2 gap-2 min-h-[44px] sm:min-h-[48px]"
-                : "rounded-xl sm:rounded-2xl px-3 py-2.5 sm:px-4 sm:py-3.5 md:px-5 md:py-4 gap-2.5 sm:gap-3.5 min-h-[52px] sm:min-h-[60px]",
-              selected.innerBorder,
-              !caps.isLowEnd && "backdrop-blur-xl"
-            )}
-            style={selected.innerStyle}
-          >
-            {/* Admin badge overlay (gold) - far right, behind content */}
-            {variant === "gold" && (
-              <img
-                src="/assets/admin-badge.webp"
-                alt=""
-                aria-hidden
-                className="absolute -right-6 top-1/2 -translate-y-1/2 h-20 sm:h-24 md:h-[96px] w-auto object-contain object-right pointer-events-none rounded-[inherit] z-0 opacity-90"
-              />
-            )}
-            {/* Premium Icon Container */}
-            {icon && (
-              <motion.div
-                className={cn(
-                  "flex-shrink-0 relative z-10",
-                  iconAsImage && "overflow-visible"
-                )}
-                animate={isHovered && canHover ? { 
-                  y: -3,
-                  scale: 1.1,
-                } : { 
-                  y: 0,
-                  scale: 1 
-                }}
-                transition={{ type: "spring", stiffness: 400, damping: 20 }}
-              >
-                {!iconAsImage && (
-                  <>
-                    {/* Outer glow ring */}
-                    <div className={cn(
-                      "absolute -inset-0.5 rounded-lg bg-gradient-to-br opacity-60 blur-[2px] transition-opacity duration-300",
-                      "group-hover:opacity-100",
-                      selected.iconBorderGradient
-                    )} />
-                  </>
-                )}
-                
-                {/* Icon container - when iconAsImage: no background/box; otherwise gradient + glow */}
-                <div
-                  className={cn(
-                    "relative flex items-center justify-center transition-all duration-300",
-                    iconAsImage
-                      ? "bg-transparent overflow-visible border-0 shadow-none ring-0 rounded-none w-0 min-w-0 h-0 min-h-0"
-                      : cn(
-                          "rounded-lg bg-gradient-to-br",
-                          selected.iconGradient,
-                          selected.iconGlow,
-                          selected.iconGlowHover
-                        ),
-                    !iconAsImage && (compact ? "w-7 h-7 sm:w-8 sm:h-8 rounded-lg" : "w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-lg sm:rounded-xl")
-                  )}
-                >
-                  {!iconAsImage && (
-                    /* Inner border highlight */
-                    <div className={cn(
-                      "absolute inset-[1px] bg-gradient-to-br opacity-50",
-                      compact ? "rounded-[6px]" : "rounded-[8px] sm:rounded-[10px]",
-                      selected.iconGradient
-                    )} />
-                  )}
-                  
-                  {/* Icon - image overlay uses explicit-size wrapper so the PNG actually renders at full size */}
-                  <div className={cn(
-                    "relative z-10 transition-colors duration-300",
-                    iconAsImage 
-                      ? "absolute -left-2 top-1/2 -translate-y-1/2 w-[64px] h-[78px] sm:w-[72px] sm:h-[88px] md:w-[80px] md:h-[98px] flex items-center justify-center [&>img]:w-full [&>img]:h-full [&>img]:object-contain [&>img]:drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
-                      : compact ? "w-3.5 h-3.5 sm:w-4 sm:h-4" : "w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6",
-                    "[&>svg]:w-full [&>svg]:h-full [&>svg]:drop-shadow-[0_0_3px_currentColor]",
-                    !iconAsImage && "[&>img]:w-full [&>img]:h-full [&>img]:object-contain",
-                    !iconAsImage && selected.iconColor,
-                    !iconAsImage && selected.iconColorHover
-                  )}>
-                    {isValidElement(icon) ? icon : typeof icon === 'function' ? React.createElement(icon as React.ComponentType) : null}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-            
-            {/* Text content - add left padding when iconAsImage so text doesn't overlap PNG */}
-            <div className={cn("flex-1 min-w-0 relative z-10", iconAsImage && "pl-[60px] sm:pl-[68px] md:pl-[76px]")}>
-              <h3
-                className={cn(
-                  "font-semibold tracking-wide truncate",
-                  compact ? "text-xs" : "text-xs sm:text-sm md:text-base",
-                  selected.title
-                )}
-              >
-                {title}
-              </h3>
-              {description && !compact && (
-                <p className={cn(
-                  "text-[10px] sm:text-xs md:text-sm mt-0.5 line-clamp-1 sm:line-clamp-2 opacity-90",
-                  selected.description
-                )}>
-                  {description}
-                </p>
-              )}
-            </div>
-            
-            {/* Arrow indicator */}
-            <motion.div
-              className={cn(
-                "flex-shrink-0 relative z-10 transition-all duration-300",
-                isMobile ? selected.arrow : cn(
-                  "opacity-30 group-hover:opacity-100",
-                  selected.iconColor,
-                  selected.iconColorHover
-                )
-              )}
-              animate={isHovered && canHover ? { x: 4 } : { x: 0 }}
-              transition={{ type: "spring", stiffness: 400, damping: 25 }}
-            >
-              <ChevronRight 
-                className={cn(
-                  "drop-shadow-[0_0_4px_currentColor]",
-                  compact ? "w-3 h-3 sm:w-3.5 sm:h-3.5" : "w-4 h-4 sm:w-5 sm:h-5"
-                )} 
-                strokeWidth={2.5} 
-              />
-            </motion.div>
-          </div>
-          
-          {/* Bottom accent line on hover - desktop */}
-          {!isMobile && (
-            <motion.div
-              className={cn(
-                "absolute bottom-0 left-0 h-[2px] rounded-full",
-                selected.accent
-              )}
-              initial={{ width: "0%" }}
-              animate={isHovered ? { width: "100%" } : { width: "0%" }}
-              transition={{ duration: 0.35, ease: "easeOut" }}
-            />
-          )}
-        </div>
-      </motion.div>
-    </>
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent) => {
+      if (!hasPinSupport) return;
+      e.preventDefault();
+      setShowPinOverlay(true);
+    },
+    [hasPinSupport]
   );
 
-  // Render with appropriate wrapper
+  const handleTogglePin = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (itemId && onTogglePin) {
+        onTogglePin(itemId);
+        if ("vibrate" in navigator) navigator.vibrate(5);
+      }
+      setShowPinOverlay(false);
+    },
+    [itemId, onTogglePin]
+  );
+
+  const mouseHandlers = {
+    onMouseEnter: () => canHover && setIsHovered(true),
+    onMouseLeave: () => {
+      setIsHovered(false);
+      setShowPinOverlay(false);
+    },
+  };
+
+  const iconNode = isValidElement(icon)
+    ? icon
+    : typeof icon === "function"
+      ? React.createElement(icon as React.ComponentType)
+      : null;
+
+  const glyphSize = compact ? 36 : 48;
+
+  const cardContent = (
+    <motion.div
+      className="group relative h-full"
+      whileHover={canHover ? { y: -4 } : undefined}
+      whileTap={canAnimate && !comingSoon ? { scale: 0.98 } : undefined}
+      transition={springSnappy}
+    >
+      {comingSoon && (
+        <div className="absolute -top-2 right-3 z-20">
+          <span className="rounded-full border border-bone-50/[0.15] bg-ink-900 px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.2em] text-bone-300 shadow-slab">
+            Soon
+          </span>
+        </div>
+      )}
+
+      {/* hover halo */}
+      {canHover && (
+        <motion.div
+          aria-hidden
+          className="pointer-events-none absolute -inset-px rounded-leaf blur-xl"
+          style={{ background: `radial-gradient(60% 80% at 20% 50%, ${v.glow}, transparent 70%)` }}
+          animate={{ opacity: isHovered ? 0.7 : 0 }}
+          transition={{ duration: 0.5, ease: EASE_CANOPY }}
+        />
+      )}
+
+      <div
+        className={cn(
+          "relative flex h-full items-center overflow-hidden border bg-[linear-gradient(160deg,#121a15_0%,#0b100d_50%,#040605_100%)] transition-[border-color,box-shadow] duration-500 ease-canopy",
+          "shadow-[inset_0_1px_0_rgba(244,247,242,0.07),0_2px_6px_rgba(0,0,0,0.5),0_18px_36px_-20px_rgba(0,0,0,0.9)]",
+          compact ? "rounded-leaf-sm gap-2.5 px-3 py-2.5 min-h-[52px]" : "rounded-leaf gap-3.5 px-4 py-3.5 sm:px-5 sm:py-4 min-h-[68px]",
+          v.border,
+          !comingSoon && v.hoverBorder,
+          comingSoon && "opacity-60",
+          isMobile && !comingSoon && "active:opacity-90"
+        )}
+      >
+        {/* top-edge highlight */}
+        <span className="pointer-events-none absolute inset-x-4 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(244,247,242,0.25),transparent)]" />
+
+        {/* sheen sweep on hover (desktop) */}
+        {canHover && (
+          <motion.span
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 w-1/3 bg-[linear-gradient(90deg,transparent,rgba(200,255,212,0.10),transparent)]"
+            initial={{ x: "-150%", skewX: -18 }}
+            animate={isHovered ? { x: "400%" } : { x: "-150%" }}
+            transition={{ duration: isHovered ? 1.1 : 0, ease: EASE_CANOPY }}
+          />
+        )}
+
+        {/* icon */}
+        {icon && (
+          <motion.div
+            className="relative z-10 flex-shrink-0"
+            animate={isHovered && canHover ? { rotate: -6, scale: 1.06 } : { rotate: 0, scale: 1 }}
+            transition={springSnappy}
+          >
+            {iconAsImage ? (
+              <div
+                className={cn(
+                  "flex items-center justify-center drop-shadow-[0_6px_14px_rgba(0,0,0,0.5)] [&>img]:h-full [&>img]:w-full [&>img]:object-contain",
+                  compact ? "h-9 w-9" : "h-12 w-12 sm:h-14 sm:w-14"
+                )}
+              >
+                {iconNode}
+              </div>
+            ) : (
+              <LeafGlyph tone={v.tone} size={glyphSize} live={isHovered}>
+                <span className={cn("flex items-center justify-center [&>svg]:h-full [&>svg]:w-full", compact ? "h-4 w-4" : "h-5 w-5")}>
+                  {iconNode}
+                </span>
+              </LeafGlyph>
+            )}
+          </motion.div>
+        )}
+
+        {/* text */}
+        <div className="relative z-10 min-w-0 flex-1">
+          <h3 className={cn("truncate font-semibold tracking-[-0.01em]", compact ? "text-[13px]" : "text-sm sm:text-[15px]", v.title)}>
+            {title}
+          </h3>
+          {description && !compact && (
+            <p className={cn("mt-0.5 line-clamp-1 text-[11px] sm:line-clamp-2 sm:text-xs", v.desc)}>{description}</p>
+          )}
+        </div>
+
+        {/* arrow */}
+        <motion.div
+          className={cn("relative z-10 flex-shrink-0 text-bone-300", !isMobile && "opacity-40 transition-opacity duration-300 group-hover:opacity-100 group-hover:text-verdant-200")}
+          animate={isHovered && canHover ? { x: 3, y: -3 } : { x: 0, y: 0 }}
+          transition={springSnappy}
+        >
+          <ArrowUpRight className={compact ? "h-3.5 w-3.5" : "h-4 w-4 sm:h-[18px] sm:w-[18px]"} strokeWidth={2} aria-hidden />
+        </motion.div>
+
+        {/* base vein draws on hover */}
+        {!isMobile && (
+          <motion.span
+            aria-hidden
+            className={cn("absolute bottom-0 left-4 right-4 h-px origin-left bg-gradient-to-r", v.vein)}
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: isHovered ? 1 : 0 }}
+            transition={{ duration: 0.6, ease: EASE_CANOPY }}
+          />
+        )}
+      </div>
+    </motion.div>
+  );
+
   if (comingSoon) {
     return (
-      <div 
-        className="block touch-manipulation cursor-not-allowed"
-        {...mouseHandlers}
-      >
+      <div className="block h-full cursor-not-allowed touch-manipulation" {...mouseHandlers}>
         {cardContent}
       </div>
     );
   }
 
   return (
-    <div 
-      className="relative"
+    <div
+      className="relative h-full"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onContextMenu={handleContextMenu}
       {...mouseHandlers}
     >
-      <Link 
-        to={to} 
-        className="block touch-manipulation"
+      <Link
+        to={to}
+        className="block h-full touch-manipulation rounded-leaf focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-verdant-400"
       >
         {cardContent}
       </Link>
 
-      {/* Pinned indicator badge */}
       {hasPinSupport && isPinned && (
-        <div className="absolute -top-1 -right-1 z-20 w-5 h-5 rounded-full bg-amber-500 border-2 border-[#041e15] flex items-center justify-center shadow-lg">
-          <Star className="w-2.5 h-2.5 text-white fill-white" />
+        <div className="absolute -right-1 -top-1 z-20 flex h-5 w-5 items-center justify-center rounded-full border-2 border-ink-950 bg-lime-400 shadow-glow-lime">
+          <Star className="h-2.5 w-2.5 fill-ink-950 text-ink-950" aria-hidden />
         </div>
       )}
 
-      {/* Pin/Unpin overlay */}
       <AnimatePresence>
         {showPinOverlay && hasPinSupport && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 rounded-2xl bg-black/85 backdrop-blur-sm flex items-center justify-center z-30"
+            className="absolute inset-0 z-30 flex items-center justify-center rounded-leaf bg-ink-950/90"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -501,23 +333,23 @@ export default function BrandedNavCard({
             {isPinned ? (
               <button
                 onClick={handleTogglePin}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-500/20 border border-red-500/40 text-red-400 text-sm font-medium hover:bg-red-500/30 transition-colors"
+                className="flex items-center gap-2 rounded-leaf-xs border border-rose-400/40 bg-rose-500/15 px-4 py-2.5 text-sm font-medium text-rose-200 transition-colors hover:bg-rose-500/25"
               >
-                <PinOff className="w-4 h-4" />
+                <PinOff className="h-4 w-4" aria-hidden />
                 Remove from Quick Access
               </button>
             ) : canPinMore ? (
               <button
                 onClick={handleTogglePin}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-sm font-medium hover:bg-emerald-500/30 transition-colors"
+                className="flex items-center gap-2 rounded-leaf-xs border border-verdant-400/40 bg-verdant-500/15 px-4 py-2.5 text-sm font-medium text-verdant-200 transition-colors hover:bg-verdant-500/25"
               >
-                <Pin className="w-4 h-4" />
+                <Pin className="h-4 w-4" aria-hidden />
                 Add to Quick Access
               </button>
             ) : (
-              <div className="flex flex-col items-center gap-2 px-4 py-3 text-center">
-                <span className="text-white/60 text-sm">Quick Access is full (4 max)</span>
-                <span className="text-white/40 text-xs">Remove an item first</span>
+              <div className="flex flex-col items-center gap-1 px-4 py-3 text-center">
+                <span className="text-sm text-bone-200">Quick Access is full (4 max)</span>
+                <span className="text-xs text-bone-400">Remove an item first</span>
               </div>
             )}
             <button
@@ -526,9 +358,10 @@ export default function BrandedNavCard({
                 e.stopPropagation();
                 setShowPinOverlay(false);
               }}
-              className="absolute top-2 right-2 p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+              className="absolute right-2 top-2 rounded-full bg-bone-50/10 p-1.5 transition-colors hover:bg-bone-50/20"
+              aria-label="Close"
             >
-              <span className="text-white/60 text-xs">✕</span>
+              <span className="text-xs text-bone-200">✕</span>
             </button>
           </motion.div>
         )}

@@ -64,14 +64,14 @@ const pageSize = 5;
 
 // Purple theme colors
 const THEME = {
-  accent: '#c084fc',
-  accentLight: '#e9d5ff',
-  accentDark: '#a855f7',
-  border: 'border-[#c084fc]/20',
-  bg: 'bg-gradient-to-br from-[#2d1b4e]/40 to-[#0a0513]/60',
-  bgCard: 'from-[#1a0f2e]/90 via-[#0d0619]/90 to-[#050308]/90',
-  text: 'text-[#f3e8ff]',
-  textMuted: 'text-[#e9d5ff]/70',
+  accent: '#5EE898',
+  accentLight: '#C8FFD4',
+  accentDark: '#2FA45A',
+  border: 'border-[#5EE898]/20',
+  bg: 'bg-gradient-to-br from-[#12482A]/40 to-[#05170E]/60',
+  bgCard: 'from-[#0A2A19]/90 via-[#0B100D]/90 to-[#040605]/90',
+  text: 'text-[#D9FFE3]',
+  textMuted: 'text-[#C8FFD4]/70',
 };
 
 // Compact inline pagination component
@@ -95,8 +95,8 @@ function CompactPagination({
   if (totalPages <= 1) return null;
   
   return (
-    <div className="flex items-center justify-between px-3 py-2 bg-black/30 border-t border-[#c084fc]/10">
-      <span className="text-[11px] text-[#e9d5ff]/40">
+    <div className="flex items-center justify-between px-3 py-2 bg-black/30 border-t border-[#5EE898]/10">
+      <span className="text-[11px] text-[#C8FFD4]/40">
         {totalItems} {label}
       </span>
       <div className="flex items-center gap-1">
@@ -105,11 +105,11 @@ function CompactPagination({
           disabled={currentPage === 1 || loading}
           onClick={onPrev}
           aria-label="Previous page"
-          className="p-1.5 rounded-lg bg-[#c084fc]/10 text-[#e9d5ff]/60 hover:bg-[#c084fc]/20 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#c084fc]/50 focus-visible:ring-offset-1"
+          className="p-1.5 rounded-lg bg-[#5EE898]/10 text-[#C8FFD4]/60 hover:bg-[#5EE898]/20 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#5EE898]/50 focus-visible:ring-offset-1"
         >
           <ChevronLeft className="w-3.5 h-3.5" aria-hidden />
         </button>
-        <span className="text-[11px] text-[#e9d5ff]/50 px-2 min-w-[50px] text-center" aria-live="polite">
+        <span className="text-[11px] text-[#C8FFD4]/50 px-2 min-w-[50px] text-center" aria-live="polite">
           {currentPage} / {totalPages}
         </span>
         <button
@@ -117,7 +117,7 @@ function CompactPagination({
           disabled={currentPage >= totalPages || loading}
           onClick={onNext}
           aria-label="Next page"
-          className="p-1.5 rounded-lg bg-[#c084fc]/10 text-[#e9d5ff]/60 hover:bg-[#c084fc]/20 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#c084fc]/50 focus-visible:ring-offset-1"
+          className="p-1.5 rounded-lg bg-[#5EE898]/10 text-[#C8FFD4]/60 hover:bg-[#5EE898]/20 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#5EE898]/50 focus-visible:ring-offset-1"
         >
           <ChevronRight className="w-3.5 h-3.5" aria-hidden />
         </button>
@@ -142,10 +142,10 @@ function FilterChip({
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#c084fc]/20 text-[#c084fc] text-[10px] font-medium"
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#5EE898]/20 text-[#5EE898] text-[10px] font-medium"
     >
       {label}
-      <button type="button" onClick={onRemove} className="hover:bg-white/10 rounded-full p-0.5 focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#c084fc]/50 focus-visible:ring-offset-1" aria-label={`Remove ${label} filter`}>
+      <button type="button" onClick={onRemove} className="hover:bg-white/10 rounded-full p-0.5 focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#5EE898]/50 focus-visible:ring-offset-1" aria-label={`Remove ${label} filter`}>
         <X className="w-2.5 h-2.5" aria-hidden />
       </button>
     </motion.span>
@@ -410,10 +410,10 @@ export default function CrewStatusAnalytics() {
   // Loading state
   if (loading && updates.length === 0) {
     return (
-      <div className={cn("rounded-3xl border p-6", THEME.border, THEME.bg)}>
+      <div className={cn("rounded-leaf border p-6", THEME.border, THEME.bg)}>
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-6 h-6 text-[#c084fc] animate-spin" />
-          <span className="ml-3 text-[#e9d5ff]/70">Loading crew analytics...</span>
+          <Loader2 className="w-6 h-6 text-[#5EE898] animate-spin" />
+          <span className="ml-3 text-[#C8FFD4]/70">Loading crew analytics...</span>
         </div>
       </div>
     );
@@ -422,13 +422,13 @@ export default function CrewStatusAnalytics() {
   // Empty state
   if (!loading && jobRows.length === 0 && !error) {
     return (
-      <div className={cn("rounded-3xl border p-6", THEME.border, THEME.bg)}>
+      <div className={cn("rounded-leaf border p-6", THEME.border, THEME.bg)}>
         <div className="text-center py-8">
-          <div className="w-16 h-16 rounded-full bg-[#c084fc]/10 flex items-center justify-center mx-auto mb-4">
-            <Users className="w-8 h-8 text-[#c084fc]" />
+          <div className="w-16 h-16 rounded-full bg-[#5EE898]/10 flex items-center justify-center mx-auto mb-4">
+            <Users className="w-8 h-8 text-[#5EE898]" />
           </div>
           <p className="text-base font-semibold text-white">No Progress Data Yet</p>
-          <p className="text-xs mt-2 text-[#e9d5ff]/60">
+          <p className="text-xs mt-2 text-[#C8FFD4]/60">
             Job progress updates will appear here once crews start logging their work.
           </p>
         </div>
@@ -444,8 +444,8 @@ export default function CrewStatusAnalytics() {
         animate={{ opacity: 1, y: 0 }}
         className="grid grid-cols-2 sm:grid-cols-4 gap-3"
       >
-        <div className={cn("rounded-2xl border p-4", THEME.border, THEME.bg)}>
-          <p className="text-[10px] uppercase tracking-wider text-[#e9d5ff]/50">Total Spans</p>
+        <div className={cn("rounded-leaf-sm border p-4", THEME.border, THEME.bg)}>
+          <p className="text-[10px] uppercase text-[#C8FFD4]/50 font-mono font-medium tracking-[0.14em]">Total Spans</p>
           <p className="text-2xl font-bold text-white mt-1">{metrics.currentWeek.totalSpans}</p>
           <div className={cn(
             "inline-flex items-center gap-1 mt-1 text-[10px] font-medium",
@@ -455,8 +455,8 @@ export default function CrewStatusAnalytics() {
             {metrics.percentChange.spans >= 0 ? '+' : ''}{metrics.percentChange.spans.toFixed(0)}%
           </div>
         </div>
-        <div className={cn("rounded-2xl border p-4", THEME.border, THEME.bg)}>
-          <p className="text-[10px] uppercase tracking-wider text-[#e9d5ff]/50">Total Feet</p>
+        <div className={cn("rounded-leaf-sm border p-4", THEME.border, THEME.bg)}>
+          <p className="text-[10px] uppercase text-[#C8FFD4]/50 font-mono font-medium tracking-[0.14em]">Total Feet</p>
           <p className="text-2xl font-bold text-white mt-1">{metrics.currentWeek.totalFeet.toLocaleString()}</p>
           <div className={cn(
             "inline-flex items-center gap-1 mt-1 text-[10px] font-medium",
@@ -466,15 +466,15 @@ export default function CrewStatusAnalytics() {
             {metrics.percentChange.feet >= 0 ? '+' : ''}{metrics.percentChange.feet.toFixed(0)}%
           </div>
         </div>
-        <div className={cn("rounded-2xl border p-4", THEME.border, THEME.bg)}>
-          <p className="text-[10px] uppercase tracking-wider text-[#e9d5ff]/50">Active Jobs</p>
+        <div className={cn("rounded-leaf-sm border p-4", THEME.border, THEME.bg)}>
+          <p className="text-[10px] uppercase text-[#C8FFD4]/50 font-mono font-medium tracking-[0.14em]">Active Jobs</p>
           <p className="text-2xl font-bold text-white mt-1">{metrics.currentWeek.jobCount}</p>
-          <p className="text-[10px] text-[#e9d5ff]/40 mt-1">with updates</p>
+          <p className="text-[10px] text-[#C8FFD4]/40 mt-1">with updates</p>
         </div>
-        <div className={cn("rounded-2xl border p-4", THEME.border, THEME.bg)}>
-          <p className="text-[10px] uppercase tracking-wider text-[#e9d5ff]/50">Top Performers</p>
+        <div className={cn("rounded-leaf-sm border p-4", THEME.border, THEME.bg)}>
+          <p className="text-[10px] uppercase text-[#C8FFD4]/50 font-mono font-medium tracking-[0.14em]">Top Performers</p>
           <p className="text-2xl font-bold text-white mt-1">{userRows.length}</p>
-          <p className="text-[10px] text-[#e9d5ff]/40 mt-1">crew members</p>
+          <p className="text-[10px] text-[#C8FFD4]/40 mt-1">crew members</p>
         </div>
       </motion.div>
 
@@ -483,7 +483,7 @@ export default function CrewStatusAnalytics() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.05 }}
-        className={cn("rounded-2xl border backdrop-blur-sm shadow-lg overflow-hidden", THEME.border, "bg-gradient-to-br", THEME.bgCard)}
+        className={cn("rounded-leaf-sm border backdrop-blur-sm shadow-lg overflow-hidden", THEME.border, "bg-gradient-to-br", THEME.bgCard)}
       >
         {/* Filter Header */}
         <button
@@ -491,13 +491,13 @@ export default function CrewStatusAnalytics() {
           onClick={() => setShowFilters(!showFilters)}
           aria-label={showFilters ? "Hide filters" : "Show filters"}
           aria-expanded={showFilters}
-          className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-white/5 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#c084fc]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] rounded-lg"
+          className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-white/5 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#5EE898]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D] rounded-lg"
         >
           <div className="flex items-center gap-2">
-            <Filter className="w-3.5 h-3.5 text-[#c084fc]" aria-hidden />
-            <span className="text-[11px] uppercase tracking-[0.2em] text-[#c084fc]/70 font-medium">Filters</span>
+            <Filter className="w-3.5 h-3.5 text-[#5EE898]" aria-hidden />
+            <span className="text-[11px] uppercase text-[#5EE898]/70 font-medium font-mono font-medium tracking-[0.14em]">Filters</span>
             {hasActiveFilters && (
-              <span className="ml-1 px-1.5 py-0.5 rounded-full bg-[#c084fc]/20 text-[#c084fc] text-[9px] font-bold">
+              <span className="ml-1 px-1.5 py-0.5 rounded-full bg-[#5EE898]/20 text-[#5EE898] text-[9px] font-bold">
                 {selectedJobIds.length}
               </span>
             )}
@@ -529,7 +529,7 @@ export default function CrewStatusAnalytics() {
                 type="button"
                 onClick={clearFilters}
                 aria-label="Clear all filters"
-                className="text-[10px] text-white/40 hover:text-white/60 px-1 focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#c084fc]/50 rounded"
+                className="text-[10px] text-white/40 hover:text-white/60 px-1 focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#5EE898]/50 rounded"
               >
                 Clear all
               </button>
@@ -546,7 +546,7 @@ export default function CrewStatusAnalytics() {
               exit={{ height: 0, opacity: 0 }}
             >
               <div className={cn(
-                "px-4 pt-1 space-y-3 border-t border-[#c084fc]/10 relative transition-all",
+                "px-4 pt-1 space-y-3 border-t border-[#5EE898]/10 relative transition-all",
                 jobDropdownOpen ? "pb-48" : "pb-4"
               )}>
                 {/* Date Range Row */}
@@ -564,9 +564,9 @@ export default function CrewStatusAnalytics() {
                       aria-label={`Filter by ${opt.label}`}
                       aria-pressed={dateRange === opt.value}
                       className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-medium transition-all focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#c084fc]/50 focus-visible:ring-offset-1",
+                        "px-3 py-1.5 rounded-lg text-xs font-medium transition-all focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#5EE898]/50 focus-visible:ring-offset-1",
                         dateRange === opt.value
-                          ? "bg-[#c084fc]/20 text-[#c084fc] border border-[#c084fc]/40"
+                          ? "bg-[#5EE898]/20 text-[#5EE898] border border-[#5EE898]/40"
                           : "bg-white/5 text-white/60 border border-white/10 hover:bg-white/10"
                       )}
                     >
@@ -582,14 +582,14 @@ export default function CrewStatusAnalytics() {
                       type="date"
                       value={customStart}
                       onChange={(e) => setCustomStart(e.target.value)}
-                      className="flex-1 min-w-[130px] rounded-lg bg-[#050402]/70 border border-[#c084fc]/20 px-3 py-1.5 text-xs text-[#f3e8ff] focus:outline-none focus-visible:ring-1 focus-visible:ring-[#c084fc]/60 [color-scheme:dark]"
+                      className="flex-1 min-w-[130px] rounded-lg bg-[#040605]/70 border border-[#5EE898]/20 px-3 py-1.5 text-xs text-[#D9FFE3] focus:outline-none focus-visible:ring-1 focus-visible:ring-[#5EE898]/60 [color-scheme:dark]"
                       placeholder="Start"
                     />
                     <input
                       type="date"
                       value={customEnd}
                       onChange={(e) => setCustomEnd(e.target.value)}
-                      className="flex-1 min-w-[130px] rounded-lg bg-[#050402]/70 border border-[#c084fc]/20 px-3 py-1.5 text-xs text-[#f3e8ff] focus:outline-none focus-visible:ring-1 focus-visible:ring-[#c084fc]/60 [color-scheme:dark]"
+                      className="flex-1 min-w-[130px] rounded-lg bg-[#040605]/70 border border-[#5EE898]/20 px-3 py-1.5 text-xs text-[#D9FFE3] focus:outline-none focus-visible:ring-1 focus-visible:ring-[#5EE898]/60 [color-scheme:dark]"
                       placeholder="End"
                     />
                   </div>
@@ -603,9 +603,9 @@ export default function CrewStatusAnalytics() {
                     aria-label={selectedJobIds.length ? `${selectedJobIds.length} job(s) selected` : "Filter by job"}
                     aria-expanded={jobDropdownOpen}
                     aria-haspopup="listbox"
-                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-[#050402]/70 border border-[#c084fc]/20 text-xs text-[#f3e8ff] hover:bg-white/5 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#c084fc]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-[#040605]/70 border border-[#5EE898]/20 text-xs text-[#D9FFE3] hover:bg-white/5 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#5EE898]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
                   >
-                    <span className={selectedJobIds.length ? 'text-[#c084fc]' : 'text-white/50'}>
+                    <span className={selectedJobIds.length ? 'text-[#5EE898]' : 'text-white/50'}>
                       {selectedJobIds.length ? `${selectedJobIds.length} job${selectedJobIds.length > 1 ? 's' : ''} selected` : 'All Jobs'}
                     </span>
                     <ChevronDown className={cn("w-3.5 h-3.5 text-white/40 transition-transform", jobDropdownOpen && "rotate-180")} aria-hidden />
@@ -616,7 +616,7 @@ export default function CrewStatusAnalytics() {
                         initial={{ opacity: 0, y: -5 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -5 }}
-                        className="absolute top-full left-0 right-0 mt-1 rounded-lg bg-[#0a0806] border border-[#c084fc]/30 shadow-2xl max-h-48 overflow-y-auto"
+                        className="absolute top-full left-0 right-0 mt-1 rounded-lg bg-[#040605] border border-[#5EE898]/30 shadow-2xl max-h-48 overflow-y-auto"
                       >
                         {jobOptions.length === 0 ? (
                           <p className="px-3 py-2 text-xs text-white/40">No jobs available</p>
@@ -632,12 +632,12 @@ export default function CrewStatusAnalytics() {
                               }}
                               aria-label={selectedJobIds.includes(id) ? `Deselect job ${label}` : `Select job ${label}`}
                               aria-pressed={selectedJobIds.includes(id)}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/80 hover:bg-white/5 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#c084fc]/50 focus-visible:ring-inset"
+                              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/80 hover:bg-white/5 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#5EE898]/50 focus-visible:ring-inset"
                             >
                               <span className={cn(
                                 "w-3.5 h-3.5 rounded border flex items-center justify-center text-[9px]",
                                 selectedJobIds.includes(id)
-                                  ? "bg-[#c084fc] border-[#c084fc] text-black"
+                                  ? "bg-[#5EE898] border-[#5EE898] text-black"
                                   : "border-white/30"
                               )}>
                                 {selectedJobIds.includes(id) && '✓'}
@@ -656,7 +656,7 @@ export default function CrewStatusAnalytics() {
                     type="button"
                     onClick={clearFilters}
                     aria-label="Clear all filters"
-                    className="text-[11px] text-white/40 hover:text-[#c084fc] transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#c084fc]/50 rounded"
+                    className="text-[11px] text-white/40 hover:text-[#5EE898] transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#5EE898]/50 rounded"
                   >
                     Clear all filters
                   </button>
@@ -680,21 +680,21 @@ export default function CrewStatusAnalytics() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className={cn("rounded-2xl border overflow-hidden", THEME.border, "bg-gradient-to-br", THEME.bgCard)}
+          className={cn("rounded-leaf-sm border overflow-hidden", THEME.border, "bg-gradient-to-br", THEME.bgCard)}
         >
-          <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#c084fc]/10 bg-white/[0.02]">
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#5EE898]/10 bg-white/[0.02]">
             <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-[#c084fc]/10">
-                <TrendingUp className="w-3.5 h-3.5 text-[#c084fc]" />
+              <div className="p-1.5 rounded-lg bg-[#5EE898]/10">
+                <TrendingUp className="w-3.5 h-3.5 text-[#5EE898]" />
               </div>
               <span className="text-xs font-semibold text-white">By Job</span>
             </div>
-            <span className="text-[10px] text-[#e9d5ff]/40">Top span producers</span>
+            <span className="text-[10px] text-[#C8FFD4]/40">Top span producers</span>
           </div>
           
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left text-white/80">
-              <thead className="text-[10px] uppercase tracking-wider text-[#e9d5ff]/40 bg-black/20">
+              <thead className="text-[10px] uppercase text-[#C8FFD4]/40 bg-black/20 font-mono font-medium tracking-[0.14em]">
                 <tr>
                   <th className="px-3 py-2 font-medium">#</th>
                   <th className="px-3 py-2 font-medium">Job</th>
@@ -703,13 +703,13 @@ export default function CrewStatusAnalytics() {
                   <th className="px-3 py-2 text-right font-medium whitespace-nowrap">Trend</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#c084fc]/10">
+              <tbody className="divide-y divide-[#5EE898]/10">
                 {pagedJobRows.map((row) => (
                   <tr key={row.id} className="hover:bg-white/[0.02] transition-colors">
                     <td className="px-3 py-2">
                       <span className={cn(
                         "text-[10px] font-bold",
-                        row.rank === 1 ? "text-[#c084fc]" : 
+                        row.rank === 1 ? "text-[#5EE898]" : 
                         row.rank === 2 ? "text-gray-300" : 
                         row.rank === 3 ? "text-purple-400" : "text-white/30"
                       )}>
@@ -722,7 +722,7 @@ export default function CrewStatusAnalytics() {
                           {row.label}
                         </span>
                         {row.circuit && (
-                          <span className="text-[9px] text-[#e9d5ff]/40 flex items-center gap-0.5 truncate">
+                          <span className="text-[9px] text-[#C8FFD4]/40 flex items-center gap-0.5 truncate">
                             <MapPin className="w-2.5 h-2.5 flex-shrink-0" />
                             {row.circuit}
                           </span>
@@ -732,7 +732,7 @@ export default function CrewStatusAnalytics() {
                     <td className="px-3 py-2 text-right">
                       <div className="flex flex-col items-end">
                         <span className="font-semibold text-white">{row.currentSpans}</span>
-                        <span className="text-[9px] text-[#e9d5ff]/30">
+                        <span className="text-[9px] text-[#C8FFD4]/30">
                           {row.contributionPercent.toFixed(0)}% of total
                         </span>
                       </div>
@@ -740,7 +740,7 @@ export default function CrewStatusAnalytics() {
                     <td className="px-3 py-2 text-right hidden sm:table-cell">
                       <div className="flex flex-col items-end">
                         <span className="text-white/70">{row.avgSpansPerDay.toFixed(1)}/day</span>
-                        <span className="text-[9px] text-[#e9d5ff]/30">
+                        <span className="text-[9px] text-[#C8FFD4]/30">
                           prev: {row.prevAvgSpansPerDay.toFixed(1)}
                         </span>
                       </div>
@@ -764,7 +764,7 @@ export default function CrewStatusAnalytics() {
                 ))}
                 {pagedJobRows.length === 0 && (
                   <tr>
-                    <td className="px-3 py-4 text-center text-[#e9d5ff]/40" colSpan={5}>
+                    <td className="px-3 py-4 text-center text-[#C8FFD4]/40" colSpan={5}>
                       No progress updates in this period
                     </td>
                   </tr>
@@ -788,21 +788,21 @@ export default function CrewStatusAnalytics() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className={cn("rounded-2xl border overflow-hidden", THEME.border, "bg-gradient-to-br", THEME.bgCard)}
+          className={cn("rounded-leaf-sm border overflow-hidden", THEME.border, "bg-gradient-to-br", THEME.bgCard)}
         >
-          <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#c084fc]/10 bg-white/[0.02]">
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#5EE898]/10 bg-white/[0.02]">
             <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-[#c084fc]/10">
-                <Users className="w-3.5 h-3.5 text-[#c084fc]" />
+              <div className="p-1.5 rounded-lg bg-[#5EE898]/10">
+                <Users className="w-3.5 h-3.5 text-[#5EE898]" />
               </div>
               <span className="text-xs font-semibold text-white">By Crew Member</span>
             </div>
-            <span className="text-[10px] text-[#e9d5ff]/40">Top performers</span>
+            <span className="text-[10px] text-[#C8FFD4]/40">Top performers</span>
           </div>
           
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left text-white/80">
-              <thead className="text-[10px] uppercase tracking-wider text-[#e9d5ff]/40 bg-black/20">
+              <thead className="text-[10px] uppercase text-[#C8FFD4]/40 bg-black/20 font-mono font-medium tracking-[0.14em]">
                 <tr>
                   <th className="px-3 py-2 font-medium">#</th>
                   <th className="px-3 py-2 font-medium">Crew Member</th>
@@ -811,13 +811,13 @@ export default function CrewStatusAnalytics() {
                   <th className="px-3 py-2 text-right font-medium whitespace-nowrap">Trend</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#c084fc]/10">
+              <tbody className="divide-y divide-[#5EE898]/10">
                 {pagedUserRows.map((row) => (
                   <tr key={row.id} className="hover:bg-white/[0.02] transition-colors">
                     <td className="px-3 py-2">
                       <span className={cn(
                         "text-[10px] font-bold",
-                        row.rank === 1 ? "text-[#c084fc]" : 
+                        row.rank === 1 ? "text-[#5EE898]" : 
                         row.rank === 2 ? "text-gray-300" : 
                         row.rank === 3 ? "text-purple-400" : "text-white/30"
                       )}>
@@ -832,14 +832,14 @@ export default function CrewStatusAnalytics() {
                     <td className="px-3 py-2 text-right">
                       <div className="flex flex-col items-end">
                         <span className="font-semibold text-white">{row.currentSpans}</span>
-                        <span className="text-[9px] text-[#e9d5ff]/30">
+                        <span className="text-[9px] text-[#C8FFD4]/30">
                           {row.contributionPercent.toFixed(0)}% of total
                         </span>
                       </div>
                     </td>
                     <td className="px-3 py-2 text-right text-white/60 hidden sm:table-cell">
                       <div className="flex items-center justify-end gap-1">
-                        <Zap className="w-2.5 h-2.5 text-[#c084fc]/60" />
+                        <Zap className="w-2.5 h-2.5 text-[#5EE898]/60" />
                         <span>{row.efficiency.toFixed(0)} ft/span</span>
                       </div>
                     </td>
@@ -862,7 +862,7 @@ export default function CrewStatusAnalytics() {
                 ))}
                 {pagedUserRows.length === 0 && (
                   <tr>
-                    <td className="px-3 py-4 text-center text-[#e9d5ff]/40" colSpan={5}>
+                    <td className="px-3 py-4 text-center text-[#C8FFD4]/40" colSpan={5}>
                       No progress updates in this period
                     </td>
                   </tr>

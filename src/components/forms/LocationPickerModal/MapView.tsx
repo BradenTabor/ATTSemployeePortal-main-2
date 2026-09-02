@@ -119,7 +119,7 @@ export function MapView({
           icon={{
             path: google.maps.SymbolPath.CIRCLE,
             scale: 8,
-            fillColor: '#3b82f6',
+            fillColor: '#8DF5A8',
             fillOpacity: 1,
             strokeColor: '#ffffff',
             strokeWeight: 2,
@@ -141,9 +141,9 @@ export function MapView({
             icon={{
               path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
               scale: isSelected ? 8 : 6,
-              fillColor: isSelected ? '#10b981' : '#6b7280',
+              fillColor: isSelected ? '#3DDC84' : '#5A6B60',
               fillOpacity: 1,
-              strokeColor: isSelected ? '#ffffff' : '#9ca3af',
+              strokeColor: isSelected ? '#ffffff' : '#8A9A8E',
               strokeWeight: isSelected ? 2 : 1,
               rotation: 0,
             }}

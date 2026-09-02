@@ -6,6 +6,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Flag, Loader2, AlertTriangle } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import { useDashboardCardTheme } from "../../contexts/dashboardCardTheme";
+import WidgetHeader from "./WidgetHeader";
+
+const FLAG_ICON_CLASS = "text-amber-300";
+const FLAG_CHIP_CLASS = "bg-amber-500/10 border-amber-500/20";
 
 export default function SafetyFlagsWidget() {
   const { cardClass } = useDashboardCardTheme();
@@ -27,7 +31,7 @@ export default function SafetyFlagsWidget() {
   if (isLoading) {
     return (
       <div className={`${cardClass} p-4`}>
-        <h3 className="text-sm font-semibold text-white mb-3">Flagged for review</h3>
+        <WidgetHeader title="Flagged for review" icon={Flag} iconClassName={FLAG_ICON_CLASS} chipClassName={FLAG_CHIP_CLASS} />
         <div className="flex items-center justify-center py-4">
           <Loader2 className="w-5 h-5 animate-spin text-amber-400" aria-hidden />
         </div>
@@ -38,7 +42,7 @@ export default function SafetyFlagsWidget() {
   if (error) {
     return (
       <div className={`${cardClass} p-4`}>
-        <h3 className="text-sm font-semibold text-white mb-3">Flagged for review</h3>
+        <WidgetHeader title="Flagged for review" icon={Flag} iconClassName={FLAG_ICON_CLASS} chipClassName={FLAG_CHIP_CLASS} />
         <div className="flex items-center gap-2 py-2 text-red-300 text-sm">
           <AlertTriangle className="w-4 h-4 flex-shrink-0" />
           <span>{error.message}</span>
@@ -51,15 +55,10 @@ export default function SafetyFlagsWidget() {
 
   return (
     <div className={`${cardClass} p-4`}>
-      <h3 className="text-sm font-semibold text-white mb-3">Flagged for review</h3>
-      <div className="flex items-center gap-2">
-        <div className="w-10 h-10 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
-          <Flag className="w-5 h-5 text-amber-400" aria-hidden />
-        </div>
-        <div>
-          <div className="text-xl font-bold text-white">{count}</div>
-          <div className="text-xs text-white/80">open flag{count !== 1 ? "s" : ""}</div>
-        </div>
+      <WidgetHeader title="Flagged for review" icon={Flag} iconClassName={FLAG_ICON_CLASS} chipClassName={FLAG_CHIP_CLASS} />
+      <div className="flex items-baseline gap-2">
+        <span className="text-3xl font-bold text-white tabular-nums leading-none">{count}</span>
+        <span className="text-xs text-white/60">open flag{count !== 1 ? "s" : ""}</span>
       </div>
       {count > 0 && (
         <ul className="mt-3 space-y-1.5 max-h-32 overflow-y-auto">

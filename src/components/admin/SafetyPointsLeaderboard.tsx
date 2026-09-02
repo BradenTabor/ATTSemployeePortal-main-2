@@ -39,32 +39,32 @@ interface SafetyPointsLeaderboardProps {
 
 const themeConfig = {
   amber: {
-    container: "border-[#f6dcb2]/20 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403]",
+    container: "border-[#E4EAE1]/20 bg-gradient-to-br from-[#0B100D] via-[#040605] to-[#040605]",
     headerIcon: "from-amber-400/20 to-amber-600/10 border-amber-500/20",
     headerIconColor: "text-amber-400",
-    subtitle: "text-[#f6dcb2]/50",
+    subtitle: "text-[#E4EAE1]/50",
     activeTab: "bg-amber-500/20 text-amber-200 border border-amber-500/30",
-    inactiveTab: "text-[#f6dcb2]/40 hover:text-[#f6dcb2]/70",
+    inactiveTab: "text-[#E4EAE1]/40 hover:text-[#E4EAE1]/70",
     points: "text-amber-300",
-    border: "border-[#f6dcb2]/10",
+    border: "border-[#E4EAE1]/10",
     statBg: "from-amber-500/5",
     linkBg: "bg-amber-500/10 border-amber-500/20 text-amber-300 hover:bg-amber-500/15",
-    roleText: "text-[#f6dcb2]/40",
-    muted: "text-[#f6dcb2]/20",
+    roleText: "text-[#E4EAE1]/40",
+    muted: "text-[#E4EAE1]/20",
   },
   purple: {
-    container: "border-[#c084fc]/20 bg-gradient-to-br from-[#1a0d2e] via-[#0d0516] to-[#050208]",
+    container: "border-[#5EE898]/20 bg-gradient-to-br from-[#1E2A23] via-[#0B100D] to-[#040605]",
     headerIcon: "from-purple-400/20 to-purple-600/10 border-purple-500/20",
     headerIconColor: "text-purple-400",
-    subtitle: "text-[#e9d5ff]/50",
+    subtitle: "text-[#C8FFD4]/50",
     activeTab: "bg-purple-500/20 text-purple-200 border border-purple-500/30",
-    inactiveTab: "text-[#e9d5ff]/40 hover:text-[#e9d5ff]/70",
+    inactiveTab: "text-[#C8FFD4]/40 hover:text-[#C8FFD4]/70",
     points: "text-purple-300",
-    border: "border-[#c084fc]/10",
+    border: "border-[#5EE898]/10",
     statBg: "from-purple-500/5",
     linkBg: "bg-purple-500/10 border-purple-500/20 text-purple-300 hover:bg-purple-500/15",
-    roleText: "text-[#e9d5ff]/40",
-    muted: "text-[#e9d5ff]/20",
+    roleText: "text-[#C8FFD4]/40",
+    muted: "text-[#C8FFD4]/20",
   },
 };
 
@@ -136,7 +136,7 @@ export default function SafetyPointsLeaderboard({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className={cn(
-        "rounded-xl sm:rounded-2xl border overflow-hidden",
+        "rounded-xl sm:rounded-leaf-sm border overflow-hidden",
         t.container,
         className
       )}
@@ -159,7 +159,7 @@ export default function SafetyPointsLeaderboard({
           </div>
           <button
             onClick={() => setExpanded(!expanded)}
-            className="p-1 rounded hover:bg-white/5 transition-colors"
+            className="tap-44 relative p-1 rounded hover:bg-white/5 transition-colors"
           >
             {expanded ? <ChevronUp className="w-3.5 h-3.5 text-white/40" /> : <ChevronDown className="w-3.5 h-3.5 text-white/40" />}
           </button>
@@ -172,7 +172,7 @@ export default function SafetyPointsLeaderboard({
               key={p}
               onClick={() => setPeriod(p)}
               className={cn(
-                "px-2 py-0.5 rounded text-[9px] font-medium transition-all",
+                "tap-44 relative px-2 py-0.5 rounded text-[9px] font-medium transition-all",
                 period === p ? t.activeTab : t.inactiveTab
               )}
             >

@@ -24,7 +24,7 @@ import {
   Download,
 } from "lucide-react";
 import type { CertificationType } from "../../../types/certifications";
-import attsLogoStamped from "../../../assets/ATTS_Logo_stamped.png";
+import { BrandMark } from "@/components/canopy/BrandMark";
 import { getDeviceCapabilities } from "../../../lib/mobilePerf";
 import { toast } from "../../../lib/toast";
 import { downloadCertificatePDF } from "../../certifications/certificatePDFDownload";
@@ -35,10 +35,10 @@ import { Z } from "@/lib/zIndex";
 
 const SECTION_TITLE_STYLE = {
   backgroundImage:
-    "linear-gradient(105deg, rgba(167, 243, 208, 1) 0%, rgba(110, 231, 183, 1) 25%, rgba(52, 211, 153, 1) 50%, rgba(16, 185, 129, 1) 75%, rgba(110, 231, 183, 1) 100%)",
+    "linear-gradient(105deg, rgba(141,245,168, 1) 0%, rgba(94,232,152, 1) 25%, rgba(61,220,132, 1) 50%, rgba(47,164,90, 1) 75%, rgba(94,232,152, 1) 100%)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
-  textShadow: "0 0 10px rgba(52, 211, 153, 0.35)",
+  textShadow: "0 0 10px rgba(61,220,132, 0.35)",
 } as const;
 
 function SectionHeader({
@@ -57,11 +57,7 @@ function SectionHeader({
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
       >
-        <img
-          src={attsLogoStamped}
-          alt="ATTS Logo"
-          className="h-11 w-11 object-contain xs:h-12 xs:w-12 sm:h-16 sm:w-16 brightness-0 invert opacity-95"
-        />
+        <BrandMark size={52} />
       </motion.div>
       <h2
         className="text-base font-semibold tracking-tight text-transparent bg-clip-text sm:text-lg"
@@ -430,7 +426,7 @@ export function CertificationsManagementSection({
       ) : null}
 
       {matrixLoading ? null : (expiring?.length ?? 0) > 0 ? (
-        <section className={`rounded-2xl border border-amber-500/25 p-4 sm:p-6 ${glass.card}`}>
+        <section className={`rounded-leaf-sm border border-amber-500/25 p-4 sm:p-6 ${glass.card}`}>
           <div className="mb-2 flex items-center gap-2 sm:mb-3">
             <AlertTriangle className="h-5 w-5 text-amber-400" aria-hidden />
             <h2 className="text-base font-semibold text-amber-400 sm:text-lg">

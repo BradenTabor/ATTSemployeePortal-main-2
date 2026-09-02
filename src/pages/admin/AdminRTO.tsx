@@ -61,11 +61,11 @@ const STATUS_CONFIG: Record<string, StatusConfig> = {
   Pending: {
     label: "Pending",
     color: "amber",
-    bgColor: "bg-[#f7dca8]/15",
-    borderColor: "border-[#f4c979]/40",
-    textColor: "text-[#fef3d1]",
+    bgColor: "bg-[#ECFFAE]/15",
+    borderColor: "border-[#F4F7F2]/40",
+    textColor: "text-[#F4F7F2]",
     icon: <Clock className="w-3.5 h-3.5" />,
-    glowColor: "shadow-[0_0_12px_rgba(244,201,121,0.2)]",
+    glowColor: "shadow-[0_0_12px_rgba(221,255,133,0.2)]",
   },
   Approved: {
     label: "Approved",
@@ -74,7 +74,7 @@ const STATUS_CONFIG: Record<string, StatusConfig> = {
     borderColor: "border-emerald-400/35",
     textColor: "text-emerald-300",
     icon: <CheckCircle2 className="w-3.5 h-3.5" />,
-    glowColor: "shadow-[0_0_12px_rgba(52,211,153,0.2)]",
+    glowColor: "shadow-[0_0_12px_rgba(61,220,132,0.2)]",
   },
   Denied: {
     label: "Denied",
@@ -149,13 +149,13 @@ const EnhancedPagination = memo(function EnhancedPagination({
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 px-3 sm:px-6 py-3 sm:py-4">
       {/* Item count */}
-      <div className="text-[10px] sm:text-sm text-[#f8e5bb]/70 order-2 sm:order-1">
-        <span className="font-semibold text-[#f4c979]">{startItem}</span>
-        <span className="text-[#f8e5bb]/50"> – </span>
-        <span className="font-semibold text-[#f4c979]">{endItem}</span>
-        <span className="text-[#f8e5bb]/50"> of </span>
-        <span className="font-semibold text-[#f4c979]">{totalItems || 0}</span>
-        <span className="text-[#f8e5bb]/50 ml-1 hidden xs:inline">requests</span>
+      <div className="text-[10px] sm:text-sm text-[#E4EAE1]/70 order-2 sm:order-1">
+        <span className="font-semibold text-[#F4F7F2]">{startItem}</span>
+        <span className="text-[#E4EAE1]/50"> – </span>
+        <span className="font-semibold text-[#F4F7F2]">{endItem}</span>
+        <span className="text-[#E4EAE1]/50"> of </span>
+        <span className="font-semibold text-[#F4F7F2]">{totalItems || 0}</span>
+        <span className="text-[#E4EAE1]/50 ml-1 hidden xs:inline">requests</span>
       </div>
 
       {/* Page navigation */}
@@ -165,7 +165,7 @@ const EnhancedPagination = memo(function EnhancedPagination({
           whileTap={{ scale: 0.95 }}
           disabled={currentPage === 1 || loading}
           onClick={() => onPageChange(currentPage - 1)}
-          className="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-[#f4c979]/10 border border-[#f4c979]/25 text-[#f4c979] hover:bg-[#f4c979]/20 hover:border-[#f4c979]/40 active:bg-[#f4c979]/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all min-h-[32px] sm:min-h-[36px]"
+          className="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-[#F4F7F2]/10 border border-[#F4F7F2]/25 text-[#F4F7F2] hover:bg-[#F4F7F2]/20 hover:border-[#F4F7F2]/40 active:bg-[#F4F7F2]/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all min-h-[32px] sm:min-h-[36px]"
           aria-label="Previous page"
         >
           <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -177,7 +177,7 @@ const EnhancedPagination = memo(function EnhancedPagination({
             page === "ellipsis" ? (
               <span
                 key={`ellipsis-${idx}`}
-                className="w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center text-[#f4c979]/50 text-xs sm:text-sm hover:scale-[1.08]"
+                className="w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center text-[#F4F7F2]/50 text-xs sm:text-sm hover:scale-[1.08]"
               >
                 ⋯
               </span>
@@ -187,10 +187,10 @@ const EnhancedPagination = memo(function EnhancedPagination({
                 whileTap={{ scale: 0.95 }}
                 disabled={loading}
                 onClick={() => onPageChange(page)}
-                className={`w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all min-h-[28px] sm:min-h-[36px] ${
+                className={`tap-44 relative w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all min-h-[28px] sm:min-h-[36px] ${
                   currentPage === page
-                    ? "bg-gradient-to-br from-[#f4c979] to-[#d89d3e] text-[#1a1408] shadow-[0_4px_20px_rgba(244,201,121,0.35)]"
-                    : "bg-[#f4c979]/10 border border-[#f4c979]/20 text-[#f4c979] hover:bg-[#f4c979]/20 hover:border-[#f4c979]/35 active:bg-[#f4c979]/30"
+                    ? "bg-gradient-to-br from-[#F4F7F2] to-[#8DF5A8] text-[#0B100D] shadow-[0_4px_20px_rgba(221,255,133,0.35)]"
+                    : "bg-[#F4F7F2]/10 border border-[#F4F7F2]/20 text-[#F4F7F2] hover:bg-[#F4F7F2]/20 hover:border-[#F4F7F2]/35 active:bg-[#F4F7F2]/30"
                 }`}
               >
                 {page}
@@ -201,9 +201,9 @@ const EnhancedPagination = memo(function EnhancedPagination({
 
         {/* Mobile: Simple current/total display */}
         <div className="xs:hidden flex items-center gap-1 px-2">
-          <span className="text-xs font-semibold text-[#f4c979]">{currentPage}</span>
-          <span className="text-[10px] text-[#f8e5bb]/50">/</span>
-          <span className="text-xs text-[#f8e5bb]/70 hover:scale-105">{totalPages}</span>
+          <span className="text-xs font-semibold text-[#F4F7F2]">{currentPage}</span>
+          <span className="text-[10px] text-[#E4EAE1]/50">/</span>
+          <span className="text-xs text-[#E4EAE1]/70 hover:scale-105">{totalPages}</span>
         </div>
 
         {/* Next button */}
@@ -211,7 +211,7 @@ const EnhancedPagination = memo(function EnhancedPagination({
           whileTap={{ scale: 0.95 }}
           disabled={currentPage >= totalPages || loading}
           onClick={() => onPageChange(currentPage + 1)}
-          className="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-[#f4c979]/10 border border-[#f4c979]/25 text-[#f4c979] hover:bg-[#f4c979]/20 hover:border-[#f4c979]/40 active:bg-[#f4c979]/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all min-h-[32px] sm:min-h-[36px]"
+          className="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-[#F4F7F2]/10 border border-[#F4F7F2]/25 text-[#F4F7F2] hover:bg-[#F4F7F2]/20 hover:border-[#F4F7F2]/40 active:bg-[#F4F7F2]/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all min-h-[32px] sm:min-h-[36px]"
           aria-label="Next page"
         >
           <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -265,19 +265,19 @@ const CompactRequestRow = memo(function CompactRequestRow({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.02, duration: 0.25 }}
-      className="group hover:bg-[#f4c979]/5 transition-colors border-b border-[#f6dcb2]/10 last:border-b-0"
+      className="group hover:bg-[#F4F7F2]/5 transition-colors border-b border-[#E4EAE1]/10 last:border-b-0"
     >
       {/* Employee */}
       <td className="px-4 py-3">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#f4c979] to-[#d89d3e] flex items-center justify-center text-[0.7rem] font-bold text-[#1a1408] shadow-[0_2px_10px_rgba(244,201,121,0.25)]">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#F4F7F2] to-[#8DF5A8] flex items-center justify-center text-[0.7rem] font-bold text-[#0B100D] shadow-[0_2px_10px_rgba(221,255,133,0.25)]">
             {initials}
           </div>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-white truncate max-w-[140px]">
               {request.full_name || "Unknown"}
             </p>
-            <p className="text-[0.65rem] text-[#c7b696] truncate max-w-[140px]">
+            <p className="text-[0.65rem] text-[#B8C4B6] truncate max-w-[140px]">
               {request.email || "—"}
             </p>
           </div>
@@ -287,17 +287,17 @@ const CompactRequestRow = memo(function CompactRequestRow({
       {/* Dates & Times */}
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
-          <CalendarDays className="w-3.5 h-3.5 text-[#f4c979]/60 flex-shrink-0" />
+          <CalendarDays className="w-3.5 h-3.5 text-[#F4F7F2]/60 flex-shrink-0" />
           <div className="min-w-0">
             <p className="text-sm text-white font-medium truncate">
               {formatDateRange(request.start_date, request.end_date)}
             </p>
             {formatTimeRange(request.start_time, request.end_time) && (
-              <p className="text-[0.65rem] text-[#d0bfa0]">
+              <p className="text-[0.65rem] text-[#B8C4B6]">
                 {formatTimeRange(request.start_time, request.end_time)}
               </p>
             )}
-            <p className="text-[0.65rem] text-[#c7b696]">
+            <p className="text-[0.65rem] text-[#B8C4B6]">
               {request.total_duration || (days ? `${days} day${days !== 1 ? "s" : ""}` : "")}
             </p>
           </div>
@@ -306,7 +306,7 @@ const CompactRequestRow = memo(function CompactRequestRow({
 
       {/* Reason */}
       <td className="px-4 py-3 max-w-[200px]">
-        <p className="text-sm text-[#fdf4db]/80 truncate">
+        <p className="text-sm text-[#F4F7F2]/80 truncate">
           {request.reason || "—"}
         </p>
       </td>
@@ -323,7 +323,7 @@ const CompactRequestRow = memo(function CompactRequestRow({
 
       {/* Submitted */}
       <td className="px-4 py-3">
-        <p className="text-sm text-[#f0e2c7]">
+        <p className="text-sm text-[#D3DCD1]">
           {formatDateTime(request.submitted_at)}
         </p>
       </td>
@@ -357,7 +357,7 @@ const CompactRequestRow = memo(function CompactRequestRow({
           </div>
         ) : (
           request.admin_notes && (
-            <p className="text-[0.65rem] text-[#c7b696] truncate max-w-[150px]" title={request.admin_notes}>
+            <p className="text-[0.65rem] text-[#B8C4B6] truncate max-w-[150px]" title={request.admin_notes}>
               {request.admin_notes}
             </p>
           )
@@ -411,19 +411,19 @@ const CompactMobileCard = memo(function CompactMobileCard({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04, duration: 0.3 }}
-      className="rounded-xl sm:rounded-2xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914]/90 via-[#120f0c]/95 to-[#070605]/95 p-3 sm:p-4 shadow-[0_8px_25px_rgba(0,0,0,0.4)] active:bg-[#f4c979]/5 transition-colors"
+      className="rounded-xl sm:rounded-leaf-sm border border-[#E4EAE1]/20 bg-gradient-to-br from-[#121A15]/90 via-[#0B100D]/95 to-[#040605]/95 p-3 sm:p-4 shadow-[0_8px_25px_rgba(0,0,0,0.4)] active:bg-[#F4F7F2]/5 transition-colors"
     >
       {/* Header: Avatar + Name + Status */}
       <div className="flex items-start justify-between gap-2 sm:gap-3 mb-2.5 sm:mb-3">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-gradient-to-br from-[#f4c979] to-[#d89d3e] flex items-center justify-center text-xs sm:text-sm font-bold text-[#1a1408] shadow-[0_4px_15px_rgba(244,201,121,0.3)] flex-shrink-0">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-gradient-to-br from-[#F4F7F2] to-[#8DF5A8] flex items-center justify-center text-xs sm:text-sm font-bold text-[#0B100D] shadow-[0_4px_15px_rgba(221,255,133,0.3)] flex-shrink-0">
             {initials}
           </div>
           <div className="min-w-0">
             <p className="text-xs sm:text-sm font-semibold text-white truncate">
               {request.full_name || "Unknown"}
             </p>
-            <p className="text-[10px] sm:text-xs text-[#c7b696] truncate">
+            <p className="text-[10px] sm:text-xs text-[#B8C4B6] truncate">
               {request.email || "—"}
             </p>
           </div>
@@ -439,28 +439,28 @@ const CompactMobileCard = memo(function CompactMobileCard({
       {/* Details grid */}
       <div className="grid grid-cols-2 gap-2 sm:gap-3 text-sm">
         <div className="flex items-start gap-1.5 sm:gap-2">
-          <CalendarDays className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#f4c979]/70 mt-0.5 flex-shrink-0" />
+          <CalendarDays className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#F4F7F2]/70 mt-0.5 flex-shrink-0" />
           <div className="min-w-0">
-            <p className="text-[9px] sm:text-[0.65rem] uppercase tracking-wider text-[#d0bfa0] mb-0.5">
+            <p className="text-[9px] sm:text-[0.65rem] uppercase text-[#B8C4B6] mb-0.5 font-mono font-medium tracking-[0.14em]">
               Dates
             </p>
             <p className="text-white font-medium text-[10px] sm:text-xs truncate">
               {formatDateRange(request.start_date, request.end_date)}
             </p>
             {formatTimeRange(request.start_time, request.end_time) && (
-              <p className="text-[9px] sm:text-[0.6rem] text-[#d0bfa0] mt-0.5">
+              <p className="text-[9px] sm:text-[0.6rem] text-[#B8C4B6] mt-0.5">
                 {formatTimeRange(request.start_time, request.end_time)}
               </p>
             )}
-            <p className="text-[9px] sm:text-[0.6rem] text-[#c7b696] mt-0.5">
+            <p className="text-[9px] sm:text-[0.6rem] text-[#B8C4B6] mt-0.5">
               {request.total_duration || (days ? `${days} day${days !== 1 ? "s" : ""}` : "")}
             </p>
           </div>
         </div>
         <div className="flex items-start gap-1.5 sm:gap-2">
-          <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#f4c979]/70 mt-0.5 flex-shrink-0" />
+          <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#F4F7F2]/70 mt-0.5 flex-shrink-0" />
           <div className="min-w-0">
-            <p className="text-[9px] sm:text-[0.65rem] uppercase tracking-wider text-[#d0bfa0] mb-0.5">
+            <p className="text-[9px] sm:text-[0.65rem] uppercase text-[#B8C4B6] mb-0.5 font-mono font-medium tracking-[0.14em]">
               Submitted
             </p>
             <p className="text-white font-medium text-[10px] sm:text-xs truncate">
@@ -472,11 +472,11 @@ const CompactMobileCard = memo(function CompactMobileCard({
 
       {/* Reason */}
       {request.reason && (
-        <div className="mt-2.5 sm:mt-3 pt-2.5 sm:pt-3 border-t border-[#f6dcb2]/15">
-          <p className="text-[9px] sm:text-[0.65rem] uppercase tracking-wider text-[#d0bfa0] mb-0.5 sm:mb-1">
+        <div className="mt-2.5 sm:mt-3 pt-2.5 sm:pt-3 border-t border-[#E4EAE1]/15">
+          <p className="text-[9px] sm:text-[0.65rem] uppercase text-[#B8C4B6] mb-0.5 sm:mb-1 font-mono font-medium tracking-[0.14em]">
             Reason
           </p>
-          <p className="text-[10px] sm:text-xs text-[#fdf4db]/80 line-clamp-2">
+          <p className="text-[10px] sm:text-xs text-[#F4F7F2]/80 line-clamp-2">
             {request.reason}
           </p>
         </div>
@@ -484,11 +484,11 @@ const CompactMobileCard = memo(function CompactMobileCard({
 
       {/* Admin Notes (for decided requests) */}
       {request.status !== "Pending" && request.admin_notes && (
-        <div className="mt-2 pt-2 border-t border-[#f6dcb2]/10">
-          <p className="text-[9px] sm:text-[0.65rem] uppercase tracking-wider text-[#d0bfa0] mb-0.5">
+        <div className="mt-2 pt-2 border-t border-[#E4EAE1]/10">
+          <p className="text-[9px] sm:text-[0.65rem] uppercase text-[#B8C4B6] mb-0.5 font-mono font-medium tracking-[0.14em]">
             Admin Note
           </p>
-          <p className="text-[10px] sm:text-xs text-[#fdf4db]/60 line-clamp-2">
+          <p className="text-[10px] sm:text-xs text-[#F4F7F2]/60 line-clamp-2">
             {request.admin_notes}
           </p>
         </div>
@@ -496,7 +496,7 @@ const CompactMobileCard = memo(function CompactMobileCard({
 
       {/* Actions for Pending requests */}
       {request.status === "Pending" && (
-        <div className="mt-2.5 sm:mt-3 pt-2.5 sm:pt-3 border-t border-[#f6dcb2]/15 flex gap-2">
+        <div className="mt-2.5 sm:mt-3 pt-2.5 sm:pt-3 border-t border-[#E4EAE1]/15 flex gap-2">
           <motion.button
             whileTap={{ scale: 0.95 }}
             disabled={updatingId === request.id}
@@ -541,9 +541,9 @@ const FilterChip = memo(function FilterChip({ label, value, onClear }: FilterChi
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#f4c979]/15 border border-[#f4c979]/25 text-xs text-[#fef3d1]"
+      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F4F7F2]/15 border border-[#F4F7F2]/25 text-xs text-[#F4F7F2]"
     >
-      <span className="text-[#f4c979]/70">{label}:</span>
+      <span className="text-[#F4F7F2]/70">{label}:</span>
       <span className="font-medium">{value}</span>
       <button
         type="button"
@@ -920,42 +920,42 @@ export function AdminRTOContent() {
             className="relative"
           >
             <div 
-              className="relative overflow-hidden rounded-2xl md:rounded-3xl border border-white/[0.12] shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.1)]"
+              className="relative overflow-hidden rounded-leaf-sm md:rounded-leaf border border-white/[0.12] shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.1)]"
               style={{
-                background: 'linear-gradient(145deg, rgba(244, 201, 121, 0.1) 0%, rgba(28, 28, 31, 0.65) 40%, rgba(15, 13, 9, 0.75) 100%)',
+                background: 'linear-gradient(145deg, rgba(221,255,133, 0.1) 0%, rgba(30,42,35, 0.65) 40%, rgba(11,16,13, 0.75) 100%)',
                 backdropFilter: 'blur(24px) saturate(1.6)',
                 WebkitBackdropFilter: 'blur(24px) saturate(1.6)',
               }}
             >
               <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(125deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 25%, transparent 50%)' }} />
               <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 40%)' }} />
-              <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 25% 0%, rgba(244, 201, 121, 0.2) 0%, transparent 45%)' }} />
+              <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 25% 0%, rgba(221,255,133, 0.2) 0%, transparent 45%)' }} />
               <div className="absolute top-0 left-0 w-32 h-32 pointer-events-none" style={{ background: 'radial-gradient(circle at 20% 20%, rgba(255,255,255,0.12) 0%, transparent 50%)' }} />
               <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-white/5 via-white/25 to-white/5 rounded-t-[inherit]" />
               <div className="absolute top-0 left-0 bottom-0 w-[1px] bg-gradient-to-b from-white/20 via-white/5 to-transparent rounded-l-[inherit]" />
 
               <div className="relative px-5 py-4 md:px-7 md:py-5">
                 <div className="flex items-center gap-3 mb-3">
-                  <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.2 }} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#f4c979]/15 border border-[#f4c979]/30">
-                    <Sparkles className="w-3.5 h-3.5 text-[#f4c979]" />
-                    <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#f8e5bb]">Admin • Time Off</span>
+                  <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.2 }} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#F4F7F2]/15 border border-[#F4F7F2]/30">
+                    <Sparkles className="w-3.5 h-3.5 text-[#F4F7F2]" />
+                    <span className="text-[10px] uppercase text-[#E4EAE1] font-mono font-medium tracking-[0.14em]">Admin • Time Off</span>
                   </motion.div>
-                  <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.3 }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#1c1c1f]/60 border border-[#f4c979]/20">
-                    <Clock className="w-3 h-3 text-[#f4c979]" />
-                    <span className="text-[9px] uppercase tracking-wider font-semibold text-[#f8e5bb]/70">{requestStats.pending} pending</span>
+                  <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.3 }} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#121A15]/60 border border-[#F4F7F2]/20">
+                    <Clock className="w-3 h-3 text-[#F4F7F2]" />
+                    <span className="text-[9px] uppercase text-[#E4EAE1]/70 font-mono font-medium tracking-[0.14em]">{requestStats.pending} pending</span>
                   </motion.div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <motion.div initial={{ scaleY: 0, opacity: 0 }} animate={{ scaleY: 1, opacity: 1 }} transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }} className="w-1 h-14 md:h-16 rounded-full bg-gradient-to-b from-[#f7e4bd] via-[#f4c979] to-[#d79a32] origin-top flex-shrink-0" style={{ boxShadow: '0 0 20px rgba(244, 201, 121, 0.5), 0 0 40px rgba(244, 201, 121, 0.25)' }} />
+                  <motion.div initial={{ scaleY: 0, opacity: 0 }} animate={{ scaleY: 1, opacity: 1 }} transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }} className="w-1 h-14 md:h-16 rounded-full bg-gradient-to-b from-[#E4EAE1] via-[#F4F7F2] to-[#8DF5A8] origin-top flex-shrink-0" style={{ boxShadow: '0 0 20px rgba(221,255,133, 0.5), 0 0 40px rgba(221,255,133, 0.25)' }} />
                   <div className="flex-1 min-w-0">
                     {enableAnimations ? (
-                      <TextEffect as="h1" preset="blurSlide" per="char" delay={0.15} className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight" segmentWrapperClassName="bg-gradient-to-r from-white via-[#f8e5bb] to-white/90 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(244,201,121,0.35)]">
+                      <TextEffect as="h1" preset="blurSlide" per="char" delay={0.15} className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]" segmentWrapperClassName="text-glow">
                         Request Time Off Control
                       </TextEffect>
                     ) : (
-                      <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight bg-gradient-to-r from-white via-[#f8e5bb] to-white/90 bg-clip-text text-transparent">Request Time Off Control</h1>
+                      <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">Request Time Off Control</h1>
                     )}
-                    <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.7 }} className="mt-1.5 md:mt-2 text-xs sm:text-sm text-[#f8e5bb]/50 font-medium leading-relaxed max-w-xl">
+                    <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.7 }} className="mt-1.5 md:mt-2 text-xs sm:text-sm text-[#E4EAE1]/50 font-medium leading-relaxed max-w-xl">
                       Filter, triage, and approve requests with every status at your fingertips
                     </motion.p>
                   </div>
@@ -973,12 +973,12 @@ export function AdminRTOContent() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
-            className="rounded-xl sm:rounded-2xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914]/95 via-[#120f0c]/95 to-[#070605]/95 p-3 sm:p-4 shadow-[0_15px_40px_rgba(0,0,0,0.5)]"
+            className="rounded-xl sm:rounded-leaf-sm border border-[#E4EAE1]/20 bg-gradient-to-br from-[#121A15]/95 via-[#0B100D]/95 to-[#040605]/95 p-3 sm:p-4 shadow-[0_15px_40px_rgba(0,0,0,0.5)]"
           >
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
               {/* Search */}
               <div className="relative sm:col-span-1">
-                <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#b59d72] absolute left-3 sm:left-3.5 top-1/2 -translate-y-1/2" />
+                <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#8A9A8E] absolute left-3 sm:left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="Search name or email..."
@@ -987,7 +987,7 @@ export function AdminRTOContent() {
                     setSearchQuery(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full rounded-lg sm:rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#fdf4db] placeholder:text-[#bfa984] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:border-[#f4c979]/50 transition-all min-h-[40px] sm:min-h-[44px]"
+                  className="w-full rounded-lg sm:rounded-xl bg-[#040605]/70 border border-[#F4F7F2]/20 pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#F4F7F2] placeholder:text-[#8A9A8E] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/50 focus-visible:border-[#F4F7F2]/50 transition-all min-h-[40px] sm:min-h-[44px]"
                 />
               </div>
 
@@ -995,7 +995,7 @@ export function AdminRTOContent() {
               <div className="grid grid-cols-2 gap-2 sm:contents">
                 {/* Status Filter */}
                 <div className="relative">
-                  <Filter className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#b59d72] absolute left-3 sm:left-3.5 top-1/2 -translate-y-1/2" />
+                  <Filter className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#8A9A8E] absolute left-3 sm:left-3.5 top-1/2 -translate-y-1/2" />
                   <select
                     aria-label="Filter by status"
                     title="Filter by status"
@@ -1004,7 +1004,7 @@ export function AdminRTOContent() {
                       setStatusFilter(e.target.value || null);
                       setCurrentPage(1);
                     }}
-                    className="w-full rounded-lg sm:rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 pl-9 sm:pl-10 pr-6 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 appearance-none cursor-pointer min-h-[40px] sm:min-h-[44px]"
+                    className="w-full rounded-lg sm:rounded-xl bg-[#040605]/70 border border-[#F4F7F2]/20 pl-9 sm:pl-10 pr-6 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#F4F7F2] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/50 appearance-none cursor-pointer min-h-[40px] sm:min-h-[44px]"
                   >
                     <option value="">All Status</option>
                     <option value="Pending">Pending</option>
@@ -1015,7 +1015,7 @@ export function AdminRTOContent() {
 
                 {/* Month Filter */}
                 <div className="relative">
-                  <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#b59d72] absolute left-3 sm:left-3.5 top-1/2 -translate-y-1/2" />
+                  <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#8A9A8E] absolute left-3 sm:left-3.5 top-1/2 -translate-y-1/2" />
                   <select
                     aria-label="Filter by month"
                     title="Filter by month"
@@ -1024,7 +1024,7 @@ export function AdminRTOContent() {
                       setMonthFilter(e.target.value || null);
                       setCurrentPage(1);
                     }}
-                    className="w-full rounded-lg sm:rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 pl-9 sm:pl-10 pr-6 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 appearance-none cursor-pointer min-h-[40px] sm:min-h-[44px]"
+                    className="w-full rounded-lg sm:rounded-xl bg-[#040605]/70 border border-[#F4F7F2]/20 pl-9 sm:pl-10 pr-6 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#F4F7F2] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/50 appearance-none cursor-pointer min-h-[40px] sm:min-h-[44px]"
                   >
                     <option value="">All Months</option>
                     {monthOptions.map((option) => (
@@ -1044,7 +1044,7 @@ export function AdminRTOContent() {
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-[#f6dcb2]/15"
+                  className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-[#E4EAE1]/15"
                 >
                   {searchQuery && (
                     <FilterChip
@@ -1077,17 +1077,17 @@ export function AdminRTOContent() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, delay: 0.05 }}
-            className="rounded-2xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#14110d]/95 via-[#0b0906]/95 to-[#050403]/95 overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.55)]"
+            className="rounded-leaf-sm border border-[#E4EAE1]/20 bg-gradient-to-br from-[#0B100D]/95 via-[#040605]/95 to-[#040605]/95 overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.55)]"
           >
             {loading ? (
               <TableSkeleton rows={6} columns={5} variant="gold" />
             ) : filteredRequests.length === 0 ? (
               <div className="text-center py-16 space-y-3">
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#211c15] border border-[#f6dcb2]/30 mx-auto">
-                  <Calendar className="w-6 h-6 text-[#f4c979]" />
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-leaf-sm bg-[#121A15] border border-[#E4EAE1]/30 mx-auto">
+                  <Calendar className="w-6 h-6 text-[#F4F7F2]" />
                 </div>
                 <h3 className="text-lg font-semibold text-white">No Requests Found</h3>
-                <p className="text-sm text-[#f8e5bb]/70 max-w-sm mx-auto">
+                <p className="text-sm text-[#E4EAE1]/70 max-w-sm mx-auto">
                   {hasActiveFilters
                     ? "Adjust your filters to see more results."
                     : "No time-off requests have been submitted yet."}
@@ -1098,8 +1098,8 @@ export function AdminRTOContent() {
                 {/* Desktop Table */}
                 <div className="hidden lg:block overflow-x-auto">
                   <table className="w-full">
-                    <thead className="bg-gradient-to-r from-[#2b251b] to-[#1b1812] border-b border-[#f6dcb2]/15">
-                      <tr className="text-[0.65rem] uppercase tracking-[0.25em] text-[#f4c979]/80">
+                    <thead className="bg-gradient-to-r from-[#1E2A23] to-[#121A15] border-b border-[#E4EAE1]/15">
+                      <tr className="text-[0.65rem] uppercase text-[#F4F7F2]/80 font-mono font-medium tracking-[0.14em]">
                         <th className="px-4 py-3 text-left font-semibold">
                           <span className="inline-flex items-center gap-1.5">
                             <User className="w-3.5 h-3.5" />
@@ -1171,7 +1171,7 @@ export function AdminRTOContent() {
                 </div>
 
                 {/* Enhanced Gold Pagination */}
-                <div className="border-t border-[#f6dcb2]/15 bg-[#0c0a08]/80">
+                <div className="border-t border-[#E4EAE1]/15 bg-[#0B100D]/80">
                   <EnhancedPagination
                     currentPage={currentPage}
                     totalPages={totalPages}
@@ -1201,7 +1201,7 @@ export function AdminRTOContent() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="w-full max-w-md rounded-2xl border border-red-400/20 bg-[#1a1a2e]/95 backdrop-blur-xl p-6 shadow-2xl"
+              className="w-full max-w-md rounded-leaf-sm border border-red-400/20 bg-[#1E2A23]/95 backdrop-blur-xl p-6 shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               <h3 className="text-lg font-semibold text-white mb-1">

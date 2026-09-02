@@ -83,12 +83,12 @@ interface TodayComplianceStatusProps {
 const themeConfig = {
   emerald: {
     border: 'border-emerald-400/20',
-    bg: 'rgba(4, 30, 21, 0.95)',
+    bg: 'rgba(11,16,13, 0.95)',
     headerBg: 'from-emerald-500/10 to-emerald-600/5',
     accent: 'text-emerald-400',
     accentBg: 'bg-emerald-500/10',
     accentBorder: 'border-emerald-500/30',
-    glow: 'rgba(16, 185, 129, 0.15)',
+    glow: 'rgba(47,164,90, 0.15)',
     checkColor: 'text-emerald-400',
     pendingColor: 'text-amber-400',
     pendingBg: 'bg-amber-500/10',
@@ -96,12 +96,12 @@ const themeConfig = {
   },
   blue: {
     border: 'border-blue-400/20',
-    bg: 'rgba(10, 22, 40, 0.95)',
+    bg: 'rgba(18,26,21, 0.95)',
     headerBg: 'from-blue-500/10 to-blue-600/5',
     accent: 'text-blue-400',
     accentBg: 'bg-blue-500/10',
     accentBorder: 'border-blue-500/30',
-    glow: 'rgba(59, 130, 246, 0.15)',
+    glow: 'rgba(125,205,162, 0.15)',
     checkColor: 'text-emerald-400',
     pendingColor: 'text-amber-400',
     pendingBg: 'bg-amber-500/10',
@@ -256,8 +256,8 @@ const WeekendModeCard = memo(function WeekendModeCard({ theme, themeKey, userId,
   
   const borderColor = themeKey === 'emerald' ? 'border-emerald-500/25' : 'border-blue-500/25';
   const bgGradient = themeKey === 'emerald' 
-    ? 'rgba(16, 185, 129, 0.12)' 
-    : 'rgba(59, 130, 246, 0.12)';
+    ? 'rgba(47,164,90, 0.12)' 
+    : 'rgba(125,205,162, 0.12)';
   
   // Personalized weekend messages based on performance
   const getMessage = useMemo(() => {
@@ -313,7 +313,7 @@ const WeekendModeCard = memo(function WeekendModeCard({ theme, themeKey, userId,
               onClick={() => setShowStats(!showStats)}
               aria-label={showStats ? "Hide week stats" : "Show week stats"}
               aria-expanded={showStats}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg ${theme.accentBg} border ${theme.accentBorder} hover:opacity-80 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]`}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg ${theme.accentBg} border ${theme.accentBorder} hover:opacity-80 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]`}
             >
               <Trophy className={`w-3.5 h-3.5 ${theme.accent}`} aria-hidden />
               <span className={`text-xs font-semibold ${theme.accent}`}>{totalForms}</span>
@@ -404,7 +404,7 @@ const ComplianceItem = memo(function ComplianceItem({ form, theme, index }: Comp
           className="flex items-center gap-1"
         >
           <CheckCircle2 className={`w-4 h-4 ${theme.checkColor}`} />
-          <span className="text-[10px] font-semibold text-emerald-400 uppercase tracking-wider">Done</span>
+          <span className="text-[10px] text-emerald-400 uppercase font-mono font-medium tracking-[0.14em]">Done</span>
         </motion.div>
       ) : (
         <motion.div
@@ -420,7 +420,7 @@ const ComplianceItem = memo(function ComplianceItem({ form, theme, index }: Comp
               group
             `}
           >
-            <span className="text-[10px] font-semibold text-amber-400 uppercase tracking-wider">Submit</span>
+            <span className="text-[10px] text-amber-400 uppercase font-mono font-medium tracking-[0.14em]">Submit</span>
             <ChevronRight className="w-3 h-3 text-amber-400 group-hover:translate-x-0.5 transition-transform" />
           </Link>
         </motion.div>
@@ -511,7 +511,7 @@ function TodayComplianceStatusComponent({
   if (compliance.loading) {
     return (
       <div 
-        className={`rounded-2xl border ${themeStyles.border} p-4 animate-pulse`}
+        className={`rounded-leaf-sm border ${themeStyles.border} p-4 animate-pulse`}
         style={{ background: themeStyles.bg }}
       >
         <div className="flex items-center gap-3 mb-3">
@@ -541,11 +541,11 @@ function TodayComplianceStatusComponent({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className={`
-        relative overflow-hidden rounded-2xl border ${themeStyles.border}
+        relative overflow-hidden rounded-leaf-sm border ${themeStyles.border}
       `}
       style={{ 
         background: themeStyles.bg,
-        boxShadow: '0px 0px 0px 0px rgba(0, 0, 0, 0), 0px 0px 0px 0px rgba(0, 0, 0, 0), 0px 10px 15px -3px rgba(0, 0, 0, 0.3), 0px 4px 6px -4px rgba(0, 0, 0, 0.6)',
+        boxShadow: '0px 0px 0px 0px rgba(0,0,0, 0), 0px 0px 0px 0px rgba(0,0,0, 0), 0px 10px 15px -3px rgba(0,0,0, 0.3), 0px 4px 6px -4px rgba(0,0,0, 0.6)',
       }}
     >
       {/* Top shine */}

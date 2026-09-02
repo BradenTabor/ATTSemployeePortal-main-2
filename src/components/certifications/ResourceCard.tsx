@@ -8,7 +8,7 @@ const VARIANT_STYLES = {
     accentVisited: "border-l-emerald-400/40",
     accentHover: "hover:border-l-emerald-500",
     hoverShadow:
-      "hover:shadow-[0_20px_40px_rgba(0,0,0,0.3),0_0_20px_rgba(16,185,129,0.15)]",
+      "hover:shadow-[0_20px_40px_rgba(0,0,0,0.3),0_0_20px_rgba(47,164,90,0.15)]",
     focusRing: "focus-visible:ring-emerald-500/50",
   },
   danger: {

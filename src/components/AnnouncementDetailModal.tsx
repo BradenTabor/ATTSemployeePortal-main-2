@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Sparkles, Calendar, User } from 'lucide-react';
 import { cn } from '../lib/utils';
-import attsLogoStamped from '../assets/ATTS_Logo_stamped.png';
+import { BrandMark } from "@/components/canopy/BrandMark";
 import { useModalOverlay } from '../hooks/useModalOverlay';
 
 interface Announcement {
@@ -56,8 +56,8 @@ function AnnouncementDetailModalComponent({
             exit={{ opacity: 0, y: 40, scale: 0.97 }}
             transition={{ type: 'spring', damping: 28, stiffness: 300 }}
             className={cn(
-              'w-full rounded-2xl sm:rounded-3xl border border-emerald-400/30',
-              'bg-gradient-to-br from-[#04150f] via-[#041812] to-[#03120c]',
+              'w-full rounded-leaf-sm sm:rounded-leaf border border-emerald-400/30',
+              'bg-gradient-to-br from-[#0B100D] via-[#0B100D] to-[#0B100D]',
               'shadow-lg shadow-emerald-900/25 overflow-hidden flex flex-col h-full sm:h-auto'
             )}
             onClick={(e) => e.stopPropagation()}
@@ -86,7 +86,7 @@ function AnnouncementDetailModalComponent({
                   id="announcement-detail-modal-title"
                   className="text-lg sm:text-xl md:text-2xl font-black leading-tight mt-2"
                   style={{
-                    background: 'linear-gradient(135deg, #ffffff 0%, #d1fae5 50%, #a7f3d0 100%)',
+                    background: 'linear-gradient(135deg, #ffffff 0%, #D9FFE3 50%, #C8FFD4 100%)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                     backgroundClip: 'text',
@@ -98,7 +98,7 @@ function AnnouncementDetailModalComponent({
               <button
                 type="button"
                 onClick={onClose}
-                className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-xl border border-emerald-500/30 text-emerald-200/70 flex items-center justify-center hover:bg-emerald-500/15 hover:border-emerald-400/50 hover:text-emerald-100 active:scale-95 transition-all touch-manipulation flex-shrink-0 min-w-[44px] min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+                className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-xl border border-emerald-500/30 text-emerald-200/70 flex items-center justify-center hover:bg-emerald-500/15 hover:border-emerald-400/50 hover:text-emerald-100 active:scale-95 transition-all touch-manipulation flex-shrink-0 min-w-[44px] min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
                 aria-label="Close announcement"
               >
                 <X className="w-5 h-5" aria-hidden />
@@ -170,16 +170,9 @@ function AnnouncementDetailModalComponent({
               exit={{ opacity: 0, scale: 0.8 }}
               transition={{ delay: 0.3, duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
               className="absolute bottom-12 right-0 pointer-events-none z-[60] sm:bottom-16"
-              style={{
-                transform: 'translate(20%, 0)',
-                filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4)) invert(1)',
-              }}
+              style={{ transform: "translate(20%, 0) rotate(-8deg)" }}
             >
-              <img
-                src={attsLogoStamped}
-                alt="ATTS"
-                className="h-20 w-20 sm:h-28 sm:w-28 md:h-32 md:w-32 object-contain opacity-95"
-              />
+              <BrandMark size={72} live />
             </motion.div>
         </div>
       </motion.div>

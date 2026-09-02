@@ -135,13 +135,13 @@ export default function AiAttendanceSummary({ startDate, endDate }: AiAttendance
         'rounded-xl border overflow-hidden',
         state.status === 'error'
           ? 'border-red-500/20 bg-red-500/5'
-          : 'border-[#c084fc]/20 bg-gradient-to-br from-[#c084fc]/5 to-transparent'
+          : 'border-[#5EE898]/20 bg-gradient-to-br from-[#5EE898]/5 to-transparent'
       )}
     >
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-[#c084fc]/15 border border-[#c084fc]/25 flex items-center justify-center">
-            <Sparkles className="w-3.5 h-3.5 text-[#c084fc]" />
+          <div className="w-7 h-7 rounded-lg bg-[#5EE898]/15 border border-[#5EE898]/25 flex items-center justify-center">
+            <Sparkles className="w-3.5 h-3.5 text-[#5EE898]" />
           </div>
           <span className="text-sm font-medium text-white">AI Attendance Summary</span>
         </div>
@@ -155,7 +155,7 @@ export default function AiAttendanceSummary({ startDate, endDate }: AiAttendance
               type="button"
               onClick={handleCopy}
               aria-label={copied ? 'Copied' : 'Copy summary'}
-              className="p-1.5 rounded-lg text-white/40 hover:text-white/70 hover:bg-white/5 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#c084fc]/50"
+              className="p-1.5 rounded-lg text-white/40 hover:text-white/70 hover:bg-white/5 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#5EE898]/50"
             >
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
@@ -163,7 +163,7 @@ export default function AiAttendanceSummary({ startDate, endDate }: AiAttendance
               type="button"
               onClick={() => handleGenerate(true)}
               aria-label="Regenerate summary"
-              className="p-1.5 rounded-lg text-white/40 hover:text-white/70 hover:bg-white/5 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#c084fc]/50"
+              className="p-1.5 rounded-lg text-white/40 hover:text-white/70 hover:bg-white/5 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#5EE898]/50"
             >
               <RefreshCcw className="w-3.5 h-3.5" />
             </button>
@@ -180,7 +180,7 @@ export default function AiAttendanceSummary({ startDate, endDate }: AiAttendance
             <button
               type="button"
               onClick={() => handleGenerate(false)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#c084fc]/20 border border-[#c084fc]/30 text-[#e9d5ff] text-sm font-medium hover:bg-[#c084fc]/30 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#c084fc]/50"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#5EE898]/20 border border-[#5EE898]/30 text-[#C8FFD4] text-sm font-medium hover:bg-[#5EE898]/30 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#5EE898]/50"
             >
               <Sparkles className="w-4 h-4" />
               Generate Summary
@@ -191,7 +191,7 @@ export default function AiAttendanceSummary({ startDate, endDate }: AiAttendance
         {state.status === 'loading' && (
           <div className="py-4 space-y-2">
             <div className="h-3 w-full rounded-full bg-white/[0.06] overflow-hidden">
-              <div className="h-full w-1/3 rounded-full bg-[#c084fc]/40 animate-pulse" />
+              <div className="h-full w-1/3 rounded-full bg-[#5EE898]/40 animate-pulse" />
             </div>
             <p className="text-xs text-gray-500">Analyzing attendance data...</p>
           </div>
@@ -219,7 +219,7 @@ export default function AiAttendanceSummary({ startDate, endDate }: AiAttendance
                   <button
                     type="button"
                     onClick={() => handleGenerate(true)}
-                    className="mt-2 text-xs font-medium text-[#c084fc] hover:text-[#e9d5ff] transition-colors"
+                    className="mt-2 text-xs font-medium text-[#5EE898] hover:text-[#C8FFD4] transition-colors"
                   >
                     Retry
                   </button>

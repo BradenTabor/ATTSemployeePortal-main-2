@@ -6,7 +6,7 @@
 
 import { Page, expect } from '@playwright/test';
 
-export type TestRole = 'employee' | 'foreman' | 'mechanic' | 'general_foreman' | 'admin';
+export type TestRole = 'employee' | 'foreman' | 'mechanic' | 'general_foreman' | 'safety_officer' | 'admin';
 
 const TEST_CREDENTIALS: Record<TestRole, { email: string; password: string }> = {
   employee: {
@@ -23,6 +23,10 @@ const TEST_CREDENTIALS: Record<TestRole, { email: string; password: string }> = 
   },
   general_foreman: {
     email: 'test-gf@atts.test',
+    password: 'TestPassword123!',
+  },
+  safety_officer: {
+    email: 'test-safety@atts.test',
     password: 'TestPassword123!',
   },
   admin: {

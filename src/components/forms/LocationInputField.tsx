@@ -5,11 +5,17 @@
  * hospitals and clinics from Google Maps.
  */
 
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { MapPin, Map } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import type { LocationType } from '../../types/location.types';
-import { LocationPickerModal } from './LocationPickerModal';
+
+// The picker pulls in @react-google-maps/api (~31 KB) and, on mount, injects
+// the Google Maps script itself. Fetch it only when the user actually opens the
+// map — most JSA submissions type the hospital name and never touch it.
+const LocationPickerModal = lazy(() =>
+  import('./LocationPickerModal').then((m) => ({ default: m.LocationPickerModal }))
+);
 
 interface LocationInputFieldProps {
   label: string;
@@ -48,7 +54,7 @@ export function LocationInputField({
   return (
     <>
       <div className={className}>
-        <label className="block text-[11px] font-medium text-white/70 mb-1 uppercase tracking-wide">
+        <label className="block text-[11px] font-medium text-white/70 mb-1 uppercase font-mono font-medium tracking-[0.14em]">
           {label}
           {required && <span className="text-emerald-400 ml-0.5">*</span>}
         </label>
@@ -95,13 +101,17 @@ export function LocationInputField({
         </p>
       </div>
 
-      {/* Location Picker Modal */}
-      <LocationPickerModal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        onSelect={handleSelectLocation}
-        locationType={locationType}
-      />
+      {/* Location Picker Modal — chunk + Maps script load on first open */}
+      {isModalOpen && (
+        <Suspense fallback={null}>
+          <LocationPickerModal
+            isOpen={isModalOpen}
+            onClose={handleCloseModal}
+            onSelect={handleSelectLocation}
+            locationType={locationType}
+          />
+        </Suspense>
+      )}
     </>
   );
 }

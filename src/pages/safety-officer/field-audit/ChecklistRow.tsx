@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import ChecklistTriState from "./ChecklistTriState";
 import EscalationControl from "./EscalationControl";
-import type { TriValue } from "../fieldAuditConstants";
+import type { FindingSubjectType, TriValue } from "../fieldAuditConstants";
 
 type TriChoice = Exclude<TriValue, "">;
 
@@ -41,7 +41,7 @@ interface ChecklistRowProps {
 
   /** Escalation context — the finding is escalatable once it has a saved id. */
   auditId: string;
-  subjectType: "person" | "equipment";
+  subjectType: FindingSubjectType;
   itemId: string | null;
   correctiveActionId: string | null;
   onEscalated: (correctiveActionId: string) => void;
@@ -123,7 +123,9 @@ export default function ChecklistRow({
 
   return (
     <div className="rounded-xl border border-white/[0.07] bg-white/[0.015] px-3.5 py-3">
-      <div className="flex items-start justify-between gap-3">
+      {/* Phones: label above a full-width P/F/NA row so the text never wraps
+          one word per line beside the buttons. sm+: label left, buttons right. */}
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
         <div className="min-w-0 flex-1">
           {isAdHoc ? (
             <input
@@ -159,6 +161,7 @@ export default function ChecklistRow({
             value={value}
             onChange={onValueChange}
             ariaLabel={isAdHoc ? customLabel || "Custom item" : label}
+            className="flex-1 sm:flex-none"
           />
           {isAdHoc && onRemoveAdHoc && (
             <button

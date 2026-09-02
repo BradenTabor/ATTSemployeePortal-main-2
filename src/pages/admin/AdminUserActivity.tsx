@@ -74,7 +74,7 @@ const StatusBadge = memo(({ status }: { status: "active" | "idle" | "offline" })
       border: "border-emerald-500/50",
       text: "text-emerald-300",
       dot: "bg-emerald-400",
-      glow: "shadow-[0_0_12px_rgba(52,211,153,0.5)]",
+      glow: "shadow-[0_0_12px_rgba(61,220,132,0.5)]",
       label: "Active",
       icon: <Wifi className="w-3 h-3" />,
     },
@@ -83,7 +83,7 @@ const StatusBadge = memo(({ status }: { status: "active" | "idle" | "offline" })
       border: "border-amber-500/50",
       text: "text-amber-300",
       dot: "bg-amber-400",
-      glow: "shadow-[0_0_12px_rgba(251,191,36,0.4)]",
+      glow: "shadow-[0_0_12px_rgba(174,219,63,0.4)]",
       label: "Idle",
       icon: <Moon className="w-3 h-3" />,
     },
@@ -122,11 +122,11 @@ StatusBadge.displayName = "StatusBadge";
 const DeviceIcon = memo(({ deviceType }: { deviceType?: string }) => {
   switch (deviceType) {
     case "mobile":
-      return <Smartphone className="w-4 h-4 text-[#f4c979]/60" />;
+      return <Smartphone className="w-4 h-4 text-[#F4F7F2]/60" />;
     case "tablet":
-      return <Tablet className="w-4 h-4 text-[#f4c979]/60" />;
+      return <Tablet className="w-4 h-4 text-[#F4F7F2]/60" />;
     default:
-      return <Monitor className="w-4 h-4 text-[#f4c979]/60" />;
+      return <Monitor className="w-4 h-4 text-[#F4F7F2]/60" />;
   }
 });
 DeviceIcon.displayName = "DeviceIcon";
@@ -187,15 +187,15 @@ const formatPageName = (path: string | null): string => {
 // Role badge styling
 const getRoleBadgeClass = (role: string | null): string => {
   const badgeClasses: Record<string, string> = {
-    admin: "bg-[#2a0b02] text-[#ffb199] border border-[#ff6b4a]/40",
-    mechanic: "bg-[#0d1d2c] text-[#9cd7ff] border border-[#4c95c9]/40",
-    employee: "bg-[#23102a] text-[#deb2ff] border border-[#b57ae3]/40",
-    manager: "bg-[#1a2a1a] text-[#a8e6a8] border border-[#4caf50]/40",
-    general_foreman: "bg-[#2d1b4e]/30 text-[#e9d5ff] border border-[#c084fc]/40",
-    safety_officer: "bg-[#450a0a]/30 text-[#fef2f2] border border-[#fecaca]/40",
-    foreman: "bg-[#03150f]/30 text-[#e5fff6] border border-[#7de1b4]/35",
+    admin: "bg-[#121A15] text-[#ffb199] border border-[#ff6b4a]/40",
+    mechanic: "bg-[#121A15] text-[#B4E6C9] border border-[#5FAF86]/40",
+    employee: "bg-[#1E2A23] text-[#B5F0D0] border border-[#7FE0B0]/40",
+    manager: "bg-[#1E2A23] text-[#8DF5A8] border border-[#3DDC84]/40",
+    general_foreman: "bg-[#12482A]/30 text-[#C8FFD4] border border-[#5EE898]/40",
+    safety_officer: "bg-[#1E2A23]/30 text-[#fef2f2] border border-[#fecaca]/40",
+    foreman: "bg-[#0B100D]/30 text-[#EFFFF3] border border-[#5EE898]/35",
   };
-  return badgeClasses[role || ""] || "bg-white/5 text-[#fdf4db] border border-white/15";
+  return badgeClasses[role || ""] || "bg-white/5 text-[#F4F7F2] border border-white/15";
 };
 
 // Compact Stats Strip for Mobile - Shows all key stats in one row
@@ -205,13 +205,13 @@ const CompactStatsStrip = memo(({ stats }: { stats: ActivityStats }) => {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.1 }}
-      className="flex items-center justify-between gap-2 p-2.5 rounded-xl border border-white/10 bg-[#0c0a08]/70 sm:hidden"
+      className="flex items-center justify-between gap-2 p-2.5 rounded-xl border border-white/10 bg-[#0B100D]/70 sm:hidden"
     >
       {/* Active */}
       <div className="flex items-center gap-2 flex-1 min-w-0">
-        <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
+        <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_rgba(61,220,132,0.6)]" />
         <div className="min-w-0">
-          <p className="text-[10px] text-emerald-300/70 uppercase tracking-wide">Active</p>
+          <p className="text-[10px] text-emerald-300/70 uppercase font-mono font-medium tracking-[0.14em]">Active</p>
           <p className="text-lg font-bold text-emerald-50 leading-tight">{stats.totalActive}</p>
         </div>
       </div>
@@ -220,9 +220,9 @@ const CompactStatsStrip = memo(({ stats }: { stats: ActivityStats }) => {
       
       {/* Idle */}
       <div className="flex items-center gap-2 flex-1 min-w-0">
-        <div className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.4)]" />
+        <div className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(174,219,63,0.4)]" />
         <div className="min-w-0">
-          <p className="text-[10px] text-amber-300/70 uppercase tracking-wide">Idle</p>
+          <p className="text-[10px] text-amber-300/70 uppercase font-mono font-medium tracking-[0.14em]">Idle</p>
           <p className="text-lg font-bold text-amber-50 leading-tight">{stats.totalIdle}</p>
         </div>
       </div>
@@ -231,10 +231,10 @@ const CompactStatsStrip = memo(({ stats }: { stats: ActivityStats }) => {
       
       {/* Today */}
       <div className="flex items-center gap-2 flex-1 min-w-0">
-        <div className="w-2 h-2 rounded-full bg-[#f4c979]" />
+        <div className="w-2 h-2 rounded-full bg-[#F4F7F2]" />
         <div className="min-w-0">
-          <p className="text-[10px] text-[#f4c979]/70 uppercase tracking-wide">Today</p>
-          <p className="text-lg font-bold text-[#fff8eb] leading-tight">{stats.totalToday}</p>
+          <p className="text-[10px] text-[#F4F7F2]/70 uppercase font-mono font-medium tracking-[0.14em]">Today</p>
+          <p className="text-lg font-bold text-[#FBFFE8] leading-tight">{stats.totalToday}</p>
         </div>
       </div>
     </motion.div>
@@ -261,7 +261,7 @@ const StatsCard = memo(
   }) => {
     const colorClasses = {
       emerald: {
-        bg: "from-[#0d2818] via-[#0a1f14] to-[#071510]",
+        bg: "from-[#121A15] via-[#121A15] to-[#0B100D]",
         border: "border-emerald-500/50",
         accent: "bg-emerald-500",
         icon: "text-emerald-400",
@@ -269,10 +269,10 @@ const StatsCard = memo(
         label: "text-emerald-300/80",
         value: "text-emerald-50",
         subValue: "text-emerald-300/60",
-        glow: "shadow-[0_0_40px_rgba(52,211,153,0.15),inset_0_1px_0_rgba(255,255,255,0.05)]",
+        glow: "shadow-[0_0_40px_rgba(61,220,132,0.15),inset_0_1px_0_rgba(255,255,255,0.05)]",
       },
       amber: {
-        bg: "from-[#1f1a0d] via-[#19150a] to-[#121008]",
+        bg: "from-[#121A15] via-[#0B100D] to-[#0B100D]",
         border: "border-amber-500/50",
         accent: "bg-amber-500",
         icon: "text-amber-400",
@@ -280,10 +280,10 @@ const StatsCard = memo(
         label: "text-amber-300/80",
         value: "text-amber-50",
         subValue: "text-amber-300/60",
-        glow: "shadow-[0_0_40px_rgba(251,191,36,0.15),inset_0_1px_0_rgba(255,255,255,0.05)]",
+        glow: "shadow-[0_0_40px_rgba(174,219,63,0.15),inset_0_1px_0_rgba(255,255,255,0.05)]",
       },
       gray: {
-        bg: "from-[#1a1a1a] via-[#141414] to-[#0f0f0f]",
+        bg: "from-[#121A15] via-[#121A15] to-[#0B100D]",
         border: "border-gray-500/40",
         accent: "bg-gray-500",
         icon: "text-gray-400",
@@ -291,18 +291,18 @@ const StatsCard = memo(
         label: "text-gray-400",
         value: "text-gray-100",
         subValue: "text-gray-500",
-        glow: "shadow-[0_0_30px_rgba(100,100,100,0.1),inset_0_1px_0_rgba(255,255,255,0.03)]",
+        glow: "shadow-[0_0_30px_rgba(90,107,96,0.1),inset_0_1px_0_rgba(255,255,255,0.03)]",
       },
       gold: {
-        bg: "from-[#1f1810] via-[#18120b] to-[#110d08]",
-        border: "border-[#f4c979]/50",
-        accent: "bg-[#f4c979]",
-        icon: "text-[#f4c979]",
-        iconBg: "bg-[#f4c979]/20 border-[#f4c979]/40",
-        label: "text-[#f8e5bb]/80",
-        value: "text-[#fff8eb]",
-        subValue: "text-[#f4c979]/60",
-        glow: "shadow-[0_0_40px_rgba(244,201,121,0.15),inset_0_1px_0_rgba(255,255,255,0.05)]",
+        bg: "from-[#121A15] via-[#0B100D] to-[#0B100D]",
+        border: "border-[#F4F7F2]/50",
+        accent: "bg-[#F4F7F2]",
+        icon: "text-[#F4F7F2]",
+        iconBg: "bg-[#F4F7F2]/20 border-[#F4F7F2]/40",
+        label: "text-[#E4EAE1]/80",
+        value: "text-[#FBFFE8]",
+        subValue: "text-[#F4F7F2]/60",
+        glow: "shadow-[0_0_40px_rgba(221,255,133,0.15),inset_0_1px_0_rgba(255,255,255,0.05)]",
       },
     };
 
@@ -314,7 +314,7 @@ const StatsCard = memo(
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5, delay, ease: [0.22, 1, 0.36, 1] }}
         className={cn(
-          "relative overflow-hidden rounded-2xl border p-3 sm:p-4",
+          "relative overflow-hidden rounded-leaf-sm border p-3 sm:p-4",
           "bg-gradient-to-br",
           c.bg,
           c.border,
@@ -380,7 +380,7 @@ const UserActivityCard = memo(
         layout
         className={cn(
           "group relative rounded-xl border transition-all duration-200",
-          "bg-gradient-to-br from-[#1b1914]/80 to-[#120f0c]/60",
+          "bg-gradient-to-br from-[#121A15]/80 to-[#0B100D]/60",
           isActive
             ? "border-emerald-500/30 hover:border-emerald-500/50"
             : isIdle
@@ -392,7 +392,7 @@ const UserActivityCard = memo(
         {isActive && (
           <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5">
             <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
-            <span className="absolute inset-0 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]" />
+            <span className="absolute inset-0 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(61,220,132,0.8)]" />
           </div>
         )}
 
@@ -411,7 +411,7 @@ const UserActivityCard = memo(
                     : "bg-gradient-to-br from-gray-500 to-gray-600"
                 )}
               >
-                <div className="rounded-full bg-[#0c0a08] p-0.5">
+                <div className="rounded-full bg-[#0B100D] p-0.5">
                   <UserAvatar
                     avatarUrl={session.avatar_url}
                     name={session.full_name}
@@ -455,11 +455,11 @@ const UserActivityCard = memo(
               <button
                 type="button"
                 onClick={onToggle}
-                className="p-1.5 rounded-lg border border-white/10 hover:border-[#f4c979]/30 hover:bg-white/5 transition-all focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+                className="p-1.5 rounded-lg border border-white/10 hover:border-[#F4F7F2]/30 hover:bg-white/5 transition-all focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
                 aria-label={isExpanded ? "Collapse details" : "Expand details"}
               >
                 {isExpanded ? (
-                  <ChevronUp className="w-3.5 h-3.5 text-[#f4c979]" aria-hidden />
+                  <ChevronUp className="w-3.5 h-3.5 text-[#F4F7F2]" aria-hidden />
                 ) : (
                   <ChevronDown className="w-3.5 h-3.5 text-white/50" aria-hidden />
                 )}
@@ -478,7 +478,7 @@ const UserActivityCard = memo(
               {formatDuration(session.started_at, session.ended_at)}
             </span>
             {session.current_page && (
-              <span className="inline-flex items-center gap-1 text-[#f4c979]/70 truncate">
+              <span className="inline-flex items-center gap-1 text-[#F4F7F2]/70 truncate">
                 <MapPin className="w-3 h-3 flex-shrink-0" />
                 <span className="truncate">{formatPageName(session.current_page)}</span>
               </span>
@@ -497,7 +497,7 @@ const UserActivityCard = memo(
               >
                 <div className="pt-2 border-t border-white/5 space-y-2">
                   {/* Email on mobile (shown in expanded) */}
-                  <p className="text-[10px] text-[#c7b696] truncate sm:hidden">
+                  <p className="text-[10px] text-[#B8C4B6] truncate sm:hidden">
                     {session.email}
                   </p>
                   
@@ -511,7 +511,7 @@ const UserActivityCard = memo(
                     </div>
                     {session.device_info?.browser && (
                       <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-white/5 border border-white/10">
-                        <Globe className="w-3 h-3 text-[#f4c979]/60" />
+                        <Globe className="w-3 h-3 text-[#F4F7F2]/60" />
                         <span className="text-[9px] sm:text-[10px] text-white/70">
                           {session.device_info.browser}
                         </span>
@@ -519,7 +519,7 @@ const UserActivityCard = memo(
                     )}
                     {session.device_info?.os && (
                       <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-white/5 border border-white/10">
-                        <Monitor className="w-3 h-3 text-[#f4c979]/60" />
+                        <Monitor className="w-3 h-3 text-[#F4F7F2]/60" />
                         <span className="text-[9px] sm:text-[10px] text-white/70">
                           {session.device_info.os}
                         </span>
@@ -530,13 +530,13 @@ const UserActivityCard = memo(
                   {/* Session Timeline - Compact */}
                   <div className="grid grid-cols-2 gap-2">
                     <div className="px-2 py-1.5 rounded bg-white/5 border border-white/10">
-                      <p className="text-[8px] uppercase tracking-wider text-white/40">Started</p>
+                      <p className="text-[8px] uppercase text-white/40 font-mono font-medium tracking-[0.14em]">Started</p>
                       <p className="text-[10px] text-white/80">
                         {new Date(session.started_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                     <div className="px-2 py-1.5 rounded bg-white/5 border border-white/10">
-                      <p className="text-[8px] uppercase tracking-wider text-white/40">Last Active</p>
+                      <p className="text-[8px] uppercase text-white/40 font-mono font-medium tracking-[0.14em]">Last Active</p>
                       <p className="text-[10px] text-white/80">
                         {new Date(session.last_seen_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </p>
@@ -826,10 +826,10 @@ function AdminUserActivity({ embedded = false }: AdminUserActivityProps) {
             className="relative"
           >
             <div
-              className="relative overflow-hidden rounded-xl sm:rounded-2xl md:rounded-3xl border border-white/[0.12] shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.1)]"
+              className="relative overflow-hidden rounded-xl sm:rounded-leaf-sm md:rounded-leaf border border-white/[0.12] shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.1)]"
               style={{
                 background:
-                  "linear-gradient(145deg, rgba(244, 201, 121, 0.1) 0%, rgba(28, 28, 31, 0.65) 40%, rgba(15, 13, 9, 0.75) 100%)",
+                  "linear-gradient(145deg, rgba(221,255,133, 0.1) 0%, rgba(30,42,35, 0.65) 40%, rgba(11,16,13, 0.75) 100%)",
                 backdropFilter: "blur(24px) saturate(1.6)",
                 WebkitBackdropFilter: "blur(24px) saturate(1.6)",
               }}
@@ -845,7 +845,7 @@ function AdminUserActivity({ embedded = false }: AdminUserActivityProps) {
               <div
                 className="absolute inset-0 pointer-events-none hidden sm:block"
                 style={{
-                  background: "radial-gradient(ellipse at 25% 0%, rgba(244, 201, 121, 0.2) 0%, transparent 45%)",
+                  background: "radial-gradient(ellipse at 25% 0%, rgba(221,255,133, 0.2) 0%, transparent 45%)",
                 }}
               />
               <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-white/5 via-white/25 to-white/5 rounded-t-[inherit]" />
@@ -857,10 +857,10 @@ function AdminUserActivity({ embedded = false }: AdminUserActivityProps) {
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.3, delay: 0.1 }}
-                    className="flex items-center gap-1.5 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl bg-[#f4c979]/15 border border-[#f4c979]/30"
+                    className="flex items-center gap-1.5 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl bg-[#F4F7F2]/15 border border-[#F4F7F2]/30"
                   >
-                    <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#f4c979]" />
-                    <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.15em] sm:tracking-[0.2em] font-bold text-[#f8e5bb]">
+                    <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#F4F7F2]" />
+                    <span className="text-[9px] sm:text-[10px] uppercase sm:tracking-[0.2em] text-[#E4EAE1] font-mono font-medium tracking-[0.14em]">
                       Admin • Live
                     </span>
                   </motion.div>
@@ -871,7 +871,7 @@ function AdminUserActivity({ embedded = false }: AdminUserActivityProps) {
                     className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/20 border border-emerald-500/30"
                   >
                     <Zap className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-emerald-400" />
-                    <span className="text-[8px] sm:text-[9px] uppercase tracking-wider font-semibold text-emerald-300">
+                    <span className="text-[8px] sm:text-[9px] uppercase text-emerald-300 font-mono font-medium tracking-[0.14em]">
                       Real-time
                     </span>
                   </motion.div>
@@ -883,9 +883,9 @@ function AdminUserActivity({ embedded = false }: AdminUserActivityProps) {
                     initial={{ scaleY: 0, opacity: 0 }}
                     animate={{ scaleY: 1, opacity: 1 }}
                     transition={{ duration: 0.4, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                    className="w-0.5 sm:w-1 h-10 sm:h-14 md:h-16 rounded-full bg-gradient-to-b from-[#f7e4bd] via-[#f4c979] to-[#d79a32] origin-top flex-shrink-0"
+                    className="w-0.5 sm:w-1 h-10 sm:h-14 md:h-16 rounded-full bg-gradient-to-b from-[#E4EAE1] via-[#F4F7F2] to-[#8DF5A8] origin-top flex-shrink-0"
                     style={{
-                      boxShadow: "0 0 20px rgba(244, 201, 121, 0.5), 0 0 40px rgba(244, 201, 121, 0.25)",
+                      boxShadow: "0 0 20px rgba(221,255,133, 0.5), 0 0 40px rgba(221,255,133, 0.25)",
                     }}
                   />
                   <div className="flex-1 min-w-0">
@@ -895,13 +895,13 @@ function AdminUserActivity({ embedded = false }: AdminUserActivityProps) {
                         preset="blurSlide"
                         per="char"
                         delay={0.1}
-                        className="text-base sm:text-xl md:text-2xl lg:text-3xl font-black tracking-tight"
-                        segmentWrapperClassName="bg-gradient-to-r from-white via-[#f8e5bb] to-white/90 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(244,201,121,0.35)]"
+                        className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]"
+                        segmentWrapperClassName="text-glow"
                       >
                         Activity Monitor
                       </TextEffect>
                     ) : (
-                      <h1 className="text-base sm:text-xl md:text-2xl lg:text-3xl font-black tracking-tight bg-gradient-to-r from-white via-[#f8e5bb] to-white/90 bg-clip-text text-transparent">
+                      <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">
                         Activity Monitor
                       </h1>
                     )}
@@ -910,7 +910,7 @@ function AdminUserActivity({ embedded = false }: AdminUserActivityProps) {
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ duration: 0.4, delay: 0.5 }}
-                      className="hidden sm:block mt-1 md:mt-2 text-xs sm:text-sm text-[#f8e5bb]/50 font-medium leading-relaxed max-w-xl"
+                      className="hidden sm:block mt-1 md:mt-2 text-xs sm:text-sm text-[#E4EAE1]/50 font-medium leading-relaxed max-w-xl"
                     >
                       Track who's online and monitor real-time user activity
                     </motion.p>
@@ -967,28 +967,28 @@ function AdminUserActivity({ embedded = false }: AdminUserActivityProps) {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.2 }}
-          className="rounded-xl sm:rounded-2xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] p-2.5 sm:p-4 mb-3 sm:mb-6 shadow-[0_25px_50px_rgba(0,0,0,0.55)]"
+          className="rounded-xl sm:rounded-leaf-sm border border-[#E4EAE1]/20 bg-gradient-to-br from-[#121A15] via-[#0B100D] to-[#040605] p-2.5 sm:p-4 mb-3 sm:mb-6 shadow-[0_25px_50px_rgba(0,0,0,0.55)]"
         >
           <div className="flex gap-2 sm:gap-3">
             {/* Search */}
             <div className="relative flex-1 min-w-0">
-              <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#b59d72] absolute left-3 sm:left-4 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#8A9A8E] absolute left-3 sm:left-4 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-lg sm:rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 pl-9 sm:pl-11 pr-3 sm:pr-4 py-2 sm:py-3 text-xs sm:text-sm text-[#fdf4db] placeholder:text-[#bfa984] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60 min-h-[40px] sm:min-h-[48px]"
+                className="w-full rounded-lg sm:rounded-xl bg-[#040605]/70 border border-[#F4F7F2]/20 pl-9 sm:pl-11 pr-3 sm:pr-4 py-2 sm:py-3 text-xs sm:text-sm text-[#F4F7F2] placeholder:text-[#8A9A8E] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/60 min-h-[40px] sm:min-h-[48px]"
               />
             </div>
 
             {/* Status Filter */}
             <div className="relative flex-shrink-0">
-              <Filter className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#b59d72] absolute left-3 sm:left-4 top-1/2 -translate-y-1/2" />
+              <Filter className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#8A9A8E] absolute left-3 sm:left-4 top-1/2 -translate-y-1/2" />
               <select
                 value={statusFilter || ""}
                 onChange={(e) => setStatusFilter(e.target.value || null)}
-                className="w-[90px] sm:w-auto rounded-lg sm:rounded-xl bg-[#050402]/70 border border-[#f4c979]/20 pl-8 sm:pl-11 pr-2 sm:pr-10 py-2 sm:py-3 text-xs sm:text-sm text-[#fdf4db] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60 appearance-none cursor-pointer min-h-[40px] sm:min-h-[48px]"
+                className="w-[90px] sm:w-auto rounded-lg sm:rounded-xl bg-[#040605]/70 border border-[#F4F7F2]/20 pl-8 sm:pl-11 pr-2 sm:pr-10 py-2 sm:py-3 text-xs sm:text-sm text-[#F4F7F2] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/60 appearance-none cursor-pointer min-h-[40px] sm:min-h-[48px]"
               >
                 <option value="">All</option>
                 <option value="active">Active</option>
@@ -1005,12 +1005,12 @@ function AdminUserActivity({ embedded = false }: AdminUserActivityProps) {
               aria-label={refreshing ? "Refreshing activity..." : "Refresh user activity"}
               className={cn(
                 "inline-flex items-center justify-center gap-1.5 px-3 sm:px-5 py-2 sm:py-3 rounded-lg sm:rounded-xl",
-                "bg-gradient-to-r from-[#f7e4bd]/10 to-[#f4c979]/10",
-                "border border-[#f4c979]/30 text-[#f4c979]",
-                "hover:from-[#f7e4bd]/20 hover:to-[#f4c979]/20",
+                "bg-gradient-to-r from-[#E4EAE1]/10 to-[#F4F7F2]/10",
+                "border border-[#F4F7F2]/30 text-[#F4F7F2]",
+                "hover:from-[#E4EAE1]/20 hover:to-[#F4F7F2]/20",
                 "transition-all duration-200 min-h-[40px] sm:min-h-[48px] flex-shrink-0",
                 "disabled:opacity-50 disabled:cursor-not-allowed",
-                "focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+                "focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
               )}
             >
               <RefreshCw className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", refreshing && "animate-spin")} aria-hidden />
@@ -1026,15 +1026,15 @@ function AdminUserActivity({ embedded = false }: AdminUserActivityProps) {
               className="flex flex-wrap gap-1.5 sm:gap-2 pt-2 sm:pt-3 mt-2 sm:mt-3 border-t border-white/5"
             >
               {searchQuery && (
-                <span className="inline-flex items-center gap-1.5 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border border-[#f4c979]/30 bg-[#f4c979]/10 text-[10px] sm:text-xs text-[#fef3d1]">
+                <span className="inline-flex items-center gap-1.5 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border border-[#F4F7F2]/30 bg-[#F4F7F2]/10 text-[10px] sm:text-xs text-[#F4F7F2]">
                   {searchQuery}
-                  <button type="button" onClick={() => setSearchQuery("")} aria-label="Clear search" className="hover:text-white focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 rounded">✕</button>
+                  <button type="button" onClick={() => setSearchQuery("")} aria-label="Clear search" className="hover:text-white focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/50 rounded">✕</button>
                 </span>
               )}
               {statusFilter && (
-                <span className="inline-flex items-center gap-1.5 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border border-[#f6dcb2]/30 bg-[#f6dcb2]/10 text-[10px] sm:text-xs text-[#fef3d1]">
+                <span className="inline-flex items-center gap-1.5 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border border-[#E4EAE1]/30 bg-[#E4EAE1]/10 text-[10px] sm:text-xs text-[#F4F7F2]">
                   {statusFilter}
-                  <button type="button" onClick={() => setStatusFilter(null)} aria-label="Clear status filter" className="hover:text-white focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 rounded">✕</button>
+                  <button type="button" onClick={() => setStatusFilter(null)} aria-label="Clear status filter" className="hover:text-white focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/50 rounded">✕</button>
                 </span>
               )}
             </motion.div>
@@ -1046,14 +1046,14 @@ function AdminUserActivity({ embedded = false }: AdminUserActivityProps) {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, delay: 0.25 }}
-          className="rounded-xl sm:rounded-2xl md:rounded-3xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] overflow-hidden shadow-[0_40px_80px_rgba(0,0,0,0.65)]"
+          className="rounded-xl sm:rounded-leaf-sm md:rounded-leaf border border-[#E4EAE1]/20 bg-gradient-to-br from-[#0B100D] via-[#040605] to-[#040605] overflow-hidden shadow-[0_40px_80px_rgba(0,0,0,0.65)]"
         >
           {/* Section Header - Compact on mobile */}
-          <div className="px-3 py-2.5 sm:px-5 sm:py-4 border-b border-white/5 bg-gradient-to-r from-[#2b251b]/50 to-[#1b1812]/50">
+          <div className="px-3 py-2.5 sm:px-5 sm:py-4 border-b border-white/5 bg-gradient-to-r from-[#1E2A23]/50 to-[#121A15]/50">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 sm:gap-3">
-                <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-[#f4c979]/15 border border-[#f4c979]/30">
-                  <Eye className="w-4 h-4 sm:w-5 sm:h-5 text-[#f4c979]" />
+                <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-[#F4F7F2]/15 border border-[#F4F7F2]/30">
+                  <Eye className="w-4 h-4 sm:w-5 sm:h-5 text-[#F4F7F2]" />
                 </div>
                 <div>
                   <h2 className="text-sm sm:text-lg font-semibold text-white">Live Feed</h2>
@@ -1070,17 +1070,17 @@ function AdminUserActivity({ embedded = false }: AdminUserActivityProps) {
               {Array.from({ length: 4 }).map((_, i) => (
                 <div
                   key={i}
-                  className="h-16 sm:h-24 rounded-xl sm:rounded-2xl bg-white/5 animate-pulse"
+                  className="h-16 sm:h-24 rounded-xl sm:rounded-leaf-sm bg-white/5 animate-pulse"
                 />
               ))}
             </div>
           ) : filteredSessions.length === 0 ? (
             <div className="text-center py-10 sm:py-16 px-4">
-              <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-[#211c15] border border-[#f6dcb2]/30 mx-auto mb-3 sm:mb-4">
-                <Activity className="w-5 h-5 sm:w-7 sm:h-7 text-[#f4c979]" />
+              <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-leaf-sm bg-[#121A15] border border-[#E4EAE1]/30 mx-auto mb-3 sm:mb-4">
+                <Activity className="w-5 h-5 sm:w-7 sm:h-7 text-[#F4F7F2]" />
               </div>
               <h3 className="text-base sm:text-xl font-semibold text-white mb-1 sm:mb-2">No Activity Found</h3>
-              <p className="text-xs sm:text-sm text-[#f8e5bb]/70 max-w-sm mx-auto">
+              <p className="text-xs sm:text-sm text-[#E4EAE1]/70 max-w-sm mx-auto">
                 {searchQuery || statusFilter
                   ? "No matches. Try adjusting filters."
                   : "Activity will appear as users interact."}
@@ -1092,8 +1092,8 @@ function AdminUserActivity({ embedded = false }: AdminUserActivityProps) {
               {groupedSessions.active.length > 0 && (
                 <div className="space-y-2 sm:space-y-3">
                   <div className="flex items-center gap-1.5 sm:gap-2 px-0.5 sm:px-1">
-                    <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
-                    <h3 className="text-xs sm:text-sm font-semibold text-emerald-300 uppercase tracking-wider">
+                    <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(61,220,132,0.6)]" />
+                    <h3 className="text-xs sm:text-sm text-emerald-300 uppercase font-mono font-medium tracking-[0.14em]">
                       Active ({groupedSessions.active.length})
                     </h3>
                   </div>
@@ -1117,8 +1117,8 @@ function AdminUserActivity({ embedded = false }: AdminUserActivityProps) {
               {groupedSessions.idle.length > 0 && (
                 <div className="space-y-2 sm:space-y-3">
                   <div className="flex items-center gap-1.5 sm:gap-2 px-0.5 sm:px-1">
-                    <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.4)]" />
-                    <h3 className="text-xs sm:text-sm font-semibold text-amber-300 uppercase tracking-wider">
+                    <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(174,219,63,0.4)]" />
+                    <h3 className="text-xs sm:text-sm text-amber-300 uppercase font-mono font-medium tracking-[0.14em]">
                       Idle ({groupedSessions.idle.length})
                     </h3>
                   </div>
@@ -1143,7 +1143,7 @@ function AdminUserActivity({ embedded = false }: AdminUserActivityProps) {
                 <details className="group">
                   <summary className="flex items-center gap-1.5 sm:gap-2 px-0.5 sm:px-1 cursor-pointer list-none">
                     <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-gray-500" />
-                    <h3 className="text-xs sm:text-sm font-semibold text-gray-400 uppercase tracking-wider">
+                    <h3 className="text-xs sm:text-sm text-gray-400 uppercase font-mono font-medium tracking-[0.14em]">
                       Offline ({groupedSessions.offline.length})
                     </h3>
                     <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500 transition-transform group-open:rotate-180" />

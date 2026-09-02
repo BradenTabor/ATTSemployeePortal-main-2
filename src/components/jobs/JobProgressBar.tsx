@@ -22,7 +22,7 @@ const getProgressGradient = (result: JobProgressResult): string => {
     case 'in_progress':
       return 'from-emerald-400 to-emerald-600';
     case 'completed':
-      return 'from-[#f4c979] to-[#d79a32]';
+      return 'from-[#F4F7F2] to-[#8DF5A8]';
     case 'exceeded':
       return 'from-red-500 to-red-600';
   }

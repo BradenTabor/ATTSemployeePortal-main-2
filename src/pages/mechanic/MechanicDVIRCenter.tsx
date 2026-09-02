@@ -299,7 +299,7 @@ const ReportListItem = memo(function ReportListItem({
       onClick={onSelect}
       className={`w-full text-left px-3 py-2.5 transition-all duration-150 flex items-center gap-2.5 group ${
         isSelected
-          ? "bg-gradient-to-r from-[#ff9350]/20 to-[#ff9350]/5 border-l-2 border-l-[#ff9350]"
+          ? "bg-gradient-to-r from-[#B8FF7A]/20 to-[#B8FF7A]/5 border-l-2 border-l-[#B8FF7A]"
           : "border-l-2 border-l-transparent hover:bg-white/[0.03]"
       }`}
     >
@@ -339,7 +339,7 @@ const ReportListItem = memo(function ReportListItem({
           </span>
         )}
         <ChevronRight className={`w-4 h-4 transition-all ${
-          isSelected ? "text-[#ff9350]" : "text-white/20 group-hover:text-white/40"
+          isSelected ? "text-[#B8FF7A]" : "text-white/20 group-hover:text-white/40"
         }`} />
       </div>
     </motion.button>
@@ -672,7 +672,7 @@ export default function MechanicDVIRCenter() {
 
   return (
     <DashboardLayout title="Mechanic DVIR Center" pageHeading>
-      <div className="w-full min-h-screen bg-gradient-to-br from-[#1a0804] via-[#0f0402] to-[#0a0201] overflow-x-hidden">
+      <div className="w-full min-h-screen bg-gradient-to-br from-[#0B100D] via-[#040605] to-[#040605] overflow-x-hidden">
         <div className="w-full max-w-7xl mx-auto px-2.5 sm:px-4 md:px-6 pb-3 pt-3 sm:pb-4 sm:pt-4 md:pt-6">
           {/* Premium Glass Header - Ember Theme (compressed on mobile) */}
           <div className="mb-3 sm:mb-5 md:mb-6">
@@ -683,17 +683,17 @@ export default function MechanicDVIRCenter() {
               className="relative"
             >
               <div 
-                className="relative overflow-hidden rounded-xl sm:rounded-2xl md:rounded-3xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
+                className="relative overflow-hidden rounded-xl sm:rounded-leaf-sm md:rounded-leaf border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
                 style={{
                   backdropFilter: 'blur(24px) saturate(180%)',
                   WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-                  background: 'linear-gradient(145deg, rgba(45, 20, 8, 0.6) 0%, rgba(20, 8, 4, 0.5) 50%, rgba(10, 4, 2, 0.4) 100%)',
-                  boxShadow: 'inset 0 0 15px rgba(255, 147, 80, 0.08), 0 8px 32px rgba(0,0,0,0.5)',
+                  background: 'linear-gradient(145deg, rgba(18,26,21, 0.6) 0%, rgba(11,16,13, 0.5) 50%, rgba(4,6,5, 0.4) 100%)',
+                  boxShadow: 'inset 0 0 15px rgba(200,245,94, 0.08), 0 8px 32px rgba(0,0,0,0.5)',
                 }}
               >
                 <div className="absolute inset-0 opacity-70 pointer-events-none" style={{ background: 'linear-gradient(125deg, rgba(255,255,255,0.15) 0%, transparent 30%, transparent 70%, rgba(255,255,255,0.05) 100%)' }} />
                 <div className="absolute inset-0 opacity-50 pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 50%)' }} />
-                <div className="absolute top-0 left-0 w-24 h-24 rounded-full opacity-30 pointer-events-none" style={{ background: 'radial-gradient(circle at 50% 50%, rgba(255, 147, 80, 0.3) 0%, transparent 70%)', filter: 'blur(15px)' }} />
+                <div className="absolute top-0 left-0 w-24 h-24 rounded-full opacity-30 pointer-events-none" style={{ background: 'radial-gradient(circle at 50% 50%, rgba(200,245,94, 0.3) 0%, transparent 70%)', filter: 'blur(15px)' }} />
                 <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-white/[0.15] to-transparent" />
                 <div className="absolute top-0 bottom-0 left-0 w-[1px] bg-gradient-to-b from-transparent via-white/[0.1] to-transparent" />
                 <div className="absolute top-0 bottom-0 right-0 w-[1px] bg-gradient-to-b from-transparent via-black/[0.1] to-transparent" />
@@ -703,22 +703,22 @@ export default function MechanicDVIRCenter() {
                   <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
                     <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.2 }} className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl bg-amber-500/15 border border-amber-500/30">
                       <Flame className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400" />
-                      <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.15em] sm:tracking-[0.2em] font-bold text-amber-200">Mechanics</span>
+                      <span className="text-[9px] sm:text-[10px] uppercase sm:tracking-[0.2em] text-amber-200 font-mono font-medium tracking-[0.14em]">Mechanics</span>
                     </motion.div>
-                    <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.3 }} className="flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-md sm:rounded-lg bg-[#1a0804]/60 border border-amber-500/20">
+                    <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, delay: 0.3 }} className="flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-md sm:rounded-lg bg-[#0B100D]/60 border border-amber-500/20">
                       <Wrench className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-amber-400" />
-                      <span className="text-[8px] sm:text-[9px] uppercase tracking-wider font-semibold text-amber-200/70">{role === "admin" ? "ADMIN" : "MECH"}</span>
+                      <span className="text-[8px] sm:text-[9px] uppercase text-amber-200/70 font-mono font-medium tracking-[0.14em]">{role === "admin" ? "ADMIN" : "MECH"}</span>
                     </motion.div>
                   </div>
                   <div className="flex items-center gap-2 sm:gap-4">
-                    <motion.div initial={{ scaleY: 0, opacity: 0 }} animate={{ scaleY: 1, opacity: 1 }} transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }} className="w-0.5 sm:w-1 h-10 sm:h-14 md:h-16 rounded-full bg-gradient-to-b from-amber-400 via-orange-500 to-red-600 origin-top flex-shrink-0" style={{ boxShadow: '0 0 20px rgba(251, 146, 60, 0.4), 0 0 40px rgba(251, 146, 60, 0.2)' }} />
+                    <motion.div initial={{ scaleY: 0, opacity: 0 }} animate={{ scaleY: 1, opacity: 1 }} transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }} className="w-0.5 sm:w-1 h-10 sm:h-14 md:h-16 rounded-full bg-gradient-to-b from-amber-400 via-orange-500 to-red-600 origin-top flex-shrink-0" style={{ boxShadow: '0 0 20px rgba(200,245,94, 0.4), 0 0 40px rgba(200,245,94, 0.2)' }} />
                     <div className="flex-1 min-w-0">
                       {enableAnimations ? (
-                        <TextEffect as="h1" preset="blurSlide" per="char" delay={0.15} className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black tracking-tight" segmentWrapperClassName="bg-gradient-to-r from-white via-amber-100 to-white/90 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(251,146,60,0.3)]">
+                        <TextEffect as="h1" preset="blurSlide" per="char" delay={0.15} className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]" segmentWrapperClassName="text-glow">
                           DVIR Center
                         </TextEffect>
                       ) : (
-                        <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black tracking-tight bg-gradient-to-r from-white via-amber-100 to-white/90 bg-clip-text text-transparent">DVIR Center</h1>
+                        <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">DVIR Center</h1>
                       )}
                       <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.7 }} className="mt-1 sm:mt-1.5 md:mt-2 text-[11px] sm:text-xs md:text-sm text-amber-200/50 font-medium leading-relaxed max-w-xl">
                         Review inspections and document repairs
@@ -733,7 +733,7 @@ export default function MechanicDVIRCenter() {
           <div className="space-y-3 sm:space-y-4">
             {/* Compact Filter Bar - Not collapsible for faster access */}
             <ScrollRevealSection delay={0}>
-              <div className="rounded-lg sm:rounded-xl border border-[#ff9350]/15 bg-gradient-to-r from-[#0c0402] to-[#120805] p-2 sm:p-3">
+              <div className="rounded-lg sm:rounded-xl border border-[#B8FF7A]/15 bg-gradient-to-r from-[#040605] to-[#0B100D] p-2 sm:p-3">
                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                   {/* Status Toggle */}
                   <div className="flex gap-0.5 sm:gap-1 p-0.5 sm:p-1 bg-black/30 rounded-md sm:rounded-lg border border-white/5">
@@ -747,9 +747,9 @@ export default function MechanicDVIRCenter() {
                           setActiveTab(id as "failed" | "passed");
                           setCurrentPage(1);
                         }}
-                        className={`flex-1 inline-flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded text-[11px] sm:text-xs font-medium transition-all ${
+                        className={`flex-1 inline-flex min-h-[40px] items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded text-[11px] sm:text-xs font-medium transition-all ${
                           activeTab === id
-                            ? "bg-gradient-to-r from-[#ff9350] to-[#e87830] text-white shadow-md"
+                            ? "bg-gradient-to-r from-[#B8FF7A] to-[#9BEB5B] text-white shadow-md"
                             : "text-white/60 hover:text-white hover:bg-white/5"
                         }`}
                       >
@@ -775,7 +775,7 @@ export default function MechanicDVIRCenter() {
                         setSearchQuery(e.target.value);
                         setCurrentPage(1);
                       }}
-                      className="w-full min-w-0 bg-black/30 border border-white/10 rounded-md sm:rounded-lg pl-7 sm:pl-8 pr-7 sm:pr-8 py-1.5 sm:py-2 text-xs sm:text-sm text-white placeholder:text-white/30 focus:outline-none focus-visible:ring-1 focus-visible:ring-[#ff9350]/50 focus-visible:border-[#ff9350]/30 transition-all"
+                      className="w-full min-w-0 bg-black/30 border border-white/10 rounded-md sm:rounded-lg pl-7 sm:pl-8 pr-7 sm:pr-8 py-1.5 sm:py-2 text-xs sm:text-sm text-white placeholder:text-white/30 focus:outline-none focus-visible:ring-1 focus-visible:ring-[#B8FF7A]/50 focus-visible:border-[#B8FF7A]/30 transition-all"
                     />
                     {searchQuery && (
                       <button
@@ -828,7 +828,7 @@ export default function MechanicDVIRCenter() {
               {!loading && !error && (
                 <div className="grid gap-3 sm:gap-4 lg:grid-cols-3">
                   {/* Left: Reports List - Compact */}
-                  <div className="rounded-lg sm:rounded-xl border border-white/10 bg-[#080403] overflow-hidden flex flex-col min-h-0">
+                  <div className="rounded-lg sm:rounded-xl border border-white/10 bg-[#040605] overflow-hidden flex flex-col min-h-0">
                     {/* Compact header */}
                     <div className="flex items-center justify-between px-2 sm:px-3 py-1.5 sm:py-2 bg-gradient-to-r from-white/5 to-transparent border-b border-white/5 shrink-0">
                       <div className="flex items-center gap-2">
@@ -844,7 +844,8 @@ export default function MechanicDVIRCenter() {
                           <button
                             onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                             disabled={currentPage === 1}
-                            className="p-1 rounded text-white/40 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            aria-label="Previous page"
+                            className="tap-44 relative p-1 rounded text-white/40 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                           >
                             <ChevronLeft className="w-3.5 h-3.5" />
                           </button>
@@ -854,7 +855,8 @@ export default function MechanicDVIRCenter() {
                           <button
                             onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                             disabled={currentPage === totalPages}
-                            className="p-1 rounded text-white/40 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            aria-label="Next page"
+                            className="tap-44 relative p-1 rounded text-white/40 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                           >
                             <ChevronRight className="w-3.5 h-3.5" />
                           </button>
@@ -894,7 +896,7 @@ export default function MechanicDVIRCenter() {
                         <motion.div
                           key="empty-state"
                           {...(prefersReducedMotion ? pageTransitionReduced : pageTransition)}
-                          className="h-full min-h-[200px] sm:min-h-[280px] lg:min-h-[300px] rounded-lg sm:rounded-xl border border-white/5 bg-[#050302] p-4 sm:p-6 flex flex-col items-center justify-center text-center"
+                          className="h-full min-h-[200px] sm:min-h-[280px] lg:min-h-[300px] rounded-lg sm:rounded-xl border border-white/5 bg-[#040605] p-4 sm:p-6 flex flex-col items-center justify-center text-center"
                         >
                           <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-amber-500/10 border border-amber-500/20 mb-2 sm:mb-3">
                             <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400/70" />
@@ -913,7 +915,7 @@ export default function MechanicDVIRCenter() {
                           className="space-y-2 sm:space-y-3"
                         >
                           {/* Report Details Card - Compact */}
-                          <div className="rounded-lg sm:rounded-xl border border-white/10 bg-[#050302] overflow-hidden min-w-0">
+                          <div className="rounded-lg sm:rounded-xl border border-white/10 bg-[#040605] overflow-hidden min-w-0">
                             {/* Card Header - Compact with contrast */}
                             <div className="bg-gradient-to-r from-amber-500/8 to-transparent border-b border-white/5 px-3 sm:px-4 py-2 sm:py-3">
                               <div className="flex items-center justify-between gap-2 sm:gap-3 flex-wrap">
@@ -987,7 +989,7 @@ export default function MechanicDVIRCenter() {
                                     <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
                                       {vehicleFails.length > 0 && (
                                         <div className="rounded-md sm:rounded-lg border border-red-500/20 bg-red-500/5 p-2 sm:p-2.5 max-h-32 sm:max-h-40 overflow-y-auto">
-                                          <div className="text-[10px] uppercase tracking-wider text-red-300/70 mb-1.5">Vehicle / Trailer</div>
+                                          <div className="text-[10px] uppercase text-red-300/70 mb-1.5 font-mono font-medium tracking-[0.14em]">Vehicle / Trailer</div>
                                           <ul className="space-y-1">
                                             {vehicleFails.map((label) => (
                                               <li key={label} className="flex items-start gap-1.5 text-xs text-red-200/80">
@@ -1001,7 +1003,7 @@ export default function MechanicDVIRCenter() {
 
                                       {aerialFails.length > 0 && (
                                         <div className="rounded-md sm:rounded-lg border border-orange-500/20 bg-orange-500/5 p-2 sm:p-2.5 max-h-32 sm:max-h-40 overflow-y-auto">
-                                          <div className="text-[10px] uppercase tracking-wider text-orange-300/70 mb-1.5">Aerial Lift</div>
+                                          <div className="text-[10px] uppercase text-orange-300/70 mb-1.5 font-mono font-medium tracking-[0.14em]">Aerial Lift</div>
                                           <ul className="space-y-1">
                                             {aerialFails.map((label) => (
                                               <li key={label} className="flex items-start gap-1.5 text-xs text-orange-200/80">
@@ -1020,13 +1022,13 @@ export default function MechanicDVIRCenter() {
                               {/* Driver Notes & Vehicle Details - Compact row */}
                               <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
                                 <div className="rounded-md sm:rounded-lg border border-white/5 bg-white/[0.02] p-2 sm:p-2.5">
-                                  <div className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Driver Notes</div>
+                                  <div className="text-[10px] uppercase text-white/30 mb-1 font-mono font-medium tracking-[0.14em]">Driver Notes</div>
                                   <p className="text-xs text-white/60 line-clamp-2">
                                     {selectedReport.notes?.trim() || "No notes"}
                                   </p>
                                 </div>
                                 <div className="rounded-md sm:rounded-lg border border-white/5 bg-white/[0.02] p-2 sm:p-2.5">
-                                  <div className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Vehicle Info</div>
+                                  <div className="text-[10px] uppercase text-white/30 mb-1 font-mono font-medium tracking-[0.14em]">Vehicle Info</div>
                                   <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10px] text-white/50">
                                     <span>Chipper: {selectedReport.chipper_number || "—"}</span>
                                     <span>Trailer: {selectedReport.trailer_number || "—"}</span>
@@ -1045,7 +1047,7 @@ export default function MechanicDVIRCenter() {
                                 </summary>
                                 <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 pt-1.5 sm:pt-2">
                                   <div className="rounded-md sm:rounded-lg border border-white/5 bg-white/[0.02] p-2 sm:p-2.5">
-                                    <div className="text-[10px] uppercase tracking-wider text-white/30 mb-1.5 sm:mb-2">Vehicle / Trailer</div>
+                                    <div className="text-[10px] uppercase text-white/30 mb-1.5 sm:mb-2 font-mono font-medium tracking-[0.14em]">Vehicle / Trailer</div>
                                     <div className="max-h-36 sm:max-h-48 overflow-y-auto space-y-0.5">
                                       {VEHICLE_TRAILER_ITEMS.map((item) => {
                                         const value = selectedReport.vehicle_trailer_checklist?.[item.id];
@@ -1063,7 +1065,7 @@ export default function MechanicDVIRCenter() {
                                   </div>
 
                                   <div className="rounded-md sm:rounded-lg border border-white/5 bg-white/[0.02] p-2 sm:p-2.5">
-                                    <div className="text-[10px] uppercase tracking-wider text-white/30 mb-1.5 sm:mb-2">Aerial Lift</div>
+                                    <div className="text-[10px] uppercase text-white/30 mb-1.5 sm:mb-2 font-mono font-medium tracking-[0.14em]">Aerial Lift</div>
                                     <div className="max-h-36 sm:max-h-48 overflow-y-auto space-y-0.5">
                                       {AERIAL_LIFT_ITEMS.map((item) => {
                                         const value = selectedReport.aerial_checklist?.[item.id];
@@ -1153,7 +1155,7 @@ export default function MechanicDVIRCenter() {
                           </div>
 
                           {/* Mechanic Update Form - Enhanced with Cost & Parts */}
-                          <div className="rounded-lg sm:rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-950/30 to-[#050302] overflow-hidden min-w-0">
+                          <div className="rounded-lg sm:rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-950/30 to-[#040605] overflow-hidden min-w-0">
                             <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-amber-500/10 to-transparent border-b border-amber-500/10">
                               <div className="flex items-center gap-1.5 sm:gap-2">
                                 <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-md sm:rounded-lg bg-amber-500/15 border border-amber-500/25 flex items-center justify-center">
@@ -1167,7 +1169,7 @@ export default function MechanicDVIRCenter() {
                               {/* Truck # & Date Row */}
                               <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
                                 <div>
-                                  <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Truck #</label>
+                                  <label className="block text-[10px] uppercase text-white/40 mb-1 font-mono font-medium tracking-[0.14em]">Truck #</label>
                                   <input
                                     value={updateTruckNumber}
                                     onChange={(e) => setUpdateTruckNumber(e.target.value)}
@@ -1188,7 +1190,7 @@ export default function MechanicDVIRCenter() {
 
                               {/* Fix Description */}
                               <div>
-                                <label className="block text-[9px] sm:text-[10px] uppercase tracking-wider text-white/40 mb-0.5 sm:mb-1">Fix Applied *</label>
+                                <label className="block text-[9px] sm:text-[10px] uppercase text-white/40 mb-0.5 sm:mb-1 font-mono font-medium tracking-[0.14em]">Fix Applied *</label>
                                 <textarea
                                   value={updateDeficiencyCorrected}
                                   onChange={(e) => setUpdateDeficiencyCorrected(e.target.value)}
@@ -1200,7 +1202,7 @@ export default function MechanicDVIRCenter() {
 
                               {/* Cost Input */}
                               <div>
-                                <label className="block text-[9px] sm:text-[10px] uppercase tracking-wider text-white/40 mb-0.5 sm:mb-1">Cost (Optional)</label>
+                                <label className="block text-[9px] sm:text-[10px] uppercase text-white/40 mb-0.5 sm:mb-1 font-mono font-medium tracking-[0.14em]">Cost (Optional)</label>
                                 <div className="relative">
                                   <DollarSign className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/30" />
                                   <input
@@ -1218,7 +1220,7 @@ export default function MechanicDVIRCenter() {
                               {/* Parts Used - stacked on mobile, grid on sm+ */}
                               <div>
                                 <div className="flex items-center justify-between mb-1 sm:mb-2">
-                                  <label className="text-[9px] sm:text-[10px] uppercase tracking-wider text-white/40">
+                                  <label className="text-[9px] sm:text-[10px] uppercase text-white/40 font-mono font-medium tracking-[0.14em]">
                                     Parts Used (Optional)
                                   </label>
                                   <button
@@ -1281,7 +1283,7 @@ export default function MechanicDVIRCenter() {
 
                               {/* Remarks */}
                               <div>
-                                <label className="block text-[9px] sm:text-[10px] uppercase tracking-wider text-white/40 mb-0.5 sm:mb-1">Additional Notes (Optional)</label>
+                                <label className="block text-[9px] sm:text-[10px] uppercase text-white/40 mb-0.5 sm:mb-1 font-mono font-medium tracking-[0.14em]">Additional Notes (Optional)</label>
                                 <textarea
                                   value={updateRemarks}
                                   onChange={(e) => setUpdateRemarks(e.target.value)}

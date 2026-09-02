@@ -115,13 +115,13 @@ function ManageAwardersSection() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-[#c7b696]">
+        <p className="text-sm text-[#B8C4B6]">
           Grant manual award authority with per-award caps and monthly budgets.
         </p>
         <button
           type="button"
           onClick={() => setShowGrantForm((v) => !v)}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#f4c979]/15 border border-[#f4c979]/30 text-sm font-semibold text-[#fef3d1] hover:bg-[#f4c979]/25 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#F4F7F2]/15 border border-[#F4F7F2]/30 text-sm font-semibold text-[#F4F7F2] hover:bg-[#F4F7F2]/25 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400"
         >
           <Plus className="w-4 h-4" aria-hidden />
           Grant awarder
@@ -131,16 +131,16 @@ function ManageAwardersSection() {
       {showGrantForm && (
         <form
           onSubmit={handleGrant}
-          className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-3"
+          className="rounded-leaf-sm border border-white/10 bg-white/[0.03] p-4 space-y-3"
         >
           <div className="grid sm:grid-cols-3 gap-3">
             <div className="sm:col-span-1">
-              <label className="text-xs text-[#c7b696] uppercase tracking-wider">User</label>
+              <label className="text-xs text-[#B8C4B6] uppercase font-mono font-medium tracking-[0.14em]">User</label>
               <select
                 value={grantUserId}
                 onChange={(e) => setGrantUserId(e.target.value)}
                 required
-                className="mt-1 w-full px-3 py-2 rounded-xl border border-white/10 bg-[#0f0d0a] text-white text-sm focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400"
+                className="mt-1 w-full px-3 py-2 rounded-xl border border-white/10 bg-[#0B100D] text-white text-sm focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400"
               >
                 <option value="">Select user…</option>
                 {users.map((u) => (
@@ -152,25 +152,25 @@ function ManageAwardersSection() {
               </select>
             </div>
             <div>
-              <label className="text-xs text-[#c7b696] uppercase tracking-wider">Per-award cap</label>
+              <label className="text-xs text-[#B8C4B6] uppercase font-mono font-medium tracking-[0.14em]">Per-award cap</label>
               <input
                 type="number"
                 min={1}
                 value={grantCap}
                 onChange={(e) => setGrantCap(e.target.value)}
                 required
-                className="mt-1 w-full px-3 py-2 rounded-xl border border-white/10 bg-[#0f0d0a] text-white text-sm focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400"
+                className="mt-1 w-full px-3 py-2 rounded-xl border border-white/10 bg-[#0B100D] text-white text-sm focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400"
               />
             </div>
             <div>
-              <label className="text-xs text-[#c7b696] uppercase tracking-wider">Monthly budget</label>
+              <label className="text-xs text-[#B8C4B6] uppercase font-mono font-medium tracking-[0.14em]">Monthly budget</label>
               <input
                 type="number"
                 min={1}
                 value={grantBudget}
                 onChange={(e) => setGrantBudget(e.target.value)}
                 required
-                className="mt-1 w-full px-3 py-2 rounded-xl border border-white/10 bg-[#0f0d0a] text-white text-sm focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400"
+                className="mt-1 w-full px-3 py-2 rounded-xl border border-white/10 bg-[#0B100D] text-white text-sm focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400"
               />
             </div>
           </div>
@@ -182,7 +182,7 @@ function ManageAwardersSection() {
           <button
             type="submit"
             disabled={grantMutation.isPending}
-            className="px-4 py-2 rounded-xl bg-[#f4c979] text-[#2d1c04] text-sm font-semibold disabled:opacity-60 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400"
+            className="px-4 py-2 rounded-xl bg-[#F4F7F2] text-[#040605] text-sm font-semibold disabled:opacity-60 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400"
           >
             {grantMutation.isPending ? 'Saving…' : 'Create grant'}
           </button>
@@ -192,30 +192,30 @@ function ManageAwardersSection() {
       {editingGrant && (
         <form
           onSubmit={handleUpdate}
-          className="rounded-2xl border border-[#f4c979]/30 bg-[#f4c979]/5 p-4 space-y-3"
+          className="rounded-leaf-sm border border-[#F4F7F2]/30 bg-[#F4F7F2]/5 p-4 space-y-3"
         >
-          <p className="text-sm font-medium text-[#fef3d1]">
+          <p className="text-sm font-medium text-[#F4F7F2]">
             Edit grant: {editingGrant.awarder_name || editingGrant.awarder_email}
           </p>
           <div className="grid sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-[#c7b696]">Per-award cap</label>
+              <label className="text-xs text-[#B8C4B6]">Per-award cap</label>
               <input
                 type="number"
                 min={1}
                 value={editCap}
                 onChange={(e) => setEditCap(e.target.value)}
-                className="mt-1 w-full px-3 py-2 rounded-xl border border-white/10 bg-[#0f0d0a] text-white text-sm"
+                className="mt-1 w-full px-3 py-2 rounded-xl border border-white/10 bg-[#0B100D] text-white text-sm"
               />
             </div>
             <div>
-              <label className="text-xs text-[#c7b696]">Monthly budget</label>
+              <label className="text-xs text-[#B8C4B6]">Monthly budget</label>
               <input
                 type="number"
                 min={1}
                 value={editBudget}
                 onChange={(e) => setEditBudget(e.target.value)}
-                className="mt-1 w-full px-3 py-2 rounded-xl border border-white/10 bg-[#0f0d0a] text-white text-sm"
+                className="mt-1 w-full px-3 py-2 rounded-xl border border-white/10 bg-[#0B100D] text-white text-sm"
               />
             </div>
           </div>
@@ -223,14 +223,14 @@ function ManageAwardersSection() {
             <button
               type="submit"
               disabled={updateMutation.isPending}
-              className="px-4 py-2 rounded-xl bg-[#f4c979] text-[#2d1c04] text-sm font-semibold"
+              className="px-4 py-2 rounded-xl bg-[#F4F7F2] text-[#040605] text-sm font-semibold"
             >
               Save changes
             </button>
             <button
               type="button"
               onClick={() => setEditingGrant(null)}
-              className="px-4 py-2 rounded-xl border border-white/10 text-sm text-[#c7b696]"
+              className="px-4 py-2 rounded-xl border border-white/10 text-sm text-[#B8C4B6]"
             >
               Cancel
             </button>
@@ -240,15 +240,15 @@ function ManageAwardersSection() {
 
       {isLoading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="w-8 h-8 text-[#f4c979] animate-spin" aria-hidden />
+          <Loader2 className="w-8 h-8 text-[#F4F7F2] animate-spin" aria-hidden />
         </div>
       ) : isError ? (
         <p role="alert" className="text-red-300 text-sm">Failed to load grants.</p>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-white/10">
+        <div className="overflow-x-auto rounded-leaf-sm border border-white/10">
           <table className="w-full text-sm min-w-[720px]">
             <thead>
-              <tr className="border-b border-white/10 bg-white/[0.03] text-left text-xs uppercase tracking-wider text-[#c7b696]">
+              <tr className="border-b border-white/10 bg-white/[0.03] text-left text-xs uppercase text-[#B8C4B6] font-mono font-medium tracking-[0.14em]">
                 <th className="px-4 py-3">Awarder</th>
                 <th className="px-4 py-3">Cap</th>
                 <th className="px-4 py-3">Budget</th>
@@ -262,11 +262,11 @@ function ManageAwardersSection() {
                 <tr key={grant.id} className="hover:bg-white/[0.02]">
                   <td className="px-4 py-3">
                     <p className="text-white font-medium">{grant.awarder_name || 'Unknown'}</p>
-                    <p className="text-xs text-[#c7b696]">{grant.awarder_email}</p>
+                    <p className="text-xs text-[#B8C4B6]">{grant.awarder_email}</p>
                   </td>
-                  <td className="px-4 py-3 text-[#fef3d1]">{grant.per_award_cap}</td>
-                  <td className="px-4 py-3 text-[#fef3d1]">{grant.monthly_budget}</td>
-                  <td className="px-4 py-3 text-[#c7b696] text-xs">
+                  <td className="px-4 py-3 text-[#F4F7F2]">{grant.per_award_cap}</td>
+                  <td className="px-4 py-3 text-[#F4F7F2]">{grant.monthly_budget}</td>
+                  <td className="px-4 py-3 text-[#B8C4B6] text-xs">
                     {formatDateTime(grant.granted_at)}
                     {grant.granted_by_name && (
                       <span className="block">by {grant.granted_by_name}</span>
@@ -291,7 +291,7 @@ function ManageAwardersSection() {
                             setEditCap(String(grant.per_award_cap));
                             setEditBudget(String(grant.monthly_budget));
                           }}
-                          className="p-2 rounded-lg text-[#f4c979] hover:bg-[#f4c979]/10 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400"
+                          className="p-2 rounded-lg text-[#F4F7F2] hover:bg-[#F4F7F2]/10 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400"
                           aria-label="Edit grant"
                         >
                           <Pencil className="w-4 h-4" />
@@ -312,7 +312,7 @@ function ManageAwardersSection() {
               ))}
               {grants.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-[#c7b696]">
+                  <td colSpan={6} className="px-4 py-8 text-center text-[#B8C4B6]">
                     No awarder grants yet.
                   </td>
                 </tr>
@@ -383,7 +383,7 @@ function AuditLogSection() {
     <div className="space-y-4">
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <div>
-          <label className="text-xs text-[#c7b696]">From</label>
+          <label className="text-xs text-[#B8C4B6]">From</label>
           <input
             type="date"
             value={dateFrom}
@@ -392,7 +392,7 @@ function AuditLogSection() {
           />
         </div>
         <div>
-          <label className="text-xs text-[#c7b696]">To</label>
+          <label className="text-xs text-[#B8C4B6]">To</label>
           <input
             type="date"
             value={dateTo}
@@ -401,7 +401,7 @@ function AuditLogSection() {
           />
         </div>
         <div>
-          <label className="text-xs text-[#c7b696]">Category</label>
+          <label className="text-xs text-[#B8C4B6]">Category</label>
           <select
             value={category}
             onChange={(e) => { setCategory(e.target.value as ManualAwardCategory | ''); setPage(1); }}
@@ -414,7 +414,7 @@ function AuditLogSection() {
           </select>
         </div>
         <div>
-          <label className="text-xs text-[#c7b696]">Awarder</label>
+          <label className="text-xs text-[#B8C4B6]">Awarder</label>
           <select
             value={awarderId}
             onChange={(e) => { setAwarderId(e.target.value); setPage(1); }}
@@ -427,7 +427,7 @@ function AuditLogSection() {
           </select>
         </div>
         <div>
-          <label className="text-xs text-[#c7b696]">Recipient</label>
+          <label className="text-xs text-[#B8C4B6]">Recipient</label>
           <select
             value={recipientId}
             onChange={(e) => { setRecipientId(e.target.value); setPage(1); }}
@@ -444,7 +444,7 @@ function AuditLogSection() {
             type="button"
             onClick={handleExportCsv}
             disabled={rows.length === 0}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-[#f4c979]/30 text-sm text-[#fef3d1] hover:bg-[#f4c979]/10 disabled:opacity-50 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-[#F4F7F2]/30 text-sm text-[#F4F7F2] hover:bg-[#F4F7F2]/10 disabled:opacity-50 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400"
           >
             <Download className="w-4 h-4" aria-hidden />
             Export CSV
@@ -454,16 +454,16 @@ function AuditLogSection() {
 
       {isLoading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="w-8 h-8 text-[#f4c979] animate-spin" />
+          <Loader2 className="w-8 h-8 text-[#F4F7F2] animate-spin" />
         </div>
       ) : isError ? (
         <p role="alert" className="text-red-300 text-sm">Failed to load audit log.</p>
       ) : (
         <>
-          <div className="overflow-x-auto rounded-2xl border border-white/10">
+          <div className="overflow-x-auto rounded-leaf-sm border border-white/10">
             <table className="w-full text-sm min-w-[800px]">
               <thead>
-                <tr className="border-b border-white/10 bg-white/[0.03] text-left text-xs uppercase tracking-wider text-[#c7b696]">
+                <tr className="border-b border-white/10 bg-white/[0.03] text-left text-xs uppercase text-[#B8C4B6] font-mono font-medium tracking-[0.14em]">
                   <th className="px-4 py-3">When</th>
                   <th className="px-4 py-3">Awarded by</th>
                   <th className="px-4 py-3">Recipient</th>
@@ -475,31 +475,31 @@ function AuditLogSection() {
               <tbody className="divide-y divide-white/5">
                 {rows.map((row) => (
                   <tr key={row.id} className="hover:bg-white/[0.02]">
-                    <td className="px-4 py-3 text-[#c7b696] text-xs whitespace-nowrap">
+                    <td className="px-4 py-3 text-[#B8C4B6] text-xs whitespace-nowrap">
                       {formatDateTime(row.created_at)}
                     </td>
                     <td className="px-4 py-3">
                       <p className="text-white">{row.awarded_by_name || '—'}</p>
-                      <p className="text-xs text-[#c7b696]">{row.awarded_by_email}</p>
+                      <p className="text-xs text-[#B8C4B6]">{row.awarded_by_email}</p>
                     </td>
                     <td className="px-4 py-3">
                       <p className="text-white">{row.recipient_name || '—'}</p>
-                      <p className="text-xs text-[#c7b696]">{row.recipient_email}</p>
+                      <p className="text-xs text-[#B8C4B6]">{row.recipient_email}</p>
                     </td>
-                    <td className="px-4 py-3 font-semibold text-[#f4c979]">+{row.amount}</td>
-                    <td className="px-4 py-3 text-[#fef3d1]">
+                    <td className="px-4 py-3 font-semibold text-[#F4F7F2]">+{row.amount}</td>
+                    <td className="px-4 py-3 text-[#F4F7F2]">
                       {row.category
                         ? MANUAL_AWARD_CATEGORY_LABELS[row.category as ManualAwardCategory] ?? row.category
                         : '—'}
                     </td>
-                    <td className="px-4 py-3 text-[#c7b696] max-w-xs truncate" title={row.reason ?? ''}>
+                    <td className="px-4 py-3 text-[#B8C4B6] max-w-xs truncate" title={row.reason ?? ''}>
                       {row.reason || '—'}
                     </td>
                   </tr>
                 ))}
                 {rows.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-[#c7b696]">
+                    <td colSpan={6} className="px-4 py-8 text-center text-[#B8C4B6]">
                       No manual awards match these filters.
                     </td>
                   </tr>
@@ -508,7 +508,7 @@ function AuditLogSection() {
             </table>
           </div>
           {totalPages > 1 && (
-            <div className="flex items-center justify-between text-sm text-[#c7b696]">
+            <div className="flex items-center justify-between text-sm text-[#B8C4B6]">
               <span>
                 Page {page} of {totalPages} ({totalCount} total)
               </span>
@@ -560,10 +560,10 @@ export default function ManualAwardsHub() {
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-6 rounded-2xl border border-[#f4c979]/20 bg-gradient-to-br from-[#1b1914]/90 to-[#0f0d0a]/80 p-5"
+          className="mb-6 rounded-leaf-sm border border-[#F4F7F2]/20 bg-gradient-to-br from-[#121A15]/90 to-[#0B100D]/80 p-5"
         >
-          <h1 className="text-2xl font-black text-[#fef3d1]">Manual Point Awards</h1>
-          <p className="mt-1 text-sm text-[#c7b696]">
+          <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">Manual Point Awards</h1>
+          <p className="mt-1 text-sm text-[#B8C4B6]">
             Manage awarder grants and review the manual award audit trail.
           </p>
         </motion.div>
@@ -574,8 +574,8 @@ export default function ManualAwardsHub() {
             onClick={() => setTab('grants')}
             className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400 ${
               tab === 'grants'
-                ? 'bg-[#f4c979]/20 border border-[#f4c979]/40 text-[#fef3d1]'
-                : 'border border-white/10 text-[#c7b696] hover:text-white'
+                ? 'bg-[#F4F7F2]/20 border border-[#F4F7F2]/40 text-[#F4F7F2]'
+                : 'border border-white/10 text-[#B8C4B6] hover:text-white'
             }`}
           >
             <Users className="w-4 h-4" aria-hidden />
@@ -586,8 +586,8 @@ export default function ManualAwardsHub() {
             onClick={() => setTab('audit')}
             className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400 ${
               tab === 'audit'
-                ? 'bg-[#f4c979]/20 border border-[#f4c979]/40 text-[#fef3d1]'
-                : 'border border-white/10 text-[#c7b696] hover:text-white'
+                ? 'bg-[#F4F7F2]/20 border border-[#F4F7F2]/40 text-[#F4F7F2]'
+                : 'border border-white/10 text-[#B8C4B6] hover:text-white'
             }`}
           >
             <ScrollText className="w-4 h-4" aria-hidden />

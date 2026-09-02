@@ -170,7 +170,7 @@ export default function MileageAnomalyCard({ anomaly, onResolve }: MileageAnomal
               
               {/* Resolution Form */}
               <div>
-                <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1.5">
+                <label className="block text-[10px] uppercase text-white/40 mb-1.5 font-mono font-medium tracking-[0.14em]">
                   Resolution Notes
                 </label>
                 <div className="relative">

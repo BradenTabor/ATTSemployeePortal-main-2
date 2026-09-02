@@ -2,7 +2,7 @@
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
 import { clientsClaim } from 'workbox-core';
 import { registerRoute, NavigationRoute } from 'workbox-routing';
-import { NetworkFirst, CacheFirst, StaleWhileRevalidate } from 'workbox-strategies';
+import { NetworkFirst, CacheFirst } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 
@@ -78,23 +78,45 @@ registerRoute(
 //    We explicitly do NOT cache /auth/v1/ to prevent stale session issues.
 //    (No registerRoute needed — NetworkOnly is the default for unmatched routes.)
 
-// 4. Google Fonts — StaleWhileRevalidate for CSS, CacheFirst for font files
+// 4. Same-origin decorative imagery (nav-card art under /assets/*.webp) is
+//    excluded from the install precache to keep first-launch download small;
+//    it is cached the first time it renders. Fonts are self-hosted under
+//    /fonts and precached, so no Google Fonts routes are needed.
 registerRoute(
-  ({ url }) => url.origin === 'https://fonts.googleapis.com',
-  new StaleWhileRevalidate({
-    cacheName: 'google-fonts-stylesheets',
-  }),
-);
-
-registerRoute(
-  ({ url }) => url.origin === 'https://fonts.gstatic.com',
+  ({ url, request }) =>
+    url.origin === self.location.origin &&
+    request.destination === 'image' &&
+    url.pathname.startsWith('/assets/'),
   new CacheFirst({
-    cacheName: 'google-fonts-webfonts',
+    cacheName: 'app-images-cache',
     plugins: [
       new CacheableResponsePlugin({ statuses: [0, 200] }),
       new ExpirationPlugin({
-        maxEntries: 30,
+        maxEntries: 80,
         maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+        purgeOnQuotaError: true,
+      }),
+    ],
+  }),
+);
+
+// 4b. Same-origin build assets that are deliberately left out of the install
+//     precache (heavy PDF/XLSX/maps vendor chunks — see vite.config.ts
+//     `globIgnores`). File names are content-hashed, so CacheFirst is safe and
+//     the chunk is cached the first time a user actually exports/prints.
+registerRoute(
+  ({ url, request }) =>
+    url.origin === self.location.origin &&
+    url.pathname.startsWith('/assets/') &&
+    (request.destination === 'script' || request.destination === 'style' || url.pathname.endsWith('.js')),
+  new CacheFirst({
+    cacheName: 'lazy-assets-cache',
+    plugins: [
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
+      new ExpirationPlugin({
+        maxEntries: 40,
+        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+        purgeOnQuotaError: true,
       }),
     ],
   }),

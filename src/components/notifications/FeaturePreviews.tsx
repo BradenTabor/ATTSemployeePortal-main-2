@@ -62,7 +62,7 @@ export const ProfilePreview = memo(function ProfilePreview() {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="w-full h-full bg-gradient-to-br from-[#030a06] via-[#051810] to-[#020604] p-2 pt-6 overflow-hidden"
+      className="w-full h-full bg-gradient-to-br from-[#040605] via-[#0B100D] to-[#040605] p-2 pt-6 overflow-hidden"
     >
       {/* Header with avatar */}
       <motion.div variants={itemVariants} className="flex items-center gap-2 mb-3">
@@ -70,7 +70,7 @@ export const ProfilePreview = memo(function ProfilePreview() {
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/30 to-emerald-700/20 border border-emerald-500/40 flex items-center justify-center">
             <User className="w-5 h-5 text-emerald-400" />
           </div>
-          <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-emerald-500 border border-[#030a06] flex items-center justify-center">
+          <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-emerald-500 border border-[#040605] flex items-center justify-center">
             <Camera className="w-2 h-2 text-white" />
           </div>
         </div>
@@ -141,7 +141,7 @@ export const SettingsPreview = memo(function SettingsPreview() {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="w-full h-full bg-gradient-to-br from-[#030a06] via-[#051810] to-[#020604] p-2 pt-6 overflow-hidden"
+      className="w-full h-full bg-gradient-to-br from-[#040605] via-[#0B100D] to-[#040605] p-2 pt-6 overflow-hidden"
     >
       {/* Header */}
       <motion.div variants={itemVariants} className="flex items-center gap-2 mb-3">
@@ -229,7 +229,7 @@ export const SmartDefaultsPreview = memo(function SmartDefaultsPreview() {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="w-full h-full bg-gradient-to-br from-[#030a06] via-[#051810] to-[#020604] p-2 pt-6 overflow-hidden"
+      className="w-full h-full bg-gradient-to-br from-[#040605] via-[#0B100D] to-[#040605] p-2 pt-6 overflow-hidden"
     >
       {/* Header */}
       <motion.div variants={itemVariants} className="flex items-center gap-2 mb-3">
@@ -318,7 +318,7 @@ export const NotificationsPreview = memo(function NotificationsPreview() {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="w-full h-full bg-gradient-to-br from-[#030a06] via-[#051810] to-[#020604] p-2 pt-6 overflow-hidden"
+      className="w-full h-full bg-gradient-to-br from-[#040605] via-[#0B100D] to-[#040605] p-2 pt-6 overflow-hidden"
     >
       {/* Header */}
       <motion.div variants={itemVariants} className="flex items-center gap-2 mb-3">
@@ -405,7 +405,7 @@ export const RewardsPreview = memo(function RewardsPreview() {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="w-full h-full bg-gradient-to-br from-[#0a0502] via-[#1a0f05] to-[#0a0502] p-2 pt-6 overflow-hidden"
+      className="w-full h-full bg-gradient-to-br from-[#040605] via-[#0B100D] to-[#040605] p-2 pt-6 overflow-hidden"
     >
       {/* Header with avatar and XP */}
       <motion.div variants={itemVariants} className="flex items-center justify-between mb-2">
@@ -417,7 +417,7 @@ export const RewardsPreview = memo(function RewardsPreview() {
             <motion.div
               animate={{ scale: [1, 1.2, 1] }}
               transition={{ duration: 2, repeat: Infinity }}
-              className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 border border-[#0a0502] flex items-center justify-center"
+              className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 border border-[#040605] flex items-center justify-center"
             >
               <Crown className="w-2 h-2 text-white" />
             </motion.div>
@@ -505,7 +505,7 @@ export const QuickAccessPreview = memo(function QuickAccessPreview() {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="w-full h-full bg-gradient-to-br from-[#030a06] via-[#051810] to-[#020604] p-2 pt-6 overflow-hidden"
+      className="w-full h-full bg-gradient-to-br from-[#040605] via-[#0B100D] to-[#040605] p-2 pt-6 overflow-hidden"
     >
       {/* Header */}
       <motion.div variants={itemVariants} className="flex items-center gap-2 mb-2">

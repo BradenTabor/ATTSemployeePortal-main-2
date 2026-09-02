@@ -62,7 +62,7 @@ export const ChallengeCard = memo(function ChallengeCard({
       )}
       style={{
         background:
-          'linear-gradient(135deg, rgba(88, 28, 135, 0.18) 0%, rgba(8, 12, 10, 0.92) 55%)',
+          'linear-gradient(135deg, rgba(34,137,92, 0.18) 0%, rgba(11,16,13, 0.92) 55%)',
         boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
       }}
       data-testid="challenge-card"

@@ -6,9 +6,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { subDays, parseISO, format } from "date-fns";
-import { ClipboardCheck, Truck, Wrench, Loader2 } from "lucide-react";
+import { ClipboardCheck, Truck, Wrench, Loader2, Activity } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import { useDashboardCardTheme } from "../../contexts/dashboardCardTheme";
+import WidgetHeader from "./WidgetHeader";
 import { getTodayDateString } from "../../lib/complianceHelpers";
 import type { ComplianceSummaryRow } from "../../types/dashboard";
 
@@ -38,8 +39,8 @@ function Sparkline({ values }: { values: number[] }) {
     <svg width={width} height={height} className="overflow-visible shrink-0" aria-hidden>
       <defs>
         <linearGradient id="spark-fill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="rgb(16, 185, 129)" stopOpacity="0.35" />
-          <stop offset="100%" stopColor="rgb(16, 185, 129)" stopOpacity="0" />
+          <stop offset="0%" stopColor="rgb(47, 164, 90)" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="rgb(47, 164, 90)" stopOpacity="0" />
         </linearGradient>
       </defs>
       <polygon fill="url(#spark-fill)" points={areaPoints} />
@@ -134,10 +135,10 @@ export default function ComplianceRatesWidget() {
   if (summaryQuery.isLoading || summaryQuery.isError) {
     return (
       <div className={`${cardClass} p-4`}>
-        <h3 className="text-sm font-semibold text-white mb-3">Compliance rates</h3>
+        <WidgetHeader title="Compliance rates" icon={Activity} />
         <div className="flex items-center justify-center py-6">
           {summaryQuery.isLoading ? (
-            <Loader2 className="w-6 h-6 animate-spin text-emerald-400" aria-hidden />
+            <Loader2 className="w-6 h-6 animate-spin text-rose-300/80" aria-hidden />
           ) : (
             <p className="text-sm text-red-300">{summaryQuery.error?.message ?? "Failed to load"}</p>
           )}
@@ -148,7 +149,7 @@ export default function ComplianceRatesWidget() {
 
   return (
     <div className={`${cardClass} p-4`}>
-      <h3 className="text-sm font-semibold text-white mb-3">Compliance rates</h3>
+      <WidgetHeader title="Compliance rates" icon={Activity} />
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {cards.map(({ label, icon: Icon, pct, sparkValues }) => (
           <div

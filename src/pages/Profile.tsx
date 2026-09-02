@@ -34,7 +34,7 @@ import { supabase } from '../lib/supabaseClient';
 import { logger } from '../lib/logger';
 import { TextEffect } from '../components/ui/TextEffect';
 import { getDeviceCapabilities } from '../lib/mobilePerf';
-import { EnableNotificationsButton } from '../components/notifications';
+import { EnableNotificationsButton } from '../components/notifications/EnableNotificationsButton';
 // ScrollReveal import removed - not currently used
 import AvatarUpload from '../components/profile/AvatarUpload';
 import { MyCertificationsSection } from '../components/profile/MyCertificationsSection';
@@ -238,7 +238,7 @@ function CertNotificationToggleCard({
     <div
       className="rounded-lg sm:rounded-xl border border-emerald-500/20 p-3 sm:p-4"
       style={{
-        background: 'linear-gradient(145deg, rgba(16, 185, 129, 0.05) 0%, rgba(5, 150, 105, 0.02) 100%)',
+        background: 'linear-gradient(145deg, rgba(47,164,90, 0.05) 0%, rgba(31,122,68, 0.02) 100%)',
       }}
     >
       <div className="flex items-start justify-between gap-3">
@@ -252,7 +252,7 @@ function CertNotificationToggleCard({
           aria-checked={enabled}
           disabled={loading}
           onClick={onToggle}
-          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#041b14] disabled:opacity-50 ${
+          className={`tap-44 relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D] disabled:opacity-50 ${
             enabled ? 'bg-emerald-500' : 'bg-white/20'
           }`}
         >
@@ -286,10 +286,10 @@ function ProfileSection({ id, title, subtitle, icon, children, action }: Profile
     <motion.section
       id={id}
       variants={cardVariants}
-      className="relative overflow-hidden rounded-xl sm:rounded-2xl md:rounded-3xl border border-emerald-400/20"
+      className="relative overflow-hidden rounded-xl sm:rounded-leaf-sm md:rounded-leaf border border-emerald-400/20"
       style={{
-        background: 'linear-gradient(145deg, rgba(4, 30, 21, 0.95) 0%, rgba(2, 15, 10, 0.98) 50%, rgba(1, 8, 5, 1) 100%)',
-        boxShadow: '0 8px 40px -10px rgba(16, 185, 129, 0.2), 0 4px 20px -8px rgba(0, 0, 0, 0.5)',
+        background: 'linear-gradient(145deg, rgba(11,16,13, 0.95) 0%, rgba(4,6,5, 0.98) 50%, rgba(4,6,5, 1) 100%)',
+        boxShadow: '0 8px 40px -10px rgba(47,164,90, 0.2), 0 4px 20px -8px rgba(0,0,0, 0.5)',
       }}
     >
       {/* Top shine line with animation */}
@@ -298,7 +298,7 @@ function ProfileSection({ id, title, subtitle, icon, children, action }: Profile
         <motion.div
           className="absolute top-0 h-full w-1/4"
           style={{
-            background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent)',
+            background: 'linear-gradient(90deg, transparent, rgba(255,255,255, 0.3), transparent)',
           }}
           animate={{ x: ['-100%', '500%'] }}
           transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', repeatDelay: 2 }}
@@ -311,7 +311,7 @@ function ProfileSection({ id, title, subtitle, icon, children, action }: Profile
         variants={orbVariants}
         animate="animate"
         style={{
-          background: 'radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(47,164,90, 0.25) 0%, transparent 70%)',
           filter: 'blur(25px)',
         }}
       />
@@ -320,7 +320,7 @@ function ProfileSection({ id, title, subtitle, icon, children, action }: Profile
         variants={orbVariants}
         animate="animate"
         style={{
-          background: 'radial-gradient(circle, rgba(52, 211, 153, 0.2) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(61,220,132, 0.2) 0%, transparent 70%)',
           filter: 'blur(20px)',
         }}
       />
@@ -332,7 +332,7 @@ function ProfileSection({ id, title, subtitle, icon, children, action }: Profile
             <motion.div 
               className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl flex items-center justify-center border border-emerald-500/30 flex-shrink-0"
               style={{
-                background: 'linear-gradient(145deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.1) 100%)',
+                background: 'linear-gradient(145deg, rgba(47,164,90, 0.15) 0%, rgba(31,122,68, 0.1) 100%)',
               }}
               whileHover={{ scale: 1.1, rotate: 5 }}
               transition={{ type: 'spring', stiffness: 300 }}
@@ -385,7 +385,7 @@ function QuickActionButton({ href, icon, title, subtitle }: QuickActionProps) {
         <div 
           className="absolute inset-0"
           style={{
-            background: 'radial-gradient(circle at 30% 50%, rgba(16, 185, 129, 0.15) 0%, transparent 60%)',
+            background: 'radial-gradient(circle at 30% 50%, rgba(47,164,90, 0.15) 0%, transparent 60%)',
           }}
         />
       </div>
@@ -524,7 +524,7 @@ export default function Profile() {
               <motion.div
                 className="absolute inset-0 rounded-full"
                 style={{
-                  background: 'radial-gradient(circle, rgba(16, 185, 129, 0.4) 0%, transparent 70%)',
+                  background: 'radial-gradient(circle, rgba(47,164,90, 0.4) 0%, transparent 70%)',
                   filter: 'blur(20px)',
                 }}
                 animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0.8, 0.5] }}
@@ -564,12 +564,12 @@ export default function Profile() {
           className="mb-4 sm:mb-8 md:mb-10"
         >
           <div 
-            className="relative overflow-hidden rounded-xl sm:rounded-2xl md:rounded-[2rem] border border-white/[0.08]"
+            className="relative overflow-hidden rounded-xl sm:rounded-leaf-sm md:rounded-[2rem] border border-white/[0.08]"
             style={{
-              background: 'linear-gradient(145deg, rgba(4, 35, 24, 0.7) 0%, rgba(2, 20, 14, 0.6) 50%, rgba(1, 10, 7, 0.5) 100%)',
+              background: 'linear-gradient(145deg, rgba(18,26,21, 0.7) 0%, rgba(11,16,13, 0.6) 50%, rgba(4,6,5, 0.5) 100%)',
               backdropFilter: 'blur(24px) saturate(180%)',
               WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(16, 185, 129, 0.1), inset 0 0 80px rgba(16, 185, 129, 0.05)',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0, 0.5), 0 0 0 1px rgba(47,164,90, 0.1), inset 0 0 80px rgba(47,164,90, 0.05)',
             }}
           >
             {/* Animated background orbs - hidden on mobile for performance */}
@@ -578,7 +578,7 @@ export default function Profile() {
               variants={orbVariants}
               animate="animate"
               style={{
-                background: 'radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, transparent 60%)',
+                background: 'radial-gradient(circle, rgba(47,164,90, 0.3) 0%, transparent 60%)',
                 filter: 'blur(40px)',
               }}
             />
@@ -587,7 +587,7 @@ export default function Profile() {
               variants={orbVariants}
               animate="animate"
               style={{
-                background: 'radial-gradient(circle, rgba(52, 211, 153, 0.25) 0%, transparent 60%)',
+                background: 'radial-gradient(circle, rgba(61,220,132, 0.25) 0%, transparent 60%)',
                 filter: 'blur(35px)',
               }}
             />
@@ -618,13 +618,13 @@ export default function Profile() {
                       preset="blurSlide"
                       per="word"
                       delay={0.3}
-                      className="text-lg sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-tight break-words line-clamp-2 sm:line-clamp-1"
-                      segmentWrapperClassName="bg-gradient-to-r from-white via-emerald-100 to-white/90 bg-clip-text text-transparent"
+                      className="type-display font-light text-bone-50 text-[clamp(1.75rem,4.5vw,3.25rem)] break-words line-clamp-2 sm:line-clamp-1"
+                      segmentWrapperClassName="text-glow"
                     >
                       {fullName || profile?.full_name || 'Employee'}
                     </TextEffect>
                   ) : (
-                    <h1 className="text-lg sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-tight bg-gradient-to-r from-white via-emerald-100 to-white/90 bg-clip-text text-transparent break-words line-clamp-2 sm:line-clamp-1">
+                    <h1 className="type-display font-light text-bone-50 text-[clamp(1.75rem,4.5vw,3.25rem)] break-words line-clamp-2 sm:line-clamp-1">
                       {fullName || profile?.full_name || 'Employee'}
                     </h1>
                   )}
@@ -741,7 +741,7 @@ export default function Profile() {
               <div 
                 className="rounded-lg sm:rounded-xl border border-emerald-500/20 p-3 sm:p-5"
                 style={{
-                  background: 'linear-gradient(145deg, rgba(16, 185, 129, 0.05) 0%, rgba(5, 150, 105, 0.02) 100%)',
+                  background: 'linear-gradient(145deg, rgba(47,164,90, 0.05) 0%, rgba(31,122,68, 0.02) 100%)',
                 }}
               >
                 <div className="flex items-start gap-3 sm:gap-4 mb-3 sm:mb-4">
@@ -806,7 +806,7 @@ export default function Profile() {
                 >
                   <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
                     <item.icon className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-emerald-400/60" />
-                    <p className="text-[8px] sm:text-[10px] uppercase tracking-[0.15em] text-white/40 font-medium truncate">{item.label}</p>
+                    <p className="text-[8px] sm:text-[10px] uppercase text-white/40 font-medium truncate font-mono font-medium tracking-[0.14em]">{item.label}</p>
                   </div>
                   <p className="text-xs sm:text-sm font-medium text-white truncate">{item.value}</p>
                 </motion.div>

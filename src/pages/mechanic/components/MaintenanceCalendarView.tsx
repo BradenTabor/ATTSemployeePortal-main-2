@@ -191,11 +191,11 @@ export default function MaintenanceCalendarView({ vehicles }: MaintenanceCalenda
   };
   
   return (
-    <div className="rounded-xl border border-white/10 bg-[#050302] overflow-hidden">
+    <div className="rounded-xl border border-white/10 bg-[#040605] overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-[#ff9350]/8 to-transparent border-b border-white/5">
+      <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-[#B8FF7A]/8 to-transparent border-b border-white/5">
         <div className="flex items-center gap-2">
-          <Calendar className="w-5 h-5 text-[#ff9350]" />
+          <Calendar className="w-5 h-5 text-[#B8FF7A]" />
           <h3 className="text-sm font-semibold text-white">Maintenance Calendar</h3>
         </div>
         
@@ -212,7 +212,7 @@ export default function MaintenanceCalendarView({ vehicles }: MaintenanceCalenda
                 onClick={() => setSelectedType(id as typeof selectedType)}
                 className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium transition-all ${
                   selectedType === id
-                    ? 'bg-[#ff9350] text-white'
+                    ? 'bg-[#B8FF7A] text-white'
                     : 'text-white/50 hover:text-white'
                 }`}
               >
@@ -272,7 +272,7 @@ export default function MaintenanceCalendarView({ vehicles }: MaintenanceCalenda
                 key={index}
                 className={`relative min-h-[60px] rounded-lg p-1 transition-colors ${
                   day.isToday 
-                    ? 'bg-[#ff9350]/20 border border-[#ff9350]/30' 
+                    ? 'bg-[#B8FF7A]/20 border border-[#B8FF7A]/30' 
                     : day.isCurrentMonth 
                       ? 'bg-white/[0.02] border border-white/5 hover:bg-white/[0.04]' 
                       : 'opacity-30'
@@ -280,7 +280,7 @@ export default function MaintenanceCalendarView({ vehicles }: MaintenanceCalenda
               >
                 {/* Date Number */}
                 <span className={`text-[10px] font-medium ${
-                  day.isToday ? 'text-[#ff9350]' : 'text-white/50'
+                  day.isToday ? 'text-[#B8FF7A]' : 'text-white/50'
                 }`}>
                   {day.date.getDate()}
                 </span>

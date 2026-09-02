@@ -169,7 +169,7 @@ export function ValidationSummary({
           onClick={() => setIsExpanded(!isExpanded)}
           className={cn(
             'flex items-center flex-1 min-w-0 text-left hover:bg-rose-500/5 rounded-md transition-colors',
-            compact ? 'gap-1.5 px-1 py-0.5 -ml-0.5 sm:gap-2 sm:px-1.5 sm:py-1 sm:-ml-1' : 'gap-2 px-2 py-1.5 -ml-2'
+            compact ? 'min-h-[44px] gap-1.5 px-1 py-0.5 -ml-0.5 sm:min-h-0 sm:gap-2 sm:px-1.5 sm:py-1 sm:-ml-1' : 'min-h-[44px] gap-2 px-2 py-1.5 -ml-2'
           )}
           aria-expanded={isExpanded}
           aria-controls="validation-summary-content"
@@ -180,7 +180,7 @@ export function ValidationSummary({
           <div className="flex-1 min-w-0">
             <h3 className={cn(
               'font-medium text-white leading-tight',
-              compact ? 'text-[11px] sm:text-xs' : 'text-sm'
+              compact ? 'text-xs' : 'text-sm'
             )}>
               <span className="hidden sm:inline">
                 {errorCount} {errorCount === 1 ? 'issue' : 'issues'} need{errorCount === 1 ? 's' : ''} attention
@@ -218,7 +218,7 @@ export function ValidationSummary({
           type="button"
           onClick={() => setIsDismissed(true)}
           className={cn(
-            'flex-shrink-0 rounded-md hover:bg-white/5 text-white/40 hover:text-white/70 transition-colors',
+            'tap-44 relative flex-shrink-0 rounded-md hover:bg-white/5 text-white/40 hover:text-white/70 transition-colors',
             compact ? 'p-0.5 sm:p-1' : 'p-1.5'
           )}
           aria-label="Dismiss"
@@ -250,7 +250,7 @@ export function ValidationSummary({
                   }}
                   className={cn(
                     'w-full flex items-start justify-between rounded-md hover:bg-rose-500/10 transition-colors text-left group',
-                    compact ? 'gap-1.5 p-1 sm:gap-2 sm:p-1.5' : 'gap-2 p-2'
+                    compact ? 'min-h-[40px] gap-1.5 p-1 sm:min-h-0 sm:gap-2 sm:p-1.5' : 'min-h-[40px] gap-2 p-2'
                   )}
                 >
                   <div className="flex-1 min-w-0">

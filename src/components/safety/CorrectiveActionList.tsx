@@ -95,9 +95,9 @@ export default function CorrectiveActionList({ incidentId, className = '' }: Cor
               type="button"
               onClick={() => setFilter(f)}
               className={cn(
-                'px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors',
+                'min-h-[44px] px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors',
                 filter === f
-                  ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
+                  ? 'bg-rose-500/20 border-rose-500/40 text-rose-300'
                   : 'border-white/10 text-white/60 hover:bg-white/5'
               )}
             >
@@ -111,7 +111,7 @@ export default function CorrectiveActionList({ incidentId, className = '' }: Cor
             setSelected(null);
             setShowForm(true);
           }}
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-sm hover:bg-emerald-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-300 text-sm hover:bg-rose-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50"
         >
           <Plus className="w-4 h-4" />
           Add Action
@@ -131,7 +131,7 @@ export default function CorrectiveActionList({ incidentId, className = '' }: Cor
               <button
                 type="button"
                 onClick={() => setFilter('all')}
-                className="text-xs text-emerald-400 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 rounded"
+                className="text-xs text-rose-300 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 rounded"
               >
                 Show all actions
               </button>
@@ -155,7 +155,7 @@ export default function CorrectiveActionList({ incidentId, className = '' }: Cor
                 <tr
                   key={a.id}
                   onClick={() => handleRowClick(a)}
-                  className="border-b border-white/5 hover:bg-white/5 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-inset"
+                  className="border-b border-white/5 hover:bg-white/5 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-inset"
                 >
                   <td className="px-4 py-2 text-sm text-white/90 max-w-[200px] truncate">{a.description}</td>
                   <td className="px-4 py-2 text-sm text-white/70 capitalize">{a.action_type.replace('_', ' ')}</td>

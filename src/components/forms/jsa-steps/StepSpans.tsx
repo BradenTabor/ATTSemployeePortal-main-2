@@ -229,7 +229,7 @@ export function StepSpans({
             <button
               type="button"
               onClick={onAddSpan}
-              className="inline-flex items-center gap-1 text-[10px] text-emerald-400 hover:text-emerald-300 transition touch-manipulation"
+              className="tap-44 relative inline-flex items-center gap-1 text-[10px] text-emerald-400 hover:text-emerald-300 transition touch-manipulation"
             >
               <Plus className="w-3 h-3" />
               Add
@@ -243,7 +243,7 @@ export function StepSpans({
             type="button"
             onClick={() => setViewMode("cards")}
             className={cn(
-              "p-1.5 rounded-md transition-all touch-manipulation",
+              "tap-44 relative p-2 rounded-md transition-all touch-manipulation",
               viewMode === "cards" ? "bg-emerald-500/20 text-emerald-400" : "text-white/40 hover:text-white/60"
             )}
           >
@@ -253,7 +253,7 @@ export function StepSpans({
             type="button"
             onClick={() => setViewMode("list")}
             className={cn(
-              "p-1.5 rounded-md transition-all touch-manipulation",
+              "tap-44 relative p-2 rounded-md transition-all touch-manipulation",
               viewMode === "list" ? "bg-emerald-500/20 text-emerald-400" : "text-white/40 hover:text-white/60"
             )}
           >
@@ -323,7 +323,7 @@ export function StepSpans({
                         <button
                           type="button"
                           onClick={() => copyFromPrevious(globalIndex)}
-                          className="inline-flex items-center gap-1 px-2 py-1 text-[10px] text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded transition touch-manipulation"
+                          className="tap-44 relative inline-flex items-center gap-1 px-2 py-1 text-[10px] text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded transition touch-manipulation"
                           title="Copy hazards & mitigation from previous span"
                         >
                           <Copy className="w-3 h-3" />
@@ -376,7 +376,7 @@ export function StepSpans({
                             <button
                               type="button"
                               onClick={() => autoFillInitials(globalIndex)}
-                              className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-emerald-400 hover:text-emerald-300"
+                              className="tap-44 absolute right-2 top-1/2 -translate-y-1/2 px-1 text-[10px] text-emerald-400 hover:text-emerald-300"
                             >
                               Use "{userInitials}"
                             </button>
@@ -395,7 +395,7 @@ export function StepSpans({
                         <button
                           type="button"
                           onClick={() => setShowQuickHazards(showQuickHazards === globalIndex ? null : globalIndex)}
-                          className="text-[9px] text-amber-400 hover:text-amber-300 flex items-center gap-0.5"
+                          className="tap-44 relative text-[10px] text-amber-400 hover:text-amber-300 flex items-center gap-0.5"
                         >
                           Quick Add
                           {showQuickHazards === globalIndex ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
@@ -442,7 +442,7 @@ export function StepSpans({
                         <button
                           type="button"
                           onClick={() => setShowQuickMitigations(showQuickMitigations === globalIndex ? null : globalIndex)}
-                          className="text-[9px] text-emerald-400 hover:text-emerald-300 flex items-center gap-0.5"
+                          className="tap-44 relative text-[10px] text-emerald-400 hover:text-emerald-300 flex items-center gap-0.5"
                         >
                           Quick Add
                           {showQuickMitigations === globalIndex ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}

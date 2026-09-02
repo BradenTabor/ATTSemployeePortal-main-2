@@ -117,8 +117,8 @@ const statusFilters = [
 
 // Purple-themed status badges
 const statusBadge: Record<string, string> = {
-  draft: "bg-[#2d1b4e]/80 text-[#e9d5ff] border border-[#c084fc]/40",
-  completed: "bg-[#0f2218]/80 text-[#9cf6d2] border border-[#6fe9b7]/35",
+  draft: "bg-[#12482A]/80 text-[#C8FFD4] border border-[#5EE898]/40",
+  completed: "bg-[#121A15]/80 text-[#8DF5A8] border border-[#5EE898]/35",
 };
 
 export default function GeneralForemanSafetyCompliance() {
@@ -353,8 +353,8 @@ export default function GeneralForemanSafetyCompliance() {
       <DashboardLayout title="Safety Compliance" pageHeading>
         <div className="min-h-[60vh] flex items-center justify-center">
           <div className="text-center">
-            <div className="w-20 h-20 rounded-full bg-[#c084fc]/10 flex items-center justify-center mx-auto mb-4">
-              <Shield className="w-10 h-10 text-[#c084fc]" />
+            <div className="w-20 h-20 rounded-full bg-[#5EE898]/10 flex items-center justify-center mx-auto mb-4">
+              <Shield className="w-10 h-10 text-[#5EE898]" />
             </div>
             <h2 className="text-2xl font-bold text-white mb-2">Access Denied</h2>
             <p className="text-gray-400">You do not have permission to view this page.</p>
@@ -390,7 +390,7 @@ export default function GeneralForemanSafetyCompliance() {
             className={`${glass.cardPurple} px-5 py-4 sm:px-6 sm:py-5`}
           >
             <div className="flex items-center gap-2 mb-3">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-500/20 border border-purple-400/25 text-[10px] font-semibold uppercase tracking-wider text-purple-200">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-500/20 border border-purple-400/25 text-[10px] uppercase text-purple-200 font-mono font-medium tracking-[0.14em]">
                 <Shield className="w-3.5 h-3.5" aria-hidden />
                 General Foreman &middot; Safety
               </span>
@@ -402,7 +402,7 @@ export default function GeneralForemanSafetyCompliance() {
             <div className="flex items-center gap-3">
               <div className="w-1 h-10 sm:h-12 rounded-full bg-gradient-to-b from-purple-400 via-violet-500 to-purple-600 flex-shrink-0" aria-hidden />
               <div>
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+                <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">
                   Safety Compliance Review
                 </h1>
                 <p className="text-xs sm:text-sm text-white/50 mt-0.5 max-w-xl">
@@ -432,10 +432,10 @@ export default function GeneralForemanSafetyCompliance() {
                   type="button"
                   onClick={() => setStatusFilter(filter.value as "all" | "draft" | "completed")}
                   whileTap={{ scale: 0.98 }}
-                  className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-semibold transition-all duration-200 ${
+                  className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-leaf-sm text-sm font-semibold transition-all duration-200 ${
                     isActive
-                      ? "bg-gradient-to-r from-[#c084fc] via-[#a855f7] to-[#7c3aed] text-white shadow-[0_8px_25px_rgba(192,132,252,0.35)]"
-                      : "bg-[#0a0513]/70 border border-[#c084fc]/20 text-[#e9d5ff]/80 hover:border-[#c084fc]/40 hover:text-white"
+                      ? "bg-gradient-to-r from-[#5EE898] via-[#2FA45A] to-[#1F7A44] text-white shadow-[0_8px_25px_rgba(127,224,176,0.35)]"
+                      : "bg-[#05170E]/70 border border-[#5EE898]/20 text-[#C8FFD4]/80 hover:border-[#5EE898]/40 hover:text-white"
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -443,7 +443,7 @@ export default function GeneralForemanSafetyCompliance() {
                   <span className={`px-2 py-0.5 rounded-full text-xs ${
                     isActive 
                       ? "bg-white/20 text-white" 
-                      : "bg-white/10 text-[#e9d5ff]"
+                      : "bg-white/10 text-[#C8FFD4]"
                   }`}>
                     {count}
                   </span>
@@ -461,7 +461,7 @@ export default function GeneralForemanSafetyCompliance() {
           >
             {/* Filter Header */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-[#c084fc]">
+              <div className="flex items-center gap-2 text-xs uppercase text-[#5EE898] font-mono font-medium tracking-[0.14em]">
                 <Search className="w-4 h-4" />
                 Search & Filter
               </div>
@@ -473,7 +473,7 @@ export default function GeneralForemanSafetyCompliance() {
                     exit={{ opacity: 0, x: 10 }}
                     type="button"
                     onClick={clearAllFilters}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold text-[#e9d5ff]/80 hover:text-white bg-white/5 border border-white/10 hover:border-[#c084fc]/40 transition-all"
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold text-[#C8FFD4]/80 hover:text-white bg-white/5 border border-white/10 hover:border-[#5EE898]/40 transition-all"
                   >
                     <X className="w-3 h-3" />
                     Clear all filters
@@ -485,53 +485,53 @@ export default function GeneralForemanSafetyCompliance() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               {/* Search Input */}
               <div className="relative">
-                <Search className="w-4 h-4 text-[#a78bfa] absolute left-3 top-1/2 -translate-y-1/2" />
+                <Search className="w-4 h-4 text-[#3DDC84] absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="Location, circuit, notes..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full rounded-2xl bg-[#0a0513]/70 border border-[#c084fc]/25 pl-10 pr-4 py-2.5 text-sm text-[#f3e8ff] placeholder:text-[#a78bfa]/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c084fc]/60"
+                  className="w-full rounded-leaf-sm bg-[#05170E]/70 border border-[#5EE898]/25 pl-10 pr-4 py-2.5 text-sm text-[#D9FFE3] placeholder:text-[#3DDC84]/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#5EE898]/60"
                 />
               </div>
 
               {/* Date Filter */}
               <div className="relative">
-                <Calendar className="w-4 h-4 text-[#a78bfa] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                <Calendar className="w-4 h-4 text-[#3DDC84] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
                 <input
                   type="date"
                   value={dateFilter}
                   onChange={(e) => setDateFilter(e.target.value)}
-                  className="w-full rounded-2xl bg-[#0a0513]/70 border border-[#c084fc]/25 pl-10 pr-4 py-2.5 text-sm text-[#f3e8ff] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c084fc]/60 [color-scheme:dark]"
+                  className="w-full rounded-leaf-sm bg-[#05170E]/70 border border-[#5EE898]/25 pl-10 pr-4 py-2.5 text-sm text-[#D9FFE3] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#5EE898]/60 [color-scheme:dark]"
                 />
               </div>
 
               {/* Signer Filter */}
               <div className="relative">
-                <User className="w-4 h-4 text-[#a78bfa] absolute left-3 top-1/2 -translate-y-1/2" />
+                <User className="w-4 h-4 text-[#3DDC84] absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="Filter by signer name…"
                   value={signatureFilter}
                   onChange={(e) => setSignatureFilter(e.target.value)}
-                  className="w-full rounded-2xl bg-[#0a0513]/70 border border-[#c084fc]/25 pl-10 pr-4 py-2.5 text-sm text-[#f3e8ff] placeholder:text-[#a78bfa]/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c084fc]/60"
+                  className="w-full rounded-leaf-sm bg-[#05170E]/70 border border-[#5EE898]/25 pl-10 pr-4 py-2.5 text-sm text-[#D9FFE3] placeholder:text-[#3DDC84]/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#5EE898]/60"
                 />
               </div>
 
               {/* Results Summary */}
-              <div className="flex items-center justify-center lg:justify-end gap-3 text-sm text-[#e9d5ff]">
+              <div className="flex items-center justify-center lg:justify-end gap-3 text-sm text-[#C8FFD4]">
                 <div className="flex items-center gap-2">
-                  <SortDesc className="w-4 h-4 text-[#c084fc]" />
-                  <span className="text-xs text-[#a78bfa]">Most recent first</span>
+                  <SortDesc className="w-4 h-4 text-[#5EE898]" />
+                  <span className="text-xs text-[#3DDC84]">Most recent first</span>
                 </div>
-                <span className="text-[#c084fc] font-semibold">
+                <span className="text-[#5EE898] font-semibold">
                   {page}/{totalPages}
                 </span>
               </div>
             </div>
 
             {error && (
-              <div className="rounded-2xl border border-[#ff8a65]/40 bg-[#2b120b]/70 text-[#ffb199] px-4 py-3 text-sm">
+              <div className="rounded-leaf-sm border border-[#ff8a65]/40 bg-[#121A15]/70 text-[#ffb199] px-4 py-3 text-sm">
                 {error}
               </div>
             )}
@@ -549,7 +549,7 @@ export default function GeneralForemanSafetyCompliance() {
             {loading ? (
               <TableSkeleton rows={6} columns={6} variant="purple" />
             ) : records.length === 0 ? (
-              <div className="p-12 text-center text-[#e9d5ff]/80 text-sm">
+              <div className="p-12 text-center text-[#C8FFD4]/80 text-sm">
                 No JSAs match your filters yet.
               </div>
             ) : (
@@ -557,13 +557,13 @@ export default function GeneralForemanSafetyCompliance() {
                 <div className="hidden lg:block overflow-x-auto">
                   <table className="w-full text-left">
                     <thead>
-                      <tr className="text-[0.65rem] uppercase tracking-[0.3em] text-[#c084fc]/80 border-b border-[#c084fc]/20">
+                      <tr className="text-[0.65rem] uppercase text-[#5EE898]/80 border-b border-[#5EE898]/20 font-mono font-medium tracking-[0.14em]">
                         <th className="px-3 py-3 w-10">
                           <input
                             type="checkbox"
                             checked={allOnPageSelected}
                             onChange={toggleSelectAllOnPage}
-                            className="w-3.5 h-3.5 accent-[#c084fc] rounded cursor-pointer"
+                            className="w-3.5 h-3.5 accent-[#5EE898] rounded cursor-pointer"
                             aria-label="Select all on page"
                           />
                         </th>
@@ -583,8 +583,8 @@ export default function GeneralForemanSafetyCompliance() {
                           <tr
                             key={record.id}
                             onClick={() => setSelectedId(record.id)}
-                            className={`border-b border-[#c084fc]/15 text-sm text-[#f3e8ff]/85 transition cursor-pointer ${
-                              isSelected ? "bg-[#c084fc]/10 border-l-2 border-l-[#c084fc]" : "hover:bg-white/5"
+                            className={`border-b border-[#5EE898]/15 text-sm text-[#D9FFE3]/85 transition cursor-pointer ${
+                              isSelected ? "bg-[#5EE898]/10 border-l-2 border-l-[#5EE898]" : "hover:bg-white/5"
                             }`}
                           >
                             <td className="px-3 py-4" onClick={e => e.stopPropagation()}>
@@ -592,19 +592,19 @@ export default function GeneralForemanSafetyCompliance() {
                                 type="checkbox"
                                 checked={selectedIds.has(record.id)}
                                 onChange={() => toggleSelectRecord(record.id)}
-                                className="w-3.5 h-3.5 accent-[#c084fc] rounded cursor-pointer"
+                                className="w-3.5 h-3.5 accent-[#5EE898] rounded cursor-pointer"
                                 aria-label={`Select JSA for ${record.work_location || 'unknown location'}`}
                               />
                             </td>
                             <td className="px-6 py-4">{formatDate(record.job_date)}</td>
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-2">
-                                <MapPin className="w-4 h-4 text-[#c084fc]" />
+                                <MapPin className="w-4 h-4 text-[#5EE898]" />
                                 <span className="font-semibold text-white">
                                   {record.work_location || "N/A"}
                                 </span>
                               </div>
-                              <p className="text-xs text-[#a78bfa]">{record.circuit_number || "—"}</p>
+                              <p className="text-xs text-[#3DDC84]">{record.circuit_number || "—"}</p>
                             </td>
                             <td className="px-6 py-4">
                               {(() => {
@@ -614,10 +614,10 @@ export default function GeneralForemanSafetyCompliance() {
                                 return (
                                   <>
                                     <div className="flex items-center gap-2">
-                                      <User className="w-4 h-4 text-[#c084fc]" />
+                                      <User className="w-4 h-4 text-[#5EE898]" />
                                       <span>{ownerName}</span>
                                     </div>
-                                    <p className="text-xs text-[#a78bfa] mt-1">
+                                    <p className="text-xs text-[#3DDC84] mt-1">
                                       {ownerEmail} · {record.user_role || "employee"}
                                     </p>
                                   </>
@@ -626,7 +626,7 @@ export default function GeneralForemanSafetyCompliance() {
                             </td>
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-2 text-sm text-white">
-                                <User className="w-3.5 h-3.5 text-[#c084fc]" />
+                                <User className="w-3.5 h-3.5 text-[#5EE898]" />
                                 <span className="font-medium">
                                   {record.employee_signature?.trim() || "—"}
                                 </span>
@@ -648,7 +648,7 @@ export default function GeneralForemanSafetyCompliance() {
                                 )}
                               </div>
                             </td>
-                            <td className="px-6 py-4 text-xs text-[#a78bfa]">
+                            <td className="px-6 py-4 text-xs text-[#3DDC84]">
                               {formatDateTime(record.updated_at || record.created_at)}
                             </td>
                             <td className="px-6 py-4 text-right">
@@ -659,7 +659,7 @@ export default function GeneralForemanSafetyCompliance() {
                                   setSelectedId(record.id);
                                 }}
                                 className={`text-sm font-semibold ${
-                                  isSelected ? "text-[#f3e8ff]" : "text-[#c084fc] hover:text-[#f3e8ff]"
+                                  isSelected ? "text-[#D9FFE3]" : "text-[#5EE898] hover:text-[#D9FFE3]"
                                 }`}
                               >
                                 {isSelected ? (
@@ -768,14 +768,14 @@ export default function GeneralForemanSafetyCompliance() {
               className="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 pb-safe"
             >
               <div className={`${glass.elevated} flex items-center gap-3 px-4 py-3`}>
-                <span className="text-xs text-[#e9d5ff] font-semibold whitespace-nowrap">
+                <span className="text-xs text-[#C8FFD4] font-semibold whitespace-nowrap">
                   {selectedIds.size} selected
                 </span>
                 <motion.button
                   type="button"
                   onClick={openBatchExport}
                   whileTap={{ scale: 0.97 }}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#c084fc] via-[#a855f7] to-[#7c3aed] text-white text-xs font-semibold shadow-[0_4px_12px_rgba(192,132,252,0.3)] transition min-h-[36px]"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#5EE898] via-[#2FA45A] to-[#1F7A44] text-white text-xs font-semibold shadow-[0_4px_12px_rgba(127,224,176,0.3)] transition min-h-[36px]"
                 >
                   <Download className="w-3.5 h-3.5" />
                   Export
@@ -783,7 +783,7 @@ export default function GeneralForemanSafetyCompliance() {
                 <button
                   type="button"
                   onClick={clearSelection}
-                  className="text-xs text-[#a78bfa]/70 hover:text-[#e9d5ff] transition font-medium"
+                  className="text-xs text-[#3DDC84]/70 hover:text-[#C8FFD4] transition font-medium"
                 >
                   Clear
                 </button>
@@ -806,7 +806,7 @@ export default function GeneralForemanSafetyCompliance() {
 
 function DetailRow({ label, value }: { label: string; value?: string | null }) {
   return (
-    <div className="flex items-center justify-between text-xs text-[#a78bfa]">
+    <div className="flex items-center justify-between text-xs text-[#3DDC84]">
       <span className="uppercase tracking-wide">{label}</span>
       <span className="text-white font-semibold">{value || "—"}</span>
     </div>
@@ -869,25 +869,25 @@ function SelectedJsaDetail({
   const sharedUsers = (Array.isArray(record.shared_with_users) ? record.shared_with_users : []) as SharedUser[];
 
   return (
-    <div className={`space-y-5 text-sm text-[#f3e8ff]/90 ${isFullscreen ? "p-6 max-w-4xl mx-auto" : "p-6"}`}>
+    <div className={`space-y-5 text-sm text-[#D9FFE3]/90 ${isFullscreen ? "p-6 max-w-4xl mx-auto" : "p-6"}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="p-3 bg-[#2d1b4e] rounded-2xl border border-[#c084fc]/30">
-            <ClipboardList className="w-5 h-5 text-[#c084fc]" />
+          <div className="p-3 bg-[#12482A] rounded-leaf-sm border border-[#5EE898]/30">
+            <ClipboardList className="w-5 h-5 text-[#5EE898]" />
           </div>
           <div>
-            <p className="text-xs uppercase tracking-wide text-[#a78bfa]">JSA Details</p>
+            <p className="text-xs uppercase text-[#3DDC84] font-mono font-medium tracking-[0.14em]">JSA Details</p>
             <p className="text-lg font-semibold text-white">
               {record.work_location || "Untitled location"}
             </p>
-            <p className="text-xs text-[#a78bfa]">{record.circuit_number || "No circuit noted"}</p>
+            <p className="text-xs text-[#3DDC84]">{record.circuit_number || "No circuit noted"}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={onExport}
-            className="p-2 rounded-lg bg-[#0a0513]/70 border border-[#c084fc]/25 text-[#c084fc] hover:bg-[#c084fc]/10 transition-all"
+            className="p-2 rounded-lg bg-[#05170E]/70 border border-[#5EE898]/25 text-[#5EE898] hover:bg-[#5EE898]/10 transition-all"
             title="Export JSA"
           >
             <Download className="w-4 h-4" />
@@ -895,7 +895,7 @@ function SelectedJsaDetail({
           <button
             type="button"
             onClick={onToggleFullscreen}
-            className="p-2 rounded-lg bg-[#0a0513]/70 border border-[#c084fc]/25 text-[#c084fc] hover:bg-[#c084fc]/10 transition-all"
+            className="p-2 rounded-lg bg-[#05170E]/70 border border-[#5EE898]/25 text-[#5EE898] hover:bg-[#5EE898]/10 transition-all"
             title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
           >
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -903,7 +903,7 @@ function SelectedJsaDetail({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-lg bg-[#0a0513]/70 border border-[#c084fc]/25 text-[#a78bfa] hover:text-white hover:bg-[#c084fc]/10 transition-all"
+            className="p-2 rounded-lg bg-[#05170E]/70 border border-[#5EE898]/25 text-[#3DDC84] hover:text-white hover:bg-[#5EE898]/10 transition-all"
             aria-label="Close compliance overview"
           >
             <X className="w-4 h-4" />
@@ -913,14 +913,14 @@ function SelectedJsaDetail({
 
       <div className={`space-y-4 ${isFullscreen ? "grid md:grid-cols-2 gap-4 space-y-0" : ""}`}>
         <DetailCard title="Owner & Job" icon={<User className="w-4 h-4" />}>
-          <div className="grid grid-cols-1 gap-1 text-xs text-[#e9d5ff]">
-            <div className="flex items-center justify-between text-xs text-[#c7b696] py-1">
+          <div className="grid grid-cols-1 gap-1 text-xs text-[#C8FFD4]">
+            <div className="flex items-center justify-between text-xs text-[#B8C4B6] py-1">
               <span className="uppercase tracking-wide">Owner</span>
               <div className="flex items-center gap-1.5 text-white font-semibold text-right max-w-[60%]">
                 <span className="truncate">{ownerName}</span>
                 {ownerName === "Unknown User" && record.user_id && (
                   <Info
-                    className="w-3 h-3 text-[#c7b696] flex-shrink-0 cursor-help"
+                    className="w-3 h-3 text-[#B8C4B6] flex-shrink-0 cursor-help"
                     aria-label={`User ID: ${record.user_id}`}
                   />
                 )}
@@ -939,24 +939,24 @@ function SelectedJsaDetail({
 
         <DetailCard title="Observers" icon={<Users className="w-4 h-4" />}>
           {observers.length === 0 ? (
-            <p className="text-xs text-[#a78bfa]">No observers for this JSA.</p>
+            <p className="text-xs text-[#3DDC84]">No observers for this JSA.</p>
           ) : (
             <div className="space-y-3 max-h-48 overflow-y-auto">
               {observers.map((obs, idx) => (
                 <div
                   key={idx}
-                  className="rounded-xl border border-[#c084fc]/15 bg-[#1a0f2e]/50 p-3 space-y-1.5 text-xs"
+                  className="rounded-xl border border-[#5EE898]/15 bg-[#0A2A19]/50 p-3 space-y-1.5 text-xs"
                 >
                   <div className="flex justify-between items-center gap-2">
                     <span className="font-semibold text-white truncate">{obs.name}</span>
-                    <span className="text-[10px] text-[#a78bfa] shrink-0">
+                    <span className="text-[10px] text-[#3DDC84] shrink-0">
                       {obs.timestamp ? new Date(obs.timestamp).toLocaleDateString() : "—"}
                     </span>
                   </div>
-                  {obs.role && <p className="text-[#a78bfa]">{obs.role}</p>}
+                  {obs.role && <p className="text-[#3DDC84]">{obs.role}</p>}
                   {obs.signature_data && (
                     <p
-                      className="text-base text-[#e9d5ff] break-words pt-1"
+                      className="text-base text-[#C8FFD4] break-words pt-1"
                       style={{ fontFamily: "Caveat, cursive" }}
                     >
                       {obs.signature_data}
@@ -970,17 +970,17 @@ function SelectedJsaDetail({
 
         <DetailCard title="Shared with" icon={<UserPlus className="w-4 h-4" />}>
           {sharedUsers.length === 0 ? (
-            <p className="text-xs text-[#a78bfa]">Not shared with any users.</p>
+            <p className="text-xs text-[#3DDC84]">Not shared with any users.</p>
           ) : (
             <div className="space-y-2">
               {sharedUsers.map((u) => (
                 <div
                   key={u.id}
-                  className="rounded-xl border border-[#c084fc]/15 bg-[#1a0f2e]/50 p-2.5 space-y-1 text-xs text-[#e9d5ff]"
+                  className="rounded-xl border border-[#5EE898]/15 bg-[#0A2A19]/50 p-2.5 space-y-1 text-xs text-[#C8FFD4]"
                 >
                   <div className="font-semibold text-white truncate">{u.full_name || "Unknown"}</div>
-                  <div className="text-[#a78bfa] truncate">{u.email || "—"}</div>
-                  {u.role ? <div className="text-[#a78bfa]">{u.role}</div> : null}
+                  <div className="text-[#3DDC84] truncate">{u.email || "—"}</div>
+                  {u.role ? <div className="text-[#3DDC84]">{u.role}</div> : null}
                 </div>
               ))}
             </div>
@@ -988,7 +988,7 @@ function SelectedJsaDetail({
         </DetailCard>
 
         <DetailCard title="Emergency & Supervisors" icon={<Shield className="w-4 h-4" />}>
-          <div className="grid grid-cols-1 gap-1 text-xs text-[#e9d5ff]">
+          <div className="grid grid-cols-1 gap-1 text-xs text-[#C8FFD4]">
             <DetailRow label="Nearest Hospital" value={record.nearest_hospital || "—"} />
             <DetailRow label="Nearest Clinic" value={record.nearest_clinic || "—"} />
             <DetailRow label="OC Contact" value={record.oc_contact || "—"} />
@@ -1002,7 +1002,7 @@ function SelectedJsaDetail({
           <ChipSection title="Jobs Performed" chips={jobs.map((job) => job.label ?? job.key)} emptyText="No jobs selected." />
           <ChipSection title="Conditions" chips={weatherConditions} />
           <ChipSection title="Surface" chips={weatherModifiers} />
-          <p className="text-xs text-[#e9d5ff] pt-2">
+          <p className="text-xs text-[#C8FFD4] pt-2">
             <span className="font-semibold text-white">Weather hazards: </span>
             {record.weather_hazards?.trim() || "None provided."}
           </p>
@@ -1016,28 +1016,28 @@ function SelectedJsaDetail({
 
         <DetailCard title="Span Walk-through" icon={<Wind className="w-4 h-4" />} className={isFullscreen ? "md:col-span-2" : ""}>
           {spanEntries.length === 0 ? (
-            <p className="text-xs text-[#a78bfa]">No spans documented.</p>
+            <p className="text-xs text-[#3DDC84]">No spans documented.</p>
           ) : (
             <div className={`grid gap-3 ${isFullscreen ? "md:grid-cols-2 lg:grid-cols-3" : ""}`}>
               {spanEntries.map((span) => (
                 <div
                   key={span.spanNumber}
-                  className="rounded-2xl border border-[#c084fc]/20 bg-[#1a0f2e]/70 p-3 text-xs text-[#f3e8ff]/85 space-y-1"
+                  className="rounded-leaf-sm border border-[#5EE898]/20 bg-[#0A2A19]/70 p-3 text-xs text-[#D9FFE3]/85 space-y-1"
                 >
-                  <div className="flex items-center justify-between text-[#e9d5ff]">
+                  <div className="flex items-center justify-between text-[#C8FFD4]">
                     <span className="font-semibold text-white">Span #{span.spanNumber}</span>
-                    <span className="text-[#a78bfa]">{span.location || "No location"}</span>
+                    <span className="text-[#3DDC84]">{span.location || "No location"}</span>
                   </div>
                   <p>
-                    <span className="text-[#a78bfa] uppercase tracking-wide">Hazards:</span>{" "}
+                    <span className="text-[#3DDC84] uppercase tracking-wide">Hazards:</span>{" "}
                     {span.hazards?.trim() || "None"}
                   </p>
                   <p>
-                    <span className="text-[#a78bfa] uppercase tracking-wide">Mitigation:</span>{" "}
+                    <span className="text-[#3DDC84] uppercase tracking-wide">Mitigation:</span>{" "}
                     {span.mitigation?.trim() || "None"}
                   </p>
                   {span.initials && (
-                    <p className="text-[#a78bfa]">
+                    <p className="text-[#3DDC84]">
                       Initials: <span className="text-white">{span.initials}</span>
                     </p>
                   )}
@@ -1048,11 +1048,11 @@ function SelectedJsaDetail({
         </DetailCard>
 
         <DetailCard title="Notes & Signature" icon={<AlignLeft className="w-4 h-4" />} className={isFullscreen ? "md:col-span-2" : ""}>
-          <p className="text-xs text-[#e9d5ff]">
+          <p className="text-xs text-[#C8FFD4]">
             <span className="font-semibold text-white">Signature:</span>{" "}
             {record.employee_signature || "Not captured"}
           </p>
-          <p className="text-xs text-[#a78bfa] mt-2">
+          <p className="text-xs text-[#3DDC84] mt-2">
             <span className="font-semibold text-white">Notes:</span>{" "}
             {record.notes?.trim() || "No notes provided for this JSA."}
           </p>
@@ -1077,9 +1077,9 @@ function MobileJsaCard({
 }) {
   return (
     <div
-      className={`rounded-2xl border ${
-        isSelected ? "border-[#c084fc]" : "border-[#c084fc]/20"
-      } bg-[#1a0f2e]/70 p-4 space-y-3 shadow-lg shadow-black/30`}
+      className={`rounded-leaf-sm border ${
+        isSelected ? "border-[#5EE898]" : "border-[#5EE898]/20"
+      } bg-[#0A2A19]/70 p-4 space-y-3 shadow-lg shadow-black/30`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
@@ -1087,17 +1087,17 @@ function MobileJsaCard({
             type="checkbox"
             checked={isChecked}
             onChange={onCheckToggle}
-            className="w-4 h-4 accent-[#c084fc] rounded cursor-pointer mt-1 flex-shrink-0"
+            className="w-4 h-4 accent-[#5EE898] rounded cursor-pointer mt-1 flex-shrink-0"
             aria-label={`Select JSA for ${record.work_location || 'unknown location'}`}
           />
           <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-[#c084fc]/80 mb-1">
+          <p className="text-xs uppercase text-[#5EE898]/80 mb-1 font-mono font-medium tracking-[0.14em]">
             {formatDate(record.job_date)}
           </p>
           <p className="text-base font-semibold text-white">
             {record.work_location || "Untitled location"}
           </p>
-          <p className="text-xs text-[#a78bfa]">
+          <p className="text-xs text-[#3DDC84]">
             {record.circuit_number || "Circuit pending"}
           </p>
         </div>
@@ -1118,21 +1118,21 @@ function MobileJsaCard({
         </div>
       </div>
 
-      <div className="text-xs text-[#a78bfa] space-y-1.5">
+      <div className="text-xs text-[#3DDC84] space-y-1.5">
         <div className="flex items-center gap-2">
-          <User className="w-3.5 h-3.5 text-[#c084fc]" />
+          <User className="w-3.5 h-3.5 text-[#5EE898]" />
           <span className="text-white/90">
             {record.user_name || record.employee_signature?.trim() || "Unknown User"}
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <User className="w-3.5 h-3.5 text-[#9cf6d2]" />
+          <User className="w-3.5 h-3.5 text-[#8DF5A8]" />
           <span className="text-white/80">
             Signer: {record.employee_signature?.trim() || "—"}
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <Clock className="w-3.5 h-3.5 text-[#9cf6d2]" />
+          <Clock className="w-3.5 h-3.5 text-[#8DF5A8]" />
           <span>{formatDateTime(record.updated_at || record.created_at)}</span>
         </div>
       </div>
@@ -1141,7 +1141,7 @@ function MobileJsaCard({
         <button
           type="button"
           onClick={onSelect}
-          className="inline-flex items-center gap-2 text-sm font-semibold text-[#c084fc] hover:text-[#f3e8ff]"
+          className="inline-flex items-center gap-2 text-sm font-semibold text-[#5EE898] hover:text-[#D9FFE3]"
         >
           View detail
           <ChevronRight className="w-4 h-4" />
@@ -1163,8 +1163,8 @@ function DetailCard({
   className?: string;
 }) {
   return (
-    <div className={`rounded-2xl border border-[#c084fc]/20 bg-[#1a0f2e]/70 p-4 space-y-3 ${className}`}>
-      <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-[#c084fc]">
+    <div className={`rounded-leaf-sm border border-[#5EE898]/20 bg-[#0A2A19]/70 p-4 space-y-3 ${className}`}>
+      <div className="flex items-center gap-2 text-xs uppercase text-[#5EE898] font-mono font-medium tracking-[0.14em]">
         {icon}
         {title}
       </div>
@@ -1184,15 +1184,15 @@ function ChipSection({
 }) {
   return (
     <div className="space-y-2">
-      <p className="text-[0.65rem] uppercase tracking-wide text-[#c084fc]">{title}</p>
+      <p className="text-[0.65rem] uppercase text-[#5EE898] font-mono font-medium tracking-[0.14em]">{title}</p>
       {chips.length === 0 ? (
-        <p className="text-xs text-[#a78bfa]">{emptyText}</p>
+        <p className="text-xs text-[#3DDC84]">{emptyText}</p>
       ) : (
         <div className="flex flex-wrap gap-1.5">
           {chips.map((chip) => (
             <span
               key={chip}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.65rem] text-[#f3e8ff] bg-[#2d1b4e]/80 border border-[#c084fc]/30"
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.65rem] text-[#D9FFE3] bg-[#12482A]/80 border border-[#5EE898]/30"
             >
               {chip}
             </span>

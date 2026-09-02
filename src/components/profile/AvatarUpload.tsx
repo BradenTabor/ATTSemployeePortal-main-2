@@ -532,7 +532,8 @@ export default function AvatarUpload({
         accept={ACCEPTED_TYPES.join(',')}
         onChange={handleFileSelect}
         className="sr-only"
-        aria-label="Upload profile photo"
+        tabIndex={-1}
+        aria-hidden="true"
       />
       
       {/* Avatar Display & Upload Area */}
@@ -547,7 +548,7 @@ export default function AvatarUpload({
           <motion.div
             className="absolute -inset-2 rounded-full pointer-events-none"
             style={{
-              background: 'conic-gradient(from 0deg, transparent 0%, rgba(16, 185, 129, 0.4) 25%, transparent 50%, rgba(52, 211, 153, 0.3) 75%, transparent 100%)',
+              background: 'conic-gradient(from 0deg, transparent 0%, rgba(47,164,90, 0.4) 25%, transparent 50%, rgba(61,220,132, 0.3) 75%, transparent 100%)',
             }}
             animate={{ rotate: 360 }}
             transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
@@ -557,7 +558,7 @@ export default function AvatarUpload({
           <motion.div
             className="absolute inset-0 rounded-full"
             style={{
-              background: 'radial-gradient(circle, rgba(16, 185, 129, 0.4) 0%, transparent 70%)',
+              background: 'radial-gradient(circle, rgba(47,164,90, 0.4) 0%, transparent 70%)',
               filter: 'blur(15px)',
             }}
             animate={{
@@ -571,8 +572,8 @@ export default function AvatarUpload({
           <div 
             className="relative w-28 h-28 rounded-full overflow-hidden border-2 border-emerald-400/50"
             style={{
-              background: hasAvatar ? 'transparent' : 'linear-gradient(145deg, rgba(4, 40, 28, 0.95) 0%, rgba(2, 25, 18, 0.98) 100%)',
-              boxShadow: '0 0 40px rgba(16, 185, 129, 0.3), inset 0 0 20px rgba(16, 185, 129, 0.1)',
+              background: hasAvatar ? 'transparent' : 'linear-gradient(145deg, rgba(18,26,21, 0.95) 0%, rgba(11,16,13, 0.98) 100%)',
+              boxShadow: '0 0 40px rgba(47,164,90, 0.3), inset 0 0 20px rgba(47,164,90, 0.1)',
             }}
           >
             {/* Image or Initials */}
@@ -590,7 +591,7 @@ export default function AvatarUpload({
                 <div 
                   className="absolute inset-0 opacity-50 pointer-events-none"
                   style={{
-                    background: 'linear-gradient(145deg, rgba(16, 185, 129, 0.2) 0%, transparent 50%, rgba(5, 150, 105, 0.1) 100%)',
+                    background: 'linear-gradient(145deg, rgba(47,164,90, 0.2) 0%, transparent 50%, rgba(31,122,68, 0.1) 100%)',
                   }}
                 />
                 
@@ -630,7 +631,7 @@ export default function AvatarUpload({
                           cx="24"
                           cy="24"
                           r="20"
-                          stroke="rgba(16, 185, 129, 0.2)"
+                          stroke="rgba(47,164,90, 0.2)"
                           strokeWidth="4"
                           fill="none"
                         />
@@ -638,7 +639,7 @@ export default function AvatarUpload({
                           cx="24"
                           cy="24"
                           r="20"
-                          stroke="rgb(16, 185, 129)"
+                          stroke="rgb(47, 164, 90)"
                           strokeWidth="4"
                           fill="none"
                           strokeLinecap="round"
@@ -703,7 +704,7 @@ export default function AvatarUpload({
               animate={{ opacity: 1, y: 0 }}
               onClick={handleRemoveAvatar}
               disabled={state !== 'idle'}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-red-300/70 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="tap-44 relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-red-300/70 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Trash2 className="w-3.5 h-3.5" />
               Remove
@@ -713,7 +714,7 @@ export default function AvatarUpload({
           <button
             onClick={handleAvatarClick}
             disabled={state !== 'idle' || !isOnline}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-emerald-300/70 hover:text-emerald-300 hover:bg-emerald-500/10 border border-emerald-500/20 hover:border-emerald-500/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="tap-44 relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-emerald-300/70 hover:text-emerald-300 hover:bg-emerald-500/10 border border-emerald-500/20 hover:border-emerald-500/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Upload className="w-3.5 h-3.5" />
             {hasAvatar ? 'Change Photo' : 'Upload Photo'}

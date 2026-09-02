@@ -32,7 +32,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getDeviceCapabilities } from '../../lib/mobilePerf';
-import { TextEffect } from '../ui/TextEffect';
+import { canopy } from '../../lib/glass';
+import { Eyebrow, type EyebrowTone } from '../canopy/Eyebrow';
+import { EASE_CANOPY, riseThroughBlur, reducedMotionFade } from '../../motion/presets';
 import { CertStatusChip } from './CertStatusChip';
 
 // ============================================================================
@@ -66,12 +68,12 @@ interface WelcomeHeaderProps {
 
 const themeConfig = {
   emerald: {
-    bgGradient: 'linear-gradient(145deg, rgba(16, 185, 129, 0.1) 0%, rgba(4, 30, 21, 0.65) 40%, rgba(0, 0, 0, 0.75) 100%)',
-    accentGlow: 'radial-gradient(ellipse at 25% 0%, rgba(16, 185, 129, 0.2) 0%, transparent 45%)',
+    bgGradient: 'linear-gradient(145deg, rgba(47,164,90, 0.1) 0%, rgba(11,16,13, 0.65) 40%, rgba(0,0,0, 0.75) 100%)',
+    accentGlow: 'radial-gradient(ellipse at 25% 0%, rgba(47,164,90, 0.2) 0%, transparent 45%)',
     lineGradient: 'bg-gradient-to-b from-emerald-400 via-emerald-500 to-emerald-600',
-    lineShadow: '0 0 12px rgba(16, 185, 129, 0.4), 0 0 24px rgba(16, 185, 129, 0.2)',
+    lineShadow: '0 0 12px rgba(47,164,90, 0.4), 0 0 24px rgba(47,164,90, 0.2)',
     textGradient: 'bg-gradient-to-r from-white via-emerald-100 to-white/90',
-    textShadow: 'drop-shadow-[0_0_30px_rgba(125,225,180,0.35)]',
+    textShadow: 'drop-shadow-[0_0_30px_rgba(94,232,152,0.35)]',
     iconColor: 'text-emerald-400/50',
     subtitleColor: 'text-emerald-300/40',
     badgeBg: 'bg-emerald-500/20',
@@ -81,9 +83,9 @@ const themeConfig = {
     avatarGradient: 'from-emerald-400 via-emerald-500 to-emerald-700',
     avatarShadow: 'shadow-emerald-500/25',
     avatarRing: 'ring-emerald-400/30',
-    onlineIndicatorBorder: 'border-[#041e15]',
+    onlineIndicatorBorder: 'border-[#0B100D]',
     dropdownBorder: 'border-emerald-500/30',
-    dropdownBg: 'linear-gradient(145deg, rgba(4, 30, 21, 0.98) 0%, rgba(2, 15, 10, 0.99) 100%)',
+    dropdownBg: 'linear-gradient(145deg, rgba(11,16,13, 0.98) 0%, rgba(4,6,5, 0.99) 100%)',
     dropdownShine: 'via-emerald-400/50',
     menuItemHover: 'hover:bg-emerald-500/10',
     menuItemBg: 'bg-emerald-500/10',
@@ -91,12 +93,12 @@ const themeConfig = {
     menuItemIcon: 'text-emerald-400',
   },
   blue: {
-    bgGradient: 'linear-gradient(145deg, rgba(59, 130, 246, 0.1) 0%, rgba(10, 22, 40, 0.65) 40%, rgba(2, 4, 8, 0.75) 100%)',
-    accentGlow: 'radial-gradient(ellipse at 25% 0%, rgba(59, 130, 246, 0.2) 0%, transparent 45%)',
+    bgGradient: 'linear-gradient(145deg, rgba(125,205,162, 0.1) 0%, rgba(18,26,21, 0.65) 40%, rgba(4,6,5, 0.75) 100%)',
+    accentGlow: 'radial-gradient(ellipse at 25% 0%, rgba(125,205,162, 0.2) 0%, transparent 45%)',
     lineGradient: 'bg-gradient-to-b from-blue-300 via-blue-400 to-blue-600',
-    lineShadow: '0 0 12px rgba(59, 130, 246, 0.4), 0 0 24px rgba(59, 130, 246, 0.2)',
+    lineShadow: '0 0 12px rgba(125,205,162, 0.4), 0 0 24px rgba(125,205,162, 0.2)',
     textGradient: 'bg-gradient-to-r from-white via-blue-100 to-white/90',
-    textShadow: 'drop-shadow-[0_0_30px_rgba(147,197,253,0.35)]',
+    textShadow: 'drop-shadow-[0_0_30px_rgba(180,230,201,0.35)]',
     iconColor: 'text-blue-400/50',
     subtitleColor: 'text-blue-300/40',
     badgeBg: 'bg-blue-500/20',
@@ -106,9 +108,9 @@ const themeConfig = {
     avatarGradient: 'from-blue-400 via-blue-500 to-blue-700',
     avatarShadow: 'shadow-blue-500/25',
     avatarRing: 'ring-blue-400/30',
-    onlineIndicatorBorder: 'border-[#0a1628]',
+    onlineIndicatorBorder: 'border-[#0A2A19]',
     dropdownBorder: 'border-blue-500/30',
-    dropdownBg: 'linear-gradient(145deg, rgba(10, 22, 40, 0.98) 0%, rgba(2, 4, 8, 0.99) 100%)',
+    dropdownBg: 'linear-gradient(145deg, rgba(18,26,21, 0.98) 0%, rgba(4,6,5, 0.99) 100%)',
     dropdownShine: 'via-blue-400/50',
     menuItemHover: 'hover:bg-blue-500/10',
     menuItemBg: 'bg-blue-500/10',
@@ -116,12 +118,12 @@ const themeConfig = {
     menuItemIcon: 'text-blue-400',
   },
   purple: {
-    bgGradient: 'linear-gradient(145deg, rgba(192, 132, 252, 0.1) 0%, rgba(45, 27, 78, 0.65) 40%, rgba(10, 5, 19, 0.75) 100%)',
-    accentGlow: 'radial-gradient(ellipse at 25% 0%, rgba(192, 132, 252, 0.2) 0%, transparent 45%)',
+    bgGradient: 'linear-gradient(145deg, rgba(127,224,176, 0.1) 0%, rgba(28,59,44, 0.65) 40%, rgba(11,16,13, 0.75) 100%)',
+    accentGlow: 'radial-gradient(ellipse at 25% 0%, rgba(127,224,176, 0.2) 0%, transparent 45%)',
     lineGradient: 'bg-gradient-to-b from-purple-300 via-purple-400 to-purple-600',
-    lineShadow: '0 0 12px rgba(192, 132, 252, 0.4), 0 0 24px rgba(192, 132, 252, 0.2)',
+    lineShadow: '0 0 12px rgba(127,224,176, 0.4), 0 0 24px rgba(127,224,176, 0.2)',
     textGradient: 'bg-gradient-to-r from-white via-purple-100 to-white/90',
-    textShadow: 'drop-shadow-[0_0_30px_rgba(192,132,252,0.35)]',
+    textShadow: 'drop-shadow-[0_0_30px_rgba(127,224,176,0.35)]',
     iconColor: 'text-purple-400/50',
     subtitleColor: 'text-purple-300/40',
     badgeBg: 'bg-purple-500/20',
@@ -131,9 +133,9 @@ const themeConfig = {
     avatarGradient: 'from-purple-400 via-purple-500 to-purple-700',
     avatarShadow: 'shadow-purple-500/25',
     avatarRing: 'ring-purple-400/30',
-    onlineIndicatorBorder: 'border-[#0a0513]',
+    onlineIndicatorBorder: 'border-[#05170E]',
     dropdownBorder: 'border-purple-500/30',
-    dropdownBg: 'linear-gradient(145deg, rgba(45, 27, 78, 0.98) 0%, rgba(10, 5, 19, 0.99) 100%)',
+    dropdownBg: 'linear-gradient(145deg, rgba(28,59,44, 0.98) 0%, rgba(11,16,13, 0.99) 100%)',
     dropdownShine: 'via-purple-400/50',
     menuItemHover: 'hover:bg-purple-500/10',
     menuItemBg: 'bg-purple-500/10',
@@ -141,10 +143,10 @@ const themeConfig = {
     menuItemIcon: 'text-purple-400',
   },
   redwhite: {
-    bgGradient: 'linear-gradient(145deg, rgba(220, 38, 38, 0.1) 0%, rgba(69, 10, 10, 0.65) 40%, rgba(10, 2, 2, 0.75) 100%)',
-    accentGlow: 'radial-gradient(ellipse at 25% 0%, rgba(254, 202, 202, 0.2) 0%, transparent 45%)',
+    bgGradient: 'linear-gradient(145deg, rgba(220,38,38, 0.1) 0%, rgba(30,42,35, 0.65) 40%, rgba(4,6,5, 0.75) 100%)',
+    accentGlow: 'radial-gradient(ellipse at 25% 0%, rgba(254,202,202, 0.2) 0%, transparent 45%)',
     lineGradient: 'bg-gradient-to-b from-red-200 via-red-400 to-red-600',
-    lineShadow: '0 0 12px rgba(220, 38, 38, 0.4), 0 0 24px rgba(220, 38, 38, 0.2)',
+    lineShadow: '0 0 12px rgba(220,38,38, 0.4), 0 0 24px rgba(220,38,38, 0.2)',
     textGradient: 'bg-gradient-to-r from-white via-red-100 to-white/90',
     textShadow: 'drop-shadow-[0_0_30px_rgba(220,38,38,0.35)]',
     iconColor: 'text-red-400/50',
@@ -156,15 +158,23 @@ const themeConfig = {
     avatarGradient: 'from-red-300 via-red-500 to-red-700',
     avatarShadow: 'shadow-red-500/25',
     avatarRing: 'ring-red-400/30',
-    onlineIndicatorBorder: 'border-[#0a0202]',
+    onlineIndicatorBorder: 'border-[#040605]',
     dropdownBorder: 'border-red-500/30',
-    dropdownBg: 'linear-gradient(145deg, rgba(69, 10, 10, 0.98) 0%, rgba(10, 2, 2, 0.99) 100%)',
+    dropdownBg: 'linear-gradient(145deg, rgba(30,42,35, 0.98) 0%, rgba(4,6,5, 0.99) 100%)',
     dropdownShine: 'via-red-400/50',
     menuItemHover: 'hover:bg-red-500/10',
     menuItemBg: 'bg-red-500/10',
     menuItemBorder: 'border-red-500/20',
     menuItemIcon: 'text-red-400',
   },
+};
+
+/** Canopy hero accents per role theme (bloom colour + italic accent word). */
+const HERO_ACCENT: Record<WelcomeHeaderTheme, { bloom: string; text: string; eyebrow: EyebrowTone }> = {
+  emerald: { bloom: 'rgba(61,220,132, 0.28)', text: 'text-verdant-300', eyebrow: 'verdant' },
+  blue: { bloom: 'rgba(94,232,152, 0.28)', text: 'text-glacier-300', eyebrow: 'glacier' },
+  purple: { bloom: 'rgba(94,232,152, 0.28)', text: 'text-moss-300', eyebrow: 'moss' },
+  redwhite: { bloom: 'rgba(248,113,113, 0.26)', text: 'text-red-300', eyebrow: 'red' },
 };
 
 // ============================================================================
@@ -387,7 +397,7 @@ const AvatarDropdown = memo(function AvatarDropdown({
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -10, scale: 0.95 }}
                 transition={{ duration: 0.15 }}
-                className={`fixed w-64 max-w-[calc(100vw-2rem)] rounded-2xl border ${themeStyles.dropdownBorder} shadow-2xl shadow-black/50 z-[9999] overflow-hidden`}
+                className={`fixed w-64 max-w-[calc(100vw-2rem)] rounded-leaf-sm border ${themeStyles.dropdownBorder} shadow-2xl shadow-black/50 z-[9999] overflow-hidden`}
                 style={{
                   top: menuPosition.top,
                   ...(menuPosition.left !== undefined 
@@ -521,138 +531,84 @@ function WelcomeHeaderComponent({
     return dynamicMsg;
   }, [firstName, timeOfDay, allFormsComplete, activeJobsCount, currentJobName, subtitle]);
 
+  const words = message.greeting.replace(/[!.]$/, '').split(' ');
+  const TimeIcon = timeOfDay === 'morning' ? Sunrise : timeOfDay === 'afternoon' ? Sun : timeOfDay === 'evening' ? Sunset : Moon;
+  const accent = HERO_ACCENT[theme];
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+      initial={caps.prefersReducedMotion ? false : { opacity: 0, y: 24, filter: 'blur(12px)' }}
+      animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+      transition={{ duration: 1, ease: EASE_CANOPY }}
       className="relative"
     >
-      {/* Glass backdrop container - overflow visible to allow dropdown to escape */}
-      <div
-        className="relative rounded-2xl md:rounded-3xl border border-white/[0.08] shadow-[0_2px_8px_rgba(0,0,0,0.3),0_8px_32px_rgba(6,50,30,0.15),inset_0_1px_0_rgba(255,255,255,0.08)]"
-        style={{
-          background: themeStyles.bgGradient,
-          backdropFilter: 'blur(24px) saturate(1.6)',
-          WebkitBackdropFilter: 'blur(24px) saturate(1.6)',
-        }}
-      >
-        {/* Glass effects - contained in overflow-hidden wrapper */}
-        <div className="absolute inset-0 overflow-hidden rounded-[inherit] pointer-events-none">
-          <div
-            className="absolute inset-0"
-            style={{
-              background: 'linear-gradient(125deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 25%, transparent 50%, transparent 100%)',
-            }}
-          />
-          <div
-            className="absolute inset-0"
-            style={{
-              background: 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 40%)',
-            }}
-          />
-          <div
-            className="absolute inset-0"
-            style={{
-              background: themeStyles.accentGlow,
-            }}
-          />
-          
-          {/* Top edge highlight */}
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent rounded-t-[inherit]" />
-        </div>
+      <div className={`${canopy.hero} px-5 py-6 sm:px-8 sm:py-8 lg:px-10 lg:py-10`}>
+        {/* Role-tinted bloom in the top-left corner */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -left-24 -top-32 h-72 w-72 rounded-full blur-3xl"
+          style={{ background: `radial-gradient(circle, ${accent.bloom} 0%, transparent 70%)` }}
+        />
 
-        {/* Content area */}
-        <div className="relative px-3 py-3 sm:px-5 sm:py-4 md:px-7 md:py-5">
-          <div className="flex items-center justify-between gap-3 sm:gap-4">
-            {/* Left: Greeting content */}
-            <div className="flex items-center gap-2.5 sm:gap-4 flex-1 min-w-0">
-              {/* Accent line - smaller on mobile */}
-              <motion.div
-                initial={{ scaleY: 0, opacity: 0 }}
-                animate={{ scaleY: 1, opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                className={`w-0.5 sm:w-1 h-10 sm:h-14 rounded-full ${themeStyles.lineGradient} origin-top flex-shrink-0`}
-                style={{
-                  boxShadow: themeStyles.lineShadow,
-                }}
-              />
+        <div className="relative flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <Eyebrow tone={accent.eyebrow} rule={false}>
+              <span className="inline-flex items-center gap-2">
+                <TimeIcon className="h-3 w-3" aria-hidden />
+                {timeOfDay} · {roleBadgeText ?? 'Employee Hub'}
+              </span>
+            </Eyebrow>
 
-              {/* Text content */}
-              <div className="flex-1 min-w-0">
-                {enableAnimations ? (
-                  <TextEffect
-                    as="h1"
-                    preset="blurSlide"
-                    per="char"
-                    delay={0.15}
-                    className="text-base sm:text-xl md:text-2xl lg:text-3xl font-bold tracking-tighter"
-                    segmentWrapperClassName={`${themeStyles.textGradient} bg-clip-text text-transparent ${themeStyles.textShadow}`}
-                  >
-                    {message.greeting}
-                  </TextEffect>
-                ) : (
-                  <h1 className={`text-base sm:text-xl md:text-2xl lg:text-3xl font-bold tracking-tighter ${themeStyles.textGradient} bg-clip-text text-transparent`}>
-                    {message.greeting}
-                  </h1>
-                )}
-
-                {/* Subtitle with time icon - tighter on mobile */}
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.5, delay: 0.7, ease: 'easeOut' }}
-                  className="mt-0.5 sm:mt-1 flex items-center gap-1.5 sm:gap-2"
+            <h1 className="type-display mt-4 max-w-3xl text-balance text-[clamp(2rem,5.5vw,4.25rem)] font-light text-bone-50">
+              {words.map((w, i) => (
+                <motion.span
+                  key={`${w}-${i}`}
+                  className={`inline-block ${i === words.length - 1 ? `italic ${accent.text} text-glow` : ''}`}
+                  variants={enableAnimations ? riseThroughBlur : reducedMotionFade}
+                  initial="hidden"
+                  animate="visible"
+                  transition={{ delay: enableAnimations ? 0.15 + i * 0.08 : 0 }}
                 >
-                  {/* Render time icon based on timeOfDay */}
-                  {timeOfDay === 'morning' && <Sunrise className={`w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 ${themeStyles.iconColor} flex-shrink-0`} />}
-                  {timeOfDay === 'afternoon' && <Sun className={`w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 ${themeStyles.iconColor} flex-shrink-0`} />}
-                  {timeOfDay === 'evening' && <Sunset className={`w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 ${themeStyles.iconColor} flex-shrink-0`} />}
-                  {timeOfDay === 'night' && <Moon className={`w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 ${themeStyles.iconColor} flex-shrink-0`} />}
-                  <p className={`text-[10px] sm:text-xs md:text-sm ${themeStyles.subtitleColor} font-medium tracking-wide truncate`}>
-                    {message.subtitle}
-                  </p>
-                </motion.div>
-                
-                {/* Status badges row - compact on mobile */}
-                <div className="flex items-center gap-1.5 sm:gap-2 mt-1.5 sm:mt-2 flex-wrap">
-                  {roleBadgeText && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className={`inline-flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-0.5 rounded-full ${themeStyles.badgeBg} border ${themeStyles.badgeBorder}`}
-                    >
-                      <Shield className={`w-2 h-2 sm:w-2.5 sm:h-2.5 ${themeStyles.badgeIcon}`} />
-                      <span className={`text-[8px] sm:text-[9px] font-semibold ${themeStyles.badgeText} uppercase tracking-wider`}>{roleBadgeText}</span>
-                    </motion.div>
-                  )}
-                  {allFormsComplete && !roleBadgeText && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className={`inline-flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-0.5 rounded-full ${themeStyles.badgeBg} border ${themeStyles.badgeBorder}`}
-                    >
-                      <Shield className={`w-2 h-2 sm:w-2.5 sm:h-2.5 ${themeStyles.badgeIcon}`} />
-                      <span className={`text-[8px] sm:text-[9px] font-semibold ${themeStyles.badgeText} uppercase tracking-wider`}>Compliant</span>
-                    </motion.div>
-                  )}
-                  {activeJobsCount > 0 && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ delay: 0.1 }}
-                      className={`inline-flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-0.5 rounded-full ${themeStyles.badgeBg} border ${themeStyles.badgeBorder}`}
-                    >
-                      <Zap className={`w-2 h-2 sm:w-2.5 sm:h-2.5 ${themeStyles.badgeIcon}`} />
-                      <span className={`text-[8px] sm:text-[9px] font-semibold ${themeStyles.badgeText}`}>{activeJobsCount} Job{activeJobsCount > 1 ? 's' : ''}</span>
-                    </motion.div>
-                  )}
-                  <CertStatusChip />
-                </div>
-              </div>
-            </div>
+                  {w}
+                  {i < words.length - 1 && '\u00A0'}
+                </motion.span>
+              ))}
+            </h1>
 
-            {/* Right: Avatar dropdown */}
+            <motion.p
+              initial={enableAnimations ? { opacity: 0, y: 10 } : false}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, ease: EASE_CANOPY, delay: 0.5 }}
+              className="mt-3 max-w-xl text-pretty text-sm text-bone-300 sm:text-base"
+            >
+              {message.subtitle}
+            </motion.p>
+
+            <motion.div
+              initial={enableAnimations ? { opacity: 0 } : false}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.7 }}
+              className="mt-5 flex flex-wrap items-center gap-2"
+            >
+              {allFormsComplete && (
+                <span className={canopy.pillLive}>
+                  <Shield className="h-3 w-3" aria-hidden />
+                  <span className="font-mono text-[10px] uppercase tracking-[0.15em]">Compliant</span>
+                </span>
+              )}
+              {activeJobsCount > 0 && (
+                <span className={canopy.pill}>
+                  <Zap className="h-3 w-3" aria-hidden />
+                  <span className="font-mono text-[10px] uppercase tracking-[0.15em]">
+                    {activeJobsCount} job{activeJobsCount > 1 ? 's' : ''}
+                  </span>
+                </span>
+              )}
+              <CertStatusChip />
+            </motion.div>
+          </div>
+
+          <div className="relative z-10 shrink-0">
             <AvatarDropdown
               email={user?.email}
               role={role}
@@ -664,9 +620,6 @@ function WelcomeHeaderComponent({
             />
           </div>
         </div>
-
-        {/* Bottom edge */}
-        <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-black/30 to-transparent" />
       </div>
     </motion.div>
   );

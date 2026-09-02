@@ -101,7 +101,7 @@ export default function ComplianceRateTrend({
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: "rgba(15,23,42,0.95)",
+                backgroundColor: "rgba(18,26,21,0.95)",
                 border: "1px solid rgba(255,255,255,0.1)",
                 borderRadius: "8px",
               }}
@@ -114,16 +114,16 @@ export default function ComplianceRateTrend({
             />
             <ReferenceLine
               y={targetPercent}
-              stroke="rgba(251,191,36,0.6)"
+              stroke="rgba(174,219,63,0.6)"
               strokeDasharray="4 4"
               strokeWidth={1}
             />
             <Line
               type="monotone"
               dataKey="percentage"
-              stroke="#10b981"
+              stroke="#3DDC84"
               strokeWidth={2}
-              dot={{ fill: "#10b981", r: 3 }}
+              dot={{ fill: "#3DDC84", r: 3 }}
               name="Completed %"
             />
           </LineChart>

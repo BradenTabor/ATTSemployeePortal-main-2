@@ -91,7 +91,7 @@ function InputField({
   
   return (
     <div className={className}>
-      <label htmlFor={fieldId} className="flex items-center gap-1 text-xs sm:text-sm font-medium text-white/70 mb-0.5 sm:mb-1 uppercase tracking-wide">
+      <label htmlFor={fieldId} className="flex items-center gap-1 text-xs sm:text-sm font-medium text-white/70 mb-0.5 sm:mb-1 uppercase font-mono font-medium tracking-[0.14em]">
         <span>
           {label}
           {required && <span className="text-emerald-400 ml-0.5">*</span>}
@@ -484,7 +484,7 @@ export function StepJobInfo({ form, onInputChange, isLoading, errors, onFieldBlu
 
       {/* Schedule */}
       <div className="space-y-2 sm:space-y-3">
-        <p className="text-xs sm:text-sm font-medium text-white/50 uppercase tracking-wider">
+        <p className="text-xs sm:text-sm font-medium text-white/50 uppercase font-mono font-medium tracking-[0.14em]">
           Schedule
         </p>
         <div className="grid gap-3 sm:gap-4 sm:grid-cols-3">
@@ -512,7 +512,7 @@ export function StepJobInfo({ form, onInputChange, isLoading, errors, onFieldBlu
 
       {/* Location */}
       <div className="space-y-3 sm:space-y-4">
-        <p className="text-xs sm:text-sm font-medium text-white/50 uppercase tracking-wider">
+        <p className="text-xs sm:text-sm font-medium text-white/50 uppercase font-mono font-medium tracking-[0.14em]">
           Location
         </p>
         
@@ -571,7 +571,7 @@ export function StepJobInfo({ form, onInputChange, isLoading, errors, onFieldBlu
 
       {/* Emergency Contacts */}
       <div className="space-y-3 sm:space-y-4">
-        <p className="text-xs sm:text-sm font-medium text-white/50 uppercase tracking-wider">
+        <p className="text-xs sm:text-sm font-medium text-white/50 uppercase font-mono font-medium tracking-[0.14em]">
           Emergency Contacts
         </p>
         

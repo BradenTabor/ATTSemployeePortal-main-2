@@ -26,6 +26,30 @@ function supabasePreconnectPlugin(supabaseUrl: string): Plugin {
   };
 }
 
+/**
+ * Vite emits `<link rel="modulepreload">` for every vendor chunk *before* the
+ * stylesheet. The CSS is the only render-blocking resource, so on a slow link
+ * it should be first out of the gate rather than sharing bandwidth with ~280 KB
+ * of scripts it does not need to wait for. Hoist it above the preloads.
+ */
+function stylesheetFirstPlugin(): Plugin {
+  return {
+    name: 'html-stylesheet-first',
+    apply: 'build',
+    transformIndexHtml: {
+      order: 'post',
+      handler(html) {
+        const css = html.match(/\s*<link rel="stylesheet"[^>]*>/);
+        const firstPreload = html.indexOf('<link rel="modulepreload"');
+        if (!css || firstPreload === -1 || css.index === undefined || css.index < firstPreload) return html;
+        const without = html.replace(css[0], '');
+        const insertAt = without.indexOf('<link rel="modulepreload"');
+        return `${without.slice(0, insertAt)}${css[0].trim()}\n    ${without.slice(insertAt)}`;
+      },
+    },
+  };
+}
+
 /** Generate version.json for deploy version checking (instant forced update). */
 function generateVersionFile(): Plugin {
   return {
@@ -59,6 +83,7 @@ export default defineConfig(({ mode }) => {
   plugins: [
     react(),
     supabasePreconnectPlugin(supabaseUrl),
+    stylesheetFirstPlugin(),
     generateVersionFile(),
     VitePWA({
       strategies: 'injectManifest',
@@ -68,10 +93,24 @@ export default defineConfig(({ mode }) => {
       injectRegister: false, // We'll handle registration manually
       manifest: false, // Use existing /public/manifest.json
       injectManifest: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
-        // Allow large docs/images in precache (e.g. daily-safety-briefing.png ~4.5 MB).
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,webp}'],
+        // Install-time precache is what a field worker downloads on first launch
+        // (often on LTE). Keep it to the app shell + every route + the fonts.
+        // Export/print-only vendor chunks (~3 MB raw) are excluded here and
+        // instead cached on first use by the `/assets/` runtime route in sw.ts.
+        globIgnores: [
+          '**/assets/vendor-react-pdf-*.js',
+          '**/assets/vendor-jspdf-*.js',
+          '**/assets/vendor-xlsx-*.js',
+          '**/assets/html2canvas*.js',
+          '**/assets/index.es-*.js', // canvg (svg → canvas, jspdf dependency)
+          '**/assets/purify.es-*.js', // dompurify (jspdf dependency)
+          // Nav-card artwork (~1.5 MB) — runtime-cached on first render instead.
+          // Canopy background textures live in assets/canopy/ and stay precached.
+          'assets/*.webp',
+        ],
         // See https://vite-pwa-org.netlify.app/guide/faq.html#missing-assets-from-sw-precache-manifest
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MiB
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3 MiB
       },
       devOptions: {
         enabled: true,
@@ -99,8 +138,25 @@ export default defineConfig(({ mode }) => {
     target: 'es2020',
     rollupOptions: {
       output: {
+        // Merge shared helper chunks under ~10 KB into their consumers instead of
+        // emitting dozens of sub-kilobyte files (fewer requests per navigation).
+        experimentalMinChunkSize: 10_000,
         manualChunks(id) {
-          if (id.includes('@react-google-maps/api')) return 'vendor-google-maps';
+          // Vite's `__vitePreload` helper (virtual module) is imported by every
+          // chunk that uses dynamic import(). Left unassigned, rollup parks it in
+          // whichever chunk claims it first — it landed in vendor-jspdf, which
+          // made the 418 KB jsPDF chunk a hard dependency of the app shell. Pin
+          // it to the chunk that is always loaded anyway.
+          if (id.includes('vite/preload-helper') || id.includes('vite/modulepreload-polyfill')) {
+            return 'vendor-react';
+          }
+          // Keep the tiny useGoogleMaps hook next to the Maps SDK it wraps.
+          // Otherwise experimentalMinChunkSize folds it into the big shared
+          // helpers chunk and the 31 KB Maps vendor becomes a static dependency
+          // of every page (it showed up on the login page).
+          if (id.includes('@react-google-maps/api') || id.includes('/hooks/useGoogleMaps')) {
+            return 'vendor-google-maps';
+          }
           if (!id.includes('node_modules')) return;
           const vendorChunks: [string, string[]][] = [
             // Core React ecosystem
@@ -117,6 +173,10 @@ export default defineConfig(({ mode }) => {
             ['vendor-forms', ['react-hook-form', '@hookform/resolvers', 'zod']],
             // Utilities
             ['vendor-utils', ['date-fns', 'clsx', 'tailwind-merge']],
+            // Icons: without this, rollup emits one ~600 B chunk per icon shared
+            // across routes (160+ files), so every navigation fans out into a
+            // waterfall of tiny requests. One ~25 KB gzip chunk, fetched once.
+            ['vendor-icons', ['lucide-react']],
             // Heavy libs — separate chunks to avoid 500kB warning and improve caching
             ['vendor-jspdf', ['jspdf', 'jspdf-autotable']],
             ['vendor-xlsx', ['xlsx']],

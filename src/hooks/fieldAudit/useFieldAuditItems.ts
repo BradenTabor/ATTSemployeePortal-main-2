@@ -3,8 +3,8 @@
  *
  * Loads every `field_audit_items` row for the audit (so a resumed draft hydrates
  * its answers) and exposes a single `saveItem` that inserts-or-updates a row by
- * its natural key (subject + seeded checklist item) or by an explicit id (ad-hoc
- * and updates). Writes are optimistic: the query cache is patched from the
+ * its natural key (subject + seeded checklist item — subject NULL for audit-wide
+ * site checks) or by an explicit id (ad-hoc and updates). Writes are optimistic: the query cache is patched from the
  * returned row so the UI stays snappy without a refetch (D1: items upsert live
  * to the server).
  */
@@ -22,7 +22,8 @@ const ITEM_COLUMNS =
   "id, field_audit_id, field_audit_subject_id, checklist_item_id, custom_label, result, note, photo_path, corrective_action_id";
 
 export interface SaveItemInput {
-  subjectId: string;
+  /** Subject the response belongs to, or null for audit-wide site checks. */
+  subjectId: string | null;
   /** Seeded item id, or null for an ad-hoc custom item. */
   checklistItemId: string | null;
   /** Required when checklistItemId is null. */

@@ -17,12 +17,13 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { config } from 'dotenv';
-import { join } from 'path';
+import { isProdSupabaseUrl, loadE2EEnv, projectRefFromUrl } from './e2eEnv';
 
 // ── Env ────────────────────────────────────────────────────────────────────
-config({ path: join(process.cwd(), '.env') });
-config({ path: join(process.cwd(), '.env.local') });
+// Same precedence as the suite (.env.test > .env). Unlike seeding, cleanup is
+// deliberately allowed against production: it is the remediation path when test
+// data has leaked there, and it only ever touches @atts.test accounts.
+loadE2EEnv();
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -32,6 +33,12 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
   console.error('  VITE_SUPABASE_URL or SUPABASE_URL');
   console.error('  SUPABASE_SERVICE_ROLE_KEY');
   process.exit(1);
+}
+
+if (isProdSupabaseUrl(SUPABASE_URL)) {
+  console.warn(
+    `⚠️  Target is PRODUCTION (${projectRefFromUrl(SUPABASE_URL)}). Only @atts.test data is touched.\n`,
+  );
 }
 
 const DRY_RUN = process.argv.includes('--dry-run');
@@ -85,6 +92,67 @@ const KNOWN_SET_NULL_TABLES: { table: string; columns: string[] }[] = [
   { table: 'crews', columns: ['created_by'] },
   // Notifications
   { table: 'notification_events', columns: ['actor_user_id'] },
+  // CASCADE tables — auth.users deletion would remove these anyway, but listing
+  // them here makes --dry-run and --submissions-only report/clear them explicitly.
+  { table: 'notification_outbox', columns: ['user_id'] },
+  { table: 'notification_preferences', columns: ['user_id'] },
+  { table: 'push_subscriptions', columns: ['user_id'] },
+  { table: 'user_activity_sessions', columns: ['user_id'] },
+  { table: 'user_preferences', columns: ['user_id'] },
+  { table: 'user_contact_templates', columns: ['user_id'] },
+  { table: 'user_signatures', columns: ['user_id'] },
+  { table: 'user_saved_locations', columns: ['user_id'] },
+  { table: 'daily_attendance', columns: ['user_id'] },
+  { table: 'user_absences', columns: ['user_id'] },
+  { table: 'user_badges', columns: ['user_id'] },
+  { table: 'streak_state', columns: ['user_id'] },
+  { table: 'streak_week_activity', columns: ['user_id'] },
+  { table: 'point_transactions', columns: ['user_id'] },
+  { table: 'compliance_rewards', columns: ['user_id'] },
+  { table: 'announcement_rewards', columns: ['user_id'] },
+  { table: 'safety_briefing_answers', columns: ['user_id'] },
+  { table: 'certification_attempts', columns: ['user_id'] },
+  { table: 'certification_records', columns: ['user_id'] },
+  { table: 'practical_evaluations', columns: ['user_id'] },
+  { table: 'recognition_feed', columns: ['subject_user_id'] },
+  { table: 'challenge_completions', columns: ['user_id'] },
+  { table: 'redemptions', columns: ['user_id'] },
+  { table: 'field_audits', columns: ['auditor_id'] },
+  { table: 'field_notes', columns: ['author_id'] },
+];
+
+/**
+ * Columns where a test user may have *acted on* a real user's row (e.g. a test
+ * admin marking real attendance). These rows belong to real users and must be
+ * kept — we only null out the test-user reference. All are ON DELETE SET NULL,
+ * so auth deletion would do this implicitly, but --submissions-only needs it
+ * explicit and it keeps dry-run output honest.
+ */
+const NULLIFY_ONLY_COLUMNS: { table: string; columns: string[] }[] = [
+  { table: 'daily_attendance', columns: ['marked_by'] },
+  { table: 'user_absences', columns: ['created_by'] },
+  { table: 'rto_requests', columns: ['approved_by'] },
+  { table: 'attendance_summaries', columns: ['generated_by'] },
+  { table: 'job_milestones', columns: ['completed_by'] },
+  { table: 'job_crew_assignments', columns: ['assigned_by'] },
+  { table: 'crew_members', columns: ['added_by'] },
+  { table: 'certification_attempts', columns: ['graded_by', 'grading_started_by'] },
+  { table: 'certification_records', columns: ['certified_by', 'reviewed_by', 'revoked_by'] },
+  { table: 'practical_evaluations', columns: ['evaluator_id'] },
+  { table: 'safety_announcements', columns: ['created_by', 'published_by'] },
+  { table: 'monthly_safety_rewards', columns: ['created_by'] },
+  { table: 'company_calendar', columns: ['created_by'] },
+  { table: 'mass_sms_log', columns: ['admin_user_id'] },
+  { table: 'app_settings', columns: ['updated_by'] },
+  { table: 'app_settings_audit', columns: ['changed_by'] },
+  { table: 'certification_audit_log', columns: ['actor_id'] },
+  // ON DELETE NO ACTION — these would BLOCK auth.users deletion if left set.
+  { table: 'point_transactions', columns: ['awarded_by'] },
+  { table: 'point_awarder_grants', columns: ['granted_by', 'revoked_by'] },
+  { table: 'reward_catalog', columns: ['created_by'] },
+  { table: 'redemptions', columns: ['decided_by'] },
+  { table: 'gamification_settings', columns: ['updated_by'] },
+  { table: 'campaigns', columns: ['created_by'] },
 ];
 
 /**
@@ -245,48 +313,96 @@ async function processTable(
   }
 }
 
+async function nullifyColumn(table: string, column: string, ids: string[]): Promise<void> {
+  if (ids.length === 0) return;
+
+  const count = await countRows(table, column, ids);
+  if (count === 0) {
+    console.log(`  ${table}.${column}: 0 rows`);
+    return;
+  }
+
+  if (DRY_RUN) {
+    console.log(`  ${table}.${column}: ${count} rows (would set NULL, rows kept)`);
+    return;
+  }
+
+  const { error } = await supabase
+    .from(table)
+    .update({ [column]: null })
+    .in(column, ids);
+  if (error) {
+    if (error.message?.includes('does not exist') || error.code === '42P01') return;
+    console.error(`  ERROR nullifying ${table}.${column}: ${error.message}`);
+    return;
+  }
+  console.log(`  ${table}.${column}: ${count} rows set NULL (rows kept)`);
+}
+
+/**
+ * Recursively list every file under `prefix` in `bucket`. Supabase's list() is
+ * one level deep and returns folders as entries with a null `id`, so we walk them.
+ */
+async function listFilesRecursive(bucket: string, prefix: string): Promise<string[]> {
+  const files: string[] = [];
+  const { data, error } = await supabase.storage
+    .from(bucket)
+    .list(prefix, { limit: 1000 });
+
+  if (error) {
+    if (error.message?.includes('not found') || error.message?.includes('does not exist')) return files;
+    console.warn(`  Warning listing ${bucket}/${prefix}: ${error.message}`);
+    return files;
+  }
+
+  for (const entry of data ?? []) {
+    const path = prefix ? `${prefix}/${entry.name}` : entry.name;
+    if (entry.id === null) {
+      files.push(...(await listFilesRecursive(bucket, path)));
+    } else {
+      files.push(path);
+    }
+  }
+  return files;
+}
+
 async function cleanupStorage(authIds: string[]): Promise<void> {
   if (authIds.length === 0) return;
 
   header(DRY_RUN ? 'STORAGE (dry-run)' : 'STORAGE CLEANUP');
 
   for (const bucket of STORAGE_BUCKETS) {
-    let totalObjects = 0;
+    const paths: string[] = [];
 
     for (const uid of authIds) {
-      const { data: files, error } = await supabase.storage
-        .from(bucket)
-        .list(uid, { limit: 1000 });
+      // Files live under `{uid}/...` or, for some older uploads, `{bucket}/{uid}/...`.
+      for (const prefix of [uid, `${bucket}/${uid}`]) {
+        paths.push(...(await listFilesRecursive(bucket, prefix)));
+      }
+    }
 
+    if (paths.length === 0) {
+      console.log(`  ${bucket}: 0 objects`);
+      continue;
+    }
+
+    if (DRY_RUN) {
+      console.log(`  ${bucket}: ${paths.length} objects (would delete)`);
+      continue;
+    }
+
+    // remove() accepts many paths but keep batches modest to avoid request limits.
+    let removed = 0;
+    for (let i = 0; i < paths.length; i += 100) {
+      const batch = paths.slice(i, i + 100);
+      const { data, error } = await supabase.storage.from(bucket).remove(batch);
       if (error) {
-        // Bucket might not exist
-        if (error.message?.includes('not found') || error.message?.includes('does not exist')) {
-          break; // skip this bucket entirely
-        }
-        console.warn(`  Warning listing ${bucket}/${uid}: ${error.message}`);
+        console.error(`  ERROR removing from ${bucket}: ${error.message}`);
         continue;
       }
-
-      if (!files || files.length === 0) continue;
-
-      const paths = files.map(f => `${uid}/${f.name}`);
-      totalObjects += paths.length;
-
-      if (!DRY_RUN) {
-        const { error: delError } = await supabase.storage
-          .from(bucket)
-          .remove(paths);
-        if (delError) {
-          console.error(`  ERROR removing from ${bucket}: ${delError.message}`);
-        }
-      }
+      removed += data?.length ?? batch.length;
     }
-
-    if (totalObjects > 0) {
-      console.log(`  ${bucket}: ${totalObjects} objects ${DRY_RUN ? '(would delete)' : 'deleted'}`);
-    } else {
-      console.log(`  ${bucket}: 0 objects`);
-    }
+    console.log(`  ${bucket}: ${removed}/${paths.length} objects deleted`);
   }
 }
 
@@ -383,6 +499,14 @@ async function main(): Promise<void> {
 
   // Also delete user_management_log by target_user_id (auth id)
   await processTable('user_management_log', ['target_user_id'], authIds);
+
+  // 4b. Null out test-user references on rows that belong to real users
+  header(DRY_RUN ? 'REAL-USER ROWS TOUCHED BY TEST USERS (dry-run)' : 'DETACHING TEST USERS FROM REAL-USER ROWS');
+  for (const { table, columns } of NULLIFY_ONLY_COLUMNS) {
+    for (const col of columns) {
+      await nullifyColumn(table, col, authIds);
+    }
+  }
 
   // 5. Storage cleanup
   await cleanupStorage(authIds);

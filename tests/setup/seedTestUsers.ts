@@ -8,20 +8,14 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import { config } from 'dotenv';
-import { join } from 'path';
+import { assertSafeE2ETarget } from './e2eEnv';
 
-// Load .env from project root (Node/tsx don't load it automatically)
-config({ path: join(process.cwd(), '.env') });
-config({ path: join(process.cwd(), '.env.local') });
-
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+// Loads .env.test(.local) > .env.local > .env and refuses to seed production.
+const { url: SUPABASE_URL } = assertSafeE2ETarget('seedTestUsers');
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
-  console.error('Missing required environment variables:');
-  console.error('- VITE_SUPABASE_URL or SUPABASE_URL');
-  console.error('- SUPABASE_SERVICE_ROLE_KEY');
+if (!SUPABASE_SERVICE_KEY) {
+  console.error('Missing required environment variable: SUPABASE_SERVICE_ROLE_KEY');
   process.exit(1);
 }
 
@@ -36,7 +30,7 @@ interface TestUser {
   email: string;
   password: string;
   fullName: string;
-  role: 'employee' | 'foreman' | 'mechanic' | 'general_foreman' | 'admin';
+  role: 'employee' | 'foreman' | 'mechanic' | 'general_foreman' | 'safety_officer' | 'admin';
 }
 
 const TEST_USERS: TestUser[] = [
@@ -63,6 +57,12 @@ const TEST_USERS: TestUser[] = [
     password: 'TestPassword123!',
     fullName: 'Test General Foreman',
     role: 'general_foreman',
+  },
+  {
+    email: 'test-safety@atts.test',
+    password: 'TestPassword123!',
+    fullName: 'Test Safety Officer',
+    role: 'safety_officer',
   },
   {
     email: 'test-admin@atts.test',

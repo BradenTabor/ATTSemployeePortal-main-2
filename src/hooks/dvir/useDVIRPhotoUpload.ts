@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { logger } from '../../lib/logger';
 import { compressImage } from '../../lib/imageCompression';
+import { getAuthUserFast } from '../../lib/authUser';
 
 /**
  * Custom hook for DVIR photo upload
@@ -9,9 +10,7 @@ import { compressImage } from '../../lib/imageCompression';
  */
 export function useDVIRPhotoUpload() {
   const uploadPhoto = useCallback(async (file: File, fieldName: string): Promise<string> => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getAuthUserFast();
     const userId = user?.id || "anonymous";
 
     const compressed = await compressImage(file);

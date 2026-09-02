@@ -268,7 +268,7 @@ export default function JSAHistory() {
                       whileTap={prefersReducedMotion ? undefined : { scale: 0.995 }}
                       transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
                       className={cn(
-                        "group w-full text-left rounded-2xl border p-4 sm:p-5 focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-950 outline-none transition-all duration-200 h-full flex flex-col",
+                        "group w-full text-left rounded-leaf-sm border p-4 sm:p-5 focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-950 outline-none transition-all duration-200 h-full flex flex-col",
                         glass.card,
                         isShared
                           ? "border-amber-500/20 hover:border-amber-400/40"

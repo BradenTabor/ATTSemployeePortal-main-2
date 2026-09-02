@@ -664,7 +664,7 @@ export function WorkerQualificationsSection({
                           <td colSpan={TABLE_COLUMNS} className="px-4 py-3 align-top">
                             <div className="space-y-4">
                               <div>
-                                <h4 className="mb-1 text-xs font-semibold uppercase tracking-wider text-white/50">
+                                <h4 className="mb-1 text-xs uppercase text-white/50 font-mono font-medium tracking-[0.14em]">
                                   Electrical Qualification History
                                 </h4>
                                 <HistoryCell userId={w.user_id} />
@@ -777,7 +777,7 @@ export function WorkerQualificationsSection({
                 {expandedUserId === w.user_id && (
                   <div className="mt-3 space-y-4 border-t border-white/10 pt-3">
                     <div>
-                      <h4 className="mb-1 text-xs font-semibold uppercase tracking-wider text-white/50">
+                      <h4 className="mb-1 text-xs uppercase text-white/50 font-mono font-medium tracking-[0.14em]">
                         Electrical History
                       </h4>
                       <HistoryCell userId={w.user_id} />

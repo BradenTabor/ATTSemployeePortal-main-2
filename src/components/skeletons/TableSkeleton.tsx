@@ -8,22 +8,22 @@ const VARIANT_STYLES: Record<
 > = {
   emerald: {
     border: "border-emerald-500/30",
-    background: "bg-[#03150f]/70",
+    background: "bg-[#0B100D]/70",
     cell: "bg-emerald-500/30",
   },
   gold: {
-    border: "border-[#f4c979]/30",
-    background: "bg-[#120f0b]/80",
-    cell: "bg-[#f6dcb2]/30",
+    border: "border-[#F4F7F2]/30",
+    background: "bg-[#0B100D]/80",
+    cell: "bg-[#E4EAE1]/30",
   },
   ember: {
-    border: "border-[#ff9350]/30",
-    background: "bg-[#1a0b05]/80",
-    cell: "bg-[#ff9350]/30",
+    border: "border-[#B8FF7A]/30",
+    background: "bg-[#0B100D]/80",
+    cell: "bg-[#B8FF7A]/30",
   },
   purple: {
     border: "border-purple-500/30",
-    background: "bg-[#0f0a1a]/80",
+    background: "bg-[#121A15]/80",
     cell: "bg-purple-500/30",
   },
 };
@@ -49,7 +49,7 @@ export default function TableSkeleton({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-2xl border backdrop-blur-md p-6",
+        "overflow-hidden rounded-leaf-sm border backdrop-blur-md p-6",
         variantStyles.border,
         variantStyles.background,
         className

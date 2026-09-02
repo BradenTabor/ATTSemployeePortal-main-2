@@ -84,7 +84,7 @@ export const darkMapStyles: google.maps.MapTypeStyle[] = [
   {
     featureType: 'poi.medical',
     elementType: 'geometry',
-    stylers: [{ color: '#10b981', lightness: -60 }],
+    stylers: [{ color: '#3DDC84', lightness: -60 }],
   },
   {
     featureType: 'poi.park',

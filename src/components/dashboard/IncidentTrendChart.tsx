@@ -5,18 +5,19 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { Loader2, AlertTriangle } from "lucide-react";
+import { Loader2, AlertTriangle, TrendingUp } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import { useDashboardCardTheme } from "../../contexts/dashboardCardTheme";
+import WidgetHeader from "./WidgetHeader";
 import { subMonths } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 
 const TZ = "America/Chicago";
 const SEVERITY_ORDER = ["near_miss", "first_aid", "recordable", "lost_time", "fatality"] as const;
 const SEVERITY_COLOR: Record<string, string> = {
-  near_miss: "#94a3b8",
-  first_aid: "#facc15",
-  recordable: "#f97316",
+  near_miss: "#7DCDA2",
+  first_aid: "#D2FFA3",
+  recordable: "#9BEB5B",
   lost_time: "#ef4444",
   fatality: "#7f1d1d",
 };
@@ -88,9 +89,9 @@ export default function IncidentTrendChart() {
   if (isLoading) {
     return (
       <div className={`${cardClass} p-4`}>
-        <h3 className="text-sm font-semibold text-white mb-3">Incident trend (12 months)</h3>
+        <WidgetHeader title="Incident trend (12 months)" icon={TrendingUp} />
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="w-6 h-6 animate-spin text-emerald-400" aria-hidden />
+          <Loader2 className="w-6 h-6 animate-spin text-rose-300/80" aria-hidden />
         </div>
       </div>
     );
@@ -99,7 +100,7 @@ export default function IncidentTrendChart() {
   if (error) {
     return (
       <div className={`${cardClass} p-4`}>
-        <h3 className="text-sm font-semibold text-white mb-3">Incident trend (12 months)</h3>
+        <WidgetHeader title="Incident trend (12 months)" icon={TrendingUp} />
         <div className="flex items-center gap-2 py-4 text-red-300 text-sm">
           <AlertTriangle className="w-5 h-5 flex-shrink-0" />
           <span>{error.message}</span>
@@ -110,7 +111,7 @@ export default function IncidentTrendChart() {
 
   return (
     <div className={`${cardClass} p-4`}>
-      <h3 className="text-sm font-semibold text-white mb-3">Incident trend (12 months)</h3>
+      <WidgetHeader title="Incident trend (12 months)" icon={TrendingUp} />
       <div className="flex flex-col gap-2">
         {months.map((month) => {
           const row = byMonth.get(month) ?? {};
@@ -136,7 +137,7 @@ export default function IncidentTrendChart() {
                         width: `${pct}%`,
                         minWidth: count > 0 ? 4 : 0,
                         height: "100%",
-                        backgroundColor: SEVERITY_COLOR[sev] ?? "#64748b",
+                        backgroundColor: SEVERITY_COLOR[sev] ?? "#5FAF86",
                       }}
                       title={`${SEVERITY_LABEL[sev] ?? sev}: ${count}`}
                     />

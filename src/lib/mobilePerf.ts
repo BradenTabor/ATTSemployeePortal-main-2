@@ -39,6 +39,15 @@ declare global {
 
 let cachedCapabilities: DeviceCapabilities | null = null;
 
+/**
+ * True on a metered-feeling cellular link (3g effective type). Read live rather
+ * than cached because connection quality changes as crews move between sites.
+ */
+export function isCellular3g(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return navigator.connection?.effectiveType === '3g';
+}
+
 export function getDeviceCapabilities(): DeviceCapabilities {
   if (cachedCapabilities) return cachedCapabilities;
   if (typeof window === 'undefined') {

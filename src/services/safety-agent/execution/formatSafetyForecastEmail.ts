@@ -53,9 +53,9 @@ export interface ForecastEmailData {
 function getRiskLevelHtmlColor(level: RiskLevel): string {
   const colors: Record<RiskLevel, string> = {
     LOW: '#22c55e',      // green-500
-    MODERATE: '#3b82f6', // blue-500
-    ELEVATED: '#f59e0b', // amber-500
-    HIGH: '#f97316',     // orange-500
+    MODERATE: '#8DF5A8', // blue-500
+    ELEVATED: '#9BEB5B', // amber-500
+    HIGH: '#9BEB5B',     // orange-500
     CRITICAL: '#ef4444', // red-500
   };
   return colors[level];
@@ -67,8 +67,8 @@ function getRiskLevelHtmlColor(level: RiskLevel): string {
 function getRiskLevelBgColor(level: RiskLevel): string {
   const colors: Record<RiskLevel, string> = {
     LOW: '#dcfce7',      // green-100
-    MODERATE: '#dbeafe', // blue-100
-    ELEVATED: '#fef3c7', // amber-100
+    MODERATE: '#EFFFF3', // blue-100
+    ELEVATED: '#F6FFE6', // amber-100
     HIGH: '#ffedd5',     // orange-100
     CRITICAL: '#fee2e2', // red-100
   };
@@ -124,15 +124,15 @@ export function formatSafetyForecastHtml(data: ForecastEmailData): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Safety Forecast - ${date}</title>
 </head>
-<body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f3f4f6;">
+<body style="margin: 0; padding: 0; background-color: #F4F7F2; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #F4F7F2;">
     <tr>
       <td align="center" style="padding: 24px;">
-        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0, 0.1);">
           
           <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 32px; border-radius: 12px 12px 0 0;">
+            <td style="background: linear-gradient(135deg, #1E2A23 0%, #334155 100%); padding: 32px; border-radius: 12px 12px 0 0;">
               <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">
                 ${emoji} Safety Forecast
               </h1>
@@ -148,7 +148,7 @@ export function formatSafetyForecastHtml(data: ForecastEmailData): string {
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: ${levelBgColor}; border: 2px solid ${levelColor}; border-radius: 8px;">
                 <tr>
                   <td style="padding: 20px; text-align: center;">
-                    <p style="margin: 0 0 8px; color: #374151; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
+                    <p style="margin: 0 0 8px; color: #2F3F36; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
                       Today's Overall Risk Level
                     </p>
                     <p style="margin: 0; color: ${levelColor}; font-size: 36px; font-weight: 800;">
@@ -169,7 +169,7 @@ export function formatSafetyForecastHtml(data: ForecastEmailData): string {
           <!-- Warnings -->
           <tr>
             <td style="padding: 0 24px 16px;">
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #F6FFE6; border-left: 4px solid #9BEB5B; border-radius: 4px;">
                 <tr>
                   <td style="padding: 12px 16px;">`;
     
@@ -194,10 +194,10 @@ export function formatSafetyForecastHtml(data: ForecastEmailData): string {
           <!-- Top Risk Drivers -->
           <tr>
             <td style="padding: 0 24px 24px;">
-              <h2 style="margin: 0 0 12px; color: #1f2937; font-size: 16px; font-weight: 700;">
+              <h2 style="margin: 0 0 12px; color: #1E2A23; font-size: 16px; font-weight: 700;">
                 📊 Top Risk Drivers
               </h2>
-              <ul style="margin: 0; padding: 0 0 0 20px; color: #4b5563; font-size: 14px; line-height: 1.6;">
+              <ul style="margin: 0; padding: 0 0 0 20px; color: #2F3F36; font-size: 14px; line-height: 1.6;">
                 ${overallRiskScore.drivers.map(d => `<li>${d}</li>`).join('')}
               </ul>
             </td>
@@ -210,10 +210,10 @@ export function formatSafetyForecastHtml(data: ForecastEmailData): string {
           <!-- Recommendations -->
           <tr>
             <td style="padding: 0 24px 24px;">
-              <h2 style="margin: 0 0 12px; color: #1f2937; font-size: 16px; font-weight: 700;">
+              <h2 style="margin: 0 0 12px; color: #1E2A23; font-size: 16px; font-weight: 700;">
                 ✅ Recommended Actions
               </h2>
-              <ul style="margin: 0; padding: 0 0 0 20px; color: #4b5563; font-size: 14px; line-height: 1.6;">
+              <ul style="margin: 0; padding: 0 0 0 20px; color: #2F3F36; font-size: 14px; line-height: 1.6;">
                 ${overallRiskScore.recommendations.map(r => `<li>${r}</li>`).join('')}
               </ul>
             </td>
@@ -226,7 +226,7 @@ export function formatSafetyForecastHtml(data: ForecastEmailData): string {
           <!-- Site Breakdown -->
           <tr>
             <td style="padding: 0 24px 24px;">
-              <h2 style="margin: 0 0 16px; color: #1f2937; font-size: 16px; font-weight: 700; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">
+              <h2 style="margin: 0 0 16px; color: #1E2A23; font-size: 16px; font-weight: 700; border-bottom: 2px solid #E4EAE1; padding-bottom: 8px;">
                 📍 Site-by-Site Breakdown
               </h2>`;
 
@@ -236,13 +236,13 @@ export function formatSafetyForecastHtml(data: ForecastEmailData): string {
       const siteEmoji = getRiskLevelEmoji(site.riskScore.level);
 
       html += `
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 16px; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 16px; border: 1px solid #E4EAE1; border-radius: 8px; overflow: hidden;">
                 <tr>
-                  <td style="background-color: ${siteBgColor}; padding: 12px 16px; border-bottom: 1px solid #e5e7eb;">
+                  <td style="background-color: ${siteBgColor}; padding: 12px 16px; border-bottom: 1px solid #E4EAE1;">
                     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                       <tr>
                         <td>
-                          <p style="margin: 0; color: #1f2937; font-size: 15px; font-weight: 700;">
+                          <p style="margin: 0; color: #1E2A23; font-size: 15px; font-weight: 700;">
                             ${siteEmoji} ${site.siteName}${site.region ? ` (${site.region})` : ''}
                           </p>
                         </td>
@@ -260,16 +260,16 @@ export function formatSafetyForecastHtml(data: ForecastEmailData): string {
                     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                       <tr>
                         <td style="vertical-align: top; width: 50%; padding-right: 8px;">
-                          <p style="margin: 0 0 4px; color: #6b7280; font-size: 11px; font-weight: 600; text-transform: uppercase;">Weather</p>
-                          <p style="margin: 0; color: #374151; font-size: 13px;">
+                          <p style="margin: 0 0 4px; color: #5A6B60; font-size: 11px; font-weight: 600; text-transform: uppercase;">Weather</p>
+                          <p style="margin: 0; color: #2F3F36; font-size: 13px;">
                             ${site.weather.conditions}<br>
                             Wind: ${site.weather.windGust}mph${site.weather.windGust > 25 ? ' ⚠️' : ''}<br>
                             Heat Index: ${site.weather.heatIndex}°F${site.weather.heatIndex > 90 ? ' ⚠️' : ''}
                           </p>
                         </td>
                         <td style="vertical-align: top; width: 50%; padding-left: 8px;">
-                          <p style="margin: 0 0 4px; color: #6b7280; font-size: 11px; font-weight: 600; text-transform: uppercase;">Crew</p>
-                          <p style="margin: 0; color: #374151; font-size: 13px;">
+                          <p style="margin: 0 0 4px; color: #5A6B60; font-size: 11px; font-weight: 600; text-transform: uppercase;">Crew</p>
+                          <p style="margin: 0; color: #2F3F36; font-size: 13px;">
                             ${site.crew.totalCount} members<br>
                             ${site.crew.newHireCount > 0 ? `${site.crew.newHireCount} new hire(s) ⚠️<br>` : ''}
                             ${site.crew.hasExpert ? 'Expert on crew ✓' : 'No expert ⚠️'}
@@ -278,14 +278,14 @@ export function formatSafetyForecastHtml(data: ForecastEmailData): string {
                       </tr>
                     </table>
                     ${site.defects.length > 0 ? `
-                    <p style="margin: 12px 0 4px; color: #6b7280; font-size: 11px; font-weight: 600; text-transform: uppercase;">Equipment Issues</p>
+                    <p style="margin: 12px 0 4px; color: #5A6B60; font-size: 11px; font-weight: 600; text-transform: uppercase;">Equipment Issues</p>
                     <p style="margin: 0; color: #dc2626; font-size: 13px;">
                       ${site.defects.slice(0, 3).join(', ')}${site.defects.length > 3 ? ` +${site.defects.length - 3} more` : ''}
                     </p>
                     ` : ''}
                     ${site.riskScore.recommendations.length > 0 ? `
-                    <p style="margin: 12px 0 4px; color: #6b7280; font-size: 11px; font-weight: 600; text-transform: uppercase;">Site Actions</p>
-                    <ul style="margin: 0; padding: 0 0 0 16px; color: #4b5563; font-size: 12px; line-height: 1.5;">
+                    <p style="margin: 12px 0 4px; color: #5A6B60; font-size: 11px; font-weight: 600; text-transform: uppercase;">Site Actions</p>
+                    <ul style="margin: 0; padding: 0 0 0 16px; color: #2F3F36; font-size: 12px; line-height: 1.5;">
                       ${site.riskScore.recommendations.slice(0, 3).map(r => `<li>${r}</li>`).join('')}
                     </ul>
                     ` : ''}
@@ -302,10 +302,10 @@ export function formatSafetyForecastHtml(data: ForecastEmailData): string {
           <!-- No Sites -->
           <tr>
             <td style="padding: 0 24px 24px;">
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f3f4f6; border-radius: 8px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #F4F7F2; border-radius: 8px;">
                 <tr>
                   <td style="padding: 24px; text-align: center;">
-                    <p style="margin: 0; color: #6b7280; font-size: 14px;">
+                    <p style="margin: 0; color: #5A6B60; font-size: 14px;">
                       No active work sites scheduled for today.
                     </p>
                   </td>
@@ -321,10 +321,10 @@ export function formatSafetyForecastHtml(data: ForecastEmailData): string {
           <!-- Company-Wide Factors -->
           <tr>
             <td style="padding: 0 24px 24px;">
-              <h2 style="margin: 0 0 12px; color: #1f2937; font-size: 16px; font-weight: 700; border-top: 2px solid #e5e7eb; padding-top: 16px;">
+              <h2 style="margin: 0 0 12px; color: #1E2A23; font-size: 16px; font-weight: 700; border-top: 2px solid #E4EAE1; padding-top: 16px;">
                 🏢 Company-Wide Factors
               </h2>
-              <ul style="margin: 0; padding: 0 0 0 20px; color: #4b5563; font-size: 14px; line-height: 1.6;">
+              <ul style="margin: 0; padding: 0 0 0 20px; color: #2F3F36; font-size: 14px; line-height: 1.6;">
                 ${companyWideFactors.map(f => `<li>${f}</li>`).join('')}
               </ul>
             </td>
@@ -335,8 +335,8 @@ export function formatSafetyForecastHtml(data: ForecastEmailData): string {
   html += `
           <!-- Footer -->
           <tr>
-            <td style="background-color: #f9fafb; padding: 16px 24px; border-radius: 0 0 12px 12px; border-top: 1px solid #e5e7eb;">
-              <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
+            <td style="background-color: #f9fafb; padding: 16px 24px; border-radius: 0 0 12px 12px; border-top: 1px solid #E4EAE1;">
+              <p style="margin: 0; color: #8A9A8E; font-size: 12px; text-align: center;">
                 Generated at ${generatedTime} | Data window: Last 24 hours<br>
                 All Terrain Tree Service Safety Management System
               </p>

@@ -135,8 +135,8 @@ export function DuplicateWarningModal({
           variants={modalVariants}
           onClick={(e) => e.stopPropagation()}
           className={cn(
-              "relative w-full max-w-md rounded-3xl overflow-hidden",
-              "bg-gradient-to-br from-[#1a1510] via-[#0f0a08] to-[#080504]",
+              "relative w-full max-w-md rounded-leaf overflow-hidden",
+              "bg-gradient-to-br from-[#121A15] via-[#0B100D] to-[#040605]",
               "border border-amber-500/30 shadow-2xl shadow-amber-500/10"
             )}
           >
@@ -148,7 +148,7 @@ export function DuplicateWarningModal({
               type="button"
               onClick={onClose}
               aria-label="Close duplicate warning"
-              className="absolute top-4 right-4 p-2 rounded-xl bg-white/5 text-white/50 hover:text-white hover:bg-white/10 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+              className="absolute top-4 right-4 p-2 rounded-xl bg-white/5 text-white/50 hover:text-white hover:bg-white/10 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
             >
               <X className="w-4 h-4" aria-hidden />
             </button>
@@ -157,7 +157,7 @@ export function DuplicateWarningModal({
             <div className="p-6 space-y-5">
               {/* Icon & Title */}
               <div className="flex items-start gap-4">
-                <div className="p-3 rounded-2xl bg-amber-500/20 border border-amber-500/30">
+                <div className="p-3 rounded-leaf-sm bg-amber-500/20 border border-amber-500/30">
                   <AlertTriangle className="w-6 h-6 text-amber-400" />
                 </div>
                 <div>
@@ -172,7 +172,7 @@ export function DuplicateWarningModal({
               </div>
 
               {/* Existing Record Details */}
-              <div className="rounded-2xl bg-white/5 border border-white/10 p-4 space-y-3">
+              <div className="rounded-leaf-sm bg-white/5 border border-white/10 p-4 space-y-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
                     <FileCheck className="w-5 h-5 text-amber-400" />
@@ -216,7 +216,7 @@ export function DuplicateWarningModal({
                     "bg-white/5 border border-white/10 text-white",
                     "hover:bg-white/10 hover:border-white/20 transition-all",
                     "text-sm font-medium",
-                    "focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+                    "focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
                   )}
                 >
                   <Eye className="w-4 h-4" aria-hidden />
@@ -234,7 +234,7 @@ export function DuplicateWarningModal({
                     "hover:bg-amber-500/30 hover:border-amber-500/40 transition-all",
                     "text-sm font-medium",
                     "disabled:opacity-50 disabled:cursor-not-allowed",
-                    "focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+                    "focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
                   )}
                 >
                   {isSubmitting ? (
@@ -265,7 +265,7 @@ export function DuplicateWarningModal({
                 type="button"
                 onClick={onClose}
                 aria-label="Cancel and go back"
-                className="w-full py-2 text-sm text-white/50 hover:text-white/70 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d] rounded"
+                className="w-full py-2 text-sm text-white/50 hover:text-white/70 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D] rounded"
               >
                 Cancel and go back
               </button>

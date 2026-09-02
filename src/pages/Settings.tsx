@@ -137,10 +137,10 @@ function SettingsSection({ title, subtitle, icon, children, action, badge }: Set
   return (
     <motion.section
       variants={cardVariants}
-      className="relative overflow-hidden rounded-xl sm:rounded-2xl md:rounded-3xl border border-emerald-400/20"
+      className="relative overflow-hidden rounded-xl sm:rounded-leaf-sm md:rounded-leaf border border-emerald-400/20"
       style={{
-        background: 'linear-gradient(145deg, rgba(4, 30, 21, 0.95) 0%, rgba(2, 15, 10, 0.98) 50%, rgba(1, 8, 5, 1) 100%)',
-        boxShadow: '0 8px 40px -10px rgba(16, 185, 129, 0.2), 0 4px 20px -8px rgba(0, 0, 0, 0.5)',
+        background: 'linear-gradient(145deg, rgba(11,16,13, 0.95) 0%, rgba(4,6,5, 0.98) 50%, rgba(4,6,5, 1) 100%)',
+        boxShadow: '0 8px 40px -10px rgba(47,164,90, 0.2), 0 4px 20px -8px rgba(0,0,0, 0.5)',
       }}
     >
       {/* Top shine line */}
@@ -154,7 +154,7 @@ function SettingsSection({ title, subtitle, icon, children, action, badge }: Set
         variants={orbVariants}
         animate="animate"
         style={{
-          background: 'radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(47,164,90, 0.25) 0%, transparent 70%)',
           filter: 'blur(25px)',
         }}
       />
@@ -166,7 +166,7 @@ function SettingsSection({ title, subtitle, icon, children, action, badge }: Set
             <motion.div 
               className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl flex items-center justify-center border border-emerald-500/30 flex-shrink-0"
               style={{
-                background: 'linear-gradient(145deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.1) 100%)',
+                background: 'linear-gradient(145deg, rgba(47,164,90, 0.15) 0%, rgba(31,122,68, 0.1) 100%)',
               }}
               whileHover={{ scale: 1.1, rotate: 5 }}
               transition={{ type: 'spring', stiffness: 300 }}
@@ -308,7 +308,7 @@ function ContactTemplatesSection() {
           <motion.button
             onClick={() => setShowAddForm(true)}
             whileTap={{ scale: 0.95 }}
-            className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg bg-emerald-600/80 text-white text-[10px] sm:text-xs font-semibold hover:bg-emerald-500 transition-colors"
+            className="tap-44 relative flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg bg-emerald-600/80 text-white text-[10px] sm:text-xs font-semibold hover:bg-emerald-500 transition-colors"
           >
             <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             <span className="hidden sm:inline">Add Template</span>
@@ -383,7 +383,7 @@ function ContactTemplatesSection() {
                   onClick={resetForm}
                   disabled={isSaving}
                   aria-label="Cancel editing contact template"
-                  className="flex-1 px-3 sm:px-4 py-1.5 sm:py-2 rounded-md sm:rounded-lg border border-white/10 bg-white/5 text-xs sm:text-sm text-white/70 hover:bg-white/10 transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+                  className="flex-1 px-3 sm:px-4 py-1.5 sm:py-2 rounded-md sm:rounded-lg border border-white/10 bg-white/5 text-xs sm:text-sm text-white/70 hover:bg-white/10 transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
                 >
                   Cancel
                 </button>
@@ -393,7 +393,7 @@ function ContactTemplatesSection() {
                   disabled={!formData.name.trim() || isSaving}
                   aria-label={isSaving ? "Saving template" : editingId ? "Update contact template" : "Save contact template"}
                   className={cn(
-                    "flex-1 px-3 sm:px-4 py-1.5 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-1.5 sm:gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]",
+                    "flex-1 px-3 sm:px-4 py-1.5 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-1.5 sm:gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]",
                     formData.name.trim() && !isSaving
                       ? "bg-emerald-600 text-white hover:bg-emerald-500"
                       : "bg-emerald-600/30 text-white/50 cursor-not-allowed"
@@ -452,7 +452,7 @@ function ContactTemplatesSection() {
                   <button
                     type="button"
                     onClick={() => setAsDefault(template.id)}
-                    className="p-1 sm:p-1.5 rounded-md sm:rounded-lg hover:bg-white/10 text-gray-400 hover:text-amber-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+                    className="p-1 sm:p-1.5 rounded-md sm:rounded-lg hover:bg-white/10 text-gray-400 hover:text-amber-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
                     title="Set as default"
                     aria-label={`Set ${template.name} as default contact template`}
                   >
@@ -462,7 +462,7 @@ function ContactTemplatesSection() {
                 <button
                   type="button"
                   onClick={() => handleEdit(template)}
-                  className="p-1 sm:p-1.5 rounded-md sm:rounded-lg hover:bg-white/10 text-gray-400 hover:text-emerald-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+                  className="p-1 sm:p-1.5 rounded-md sm:rounded-lg hover:bg-white/10 text-gray-400 hover:text-emerald-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
                   title="Edit"
                   aria-label={`Edit ${template.name}`}
                 >
@@ -471,7 +471,7 @@ function ContactTemplatesSection() {
                 <button
                   type="button"
                   onClick={() => handleDelete(template.id)}
-                  className="p-1 sm:p-1.5 rounded-md sm:rounded-lg hover:bg-white/10 text-gray-400 hover:text-red-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+                  className="p-1 sm:p-1.5 rounded-md sm:rounded-lg hover:bg-white/10 text-gray-400 hover:text-red-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
                   title="Delete"
                   aria-label={`Delete ${template.name}`}
                 >
@@ -570,7 +570,7 @@ function SavedLocationsSection() {
           <motion.button
             onClick={() => setShowAddForm(true)}
             whileTap={{ scale: 0.95 }}
-            className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg bg-emerald-600/80 text-white text-[10px] sm:text-xs font-semibold hover:bg-emerald-500 transition-colors"
+            className="tap-44 relative flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg bg-emerald-600/80 text-white text-[10px] sm:text-xs font-semibold hover:bg-emerald-500 transition-colors"
           >
             <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             <span className="hidden sm:inline">Add Location</span>
@@ -634,7 +634,7 @@ function SavedLocationsSection() {
                   onClick={resetForm}
                   disabled={isSaving}
                   aria-label="Cancel editing location"
-                  className="flex-1 px-3 sm:px-4 py-1.5 sm:py-2 rounded-md sm:rounded-lg border border-white/10 bg-white/5 text-xs sm:text-sm text-white/70 hover:bg-white/10 transition-colors disabled:opacity-50 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+                  className="flex-1 px-3 sm:px-4 py-1.5 sm:py-2 rounded-md sm:rounded-lg border border-white/10 bg-white/5 text-xs sm:text-sm text-white/70 hover:bg-white/10 transition-colors disabled:opacity-50 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
                 >
                   Cancel
                 </button>
@@ -644,7 +644,7 @@ function SavedLocationsSection() {
                   disabled={!formData.name.trim() || !formData.address.trim() || isSaving}
                   aria-label={isSaving ? "Saving location..." : "Save location"}
                   className={cn(
-                    "flex-1 px-3 sm:px-4 py-1.5 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-1.5 sm:gap-2 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]",
+                    "flex-1 px-3 sm:px-4 py-1.5 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-1.5 sm:gap-2 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]",
                     formData.name.trim() && formData.address.trim() && !isSaving
                       ? "bg-emerald-600 text-white hover:bg-emerald-500"
                       : "bg-emerald-600/30 text-white/50 cursor-not-allowed"
@@ -698,7 +698,7 @@ function SavedLocationsSection() {
                 <button
                   type="button"
                   onClick={() => handleDelete(location.id)}
-                  className="p-1 sm:p-1.5 rounded-md sm:rounded-lg hover:bg-white/10 text-gray-400 hover:text-red-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+                  className="p-1 sm:p-1.5 rounded-md sm:rounded-lg hover:bg-white/10 text-gray-400 hover:text-red-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
                   title="Delete"
                   aria-label={`Delete location ${location.name}`}
                 >
@@ -775,7 +775,7 @@ function SignatureSection() {
             type="button"
             onClick={handleDelete}
             aria-label="Delete saved signature"
-            className="w-full flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg border border-red-500/30 bg-red-500/10 text-red-300 text-xs sm:text-sm font-medium hover:bg-red-500/20 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+            className="w-full flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg border border-red-500/30 bg-red-500/10 text-red-300 text-xs sm:text-sm font-medium hover:bg-red-500/20 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
           >
             <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" aria-hidden />
             Delete Saved Signature
@@ -853,7 +853,7 @@ function PreferencesSection() {
           onClick={resetToDefaults}
           whileTap={{ scale: 0.95 }}
           aria-label="Reset form preferences to defaults"
-          className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg border border-white/10 bg-white/5 text-white/70 text-[10px] sm:text-xs font-medium hover:bg-white/10 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+          className="tap-44 relative flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg border border-white/10 bg-white/5 text-white/70 text-[10px] sm:text-xs font-medium hover:bg-white/10 transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
         >
           <RotateCcw className="w-3 h-3 sm:w-3.5 sm:h-3.5" aria-hidden />
           Reset
@@ -882,7 +882,7 @@ function PreferencesSection() {
               onClick={() => updatePreference(item.key, !preferences[item.key])}
               aria-label={`${preferences[item.key] ? "Disable" : "Enable"} ${item.label}`}
               className={cn(
-                "relative w-10 h-6 sm:w-12 sm:h-7 rounded-full transition-colors flex-shrink-0 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]",
+                "tap-44 relative w-10 h-6 sm:w-12 sm:h-7 rounded-full transition-colors flex-shrink-0 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]",
                 preferences[item.key]
                   ? "bg-emerald-600"
                   : "bg-white/10"
@@ -920,11 +920,11 @@ export default function Settings() {
           className="mb-4 sm:mb-8"
         >
           <div 
-            className="relative overflow-hidden rounded-xl sm:rounded-2xl md:rounded-3xl border border-white/[0.08] p-4 sm:p-6 md:p-8"
+            className="relative overflow-hidden rounded-xl sm:rounded-leaf-sm md:rounded-leaf border border-white/[0.08] p-4 sm:p-6 md:p-8"
             style={{
-              background: 'linear-gradient(145deg, rgba(4, 35, 24, 0.7) 0%, rgba(2, 20, 14, 0.6) 50%, rgba(1, 10, 7, 0.5) 100%)',
+              background: 'linear-gradient(145deg, rgba(18,26,21, 0.7) 0%, rgba(11,16,13, 0.6) 50%, rgba(4,6,5, 0.5) 100%)',
               backdropFilter: 'blur(24px) saturate(180%)',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(16, 185, 129, 0.1)',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0, 0.5), 0 0 0 1px rgba(47,164,90, 0.1)',
             }}
           >
             {/* Background orbs - hidden on mobile for performance */}
@@ -933,16 +933,16 @@ export default function Settings() {
               variants={orbVariants}
               animate="animate"
               style={{
-                background: 'radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, transparent 60%)',
+                background: 'radial-gradient(circle, rgba(47,164,90, 0.3) 0%, transparent 60%)',
                 filter: 'blur(40px)',
               }}
             />
             
             <div className="relative flex items-center gap-3 sm:gap-4">
               <motion.div 
-                className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center border border-emerald-500/30 flex-shrink-0"
+                className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-leaf-sm flex items-center justify-center border border-emerald-500/30 flex-shrink-0"
                 style={{
-                  background: 'linear-gradient(145deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.1) 100%)',
+                  background: 'linear-gradient(145deg, rgba(47,164,90, 0.2) 0%, rgba(31,122,68, 0.1) 100%)',
                 }}
                 whileHover={{ scale: 1.1, rotate: 10 }}
               >
@@ -956,13 +956,13 @@ export default function Settings() {
                     preset="blurSlide"
                     per="char"
                     delay={0.1}
-                    className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight"
-                    segmentWrapperClassName="bg-gradient-to-r from-white via-emerald-100 to-white/90 bg-clip-text text-transparent"
+                    className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]"
+                    segmentWrapperClassName="text-glow"
                   >
                     Settings
                   </TextEffect>
                 ) : (
-                  <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight bg-gradient-to-r from-white via-emerald-100 to-white/90 bg-clip-text text-transparent">
+                  <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">
                     Settings
                   </h1>
                 )}

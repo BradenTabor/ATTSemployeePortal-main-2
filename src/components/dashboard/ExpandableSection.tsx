@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback, ReactNode, memo, cloneElement, isValidElement, useRef } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { canopy } from '../../lib/glass';
 import { getPersistedBool, setPersistedBool } from '../../lib/persistence';
-import { GlowEffect } from '../ui/GlowEffect';
-import { ShimmerEffect } from '../ui/ShimmerEffect';
 import {
   getDeviceCapabilities,
   getQualitySettings,
@@ -13,84 +12,36 @@ import {
 } from '../../lib/mobilePerf';
 
 // ============================================================================
-// THEME CONFIGURATION
+// THEME
 // ============================================================================
 
 export type ExpandableSectionTheme = 'emerald' | 'blue';
 
 interface ThemeConfig {
-  glowColors: string[];
-  cardBg: string;
-  borderColor: string;
-  shadow: string;
-  shadowMobile: string;
-  innerGlowAccent: string;
-  headerBg: string;
+  eyebrow: string;
+  accentWord: string;
+  chevron: string;
+  chevronOpen: string;
+  vein: string;
   focusRing: string;
-  hoverBg: string;
-  iconContainerBg: string;
-  iconContainerBorder: string;
-  iconContainerShadow: string;
-  iconContainerShadowMobile: string;
-  iconContainerRing: string;
-  iconGlowHover: string;
-  iconGlowDefault: string;
-  titleGradient: string;
-  subtitleColor: string;
-  chevronBg: string;
-  chevronBorder: string;
-  chevronColor: string;
-  dividerGradient: string;
 }
 
 const themeConfig: Record<ExpandableSectionTheme, ThemeConfig> = {
   emerald: {
-    glowColors: ['#10b981', '#059669', '#34d399', '#047857'],
-    cardBg: 'bg-gradient-to-br from-[#061f16]/95 via-[#04180f]/90 to-[#020e09]/95',
-    borderColor: 'border-emerald-500/[0.15]',
-    shadow: 'shadow-[0_2px_8px_rgba(6,50,30,0.2),0_10px_24px_-4px_rgba(0,0,0,0.4)]',
-    shadowMobile: 'shadow-[0_2px_8px_rgba(6,50,30,0.15),0_4px_12px_-4px_rgba(0,0,0,0.4)]',
-    innerGlowAccent: 'bg-gradient-to-b from-emerald-500/[0.04] via-transparent to-transparent',
-    headerBg: 'linear-gradient(135deg, rgba(6,50,30,0.6) 0%, rgba(4,24,15,0.4) 60%, rgba(2,14,9,0.2) 100%)',
-    focusRing: 'focus-visible:ring-emerald-400/50 focus-visible:ring-offset-[#04150f]',
-    hoverBg: 'hover:bg-emerald-500/[0.04]',
-    iconContainerBg: 'bg-gradient-to-br from-emerald-500/15 via-emerald-600/8 to-transparent',
-    iconContainerBorder: 'border-emerald-400/25',
-    iconContainerShadow: 'shadow-[0_4px_12px_rgba(16,185,129,0.12)]',
-    iconContainerShadowMobile: 'shadow-[0_2px_8px_rgba(16,185,129,0.08)]',
-    iconContainerRing: 'ring-emerald-300/5',
-    iconGlowHover: 'from-emerald-500/8 via-transparent to-emerald-400/3',
-    iconGlowDefault: 'from-emerald-500/8 via-transparent to-emerald-400/3',
-    titleGradient: 'from-white via-emerald-50 to-white/80',
-    subtitleColor: 'text-emerald-300/50',
-    chevronBg: 'bg-emerald-500/[0.08]',
-    chevronBorder: 'border-emerald-500/[0.15]',
-    chevronColor: 'text-emerald-400/60',
-    dividerGradient: 'from-transparent via-emerald-500/20 to-transparent',
+    eyebrow: 'text-verdant-300',
+    accentWord: 'text-verdant-300',
+    chevron: 'border-bone-50/[0.12] bg-ink-900 text-bone-300',
+    chevronOpen: 'border-verdant-400/50 bg-verdant-500/15 text-verdant-200',
+    vein: 'bg-[linear-gradient(90deg,transparent,#3DDC84,transparent)]',
+    focusRing: 'focus-visible:ring-verdant-400/70',
   },
   blue: {
-    glowColors: ['#3b82f6', '#2563eb', '#60a5fa', '#1d4ed8'],
-    cardBg: 'bg-gradient-to-br from-[#040815]/95 via-[#041020]/90 to-[#03080c]/95',
-    borderColor: 'border-blue-500/30',
-    shadow: 'shadow-[0_0_40px_-12px_rgba(59,130,246,0.25)] shadow-blue-500/10',
-    shadowMobile: 'shadow-lg shadow-blue-500/10',
-    innerGlowAccent: 'bg-gradient-to-b from-blue-500/5 via-transparent to-transparent',
-    headerBg: 'radial-gradient(circle at 50% 50%, rgba(16, 42, 66, 1) 0%, rgba(0, 0, 0, 1) 100%)',
-    focusRing: 'focus-visible:ring-blue-400/50 focus-visible:ring-offset-[#040815]',
-    hoverBg: 'hover:bg-blue-500/5',
-    iconContainerBg: 'bg-gradient-to-br from-blue-500/15 via-blue-600/8 to-transparent',
-    iconContainerBorder: 'border-blue-400/30',
-    iconContainerShadow: 'shadow-xl shadow-blue-500/20',
-    iconContainerShadowMobile: 'shadow-lg shadow-blue-500/15',
-    iconContainerRing: 'ring-blue-300/5',
-    iconGlowHover: 'from-blue-500/8 via-transparent to-blue-400/3',
-    iconGlowDefault: 'from-blue-500/8 via-transparent to-blue-400/3',
-    titleGradient: 'from-white via-blue-100 to-white/80',
-    subtitleColor: 'text-blue-200/60',
-    chevronBg: 'bg-blue-500/10',
-    chevronBorder: 'border-blue-500/20',
-    chevronColor: 'text-blue-400/70',
-    dividerGradient: 'from-transparent via-blue-500/30 to-transparent',
+    eyebrow: 'text-glacier-300',
+    accentWord: 'text-glacier-300',
+    chevron: 'border-bone-50/[0.12] bg-ink-900 text-bone-300',
+    chevronOpen: 'border-glacier-400/50 bg-glacier-500/15 text-glacier-200',
+    vein: 'bg-[linear-gradient(90deg,transparent,#5EE898,transparent)]',
+    focusRing: 'focus-visible:ring-glacier-400/70',
   },
 };
 
@@ -129,19 +80,19 @@ interface ExpandableSectionProps {
   ariaLabel?: string;
   /** Color theme - defaults to emerald */
   theme?: ExpandableSectionTheme;
-  /** When true, icon container has no background/border/shadow (image-only overlay) */
+  /** Kept for API compatibility — the Canopy slot never draws its own chrome. */
   transparentIconContainer?: boolean;
+  /** Optional two-digit index rendered as the instrument counter. */
+  index?: number | string;
 }
 
 /**
- * ExpandableSection - Mobile-optimized collapsible section
- * 
- * Performance optimizations:
- * - Uses CSS grid-template-rows for GPU-accelerated height animation
- * - Respects prefers-reduced-motion for accessibility
- * - Applies will-change only during animation to save GPU memory
- * - Reduced visual effects on low-end devices
- * - No JavaScript-based height measurement (eliminates ResizeObserver polling)
+ * ExpandableSection — Canopy instrument slab with a collapsible body.
+ *
+ * Performance notes:
+ * - CSS grid-template-rows drives the height animation (GPU friendly, no measurement)
+ * - Respects prefers-reduced-motion
+ * - will-change only during the transition
  */
 function ExpandableSectionComponent({
   id,
@@ -155,79 +106,51 @@ function ExpandableSectionComponent({
   headerAction,
   ariaLabel,
   theme = 'emerald',
-  transparentIconContainer = false,
+  index,
 }: ExpandableSectionProps) {
-  // Get theme styles
   const themeStyles = themeConfig[theme];
-  
-  // Use lazy initializer to read persisted state without useEffect setState
+
   const [isOpen, setIsOpen] = useState(() => {
-    if (storageKey) {
-      return getPersistedBool(storageKey, defaultOpen);
-    }
+    if (storageKey) return getPersistedBool(storageKey, defaultOpen);
     return defaultOpen;
   });
-  // Always true since we initialize synchronously now
-  const hasHydrated = true;
-  
-  // Interactive states for avatar animations
+
   const [isHovered, setIsHovered] = useState(false);
   const [wasJustToggled, setWasJustToggled] = useState(false);
   const [toggleDirection, setToggleDirection] = useState<'expand' | 'collapse' | null>(null);
   const toggleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const sectionRef = useRef<HTMLElement>(null);
 
-  // Get device capabilities and quality settings (cached)
   const caps = getDeviceCapabilities();
   const quality = getQualitySettings();
 
-  // Cleanup toggle timeout on unmount
   useEffect(() => {
     return () => {
-      if (toggleTimeoutRef.current) {
-        clearTimeout(toggleTimeoutRef.current);
-      }
+      if (toggleTimeoutRef.current) clearTimeout(toggleTimeoutRef.current);
     };
   }, []);
 
-  // Toggle handler with persistence and animation trigger
   const toggle = useCallback(() => {
     perfMark(`expand-section-${id}`);
-    
     setIsOpen((prev) => {
       const newValue = !prev;
-      if (storageKey) {
-        setPersistedBool(storageKey, newValue);
-      }
-      
-      // Set toggle direction and trigger animation
+      if (storageKey) setPersistedBool(storageKey, newValue);
       setToggleDirection(newValue ? 'expand' : 'collapse');
       setWasJustToggled(true);
-      
-      // Apply will-change during animation only (prevents GPU memory waste)
       if (quality.enableAnimations) {
-        withWillChange(contentRef.current, 'grid-template-rows, opacity', 350);
+        withWillChange(contentRef.current, 'grid-template-rows, opacity', 450);
       }
-      
-      // Clear any existing timeout
-      if (toggleTimeoutRef.current) {
-        clearTimeout(toggleTimeoutRef.current);
-      }
-      
-      // Reset wasJustToggled after animation completes
-      const animDuration = quality.enableAnimations ? 400 : 0;
+      if (toggleTimeoutRef.current) clearTimeout(toggleTimeoutRef.current);
+      const animDuration = quality.enableAnimations ? 500 : 0;
       toggleTimeoutRef.current = setTimeout(() => {
         setWasJustToggled(false);
         setToggleDirection(null);
         perfMeasure(`expand-section-${id}`);
       }, animDuration);
-      
       return newValue;
     });
   }, [storageKey, id, quality.enableAnimations]);
 
-  // Keyboard handler for Enter/Space
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === 'Enter' || e.key === ' ') {
@@ -238,21 +161,14 @@ function ExpandableSectionComponent({
     [toggle]
   );
 
-  // Hover handlers (disabled on touch devices to prevent stuck hover states)
   const handleMouseEnter = useCallback(() => {
-    if (!caps.isMobile) {
-      setIsHovered(true);
-    }
+    if (!caps.isMobile) setIsHovered(true);
   }, [caps.isMobile]);
-
-  const handleMouseLeave = useCallback(() => {
-    setIsHovered(false);
-  }, []);
+  const handleMouseLeave = useCallback(() => setIsHovered(false), []);
 
   const toggleId = `${id}-toggle`;
   const contentId = `${id}-content`;
 
-  // Clone icon element with interaction props if it's a valid React element
   const enhancedIcon = icon && isValidElement(icon)
     ? cloneElement(icon as React.ReactElement<IconInteractionProps>, {
         isExpanded: isOpen,
@@ -262,229 +178,118 @@ function ExpandableSectionComponent({
       })
     : icon;
 
-  // Determine animation styles based on device capabilities
   const shouldAnimate = quality.enableAnimations && !caps.prefersReducedMotion;
-  
-  // CSS Grid-based height animation (GPU-accelerated, no JS measurement)
-  // grid-template-rows: 0fr -> 1fr is performant and works well cross-browser
+
   const gridStyle: React.CSSProperties = shouldAnimate
     ? {
         display: 'grid',
         gridTemplateRows: isOpen ? '1fr' : '0fr',
-        transition: 'grid-template-rows 300ms cubic-bezier(0.4, 0, 0.2, 1)',
+        transition: 'grid-template-rows 450ms cubic-bezier(0.16, 1, 0.3, 1)',
       }
-    : {
-        display: isOpen ? 'block' : 'none',
-      };
+    : { display: isOpen ? 'block' : 'none' };
 
-  // Reduced effects for low-end devices
-  const showEffects = quality.enableEffects && !caps.isLowEnd;
+  const words = title.split(' ');
 
   return (
-    <div className={cn('relative', className)}>
-      {/* Glow effect layer - behind the card (disabled on low-end) */}
-      {showEffects && (
-        <div className="absolute -inset-3 opacity-40">
-          <GlowEffect
-            colors={themeStyles.glowColors}
-            mode="static"
-            blur="stronger"
-            scale={1.1}
-          />
-        </div>
-      )}
-
-      {/* Shimmer wrapper - only on capable devices */}
-      <ShimmerEffectWrapper enabled={showEffects}>
-        <section
-          ref={sectionRef}
-          className={cn(
-            'relative rounded-3xl transition-colors duration-300',
-            // Premium glass morphism styling - theme-aware
-            themeStyles.cardBg,
-            'border',
-            themeStyles.borderColor,
-            // Reduced shadow on mobile for performance
-            caps.isMobile ? themeStyles.shadowMobile : themeStyles.shadow,
-            // Layout containment for rendering isolation
-            'contain-layout'
-          )}
-          style={{
-            // Safari-safe containment
-            contain: 'layout style',
-          }}
-        >
-          {/* Inner glow accent (simplified on mobile) */}
-          {showEffects && (
-            <div className={cn('absolute inset-0 rounded-3xl pointer-events-none', themeStyles.innerGlowAccent)} />
-          )}
-
-          {/* Header - clickable toggle area */}
-          <div 
-            className="relative p-4 md:p-6 rounded-[inherit]"
-            style={{
-              background: themeStyles.headerBg,
-            }}
+    <section
+      className={cn(canopy.instrument, 'contain-layout', className)}
+      style={{ contain: 'layout style' }}
+      data-expanded={isOpen ? 'true' : 'false'}
+    >
+      {/* Header */}
+      <div className="relative px-4 py-4 sm:px-6 sm:py-5">
+        <div className="flex items-center justify-between gap-3">
+          <button
+            id={toggleId}
+            type="button"
+            onClick={toggle}
+            onKeyDown={handleKeyDown}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            aria-expanded={isOpen ? 'true' : 'false'}
+            aria-controls={contentId}
+            aria-label={ariaLabel}
+            className={cn(
+              'group -m-2 flex min-h-[44px] flex-1 items-center gap-3.5 rounded-leaf-xs p-2 text-left',
+              'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950',
+              themeStyles.focusRing
+            )}
           >
-            <div className="flex items-center justify-between gap-3">
-              <button
-                id={toggleId}
-                type="button"
-                onClick={toggle}
-                onKeyDown={handleKeyDown}
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
-                aria-expanded={isOpen ? "true" : "false"}
-                aria-controls={contentId}
-                aria-label={ariaLabel}
+            {enhancedIcon && (
+              <span
                 className={cn(
-                  'flex-1 flex items-center gap-3 text-left',
-                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
-                  themeStyles.focusRing,
-                  'rounded-xl -m-2 p-2 transition-colors duration-200',
-                  themeStyles.hoverBg,
-                  // Touch-friendly sizing
-                  'min-h-[44px]'
+                  'relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-leaf-xs border border-bone-50/[0.1] bg-ink-950/70 sm:h-14 sm:w-14',
+                  '[&_img]:h-full [&_img]:w-full [&_img]:object-contain [&_img]:transform-none',
+                  shouldAnimate && !caps.isMobile && 'transition-transform duration-500 ease-canopy group-hover:-rotate-3'
                 )}
               >
-                {/* Icon/Avatar container with premium styling (or transparent for image-only) */}
-                {enhancedIcon && (
-                  <div
-                    className={cn(
-                      'flex-shrink-0 w-16 h-20 md:w-18 md:h-22 rounded-2xl',
-                      'flex items-center justify-center overflow-visible relative',
-                      // Scale on hover (desktop only, respects reduced motion)
-                      shouldAnimate && !caps.isMobile && 'transition-transform duration-200',
-                      isHovered && shouldAnimate && !caps.isMobile && 'scale-[1.03]',
-                      !transparentIconContainer && themeStyles.iconContainerBg,
-                      !transparentIconContainer && 'border',
-                      !transparentIconContainer && themeStyles.iconContainerBorder,
-                      !transparentIconContainer && (caps.isMobile ? themeStyles.iconContainerShadowMobile : themeStyles.iconContainerShadow),
-                      !transparentIconContainer && 'ring-1 ring-inset',
-                      !transparentIconContainer && themeStyles.iconContainerRing
-                    )}
-                  >
-                    {/* Inner glow effect - only when not transparent */}
-                    {showEffects && !transparentIconContainer && (
-                      <div 
-                        className={cn(
-                          'absolute inset-0 rounded-2xl bg-gradient-to-t pointer-events-none transition-opacity duration-300',
-                          themeStyles.iconGlowHover,
-                          isHovered ? 'opacity-100' : 'opacity-70'
-                        )}
-                      />
-                    )}
-                    {enhancedIcon}
-                  </div>
+                {enhancedIcon}
+              </span>
+            )}
+
+            <span className="min-w-0 flex-1">
+              <span className="flex items-center gap-2.5">
+                {index !== undefined && (
+                  <span className={cn('type-instrument tabular-nums opacity-70', themeStyles.eyebrow)}>
+                    {String(index).padStart(2, '0')}
+                  </span>
                 )}
-
-                {/* Title and subtitle */}
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-base md:text-lg font-semibold tracking-tight text-white flex items-center gap-2">
-                    <span className={cn('bg-gradient-to-r bg-clip-text text-transparent', themeStyles.titleGradient)}>
-                      {title}
+                <span className="type-display truncate text-[1.35rem] font-light leading-none text-bone-50 sm:text-2xl">
+                  {words.map((w, i) => (
+                    <span key={`${w}-${i}`} className={i === words.length - 1 && words.length > 1 ? `italic ${themeStyles.accentWord}` : ''}>
+                      {w}
+                      {i < words.length - 1 && '\u00A0'}
                     </span>
-                  </h3>
-                  {subtitle && (
-                    <p className={cn('text-[11px] md:text-xs mt-0.5 font-medium tracking-wide uppercase line-clamp-1', themeStyles.subtitleColor)}>
-                      {subtitle}
-                    </p>
-                  )}
-                </div>
-
-                {/* Animated chevron indicator */}
-                <div
-                  className={cn(
-                    'flex-shrink-0 w-8 h-8 rounded-lg',
-                    themeStyles.chevronBg,
-                    'border',
-                    themeStyles.chevronBorder,
-                    'flex items-center justify-center',
-                    // CSS transform for chevron rotation (GPU-accelerated)
-                    'transition-transform duration-300',
-                    isOpen && 'rotate-180'
-                  )}
-                  style={{
-                    // Force GPU layer for smooth rotation
-                    transform: `rotate(${isOpen ? 180 : 0}deg) translateZ(0)`,
-                    transition: shouldAnimate ? 'transform 300ms cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
-                  }}
-                >
-                  <ChevronDown
-                    className={cn('w-4 h-4', themeStyles.chevronColor)}
-                    aria-hidden="true"
-                  />
-                </div>
-              </button>
-
-              {/* Optional header action (e.g., "View all" link) */}
-              {headerAction && (
-                <div className="flex-shrink-0 ml-2">{headerAction}</div>
+                  ))}
+                </span>
+              </span>
+              {subtitle && (
+                <span className="mt-1.5 block truncate font-mono text-[10px] uppercase tracking-[0.18em] text-bone-400">
+                  {subtitle}
+                </span>
               )}
-            </div>
-          </div>
+            </span>
 
-          {/* Collapsible content with CSS Grid animation */}
-          <div
-            ref={contentRef}
-            id={contentId}
-            role="region"
-            aria-labelledby={toggleId}
-            style={gridStyle}
-          >
-            <div className="overflow-hidden">
-              {/* Simplified content wrapper - CSS-only opacity transition */}
-              {hasHydrated && (
-                <div
-                  className={cn(
-                    shouldAnimate && "transition-opacity duration-200",
-                    isOpen ? "opacity-100" : "opacity-0"
-                  )}
-                >
-                  {/* Divider line */}
-                  <div className={cn('mx-4 md:mx-6 h-px bg-gradient-to-r', themeStyles.dividerGradient)} />
-                  
-                  <div
-                    className="px-4 pb-4 md:px-6 md:pb-6 pt-4"
-                    style={{
-                      boxShadow: '0px 0px 0px 0px rgba(0, 0, 0, 0), 0px 0px 0px 0px rgba(0, 0, 0, 0), 0px 10px 15px -3px rgba(0, 0, 0, 0.3), 0px 4px 6px 1px rgba(0, 0, 0, 0.6)',
-                    }}
-                  >
-                    {children}
-                  </div>
-                </div>
+            <span
+              className={cn(
+                'flex h-9 w-9 shrink-0 items-center justify-center rounded-leaf-xs border transition-[background-color,border-color,color] duration-500 ease-canopy',
+                isOpen ? themeStyles.chevronOpen : themeStyles.chevron
               )}
-            </div>
+            >
+              <ChevronDown
+                className="h-4 w-4"
+                aria-hidden="true"
+                style={{
+                  transform: `rotate(${isOpen ? 180 : 0}deg)`,
+                  transition: shouldAnimate ? 'transform 500ms cubic-bezier(0.16, 1, 0.3, 1)' : 'none',
+                }}
+              />
+            </span>
+          </button>
+
+          {headerAction && <div className="ml-1 shrink-0">{headerAction}</div>}
+        </div>
+
+        {/* Hairline that draws when open */}
+        <span
+          aria-hidden
+          className={cn(
+            'pointer-events-none absolute inset-x-4 bottom-0 h-px origin-left transition-transform duration-700 ease-canopy sm:inset-x-6',
+            themeStyles.vein,
+            isOpen ? 'scale-x-100' : 'scale-x-0'
+          )}
+        />
+      </div>
+
+      {/* Collapsible content */}
+      <div ref={contentRef} id={contentId} role="region" aria-labelledby={toggleId} style={gridStyle}>
+        <div className="overflow-hidden">
+          <div className={cn(shouldAnimate && 'transition-opacity duration-300', isOpen ? 'opacity-100' : 'opacity-0')}>
+            <div className="px-4 pb-4 pt-4 sm:px-6 sm:pb-6">{children}</div>
           </div>
-        </section>
-      </ShimmerEffectWrapper>
-    </div>
-  );
-}
-
-/**
- * Conditional wrapper for ShimmerEffect to avoid overhead on low-end devices
- */
-function ShimmerEffectWrapper({ 
-  enabled, 
-  children 
-}: { 
-  enabled: boolean; 
-  children: ReactNode;
-}) {
-  if (!enabled) {
-    return <>{children}</>;
-  }
-
-  return (
-    <ShimmerEffect
-      borderShimmer={true}
-      surfaceShimmer={true}
-      duration={4}
-      className="rounded-3xl"
-    >
-      {children}
-    </ShimmerEffect>
+        </div>
+      </div>
+    </section>
   );
 }
 

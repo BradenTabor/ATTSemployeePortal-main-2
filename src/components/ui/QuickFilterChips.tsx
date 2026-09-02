@@ -50,7 +50,7 @@ export const QuickFilterChips = memo(function QuickFilterChips({
         className={`flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/5 border border-white/10`}
       >
         <Sparkles className="w-3 h-3 text-white/40" />
-        <span className="text-[10px] uppercase tracking-wider text-white/40 font-medium">Quick Filters</span>
+        <span className="text-[10px] uppercase text-white/40 font-medium font-mono font-medium tracking-[0.14em]">Quick Filters</span>
       </motion.div>
 
       <AnimatePresence mode="popLayout">

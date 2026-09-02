@@ -27,7 +27,7 @@ export const RewardCatalogGrid = memo(function RewardCatalogGrid({
 }: RewardCatalogGridProps) {
   if (items.length === 0) {
     return (
-      <div className={`${glass.subtle} border-[#f4c979]/10 p-8 text-center`}>
+      <div className={`${glass.subtle} border-[#F4F7F2]/10 p-8 text-center`}>
         <Package className="w-10 h-10 text-white/30 mx-auto mb-3" aria-hidden />
         <p className="text-white/70 text-sm font-medium">No rewards available right now.</p>
         <p className="text-white/50 text-xs mt-1">Check back soon for new gear and gift cards.</p>
@@ -74,10 +74,10 @@ export const RewardCatalogGrid = memo(function RewardCatalogGrid({
               <div
                 className={cn(
                   glass.subtle,
-                  'relative h-36 flex items-center justify-center border-[#f4c979]/10 border-b border-white/[0.04]',
+                  'relative h-36 flex items-center justify-center border-[#F4F7F2]/10 border-b border-white/[0.04]',
                 )}
               >
-                <Gift className="w-12 h-12 text-[#f4c979]/40" aria-hidden />
+                <Gift className="w-12 h-12 text-[#F4F7F2]/40" aria-hidden />
                 <span
                   className={`absolute top-2 right-2 text-[10px] font-medium px-2 py-0.5 rounded-full ${
                     inStock
@@ -96,12 +96,12 @@ export const RewardCatalogGrid = memo(function RewardCatalogGrid({
                 <p className="text-xs text-white/60 mt-1 line-clamp-2 leading-relaxed">{item.description}</p>
               )}
               <div className="mt-auto pt-4 flex items-end justify-between gap-2">
-                <span className="text-lg font-bold text-[#f4c979] tabular-nums">{item.point_cost} pts</span>
+                <span className="text-lg font-bold text-[#F4F7F2] tabular-nums">{item.point_cost} pts</span>
                 <button
                   type="button"
                   onClick={() => onRedeem(item)}
                   disabled={!redeemable}
-                  className="px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50 bg-gradient-to-r from-[#f4c979] to-[#d89d3e] text-[#2d1c04] hover:from-[#f6dcb2] hover:to-[#f4c979] disabled:bg-gray-800 disabled:text-white/40 disabled:from-transparent disabled:to-transparent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
+                  className="min-h-[40px] px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50 bg-gradient-to-r from-[#F4F7F2] to-[#8DF5A8] text-[#040605] hover:from-[#E4EAE1] hover:to-[#F4F7F2] disabled:bg-gray-800 disabled:text-white/40 disabled:from-transparent disabled:to-transparent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
                   aria-disabled={!redeemable}
                 >
                   {!inStock

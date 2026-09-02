@@ -156,10 +156,10 @@ export function getProgressStatusColors(status: ProgressStatus): {
       };
     case 'completed':
       return {
-        gradient: 'from-[#f4c979] to-[#d79a32]',
-        bg: 'bg-[#f4c979]/15',
-        text: 'text-[#f4c979]',
-        border: 'border-[#f4c979]/30',
+        gradient: 'from-[#F4F7F2] to-[#8DF5A8]',
+        bg: 'bg-[#F4F7F2]/15',
+        text: 'text-[#F4F7F2]',
+        border: 'border-[#F4F7F2]/30',
       };
     case 'exceeded':
       return {
@@ -299,10 +299,10 @@ export function getSpanProgressColors(percentage: number): {
   if (percentage >= 100) {
     // Completed - gold theme
     return {
-      gradient: 'from-[#f4c979] to-[#d79a32]',
-      bg: 'bg-[#f4c979]/15',
-      text: 'text-[#f4c979]',
-      border: 'border-[#f4c979]/30',
+      gradient: 'from-[#F4F7F2] to-[#8DF5A8]',
+      bg: 'bg-[#F4F7F2]/15',
+      text: 'text-[#F4F7F2]',
+      border: 'border-[#F4F7F2]/30',
     };
   }
   

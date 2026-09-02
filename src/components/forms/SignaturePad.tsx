@@ -88,7 +88,7 @@ export function SignaturePad({
     return (
       <div className={cn('space-y-2', className)}>
         <div className="flex items-center justify-between">
-          <label className="block text-[10px] font-medium text-white/50 uppercase tracking-wide">
+          <label className="block text-[10px] font-medium text-white/50 uppercase font-mono font-medium tracking-[0.14em]">
             Signature {required && <span className="text-emerald-400">*</span>}
           </label>
           <button

@@ -140,9 +140,9 @@ function JsaExportModalInner({ records, onClose }: JsaExportModalProps) {
         role="dialog"
         aria-modal="true"
         aria-label="Export JSA"
-        className="fixed z-50 inset-x-4 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 top-[10vh] sm:top-[12vh] w-auto sm:w-full sm:max-w-md rounded-2xl border border-white/[0.12] shadow-[0_30px_60px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.1)] overflow-hidden"
+        className="fixed z-50 inset-x-4 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 top-[10vh] sm:top-[12vh] w-auto sm:w-full sm:max-w-md rounded-leaf-sm border border-white/[0.12] shadow-[0_30px_60px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.1)] overflow-hidden"
         style={{
-          background: 'linear-gradient(145deg, rgba(45, 27, 78, 0.95) 0%, rgba(15, 8, 25, 0.98) 100%)',
+          background: 'linear-gradient(145deg, rgba(28,59,44, 0.95) 0%, rgba(11,16,13, 0.98) 100%)',
           backdropFilter: 'blur(24px) saturate(1.6)',
           WebkitBackdropFilter: 'blur(24px) saturate(1.6)',
         }}
@@ -152,14 +152,14 @@ function JsaExportModalInner({ records, onClose }: JsaExportModalProps) {
             {/* Header */}
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#c084fc]/80">
+                <p className="text-[10px] uppercase text-[#5EE898]/80 font-mono font-medium tracking-[0.14em]">
                   {isBatch ? `Export ${records.length} JSAs` : 'Export JSA'}
                 </p>
                 <p className="text-base font-bold tracking-tight text-white mt-0.5 truncate">
                   {locationPreview}
                 </p>
                 {!isBatch && (
-                  <p className="text-xs text-[#a78bfa]/70 mt-0.5">
+                  <p className="text-xs text-[#3DDC84]/70 mt-0.5">
                     {record.job_date || '—'} &middot; {record.user_name || 'Unknown'}
                   </p>
                 )}
@@ -185,8 +185,8 @@ function JsaExportModalInner({ records, onClose }: JsaExportModalProps) {
 
             {/* Format selector */}
             <div className="space-y-1.5">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-[#a78bfa]/60 font-semibold">Format</p>
-              <div className="flex gap-1.5 rounded-xl bg-[#0a0513]/60 border border-[#c084fc]/20 p-1">
+              <p className="text-[10px] uppercase text-[#3DDC84]/60 font-mono font-medium tracking-[0.14em]">Format</p>
+              <div className="flex gap-1.5 rounded-xl bg-[#05170E]/60 border border-[#5EE898]/20 p-1">
                 {FORMAT_OPTIONS.map(opt => {
                   const isActive = selectedFormat === opt.id;
                   return (
@@ -198,13 +198,13 @@ function JsaExportModalInner({ records, onClose }: JsaExportModalProps) {
                       className={`relative flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold transition-colors ${
                         isActive
                           ? 'text-white'
-                          : 'text-[#a78bfa]/70 hover:text-[#e9d5ff]'
+                          : 'text-[#3DDC84]/70 hover:text-[#C8FFD4]'
                       }`}
                     >
                       {isActive && (
                         <motion.div
                           layoutId="format-indicator"
-                          className="absolute inset-0 rounded-lg bg-gradient-to-r from-[#c084fc] via-[#a855f7] to-[#7c3aed] shadow-[0_4px_12px_rgba(192,132,252,0.3)]"
+                          className="absolute inset-0 rounded-lg bg-gradient-to-r from-[#5EE898] via-[#2FA45A] to-[#1F7A44] shadow-[0_4px_12px_rgba(127,224,176,0.3)]"
                           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                         />
                       )}
@@ -213,7 +213,7 @@ function JsaExportModalInner({ records, onClose }: JsaExportModalProps) {
                         {opt.label}
                       </span>
                       {opt.id === 'pdf' && !isBatch && (
-                        <span className="relative text-[8px] text-[#c084fc]/60 absolute -bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap hidden sm:block">
+                        <span className="relative text-[8px] text-[#5EE898]/60 absolute -bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap hidden sm:block">
                           Recommended
                         </span>
                       )}
@@ -236,11 +236,11 @@ function JsaExportModalInner({ records, onClose }: JsaExportModalProps) {
                 >
                   <div className="space-y-2 pt-1">
                     <div className="flex items-center justify-between">
-                      <p className="text-[10px] uppercase tracking-[0.2em] text-[#a78bfa]/60 font-semibold">Sections</p>
+                      <p className="text-[10px] uppercase text-[#3DDC84]/60 font-mono font-medium tracking-[0.14em]">Sections</p>
                       <button
                         type="button"
                         onClick={toggleAll}
-                        className="text-[10px] text-[#c084fc] hover:text-[#e9d5ff] font-semibold transition-colors"
+                        className="text-[10px] text-[#5EE898] hover:text-[#C8FFD4] font-semibold transition-colors"
                       >
                         {enabledSections.size === JSA_SECTIONS.length ? 'Deselect all' : 'Select all'}
                       </button>
@@ -259,12 +259,12 @@ function JsaExportModalInner({ records, onClose }: JsaExportModalProps) {
                             whileTap={{ scale: 0.97 }}
                             className={`flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium transition-all text-left ${
                               isOn
-                                ? 'bg-[#c084fc]/15 border border-[#c084fc]/40 text-[#e9d5ff]'
-                                : 'bg-white/[0.02] border border-white/8 text-[#a78bfa]/50'
+                                ? 'bg-[#5EE898]/15 border border-[#5EE898]/40 text-[#C8FFD4]'
+                                : 'bg-white/[0.02] border border-white/8 text-[#3DDC84]/50'
                             }`}
                           >
                             <div className={`w-3.5 h-3.5 rounded flex items-center justify-center flex-shrink-0 transition-colors ${
-                              isOn ? 'bg-[#c084fc]' : 'bg-white/10 border border-white/20'
+                              isOn ? 'bg-[#5EE898]' : 'bg-white/10 border border-white/20'
                             }`}>
                               {isOn && (
                                 <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -297,7 +297,7 @@ function JsaExportModalInner({ records, onClose }: JsaExportModalProps) {
                   onClick={() => handleExport(true)}
                   disabled={exporting || isOverCap || (selectedFormat === 'pdf' && enabledSections.size === 0)}
                   whileTap={{ scale: 0.98 }}
-                  className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-gradient-to-r from-[#c084fc] via-[#a855f7] to-[#7c3aed] text-white text-sm font-semibold shadow-[0_6px_16px_rgba(192,132,252,0.3)] transition disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-gradient-to-r from-[#5EE898] via-[#2FA45A] to-[#1F7A44] text-white text-sm font-semibold shadow-[0_6px_16px_rgba(127,224,176,0.3)] transition disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
                 >
                   {exporting ? <Loader2 className="w-4 h-4 animate-spin hover:scale-[1.02]" /> : <Share2 className="w-4 h-4" />}
                   Share
@@ -311,8 +311,8 @@ function JsaExportModalInner({ records, onClose }: JsaExportModalProps) {
                 whileTap={{ scale: 0.98 }}
                 className={`inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] ${
                   canShare && selectedFormat === 'pdf'
-                    ? 'flex-1 border border-[#c084fc]/30 text-[#c084fc] hover:bg-[#c084fc]/8'
-                    : 'flex-1 bg-gradient-to-r from-[#c084fc] via-[#a855f7] to-[#7c3aed] text-white shadow-[0_6px_16px_rgba(192,132,252,0.3)]'
+                    ? 'flex-1 border border-[#5EE898]/30 text-[#5EE898] hover:bg-[#5EE898]/8'
+                    : 'flex-1 bg-gradient-to-r from-[#5EE898] via-[#2FA45A] to-[#1F7A44] text-white shadow-[0_6px_16px_rgba(127,224,176,0.3)]'
                 }`}
               >
                 {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}

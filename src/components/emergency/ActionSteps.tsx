@@ -136,7 +136,7 @@ export default function ActionSteps({ protocol, config }: ActionStepsProps) {
                     {tel ? (
                       <a
                         href={tel}
-                        className={`text-red-300 hover:text-red-200 font-semibold underline underline-offset-2 decoration-red-400/40 hover:decoration-red-300/60 transition-colors ${FOCUS_RING}`}
+                        className={`tap-44 relative inline-block text-red-300 hover:text-red-200 font-semibold underline underline-offset-2 decoration-red-400/40 hover:decoration-red-300/60 transition-colors ${FOCUS_RING}`}
                         aria-label={`Call ${contact.name}, ${contact.title}`}
                       >
                         {contact.name} ({contact.title}) — {contact.phone}
@@ -156,7 +156,7 @@ export default function ActionSteps({ protocol, config }: ActionStepsProps) {
       {/* Critical notes */}
       {protocol.criticalNotes.length > 0 && (
         <motion.div
-          className="bg-gradient-to-b from-amber-950/70 to-amber-950/50 border border-amber-700/40 border-l-4 border-l-amber-500 rounded-xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.25),0_8px_24px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(251,191,36,0.05)]"
+          className="bg-gradient-to-b from-amber-950/70 to-amber-950/50 border border-amber-700/40 border-l-4 border-l-amber-500 rounded-xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.25),0_8px_24px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(174,219,63,0.05)]"
           variants={stepVariants}
           initial="hidden"
           animate="visible"
@@ -243,7 +243,7 @@ export default function ActionSteps({ protocol, config }: ActionStepsProps) {
             <a
               href={getTelUri(config.site.nearestHospital.phone)!}
               className={`
-                inline-flex items-center gap-2
+                tap-44 relative inline-flex items-center gap-2
                 text-red-300 hover:text-red-200 font-semibold text-sm
                 underline underline-offset-2 decoration-red-400/40 hover:decoration-red-300/60
                 transition-colors

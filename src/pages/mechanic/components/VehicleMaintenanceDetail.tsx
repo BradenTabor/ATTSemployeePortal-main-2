@@ -181,8 +181,8 @@ function MileageHistoryChart({ history, isLoading }: MileageHistoryChartProps) {
       <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-32" preserveAspectRatio="none">
         <defs>
           <linearGradient id="mileageGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="rgb(251, 146, 60)" stopOpacity="0.3" />
-            <stop offset="100%" stopColor="rgb(251, 146, 60)" stopOpacity="0" />
+            <stop offset="0%" stopColor="rgb(200, 245, 94)" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="rgb(200, 245, 94)" stopOpacity="0" />
           </linearGradient>
         </defs>
         
@@ -193,7 +193,7 @@ function MileageHistoryChart({ history, isLoading }: MileageHistoryChartProps) {
         <path
           d={pathD}
           fill="none"
-          stroke="rgb(251, 146, 60)"
+          stroke="rgb(200, 245, 94)"
           strokeWidth="1.5"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -206,7 +206,7 @@ function MileageHistoryChart({ history, isLoading }: MileageHistoryChartProps) {
             cx={point.x}
             cy={point.y}
             r="2"
-            fill="rgb(251, 146, 60)"
+            fill="rgb(200, 245, 94)"
             className="hover:r-3 transition-all"
           />
         ))}
@@ -564,7 +564,7 @@ ${summary.summary}`;
               type="button"
               onClick={() => handleGenerate(false)}
               aria-label="Generate AI maintenance summary"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs font-semibold transition-all hover:shadow-lg hover:shadow-purple-500/20 focus-visible:outline focus-visible:ring-2 focus-visible:ring-purple-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs font-semibold transition-all hover:shadow-lg hover:shadow-purple-500/20 focus-visible:outline focus-visible:ring-2 focus-visible:ring-purple-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
             >
               <Sparkles className="w-3.5 h-3.5" aria-hidden />
               Generate Summary
@@ -700,12 +700,12 @@ export default function VehicleMaintenanceDetail({ vehicle, onLogRepair }: Vehic
       className="space-y-4"
     >
       {/* Header Card */}
-      <div className="rounded-xl border border-white/10 bg-[#050302] overflow-hidden">
-        <div className="bg-gradient-to-r from-[#ff9350]/8 to-transparent border-b border-white/5 px-4 py-3">
+      <div className="rounded-xl border border-white/10 bg-[#040605] overflow-hidden">
+        <div className="bg-gradient-to-r from-[#B8FF7A]/8 to-transparent border-b border-white/5 px-4 py-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#ff9350]/20 to-[#e87830]/10 border border-[#ff9350]/20 flex items-center justify-center flex-shrink-0">
-                <Truck className="w-5 h-5 text-[#ff9350]" />
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#B8FF7A]/20 to-[#9BEB5B]/10 border border-[#B8FF7A]/20 flex items-center justify-center flex-shrink-0">
+                <Truck className="w-5 h-5 text-[#B8FF7A]" />
               </div>
               <div className="min-w-0">
                 <h3 className="text-base font-semibold text-white truncate">
@@ -730,12 +730,12 @@ export default function VehicleMaintenanceDetail({ vehicle, onLogRepair }: Vehic
                   disabled={isExporting || isLoadingLogs || serviceLogs.length === 0}
                   aria-label={isExporting ? "Exporting..." : "Export service logs"}
                   aria-haspopup="menu"
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-300 text-xs font-medium hover:bg-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-blue-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-300 text-xs font-medium hover:bg-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-blue-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
                 >
                   {isExporting ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden /> : <Download className="w-3 h-3" aria-hidden />}
                   Export
                 </button>
-                <div className="absolute right-0 top-full mt-1 w-28 bg-[#0c0402] border border-white/10 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20">
+                <div className="absolute right-0 top-full mt-1 w-28 bg-[#040605] border border-white/10 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20">
                   <button type="button" onClick={() => handleExport('csv')} disabled={isExporting} aria-label="Export as CSV" className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/70 hover:text-white hover:bg-white/5 transition-colors rounded-t-lg min-h-[44px] focus-visible:outline focus-visible:ring-2 focus-visible:ring-blue-400/50 focus-visible:ring-inset">
                     <FileSpreadsheet className="w-3 h-3" aria-hidden /> CSV
                   </button>
@@ -751,7 +751,7 @@ export default function VehicleMaintenanceDetail({ vehicle, onLogRepair }: Vehic
                 type="button"
                 onClick={onLogRepair}
                 aria-label="Log repair"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#ff9350] to-[#e87830] text-white text-xs font-semibold transition-all hover:shadow-lg hover:shadow-[#ff9350]/20 focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#ff9350]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#B8FF7A] to-[#9BEB5B] text-white text-xs font-semibold transition-all hover:shadow-lg hover:shadow-[#B8FF7A]/20 focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#B8FF7A]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
               >
                 <Plus className="w-3.5 h-3.5" aria-hidden />
                 Log Repair
@@ -771,7 +771,7 @@ export default function VehicleMaintenanceDetail({ vehicle, onLogRepair }: Vehic
         {/* Mileage Chart */}
         <div className="p-4 border-b border-white/5">
           <div className="flex items-center gap-2 mb-3">
-            <TrendingUp className="w-4 h-4 text-[#ff9350]" />
+            <TrendingUp className="w-4 h-4 text-[#B8FF7A]" />
             <span className="text-xs font-medium text-white/70">Mileage History</span>
             <span className="text-[10px] text-white/40">
               ({mileageHistory.length} records)
@@ -878,9 +878,9 @@ export default function VehicleMaintenanceDetail({ vehicle, onLogRepair }: Vehic
       />
       
       {/* Service Timeline */}
-      <div className="rounded-xl border border-white/10 bg-[#050302] p-4">
+      <div className="rounded-xl border border-white/10 bg-[#040605] p-4">
         <div className="flex items-center gap-2 mb-3">
-          <History className="w-4 h-4 text-[#ff9350]" />
+          <History className="w-4 h-4 text-[#B8FF7A]" />
           <span className="text-xs font-medium text-white/70">Service History</span>
           <span className="text-[10px] text-white/40">({serviceLogs.length} records)</span>
         </div>

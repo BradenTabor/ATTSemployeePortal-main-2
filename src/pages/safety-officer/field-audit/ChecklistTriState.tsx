@@ -28,7 +28,7 @@ const OPTIONS: TriOption[] = [
     label: "Pass",
     icon: Check,
     selected:
-      "bg-emerald-500/20 border-emerald-400/50 text-emerald-200 shadow-[inset_0_1px_0_rgba(167,243,208,0.1)]",
+      "bg-emerald-500/20 border-emerald-400/50 text-emerald-200 shadow-[inset_0_1px_0_rgba(141,245,168,0.1)]",
   },
   {
     value: "F",
@@ -80,8 +80,8 @@ export default function ChecklistTriState({
             disabled={disabled}
             onClick={() => onChange(opt.value)}
             className={[
-              "inline-flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold transition-all duration-150",
-              "min-w-[3.25rem] active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100",
+              "inline-flex flex-1 sm:flex-none items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold transition-all duration-150",
+              "min-h-[40px] min-w-[3.25rem] active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100",
               "focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50",
               isSelected
                 ? opt.selected

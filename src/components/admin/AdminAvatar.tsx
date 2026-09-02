@@ -8,43 +8,43 @@ interface AdminAvatarProps {
 const colors = {
   // Primary gold theme
   gold: {
-    bright: '#f7e4bd',
-    base: '#f4c979',
-    dark: '#d79a32',
-    darker: '#a67c20',
-    glow: '#fef3d1',
-    shimmer: '#fff8e7',
+    bright: '#E4EAE1',
+    base: '#F4F7F2',
+    dark: '#8DF5A8',
+    darker: '#8DB52A',
+    glow: '#F4F7F2',
+    shimmer: '#FBFFE8',
   },
   // Rich blacks
   black: {
-    rich: '#0a0a0a',
-    suit: '#1a1a1a',
-    accent: '#2a2a2a',
-    highlight: '#3a3a3a',
+    rich: '#040605',
+    suit: '#121A15',
+    accent: '#1E2A23',
+    highlight: '#2F3F36',
   },
   // Skin tones with SSS undertones
   skin: {
-    highlight: '#fcd9bd',
-    base: '#e8b896',
-    shadow: '#c99a6b',
-    deep: '#a67c52',
+    highlight: '#ECFFAE',
+    base: '#E4FFC2',
+    shadow: '#AEDB3F',
+    deep: '#8A9A8E',
     sssWarm: '#ffb8a8',
     sssRed: '#e8a090',
     sssPink: '#f0c8c0',
   },
   // Materials
   metal: {
-    light: '#e5e7eb',
-    base: '#9ca3af',
-    dark: '#6b7280',
-    darker: '#4b5563',
+    light: '#E4EAE1',
+    base: '#8A9A8E',
+    dark: '#5A6B60',
+    darker: '#2F3F36',
     highlight: '#ffffff',
-    reflection: '#f8fafc',
+    reflection: '#F4FBF7',
   },
   fabric: {
-    shirtWhite: '#fafafa',
-    shirtShadow: '#e5e5e5',
-    tie: '#1a1a1a',
+    shirtWhite: '#F4F7F2',
+    shirtShadow: '#E4EAE1',
+    tie: '#121A15',
   },
 };
 
@@ -158,7 +158,7 @@ function AdminAvatarComponent({ className = '' }: AdminAvatarProps) {
             <linearGradient id={`${id}-shirt`} x1="0%" y1="0%" x2="0%" y2="100%">
               <stop offset="0%" stopColor={colors.fabric.shirtWhite} />
               <stop offset="50%" stopColor={colors.fabric.shirtShadow} />
-              <stop offset="100%" stopColor="#d5d5d5" />
+              <stop offset="100%" stopColor="#D3DCD1" />
             </linearGradient>
 
             {/* Tie gradient - gold accent */}
@@ -174,7 +174,7 @@ function AdminAvatarComponent({ className = '' }: AdminAvatarProps) {
               <stop offset="0%" stopColor={colors.black.accent} />
               <stop offset="30%" stopColor={colors.black.suit} />
               <stop offset="70%" stopColor={colors.black.rich} />
-              <stop offset="100%" stopColor="#050505" />
+              <stop offset="100%" stopColor="#040605" />
             </linearGradient>
 
             {/* Gold metal for accessories */}
@@ -188,18 +188,18 @@ function AdminAvatarComponent({ className = '' }: AdminAvatarProps) {
 
             {/* Iris gradient */}
             <radialGradient id={`${id}-iris`} cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#1c1917" />
-              <stop offset="30%" stopColor="#3d2c1e" />
-              <stop offset="60%" stopColor="#5c4033" />
-              <stop offset="80%" stopColor="#4a3428" />
-              <stop offset="100%" stopColor="#3d2c1e" />
+              <stop offset="0%" stopColor="#121A15" />
+              <stop offset="30%" stopColor="#2F3F36" />
+              <stop offset="60%" stopColor="#2F3F36" />
+              <stop offset="80%" stopColor="#2F3F36" />
+              <stop offset="100%" stopColor="#2F3F36" />
             </radialGradient>
 
             {/* Hair gradient - dark executive style */}
             <linearGradient id={`${id}-hair`} x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#2a2520" />
-              <stop offset="40%" stopColor="#1a1510" />
-              <stop offset="100%" stopColor="#0d0a08" />
+              <stop offset="0%" stopColor="#1E2A23" />
+              <stop offset="40%" stopColor="#121A15" />
+              <stop offset="100%" stopColor="#0B100D" />
             </linearGradient>
 
             {/* Gold fresnel edge */}
@@ -299,10 +299,10 @@ function AdminAvatarComponent({ className = '' }: AdminAvatarProps) {
             {/* Left shoe - polished dress shoe */}
             <path
               d="M 26 87 Q 24 91 26 94 L 39 94 Q 42 91 39 87 L 37 87 Q 35 89 33 89 Q 31 89 29 87 Z"
-              fill="#0f0f0f"
+              fill="#0B100D"
               filter={`url(#${id}-contact-shadow)`}
             />
-            <path d="M 27 93 L 39 93 L 39 95 L 27 95 Z" fill="#050505" />
+            <path d="M 27 93 L 39 93 L 39 95 L 27 95 Z" fill="#040605" />
             <ellipse cx="33" cy="89" rx="4" ry="1.5" fill="white" opacity="0.08" />
 
             {/* Right leg */}
@@ -316,10 +316,10 @@ function AdminAvatarComponent({ className = '' }: AdminAvatarProps) {
             {/* Right shoe */}
             <path
               d="M 41 87 Q 39 91 41 94 L 54 94 Q 57 91 54 87 L 52 87 Q 50 89 48 89 Q 46 89 44 87 Z"
-              fill="#0f0f0f"
+              fill="#0B100D"
               filter={`url(#${id}-contact-shadow)`}
             />
-            <path d="M 42 93 L 54 93 L 54 95 L 42 95 Z" fill="#050505" />
+            <path d="M 42 93 L 54 93 L 54 95 L 42 95 Z" fill="#040605" />
             <ellipse cx="48" cy="89" rx="4" ry="1.5" fill="white" opacity="0.08" />
           </g>
 
@@ -416,8 +416,8 @@ function AdminAvatarComponent({ className = '' }: AdminAvatarProps) {
             </g>
 
             {/* Belt */}
-            <rect x="22" y="68" width="36" height="4" rx="1" fill="#1a1a1a" />
-            <rect x="22" y="68" width="36" height="1.5" rx="0.5" fill="#2a2a2a" />
+            <rect x="22" y="68" width="36" height="4" rx="1" fill="#121A15" />
+            <rect x="22" y="68" width="36" height="1.5" rx="0.5" fill="#1E2A23" />
             {/* Gold belt buckle */}
             <rect x="36" y="67" width="8" height="6" rx="1" fill={`url(#${id}-gold-metal)`} filter={`url(#${id}-gold-glow)`} />
             <rect x="38" y="69" width="4" height="2" rx="0.3" fill={colors.gold.darker} />
@@ -524,32 +524,32 @@ function AdminAvatarComponent({ className = '' }: AdminAvatarProps) {
               />
               <path
                 d="M 28 18 Q 34 14 45 14 Q 52 14 52 19"
-                stroke="#3a3530"
+                stroke="#2F3F36"
                 strokeWidth="0.5"
                 fill="none"
                 opacity="0.5"
               />
               {/* Side part */}
-              <path d="M 32 12 Q 32 16 30 22" stroke="#1a1510" strokeWidth="0.8" fill="none" />
+              <path d="M 32 12 Q 32 16 30 22" stroke="#121A15" strokeWidth="0.8" fill="none" />
               {/* Hair shine */}
               <path d="M 35 13 Q 42 11 48 14" stroke="white" strokeWidth="0.6" opacity="0.2" fill="none" />
               {/* Temple graying - distinguished look */}
-              <path d="M 27 20 Q 26 22 27 25" stroke="#6b6b6b" strokeWidth="1.5" opacity="0.4" fill="none" strokeLinecap="round" />
-              <path d="M 53 20 Q 54 22 53 25" stroke="#6b6b6b" strokeWidth="1.5" opacity="0.4" fill="none" strokeLinecap="round" />
+              <path d="M 27 20 Q 26 22 27 25" stroke="#5A6B60" strokeWidth="1.5" opacity="0.4" fill="none" strokeLinecap="round" />
+              <path d="M 53 20 Q 54 22 53 25" stroke="#5A6B60" strokeWidth="1.5" opacity="0.4" fill="none" strokeLinecap="round" />
             </g>
 
             {/* Eyebrows - confident, slightly arched */}
             <g>
               <path 
                 d="M 31 21 Q 35 19 39 21" 
-                stroke="#2a2520" 
+                stroke="#1E2A23" 
                 strokeWidth="1.6" 
                 strokeLinecap="round" 
                 fill="none"
               />
               <path 
                 d="M 41 21 Q 45 19 49 21" 
-                stroke="#2a2520" 
+                stroke="#1E2A23" 
                 strokeWidth="1.6" 
                 strokeLinecap="round" 
                 fill="none"
@@ -561,7 +561,7 @@ function AdminAvatarComponent({ className = '' }: AdminAvatarProps) {
               {/* Left eye */}
               <ellipse cx="35" cy="25.5" rx="4.5" ry="5" fill={colors.skin.shadow} opacity="0.3" />
               <ellipse cx="35" cy="25" rx="4.5" ry="5" fill="white" />
-              <ellipse cx="35" cy="25" rx="4" ry="4.5" fill="#f8fafc" />
+              <ellipse cx="35" cy="25" rx="4" ry="4.5" fill="#F4FBF7" />
               
               <g>
                 <ellipse cx="36" cy="25.5" rx="2.8" ry="3.2" fill={`url(#${id}-iris)`} />
@@ -572,12 +572,12 @@ function AdminAvatarComponent({ className = '' }: AdminAvatarProps) {
                     y1="25.5"
                     x2={36 + Math.cos(i * Math.PI / 4) * 2}
                     y2={25.5 + Math.sin(i * Math.PI / 4) * 2.5}
-                    stroke="#6b5344"
+                    stroke="#5A6B60"
                     strokeWidth="0.2"
                     opacity="0.5"
                   />
                 ))}
-                <ellipse cx="36" cy="26" rx="1.6" ry="2" fill="#0f0f0f" />
+                <ellipse cx="36" cy="26" rx="1.6" ry="2" fill="#0B100D" />
                 <ellipse cx="36" cy="26" rx="1" ry="1.3" fill="#000000" />
               </g>
               
@@ -591,7 +591,7 @@ function AdminAvatarComponent({ className = '' }: AdminAvatarProps) {
               {/* Right eye */}
               <ellipse cx="45" cy="25.5" rx="4.5" ry="5" fill={colors.skin.shadow} opacity="0.3" />
               <ellipse cx="45" cy="25" rx="4.5" ry="5" fill="white" />
-              <ellipse cx="45" cy="25" rx="4" ry="4.5" fill="#f8fafc" />
+              <ellipse cx="45" cy="25" rx="4" ry="4.5" fill="#F4FBF7" />
               
               <g>
                 <ellipse cx="44" cy="25.5" rx="2.8" ry="3.2" fill={`url(#${id}-iris)`} />
@@ -602,12 +602,12 @@ function AdminAvatarComponent({ className = '' }: AdminAvatarProps) {
                     y1="25.5"
                     x2={44 + Math.cos(i * Math.PI / 4) * 2}
                     y2={25.5 + Math.sin(i * Math.PI / 4) * 2.5}
-                    stroke="#6b5344"
+                    stroke="#5A6B60"
                     strokeWidth="0.2"
                     opacity="0.5"
                   />
                 ))}
-                <ellipse cx="44" cy="26" rx="1.6" ry="2" fill="#0f0f0f" />
+                <ellipse cx="44" cy="26" rx="1.6" ry="2" fill="#0B100D" />
                 <ellipse cx="44" cy="26" rx="1" ry="1.3" fill="#000000" />
               </g>
               
@@ -625,7 +625,7 @@ function AdminAvatarComponent({ className = '' }: AdminAvatarProps) {
             {/* Mouth - confident smile */}
             <path
               d="M 35 34 Q 40 37 45 34"
-              stroke="#9a6b4a"
+              stroke="#8DB52A"
               strokeWidth="1.5"
               strokeLinecap="round"
               fill="none"
@@ -675,15 +675,15 @@ function AdminAvatarComponent({ className = '' }: AdminAvatarProps) {
               />
               
               {/* Crown gems - center */}
-              <circle cx="40" cy="8" r="2" fill="#1a0505" />
+              <circle cx="40" cy="8" r="2" fill="#0B100D" />
               <circle cx="40" cy="8" r="1.5" fill="#b91c1c" />
               <circle cx="39.5" cy="7.5" r="0.5" fill="white" opacity="0.7" />
               
               {/* Crown gems - sides */}
               <circle cx="33" cy="9" r="1.2" fill={colors.gold.darker} />
-              <circle cx="33" cy="9" r="0.8" fill="#059669" />
+              <circle cx="33" cy="9" r="0.8" fill="#2FA45A" />
               <circle cx="47" cy="9" r="1.2" fill={colors.gold.darker} />
-              <circle cx="47" cy="9" r="0.8" fill="#059669" />
+              <circle cx="47" cy="9" r="0.8" fill="#2FA45A" />
               
               {/* Crown shine */}
               <path

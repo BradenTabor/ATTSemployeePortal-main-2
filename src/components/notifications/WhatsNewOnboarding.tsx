@@ -56,7 +56,7 @@ const accentColors = {
     cardBorder: 'border-emerald-500/30',
     cardBg: 'bg-emerald-500/10',
     dot: 'bg-emerald-400',
-    particle: '#10b981',
+    particle: '#3DDC84',
   },
   amber: {
     glow: 'bg-amber-500/20',
@@ -65,7 +65,7 @@ const accentColors = {
     cardBorder: 'border-amber-500/30',
     cardBg: 'bg-amber-500/10',
     dot: 'bg-amber-400',
-    particle: '#f59e0b',
+    particle: '#9BEB5B',
   },
   purple: {
     glow: 'bg-purple-500/20',
@@ -74,7 +74,7 @@ const accentColors = {
     cardBorder: 'border-purple-500/30',
     cardBg: 'bg-purple-500/10',
     dot: 'bg-purple-400',
-    particle: '#a855f7',
+    particle: '#2FA45A',
   },
   blue: {
     glow: 'bg-blue-500/20',
@@ -83,7 +83,7 @@ const accentColors = {
     cardBorder: 'border-blue-500/30',
     cardBg: 'bg-blue-500/10',
     dot: 'bg-blue-400',
-    particle: '#3b82f6',
+    particle: '#8DF5A8',
   },
   pink: {
     glow: 'bg-pink-500/20',
@@ -92,7 +92,7 @@ const accentColors = {
     cardBorder: 'border-pink-500/30',
     cardBg: 'bg-pink-500/10',
     dot: 'bg-pink-400',
-    particle: '#ec4899',
+    particle: '#4CCB8F',
   },
 };
 
@@ -636,7 +636,7 @@ function WhatsNewOnboardingComponent() {
         particleCount: 100,
         spread: 70,
         origin: { x: 0.5, y: 0.6 },
-        colors: ['#10b981', '#34d399', '#6ee7b7', '#a7f3d0', '#059669'],
+        colors: ['#3DDC84', '#5EE898', '#8DF5A8', '#C8FFD4', '#2FA45A'],
       });
     }
 
@@ -701,7 +701,7 @@ function WhatsNewOnboardingComponent() {
           aria-label="What's New in ATTS Portal"
         >
           {/* Background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[#020805] via-[#041a10] to-[#010503]" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#040605] via-[#0B100D] to-[#040605]" />
           
           {/* Animated background orbs - dynamic based on current feature, simplified on mobile */}
           {enableAnimations && (() => {
@@ -778,7 +778,7 @@ function WhatsNewOnboardingComponent() {
               </div>
             </BlurFade>
             <BlurFade delay={0.1} direction="down" inView={false}>
-              <h1 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1 sm:mb-2">
+              <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)] mb-1 sm:mb-2">
                 Explore New Features
               </h1>
             </BlurFade>
@@ -863,9 +863,9 @@ function WhatsNewOnboardingComponent() {
               {isLastSlide ? (
                 <ShimmerButton
                   onClick={handleComplete}
-                  shimmerColor="#34d399"
+                  shimmerColor="#5EE898"
                   shimmerDuration="2s"
-                  background="rgba(16, 185, 129, 0.9)"
+                  background="rgba(47,164,90, 0.9)"
                   className="min-w-[160px] sm:min-w-[200px] text-sm sm:text-base py-2.5 sm:py-3"
                 >
                   <Check className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2 hover:scale-[1.02]" />

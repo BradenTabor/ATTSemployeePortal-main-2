@@ -34,11 +34,11 @@ export default function WaysToEarn({ className }: WaysToEarnProps) {
       transition={{ duration: 0.2 }}
       className={cn(
         cardClass,
-        'overflow-hidden border-[#f6dcb2]/15 bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403]',
+        'overflow-hidden border-[#E4EAE1]/15 bg-gradient-to-br from-[#0B100D] via-[#040605] to-[#040605]',
         className,
       )}
     >
-      <div className="px-4 py-3 sm:px-5 sm:py-4 border-b border-[#f6dcb2]/10">
+      <div className="px-4 py-3 sm:px-5 sm:py-4 border-b border-[#E4EAE1]/10">
         <div className="flex items-start gap-3">
           <div
             className="w-9 h-9 rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-400/20 to-amber-600/10 flex items-center justify-center shrink-0"
@@ -53,7 +53,7 @@ export default function WaysToEarn({ className }: WaysToEarnProps) {
             >
               Ways to Earn
             </h2>
-            <p className="text-xs sm:text-sm text-[#f6dcb2]/50 mt-0.5">
+            <p className="text-xs sm:text-sm text-[#E4EAE1]/50 mt-0.5">
               Safety points you can earn across daily work, reporting, and certifications.
             </p>
           </div>
@@ -66,14 +66,14 @@ export default function WaysToEarn({ className }: WaysToEarnProps) {
 
           return (
             <div key={category}>
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-[#f6dcb2]/70 mb-3">
+              <h3 className="text-xs uppercase text-[#E4EAE1]/70 mb-3 font-mono font-medium tracking-[0.14em]">
                 {WAYS_TO_EARN_CATEGORY_LABELS[category]}
               </h3>
               <ul className="space-y-2" aria-label={WAYS_TO_EARN_CATEGORY_LABELS[category]}>
                 {rules.map((rule) => (
                   <li
                     key={rule.id}
-                    className={cn(subtleClass, 'p-3 sm:p-3.5 border-[#f6dcb2]/10')}
+                    className={cn(subtleClass, 'p-3 sm:p-3.5 border-[#E4EAE1]/10')}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
@@ -97,10 +97,10 @@ export default function WaysToEarn({ className }: WaysToEarnProps) {
         })}
       </div>
 
-      <div className="px-4 sm:px-5 pb-4 sm:pb-5 border-t border-[#f6dcb2]/10">
+      <div className="px-4 sm:px-5 pb-4 sm:pb-5 border-t border-[#E4EAE1]/10">
         <Link
           to="/my-points"
-          className="flex items-center justify-between gap-2 py-2 text-xs sm:text-sm text-[#f6dcb2]/70 hover:text-[#f6dcb2] transition-colors"
+          className="flex min-h-[44px] items-center justify-between gap-2 py-2 text-xs sm:text-sm text-[#E4EAE1]/70 hover:text-[#E4EAE1] transition-colors"
         >
           <span>View your points balance & activity</span>
           <ChevronRight className="w-4 h-4 shrink-0" aria-hidden />

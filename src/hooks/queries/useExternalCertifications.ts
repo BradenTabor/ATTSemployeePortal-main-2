@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabaseClient';
+import { getAuthUserFast } from '../../lib/authUser';
 import { queryKeys } from '../../lib/queryKeys';
 import { deriveEffectiveStatus } from '../../lib/certStatus';
 import { useAuth } from '../../contexts/AuthContext';
@@ -39,7 +40,7 @@ export function useCreateExternalCertificationType() {
       is_required?: boolean;
       validity_months?: number | null;
     }) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getAuthUserFast();
       if (!user) throw new Error('Not authenticated');
 
       const { data, error } = await supabase
@@ -81,7 +82,7 @@ export function useUpdateExternalCertificationType() {
       id: string;
       updates: Partial<Pick<ExternalCertificationType, 'name' | 'description' | 'category' | 'is_required' | 'validity_months' | 'is_active'>>;
     }) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getAuthUserFast();
       if (!user) throw new Error('Not authenticated');
 
       const { data, error } = await supabase
@@ -134,9 +135,11 @@ export function useWorkerExternalCertifications(userId?: string, options?: { ena
     staleTime: TEN_MIN,
     enabled: options?.enabled ?? true,
     queryFn: async (): Promise<WorkerExternalCertification[]> => {
+      // user_id references auth.users, not app_users, so PostgREST cannot embed
+      // the worker row (400 "no relationship"). Fetch names in a second query.
       let q = supabase
         .from('worker_external_certifications')
-        .select('*, cert_type:external_certification_types(name), worker:app_users!user_id(full_name)');
+        .select('*, cert_type:external_certification_types(name)');
 
       if (userId) {
         q = q.eq('user_id', userId);
@@ -147,9 +150,24 @@ export function useWorkerExternalCertifications(userId?: string, options?: { ena
       const { data, error } = await q.order('granted_at', { ascending: false });
       if (error) throw new Error(error.message ?? 'Failed to load external certifications.');
 
-      return (data ?? []).map((r: Record<string, unknown>) => {
+      const rows = (data ?? []) as Record<string, unknown>[];
+      const nameByUserId = new Map<string, string | null>();
+      if (!userId && rows.length > 0) {
+        const ids = [...new Set(rows.map((r) => r.user_id as string))];
+        const { data: workers } = await supabase
+          .from('app_users')
+          .select('user_id, full_name')
+          .in('user_id', ids);
+        for (const w of (workers ?? []) as { user_id: string; full_name: string | null }[]) {
+          nameByUserId.set(w.user_id, w.full_name);
+        }
+      }
+
+      return rows.map((r) => {
         const certType = r.cert_type as { name: string } | null;
-        const worker = r.worker as { full_name: string | null } | null;
+        const worker = nameByUserId.has(r.user_id as string)
+          ? { full_name: nameByUserId.get(r.user_id as string) ?? null }
+          : null;
         return {
           id: r.id as string,
           user_id: r.user_id as string,
@@ -199,7 +217,7 @@ export function useAssignExternalCertification() {
       documentUrl?: string;
       notes?: string;
     }) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getAuthUserFast();
       if (!user) throw new Error('Not authenticated');
 
       const { data, error } = await supabase
@@ -260,7 +278,7 @@ export function useUpdateExternalCertification() {
         notes?: string | null;
       };
     }) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getAuthUserFast();
       if (!user) throw new Error('Not authenticated');
 
       const { data, error } = await supabase
@@ -299,7 +317,7 @@ export function useRevokeExternalCertification() {
       userId: string;
       reason?: string;
     }) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getAuthUserFast();
       if (!user) throw new Error('Not authenticated');
 
       const { error } = await supabase

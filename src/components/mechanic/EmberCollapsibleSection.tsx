@@ -111,12 +111,12 @@ function EmberCollapsibleSectionComponent({
   return (
     <section
       className={cn(
-        'relative rounded-3xl border border-[#ff9350]/25 bg-gradient-to-br from-[#1a0a06] via-[#bf7140] to-[#070302] overflow-hidden shadow-[0_25px_50px_rgba(0,0,0,0.5)]',
+        'relative rounded-leaf border border-[#B8FF7A]/25 bg-gradient-to-br from-[#0B100D] via-[#AEDB3F] to-[#040605] overflow-hidden shadow-[0_25px_50px_rgba(0,0,0,0.5)]',
         className
       )}
     >
       {/* Simplified ambient glow - single layer for performance */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,147,80,0.1),transparent_50%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(200,245,94,0.1),transparent_50%)]" />
 
       {/* Header - clickable toggle area */}
       <div className="relative p-5 md:p-6">
@@ -131,24 +131,24 @@ function EmberCollapsibleSectionComponent({
             aria-label={isOpen ? `Collapse ${title}` : `Expand ${title}`}
             className={cn(
               'flex-1 flex items-center gap-4 text-left',
-              'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#ff9350]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c0402]',
+              'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B8FF7A]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#040605]',
               'rounded-xl -m-2 p-2 transition-colors duration-200 hover:bg-white/5'
             )}
           >
             {/* Icon container */}
             {icon && (
-              <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-[#ff9350]/20 to-[#ff6f3c]/10 border border-[#ff9350]/40 flex items-center justify-center">
+              <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-[#B8FF7A]/20 to-[#ff6f3c]/10 border border-[#B8FF7A]/40 flex items-center justify-center">
                 {icon}
               </div>
             )}
 
             {/* Title and subtitle */}
             <div className="flex-1 min-w-0">
-              <h3 className="text-lg md:text-xl font-bold text-[#ffe7d0] tracking-wide">
+              <h3 className="text-lg md:text-xl font-bold text-[#F5FFD1] tracking-wide">
                 {title}
               </h3>
               {subtitle && (
-                <p className="text-xs md:text-sm text-[#ffd4b8]/70 mt-0.5 line-clamp-1">
+                <p className="text-xs md:text-sm text-[#ECFFAE]/70 mt-0.5 line-clamp-1">
                   {subtitle}
                 </p>
               )}
@@ -158,10 +158,10 @@ function EmberCollapsibleSectionComponent({
             <motion.div
               animate={{ rotate: isOpen ? 180 : 0 }}
               transition={prefersReducedMotion ? { duration: 0 } : chevronTransition}
-              className="flex-shrink-0 w-8 h-8 rounded-full bg-[#ff9350]/15 border border-[#ff9350]/35 flex items-center justify-center will-change-transform"
+              className="flex-shrink-0 w-8 h-8 rounded-full bg-[#B8FF7A]/15 border border-[#B8FF7A]/35 flex items-center justify-center will-change-transform"
             >
               <ChevronDown
-                className="w-5 h-5 text-[#ff9350]"
+                className="w-5 h-5 text-[#B8FF7A]"
                 aria-hidden="true"
               />
             </motion.div>
@@ -185,7 +185,7 @@ function EmberCollapsibleSectionComponent({
             className="overflow-hidden"
           >
             {/* Content divider line */}
-            <div className="mx-5 md:mx-6 h-px bg-gradient-to-r from-transparent via-[#ff9350]/35 to-transparent" />
+            <div className="mx-5 md:mx-6 h-px bg-gradient-to-r from-transparent via-[#B8FF7A]/35 to-transparent" />
             
             <div className="p-5 md:p-6 pt-4">
               {hasHydrated && children}

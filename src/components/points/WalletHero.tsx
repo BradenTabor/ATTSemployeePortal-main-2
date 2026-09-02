@@ -39,11 +39,11 @@ export function WalletHero({
       data-testid={testId}
     >
       <div className="flex items-start gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#f4c979]/15">
-          <Wallet className="h-5 w-5 text-[#f4c979]" aria-hidden />
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#F4F7F2]/15">
+          <Wallet className="h-5 w-5 text-[#F4F7F2]" aria-hidden />
         </div>
         <div className="min-w-0 flex-1">
-          <h2 id={headingId} className="text-xs uppercase tracking-wider text-white/50">
+          <h2 id={headingId} className="text-xs uppercase text-white/50 font-mono font-medium tracking-[0.14em]">
             {label}
           </h2>
           {isLoading ? (
@@ -51,7 +51,7 @@ export function WalletHero({
           ) : (
             <p
               className={cn(
-                'mt-0.5 flex items-center gap-2 font-bold tabular-nums text-[#f4c979]',
+                'mt-0.5 flex items-center gap-2 font-bold tabular-nums text-[#F4F7F2]',
                 isLarge ? 'text-4xl' : 'text-3xl',
               )}
             >

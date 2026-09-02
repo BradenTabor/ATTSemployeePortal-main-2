@@ -39,7 +39,7 @@ function UnderlineAuditTabs({
             id={`tab-${id}`}
             onClick={() => setTab(id)}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium transition-colors border-b-2 focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]",
+              "flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium transition-colors border-b-2 focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]",
               tab === id
                 ? "border-amber-400 text-amber-300 bg-amber-500/5"
                 : "border-transparent text-white/50 hover:text-white/70 hover:border-white/20"

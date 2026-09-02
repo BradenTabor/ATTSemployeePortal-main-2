@@ -21,8 +21,8 @@ const ALL_ROLES = [
 ] as const;
 
 const ROLE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  admin:           { bg: "bg-[#f4c979]/15", text: "text-[#f8e5bb]",    border: "border-[#f4c979]/30" },
-  manager:         { bg: "bg-[#f4c979]/15", text: "text-[#f8e5bb]",    border: "border-[#f4c979]/30" },
+  admin:           { bg: "bg-[#F4F7F2]/15", text: "text-[#E4EAE1]",    border: "border-[#F4F7F2]/30" },
+  manager:         { bg: "bg-[#F4F7F2]/15", text: "text-[#E4EAE1]",    border: "border-[#F4F7F2]/30" },
   mechanic:        { bg: "bg-orange-500/15", text: "text-orange-200",   border: "border-orange-500/30" },
   foreman:         { bg: "bg-blue-500/15",   text: "text-blue-200",     border: "border-blue-500/30" },
   general_foreman: { bg: "bg-purple-500/15", text: "text-purple-200",   border: "border-purple-500/30" },
@@ -94,14 +94,14 @@ export default function TeamContacts() {
             className="relative"
           >
             <div
-              className="relative overflow-hidden rounded-2xl md:rounded-3xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
+              className="relative overflow-hidden rounded-leaf-sm md:rounded-leaf border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
               style={{
                 backdropFilter: "blur(24px) saturate(180%)",
                 WebkitBackdropFilter: "blur(24px) saturate(180%)",
                 background:
-                  "linear-gradient(145deg, rgba(4, 30, 21, 0.6) 0%, rgba(2, 15, 10, 0.5) 50%, rgba(1, 8, 5, 0.4) 100%)",
+                  "linear-gradient(145deg, rgba(11,16,13, 0.6) 0%, rgba(4,6,5, 0.5) 50%, rgba(4,6,5, 0.4) 100%)",
                 boxShadow:
-                  "inset 0 0 15px rgba(125, 225, 180, 0.05), 0 8px 32px rgba(0,0,0,0.4)",
+                  "inset 0 0 15px rgba(94,232,152, 0.05), 0 8px 32px rgba(0,0,0,0.4)",
               }}
             >
               <div
@@ -124,7 +124,7 @@ export default function TeamContacts() {
                     className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30"
                   >
                     <Users className="w-3.5 h-3.5 text-emerald-400" aria-hidden />
-                    <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-emerald-200">
+                    <span className="text-[10px] uppercase text-emerald-200 font-mono font-medium tracking-[0.14em]">
                       Team Directory
                     </span>
                   </motion.div>
@@ -133,9 +133,9 @@ export default function TeamContacts() {
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ duration: 0.4, delay: 0.3 }}
-                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#03150f]/60 border border-emerald-500/20"
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0B100D]/60 border border-emerald-500/20"
                     >
-                      <span className="text-[9px] uppercase tracking-wider font-semibold text-emerald-200/70">
+                      <span className="text-[9px] uppercase text-emerald-200/70 font-mono font-medium tracking-[0.14em]">
                         {contacts.length} {contacts.length === 1 ? "member" : "members"}
                       </span>
                     </motion.div>
@@ -154,7 +154,7 @@ export default function TeamContacts() {
                     className="w-1 h-14 md:h-16 rounded-full bg-gradient-to-b from-emerald-400 via-emerald-500 to-emerald-600 origin-top flex-shrink-0"
                     style={{
                       boxShadow:
-                        "0 0 20px rgba(16, 185, 129, 0.4), 0 0 40px rgba(16, 185, 129, 0.2)",
+                        "0 0 20px rgba(47,164,90, 0.4), 0 0 40px rgba(47,164,90, 0.2)",
                     }}
                   />
                   <div className="flex-1 min-w-0">
@@ -164,13 +164,13 @@ export default function TeamContacts() {
                         preset="blurSlide"
                         per="char"
                         delay={0.15}
-                        className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight"
-                        segmentWrapperClassName="bg-gradient-to-r from-white via-emerald-100 to-white/90 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(125,225,180,0.3)]"
+                        className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]"
+                        segmentWrapperClassName="text-glow"
                       >
                         ATTS Team Contacts
                       </TextEffect>
                     ) : (
-                      <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight bg-gradient-to-r from-white via-emerald-100 to-white/90 bg-clip-text text-transparent">
+                      <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">
                         ATTS Team Contacts
                       </h1>
                     )}
@@ -247,7 +247,7 @@ export default function TeamContacts() {
             animate={{ opacity: 1, y: 0 }}
             className={`${glass.card} border-rose-500/20 px-6 py-10 flex flex-col items-center text-center`}
           >
-            <div className={`w-14 h-14 rounded-2xl ${glass.subtle} flex items-center justify-center mb-4`}>
+            <div className={`w-14 h-14 rounded-leaf-sm ${glass.subtle} flex items-center justify-center mb-4`}>
               <RefreshCw className="w-7 h-7 text-rose-400/60" aria-hidden />
             </div>
             <h3 className="text-lg font-semibold text-white mb-2">
@@ -276,7 +276,7 @@ export default function TeamContacts() {
                 : "No active team members are available right now."
             }
             icon={
-              <div className={`w-14 h-14 rounded-2xl ${glass.subtle} flex items-center justify-center`}>
+              <div className={`w-14 h-14 rounded-leaf-sm ${glass.subtle} flex items-center justify-center`}>
                 <Users className="w-7 h-7 text-white/40" aria-hidden />
               </div>
             }

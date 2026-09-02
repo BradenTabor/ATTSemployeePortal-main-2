@@ -132,8 +132,8 @@ function JobCrewSelectorComponent({
 
   return (
     <div className="space-y-2 relative" ref={containerRef} onKeyDown={handleKeyDown}>
-      <label className="text-xs uppercase tracking-[0.3em] text-[#f3d9a4]/70 flex items-center gap-2">
-        <Users className="w-4 h-4 text-[#f4c979]" />
+      <label className="text-xs uppercase text-[#DDFF85]/70 flex items-center gap-2 font-mono font-medium tracking-[0.14em]">
+        <Users className="w-4 h-4 text-[#F4F7F2]" />
         Assign Crew Members
       </label>
 
@@ -151,9 +151,9 @@ function JobCrewSelectorComponent({
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
                   layout
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#f4c979]/15 border border-[#f4c979]/30 text-[#f8e5bb] text-xs"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F4F7F2]/15 border border-[#F4F7F2]/30 text-[#E4EAE1] text-xs"
                 >
-                  <span className="w-5 h-5 rounded-full bg-gradient-to-br from-[#f4c979] to-[#d89d3e] flex items-center justify-center text-[#2d1c04] text-[10px] font-bold">
+                  <span className="w-5 h-5 rounded-full bg-gradient-to-br from-[#F4F7F2] to-[#8DF5A8] flex items-center justify-center text-[#040605] text-[10px] font-bold">
                     {avatarInitial}
                   </span>
                   <span className="max-w-[150px] truncate">
@@ -162,7 +162,7 @@ function JobCrewSelectorComponent({
                   <button
                     type="button"
                     onClick={() => removeMember(member.user_id)}
-                    className="ml-1 text-[#f4c979]/60 hover:text-white transition-colors"
+                    className="ml-1 text-[#F4F7F2]/60 hover:text-white transition-colors"
                     disabled={disabled}
                     aria-label={`Remove ${displayName}`}
                   >
@@ -183,11 +183,11 @@ function JobCrewSelectorComponent({
         aria-expanded={isOpen ? "true" : "false"}
         aria-haspopup="listbox"
         className={cn(
-          'w-full flex items-center justify-between px-4 py-3 rounded-2xl border text-left transition-all',
-          'bg-[#050402]/80 border-[#f6dcb2]/20 text-white',
-          'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/60',
+          'w-full flex items-center justify-between px-4 py-3 rounded-leaf-sm border text-left transition-all',
+          'bg-[#040605]/80 border-[#E4EAE1]/20 text-white',
+          'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/60',
           disabled && 'opacity-50 cursor-not-allowed',
-          isOpen && 'ring-2 ring-[#f4c979]/60'
+          isOpen && 'ring-2 ring-[#F4F7F2]/60'
         )}
       >
         <span className={selectedIds.length === 0 ? 'text-white/30' : 'text-white'}>
@@ -198,7 +198,7 @@ function JobCrewSelectorComponent({
             : `${selectedIds.length} member${selectedIds.length !== 1 ? 's' : ''} selected`}
         </span>
         <ChevronDown className={cn(
-          'w-4 h-4 text-[#f4c979] transition-transform',
+          'w-4 h-4 text-[#F4F7F2] transition-transform',
           isOpen && 'rotate-180'
         )} />
       </button>
@@ -215,21 +215,21 @@ function JobCrewSelectorComponent({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.15 }}
-            className="absolute z-50 mt-1 w-full max-h-64 overflow-hidden rounded-2xl border border-[#f6dcb2]/20 bg-[#0c0a07] shadow-[0_20px_40px_rgba(0,0,0,0.5)]"
+            className="absolute z-50 mt-1 w-full max-h-64 overflow-hidden rounded-leaf-sm border border-[#E4EAE1]/20 bg-[#0B100D] shadow-[0_20px_40px_rgba(0,0,0,0.5)]"
             role="listbox"
             aria-multiselectable="true"
           >
             {/* Search input */}
-            <div className="sticky top-0 p-2 bg-[#0c0a07] border-b border-white/5">
+            <div className="sticky top-0 p-2 bg-[#0B100D] border-b border-white/5">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#f4c979]/50" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#F4F7F2]/50" />
                 <input
                   ref={searchInputRef}
                   type="text"
                   placeholder="Search by name or email..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 rounded-xl bg-[#050402] border border-[#f6dcb2]/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus-visible:border-[#f4c979]/40"
+                  className="w-full pl-9 pr-4 py-2 rounded-xl bg-[#040605] border border-[#E4EAE1]/10 text-white text-sm placeholder:text-white/30 focus:outline-none focus-visible:border-[#F4F7F2]/40"
                   aria-label="Search crew members"
                 />
               </div>
@@ -259,16 +259,16 @@ function JobCrewSelectorComponent({
                       className={cn(
                         'w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors',
                         isSelected
-                          ? 'bg-[#f4c979]/10 text-white'
+                          ? 'bg-[#F4F7F2]/10 text-white'
                           : 'text-white/80 hover:bg-white/5',
                         isFocused && !isSelected && 'bg-white/5',
-                        isFocused && 'ring-1 ring-inset ring-[#f4c979]/40'
+                        isFocused && 'ring-1 ring-inset ring-[#F4F7F2]/40'
                       )}
                     >
                       <div className={cn(
                         'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold',
                         isSelected
-                          ? 'bg-gradient-to-br from-[#f4c979] to-[#d89d3e] text-[#2d1c04]'
+                          ? 'bg-gradient-to-br from-[#F4F7F2] to-[#8DF5A8] text-[#040605]'
                           : 'bg-white/10 text-white/60'
                       )}>
                         {avatarInitial}
@@ -284,10 +284,10 @@ function JobCrewSelectorComponent({
                       <div className={cn(
                         'w-5 h-5 rounded-md border flex items-center justify-center transition-colors',
                         isSelected
-                          ? 'bg-[#f4c979] border-[#f4c979]'
+                          ? 'bg-[#F4F7F2] border-[#F4F7F2]'
                           : 'border-white/20'
                       )}>
-                        {isSelected && <Check className="w-3 h-3 text-[#2d1c04]" />}
+                        {isSelected && <Check className="w-3 h-3 text-[#040605]" />}
                       </div>
                     </button>
                   );
@@ -296,7 +296,7 @@ function JobCrewSelectorComponent({
             </div>
 
             {/* Keyboard hint */}
-            <div className="sticky bottom-0 px-3 py-2 bg-[#0c0a07] border-t border-white/5 text-[10px] text-white/30 flex items-center gap-3">
+            <div className="sticky bottom-0 px-3 py-2 bg-[#0B100D] border-t border-white/5 text-[10px] text-white/30 flex items-center gap-3">
               <span>↑↓ Navigate</span>
               <span>Enter Select</span>
               <span>Esc Close</span>

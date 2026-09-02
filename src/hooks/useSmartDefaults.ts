@@ -94,6 +94,8 @@ export interface UseSmartDefaultsResult {
  * }
  * ```
  */
+const SUPPORTED_FORM_TYPES: ReadonlySet<string> = new Set(['dvir', 'jsa']);
+
 export function useSmartDefaults(formType: 'dvir' | 'jsa' | 'equipment'): UseSmartDefaultsResult {
   const [data, setData] = useState<SmartDefaultsResponse | null>(null);
   // Start with loading=true so the skeleton shows immediately on mount
@@ -101,6 +103,12 @@ export function useSmartDefaults(formType: 'dvir' | 'jsa' | 'equipment'): UseSma
   const [error, setError] = useState<string | null>(null);
 
   const fetchSuggestions = useCallback(async () => {
+    // The edge function only has history extractors for DVIR and JSA; asking
+    // for anything else is a guaranteed 400 (wasted round-trip + skeleton).
+    if (!SUPPORTED_FORM_TYPES.has(formType)) {
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     setError(null);
 

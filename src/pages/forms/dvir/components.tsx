@@ -36,11 +36,11 @@ interface SectionCardProps {
 
 export const SectionCard = ({ title, subtitle, badge, children }: SectionCardProps) => (
   <section 
-    className="rounded-2xl sm:rounded-3xl border border-white/10 bg-gradient-to-br from-gray-900/80 via-gray-900/40 to-gray-900/10 p-4 sm:p-6 space-y-4 sm:space-y-5 shadow-2xl shadow-black/60"
+    className="rounded-leaf-sm sm:rounded-leaf border border-white/10 bg-gradient-to-br from-gray-900/80 via-gray-900/40 to-gray-900/10 p-4 sm:p-6 space-y-4 sm:space-y-5 shadow-2xl shadow-black/60"
   >
     <div className="flex flex-wrap items-start justify-between gap-2 sm:gap-3">
       <div className="min-w-0">
-        <p className="text-[9px] sm:text-[10px] tracking-[0.2em] sm:tracking-[0.3em] uppercase text-emerald-200/70">
+        <p className="text-[9px] sm:text-[10px] sm:tracking-[0.3em] uppercase text-emerald-200/70 font-mono font-medium tracking-[0.14em]">
           {badge || "DOT COMPLIANT"}
         </p>
         <h2 className="text-base sm:text-lg font-semibold text-white">{title}</h2>
@@ -237,7 +237,7 @@ export const ChecklistQuickActions = ({ onMarkAllPass, onMarkAllFail, onClearAll
           </motion.span>
         )}
       </div>
-      <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-white/50 hidden sm:inline">
+      <span className="text-[9px] sm:text-[10px] uppercase text-white/50 hidden sm:inline font-mono font-medium tracking-[0.14em]">
         Quick Actions
       </span>
     </div>
@@ -294,20 +294,35 @@ interface FormProgressProps {
 export const FormProgress = ({ steps, lastSaved, hasUnsavedChanges }: FormProgressProps) => {
   const completedCount = steps.filter(s => s.isComplete).length;
   const progress = (completedCount / steps.length) * 100;
+
+  // Once the card is actually stuck (its natural position scrolled off-screen)
+  // we condense it so it stops covering the form on phones. The sentinel sits
+  // at the card's natural position; when it leaves the viewport, we're stuck.
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const [stuck, setStuck] = useState(false);
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([entry]) => setStuck(!entry.isIntersecting), { threshold: 0 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
   
   return (
+    <>
+    <div ref={sentinelRef} aria-hidden className="h-px w-px" />
     <div className="sticky top-2 sm:top-4 z-40 mx-2 sm:mx-4">
       <motion.div 
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-4xl mx-auto rounded-2xl bg-black/70 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/50 overflow-hidden"
+        className="max-w-4xl mx-auto rounded-leaf-sm bg-black/70 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/50 overflow-hidden"
       >
         {/* Subtle gradient border effect */}
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
         
-        <div className="p-4 sm:p-5">
+        <div className={cn("p-4 sm:p-5", stuck && "py-2.5 sm:py-5")}>
           {/* Top row: Title + Percentage */}
-          <div className="flex items-center justify-between mb-4">
+          <div className={cn("flex items-center justify-between", stuck ? "mb-0 sm:mb-4" : "mb-4")}>
             <div className="flex items-center gap-3">
               <div className={cn(
                 "w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
@@ -367,8 +382,8 @@ export const FormProgress = ({ steps, lastSaved, hasUnsavedChanges }: FormProgre
                 />
                 <defs>
                   <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#10b981" />
-                    <stop offset="100%" stopColor="#34d399" />
+                    <stop offset="0%" stopColor="#3DDC84" />
+                    <stop offset="100%" stopColor="#5EE898" />
                   </linearGradient>
                 </defs>
               </svg>
@@ -384,7 +399,7 @@ export const FormProgress = ({ steps, lastSaved, hasUnsavedChanges }: FormProgre
           </div>
           
           {/* Progress bar */}
-          <div className="relative h-1.5 bg-gray-800 rounded-full overflow-hidden mb-5">
+          <div className={cn("relative h-1.5 bg-gray-800 rounded-full overflow-hidden mb-5", stuck && "hidden sm:block")}>
             <motion.div
               className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400"
               initial={{ width: 0 }}
@@ -393,8 +408,8 @@ export const FormProgress = ({ steps, lastSaved, hasUnsavedChanges }: FormProgre
             />
           </div>
           
-          {/* Step indicators - horizontal scroll on mobile */}
-          <div className="flex items-start justify-between gap-2 sm:gap-4">
+          {/* Step indicators - collapsed on phones while the card is stuck */}
+          <div className={cn("flex items-start justify-between gap-2 sm:gap-4", stuck && "hidden sm:flex")}>
             {steps.map((step, index) => {
               const isCompleted = step.isComplete;
               const isCurrent = step.isCurrent && !step.isComplete;
@@ -446,6 +461,7 @@ export const FormProgress = ({ steps, lastSaved, hasUnsavedChanges }: FormProgre
         </div>
       </motion.div>
     </div>
+    </>
   );
 };
 
@@ -465,10 +481,10 @@ export const UploadTile = ({ label, description, required, status, onClick }: Up
   <button
     type="button"
     onClick={onClick}
-    className="group flex items-center justify-between gap-2 sm:gap-4 rounded-xl sm:rounded-2xl border border-white/5 bg-white/[0.04] px-3 sm:px-4 py-3 text-left transition-all hover:border-emerald-400/40 hover:bg-white/[0.07] active:bg-white/[0.1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 min-h-[60px] sm:min-h-[64px]"
+    className="group flex items-center justify-between gap-2 sm:gap-4 rounded-xl sm:rounded-leaf-sm border border-white/5 bg-white/[0.04] px-3 sm:px-4 py-3 text-left transition-all hover:border-emerald-400/40 hover:bg-white/[0.07] active:bg-white/[0.1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 min-h-[60px] sm:min-h-[64px]"
   >
     <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-      <span className="inline-flex items-center justify-center rounded-xl sm:rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-2 sm:p-2.5 text-emerald-200 flex-shrink-0">
+      <span className="inline-flex items-center justify-center rounded-xl sm:rounded-leaf-sm border border-emerald-400/30 bg-emerald-500/10 p-2 sm:p-2.5 text-emerald-200 flex-shrink-0">
         <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
       </span>
       <div className="min-w-0">
@@ -530,7 +546,7 @@ export const SignaturePad = forwardRef<SignaturePadHandle, SignaturePadProps>(
       if (!canvas || !ctx) return;
       const rect = canvas.getBoundingClientRect();
       ctx.clearRect(0, 0, rect.width, rect.height);
-      ctx.fillStyle = "#fdfdfd";
+      ctx.fillStyle = "#F4F7F2";
       ctx.fillRect(0, 0, rect.width, rect.height);
       strokesRef.current.forEach((stroke) => {
         ctx.beginPath();
@@ -557,7 +573,7 @@ export const SignaturePad = forwardRef<SignaturePadHandle, SignaturePadProps>(
       ctx.scale(dpr, dpr);
       ctx.lineWidth = 2.2;
       ctx.lineCap = "round";
-      ctx.strokeStyle = "#0f172a";
+      ctx.strokeStyle = "#0B100D";
       ctxRef.current = ctx;
       redraw();
     }, [redraw]);
@@ -669,7 +685,7 @@ export const SignaturePad = forwardRef<SignaturePadHandle, SignaturePadProps>(
             </button>
           </div>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-white overflow-hidden shadow-inner">
+        <div className="rounded-leaf-sm border border-white/10 bg-white overflow-hidden shadow-inner">
           <canvas
             ref={canvasRef}
             className="w-full h-36 md:h-44 touch-none cursor-crosshair"

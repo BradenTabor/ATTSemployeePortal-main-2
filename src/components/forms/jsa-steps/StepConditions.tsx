@@ -43,7 +43,7 @@ function ToggleButtonGroup({
 }: ToggleButtonGroupProps) {
   return (
     <div>
-      <p className="text-xs font-medium text-white/50 uppercase tracking-wider mb-2">
+      <p className="text-xs font-medium text-white/50 uppercase mb-2 font-mono font-medium tracking-[0.14em]">
         {title}
       </p>
       <div className="grid gap-2 grid-cols-2">
@@ -96,7 +96,7 @@ export function StepConditions({
       {/* Hazards & Mitigation */}
       <div className="space-y-2 pt-2">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-medium text-white/50 uppercase tracking-wider">
+          <p className="text-xs font-medium text-white/50 uppercase font-mono font-medium tracking-[0.14em]">
             Weather Hazards & Mitigation
           </p>
           <VoiceInputButton

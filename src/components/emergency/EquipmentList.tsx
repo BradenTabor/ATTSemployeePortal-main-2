@@ -78,7 +78,7 @@ export default function EquipmentList({ equipment }: EquipmentListProps) {
           return (
             <motion.div
               key={type}
-              className={`bg-[linear-gradient(180deg,rgba(110,110,110,1)_0%,rgba(114,72,23,0.75)_27%,rgba(35,24,6,0.65)_72%,rgba(4,3,1,0.9)_100%)] border border-slate-700/80 border-l-4 ${borderColor} rounded-xl p-5 ${CARD_SHADOW} equipment-section`}
+              className={`bg-[linear-gradient(180deg,rgba(90,107,96,1)_0%,rgba(74,97,22,0.75)_27%,rgba(18,26,21,0.65)_72%,rgba(4,6,5,0.9)_100%)] border border-slate-700/80 border-l-4 ${borderColor} rounded-xl p-5 ${CARD_SHADOW} equipment-section`}
               variants={cardVariants}
               initial="hidden"
               whileInView="visible"

@@ -104,7 +104,7 @@ export function LocationPickerModal({
               "relative w-full overflow-hidden",
               "bg-gradient-to-b from-gray-900/95 to-black/95",
               "border-t sm:border border-white/10",
-              "rounded-t-2xl sm:rounded-2xl shadow-2xl",
+              "rounded-t-2xl sm:rounded-leaf-sm shadow-2xl",
               "flex flex-col",
               // Full height on mobile (sheet-style), constrained on desktop
               "h-[92vh] sm:h-auto sm:max-h-[85vh] sm:max-w-2xl"

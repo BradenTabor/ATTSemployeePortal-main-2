@@ -40,14 +40,14 @@ const TYPOGRAPHY = {
 } as const;
 
 const CARD_BASE =
-  "rounded-2xl border bg-gradient-to-br from-[#04150f] via-[#041812] to-[#03120c] transition-all duration-200";
+  "rounded-leaf-sm border bg-gradient-to-br from-[#0B100D] via-[#0B100D] to-[#0B100D] transition-all duration-200";
 const CARD_STYLES = {
   featured: `${CARD_BASE} border-emerald-400/30 shadow-lg shadow-emerald-900/20 hover:shadow-xl hover:shadow-emerald-900/30 hover:border-emerald-400/50`,
   feed: `${CARD_BASE} border-emerald-500/20 shadow-md shadow-emerald-900/10 hover:shadow-lg hover:shadow-emerald-900/20 hover:border-emerald-400/40 p-4 md:p-5`,
 } as const;
 
 const FOCUS_RING =
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]";
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]";
 
 const FeaturedAnnouncementSkeleton = () => (
   <div className={cn(CARD_STYLES.featured, "overflow-hidden")}>
@@ -84,8 +84,8 @@ const EmptyState = ({ searchTerm, onClearFilter }: { searchTerm: string; onClear
     initial={{ opacity: 0, y: 16 }}
     animate={{ opacity: 1, y: 0 }}
     className={cn(
-      "flex flex-col items-center justify-center py-10 sm:py-12 text-center rounded-2xl border border-emerald-500/20",
-      "bg-gradient-to-br from-[#04150f] via-[#041812] to-[#03120c]"
+      "flex flex-col items-center justify-center py-10 sm:py-12 text-center rounded-leaf-sm border border-emerald-500/20",
+      "bg-gradient-to-br from-[#0B100D] via-[#0B100D] to-[#0B100D]"
     )}
     aria-label="No announcements"
   >
@@ -166,7 +166,7 @@ const FeaturedAnnouncementCard = ({ announcement, formatDate, onClick }: Feature
       <motion.div
         className="absolute -inset-[2px] rounded-[inherit] opacity-50 pointer-events-none"
         style={{
-          background: 'conic-gradient(from 0deg, transparent 0%, rgba(16, 185, 129, 0.6) 10%, transparent 25%, transparent 50%, rgba(52, 211, 153, 0.4) 60%, transparent 75%)',
+          background: 'conic-gradient(from 0deg, transparent 0%, rgba(47,164,90, 0.6) 10%, transparent 25%, transparent 50%, rgba(61,220,132, 0.4) 60%, transparent 75%)',
         }}
         animate={{ rotate: 360 }}
         transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
@@ -177,7 +177,7 @@ const FeaturedAnnouncementCard = ({ announcement, formatDate, onClick }: Feature
     <div 
       className="relative rounded-[inherit] overflow-hidden"
       style={{
-        background: 'linear-gradient(145deg, rgba(4, 30, 21, 0.99) 0%, rgba(2, 15, 10, 1) 50%, rgba(1, 8, 5, 1) 100%)',
+        background: 'linear-gradient(145deg, rgba(11,16,13, 0.99) 0%, rgba(4,6,5, 1) 50%, rgba(4,6,5, 1) 100%)',
       }}
     >
       {/* Premium top shine line */}
@@ -189,7 +189,7 @@ const FeaturedAnnouncementCard = ({ announcement, formatDate, onClick }: Feature
           <motion.div
             className="absolute w-64 h-64 rounded-full pointer-events-none"
             style={{
-              background: 'radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, transparent 70%)',
+              background: 'radial-gradient(circle, rgba(47,164,90, 0.25) 0%, transparent 70%)',
               top: '-20%',
               left: '-10%',
               filter: 'blur(40px)',
@@ -204,7 +204,7 @@ const FeaturedAnnouncementCard = ({ announcement, formatDate, onClick }: Feature
           <motion.div
             className="absolute w-48 h-48 rounded-full pointer-events-none"
             style={{
-              background: 'radial-gradient(circle, rgba(52, 211, 153, 0.2) 0%, transparent 70%)',
+              background: 'radial-gradient(circle, rgba(61,220,132, 0.2) 0%, transparent 70%)',
               bottom: '-15%',
               right: '-5%',
               filter: 'blur(35px)',
@@ -223,7 +223,7 @@ const FeaturedAnnouncementCard = ({ announcement, formatDate, onClick }: Feature
           <div
             className="absolute w-64 h-64 rounded-full pointer-events-none"
             style={{
-              background: 'radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, transparent 70%)',
+              background: 'radial-gradient(circle, rgba(47,164,90, 0.2) 0%, transparent 70%)',
               top: '-20%',
               left: '-10%',
               filter: 'blur(40px)',
@@ -232,7 +232,7 @@ const FeaturedAnnouncementCard = ({ announcement, formatDate, onClick }: Feature
           <div
             className="absolute w-48 h-48 rounded-full pointer-events-none"
             style={{
-              background: 'radial-gradient(circle, rgba(52, 211, 153, 0.15) 0%, transparent 70%)',
+              background: 'radial-gradient(circle, rgba(61,220,132, 0.15) 0%, transparent 70%)',
               bottom: '-15%',
               right: '-5%',
               filter: 'blur(35px)',
@@ -246,8 +246,8 @@ const FeaturedAnnouncementCard = ({ announcement, formatDate, onClick }: Feature
         className="absolute inset-0 opacity-[0.03] pointer-events-none"
         style={{
           backgroundImage: `
-            linear-gradient(rgba(16, 185, 129, 0.5) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(16, 185, 129, 0.5) 1px, transparent 1px)
+            linear-gradient(rgba(47,164,90, 0.5) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(47,164,90, 0.5) 1px, transparent 1px)
           `,
           backgroundSize: '40px 40px',
         }}
@@ -297,7 +297,7 @@ const FeaturedAnnouncementCard = ({ announcement, formatDate, onClick }: Feature
         <motion.h2 
           className="text-2xl sm:text-3xl md:text-4xl font-black leading-tight mb-4 tracking-tight"
           style={{
-            background: 'linear-gradient(135deg, #ffffff 0%, #d1fae5 50%, #a7f3d0 100%)',
+            background: 'linear-gradient(135deg, #ffffff 0%, #D9FFE3 50%, #C8FFD4 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
@@ -349,7 +349,7 @@ const FeaturedAnnouncementCard = ({ announcement, formatDate, onClick }: Feature
               <p className="text-sm sm:text-base font-semibold text-white truncate">
                 {announcement.author || "ATTS Leadership"}
               </p>
-              <p className="text-[10px] sm:text-xs text-emerald-300/50 font-bold tracking-[0.2em] uppercase mt-0.5">
+              <p className="text-[10px] sm:text-xs text-emerald-300/50 uppercase mt-0.5 font-mono font-medium tracking-[0.14em]">
                 Originator
               </p>
             </div>
@@ -515,7 +515,7 @@ const SearchBar = ({ value, onChange, onClear, visibleCount, totalCount }: Searc
           placeholder="Search by title, message, or author..."
           aria-label="Search announcements"
           className={cn(
-            "w-full rounded-xl bg-[#020d09] border border-emerald-500/20 pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-white/35 focus-visible:border-emerald-400/50 focus-visible:ring-1 focus-visible:ring-emerald-400/30 outline-none transition",
+            "w-full rounded-xl bg-[#040605] border border-emerald-500/20 pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-white/35 focus-visible:border-emerald-400/50 focus-visible:ring-1 focus-visible:ring-emerald-400/30 outline-none transition",
             FOCUS_RING
           )}
         />
@@ -525,7 +525,7 @@ const SearchBar = ({ value, onChange, onClear, visibleCount, totalCount }: Searc
           type="button"
           onClick={onClear}
           aria-label="Clear search"
-          className="px-3 py-2.5 rounded-xl border border-emerald-500/20 text-emerald-300/70 text-xs font-medium hover:text-emerald-200 hover:border-emerald-400/40 transition whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0f0d]"
+          className="px-3 py-2.5 rounded-xl border border-emerald-500/20 text-emerald-300/70 text-xs font-medium hover:text-emerald-200 hover:border-emerald-400/40 transition whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D]"
         >
           Clear
         </button>
@@ -819,7 +819,7 @@ export default function Announcements() {
 
                     {/* Pagination - compact */}
                     {totalPages > 1 && (
-                      <div className="rounded-xl border border-emerald-500/15 bg-[#03150f]/60 backdrop-blur-xl p-3">
+                      <div className="rounded-xl border border-emerald-500/15 bg-[#0B100D]/60 backdrop-blur-xl p-3">
                         <PaginationControls
                           currentPage={currentPage}
                           totalPages={totalPages}

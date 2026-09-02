@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabaseClient';
+import { getAuthUserFast } from '../../lib/authUser';
 import { queryKeys } from '../../lib/queryKeys';
 import type { MonthlyReward } from './useMonthlyReward';
 
@@ -9,9 +10,7 @@ export type UpsertRewardInput = Omit<
 > & { id?: string };
 
 async function upsertMonthlyReward(input: UpsertRewardInput): Promise<MonthlyReward> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUserFast();
 
   const payload = {
     ...input,

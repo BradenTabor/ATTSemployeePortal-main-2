@@ -63,7 +63,7 @@ function PWAUpdatePromptComponent({ position = 'bottom-right' }: PWAUpdatePrompt
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         className={`fixed ${positionClasses[position]} z-50 max-w-sm`}
       >
-        <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl shadow-2xl border border-white/10 overflow-hidden">
+        <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-leaf-sm shadow-2xl border border-white/10 overflow-hidden">
           {/* Header gradient */}
           <div className="h-1 bg-gradient-to-r from-emerald-500 via-blue-500 to-purple-500" />
           

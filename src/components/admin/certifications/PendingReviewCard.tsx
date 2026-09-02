@@ -361,7 +361,7 @@ export function PendingReviewCard({ review, onBeforeSubmit, onSubmitError, bulkS
                   Written Response #{idx + 1}
                 </p>
                 <div className="text-sm font-medium text-white bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 mb-3">
-                  <span className="text-[10px] uppercase tracking-wider text-amber-400/70 block mb-1">
+                  <span className="text-[10px] uppercase text-amber-400/70 block mb-1 font-mono font-medium tracking-[0.14em]">
                     Question
                   </span>
                   {answer.question_text ?? (
@@ -369,7 +369,7 @@ export function PendingReviewCard({ review, onBeforeSubmit, onSubmitError, bulkS
                   )}
                 </div>
                 <div className="text-sm text-gray-300 bg-white/5 border border-white/10 rounded-lg px-3 py-2 mb-3">
-                  <span className="text-[10px] uppercase tracking-wider text-gray-500 block mb-1">
+                  <span className="text-[10px] uppercase text-gray-500 block mb-1 font-mono font-medium tracking-[0.14em]">
                     Employee&apos;s Answer
                   </span>
                   {answer.user_answer || (

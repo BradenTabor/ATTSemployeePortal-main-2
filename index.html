@@ -6,17 +6,27 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.json" />
     <!--
-      Viewport locked to prevent iOS auto-zoom on input focus.
-      Accessibility: App uses large touch targets (44px+) and text-base (16px) minimum
-      for all interactive elements. See docs/ACCESSIBILITY.md for rationale.
+      Pinch-zoom stays enabled (WCAG 1.4.4). iOS focus-zoom is prevented by the
+      16px minimum input font-size in src/index.css and double-tap zoom by
+      `touch-action: manipulation` on html/body, so the viewport no longer needs
+      maximum-scale / user-scalable=no. viewport-fit=cover lets the app paint
+      under the notch / home indicator (safe-area utilities handle the insets).
     -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#166534" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#040605" />
     <meta name="description" content="All Terrain Tree Service Employee Portal" />
-    <!-- Google Fonts: Outfit (UI) + JetBrains Mono (tabular data) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <!--
+      CANOPY type system (self-hosted in /public/fonts, declared in src/index.css)
+        Fraunces            — display serif (variable optical size, italic for hero words)
+        Bricolage Grotesque — UI sans (variable optical size)
+        Martian Mono        — instrument labels, eyebrows, tabular data
+      Preload the two faces that paint above the fold; italic serif and mono load on demand.
+      fetchpriority=low keeps them from competing with the stylesheet and app
+      chunks on a slow link — text paints in the fallback face (font-display:
+      swap) and upgrades, rather than the whole page waiting.
+    -->
+    <link rel="preload" as="font" type="font/woff2" fetchpriority="low" href="/fonts/bricolage-grotesque-latin-wght-normal.woff2" crossorigin />
+    <link rel="preload" as="font" type="font/woff2" fetchpriority="low" href="/fonts/fraunces-latin-wght-normal.woff2" crossorigin />
     <!-- Supabase preconnect: injected at build from VITE_SUPABASE_URL (project-specific origin) -->
     
     <!-- iOS PWA Meta Tags (REQUIRED FOR PUSH NOTIFICATIONS) -->
@@ -26,9 +36,58 @@
     <meta name="mobile-web-app-capable" content="yes" />
     
     <title>ATTS Employee Portal</title>
+    <!--
+      Pre-hydration splash. The app is a SPA, so nothing paints until ~230 KB of
+      JS arrives — on a slow cell link that is 2–3 s of black screen. This inline,
+      CSS-only shell (mirrors components/LoadingScreen) paints with the HTML and
+      is replaced wholesale by React's first render.
+    -->
+    <style>
+      html, body { margin: 0; background: #040605; }
+      .boot {
+        position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center;
+        justify-content: center; overflow: hidden; background: #040605; color: #F4F7F2;
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      .boot-glow {
+        position: absolute; left: 50%; top: 50%; width: 70vmin; height: 70vmin; border-radius: 9999px;
+        transform: translate(-50%, -50%);
+        background: radial-gradient(circle, rgba(61,220,132,0.14), rgba(61,220,132,0.04) 45%, transparent 70%);
+        animation: boot-breathe 4s ease-in-out infinite;
+      }
+      .boot-tile {
+        position: relative; display: grid; place-items: center; width: 84px; height: 84px;
+        border-radius: 26px 8px 26px 8px; border: 1px solid rgba(244,247,242,0.4);
+        background: linear-gradient(160deg, #FFFFFF 0%, #E4EAE1 100%);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 6px 18px -6px rgba(61,220,132,0.45);
+        color: #040605; font-weight: 800; font-size: 22px; letter-spacing: 0.08em;
+        animation: boot-pulse 3.2s ease-in-out infinite;
+      }
+      .boot-name { margin: 32px 0 0; font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 300; line-height: 1; }
+      .boot-sub { margin: 10px 0 0; font-family: ui-monospace, Menlo, monospace; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: #8DF5A8; }
+      .boot-track { position: relative; margin-top: 32px; width: 176px; height: 1px; overflow: hidden; background: rgba(244,247,242,0.08); }
+      .boot-track::after {
+        content: ""; position: absolute; inset: 0 auto 0 0; width: 33%;
+        background: linear-gradient(90deg, transparent, #B8FF7A, #3DDC84, transparent);
+        animation: boot-sweep 1.6s cubic-bezier(0.16,1,0.3,1) infinite;
+      }
+      @keyframes boot-breathe { 0%,100% { opacity: .7; transform: translate(-50%,-50%) scale(1); } 50% { opacity: 1; transform: translate(-50%,-50%) scale(1.06); } }
+      @keyframes boot-pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+      @keyframes boot-sweep { 0% { transform: translateX(-100%); } 100% { transform: translateX(400%); } }
+      @media (prefers-reduced-motion: reduce) { .boot *, .boot-track::after { animation: none !important; } }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"
+      ><div class="boot" role="status" aria-label="Loading the All Terrain Tree Service portal">
+        <div class="boot-glow" aria-hidden="true"></div>
+        <div class="boot-tile" aria-hidden="true">ATTS</div>
+        <p class="boot-name">All Terrain</p>
+        <p class="boot-sub">Tree Service · Employee Portal</p>
+        <div class="boot-track" aria-hidden="true"></div>
+      </div
+    ></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -112,7 +112,7 @@ export default function FieldNoteComposer({
       className="rounded-xl border border-rose-500/20 bg-rose-950/[0.15] p-3 space-y-3"
       data-testid="field-audit-note-composer"
     >
-      <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-rose-200/80">
+      <div className="flex items-center gap-1.5 text-[11px] uppercase text-rose-200/80 font-mono font-medium tracking-[0.14em]">
         <StickyNote className="w-3.5 h-3.5" aria-hidden />
         New note
       </div>

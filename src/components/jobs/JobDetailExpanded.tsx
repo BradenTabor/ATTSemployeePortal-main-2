@@ -43,9 +43,9 @@ const statusConfig: typeof JOB_STATUS_CONFIG = {
   },
   completed: {
     label: 'Completed',
-    bgColor: 'bg-[#f4c979]/15',
-    borderColor: 'border-[#f4c979]/30',
-    textColor: 'text-[#f4c979]',
+    bgColor: 'bg-[#F4F7F2]/15',
+    borderColor: 'border-[#F4F7F2]/30',
+    textColor: 'text-[#F4F7F2]',
   },
   paused: {
     label: 'Paused',
@@ -99,10 +99,10 @@ function JobDetailExpandedComponent({ job, onJobUpdate }: JobDetailExpandedProps
       className="w-full p-6 sm:p-8"
       style={{
         background: isSpanBased
-          ? 'linear-gradient(135deg, rgba(35, 133, 97, 0.1) 17%, rgba(2, 5, 9, 0.1) 54%, rgba(1, 2, 4, 1) 100%)'
+          ? 'linear-gradient(135deg, rgba(31,122,68, 0.1) 17%, rgba(4,6,5, 0.1) 54%, rgba(4,6,5, 1) 100%)'
           : isExceeded
-            ? 'linear-gradient(to bottom right, #1a0808, #0d0606, #050303)'
-            : 'linear-gradient(to bottom right, #0d6e51, #05291c, #010604)',
+            ? 'linear-gradient(to bottom right, #132308, #0B100D, #040605)'
+            : 'linear-gradient(to bottom right, #1F7A44, #121A15, #040605)',
       }}
     >
       {/* Header */}
@@ -147,11 +147,11 @@ function JobDetailExpandedComponent({ job, onJobUpdate }: JobDetailExpandedProps
       {isSpanBased && spanProgress && spanProgressColors && (
         <div
           className={cn(
-            'rounded-2xl border p-4 mb-6',
+            'rounded-leaf-sm border p-4 mb-6',
             spanProgressColors.border,
             spanProgressColors.bg
           )}
-          style={{ boxShadow: 'inset 0px 4px 25px 15px rgba(0, 0, 0, 0.35)' }}
+          style={{ boxShadow: 'inset 0px 4px 25px 15px rgba(0,0,0, 0.35)' }}
         >
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -164,11 +164,11 @@ function JobDetailExpandedComponent({ job, onJobUpdate }: JobDetailExpandedProps
             <motion.button
               whileTap={{ scale: 0.97 }}
               onClick={() => setShowProgressForm(true)}
-              className="relative inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-[#f4c979]/50 text-[#fdf4db] text-sm font-bold ring-1 ring-[#f4c979]/20 hover:border-[#f4c979]/70 hover:ring-[#f4c979]/30 transition-all duration-300"
+              className="relative inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-[#F4F7F2]/50 text-[#F4F7F2] text-sm font-bold ring-1 ring-[#F4F7F2]/20 hover:border-[#F4F7F2]/70 hover:ring-[#F4F7F2]/30 transition-all duration-300"
               style={{
                 width: '100px',
-                background: 'linear-gradient(135deg, rgba(247, 228, 189, 1) 0%, rgba(244, 201, 121, 0.65) 50%, rgba(215, 154, 50, 1) 100%)',
-                boxShadow: '0px 0px 0px 0px rgba(255, 255, 255, 1), 0px 0px 0px 1px rgba(244, 201, 121, 0.3), 0px 20px 25px -5px rgba(244, 201, 121, 0.25), 0px 8px 10px -6px rgba(244, 201, 121, 0.25), 0px 4px 12px 0px rgba(0, 0, 0, 0.15)',
+                background: 'linear-gradient(135deg, rgba(236,255,174, 1) 0%, rgba(221,255,133, 0.65) 50%, rgba(174,219,63, 1) 100%)',
+                boxShadow: '0px 0px 0px 0px rgba(255,255,255, 1), 0px 0px 0px 1px rgba(221,255,133, 0.3), 0px 20px 25px -5px rgba(221,255,133, 0.25), 0px 8px 10px -6px rgba(221,255,133, 0.25), 0px 4px 12px 0px rgba(0,0,0, 0.15)',
                 backdropFilter: 'blur(8px)',
               }}
             >
@@ -211,7 +211,7 @@ function JobDetailExpandedComponent({ job, onJobUpdate }: JobDetailExpandedProps
             </div>
             <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-center">
               <p className="text-xs text-white/50 mb-1">Estimated</p>
-              <p className="text-lg font-bold text-[#f4c979]">
+              <p className="text-lg font-bold text-[#F4F7F2]">
                 {spanProgress.total > 0 ? spanProgress.total.toLocaleString() : '—'}
               </p>
             </div>
@@ -238,7 +238,7 @@ function JobDetailExpandedComponent({ job, onJobUpdate }: JobDetailExpandedProps
         <>
           <div
             className={cn(
-              'rounded-2xl border p-4 mb-6',
+              'rounded-leaf-sm border p-4 mb-6',
               isExceeded
                 ? 'border-red-500/20 bg-red-500/5'
                 : 'border-emerald-500/20 bg-emerald-500/5'

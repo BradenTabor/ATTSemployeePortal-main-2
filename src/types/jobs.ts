@@ -219,9 +219,9 @@ export const JOB_STATUS_CONFIG: Record<JobStatus, StatusConfig> = {
   },
   completed: {
     label: 'Completed',
-    bgColor: 'bg-[#f4c979]/15',
-    borderColor: 'border-[#f4c979]/30',
-    textColor: 'text-[#f4c979]',
+    bgColor: 'bg-[#F4F7F2]/15',
+    borderColor: 'border-[#F4F7F2]/30',
+    textColor: 'text-[#F4F7F2]',
   },
   paused: {
     label: 'Paused',

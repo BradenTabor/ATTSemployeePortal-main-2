@@ -40,7 +40,7 @@ import { logger } from '../../../lib/logger';
 function AnimatedAiText({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
     <span className={`relative inline-flex ${className}`}>
-      <span className="bg-gradient-to-r from-violet-300 via-fuchsia-300 to-cyan-300 bg-clip-text text-transparent font-bold">
+      <span className="bg-gradient-to-r from-lime-200 via-lime-400 to-glacier-300 bg-clip-text text-transparent font-semibold italic font-display">
         {children}
       </span>
     </span>
@@ -306,32 +306,28 @@ export default function FleetAiSummary() {
   }, []);
 
   return (
-    <div className="relative rounded-xl sm:rounded-2xl overflow-hidden">
-      {/* Gradient border */}
-      <div className="absolute inset-0 rounded-xl sm:rounded-2xl p-[1.5px] bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-500">
-        <div className="absolute inset-[1.5px] rounded-[10px] sm:rounded-[14px] bg-[#0c0515]" />
-      </div>
-      
+    <div className="relative overflow-hidden">
       {/* Container */}
-      <div className="relative rounded-xl sm:rounded-2xl bg-gradient-to-br from-[#12081f] via-[#0c0515] to-[#0a0810] overflow-hidden">
+      <div className="relative rounded-leaf border border-bone-50/[0.1] bg-ink-900/80 overflow-hidden shadow-slab">
+        <div aria-hidden className="vein absolute inset-x-0 top-0" />
         {/* Ambient glow */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-16 -left-16 w-48 h-48 bg-violet-600/15 rounded-full blur-[60px]" />
-          <div className="absolute -bottom-16 -right-16 w-48 h-48 bg-cyan-600/15 rounded-full blur-[60px]" />
+          <div className="absolute -top-16 -left-16 w-48 h-48 bg-verdant-500/15 rounded-full blur-[60px]" />
+          <div className="absolute -bottom-16 -right-16 w-48 h-48 bg-lime-400/10 rounded-full blur-[60px]" />
         </div>
         
         {/* Header - Compact */}
         <div className="relative flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b border-white/10">
           <div className="flex items-center gap-2.5 sm:gap-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-gradient-to-br from-violet-600 via-fuchsia-600 to-cyan-600 flex items-center justify-center shadow-lg shadow-violet-500/30">
-              <Brain className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-white" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-leaf-sm bg-[linear-gradient(135deg,#F4F7F2_0%,#D2FFA3_100%)] flex items-center justify-center shadow-[0_2px_6px_rgba(0,0,0,0.5)]">
+              <Brain className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-ink-950" />
             </div>
             <div>
-              <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-1.5">
+              <h3 className="font-display text-lg sm:text-xl font-light text-bone-50 flex items-center gap-1.5">
                 Fleet <AnimatedAiText>AI</AnimatedAiText>
               </h3>
-              <p className="text-[10px] sm:text-xs text-violet-300/60 flex items-center gap-1">
-                <Zap className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-cyan-400" />
+              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-bone-400 flex items-center gap-1">
+                <Zap className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-lime-400" />
                 <span className="hidden sm:inline">Maintenance tracking</span>
                 <span className="sm:hidden">Tracking</span>
               </p>
@@ -342,8 +338,8 @@ export default function FleetAiSummary() {
             onClick={toggleInfo}
             className={`p-2 sm:p-2.5 rounded-lg sm:rounded-xl transition-all ${
               showInfo 
-                ? 'bg-violet-600/30 text-violet-300 shadow-lg shadow-violet-500/20' 
-                : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-violet-300 active:bg-violet-600/20'
+                ? 'bg-verdant-500/25 text-lime-200' 
+                : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-lime-200 active:bg-verdant-500/20'
             }`}
             aria-label={showInfo ? 'Hide info' : 'Show info'}
             aria-expanded={showInfo}
@@ -362,16 +358,16 @@ export default function FleetAiSummary() {
               transition={{ duration: 0.2 }}
               className="overflow-hidden"
             >
-              <div className="px-3 sm:px-4 py-3 bg-violet-600/10 border-b border-white/5">
+              <div className="px-3 sm:px-4 py-3 bg-verdant-500/10 border-b border-bone-50/[0.06]">
                 <div className="flex items-start gap-2.5">
-                  <Sparkles className="w-4 h-4 text-violet-400 mt-0.5 flex-shrink-0" />
+                  <Sparkles className="w-4 h-4 text-lime-300 mt-0.5 flex-shrink-0" />
                   <div className="text-xs sm:text-sm text-white/70 space-y-1.5">
                     <p className="font-semibold text-white">
                       How does Fleet <AnimatedAiText className="text-xs sm:text-sm">AI</AnimatedAiText> work?
                     </p>
                     <p className="leading-relaxed">
                       Analyzes DVIR data to track maintenance. 
-                      <span className="text-cyan-400 font-medium"> Tap any truck</span> to generate an 
+                      <span className="text-lime-300 font-medium"> Tap any truck</span> to generate an 
                       <AnimatedAiText className="text-xs sm:text-sm mx-1">AI</AnimatedAiText> summary.
                     </p>
                   </div>
@@ -386,8 +382,8 @@ export default function FleetAiSummary() {
           {/* Loading */}
           {isLoading && (
             <div className="flex items-center justify-center gap-2 py-8">
-              <Loader2 className="w-5 h-5 text-violet-400 animate-spin" />
-              <span className="text-sm text-violet-200/70">Loading...</span>
+              <Loader2 className="w-5 h-5 text-lime-300 animate-spin" />
+              <span className="text-sm text-bone-300">Loading...</span>
             </div>
           )}
 
@@ -406,40 +402,40 @@ export default function FleetAiSummary() {
               <div className="grid grid-cols-3 gap-2">
                 {/* Overdue */}
                 <motion.div 
-                  className="relative rounded-lg sm:rounded-xl overflow-hidden hover:scale-[1.02]"
+                  className="relative rounded-leaf-sm overflow-hidden"
                   whileTap={{ scale: 0.98 }}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-red-500 to-rose-600" />
+                  <div className="absolute inset-0 border border-red-400/30 bg-red-500/[0.12] rounded-leaf-sm" />
                   <div className="relative p-2 sm:p-3 text-center">
-                    <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-white/90 mx-auto mb-0.5 sm:mb-1" />
-                    <div className="text-xl sm:text-2xl font-black text-white">{fleetStats.overdueCount}</div>
-                    <div className="text-[9px] sm:text-[10px] text-white/80 uppercase tracking-wide font-bold">Overdue</div>
+                    <AlertCircle className="w-4 h-4 text-red-300 mx-auto mb-1" />
+                    <div className="font-display text-2xl sm:text-3xl font-light tabular-nums text-red-200">{fleetStats.overdueCount}</div>
+                    <div className="font-mono text-[9px] text-bone-400 uppercase tracking-[0.18em]">Overdue</div>
                   </div>
                 </motion.div>
 
                 {/* Due Soon */}
                 <motion.div 
-                  className="relative rounded-lg sm:rounded-xl overflow-hidden hover:scale-[1.02]"
+                  className="relative rounded-leaf-sm overflow-hidden"
                   whileTap={{ scale: 0.98 }}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-600" />
+                  <div className="absolute inset-0 border border-sap-400/30 bg-sap-400/[0.12] rounded-leaf-sm" />
                   <div className="relative p-2 sm:p-3 text-center">
-                    <Timer className="w-4 h-4 sm:w-5 sm:h-5 text-white/90 mx-auto mb-0.5 sm:mb-1" />
-                    <div className="text-xl sm:text-2xl font-black text-white">{fleetStats.dueSoonCount}</div>
-                    <div className="text-[9px] sm:text-[10px] text-white/80 uppercase tracking-wide font-bold">Soon</div>
+                    <Timer className="w-4 h-4 text-sap-300 mx-auto mb-1" />
+                    <div className="font-display text-2xl sm:text-3xl font-light tabular-nums text-sap-200">{fleetStats.dueSoonCount}</div>
+                    <div className="font-mono text-[9px] text-bone-400 uppercase tracking-[0.18em]">Soon</div>
                   </div>
                 </motion.div>
 
                 {/* Healthy */}
                 <motion.div 
-                  className="relative rounded-lg sm:rounded-xl overflow-hidden hover:scale-[1.02]"
+                  className="relative rounded-leaf-sm overflow-hidden"
                   whileTap={{ scale: 0.98 }}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 to-green-600" />
+                  <div className="absolute inset-0 border border-verdant-400/30 bg-verdant-500/[0.12] rounded-leaf-sm" />
                   <div className="relative p-2 sm:p-3 text-center">
-                    <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-white/90 mx-auto mb-0.5 sm:mb-1" />
-                    <div className="text-xl sm:text-2xl font-black text-white">{fleetStats.healthyCount}</div>
-                    <div className="text-[9px] sm:text-[10px] text-white/80 uppercase tracking-wide font-bold">OK</div>
+                    <Shield className="w-4 h-4 text-verdant-300 mx-auto mb-1" />
+                    <div className="font-display text-2xl sm:text-3xl font-light tabular-nums text-verdant-200">{fleetStats.healthyCount}</div>
+                    <div className="font-mono text-[9px] text-bone-400 uppercase tracking-[0.18em]">OK</div>
                   </div>
                 </motion.div>
               </div>
@@ -447,8 +443,8 @@ export default function FleetAiSummary() {
               {/* Priority Trucks - Compact */}
               {fleetStats.priorityTrucks.length > 0 ? (
                 <div className="space-y-2">
-                  <p className="text-[10px] uppercase tracking-wider text-violet-300/50 font-semibold flex items-center gap-1.5">
-                    <Sparkles className="w-3 h-3 text-fuchsia-400" />
+                  <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-bone-400 flex items-center gap-1.5">
+                    <Sparkles className="w-3 h-3 text-lime-300" />
                     Tap truck for <AnimatedAiText className="text-[10px]">AI</AnimatedAiText> summary
                   </p>
                   <div className="space-y-1.5">
@@ -456,39 +452,39 @@ export default function FleetAiSummary() {
                       <div key={truck.truckNumber}>
                         <motion.button
                           onClick={() => handleTruckSelect(truck.truckNumber)}
-                          className={`w-full flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-lg sm:rounded-xl border-2 transition-all text-left ${
+                          className={`w-full flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-leaf-sm border transition-all text-left ${
                             selectedTruck === truck.truckNumber
-                              ? 'bg-violet-600/20 border-violet-500/50 shadow-lg shadow-violet-500/10'
+                              ? 'bg-verdant-500/15 border-lime-400/50'
                               : truck.urgency === 'overdue'
-                              ? 'bg-red-600/15 border-red-500/30 active:bg-red-600/25'
-                              : 'bg-amber-600/15 border-amber-500/30 active:bg-amber-600/25'
+                              ? 'bg-ink-950/60 border-red-400/25 active:bg-red-500/10'
+                              : 'bg-ink-950/60 border-sap-400/25 active:bg-sap-400/10'
                           }`}
                           whileTap={{ scale: 0.98 }}
                         >
                           {/* Icon */}
                           <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
                             selectedTruck === truck.truckNumber
-                              ? 'bg-gradient-to-br from-violet-500 to-fuchsia-600'
+                              ? 'bg-[linear-gradient(135deg,#F4F7F2_0%,#D2FFA3_100%)] text-ink-950'
                               : truck.urgency === 'overdue' 
-                              ? 'bg-gradient-to-br from-red-500 to-rose-600' 
-                              : 'bg-gradient-to-br from-amber-500 to-orange-600'
+                              ? 'bg-red-500/20 text-red-200 border border-red-400/30' 
+                              : 'bg-sap-400/20 text-sap-200 border border-sap-400/30'
                           }`}>
-                            <Truck className="w-4 h-4 text-white" />
+                            <Truck className="w-4 h-4" />
                           </div>
                           
                           {/* Content */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="text-sm font-bold text-white">{truck.truckNumber}</span>
+                              <span className="font-mono text-sm font-semibold text-bone-50">{truck.truckNumber}</span>
                               <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded ${
                                 truck.urgency === 'overdue'
-                                  ? 'bg-red-500/30 text-red-200'
-                                  : 'bg-amber-500/30 text-amber-200'
+                                  ? 'bg-red-500/20 text-red-200'
+                                  : 'bg-sap-400/20 text-sap-200'
                               }`}>
                                 {truck.urgency === 'overdue' ? 'Overdue' : 'Soon'}
                               </span>
                               {truck.aiSummary && (
-                                <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-violet-500/30 text-violet-200">
+                                <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-verdant-500/25 text-lime-200">
                                   <AnimatedAiText className="text-[9px]">AI</AnimatedAiText>
                                 </span>
                               )}
@@ -496,9 +492,9 @@ export default function FleetAiSummary() {
                             <div className="flex items-center gap-1 mt-0.5 text-[10px] text-white/60">
                               {truck.issues.map((issue, idx) => (
                                 <span key={idx} className="flex items-center gap-0.5">
-                                  {issue === 'Oil' && <Droplet className="w-2.5 h-2.5 text-blue-400" />}
-                                  {issue === 'Rotation' && <RefreshCw className="w-2.5 h-2.5 text-cyan-400" />}
-                                  {issue === 'Tires' && <Circle className="w-2.5 h-2.5 text-purple-400" />}
+                                  {issue === 'Oil' && <Droplet className="w-2.5 h-2.5 text-glacier-300" />}
+                                  {issue === 'Rotation' && <RefreshCw className="w-2.5 h-2.5 text-lime-300" />}
+                                  {issue === 'Tires' && <Circle className="w-2.5 h-2.5 text-bone-300" />}
                                   {issue}
                                   {idx < truck.issues.length - 1 && <span className="text-white/30 mx-0.5">·</span>}
                                 </span>
@@ -508,7 +504,7 @@ export default function FleetAiSummary() {
                           
                           {/* Chevron */}
                           <ChevronDown className={`w-4 h-4 flex-shrink-0 transition-transform ${
-                            selectedTruck === truck.truckNumber ? 'rotate-180 text-violet-300' : 'text-white/30'
+                            selectedTruck === truck.truckNumber ? 'rotate-180 text-lime-300' : 'text-bone-500'
                           }`} />
                         </motion.button>
                         
@@ -522,25 +518,25 @@ export default function FleetAiSummary() {
                               transition={{ duration: 0.2 }}
                               className="overflow-hidden"
                             >
-                              <div className="mt-1.5 rounded-lg sm:rounded-xl border border-violet-500/30 bg-violet-600/10 p-3 sm:p-4">
+                              <div className="mt-1.5 rounded-leaf-sm border border-verdant-400/30 bg-verdant-500/10 p-3 sm:p-4">
                                 {/* Header */}
                                 <div className="flex items-center justify-between mb-2.5">
                                   <div className="flex items-center gap-2">
-                                    <Sparkles className="w-4 h-4 text-violet-400" />
+                                    <Sparkles className="w-4 h-4 text-lime-300" />
                                     <span className="text-xs font-bold text-white">
                                       <AnimatedAiText className="text-xs">AI</AnimatedAiText> Summary
                                     </span>
                                   </div>
                                   {currentSummary && (
                                     <div className="flex items-center gap-1.5">
-                                      <span className="text-[10px] text-violet-300/50">
+                                      <span className="font-mono text-[10px] text-bone-400">
                                         {formatTimeAgo(currentSummary.generated_at)}
                                       </span>
                                       <button
                                         type="button"
                                         onClick={handleCopy}
                                         aria-label={copied ? "Copied" : "Copy summary"}
-                                        className="p-1.5 rounded-md bg-white/5 text-white/50 hover:text-violet-300 active:bg-violet-500/20 focus-visible:outline focus-visible:ring-2 focus-visible:ring-violet-400/50 focus-visible:ring-offset-1"
+                                        className="p-1.5 rounded-md bg-white/5 text-white/50 hover:text-lime-200 active:bg-verdant-500/20 focus-visible:outline focus-visible:ring-2 focus-visible:ring-verdant-400/50 focus-visible:ring-offset-1"
                                       >
                                         {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" aria-hidden /> : <Copy className="w-3.5 h-3.5" aria-hidden />}
                                       </button>
@@ -549,7 +545,7 @@ export default function FleetAiSummary() {
                                         onClick={() => handleGenerateSummary(true)}
                                         disabled={isGenerating}
                                         aria-label={isGenerating ? "Regenerating summary" : "Regenerate summary"}
-                                        className="p-1.5 rounded-md bg-white/5 text-white/50 hover:text-violet-300 active:bg-violet-500/20 disabled:opacity-50 focus-visible:outline focus-visible:ring-2 focus-visible:ring-violet-400/50 focus-visible:ring-offset-1"
+                                        className="p-1.5 rounded-md bg-white/5 text-white/50 hover:text-lime-200 active:bg-verdant-500/20 disabled:opacity-50 focus-visible:outline focus-visible:ring-2 focus-visible:ring-verdant-400/50 focus-visible:ring-offset-1"
                                       >
                                         <RefreshCw className={`w-3.5 h-3.5 ${isGenerating ? 'animate-spin' : ''}`} aria-hidden />
                                       </button>
@@ -560,8 +556,8 @@ export default function FleetAiSummary() {
                                 {/* States */}
                                 {isGenerating && (
                                   <div className="flex items-center gap-2 py-2">
-                                    <Loader2 className="w-4 h-4 text-violet-400 animate-spin" />
-                                    <span className="text-xs text-violet-200/70">Generating...</span>
+                                    <Loader2 className="w-4 h-4 text-lime-300 animate-spin" />
+                                    <span className="text-xs text-bone-300">Generating...</span>
                                   </div>
                                 )}
                                 
@@ -576,7 +572,7 @@ export default function FleetAiSummary() {
                                 
                                 {currentSummary && !isGenerating && !summaryError && (
                                   <div className="relative pl-3">
-                                    <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-violet-500 via-fuchsia-500 to-cyan-500 rounded-full" />
+                                    <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-lime-300 via-verdant-400 to-glacier-400 rounded-full" />
                                     <p className="text-xs sm:text-sm text-white/85 leading-relaxed">
                                       {currentSummary.summary}
                                     </p>
@@ -587,7 +583,7 @@ export default function FleetAiSummary() {
                                   <div className="text-center py-2">
                                     <motion.button
                                       onClick={() => handleGenerateSummary(false)}
-                                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-violet-600 via-fuchsia-600 to-cyan-600 text-white text-xs font-bold shadow-lg shadow-violet-500/30"
+                                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-leaf-sm bg-[linear-gradient(135deg,#F4F7F2_0%,#D2FFA3_100%)] text-ink-950 font-mono text-[10px] uppercase tracking-[0.16em] font-semibold shadow-[0_2px_6px_rgba(0,0,0,0.5)]"
                                       whileTap={{ scale: 0.95 }}
                                     >
                                       <Sparkles className="w-3.5 h-3.5" />
@@ -601,7 +597,7 @@ export default function FleetAiSummary() {
                                   type="button"
                                   onClick={() => navigate(`/mechanic/parts-repairs?truck=${encodeURIComponent(truck.truckNumber)}`)}
                                   aria-label={`View details and log repairs for truck ${truck.truckNumber}`}
-                                  className="mt-2.5 pt-2.5 border-t border-violet-500/20 text-xs text-violet-300 hover:text-cyan-300 flex items-center gap-1 w-full focus-visible:outline focus-visible:ring-2 focus-visible:ring-violet-400/50 focus-visible:ring-offset-1 rounded"
+                                  className="mt-2.5 pt-2.5 border-t border-bone-50/[0.08] text-xs text-lime-300 hover:text-lime-200 flex items-center gap-1 w-full focus-visible:outline focus-visible:ring-2 focus-visible:ring-verdant-400/50 focus-visible:ring-offset-1 rounded"
                                 >
                                   <Wrench className="w-3 h-3" aria-hidden />
                                   View details & log repairs
@@ -632,7 +628,7 @@ export default function FleetAiSummary() {
               {fleetStats.totalTrucks > 0 && (
                 <motion.button
                   onClick={() => navigate('/mechanic/parts-repairs')}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg sm:rounded-xl bg-violet-600/20 border border-violet-500/30 text-violet-200 text-sm font-semibold hover:bg-violet-600/30 active:bg-violet-600/40 transition-colors"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-leaf-sm bg-ink-950/60 border border-bone-50/[0.1] text-bone-100 font-mono text-[10px] uppercase tracking-[0.18em] hover:border-lime-400/50 hover:bg-ink-900/80 transition-colors"
                   whileTap={{ scale: 0.98 }}
                 >
                   <Wrench className="w-4 h-4" />

@@ -184,9 +184,9 @@ function AdminNotificationTestComponent() {
         <div className="space-y-2">
           <label 
             htmlFor="notification-title" 
-            className="block text-sm font-semibold text-[#f8e5bb]"
+            className="block text-sm font-semibold text-[#E4EAE1]"
           >
-            Title <span className="text-[#f4c979]">*</span>
+            Title <span className="text-[#F4F7F2]">*</span>
           </label>
           <input
             id="notification-title"
@@ -196,7 +196,7 @@ function AdminNotificationTestComponent() {
             placeholder="Enter notification title..."
             required
             maxLength={100}
-            className="w-full px-4 py-3 rounded-xl bg-[#1a1814]/80 border border-[#f4c979]/30 text-[#fff6dd] placeholder-[#f8e5bb]/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:border-[#f4c979]/60 transition-all"
+            className="w-full px-4 py-3 rounded-xl bg-[#121A15]/80 border border-[#F4F7F2]/30 text-[#F4F7F2] placeholder-[#E4EAE1]/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/50 focus-visible:border-[#F4F7F2]/60 transition-all"
           />
         </div>
 
@@ -204,9 +204,9 @@ function AdminNotificationTestComponent() {
         <div className="space-y-2">
           <label 
             htmlFor="notification-body" 
-            className="block text-sm font-semibold text-[#f8e5bb]"
+            className="block text-sm font-semibold text-[#E4EAE1]"
           >
-            Body <span className="text-[#f8e5bb]/50">(optional)</span>
+            Body <span className="text-[#E4EAE1]/50">(optional)</span>
           </label>
           <textarea
             id="notification-body"
@@ -215,7 +215,7 @@ function AdminNotificationTestComponent() {
             placeholder="Enter notification message..."
             rows={3}
             maxLength={500}
-            className="w-full px-4 py-3 rounded-xl bg-[#1a1814]/80 border border-[#f4c979]/30 text-[#fff6dd] placeholder-[#f8e5bb]/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:border-[#f4c979]/60 transition-all resize-none"
+            className="w-full px-4 py-3 rounded-xl bg-[#121A15]/80 border border-[#F4F7F2]/30 text-[#F4F7F2] placeholder-[#E4EAE1]/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/50 focus-visible:border-[#F4F7F2]/60 transition-all resize-none"
           />
         </div>
 
@@ -225,7 +225,7 @@ function AdminNotificationTestComponent() {
           <div className="space-y-2">
             <label 
               htmlFor="notification-category" 
-              className="block text-sm font-semibold text-[#f8e5bb]"
+              className="block text-sm font-semibold text-[#E4EAE1]"
             >
               Category
             </label>
@@ -233,7 +233,7 @@ function AdminNotificationTestComponent() {
               id="notification-category"
               value={formState.category}
               onChange={(e) => updateField('category', e.target.value as NotificationCategory)}
-              className="w-full px-4 py-3 rounded-xl bg-[#1a1814]/80 border border-[#f4c979]/30 text-[#fff6dd] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:border-[#f4c979]/60 transition-all appearance-none cursor-pointer"
+              className="w-full px-4 py-3 rounded-xl bg-[#121A15]/80 border border-[#F4F7F2]/30 text-[#F4F7F2] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/50 focus-visible:border-[#F4F7F2]/60 transition-all appearance-none cursor-pointer"
             >
               {NOTIFICATION_CATEGORIES.map(cat => (
                 <option key={cat.value} value={cat.value}>
@@ -247,7 +247,7 @@ function AdminNotificationTestComponent() {
           <div className="space-y-2">
             <label 
               htmlFor="notification-severity" 
-              className="block text-sm font-semibold text-[#f8e5bb]"
+              className="block text-sm font-semibold text-[#E4EAE1]"
             >
               Severity
             </label>
@@ -255,7 +255,7 @@ function AdminNotificationTestComponent() {
               id="notification-severity"
               value={formState.severity}
               onChange={(e) => updateField('severity', e.target.value as NotificationSeverity)}
-              className="w-full px-4 py-3 rounded-xl bg-[#1a1814]/80 border border-[#f4c979]/30 text-[#fff6dd] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:border-[#f4c979]/60 transition-all appearance-none cursor-pointer"
+              className="w-full px-4 py-3 rounded-xl bg-[#121A15]/80 border border-[#F4F7F2]/30 text-[#F4F7F2] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/50 focus-visible:border-[#F4F7F2]/60 transition-all appearance-none cursor-pointer"
             >
               {NOTIFICATION_SEVERITIES.map(sev => (
                 <option key={sev.value} value={sev.value}>
@@ -268,7 +268,7 @@ function AdminNotificationTestComponent() {
 
         {/* Target Type Selection */}
         <div className="space-y-2">
-          <label className="block text-sm font-semibold text-[#f8e5bb]">
+          <label className="block text-sm font-semibold text-[#E4EAE1]">
             Send To
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -282,8 +282,8 @@ function AdminNotificationTestComponent() {
                 }}
                 className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border transition-all ${
                   formState.targetType === target.value
-                    ? 'bg-[#f4c979]/20 border-[#f4c979]/60 text-[#f4c979]'
-                    : 'bg-[#1a1814]/60 border-[#f4c979]/20 text-[#f8e5bb]/70 hover:border-[#f4c979]/40 hover:bg-[#1a1814]/80'
+                    ? 'bg-[#F4F7F2]/20 border-[#F4F7F2]/60 text-[#F4F7F2]'
+                    : 'bg-[#121A15]/60 border-[#F4F7F2]/20 text-[#E4EAE1]/70 hover:border-[#F4F7F2]/40 hover:bg-[#121A15]/80'
                 }`}
               >
                 {getTargetIcon(target.value)}
@@ -303,7 +303,7 @@ function AdminNotificationTestComponent() {
           >
             <label 
               htmlFor="notification-role" 
-              className="block text-sm font-semibold text-[#f8e5bb]"
+              className="block text-sm font-semibold text-[#E4EAE1]"
             >
               Select Role
             </label>
@@ -312,7 +312,7 @@ function AdminNotificationTestComponent() {
               value={formState.targetRef}
               onChange={(e) => updateField('targetRef', e.target.value)}
               required
-              className="w-full px-4 py-3 rounded-xl bg-[#1a1814]/80 border border-[#f4c979]/30 text-[#fff6dd] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:border-[#f4c979]/60 transition-all appearance-none cursor-pointer"
+              className="w-full px-4 py-3 rounded-xl bg-[#121A15]/80 border border-[#F4F7F2]/30 text-[#F4F7F2] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/50 focus-visible:border-[#F4F7F2]/60 transition-all appearance-none cursor-pointer"
             >
               <option value="">Choose a role...</option>
               {TARGETABLE_ROLES.map(role => (
@@ -333,7 +333,7 @@ function AdminNotificationTestComponent() {
           >
             <label 
               htmlFor="notification-job" 
-              className="block text-sm font-semibold text-[#f8e5bb]"
+              className="block text-sm font-semibold text-[#E4EAE1]"
             >
               Job ID
             </label>
@@ -344,9 +344,9 @@ function AdminNotificationTestComponent() {
               onChange={(e) => updateField('targetRef', e.target.value)}
               placeholder="Enter job UUID..."
               required
-              className="w-full px-4 py-3 rounded-xl bg-[#1a1814]/80 border border-[#f4c979]/30 text-[#fff6dd] placeholder-[#f8e5bb]/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:border-[#f4c979]/60 transition-all"
+              className="w-full px-4 py-3 rounded-xl bg-[#121A15]/80 border border-[#F4F7F2]/30 text-[#F4F7F2] placeholder-[#E4EAE1]/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/50 focus-visible:border-[#F4F7F2]/60 transition-all"
             />
-            <p className="text-xs text-[#f8e5bb]/50">
+            <p className="text-xs text-[#E4EAE1]/50">
               Enter the UUID of the job whose crew should receive this notification
             </p>
           </motion.div>
@@ -386,14 +386,14 @@ function AdminNotificationTestComponent() {
         <button
           type="submit"
           disabled={loading || !formState.title.trim()}
-          className="w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold text-[#0c0b09] bg-gradient-to-r from-[#f4c979] via-[#f8e5bb] to-[#f4c979] hover:from-[#f8e5bb] hover:via-[#fff6dd] hover:to-[#f8e5bb] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c979]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c0b09] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-[#f4c979]/20 hover:shadow-[#f4c979]/30"
+          className="w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold text-[#0B100D] bg-gradient-to-r from-[#F4F7F2] via-[#E4EAE1] to-[#F4F7F2] hover:from-[#E4EAE1] hover:via-[#F4F7F2] hover:to-[#E4EAE1] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4F7F2]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B100D] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-[#F4F7F2]/20 hover:shadow-[#F4F7F2]/30"
         >
           {loading ? (
             <>
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                className="w-5 h-5 border-2 border-[#0c0b09]/30 border-t-[#0c0b09] rounded-full"
+                className="w-5 h-5 border-2 border-[#0B100D]/30 border-t-[#0B100D] rounded-full"
               />
               <span>Sending...</span>
             </>
@@ -406,7 +406,7 @@ function AdminNotificationTestComponent() {
         </button>
 
         {/* Security Notice */}
-        <p className="text-xs text-[#f8e5bb]/40 text-center">
+        <p className="text-xs text-[#E4EAE1]/40 text-center">
           This notification will be processed through the secure admin gateway.
           All actions are logged for audit purposes.
         </p>

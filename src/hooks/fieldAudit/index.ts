@@ -39,3 +39,15 @@ export {
   type SubjectTimeline,
   type TimelineEntry,
 } from "./useFieldSubjectTimeline";
+export {
+  useSubmitFieldAudit,
+  FieldAuditSubmitError,
+  isFieldAuditSubmitError,
+  type FieldAuditSubmitSummary,
+  type SubmitFieldAuditInput,
+} from "./useSubmitFieldAudit";
+export { useReopenFieldAudit } from "./useReopenFieldAudit";
+export {
+  useUpdateFieldAuditNotes,
+  type UpdateFieldAuditNotesInput,
+} from "./useUpdateFieldAuditNotes";

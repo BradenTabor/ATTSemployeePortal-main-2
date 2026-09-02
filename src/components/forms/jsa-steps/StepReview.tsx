@@ -196,7 +196,7 @@ function PaperJsaPhotoReview({ paths, onEdit }: { paths: string[]; onEdit: () =>
         <button
           type="button"
           onClick={onEdit}
-          className="inline-flex items-center gap-1 text-[10px] text-emerald-400 hover:text-emerald-300 transition touch-manipulation px-1.5 py-1"
+          className="tap-44 relative inline-flex items-center gap-1 text-[10px] text-emerald-400 hover:text-emerald-300 transition touch-manipulation px-1.5 py-1"
         >
           <Edit3 className="w-3 h-3" />
           Edit
@@ -257,7 +257,7 @@ function SummarySection({
         <button
           type="button"
           onClick={onEdit}
-          className="inline-flex items-center gap-1 text-[10px] text-emerald-400 hover:text-emerald-300 transition touch-manipulation px-1.5 py-1"
+          className="tap-44 relative inline-flex items-center gap-1 text-[10px] text-emerald-400 hover:text-emerald-300 transition touch-manipulation px-1.5 py-1"
         >
           <Edit3 className="w-3 h-3" />
           Edit
@@ -483,19 +483,19 @@ export function StepReview({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <div className="rounded-lg bg-black/30 px-3 py-2 text-center">
             <p className="text-lg font-bold text-emerald-400">{completionStats.hazardsCount}</p>
-            <p className="text-[10px] text-white/50 uppercase tracking-wide">Hazards</p>
+            <p className="text-[10px] text-white/50 uppercase font-mono font-medium tracking-[0.14em]">Hazards</p>
           </div>
           <div className="rounded-lg bg-black/30 px-3 py-2 text-center">
             <p className="text-lg font-bold text-amber-400">{completionStats.ppeCount}</p>
-            <p className="text-[10px] text-white/50 uppercase tracking-wide">PPE Items</p>
+            <p className="text-[10px] text-white/50 uppercase font-mono font-medium tracking-[0.14em]">PPE Items</p>
           </div>
           <div className="rounded-lg bg-black/30 px-3 py-2 text-center">
             <p className="text-lg font-bold text-sky-400">{completionStats.spansCount}</p>
-            <p className="text-[10px] text-white/50 uppercase tracking-wide">Spans</p>
+            <p className="text-[10px] text-white/50 uppercase font-mono font-medium tracking-[0.14em]">Spans</p>
           </div>
           <div className="rounded-lg bg-black/30 px-3 py-2 text-center">
             <p className="text-lg font-bold text-purple-400">{completionStats.trafficSetupCount}</p>
-            <p className="text-[10px] text-white/50 uppercase tracking-wide">Traffic Setup</p>
+            <p className="text-[10px] text-white/50 uppercase font-mono font-medium tracking-[0.14em]">Traffic Setup</p>
           </div>
         </div>
         
@@ -655,7 +655,7 @@ export function StepReview({
             <button
               type="button"
               onClick={() => setShowUserSelector(true)}
-              className="inline-flex items-center gap-1 text-[10px] text-emerald-400 hover:text-emerald-300 transition touch-manipulation px-1.5 py-1"
+              className="tap-44 relative inline-flex items-center gap-1 text-[10px] text-emerald-400 hover:text-emerald-300 transition touch-manipulation px-1.5 py-1"
             >
               <Edit3 className="w-3 h-3" />
               {form.sharedWithUsers.length > 0 ? 'Edit' : 'Add Users'}

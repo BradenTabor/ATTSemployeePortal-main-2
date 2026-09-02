@@ -176,35 +176,35 @@ const FORM_ICON_COLORS: Record<string, string> = {
 // Theme colors based on form type
 const THEME_COLORS: Record<string, { confetti: string[], glow: string, icon: string, badge: string, badgeText: string }> = {
   dvir: {
-    confetti: ['#10b981', '#34d399', '#6ee7b7', '#fbbf24', '#f59e0b', '#ffffff'],
+    confetti: ['#3DDC84', '#5EE898', '#8DF5A8', '#B8FF7A', '#9BEB5B', '#ffffff'],
     glow: 'bg-emerald-500',
     icon: 'from-emerald-500 to-emerald-600',
     badge: 'bg-emerald-500/15 border-emerald-500/30',
     badgeText: 'text-emerald-300',
   },
   equipment: {
-    confetti: ['#10b981', '#34d399', '#6ee7b7', '#fbbf24', '#f59e0b', '#ffffff'],
+    confetti: ['#3DDC84', '#5EE898', '#8DF5A8', '#B8FF7A', '#9BEB5B', '#ffffff'],
     glow: 'bg-emerald-500',
     icon: 'from-emerald-500 to-emerald-600',
     badge: 'bg-emerald-500/15 border-emerald-500/30',
     badgeText: 'text-emerald-300',
   },
   jsa: {
-    confetti: ['#10b981', '#34d399', '#6ee7b7', '#fbbf24', '#f59e0b', '#ffffff'],
+    confetti: ['#3DDC84', '#5EE898', '#8DF5A8', '#B8FF7A', '#9BEB5B', '#ffffff'],
     glow: 'bg-emerald-500',
     icon: 'from-emerald-500 to-emerald-600',
     badge: 'bg-emerald-500/15 border-emerald-500/30',
     badgeText: 'text-emerald-300',
   },
   incident: {
-    confetti: ['#ef4444', '#f87171', '#fca5a5', '#fbbf24', '#f59e0b', '#ffffff'],
+    confetti: ['#ef4444', '#f87171', '#fca5a5', '#B8FF7A', '#9BEB5B', '#ffffff'],
     glow: 'bg-red-500',
     icon: 'from-red-500 to-red-600',
     badge: 'bg-red-500/15 border-red-500/30',
     badgeText: 'text-red-300',
   },
   near_miss: {
-    confetti: ['#f59e0b', '#fbbf24', '#fcd34d', '#10b981', '#34d399', '#ffffff'],
+    confetti: ['#9BEB5B', '#B8FF7A', '#C8F55E', '#3DDC84', '#5EE898', '#ffffff'],
     glow: 'bg-amber-500',
     icon: 'from-amber-500 to-amber-600',
     badge: 'bg-amber-500/15 border-amber-500/30',

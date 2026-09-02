@@ -426,7 +426,7 @@ export function ComplianceAuditContent({ tab, setTab, renderTabs }: ComplianceAu
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.2 }}
-                className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/[0.02] overflow-hidden"
+                className="rounded-xl sm:rounded-leaf-sm border border-white/10 bg-white/[0.02] overflow-hidden"
               >
                 <div className="p-3 sm:p-4 border-b border-white/10 flex items-center justify-between flex-wrap gap-2">
                   <span className="text-xs sm:text-sm text-white/70">
@@ -595,7 +595,7 @@ export function ComplianceAuditContent({ tab, setTab, renderTabs }: ComplianceAu
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.2 }}
-                className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/[0.02] overflow-hidden"
+                className="rounded-xl sm:rounded-leaf-sm border border-white/10 bg-white/[0.02] overflow-hidden"
               >
                 <div className="p-3 sm:p-4 border-b border-white/10 flex items-center justify-between flex-wrap gap-2">
                   <span className="text-xs sm:text-sm text-white/70">
@@ -703,7 +703,7 @@ export function ComplianceAuditContent({ tab, setTab, renderTabs }: ComplianceAu
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.2 }}
-                className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/[0.02] overflow-hidden"
+                className="rounded-xl sm:rounded-leaf-sm border border-white/10 bg-white/[0.02] overflow-hidden"
               >
                 {/* Compliance Summary Section */}
                 <div className="p-3 sm:p-4 border-b border-white/10 space-y-3 sm:space-y-4">
@@ -1006,7 +1006,7 @@ export function ComplianceAuditContent({ tab, setTab, renderTabs }: ComplianceAu
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.2 }}
-                className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/[0.02] overflow-hidden"
+                className="rounded-xl sm:rounded-leaf-sm border border-white/10 bg-white/[0.02] overflow-hidden"
               >
                 <div className="p-3 sm:p-4 border-b border-white/10 flex items-center justify-between flex-wrap gap-2">
                   <span className="text-xs sm:text-sm text-white/70">
@@ -1238,7 +1238,7 @@ export function ComplianceAuditContent({ tab, setTab, renderTabs }: ComplianceAu
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.2 }}
-                className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/[0.02] overflow-hidden"
+                className="rounded-xl sm:rounded-leaf-sm border border-white/10 bg-white/[0.02] overflow-hidden"
               >
                 <div className="p-3 sm:p-4 border-b border-white/10">
                   <span className="text-xs sm:text-sm text-white/70">

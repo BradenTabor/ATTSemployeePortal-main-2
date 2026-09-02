@@ -76,15 +76,15 @@ export default function AdminRedemptionFulfillment() {
           className="mb-6"
         >
           <div className="flex items-center gap-3 mb-2">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#f4c979]/15 border border-[#f4c979]/30">
-              <Sparkles className="w-3.5 h-3.5 text-[#f4c979]" aria-hidden />
-              <span className="text-xs font-medium text-[#f4c979]">Admin</span>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#F4F7F2]/15 border border-[#F4F7F2]/30">
+              <Sparkles className="w-3.5 h-3.5 text-[#F4F7F2]" aria-hidden />
+              <span className="text-xs font-medium text-[#F4F7F2]">Admin</span>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Gift className="w-8 h-8 text-[#f4c979]" aria-hidden />
+            <Gift className="w-8 h-8 text-[#F4F7F2]" aria-hidden />
             <div>
-              <h1 className="text-2xl font-bold text-white">Redemption Fulfillment</h1>
+              <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">Redemption Fulfillment</h1>
               <p className="text-sm text-white/50 mt-0.5">
                 Fulfill or deny employee reward requests. Deny refunds points to the requester.
               </p>

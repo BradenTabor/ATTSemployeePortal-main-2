@@ -215,10 +215,10 @@ export default function CertificationTest() {
 
           {/* Page header */}
           <header>
-            <p className="text-xs font-medium uppercase tracking-wider text-emerald-400/80 mb-1">
+            <p className="text-xs font-medium uppercase text-emerald-400/80 mb-1 font-mono font-medium tracking-[0.14em]">
               Certification Test
             </p>
-            <h1 className="text-2xl font-bold text-white">{cert.name}</h1>
+            <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">{cert.name}</h1>
             <p className="text-sm text-white/60 mt-1">
               {cert.question_count ?? "—"} questions · {cert.passing_score}% to pass
             </p>
@@ -349,7 +349,7 @@ export default function CertificationTest() {
       <motion.div className="mx-auto max-w-lg space-y-4 px-4" {...motionProps}>
         {/* Cert name + progress */}
         <div className="space-y-2">
-          <p className="text-xs font-medium uppercase tracking-wider text-emerald-400/80">
+          <p className="text-xs font-medium uppercase text-emerald-400/80 font-mono font-medium tracking-[0.14em]">
             {cert.name}
           </p>
           <div className="flex items-center justify-between gap-2">

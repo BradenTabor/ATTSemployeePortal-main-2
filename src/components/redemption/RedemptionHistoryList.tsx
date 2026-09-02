@@ -68,8 +68,8 @@ export const RedemptionHistoryList = memo(function RedemptionHistoryList({
             data-testid={`redemption-row-${row.id}`}
           >
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#f4c979]/15 border border-[#f4c979]/20 flex items-center justify-center flex-shrink-0">
-                <Gift className="w-5 h-5 text-[#f4c979]" aria-hidden />
+              <div className="w-10 h-10 rounded-xl bg-[#F4F7F2]/15 border border-[#F4F7F2]/20 flex items-center justify-center flex-shrink-0">
+                <Gift className="w-5 h-5 text-[#F4F7F2]" aria-hidden />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2">

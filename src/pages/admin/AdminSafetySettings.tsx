@@ -9,6 +9,8 @@ import {
   AlertTriangle,
   ChevronDown,
   Eye,
+  Megaphone,
+  Gift,
 } from "lucide-react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { AdminSegmentedControl, type SegmentTab } from "../../components/admin/AdminSegmentedControl";
@@ -34,50 +36,24 @@ import { toast } from "../../lib/toast";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const TAB_ICON_SIZE = 40;
-
 const TABS: SegmentTab[] = [
   {
     id: "announcements",
     label: "Announcements",
     shortLabel: "Announce",
-    icon: (
-      <img
-        loading="lazy"
-        src="/assets/news-announcements.webp"
-        alt=""
-        className="object-contain flex-shrink-0"
-        style={{ width: TAB_ICON_SIZE, height: TAB_ICON_SIZE }}
-      />
-    ),
+    icon: <Megaphone className="h-4 w-4" aria-hidden />,
   },
   {
     id: "briefings",
     label: "Briefings",
     shortLabel: "Briefing",
-    icon: (
-      <img
-        loading="lazy"
-        src="/assets/safety-compliance.webp"
-        alt=""
-        className="object-contain flex-shrink-0"
-        style={{ width: TAB_ICON_SIZE, height: TAB_ICON_SIZE }}
-      />
-    ),
+    icon: <Shield className="h-4 w-4" aria-hidden />,
   },
   {
     id: "rewards",
     label: "Reward Points",
     shortLabel: "Rewards",
-    icon: (
-      <img
-        loading="lazy"
-        src="/assets/safety-rewards.webp"
-        alt=""
-        className="object-contain flex-shrink-0"
-        style={{ width: TAB_ICON_SIZE, height: TAB_ICON_SIZE }}
-      />
-    ),
+    icon: <Gift className="h-4 w-4" aria-hidden />,
   },
 ];
 
@@ -229,7 +205,7 @@ function BasePromptViewer() {
         className="w-full flex items-center justify-between px-4 py-3 text-left group hover:bg-white/[0.02] transition-colors"
       >
         <div className="flex items-center gap-2">
-          <Eye className="w-4 h-4 text-[#f4c979]/60" />
+          <Eye className="w-4 h-4 text-[#F4F7F2]/60" />
           <span className="text-sm font-medium text-white/80">
             Current Base Prompt
           </span>
@@ -259,9 +235,9 @@ function SectionCard({ title, children }: { title: string; children: React.React
   return (
     <motion.div
       variants={itemVariants}
-      className="rounded-xl border border-[#f6dcb2]/15 bg-white/[0.03] p-4 sm:p-5 space-y-4"
+      className="rounded-xl border border-[#E4EAE1]/15 bg-white/[0.03] p-4 sm:p-5 space-y-4"
     >
-      <h3 className="text-sm font-semibold text-[#f6dcb2]/80 uppercase tracking-wider">
+      <h3 className="text-sm font-semibold text-[#E4EAE1]/80 uppercase tracking-wider">
         {title}
       </h3>
       {children}
@@ -289,7 +265,7 @@ function Toggle({
           onChange={(e) => onChange(e.target.checked)}
           className="sr-only peer"
         />
-        <div className="w-11 h-6 rounded-full transition-colors peer-checked:bg-[#f4c979]/80 bg-white/10 peer-focus-visible:ring-2 peer-focus-visible:ring-[#f4c979]/60" />
+        <div className="w-11 h-6 rounded-full transition-colors peer-checked:bg-[#F4F7F2]/80 bg-white/10 peer-focus-visible:ring-2 peer-focus-visible:ring-[#F4F7F2]/60" />
         <div className="absolute left-0.5 top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5" />
       </div>
       <div>
@@ -330,7 +306,7 @@ function NumberInput({
           }}
           min={min}
           max={max}
-          className="w-24 rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/60"
+          className="w-24 rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus-visible:ring-1 focus-visible:ring-[#F4F7F2]/60"
         />
         {suffix && <span className="text-xs text-white/40">{suffix}</span>}
       </div>
@@ -353,10 +329,10 @@ function HourPicker({
       <select
         value={value}
         onChange={(e) => onChange(parseInt(e.target.value, 10))}
-        className="rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/60"
+        className="rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#F4F7F2]/60"
       >
         {HOUR_OPTIONS.map((h) => (
-          <option key={h} value={h} className="bg-[#1a1a1a] text-white">
+          <option key={h} value={h} className="bg-[#121A15] text-white">
             {formatCentralTime(h)}
           </option>
         ))}
@@ -382,7 +358,7 @@ function SaveBar({
         type="button"
         onClick={onSave}
         disabled={isPending || !hasChanges}
-        className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#f4c979] to-[#d79a32] px-5 py-2.5 text-sm font-semibold text-[#2e1b02] shadow-lg shadow-[#f4c979]/20 transition-all hover:shadow-[#f4c979]/30 disabled:opacity-40 disabled:cursor-not-allowed"
+        className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#F4F7F2] to-[#8DF5A8] px-5 py-2.5 text-sm font-semibold text-[#040605] shadow-lg shadow-[#F4F7F2]/20 transition-all hover:shadow-[#F4F7F2]/30 disabled:opacity-40 disabled:cursor-not-allowed"
       >
         <Save className="w-4 h-4" />
         {isPending ? "Saving..." : "Save Changes"}
@@ -490,7 +466,7 @@ function AnnouncementsTab() {
                 }
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   active
-                    ? "bg-[#f4c979]/20 text-[#f4c979] border border-[#f4c979]/40"
+                    ? "bg-[#F4F7F2]/20 text-[#F4F7F2] border border-[#F4F7F2]/40"
                     : "bg-white/[0.03] text-white/40 border border-white/10 hover:text-white/60"
                 }`}
               >
@@ -516,11 +492,11 @@ function AnnouncementsTab() {
 
         <div className="mt-5 pt-4 border-t border-white/10">
           <div className="flex items-center gap-2 mb-2">
-            <h4 className="text-xs font-semibold text-[#f6dcb2]/80 uppercase tracking-wider">
+            <h4 className="text-xs text-[#E4EAE1]/80 uppercase font-mono font-medium tracking-[0.14em]">
               Custom Instructions
             </h4>
             {config.custom_prompt_instructions.length > 0 && (
-              <span className="px-1.5 py-0.5 rounded bg-[#f4c979]/20 text-[10px] font-semibold text-[#f4c979]">
+              <span className="px-1.5 py-0.5 rounded bg-[#F4F7F2]/20 text-[10px] font-semibold text-[#F4F7F2]">
                 Active
               </span>
             )}
@@ -534,7 +510,7 @@ function AnnouncementsTab() {
             maxLength={2000}
             rows={4}
             placeholder="e.g. Focus on heat safety during summer months, always mention hydration breaks..."
-            className="w-full rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/60 resize-y"
+            className="w-full rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus-visible:ring-1 focus-visible:ring-[#F4F7F2]/60 resize-y"
           />
           <div className="flex items-center justify-between mt-1">
             <div>
@@ -655,7 +631,7 @@ function BriefingsTab() {
                         : [...config.required_roles, key],
                     })
                   }
-                  className="rounded border-white/20 bg-white/[0.05] text-[#f4c979] focus-visible:ring-[#f4c979]/60"
+                  className="rounded border-white/20 bg-white/[0.05] text-[#F4F7F2] focus-visible:ring-[#F4F7F2]/60"
                 />
                 <span className="text-sm text-white/80">{label}</span>
               </label>
@@ -721,7 +697,7 @@ function BriefingsTab() {
             }
           }}
           rows={16}
-          className="w-full rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-xs font-mono text-white placeholder-white/30 focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/60 resize-y"
+          className="w-full rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-xs font-mono text-white placeholder-white/30 focus:outline-none focus-visible:ring-1 focus-visible:ring-[#F4F7F2]/60 resize-y"
           spellCheck={false}
         />
       </SectionCard>
@@ -734,7 +710,7 @@ function BriefingsTab() {
               value={config.tree_service_standard_text}
               onChange={(e) => patch({ tree_service_standard_text: e.target.value })}
               rows={5}
-              className="w-full rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/60 resize-y"
+              className="w-full rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#F4F7F2]/60 resize-y"
             />
           </div>
           <div>
@@ -743,7 +719,7 @@ function BriefingsTab() {
               value={config.personalized_fallback_text}
               onChange={(e) => patch({ personalized_fallback_text: e.target.value })}
               rows={2}
-              className="w-full rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/60 resize-y"
+              className="w-full rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#F4F7F2]/60 resize-y"
             />
           </div>
           <div>
@@ -752,7 +728,7 @@ function BriefingsTab() {
               value={config.safety_tips.join("\n")}
               onChange={(e) => patch({ safety_tips: e.target.value.split("\n").filter((s) => s.trim().length > 0) })}
               rows={6}
-              className="w-full rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/60 resize-y"
+              className="w-full rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#F4F7F2]/60 resize-y"
             />
             <p className="text-xs text-white/30 text-right mt-1">{config.safety_tips.length} tips</p>
           </div>
@@ -867,13 +843,13 @@ function RewardsTab() {
             type="date"
             value={newOverrideDate}
             onChange={(e) => setNewOverrideDate(e.target.value)}
-            className="rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#f4c979]/60"
+            className="rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2 text-sm text-white focus:outline-none focus-visible:ring-1 focus-visible:ring-[#F4F7F2]/60"
           />
           <button
             type="button"
             onClick={addOverrideDate}
             disabled={!newOverrideDate}
-            className="flex items-center gap-1 rounded-lg bg-[#f4c979]/20 px-3 py-2 text-sm font-medium text-[#f4c979] transition-all hover:bg-[#f4c979]/30 disabled:opacity-40"
+            className="flex items-center gap-1 rounded-lg bg-[#F4F7F2]/20 px-3 py-2 text-sm font-medium text-[#F4F7F2] transition-all hover:bg-[#F4F7F2]/30 disabled:opacity-40"
           >
             <Plus className="w-4 h-4" />
             Add
@@ -886,13 +862,13 @@ function RewardsTab() {
             {config.override_dates.map((date) => (
               <span
                 key={date}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-[#f4c979]/20 bg-[#f4c979]/10 px-2.5 py-1 text-xs font-medium text-[#f4c979]"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[#F4F7F2]/20 bg-[#F4F7F2]/10 px-2.5 py-1 text-xs font-medium text-[#F4F7F2]"
               >
                 {date}
                 <button
                   type="button"
                   onClick={() => patch({ override_dates: config.override_dates.filter((d) => d !== date) })}
-                  className="text-[#f4c979]/60 hover:text-[#f4c979] transition-colors"
+                  className="text-[#F4F7F2]/60 hover:text-[#F4F7F2] transition-colors"
                   aria-label={`Remove override ${date}`}
                 >
                   <X className="w-3.5 h-3.5" />
@@ -949,14 +925,14 @@ function AdminSafetySettings() {
           initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="rounded-2xl border border-[#f6dcb2]/20 bg-gradient-to-br from-[#f4c979]/10 via-[#d79a32]/5 to-transparent p-5 sm:p-6"
+          className="rounded-leaf-sm border border-[#E4EAE1]/20 bg-gradient-to-br from-[#F4F7F2]/10 via-[#8DF5A8]/5 to-transparent p-5 sm:p-6"
         >
           <div className="flex items-center gap-3 mb-1">
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[#f4c979]/20">
-              <Shield className="w-5 h-5 text-[#f4c979]" />
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[#F4F7F2]/20">
+              <Shield className="w-5 h-5 text-[#F4F7F2]" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-white">Safety Feature Settings</h1>
+              <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">Safety Feature Settings</h1>
               <p className="text-sm text-white/50">
                 Configure announcements, briefings, and reward points. Changes take effect immediately.
               </p>

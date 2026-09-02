@@ -76,7 +76,7 @@ function ComplianceRing({
   const pct = totalCount > 0 ? Math.min(1, activeCount / totalCount) : 1;
   const circumference = 2 * Math.PI * 45;
   const offset = circumference * (1 - pct);
-  const strokeColor = hasExpired ? '#ef4444' : hasExpiring ? '#f59e0b' : '#10b981';
+  const strokeColor = hasExpired ? '#ef4444' : hasExpiring ? '#9BEB5B' : '#3DDC84';
   return (
     <div className="relative w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center">
       <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
@@ -279,12 +279,12 @@ export function MyCertificationsSection({
   return (
     <section
       id={CERT_SECTION_ID}
-      className="relative overflow-hidden rounded-xl sm:rounded-2xl md:rounded-3xl border border-emerald-400/20"
+      className="relative overflow-hidden rounded-xl sm:rounded-leaf-sm md:rounded-leaf border border-emerald-400/20"
       style={{
         background:
-          'linear-gradient(145deg, rgba(4, 30, 21, 0.95) 0%, rgba(2, 15, 10, 0.98) 50%, rgba(1, 8, 5, 1) 100%)',
+          'linear-gradient(145deg, rgba(11,16,13, 0.95) 0%, rgba(4,6,5, 0.98) 50%, rgba(4,6,5, 1) 100%)',
         boxShadow:
-          '0 8px 40px -10px rgba(16, 185, 129, 0.2), 0 4px 20px -8px rgba(0, 0, 0, 0.5)',
+          '0 8px 40px -10px rgba(47,164,90, 0.2), 0 4px 20px -8px rgba(0,0,0, 0.5)',
       }}
     >
       <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent" />
@@ -294,7 +294,7 @@ export function MyCertificationsSection({
             className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl flex items-center justify-center border border-emerald-500/30 flex-shrink-0"
             style={{
               background:
-                'linear-gradient(145deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.1) 100%)',
+                'linear-gradient(145deg, rgba(47,164,90, 0.15) 0%, rgba(31,122,68, 0.1) 100%)',
             }}
           >
             <Award className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
@@ -314,7 +314,7 @@ export function MyCertificationsSection({
             <p className="text-sm text-white/80 mb-3">No certifications yet</p>
             <a
               href="/resources"
-              className="inline-flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-xs sm:text-sm font-medium text-emerald-300 hover:bg-emerald-500/20 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-xs sm:text-sm font-medium text-emerald-300 hover:bg-emerald-500/20 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400/50"
             >
               View certifications & training
               <ChevronRight className="w-3.5 h-3.5" />

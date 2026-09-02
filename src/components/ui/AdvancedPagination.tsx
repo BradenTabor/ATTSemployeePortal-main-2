@@ -303,7 +303,7 @@ export const AdvancedPagination = memo(function AdvancedPagination({
               exit={{ y: 20 }}
               onClick={(e) => e.stopPropagation()}
               onSubmit={handleJumpSubmit}
-              className={`bg-[#0a0a0a] border ${styles.border} rounded-2xl p-4 shadow-2xl ${styles.glow}`}
+              className={`bg-[#040605] border ${styles.border} rounded-leaf-sm p-4 shadow-2xl ${styles.glow}`}
             >
               <div className="text-sm text-white/70 mb-3">Jump to page</div>
               <div className="flex gap-2">

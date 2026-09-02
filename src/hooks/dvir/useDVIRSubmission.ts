@@ -8,6 +8,7 @@ import { parseFormError } from '../../lib/errorHandling';
 import { isOnline, addToQueue } from '../../lib/offlineQueue';
 import { storePhotosForQueue } from '../../lib/offlinePhotoStore';
 import { compressImage } from '../../lib/imageCompression';
+import { uploadBatch } from '../../lib/asyncPool';
 import type { DVIRFormState, ExtraPhotos } from '../../pages/forms/dvir';
 
 interface SubmissionOptions {
@@ -51,25 +52,9 @@ export function useDVIRSubmission() {
     const uploadedPhotoPaths: string[] = [];
 
     try {
-      // 1) Ensure we have an authenticated user
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError) {
-        logger.error("Auth error in DVIR submit (getUser):", userError);
-        formToast.error("Authentication Error", `Unable to load user: ${userError.message}`);
-        throw new Error(`Authentication error: ${userError.message}`);
-      }
-
-      if (!user) {
-        logger.error("No authenticated user in DVIR submit");
-        formToast.error("Authentication Error", "You must be logged in to submit a DVIR.");
-        throw new Error("No authenticated user");
-      }
-
-      // 2) Ensure Supabase session/JWT is loaded so RLS auth.uid() is not null
+      // 1+2) Resolve the session locally (no GoTrue round-trip). The JWT is
+      // verified by Storage/PostgREST on every request below, so RLS
+      // auth.uid() is guaranteed non-null once we have a session here.
       const {
         data: { session },
         error: sessionError,
@@ -87,6 +72,7 @@ export function useDVIRSubmission() {
         throw new Error("No active session");
       }
 
+      const user = session.user;
       const userId = user.id;
       const userEmail = user.email ?? null;
 
@@ -230,44 +216,37 @@ export function useDVIRSubmission() {
         }
       }
 
-      // 3) Upload required oil dipstick photo
-      logger.debug("Uploading oil dipstick photo...");
+      // 3+4) Upload the required oil dipstick photo and any optional photos in
+      // parallel (bounded). Successful paths land in uploadedPhotoPaths even if
+      // a sibling fails so the catch block can roll them back.
       if (!oilDipstickPhoto) {
         throw new Error("Oil dipstick photo is required");
       }
-      const oilDipstickPath = await uploadPhoto(oilDipstickPhoto, "oil_dipstick");
-      uploadedPhotoPaths.push(oilDipstickPath);
-      logger.debug("Oil dipstick uploaded:", oilDipstickPath);
+      const photoJobs: Array<{ file: File; fieldName: string }> = [
+        { file: oilDipstickPhoto, fieldName: "oil_dipstick" },
+      ];
+      if (extraPhotos.tire) photoJobs.push({ file: extraPhotos.tire, fieldName: "tire" });
+      if (extraPhotos.coolant) photoJobs.push({ file: extraPhotos.coolant, fieldName: "coolant" });
+      if (extraPhotos.damage) photoJobs.push({ file: extraPhotos.damage, fieldName: "damage" });
+      if (extraPhotos.mileage) photoJobs.push({ file: extraPhotos.mileage, fieldName: "detail-clean_truck" });
 
-      // 4) Upload optional photos
-      let tirePhotoPath: string | null = null;
-      let coolantPhotoPath: string | null = null;
-      let damagePhotoPath: string | null = null;
-      let detailCleanTruckPhotoPath: string | null = null;
+      logger.debug(`Uploading ${photoJobs.length} DVIR photo(s) in parallel...`);
+      const uploadedByField = new Map<string, string>();
+      await uploadBatch(
+        photoJobs,
+        async (job) => {
+          const path = await uploadPhoto(job.file, job.fieldName);
+          uploadedByField.set(job.fieldName, path);
+          return path;
+        },
+        uploadedPhotoPaths,
+      );
 
-      if (extraPhotos.tire) {
-        logger.debug("Uploading tire photo...");
-        tirePhotoPath = await uploadPhoto(extraPhotos.tire, "tire");
-        uploadedPhotoPaths.push(tirePhotoPath);
-      }
-      if (extraPhotos.coolant) {
-        logger.debug("Uploading coolant photo...");
-        coolantPhotoPath = await uploadPhoto(extraPhotos.coolant, "coolant");
-        uploadedPhotoPaths.push(coolantPhotoPath);
-      }
-      if (extraPhotos.damage) {
-        logger.debug("Uploading damage photo...");
-        damagePhotoPath = await uploadPhoto(extraPhotos.damage, "damage");
-        uploadedPhotoPaths.push(damagePhotoPath);
-      }
-      if (extraPhotos.mileage) {
-        logger.debug("Uploading detail-clean truck photo...");
-        detailCleanTruckPhotoPath = await uploadPhoto(
-          extraPhotos.mileage,
-          "detail-clean_truck"
-        );
-        uploadedPhotoPaths.push(detailCleanTruckPhotoPath);
-      }
+      const oilDipstickPath = uploadedByField.get("oil_dipstick")!;
+      const tirePhotoPath = uploadedByField.get("tire") ?? null;
+      const coolantPhotoPath = uploadedByField.get("coolant") ?? null;
+      const damagePhotoPath = uploadedByField.get("damage") ?? null;
+      const detailCleanTruckPhotoPath = uploadedByField.get("detail-clean_truck") ?? null;
 
       // 5) Signature values (typed; stored as text)
       const finalDriverSig = form.finalDriverSignature?.trim() || null;

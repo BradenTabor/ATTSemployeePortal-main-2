@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import attsLogo from "../assets/ATTS_Logo-removebg-preview.png";
+import { BrandMark } from "@/components/canopy/BrandMark";
 
 interface AnnouncementCardProps {
   title: string;
@@ -18,18 +18,13 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
 }) => (
   <motion.div
     transition={{ duration: 0.25, ease: "easeOut" }}
-    className="relative overflow-hidden rounded-2xl border border-green-800/40 bg-gradient-to-br from-neutral-950/90 via-neutral-900/90 to-black/80 shadow-md hover:shadow-[0_0_20px_rgba(34,197,94,0.3)] backdrop-blur-sm p-5 sm:p-6 transition-all duration-200 hover:scale-[1.02]"
+    className="relative overflow-hidden rounded-leaf-sm border border-green-800/40 bg-gradient-to-br from-neutral-950/90 via-neutral-900/90 to-black/80 shadow-md hover:shadow-[0_0_20px_rgba(47,164,90,0.3)] backdrop-blur-sm p-5 sm:p-6 transition-all duration-200 hover:scale-[1.02]"
   >
     <div className="absolute top-3 right-3 pointer-events-none">
       {isNew && (
         <span className="absolute inset-0 animate-ping rounded-full bg-green-500/30 scale-150 blur-md" />
       )}
-      <img
-        src={attsLogo}
-        alt="ATTS Logo"
-        loading="lazy"
-        className="w-10 h-10 object-contain opacity-50"
-      />
+      <BrandMark size={36} className="opacity-80" />
     </div>
 
     {isNew && (
@@ -46,7 +41,7 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
         {message}
       </p>
       <div className="flex flex-wrap justify-between items-center pt-3 border-t border-green-800/30">
-        <span className="inline-block text-xs font-semibold uppercase tracking-wide text-green-700 bg-green-100/10 px-3 py-1 rounded-full">
+        <span className="inline-block text-xs uppercase text-green-700 bg-green-100/10 px-3 py-1 rounded-full font-mono font-medium tracking-[0.14em]">
           {category}
         </span>
         <span className="text-xs text-gray-400">{date}</span>

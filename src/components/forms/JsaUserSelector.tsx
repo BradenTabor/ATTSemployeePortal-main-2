@@ -150,7 +150,7 @@ export function JsaUserSelector({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 100 }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="relative w-full max-w-md bg-gradient-to-br from-gray-900 to-gray-950 rounded-t-3xl sm:rounded-3xl border border-emerald-500/30 shadow-2xl max-h-[80vh] flex flex-col"
+        className="relative w-full max-w-md bg-gradient-to-br from-gray-900 to-gray-950 rounded-t-3xl sm:rounded-leaf border border-emerald-500/30 shadow-2xl max-h-[80vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -198,7 +198,7 @@ export function JsaUserSelector({
         {/* Selected Users */}
         {selectedUsers.length > 0 && (
           <div className="px-4 py-3 border-b border-white/10 bg-emerald-500/5">
-            <p className="text-xs uppercase tracking-wider text-emerald-300 font-bold mb-2">
+            <p className="text-xs uppercase text-emerald-300 mb-2 font-mono font-medium tracking-[0.14em]">
               Shared with ({selectedUsers.length})
             </p>
             <div className="flex flex-wrap gap-2">

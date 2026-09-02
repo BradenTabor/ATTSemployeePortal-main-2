@@ -1,136 +1,185 @@
 /**
- * ATTS surface system — solid premium surfaces with layered shadows and top-highlight.
- * No glassmorphism (no backdrop-blur or bg-white/[N] on major surfaces).
- * Use these constants for all cards, panels, modals, and inputs.
+ * CANOPY surface system.
+ *
+ * Every surface is a "slab": an ink body with a one-pixel bone highlight along
+ * the top edge and a deep, soft drop so it reads as a physical object resting in
+ * the understory. The asymmetric "leaf" radius (rounded-leaf / rounded-leaf-sm)
+ * is the signature silhouette.
+ *
+ * Role tints (all within green · white · black, except safety = red which is a
+ * justified safety-critical exception):
+ *   emerald  → verdant (employee default)
+ *   gold     → platinum (admin: bone-white forward, lime hairline)
+ *   purple   → moss (general foreman: deep saturated green)
+ *   blue     → glacier (foreman: cool bone/mint)
+ *   ember    → sap (mechanic: yellow-green)
+ *   red      → safety (safety officer)
+ *
+ * Key names are preserved from the previous system so 57 call-sites re-theme
+ * without edits.
  */
+
+const SLAB_SHADOW =
+  "shadow-[inset_0_1px_0_rgba(244,247,242,0.07),0_2px_6px_rgba(0,0,0,0.5),0_24px_48px_-24px_rgba(0,0,0,0.9)]";
+const SLAB_SHADOW_LG =
+  "shadow-[inset_0_1px_0_rgba(244,247,242,0.09),0_4px_12px_rgba(0,0,0,0.6),0_40px_80px_-32px_rgba(0,0,0,0.95)]";
+const SLAB_SHADOW_SM = "shadow-[inset_0_1px_0_rgba(244,247,242,0.05),0_1px_2px_rgba(0,0,0,0.4)]";
+
 export const glass = {
   /** Standard card — dashboards, stat cards, form panels */
-  card:
-    "bg-gray-900 border border-white/[0.06] rounded-2xl " +
-    "shadow-[0_1px_3px_rgba(0,0,0,0.5),0_4px_16px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.04)]",
+  card: `bg-ink-900 border border-bone-50/[0.07] rounded-leaf ${SLAB_SHADOW}`,
 
   /** Elevated — modals, drawers, floating panels */
-  elevated:
-    "bg-gray-800 border border-white/[0.08] rounded-2xl " +
-    "shadow-[0_2px_8px_rgba(0,0,0,0.6),0_16px_40px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.06)]",
+  elevated: `bg-ink-800 border border-bone-50/[0.1] rounded-leaf ${SLAB_SHADOW_LG}`,
 
   /** Subtle — nested inner panels, search bar, pagination strip */
-  subtle:
-    "bg-[#0d1117] border border-white/[0.04] rounded-xl " +
-    "shadow-[0_1px_2px_rgba(0,0,0,0.3)]",
+  subtle: `bg-ink-950/80 border border-bone-50/[0.05] rounded-leaf-sm ${SLAB_SHADOW_SM}`,
 
-  /** Employee dashboard card — emerald-tinted solid surface */
+  /** Employee dashboard card — verdant-tinted slab */
   cardEmerald:
-    "rounded-2xl border border-emerald-500/[0.12] " +
-    "bg-gradient-to-br from-[#061f16] via-[#04180f] to-[#020e09] " +
-    "shadow-[0_1px_3px_rgba(0,0,0,0.5),0_4px_16px_rgba(6,50,30,0.25),inset_0_1px_0_rgba(167,243,208,0.04)]",
+    "rounded-leaf border border-verdant-500/[0.16] " +
+    "bg-[linear-gradient(160deg,#0a2a19_0%,#0b100d_45%,#040605_100%)] " +
+    "shadow-[inset_0_1px_0_rgba(200,255,212,0.08),0_2px_6px_rgba(0,0,0,0.5),0_24px_48px_-24px_rgba(5,23,14,0.9)]",
 
-  /** Employee dashboard inner panels — nested emerald surface */
+  /** Employee dashboard inner panels — nested verdant surface */
   subtleEmerald:
-    "rounded-xl border border-emerald-500/[0.08] " +
-    "bg-gradient-to-br from-[#041810]/60 to-[#020e09]/40 " +
-    "shadow-[0_1px_2px_rgba(0,0,0,0.3)]",
+    "rounded-leaf-sm border border-verdant-500/[0.1] " +
+    "bg-[linear-gradient(160deg,rgba(10,42,25,0.6),rgba(4,6,5,0.4))] " +
+    SLAB_SHADOW_SM,
 
   /** Danger — confirmation dialogs, error surfaces */
   danger:
-    "bg-red-950 border border-red-500/[0.18] rounded-2xl " +
-    "shadow-[0_4px_16px_rgba(127,29,29,0.3),inset_0_1px_0_rgba(255,255,255,0.04)]",
+    "bg-[#132308] border border-red-500/[0.22] rounded-leaf " +
+    "shadow-[inset_0_1px_0_rgba(254,202,202,0.06),0_4px_16px_rgba(127,29,29,0.3)]",
 
   /** Success — completed/approved surfaces */
   success:
-    "bg-green-950 border border-green-500/[0.18] rounded-2xl " +
-    "shadow-[0_4px_16px_rgba(20,83,45,0.3),inset_0_1px_0_rgba(255,255,255,0.04)]",
+    "bg-verdant-950 border border-verdant-500/[0.22] rounded-leaf " +
+    "shadow-[inset_0_1px_0_rgba(200,255,212,0.06),0_4px_16px_rgba(10,42,25,0.4)]",
 
-  /** Safety Officer dashboard — evolved rose palette, warm and sophisticated */
+  /** Safety Officer — red slab (safety-critical exception to the green brand) */
   cardRed:
-    "rounded-2xl border border-rose-500/20 " +
-    "bg-gradient-to-br from-rose-950/80 via-rose-950/40 to-gray-900 " +
-    "shadow-[0_1px_3px_rgba(0,0,0,0.5),0_4px_16px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(251,207,210,0.06)]",
+    "rounded-leaf border border-rose-500/25 " +
+    "bg-[linear-gradient(160deg,#2a0a0e_0%,#12080a_45%,#040605_100%)] " +
+    "shadow-[inset_0_1px_0_rgba(251,207,210,0.08),0_2px_6px_rgba(0,0,0,0.5),0_24px_48px_-24px_rgba(0,0,0,0.9)]",
 
-  /** Safety Officer dashboard — inner panels and quick links */
+  /** Safety Officer — inner panels and quick links */
   subtleRed:
-    "rounded-xl border border-rose-500/20 " +
-    "bg-gradient-to-br from-rose-950/30 to-[#0f1216] " +
-    "shadow-[0_1px_2px_rgba(0,0,0,0.3)]",
+    "rounded-leaf-sm border border-rose-500/20 " +
+    "bg-[linear-gradient(160deg,rgba(42,10,14,0.5),rgba(4,6,5,0.6))] " +
+    SLAB_SHADOW_SM,
 
-  /** Safety Officer cockpit — ultra-dense metric cells, no gradient, warm stone base */
-  cockpit:
-    "bg-[#0c0a09] border border-rose-500/[0.10] rounded-xl " +
-    "shadow-[0_1px_2px_rgba(0,0,0,0.4)]",
+  /** Safety Officer cockpit — dense metric cells */
+  cockpit: `bg-ink-950 border border-rose-500/[0.12] rounded-leaf-xs ${SLAB_SHADOW_SM}`,
 
-  /** Safety Officer command bar — spotlight surface for quick-access navigation */
+  /** Safety Officer command bar */
   commandBar:
-    "bg-[#0d0b0a] border border-rose-500/[0.12] rounded-2xl " +
-    "shadow-[0_2px_8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(251,207,210,0.04)]",
+    "bg-ink-950 border border-rose-500/[0.14] rounded-leaf " +
+    "shadow-[inset_0_1px_0_rgba(251,207,210,0.05),0_2px_8px_rgba(0,0,0,0.4)]",
 
-  /** Incident card — Double-Bezel outer shell with danger tint (used for SafetyIncidentsList) */
+  /** Incident card — outer shell with danger tint */
   incidentOuter:
-    "rounded-[1.25rem] p-[5px] " +
-    "bg-gradient-to-br from-rose-950/40 via-[#0c0404]/60 to-[#080202]/80 " +
-    "ring-1 ring-rose-500/[0.12] " +
+    "rounded-leaf p-[5px] " +
+    "bg-[linear-gradient(160deg,rgba(42,10,14,0.5),rgba(12,4,4,0.7),rgba(4,6,5,0.9))] " +
+    "ring-1 ring-rose-500/[0.14] " +
     "shadow-[0_2px_8px_rgba(159,18,57,0.15),0_8px_32px_rgba(0,0,0,0.4)]",
 
-  /** Incident card — Double-Bezel inner core */
+  /** Incident card — inner core */
   incidentInner:
-    "rounded-[calc(1.25rem-5px)] " +
-    "bg-gradient-to-br from-[#0d0505] via-[#0a0303] to-[#060101] " +
+    "rounded-[23px_3px_23px_3px] " +
+    "bg-[linear-gradient(160deg,#120606,#0a0303,#040605)] " +
     "shadow-[inset_0_1px_1px_rgba(251,207,210,0.06),inset_0_-1px_1px_rgba(0,0,0,0.3)] " +
-    "border border-rose-500/[0.08]",
+    "border border-rose-500/[0.1]",
 
-  /** Incident detail modal — elevated danger surface */
+  /** Incident detail modal */
   incidentModal:
-    "rounded-[1.25rem] " +
-    "bg-gradient-to-br from-[#120606] via-[#0a0303] to-[#040101] " +
-    "border border-rose-500/[0.15] " +
-    "shadow-[0_4px_24px_rgba(159,18,57,0.2),0_16px_48px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(251,207,210,0.06)]",
+    "rounded-leaf " +
+    "bg-[linear-gradient(160deg,#160606,#0a0303,#040605)] " +
+    "border border-rose-500/[0.18] " +
+    "shadow-[inset_0_1px_0_rgba(251,207,210,0.06),0_4px_24px_rgba(159,18,57,0.2),0_16px_48px_rgba(0,0,0,0.6)]",
 
-  /** General Foreman dashboard — purple-tinted card with role accent border */
+  /** General Foreman — moss slab (deep saturated green) */
   cardPurple:
-    "rounded-2xl border border-purple-500/25 " +
-    "bg-gradient-to-br from-purple-950/90 via-purple-950/40 to-gray-900 " +
-    "shadow-[0_1px_3px_rgba(0,0,0,0.5),0_4px_16px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(233,213,255,0.08)]",
+    "rounded-leaf border border-verdant-400/25 " +
+    "bg-[linear-gradient(160deg,#12482a_0%,#0a2a19_40%,#040605_100%)] " +
+    "shadow-[inset_0_1px_0_rgba(200,255,212,0.1),0_2px_6px_rgba(0,0,0,0.5),0_24px_48px_-24px_rgba(5,23,14,0.95)]",
 
   /** General Foreman — inner panels and stat blocks */
   subtlePurple:
-    "rounded-xl border border-purple-500/20 " +
-    "bg-gradient-to-br from-purple-950/35 to-[#0d0a17] " +
-    "shadow-[0_1px_2px_rgba(0,0,0,0.3)]",
+    "rounded-leaf-sm border border-verdant-400/20 " +
+    "bg-[linear-gradient(160deg,rgba(18,72,42,0.45),rgba(4,6,5,0.6))] " +
+    SLAB_SHADOW_SM,
 
-  /** Admin / rewards — gold-tinted card with warm accent border */
+  /** Admin — platinum slab: bone-white forward with a lime hairline */
   cardGold:
-    "rounded-2xl border border-[#f6dcb2]/20 " +
-    "bg-gradient-to-br from-[#14110d] via-[#0b0906] to-[#050403] " +
-    "shadow-[0_1px_3px_rgba(0,0,0,0.5),0_4px_16px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(246,220,178,0.06)]",
+    "rounded-leaf border border-bone-50/[0.16] " +
+    "bg-[linear-gradient(160deg,#1e2a23_0%,#0b100d_40%,#040605_100%)] " +
+    "shadow-[inset_0_1px_0_rgba(244,247,242,0.14),0_2px_6px_rgba(0,0,0,0.5),0_24px_48px_-24px_rgba(0,0,0,0.95)]",
 
-  /** Admin — inner panels, stat blocks, table sections (lighter warm gold base) */
+  /** Admin — inner panels, stat blocks, table sections */
   subtleGold:
-    "rounded-xl border border-[#f6dcb2]/15 " +
-    "bg-gradient-to-br from-[#1b1914] via-[#120f0c] to-[#080705] " +
-    "shadow-[0_1px_2px_rgba(0,0,0,0.3)]",
+    "rounded-leaf-sm border border-bone-50/[0.1] " +
+    "bg-[linear-gradient(160deg,rgba(30,42,35,0.7),rgba(11,16,13,0.9))] " +
+    "shadow-[inset_0_1px_0_rgba(244,247,242,0.06),0_1px_2px_rgba(0,0,0,0.4)]",
 
-  /** Foreman dashboard — blue-tinted card with role accent border.
-   *  Consolidates the freestyle `from-[#0a1628] ... to-[#020408]` foreman panels. */
+  /** Foreman — glacier slab (cool bone/mint) */
   cardBlue:
-    "rounded-2xl border border-[#bfdbfe]/20 " +
-    "bg-gradient-to-br from-[#0a1628] via-[#0a1020] to-[#020408] " +
-    "shadow-[0_1px_3px_rgba(0,0,0,0.5),0_4px_16px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(191,219,254,0.06)]",
+    "rounded-leaf border border-verdant-200/20 " +
+    "bg-[linear-gradient(160deg,#1e2a23_0%,#0b100d_45%,#040605_100%)] " +
+    "shadow-[inset_0_1px_0_rgba(200,255,212,0.12),0_2px_6px_rgba(0,0,0,0.5),0_24px_48px_-24px_rgba(0,0,0,0.95)]",
 
-  /** Foreman — inner panels and stat blocks (deeper blue base) */
+  /** Foreman — inner panels and stat blocks */
   subtleBlue:
-    "rounded-xl border border-[#bfdbfe]/15 " +
-    "bg-gradient-to-br from-[#0a1628] via-[#060d18] to-[#020408] " +
-    "shadow-[0_1px_2px_rgba(0,0,0,0.3)]",
+    "rounded-leaf-sm border border-verdant-200/15 " +
+    "bg-[linear-gradient(160deg,rgba(30,42,35,0.6),rgba(4,6,5,0.7))] " +
+    SLAB_SHADOW_SM,
 
-  /** Mechanic dashboard — ember-tinted card (orange accent border).
-   *  Consolidates freestyle `from-[#1f0f09] via-[#150906] to-[#0a0504]` mechanic panels. */
+  /** Mechanic — sap slab (yellow-green) */
   cardEmber:
-    "rounded-2xl border border-orange-500/20 " +
-    "bg-gradient-to-br from-[#1f0f09] via-[#150906] to-[#0a0504] " +
-    "shadow-[0_1px_3px_rgba(0,0,0,0.5),0_4px_16px_rgba(127,53,11,0.2),inset_0_1px_0_rgba(251,146,60,0.06)]",
+    "rounded-leaf border border-lime-400/25 " +
+    "bg-[linear-gradient(160deg,#1c2a12_0%,#0f150a_45%,#040605_100%)] " +
+    "shadow-[inset_0_1px_0_rgba(184,255,122,0.1),0_2px_6px_rgba(0,0,0,0.5),0_24px_48px_-24px_rgba(0,0,0,0.95)]",
 
   /** Mechanic — nav cards, compact panels, inner surfaces */
   subtleEmber:
-    "rounded-xl border border-orange-500/20 " +
-    "bg-gradient-to-br from-[#1a0c08] via-[#120504] to-[#0f0705] " +
-    "shadow-[0_1px_2px_rgba(0,0,0,0.3)]",
+    "rounded-leaf-sm border border-lime-400/20 " +
+    "bg-[linear-gradient(160deg,rgba(28,42,18,0.55),rgba(4,6,5,0.7))] " +
+    SLAB_SHADOW_SM,
+
+  /** Admin command bar — platinum spotlight */
+  commandBarGold:
+    "bg-ink-950 border border-bone-50/[0.12] rounded-leaf " +
+    "shadow-[inset_0_1px_0_rgba(244,247,242,0.08),0_2px_8px_rgba(0,0,0,0.4)]",
+} as const;
+
+/**
+ * Canopy-native surfaces for new components.
+ */
+export const canopy = {
+  /** Instrument panel: a slab with a mono label rail on top */
+  instrument: `relative overflow-hidden bg-ink-900 border border-bone-50/[0.08] rounded-leaf ${SLAB_SHADOW}`,
+  /** Hero slab: large, deep, with grain */
+  hero: `relative overflow-hidden grain bg-[radial-gradient(120%_120%_at_0%_0%,#12482a_0%,#0b100d_45%,#040605_100%)] border border-verdant-400/20 rounded-leaf-lg ${SLAB_SHADOW_LG}`,
+  /** Interactive pill / chip */
+  pill: "inline-flex items-center gap-2 rounded-full border border-bone-50/[0.12] bg-ink-900/80 px-3 py-1.5 text-xs text-bone-200",
+  /** Verdant pill */
+  pillLive: "inline-flex items-center gap-2 rounded-full border border-verdant-400/40 bg-verdant-500/10 px-3 py-1.5 text-xs text-verdant-200",
+  /** Instrument input */
+  input:
+    "w-full rounded-leaf-xs border border-bone-50/[0.12] bg-ink-950/80 px-4 py-3 text-base text-bone-50 placeholder:text-ink-400 " +
+    "outline-none transition-[border-color,box-shadow] duration-300 ease-canopy " +
+    "focus:border-verdant-400/70 focus:shadow-glow",
+  /** Primary action */
+  buttonPrimary:
+    "relative inline-flex items-center justify-center gap-2 rounded-leaf-xs bg-verdant-400 px-5 py-3 font-semibold text-ink-950 " +
+    "transition-[transform,box-shadow,background-color] duration-300 ease-canopy " +
+    "hover:bg-lime-400 hover:shadow-glow-lime active:scale-[0.98] " +
+    "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-verdant-400 " +
+    "disabled:opacity-60 disabled:cursor-not-allowed",
+  /** Secondary action */
+  buttonGhost:
+    "inline-flex items-center justify-center gap-2 rounded-leaf-xs border border-bone-50/[0.14] bg-ink-900/60 px-5 py-3 font-medium text-bone-100 " +
+    "transition-[border-color,background-color,transform] duration-300 ease-canopy " +
+    "hover:border-verdant-400/50 hover:bg-ink-800 active:scale-[0.98] " +
+    "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-verdant-400",
 } as const;

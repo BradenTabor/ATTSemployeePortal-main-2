@@ -62,16 +62,16 @@ interface RecurringIssue {
 // =============================================================================
 
 const TYPE_COLORS: Record<string, string> = {
-  'oil_change': '#f59e0b',
-  'tire_rotation': '#3b82f6',
-  'tire_replacement': '#8b5cf6',
+  'oil_change': '#9BEB5B',
+  'tire_rotation': '#8DF5A8',
+  'tire_replacement': '#7DCDA2',
   'repair': '#ef4444',
-  'part_replacement': '#10b981',
-  'inspection': '#06b6d4',
-  'upgrade': '#ec4899',
-  'dvir_fix': '#6366f1',
-  'equipment_fix': '#14b8a6',
-  'other': '#6b7280',
+  'part_replacement': '#3DDC84',
+  'inspection': '#468A68',
+  'upgrade': '#4CCB8F',
+  'dvir_fix': '#7DCDA2',
+  'equipment_fix': '#468A68',
+  'other': '#5A6B60',
 };
 
 // =============================================================================
@@ -429,7 +429,7 @@ export default function PartsCostAnalytics({ fixes, assetStats }: PartsCostAnaly
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="rounded-xl sm:rounded-2xl border border-[#ff9350]/20 bg-gradient-to-br from-[#1a0c05]/60 to-[#0a0402]/80 overflow-hidden mb-4 sm:mb-5"
+      className="rounded-xl sm:rounded-leaf-sm border border-[#B8FF7A]/20 bg-gradient-to-br from-[#0B100D]/60 to-[#040605]/80 overflow-hidden mb-4 sm:mb-5"
     >
       {/* Header */}
       <button

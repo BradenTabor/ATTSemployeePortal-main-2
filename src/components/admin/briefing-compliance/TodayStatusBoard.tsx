@@ -86,7 +86,7 @@ export default function TodayStatusBoard({
       <div className="max-h-[320px] overflow-y-auto rounded-lg border border-white/5">
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="sticky top-0 bg-gray-900/95 text-[0.65rem] uppercase tracking-wider text-white/60 border-b border-white/10">
+            <thead className="sticky top-0 bg-gray-900/95 text-[0.65rem] uppercase text-white/60 border-b border-white/10 font-mono font-medium tracking-[0.14em]">
               <tr>
                 <th className="px-3 py-2 text-left">Employee</th>
                 <th className="px-3 py-2 text-left">Crew</th>

@@ -195,12 +195,12 @@ export function AwardPointsModal({
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 24 }}
-          className="relative w-full sm:max-w-lg max-h-[92vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl border border-[#f4c979]/20 bg-gradient-to-b from-[#1b1914] to-[#0f0d0a] shadow-2xl"
+          className="relative w-full sm:max-w-lg max-h-[92vh] overflow-y-auto rounded-t-2xl sm:rounded-leaf-sm border border-[#F4F7F2]/20 bg-gradient-to-b from-[#121A15] to-[#0B100D] shadow-2xl"
         >
-          <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 border-b border-white/10 bg-[#1b1914]/95 backdrop-blur">
+          <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 border-b border-white/10 bg-[#121A15]/95 backdrop-blur">
             <div className="flex items-center gap-2">
-              <Gift className="w-5 h-5 text-[#f4c979]" aria-hidden />
-              <h2 id="award-points-title" className="text-lg font-bold text-[#fef3d1]">
+              <Gift className="w-5 h-5 text-[#F4F7F2]" aria-hidden />
+              <h2 id="award-points-title" className="text-lg font-bold text-[#F4F7F2]">
                 Award Points
               </h2>
             </div>
@@ -208,7 +208,7 @@ export function AwardPointsModal({
               type="button"
               onClick={handleClose}
               disabled={isSubmitting}
-              className="p-2 rounded-lg text-[#c7b696] hover:text-white hover:bg-white/10 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400"
+              className="p-2 rounded-lg text-[#B8C4B6] hover:text-white hover:bg-white/10 focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400"
               aria-label="Close"
             >
               <X className="w-5 h-5" />
@@ -242,13 +242,13 @@ export function AwardPointsModal({
                     <span>{partialFailureMessage}</span>
                   </div>
                 )}
-                <p className="text-sm text-[#c7b696]">
+                <p className="text-sm text-[#B8C4B6]">
                   {awardedRecipients.length === 1
                     ? `${awardedRecipients[0].full_name || awardedRecipients[0].email} will see updated totals shortly.`
                     : `${awardedRecipients.length} recipients will see updated totals shortly.`}
                 </p>
                 {awardedRecipients.length > 1 && (
-                  <p className="text-xs text-[#c7b696]/80 max-h-24 overflow-y-auto">
+                  <p className="text-xs text-[#B8C4B6]/80 max-h-24 overflow-y-auto">
                     {awardedRecipients
                       .map((r) => r.full_name || r.email)
                       .join(' · ')}
@@ -257,7 +257,7 @@ export function AwardPointsModal({
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="mt-4 w-full py-3 rounded-xl bg-[#f4c979] text-[#2d1c04] font-semibold hover:bg-[#f6dcb2] focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400"
+                  className="mt-4 w-full py-3 rounded-xl bg-[#F4F7F2] text-[#040605] font-semibold hover:bg-[#E4EAE1] focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400"
                 >
                   Done
                 </button>
@@ -282,7 +282,7 @@ export function AwardPointsModal({
                   <div>
                     <label
                       htmlFor="award-category"
-                      className="text-xs font-medium text-[#f8e5bb]/70 uppercase tracking-wider"
+                      className="text-xs font-medium text-[#E4EAE1]/70 uppercase font-mono font-medium tracking-[0.14em]"
                     >
                       Category
                     </label>
@@ -303,14 +303,14 @@ export function AwardPointsModal({
                 </div>
 
                 {!isAdmin && budgetHint && !budgetLoading && (
-                  <p className="text-xs text-[#c7b696] rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2">
-                    <span className="text-[#f4c979]/80 font-medium">Indicative budget: </span>
+                  <p className="text-xs text-[#B8C4B6] rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2">
+                    <span className="text-[#F4F7F2]/80 font-medium">Indicative budget: </span>
                     ~{budgetHint.remaining} of {budgetHint.monthlyBudget} pts remaining this month
                     (cap {budgetHint.perAwardCap}/award). Final limits enforced by the server.
                   </p>
                 )}
                 {isAdmin && (
-                  <p className="text-xs text-[#c7b696]">
+                  <p className="text-xs text-[#B8C4B6]">
                     Admin awards are not capped — limits are enforced server-side for grant holders only.
                     Scroll to deduct points with negative presets.
                   </p>
@@ -319,7 +319,7 @@ export function AwardPointsModal({
                 <div>
                   <label
                     htmlFor="award-reason"
-                    className="text-xs font-medium text-[#f8e5bb]/70 uppercase tracking-wider"
+                    className="text-xs font-medium text-[#E4EAE1]/70 uppercase font-mono font-medium tracking-[0.14em]"
                   >
                     Reason
                   </label>
@@ -355,7 +355,7 @@ export function AwardPointsModal({
                   className={
                     amount !== null && amount < 0
                       ? 'w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-red-600 to-red-700 text-white font-bold disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400'
-                      : 'w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-[#f4c979] to-[#d89d3e] text-[#2d1c04] font-bold disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400'
+                      : 'w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-[#F4F7F2] to-[#8DF5A8] text-[#040605] font-bold disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline focus-visible:ring-2 focus-visible:ring-emerald-400'
                   }
                 >
                   {isSubmitting ? (

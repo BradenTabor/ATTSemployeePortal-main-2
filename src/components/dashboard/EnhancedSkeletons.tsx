@@ -42,9 +42,9 @@ const ShimmerOverlay = memo(function ShimmerOverlay() {
 export const WelcomeHeaderSkeleton = memo(function WelcomeHeaderSkeleton() {
   return (
     <div
-      className="relative overflow-hidden rounded-2xl md:rounded-3xl border border-white/[0.08] animate-pulse"
+      className="relative overflow-hidden rounded-leaf-sm md:rounded-leaf border border-white/[0.08] animate-pulse"
       style={{
-        background: 'linear-gradient(145deg, rgba(16, 185, 129, 0.05) 0%, rgba(4, 30, 21, 0.65) 40%, rgba(0, 0, 0, 0.75) 100%)',
+        background: 'linear-gradient(145deg, rgba(47,164,90, 0.05) 0%, rgba(11,16,13, 0.65) 40%, rgba(0,0,0, 0.75) 100%)',
       }}
     >
       <ShimmerOverlay />
@@ -79,9 +79,9 @@ export const WelcomeHeaderSkeleton = memo(function WelcomeHeaderSkeleton() {
 export const MissionControlSkeleton = memo(function MissionControlSkeleton() {
   return (
     <div
-      className="relative overflow-hidden rounded-2xl border border-emerald-400/20 animate-pulse"
+      className="relative overflow-hidden rounded-leaf-sm border border-emerald-400/20 animate-pulse"
       style={{
-        background: 'linear-gradient(145deg, rgba(4, 30, 21, 0.98) 0%, rgba(2, 15, 10, 1) 100%)',
+        background: 'linear-gradient(145deg, rgba(11,16,13, 0.98) 0%, rgba(4,6,5, 1) 100%)',
       }}
     >
       <ShimmerOverlay />
@@ -134,7 +134,7 @@ export const QuickActionsSkeleton = memo(function QuickActionsSkeleton() {
       <div 
         className="absolute inset-0 -z-10 blur-3xl opacity-20 pointer-events-none"
         style={{
-          background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.3) 0%, rgba(96, 165, 250, 0.3) 50%, rgba(167, 139, 250, 0.3) 100%)',
+          background: 'linear-gradient(90deg, rgba(47,164,90, 0.3) 0%, rgba(125,205,162, 0.3) 50%, rgba(154,221,183, 0.3) 100%)',
         }}
       />
       
@@ -142,7 +142,7 @@ export const QuickActionsSkeleton = memo(function QuickActionsSkeleton() {
         {Array.from({ length: 5 }).map((_, i) => (
           <div 
             key={i} 
-            className={`flex-shrink-0 h-[54px] rounded-2xl bg-gradient-to-br ${skeletonColors[i].bg} ${skeletonColors[i].border} border animate-pulse flex items-center gap-3 px-5`}
+            className={`flex-shrink-0 h-[54px] rounded-leaf-sm bg-gradient-to-br ${skeletonColors[i].bg} ${skeletonColors[i].border} border animate-pulse flex items-center gap-3 px-5`}
             style={{ 
               width: skeletonWidths[i],
               animationDelay: `${i * 150}ms`,
@@ -168,9 +168,9 @@ export const QuickActionsSkeleton = memo(function QuickActionsSkeleton() {
 export const EnhancedJobCardSkeleton = memo(function EnhancedJobCardSkeleton() {
   return (
     <div
-      className="relative overflow-hidden rounded-2xl border border-emerald-500/20 animate-pulse"
+      className="relative overflow-hidden rounded-leaf-sm border border-emerald-500/20 animate-pulse"
       style={{
-        background: 'linear-gradient(145deg, rgba(4, 30, 21, 0.98) 0%, rgba(2, 15, 10, 1) 100%)',
+        background: 'linear-gradient(145deg, rgba(11,16,13, 0.98) 0%, rgba(4,6,5, 1) 100%)',
       }}
     >
       <ShimmerOverlay />
@@ -195,9 +195,9 @@ export const EnhancedJobCardSkeleton = memo(function EnhancedJobCardSkeleton() {
 export const JobsSectionSkeleton = memo(function JobsSectionSkeleton() {
   return (
     <div
-      className="relative overflow-hidden rounded-xl sm:rounded-2xl md:rounded-[28px] border border-emerald-400/20 animate-pulse"
+      className="relative overflow-hidden rounded-xl sm:rounded-leaf-sm md:rounded-[28px] border border-emerald-400/20 animate-pulse"
       style={{
-        background: 'linear-gradient(145deg, rgba(4, 30, 21, 0.98) 0%, rgba(2, 15, 10, 1) 100%)',
+        background: 'linear-gradient(145deg, rgba(11,16,13, 0.98) 0%, rgba(4,6,5, 1) 100%)',
       }}
     >
       <ShimmerOverlay />
@@ -228,9 +228,9 @@ export const JobsSectionSkeleton = memo(function JobsSectionSkeleton() {
 export const EnhancedAnnouncementSkeleton = memo(function EnhancedAnnouncementSkeleton() {
   return (
     <div
-      className="relative overflow-hidden rounded-2xl md:rounded-[28px] border border-emerald-400/20 animate-pulse"
+      className="relative overflow-hidden rounded-leaf-sm md:rounded-[28px] border border-emerald-400/20 animate-pulse"
       style={{
-        background: 'linear-gradient(145deg, rgba(4, 30, 21, 0.98) 0%, rgba(2, 15, 10, 1) 100%)',
+        background: 'linear-gradient(145deg, rgba(11,16,13, 0.98) 0%, rgba(4,6,5, 1) 100%)',
       }}
     >
       <ShimmerOverlay />
@@ -275,9 +275,9 @@ export const EnhancedNavCardsSkeleton = memo(function EnhancedNavCardsSkeleton()
       {Array.from({ length: 6 }).map((_, idx) => (
         <div
           key={idx}
-          className="relative overflow-hidden rounded-2xl border border-white/10 animate-pulse h-28 md:h-32"
+          className="relative overflow-hidden rounded-leaf-sm border border-white/10 animate-pulse h-28 md:h-32"
           style={{
-            background: 'linear-gradient(145deg, rgba(4, 30, 21, 0.6) 0%, rgba(2, 15, 10, 0.8) 100%)',
+            background: 'linear-gradient(145deg, rgba(11,16,13, 0.6) 0%, rgba(4,6,5, 0.8) 100%)',
           }}
         >
           <ShimmerOverlay />
