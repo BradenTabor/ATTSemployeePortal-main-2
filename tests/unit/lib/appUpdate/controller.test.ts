@@ -11,6 +11,8 @@ interface FakeAdapter {
   adapter: ServiceWorkerAdapter;
   emitWaiting: () => void;
   emitControlling: () => void;
+  /** Simulate `registration.installing` (precache in progress) without `waiting`. */
+  setInstalling: (v: boolean) => void;
   checkForUpdate: ReturnType<typeof vi.fn>;
   activateWaiting: ReturnType<typeof vi.fn>;
   hardReset: ReturnType<typeof vi.fn>;
@@ -21,9 +23,11 @@ function createFakeAdapter(opts: { supported?: boolean; controlled?: boolean; in
   const supported = opts.supported ?? true;
   let controlled = opts.controlled ?? true;
   let waiting = false;
+  let installing = false;
   let handlers: Parameters<ServiceWorkerAdapter['register']>[0] | null = null;
 
   const emitWaiting = () => {
+    installing = false;
     waiting = true;
     handlers?.onWaiting();
   };
@@ -46,6 +50,7 @@ function createFakeAdapter(opts: { supported?: boolean; controlled?: boolean; in
       },
       checkForUpdate,
       hasWaitingWorker: () => waiting,
+      hasInstallingWorker: () => installing,
       activateWaiting,
       isControlled: () => supported && controlled,
       hardReset,
@@ -55,6 +60,9 @@ function createFakeAdapter(opts: { supported?: boolean; controlled?: boolean; in
       waiting = false;
       controlled = true;
       handlers?.onControlling();
+    },
+    setInstalling: (v) => {
+      installing = v;
     },
     checkForUpdate,
     activateWaiting,
@@ -83,6 +91,7 @@ const CONFIG = {
   snoozeMs: 30_000,
   applyTimeoutMs: 8_000,
   downloadTimeoutMs: 20_000,
+  manualRecoverMs: 5_000,
 };
 
 function makeController(
@@ -249,6 +258,224 @@ describe('AppUpdateController — no reload loop', () => {
     expect(fake.activateWaiting).toHaveBeenCalledTimes(1);
     fake.emitControlling();
     expect(reload).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The second reported bug: a worker swap that carries no new build (dev server
+// rebuilding dev-sw.js, or a worker-only deploy) landed on the same buildTime
+// and was reported as "still on the old version". Update now then found no
+// waiting worker and dead-ended; Reset app looped back to the same message.
+// ---------------------------------------------------------------------------
+
+describe('AppUpdateController — worker swap without a new build', () => {
+  /** Apply a waiting worker in the launch phase and "reload" into a fresh controller on the same build. */
+  async function swapWorkerAndReload(fetchImpl: typeof fetch) {
+    const fake = createFakeAdapter({ controlled: true });
+    const first = makeController(fake, { fetchImpl });
+    first.controller.start();
+    await flush();
+    fake.emitWaiting();
+    await flush();
+    expect(state().status).toBe('applying');
+    fake.emitControlling();
+    expect(first.reload).toHaveBeenCalledTimes(1);
+    first.controller.stop();
+
+    useAppUpdateStore.getState().reset();
+    const fake2 = createFakeAdapter({ controlled: true });
+    const second = makeController(fake2, { fetchImpl }); // same build, same server
+    active = second.controller;
+    second.controller.start();
+    await flush();
+    return { second, fake2 };
+  }
+
+  it('dev server: version.json unavailable → stays idle, no failure banner', async () => {
+    const { second } = await swapWorkerAndReload(fakeFetch(null));
+    expect(state().status).toBe('idle');
+    expect(state().error).toBeNull();
+    expect(state().appliedUpdate).toBeNull();
+    await vi.advanceTimersByTimeAsync(2 * 60_000);
+    expect(state().status).toBe('idle');
+    expect(second.reload).not.toHaveBeenCalled();
+  });
+
+  it('server agrees with the running build → counts as a completed update', async () => {
+    const { second } = await swapWorkerAndReload(fakeFetch(LOCAL));
+    expect(state().status).toBe('idle');
+    expect(state().appliedUpdate).toEqual({ fromVersion: LOCAL.version, toVersion: LOCAL.version });
+    expect(second.reload).not.toHaveBeenCalled();
+  });
+
+  it('still reports a real failure when version.json had promised a different build', async () => {
+    const fake = createFakeAdapter({ controlled: true, installOnCheck: true });
+    const first = makeController(fake); // REMOTE_NEW
+    first.controller.start();
+    await vi.advanceTimersByTimeAsync(600);
+    fake.emitControlling();
+    first.controller.stop();
+
+    useAppUpdateStore.getState().reset();
+    const second = makeController(createFakeAdapter({ controlled: true }));
+    active = second.controller;
+    second.controller.start();
+    expect(state().status).toBe('failed');
+    expect(state().error).toMatch(/still on the old version/i);
+    expect(state().targetBuildTime).toBe(REMOTE_NEW.buildTime);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// A new worker takes control while we are NOT applying (another tab activated
+// it). `registration.waiting` will never be set again, so the old code could
+// never reach `ready`; Update now dead-ended with "Could not fetch".
+// ---------------------------------------------------------------------------
+
+describe('AppUpdateController — controller swapped outside an apply', () => {
+  it('treats the swap as ready and reloads exactly once onto the new controller', async () => {
+    const fake = createFakeAdapter({ controlled: true });
+    const { controller, reload } = makeController(fake);
+    active = controller;
+    controller.start();
+    await flush();
+    expect(state().status).toBe('downloading');
+
+    fake.emitControlling(); // no waiting worker — the other tab activated it
+    await flush();
+    expect(reload).toHaveBeenCalledTimes(1); // launch phase → applied silently
+    expect(fake.activateWaiting).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem('atts-update-applied')).toContain(REMOTE_NEW.buildTime);
+
+    fake.emitControlling();
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it('mid-session it follows the normal countdown policy before reloading', async () => {
+    const fake = createFakeAdapter({ controlled: true });
+    const { controller, reload } = makeController(fake);
+    active = controller;
+    controller.start();
+    await flush();
+    interact();
+
+    fake.emitControlling();
+    await flush();
+    expect(state().status).toBe('ready');
+    expect(state().reason).toBe('version-poll');
+    expect(state().countdownEndsAt).not.toBeNull();
+    expect(reload).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(CONFIG.countdownMs + 100);
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it('an idle page learns about the swap on its next version check', async () => {
+    let remote = LOCAL;
+    const fetchImpl = vi.fn(async () => ({ ok: true, json: async () => remote }) as unknown as Response) as unknown as typeof fetch;
+    const fake = createFakeAdapter({ controlled: true });
+    const { controller, reload } = makeController(fake, { fetchImpl });
+    active = controller;
+    controller.start();
+    await flush();
+    expect(state().status).toBe('idle');
+
+    remote = REMOTE_NEW; // deploy happens; another tab applies it
+    fake.emitControlling();
+    await flush();
+    // Launch phase: ready → applied (reload) in the same tick.
+    expect(state().status).toBe('applying');
+    expect(state().targetBuildTime).toBe(REMOTE_NEW.buildTime);
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it('a first-install claim of an uncontrolled page is not a swap', async () => {
+    const fake = createFakeAdapter({ controlled: false });
+    const { controller, reload } = makeController(fake);
+    active = controller;
+    controller.start();
+    await flush();
+    expect(state().status).toBe('downloading');
+
+    fake.emitControlling(); // fresh registration activating → clientsClaim
+    await vi.advanceTimersByTimeAsync(2_000);
+    expect(state().status).toBe('downloading');
+    expect(reload).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Manual "Update now" when no worker is waiting
+// ---------------------------------------------------------------------------
+
+describe('AppUpdateController — manual update without a waiting worker', () => {
+  async function failedAfterDownloadTimeout(fake: FakeAdapter) {
+    const made = makeController(fake);
+    active = made.controller;
+    made.controller.start();
+    await flush();
+    interact();
+    await vi.advanceTimersByTimeAsync(CONFIG.downloadTimeoutMs + 100);
+    expect(state().status).toBe('failed');
+    return made;
+  }
+
+  it('waits while a worker is still installing instead of giving up after a few seconds', async () => {
+    const fake = createFakeAdapter({ controlled: true });
+    const { controller, reload } = await failedAfterDownloadTimeout(fake);
+
+    fake.setInstalling(true);
+    const tap = controller.applyNow();
+    await vi.advanceTimersByTimeAsync(CONFIG.manualRecoverMs + 500);
+    await tap;
+    expect(state().status).toBe('downloading');
+    expect(state().error).toBeNull();
+    expect(reload).not.toHaveBeenCalled();
+
+    fake.emitWaiting(); // precache finished
+    await flush();
+    expect(state().status).toBe('ready');
+  });
+
+  it('extends the download window while a worker is installing, then fails only once it stalls', async () => {
+    const fake = createFakeAdapter({ controlled: true });
+    const { controller } = makeController(fake);
+    active = controller;
+    controller.start();
+    await flush();
+    fake.setInstalling(true);
+
+    await vi.advanceTimersByTimeAsync(CONFIG.downloadTimeoutMs + 100);
+    expect(state().status).toBe('downloading'); // extended, not failed
+
+    fake.setInstalling(false);
+    await vi.advanceTimersByTimeAsync(CONFIG.downloadTimeoutMs + 100);
+    expect(state().status).toBe('failed');
+  });
+
+  it('with nothing installing, a user tap ends in one user-initiated reload rather than a dead end', async () => {
+    const fake = createFakeAdapter({ controlled: true });
+    const { controller, reload } = await failedAfterDownloadTimeout(fake);
+
+    const tap = controller.applyNow();
+    await vi.advanceTimersByTimeAsync(CONFIG.manualRecoverMs + 500);
+    await tap;
+    expect(reload).toHaveBeenCalledTimes(1);
+    expect(state().status).toBe('applying');
+  });
+
+  it('while offline, a user tap explains instead of reloading onto the cached shell', async () => {
+    const fake = createFakeAdapter({ controlled: true });
+    const { controller, reload } = await failedAfterDownloadTimeout(fake);
+
+    const onLine = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+    await controller.applyNow();
+    onLine.mockRestore();
+
+    expect(reload).not.toHaveBeenCalled();
+    expect(state().status).toBe('failed');
+    expect(state().error).toMatch(/offline/i);
   });
 });
 

@@ -37,8 +37,11 @@ src/sw.ts                             precached app shell (createHandlerBoundToU
 |---|---|---|
 | `/version.json.buildTime !== BUILD_TIME` | server has a newer build | `downloading` → asks the browser to fetch `sw.js` (`registration.update()`) |
 | service worker `waiting` | new build installed, not yet controlling | `ready` |
+| `controllerchange` while **not** applying, on a page that was already controlled | another tab activated the new worker; this page is now older than its controller and nothing will ever be `waiting` again | `ready` with reason `sw-controlling` — "apply" means one guarded reload |
 | `vite:preloadError` | a lazy chunk 404'd (stale deploy) | re-check, then `blocking` |
 | `/version.json` matches | we are current | `idle`, reload budget reset |
+
+A `controllerchange` on a page that was *uncontrolled* at start (fresh visit, right after **Reset app**) is a first-install claim, not a swap, and is ignored.
 
 The version poll runs at start, on `focus`, `visibilitychange`, `online`, and every 5 minutes (20 s minimum gap). A failed or malformed fetch is "unknown", never "new version".
 
@@ -52,16 +55,22 @@ The version poll runs at start, on `focus`, `visibilitychange`, `online`, and ev
 | **Later** | hides the banner for 30 min; still applies at next launch |
 | Chunk load failure | blocking overlay; applies the moment the worker is ready, regardless of route |
 | Worker never takes control after `SKIP_WAITING` (8 s) | `failed` — banner with **Update now** / **Reset app** |
-| Server newer but no worker arrives (90 s) | `failed` (if a worker controls the page) or one guarded network reload (no worker, e.g. first visit) |
+| Server newer but no worker arrives (90 s) | if a worker is visibly `installing` (precaching on LTE), extend up to 3×; else `failed` (if a worker controls the page) or one guarded network reload (no worker, e.g. first visit) |
+| **Update now** with no waiting worker | re-check `version.json`, `registration.update()`, wait up to 20 s while a worker is installing; if none appears → one user-initiated reload (never a dead end). Offline → `failed` with an "offline" explanation, no reload |
 
 ### The one reload
 
-`window.location.reload()` is called from exactly one place: `onControllerChange`, i.e. after the new worker has taken control, so the reload always lands on the new shell. Before reloading, the controller writes an `atts-update-applied` marker (`fromBuildTime`). On the next start it consumes the marker:
+Automatic reloads happen only after the new worker has taken control (`controllerchange`) — either because we sent `SKIP_WAITING`, or because another tab did — so the reload always lands on the new shell. Before reloading, the controller writes an `atts-update-applied` marker (`fromBuildTime`, `toBuildTime` when `/version.json` told us). On the next start it consumes the marker:
 
 - `fromBuildTime !== BUILD_TIME` → success → `appliedUpdate` → pill.
-- same `BUILD_TIME` → the reload landed on the old build → `failed` with an explanation; **no automatic retry**. The user can tap Update or Reset app.
+- same `BUILD_TIME` **and** `toBuildTime` was known and differs → the reload landed on the old build → `failed` with an explanation; **no automatic retry**. The user can tap Update or Reset app.
+- same `BUILD_TIME` with no known target → **not** a failure. A worker swap does not imply a new app build: the Vite dev server rebuilds `dev-sw.js` on its own (dependency re-optimisation) while `BUILD_TIME` stays put, and a deploy can change nothing but the worker. The first `/version.json` check decides: same build → "up to date" pill; unavailable (dev server returns `index.html`) → silent; newer → the normal path resumes (bounded by the guard).
 
 `reloadGuard` additionally refuses any second automatic reload for the same target build and more than two per 10 minutes. User taps are never blocked.
+
+### Dev server behaviour
+
+`/version.json` does not exist in dev; Vite's SPA fallback answers with `index.html`, which `fetchRemoteVersion` rejects → "unknown". The only update signal in dev is the dev worker itself, which changes whenever Vite re-optimises dependencies or `sw.ts` is edited. Expected dev experience: one automatic reload (or a 10 s countdown if you had already interacted), then nothing. If you see **Update needs a hand** in dev, it is a bug in the pipeline, not in your build.
 
 ### Service worker
 
@@ -118,4 +127,8 @@ Logs are prefixed `[AppUpdate]`.
 
 ## Tuning
 
-`DEFAULT_APP_UPDATE_CONFIG` in `types.ts`: `pollIntervalMs` 5 min, `minCheckGapMs` 20 s, `launchWindowMs` 6 s, `countdownMs` 10 s, `snoozeMs` 30 min, `applyTimeoutMs` 8 s, `downloadTimeoutMs` 90 s. Route safety lives in `safeRoutes.ts`; add a prefix there when a new data-entry page is created.
+`DEFAULT_APP_UPDATE_CONFIG` in `types.ts`: `pollIntervalMs` 5 min, `minCheckGapMs` 20 s, `launchWindowMs` 6 s, `countdownMs` 10 s, `snoozeMs` 30 min, `applyTimeoutMs` 8 s, `downloadTimeoutMs` 90 s (extended up to 3× while a worker is installing), `manualRecoverMs` 20 s. Route safety lives in `safeRoutes.ts`; add a prefix there when a new data-entry page is created.
+
+## Deployment note
+
+The rebuilt pipeline lives on `feat/sms-upgrade` (commit `ec1327c` onwards). As of 2026-09-02 production (`att-semployee-portal-main-2.vercel.app`) still serves commit `209fa4f` with the old `DeployVersionChecker` / `PWAUpdatePrompt` pair — confirm with `curl -s https://<host>/version.json` (`commit`) before debugging update behaviour against production.

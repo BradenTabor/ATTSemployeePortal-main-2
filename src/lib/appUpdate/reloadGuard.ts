@@ -32,6 +32,13 @@ export interface AppliedUpdateRecord {
   fromBuildTime: string;
   /** Version we were updating to (when known). */
   toVersion: string;
+  /**
+   * buildTime we were updating to, when `/version.json` told us. `null` when the
+   * only signal was a waiting worker — in that case a same-buildTime landing is
+   * NOT proof of failure (worker-only change, or dev server), so the next
+   * version check decides.
+   */
+  toBuildTime: string | null;
   at: number;
 }
 
@@ -121,6 +128,7 @@ export function consumeAppliedUpdate(): AppliedUpdateRecord | null {
       fromVersion: parsed.fromVersion,
       fromBuildTime: parsed.fromBuildTime,
       toVersion: parsed.toVersion,
+      toBuildTime: typeof parsed.toBuildTime === 'string' ? parsed.toBuildTime : null,
       at: parsed.at,
     };
   } catch {

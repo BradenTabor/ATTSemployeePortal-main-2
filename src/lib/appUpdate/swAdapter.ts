@@ -67,6 +67,10 @@ export function createPwaServiceWorkerAdapter(): ServiceWorkerAdapter {
       return !!registration?.waiting;
     },
 
+    hasInstallingWorker() {
+      return !!registration?.installing;
+    },
+
     async activateWaiting() {
       const waiting = registration?.waiting;
       if (waiting) {

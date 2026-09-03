@@ -44,9 +44,23 @@ describe('reloadGuard', () => {
   });
 
   it('round-trips the applied-update marker and clears it on read', () => {
-    setAppliedUpdate({ fromVersion: '1.1.0', fromBuildTime: 'T1', toVersion: '1.2.0' }, 42);
-    expect(consumeAppliedUpdate()).toEqual({ fromVersion: '1.1.0', fromBuildTime: 'T1', toVersion: '1.2.0', at: 42 });
+    setAppliedUpdate({ fromVersion: '1.1.0', fromBuildTime: 'T1', toVersion: '1.2.0', toBuildTime: 'T2' }, 42);
+    expect(consumeAppliedUpdate()).toEqual({
+      fromVersion: '1.1.0',
+      fromBuildTime: 'T1',
+      toVersion: '1.2.0',
+      toBuildTime: 'T2',
+      at: 42,
+    });
     expect(consumeAppliedUpdate()).toBeNull();
+  });
+
+  it('reads markers written before toBuildTime existed as "target unknown"', () => {
+    sessionStorage.setItem(
+      'atts-update-applied',
+      JSON.stringify({ fromVersion: '1.1.0', fromBuildTime: 'T1', toVersion: 'latest', at: 1 }),
+    );
+    expect(consumeAppliedUpdate()?.toBuildTime).toBeNull();
   });
 
   it('ignores malformed storage contents', () => {

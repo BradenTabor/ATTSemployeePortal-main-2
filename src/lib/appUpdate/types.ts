@@ -24,6 +24,8 @@ export type AppUpdateReason =
   | 'version-poll'
   /** The service worker reported a waiting (updated) worker. */
   | 'sw-waiting'
+  /** A new worker took control of this page (activated elsewhere); a reload picks up its shell. */
+  | 'sw-controlling'
   /** A lazy chunk failed to load — the running build is stale on the server. */
   | 'chunk-error';
 
@@ -83,6 +85,8 @@ export interface ServiceWorkerAdapter {
   checkForUpdate(): Promise<void>;
   /** True when an installed worker is waiting to activate. */
   hasWaitingWorker(): boolean;
+  /** True while a new worker is still installing (precaching); `waiting` comes after. */
+  hasInstallingWorker(): boolean;
   /** Tell the waiting worker to activate (SKIP_WAITING). */
   activateWaiting(): Promise<void>;
   /** True when a worker currently controls this page. */
@@ -106,6 +110,8 @@ export interface AppUpdateConfig {
   applyTimeoutMs: number;
   /** How long `downloading` may last before we surface manual controls. */
   downloadTimeoutMs: number;
+  /** After a manual "Update now" with no worker ready: how long to wait for one before reloading. */
+  manualRecoverMs: number;
 }
 
 export const DEFAULT_APP_UPDATE_CONFIG: AppUpdateConfig = {
@@ -116,4 +122,5 @@ export const DEFAULT_APP_UPDATE_CONFIG: AppUpdateConfig = {
   snoozeMs: 30 * 60 * 1000,
   applyTimeoutMs: 8 * 1000,
   downloadTimeoutMs: 90 * 1000,
+  manualRecoverMs: 20 * 1000,
 };
