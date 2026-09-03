@@ -1,9 +1,9 @@
 /**
  * Renders notification/prompt overlays that are lazy-loaded to keep main bundle under size limit.
- * Must be mounted inside Router so WhatsNewOnboarding has route context.
+ * Must be mounted inside Router so WhatsNewOnboarding and AppUpdatePrompt have route context.
  */
 import { lazy, Suspense } from "react";
-import { RequiredUpdatePrompt } from "./notifications/RequiredUpdatePrompt";
+import { AppUpdatePrompt } from "./notifications/AppUpdatePrompt";
 import { useAuth } from "../contexts/AuthContext";
 import { shouldShowOnboarding } from "../lib/appVersion";
 
@@ -30,7 +30,7 @@ export default function AppNotificationShell() {
           <WhatsNewOnboarding />
         </Suspense>
       )}
-      <RequiredUpdatePrompt required={true} />
+      <AppUpdatePrompt />
       {user && (
         <Suspense fallback={null}>
           <PushNotificationPrompt />
