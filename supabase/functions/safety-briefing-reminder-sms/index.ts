@@ -11,7 +11,7 @@
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { sendSMS } from "../_shared/clicksend.ts";
+import { sendAndLogSMS, smsMessageLogInsert } from "../_shared/clicksend.ts";
 
 const INTERNAL_SECRET = Deno.env.get("INTERNAL_SECRET") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -69,6 +69,17 @@ Deno.serve(async (req: Request) => {
       status: 401,
       headers: { "Content-Type": "application/json" },
     });
+  }
+
+  let dryRun = req.headers.get("x-dry-run")?.toLowerCase() === "true";
+  try {
+    const text = await req.text();
+    if (text) {
+      const parsed = JSON.parse(text);
+      if (parsed && typeof parsed.dryRun === "boolean") dryRun = parsed.dryRun;
+    }
+  } catch {
+    // leave dryRun as-is
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -147,7 +158,7 @@ Deno.serve(async (req: Request) => {
   // Active field users (full_name for personalized morning nudge)
   const { data: fieldUsers, error: usersErr } = await supabase
     .from("app_users")
-    .select("user_id, phone_number, created_at, full_name")
+    .select("user_id, phone_number, created_at, full_name, sms_operational_opt_out, sms_marketing_opt_out")
     .in("role", FIELD_ROLES)
     .eq("status", "active")
     .not("email", "ilike", "%@atts.test");
@@ -166,8 +177,20 @@ Deno.serve(async (req: Request) => {
     .or(`briefing_date.eq.${todayStr},announcement_id.eq.${todayAnnouncementId}`);
   const completedSet = new Set((completed ?? []).map((r: { user_id: string }) => r.user_id));
 
-  const overdue: { user_id: string; phone_number: string; first_name: string | null }[] = [];
-  for (const u of fieldUsers as { user_id: string; phone_number: string | null; created_at: string; full_name: string | null }[]) {
+  const overdue: {
+    user_id: string;
+    phone_number: string;
+    first_name: string | null;
+    optOutState: { operational: boolean; marketing: boolean };
+  }[] = [];
+  for (const u of fieldUsers as {
+    user_id: string;
+    phone_number: string | null;
+    created_at: string;
+    full_name: string | null;
+    sms_operational_opt_out?: boolean;
+    sms_marketing_opt_out?: boolean;
+  }[]) {
     if (completedSet.has(u.user_id)) continue;
     if (absentSet.has(u.user_id)) continue;
     if (u.created_at && u.created_at > cutoffStr) continue;
@@ -178,6 +201,10 @@ Deno.serve(async (req: Request) => {
       user_id: u.user_id,
       phone_number: e164,
       first_name: getFirstName(u.full_name),
+      optOutState: {
+        operational: u.sms_operational_opt_out === true,
+        marketing: u.sms_marketing_opt_out === true,
+      },
     });
   }
 
@@ -202,24 +229,26 @@ Deno.serve(async (req: Request) => {
 
   // Zero-overdue audit log: when nobody to notify, still log so admin can distinguish "ran, 0 overdue" from "cron failed"
   if (overdue.length === 0) {
-    await supabase.from("sms_escalation_send_log").insert({
-      tier: 0,
-      date_checked: todayStr,
-      overdue_count: 0,
-      recipient_count: 0,
-      success: true,
-      error_message: null,
-      total_price: 0,
-      results: null,
-      employee_user_ids: [],
-    });
+    if (!dryRun) {
+      await supabase.from("sms_escalation_send_log").insert({
+        tier: 0,
+        date_checked: todayStr,
+        overdue_count: 0,
+        recipient_count: 0,
+        success: true,
+        error_message: null,
+        total_price: 0,
+        results: null,
+        employee_user_ids: [],
+      });
+    }
     return new Response(
-      JSON.stringify({ sent: 0, reason: "No overdue users with phone", date: todayStr }),
+      JSON.stringify({ sent: 0, reason: "No overdue users with phone", date: todayStr, dryRun }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   }
 
-  if (!CLICKSEND_USERNAME || !CLICKSEND_PASSWORD) {
+  if (!dryRun && (!CLICKSEND_USERNAME || !CLICKSEND_PASSWORD)) {
     return new Response(
       JSON.stringify({ error: "ClickSend not configured", overdueCount: overdue.length }),
       { status: 200, headers: { "Content-Type": "application/json" } }
@@ -229,23 +258,36 @@ Deno.serve(async (req: Request) => {
   const messages = overdue.map((o) => ({
     to: o.phone_number,
     body: buildReminderBody(o.first_name),
+    userId: o.user_id,
+    optOutState: o.optOutState,
   }));
-  const sendResult = await sendSMS(messages, {
+  const sendResult = await sendAndLogSMS(messages, {
     username: CLICKSEND_USERNAME,
     password: CLICKSEND_PASSWORD,
     from: CLICKSEND_FROM_NUMBER,
-  });
-
-  await supabase.from("sms_escalation_send_log").insert({
-    tier: 0,
-    date_checked: todayStr,
-    overdue_count: overdue.length,
-    recipient_count: overdue.length,
-    success: sendResult.success,
-    error_message: sendResult.error ?? null,
-    total_price: sendResult.totalPrice ?? 0,
-    results: sendResult.results ?? null,
-    employee_user_ids: overdue.map((o) => o.user_id),
+  }, {
+    insert: smsMessageLogInsert(supabase),
+    messageType: "safety_briefing_reminder",
+    category: "operational",
+    fromNumber: CLICKSEND_FROM_NUMBER,
+    sourceTable: "sms_escalation_send_log",
+    isDryRun: dryRun,
+    afterSend: dryRun
+      ? undefined
+      : async (result) => {
+          const { data } = await supabase.from("sms_escalation_send_log").insert({
+            tier: 0,
+            date_checked: todayStr,
+            overdue_count: overdue.length,
+            recipient_count: overdue.length,
+            success: result.success,
+            error_message: result.error ?? null,
+            total_price: result.totalPrice ?? 0,
+            results: result.results ?? null,
+            employee_user_ids: overdue.map((o) => o.user_id),
+          }).select("id").maybeSingle();
+          return data?.id ?? null;
+        },
   });
 
   return new Response(
@@ -255,6 +297,7 @@ Deno.serve(async (req: Request) => {
       date: todayStr,
       error: sendResult.error,
       totalPrice: sendResult.totalPrice,
+      dryRun,
     }),
     { status: 200, headers: { "Content-Type": "application/json" } }
   );

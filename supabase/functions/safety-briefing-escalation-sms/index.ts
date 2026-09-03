@@ -18,7 +18,7 @@
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { sendSMS } from "../_shared/clicksend.ts";
+import { sendAndLogSMS, smsMessageLogInsert } from "../_shared/clicksend.ts";
 
 const INTERNAL_SECRET = Deno.env.get("INTERNAL_SECRET") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -433,14 +433,28 @@ Deno.serve(async (req: Request) => {
   // Tier 1: dynamic per-manager; orphans (no manager or no manager phone) → tier 2 and log
   const managerIds = [...new Set(overdueD1Raw.map((u) => u.manager_id).filter(Boolean))] as string[];
   let managerPhoneMap: Record<string, string> = {};
+  const managerMeta: Record<string, { userId: string; optOutState: { operational: boolean; marketing: boolean } }> = {};
   if (managerIds.length > 0) {
     const { data: managers } = await supabase
       .from("app_users")
-      .select("id, phone_number")
+      .select("id, user_id, phone_number, sms_operational_opt_out, sms_marketing_opt_out")
       .in("id", managerIds);
-    (managers ?? []).forEach((m: { id: string; phone_number: string | null }) => {
+    (managers ?? []).forEach((m: {
+      id: string;
+      user_id: string;
+      phone_number: string | null;
+      sms_operational_opt_out?: boolean;
+      sms_marketing_opt_out?: boolean;
+    }) => {
       const e164 = toE164(m.phone_number);
       if (e164) managerPhoneMap[m.id] = e164;
+      managerMeta[m.id] = {
+        userId: m.user_id,
+        optOutState: {
+          operational: m.sms_operational_opt_out === true,
+          marketing: m.sms_marketing_opt_out === true,
+        },
+      };
     });
   }
 
@@ -510,41 +524,78 @@ Deno.serve(async (req: Request) => {
   const skipTier1 = skipTier1Lookback || skipTier1Calendar || skipTier1WeekReset || overdueD1 === 0;
   if (!skipTier1 && !tier1AlreadySent) {
     const managerEntries = Object.entries(byManager);
-    if (managerEntries.length > 0 && (CLICKSEND_USERNAME && CLICKSEND_PASSWORD) && !dryRun) {
-      const messages: { to: string; body: string }[] = [];
+    if (managerEntries.length > 0) {
+      const messages: {
+        to: string;
+        body: string;
+        userId?: string | null;
+        optOutState?: { operational: boolean; marketing: boolean } | null;
+      }[] = [];
       for (const [_managerId, users] of managerEntries) {
         const names = users.map((u) => abbreviateName(u.full_name));
         const crewTotal = managerCrewCount[_managerId] ?? users.length;
         const body = buildSMSBody(names, users.length, crewTotal, 1, D1);
         const phone = managerPhoneMap[_managerId];
-        if (phone) messages.push({ to: phone, body });
+        if (phone) {
+          const meta = managerMeta[_managerId];
+          messages.push({
+            to: phone,
+            body,
+            userId: meta?.userId ?? null,
+            optOutState: meta?.optOutState ?? null,
+          });
+        }
       }
-      if (messages.length > 0) {
-        const sendResult = await sendSMS(
-          messages.map((m) => ({ to: m.to, body: m.body })),
-          { username: CLICKSEND_USERNAME, password: CLICKSEND_PASSWORD, from: CLICKSEND_FROM_NUMBER }
-        );
+      if (messages.length > 0 && dryRun) {
+        await sendAndLogSMS(messages, {
+          username: CLICKSEND_USERNAME,
+          password: CLICKSEND_PASSWORD,
+          from: CLICKSEND_FROM_NUMBER,
+        }, {
+          insert: smsMessageLogInsert(supabase),
+          messageType: "safety_briefing_escalation_t1",
+          category: "operational",
+          fromNumber: CLICKSEND_FROM_NUMBER,
+          sourceTable: "sms_escalation_send_log",
+          isDryRun: true,
+        });
+        tier1.dryRunWouldSend = true;
+      } else if (messages.length > 0 && CLICKSEND_USERNAME && CLICKSEND_PASSWORD) {
+        const sendResult = await sendAndLogSMS(messages, {
+          username: CLICKSEND_USERNAME,
+          password: CLICKSEND_PASSWORD,
+          from: CLICKSEND_FROM_NUMBER,
+        }, {
+          insert: smsMessageLogInsert(supabase),
+          messageType: "safety_briefing_escalation_t1",
+          category: "operational",
+          fromNumber: CLICKSEND_FROM_NUMBER,
+          sourceTable: "sms_escalation_send_log",
+          isDryRun: false,
+          afterSend: async (result) => {
+            const { data } = await supabase.from("sms_escalation_send_log").insert({
+              tier: 1,
+              date_checked: D1,
+              overdue_count: overdueD1,
+              recipient_count: messages.length,
+              success: result.success,
+              error_message: result.error ?? null,
+              total_price: result.totalPrice,
+              results: result.results ?? null,
+              employee_user_ids: overdueD1Raw.map((u) => u.user_id),
+              orphaned_user_ids: orphaned.map((o) => ({ user_id: o.user_id, reason: o.reason })),
+              suppression_log: suppressionLogTier1,
+            }).select("id").maybeSingle();
+            return data?.id ?? null;
+          },
+        });
         tier1.sent = true;
         tier1.totalPrice = sendResult.totalPrice ?? 0;
-        await supabase.from("sms_escalation_send_log").insert({
-          tier: 1,
-          date_checked: D1,
-          overdue_count: overdueD1,
-          recipient_count: messages.length,
-          success: sendResult.success,
-          error_message: sendResult.error ?? null,
-          total_price: sendResult.totalPrice,
-          results: sendResult.results ?? null,
-          employee_user_ids: overdueD1Raw.map((u) => u.user_id),
-          orphaned_user_ids: orphaned.map((o) => ({ user_id: o.user_id, reason: o.reason })),
-          suppression_log: suppressionLogTier1,
-        });
         if (sendResult.error) errors.push(`Tier1: ${sendResult.error}`);
+      } else if (!dryRun) {
+        tier1.skippedReason = "ClickSend not configured";
       }
-    } else if (managerEntries.length > 0 && !dryRun) {
-      tier1.skippedReason = "ClickSend not configured";
     }
-    if (dryRun && managerEntries.length > 0) tier1.dryRunWouldSend = true;
   } else {
     if (skipTier1Lookback) tier1.skippedReason = "Max lookback exceeded";
     else if (skipTier1Calendar) tier1.skippedReason = "Date in company_calendar";
@@ -572,31 +623,49 @@ Deno.serve(async (req: Request) => {
 
   // --- Tier 2: static recipients; include D2 overdue + D1 orphans (routed to tier 2), allow overlap ---
   const skipTier2 = skipTier2Lookback || skipTier2Calendar || skipTier2WeekReset || tier2CombinedCount === 0 || tier2Phones.length === 0 || tier2AlreadySent;
-  if (!skipTier2 && tier2Phones.length > 0 && (CLICKSEND_USERNAME && CLICKSEND_PASSWORD) && !dryRun) {
+  if (!skipTier2 && tier2Phones.length > 0 && (dryRun || (CLICKSEND_USERNAME && CLICKSEND_PASSWORD))) {
     const body =
       orphaned.length > 0
         ? buildTier2BodyWithD2Section(d2Section, tier2NamesOrphans, orphaned.length, D1)
         : `ATTS Safety Briefing\n${d2Section}\nImmediate follow-up required.\nReply STOP to opt out.`;
-    const sendResult = await sendSMS(
-      tier2Phones.map((to) => ({ to, body })),
-      { username: CLICKSEND_USERNAME, password: CLICKSEND_PASSWORD, from: CLICKSEND_FROM_NUMBER }
-    );
-    tier2.sent = true;
-    tier2.totalPrice = sendResult.totalPrice ?? 0;
-    await supabase.from("sms_escalation_send_log").insert({
-      tier: 2,
-      date_checked: D2,
-      overdue_count: tier2CombinedCount,
-      recipient_count: tier2Phones.length,
-      success: sendResult.success,
-      error_message: sendResult.error ?? null,
-      total_price: sendResult.totalPrice,
-      results: sendResult.results ?? null,
-      employee_user_ids: [...overdueD2Raw.map((u) => u.user_id), ...orphaned.map((o) => o.user_id)],
-      orphaned_user_ids: orphaned.length > 0 ? orphaned.map((o) => ({ user_id: o.user_id, reason: o.reason })) : [],
-      suppression_log: suppressionLogTier2,
+    const messages = tier2Phones.map((to) => ({ to, body }));
+    const sendResult = await sendAndLogSMS(messages, {
+      username: CLICKSEND_USERNAME,
+      password: CLICKSEND_PASSWORD,
+      from: CLICKSEND_FROM_NUMBER,
+    }, {
+      insert: smsMessageLogInsert(supabase),
+      messageType: "safety_briefing_escalation_t2",
+      category: "operational",
+      fromNumber: CLICKSEND_FROM_NUMBER,
+      sourceTable: "sms_escalation_send_log",
+      isDryRun: dryRun,
+      afterSend: dryRun
+        ? undefined
+        : async (result) => {
+            const { data } = await supabase.from("sms_escalation_send_log").insert({
+              tier: 2,
+              date_checked: D2,
+              overdue_count: tier2CombinedCount,
+              recipient_count: tier2Phones.length,
+              success: result.success,
+              error_message: result.error ?? null,
+              total_price: result.totalPrice,
+              results: result.results ?? null,
+              employee_user_ids: [...overdueD2Raw.map((u) => u.user_id), ...orphaned.map((o) => o.user_id)],
+              orphaned_user_ids: orphaned.length > 0 ? orphaned.map((o) => ({ user_id: o.user_id, reason: o.reason })) : [],
+              suppression_log: suppressionLogTier2,
+            }).select("id").maybeSingle();
+            return data?.id ?? null;
+          },
     });
-    if (sendResult.error) errors.push(`Tier2: ${sendResult.error}`);
+    if (dryRun) {
+      tier2.dryRunWouldSend = true;
+    } else {
+      tier2.sent = true;
+      tier2.totalPrice = sendResult.totalPrice ?? 0;
+      if (sendResult.error) errors.push(`Tier2: ${sendResult.error}`);
+    }
   } else {
     if (skipTier2Lookback) tier2.skippedReason = "Max lookback exceeded";
     else if (skipTier2Calendar) tier2.skippedReason = "Date in company_calendar";
@@ -766,11 +835,28 @@ Deno.serve(async (req: Request) => {
 
   const managerIdsSingle = [...new Set(overdueTodayRaw.map((u) => u.manager_id).filter(Boolean))] as string[];
   let managerPhoneMapSingle: Record<string, string> = {};
+  const managerMetaSingle: Record<string, { userId: string; optOutState: { operational: boolean; marketing: boolean } }> = {};
   if (managerIdsSingle.length > 0) {
-    const { data: managersSingle } = await supabase.from("app_users").select("id, phone_number").in("id", managerIdsSingle);
-    (managersSingle ?? []).forEach((m: { id: string; phone_number: string | null }) => {
+    const { data: managersSingle } = await supabase
+      .from("app_users")
+      .select("id, user_id, phone_number, sms_operational_opt_out, sms_marketing_opt_out")
+      .in("id", managerIdsSingle);
+    (managersSingle ?? []).forEach((m: {
+      id: string;
+      user_id: string;
+      phone_number: string | null;
+      sms_operational_opt_out?: boolean;
+      sms_marketing_opt_out?: boolean;
+    }) => {
       const e164 = toE164(m.phone_number);
       if (e164) managerPhoneMapSingle[m.id] = e164;
+      managerMetaSingle[m.id] = {
+        userId: m.user_id,
+        optOutState: {
+          operational: m.sms_operational_opt_out === true,
+          marketing: m.sms_marketing_opt_out === true,
+        },
+      };
     });
   }
 
@@ -821,39 +907,76 @@ Deno.serve(async (req: Request) => {
   const skipTier1Single = skipCalendar || overdueCountSingle === 0;
   if (!skipTier1Single && !tier1AlreadySentSingle) {
     const managerEntriesSingle = Object.entries(byManagerSingle);
-    if (managerEntriesSingle.length > 0 && CLICKSEND_USERNAME && CLICKSEND_PASSWORD && !dryRun) {
-      const messages: { to: string; body: string }[] = [];
+    if (managerEntriesSingle.length > 0) {
+      const messages: {
+        to: string;
+        body: string;
+        userId?: string | null;
+        optOutState?: { operational: boolean; marketing: boolean } | null;
+      }[] = [];
       for (const [_mid, users] of managerEntriesSingle) {
         const phone = managerPhoneMapSingle[_mid];
         if (!phone) continue;
         const names = users.map((u) => abbreviateName(u.full_name));
         const crewTotal = managerCrewCountSingle[_mid] ?? users.length;
-        messages.push({ to: phone, body: buildSMSBody(names, users.length, crewTotal, 1, todayStr) });
+        const meta = managerMetaSingle[_mid];
+        messages.push({
+          to: phone,
+          body: buildSMSBody(names, users.length, crewTotal, 1, todayStr),
+          userId: meta?.userId ?? null,
+          optOutState: meta?.optOutState ?? null,
+        });
       }
-      if (messages.length > 0) {
-        const sendResult = await sendSMS(
-          messages.map((m) => ({ to: m.to, body: m.body })),
-          { username: CLICKSEND_USERNAME, password: CLICKSEND_PASSWORD, from: CLICKSEND_FROM_NUMBER }
-        );
+      if (messages.length > 0 && dryRun) {
+        await sendAndLogSMS(messages, {
+          username: CLICKSEND_USERNAME,
+          password: CLICKSEND_PASSWORD,
+          from: CLICKSEND_FROM_NUMBER,
+        }, {
+          insert: smsMessageLogInsert(supabase),
+          messageType: "safety_briefing_escalation_t1",
+          category: "operational",
+          fromNumber: CLICKSEND_FROM_NUMBER,
+          sourceTable: "sms_escalation_send_log",
+          isDryRun: true,
+        });
+        tier1Single.dryRunWouldSend = true;
+      } else if (messages.length > 0 && CLICKSEND_USERNAME && CLICKSEND_PASSWORD) {
+        const sendResult = await sendAndLogSMS(messages, {
+          username: CLICKSEND_USERNAME,
+          password: CLICKSEND_PASSWORD,
+          from: CLICKSEND_FROM_NUMBER,
+        }, {
+          insert: smsMessageLogInsert(supabase),
+          messageType: "safety_briefing_escalation_t1",
+          category: "operational",
+          fromNumber: CLICKSEND_FROM_NUMBER,
+          sourceTable: "sms_escalation_send_log",
+          isDryRun: false,
+          afterSend: async (result) => {
+            const { data } = await supabase.from("sms_escalation_send_log").insert({
+              tier: 1,
+              date_checked: todayStr,
+              overdue_count: overdueCountSingle,
+              recipient_count: messages.length,
+              success: result.success,
+              error_message: result.error ?? null,
+              total_price: result.totalPrice,
+              results: result.results ?? null,
+              employee_user_ids: overdueTodayRaw.map((u) => u.user_id),
+              orphaned_user_ids: orphanedSingle.map((o) => ({ user_id: o.user_id, reason: o.reason })),
+              suppression_log: suppressionLogTier1Single,
+            }).select("id").maybeSingle();
+            return data?.id ?? null;
+          },
+        });
         tier1Single.sent = true;
         tier1Single.totalPrice = sendResult.totalPrice ?? 0;
-        await supabase.from("sms_escalation_send_log").insert({
-          tier: 1,
-          date_checked: todayStr,
-          overdue_count: overdueCountSingle,
-          recipient_count: messages.length,
-          success: sendResult.success,
-          error_message: sendResult.error ?? null,
-          total_price: sendResult.totalPrice,
-          results: sendResult.results ?? null,
-          employee_user_ids: overdueTodayRaw.map((u) => u.user_id),
-          orphaned_user_ids: orphanedSingle.map((o) => ({ user_id: o.user_id, reason: o.reason })),
-          suppression_log: suppressionLogTier1Single,
-        });
         if (sendResult.error) errorsSingle.push(`Tier1: ${sendResult.error}`);
+      } else if (!dryRun) {
+        tier1Single.skippedReason = "ClickSend not configured";
       }
-    } else if (managerEntriesSingle.length > 0 && !dryRun) tier1Single.skippedReason = "ClickSend not configured";
-    if (dryRun && managerEntriesSingle.length > 0) tier1Single.dryRunWouldSend = true;
+    }
   } else {
     if (skipCalendar) tier1Single.skippedReason = "Date in company_calendar";
     else if (overdueCountSingle === 0) tier1Single.skippedReason = "No overdue";
@@ -878,7 +1001,7 @@ Deno.serve(async (req: Request) => {
 
   const tier2CombinedCountSingle = overdueCountSingle;
   const skipTier2Single = skipCalendar || tier2CombinedCountSingle === 0 || tier2PhonesSingle.length === 0 || tier2AlreadySentSingle;
-  if (!skipTier2Single && tier2PhonesSingle.length > 0 && CLICKSEND_USERNAME && CLICKSEND_PASSWORD && !dryRun) {
+  if (!skipTier2Single && tier2PhonesSingle.length > 0 && (dryRun || (CLICKSEND_USERNAME && CLICKSEND_PASSWORD))) {
     const overdueNamesSingle = overdueTodayRaw.map((u) => abbreviateName(u.full_name));
     const orphanNamesSingle = orphanedSingle.map((u) => abbreviateName(u.full_name));
     const bodySingle = buildTier2BodySingleDay(
@@ -889,26 +1012,44 @@ Deno.serve(async (req: Request) => {
       orphanedSingle.length,
       todayStr
     );
-    const sendResult = await sendSMS(
-      tier2PhonesSingle.map((to) => ({ to, body: bodySingle })),
-      { username: CLICKSEND_USERNAME, password: CLICKSEND_PASSWORD, from: CLICKSEND_FROM_NUMBER }
-    );
-    tier2Single.sent = true;
-    tier2Single.totalPrice = sendResult.totalPrice ?? 0;
-    await supabase.from("sms_escalation_send_log").insert({
-      tier: 2,
-      date_checked: todayStr,
-      overdue_count: tier2CombinedCountSingle,
-      recipient_count: tier2PhonesSingle.length,
-      success: sendResult.success,
-      error_message: sendResult.error ?? null,
-      total_price: sendResult.totalPrice,
-      results: sendResult.results ?? null,
-      employee_user_ids: overdueTodayRaw.map((u) => u.user_id),
-      orphaned_user_ids: orphanedSingle.map((o) => ({ user_id: o.user_id, reason: o.reason })),
-      suppression_log: suppressionLogTier2Single,
+    const messages = tier2PhonesSingle.map((to) => ({ to, body: bodySingle }));
+    const sendResult = await sendAndLogSMS(messages, {
+      username: CLICKSEND_USERNAME,
+      password: CLICKSEND_PASSWORD,
+      from: CLICKSEND_FROM_NUMBER,
+    }, {
+      insert: smsMessageLogInsert(supabase),
+      messageType: "safety_briefing_escalation_t2",
+      category: "operational",
+      fromNumber: CLICKSEND_FROM_NUMBER,
+      sourceTable: "sms_escalation_send_log",
+      isDryRun: dryRun,
+      afterSend: dryRun
+        ? undefined
+        : async (result) => {
+            const { data } = await supabase.from("sms_escalation_send_log").insert({
+              tier: 2,
+              date_checked: todayStr,
+              overdue_count: tier2CombinedCountSingle,
+              recipient_count: tier2PhonesSingle.length,
+              success: result.success,
+              error_message: result.error ?? null,
+              total_price: result.totalPrice,
+              results: result.results ?? null,
+              employee_user_ids: overdueTodayRaw.map((u) => u.user_id),
+              orphaned_user_ids: orphanedSingle.map((o) => ({ user_id: o.user_id, reason: o.reason })),
+              suppression_log: suppressionLogTier2Single,
+            }).select("id").maybeSingle();
+            return data?.id ?? null;
+          },
     });
-    if (sendResult.error) errorsSingle.push(`Tier2: ${sendResult.error}`);
+    if (dryRun) {
+      tier2Single.dryRunWouldSend = true;
+    } else {
+      tier2Single.sent = true;
+      tier2Single.totalPrice = sendResult.totalPrice ?? 0;
+      if (sendResult.error) errorsSingle.push(`Tier2: ${sendResult.error}`);
+    }
   } else {
     if (skipCalendar) tier2Single.skippedReason = "Date in company_calendar";
     else if (tier2CombinedCountSingle === 0) tier2Single.skippedReason = "No overdue";

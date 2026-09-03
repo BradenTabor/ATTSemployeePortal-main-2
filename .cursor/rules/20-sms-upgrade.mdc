@@ -1,0 +1,20 @@
+---
+description: SMS pipeline upgrade constraints. Never send live SMS from an agent session; additive schema only.
+globs:
+  - supabase/functions/_shared/clicksend.ts
+  - supabase/functions/*sms*/**
+  - supabase/functions/clicksend-*/**
+  - supabase/migrations/*sms*
+  - src/components/admin/ComplianceDataExportPanel.tsx
+alwaysApply: false
+---
+
+# SMS upgrade constraints
+
+- No live SMS from an agent session. READ ClickSend via view-* MCP tools and `scripts/clicksend-audit.sh` only. Never call send-sms, never POST rest.clicksend.com, never invoke an Edge Function without dryRun. Every send path must support `{"dryRun": true}` or `x-dry-run: true`.
+- Additive only. No DROP, RENAME, ALTER ... TYPE, or data rewrites against `sms_escalation_send_log`, `mass_sms_log`, `payroll_reminder_sms_log`, or `app_users`.
+- No changes to safety-briefing overdue/tiering/suppression business logic.
+- Recipients are employees/crew only — never add a customer-facing send path.
+- Exclude test accounts (`email NOT ILIKE '%@atts.test%'`) in any new query.
+- New migration filenames must sort after 20260627170000 (use `202609DDHHMM00_` prefix).
+- Never commit to main. All work happens on branch `feat/sms-upgrade`. Never force-push.

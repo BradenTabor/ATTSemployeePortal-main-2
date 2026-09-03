@@ -1,5 +1,5 @@
 /// <reference lib="webworker" />
-import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
+import { precacheAndRoute, cleanupOutdatedCaches, createHandlerBoundToURL } from 'workbox-precaching';
 import { clientsClaim } from 'workbox-core';
 import { registerRoute, NavigationRoute } from 'workbox-routing';
 import { NetworkFirst, CacheFirst } from 'workbox-strategies';
@@ -27,10 +27,11 @@ precacheAndRoute(self.__WB_MANIFEST);
 cleanupOutdatedCaches();
 clientsClaim();
 
-// DO NOT skip waiting on install - wait for client signal.
-// This allows RequiredUpdatePrompt to appear and user to control the update.
-// SKIP_WAITING is triggered by the message handler below when user clicks "Update Now".
-// Queue-aware: if offline queue is non-empty, defer the update (see message handler).
+// DO NOT skip waiting on install — wait for the client's SKIP_WAITING message.
+// The page-side AppUpdateController (src/lib/appUpdate) decides WHEN the new
+// worker activates: silently at launch, after a short countdown on a safe
+// route, or when the user taps "Update now". It reloads the page only after
+// `controllerchange`, so a reload always lands on this worker's precached shell.
 
 // ============================================
 // Runtime Caching Strategies
@@ -122,17 +123,25 @@ registerRoute(
   }),
 );
 
-// 5. Navigation fallback — serve cached index.html for all navigation requests (SPA)
-//    This ensures the app shell loads offline even for deep-link routes like /forms/jsa
-const navigationHandler = new NetworkFirst({
-  cacheName: 'navigation-cache',
-  networkTimeoutSeconds: 4,
-  plugins: [
-    new CacheableResponsePlugin({ statuses: [0, 200] }),
-  ],
-});
-
-registerRoute(new NavigationRoute(navigationHandler));
+// 5. Navigation — always serve THIS worker's precached index.html (app-shell model).
+//    The shell and the hashed assets it references then come from the same build,
+//    so a page can never load a new index.html against an old precache (or vice
+//    versa). New builds reach the user only through the update pipeline: the new
+//    worker installs, waits, and the page reloads once it has taken control.
+//    Deep links (/forms/jsa) work offline for the same reason. Non-HTML paths that
+//    happen to be navigations (direct hits on sw.js, version.json, files with an
+//    extension) fall through to the network.
+registerRoute(
+  new NavigationRoute(createHandlerBoundToURL('index.html'), {
+    denylist: [
+      /^\/(sw|dev-sw)\.js/,
+      /^\/version\.json$/,
+      /^\/manifest\.json$/,
+      /^\/api\//,
+      /\/[^/?]+\.[^/?]+$/,
+    ],
+  }),
+);
 
 // ============================================
 // Push Notification Handler (iOS Safari Compatible)
@@ -260,21 +269,10 @@ self.addEventListener('message', (event) => {
 
   switch (event.data.type) {
     case 'SKIP_WAITING':
+      // Sent by AppUpdateController once it is safe to swap builds (offline
+      // queue drained, user idle / consented). Activation → clientsClaim →
+      // `controllerchange` on the page → single reload onto the new shell.
       self.skipWaiting();
-      break;
-
-    case 'CHECK_QUEUE_EMPTY':
-      // The main thread asks if it's safe to update. We respond with whatever
-      // the client told us (we can't check IDB from here — the main thread
-      // checks the queue length and sends the result).
-      // This is a coordination handshake: the client checks queue, then
-      // either sends SKIP_WAITING or defers.
-      if (event.source && 'postMessage' in event.source) {
-        (event.source as Client).postMessage({
-          type: 'QUEUE_CHECK_RESPONSE',
-          // Acknowledge the check — the client drives the decision
-        });
-      }
       break;
   }
 });

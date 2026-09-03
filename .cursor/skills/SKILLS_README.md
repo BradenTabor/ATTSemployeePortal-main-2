@@ -17,6 +17,7 @@ knowledge that agents load on demand — complementing the always-on `.cursor/ru
 | `add-e2e-test` | "add e2e test", "create playwright test", "write e2e spec" | 2026-02-17 |
 | `add-dashboard-widget` | "add dashboard widget", "create widget", "new dashboard card" | 2026-02-17 |
 | `ui-design-guide` | "create a page", "build a component", "style", "layout", "loading state", any .tsx creation | 2026-02-17 |
+| `sms-upgrade` | "sms", "clicksend", "opt-out", "sms log", "sms export", "sender number", "heat alert sms", "cert expiry sms" | 2026-09-02 |
 
 ## When to Update a Skill
 
