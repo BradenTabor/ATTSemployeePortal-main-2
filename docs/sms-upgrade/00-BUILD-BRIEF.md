@@ -89,7 +89,7 @@ Phone number is touched in UI at: `src/pages/Home.tsx`, `src/pages/TeamContacts.
 2. **Inbound opt-out sync** — new Edge Function `clicksend-inbound-webhook` (internal-secret auth, `--no-verify-jwt`), parses STOP/START/HELP, updates `app_users.sms_operational_opt_out` / `sms_marketing_opt_out` (policy: STOP → both flags true unless product decides otherwise — flag this for the human), writes `sms_opt_out_events`. Plus a nightly reconciliation function that pulls ClickSend's opt-out list via API and diffs against `app_users`.
 3. **Export** — new "SMS Communications" section in `ComplianceDataExportPanel.tsx` reading `sms_message_log` (+ compat view), CSV + PDF, audit-logged via `logReportExported`.
 4. **Consent** — `sms_consent_records` table + onboarding/profile acknowledgment; categories operational vs announcement.
-5. **Sender registry** — `sms_sender_numbers` config table (number, purpose, 10DLC status, last verified) and make **every** function read `from` from it instead of a hardcoded fallback.
+5. **Sender registry** — `sms_sender_numbers` config table (number, purpose, **toll-free verification status** — these are toll-free numbers, not A2P 10DLC long codes — last verified) and make **every** function read `from` from it instead of a hardcoded fallback.
 6. **New message types** — `cert-expiry-reminder-sms`, `heat-index-alert-sms`, each with dry-run, kill switch, idempotency, and cost estimate before enable.
 
 Suggested PR-sized chunks (each independently shippable, each behind a flag or dry-run):

@@ -47,7 +47,7 @@ Each item from `00-BUILD-BRIEF.md` “Where things live today” and Change Requ
 | A.3: no SMS section in ComplianceDataExportPanel | CONFIRMED | `ComplianceDataExportPanel.tsx:462+` sections are DVIR/JSA/equipment/mechanic/compliance/incidents/RTO/rewards/certs — no SMS |
 | A.3: consent provenance gap (auth backfill) | CONFIRMED | `20260320120001_backfill_app_users_phone_from_auth.sql` |
 | A.3: sender number governance undocumented; two numbers | CONFIRMED as undocumented / HYPOTHESIS as “two numbers in use” | Only one hardcoded default in repo. Mass unset `from` is the plausible second source. |
-| A.3: A2P 10DLC status undocumented | CONFIRMED | No 10DLC string in repo. API also cannot confirm (see ClickSend facts). |
+| A.3: Toll-free verification status undocumented | CONFIRMED (corrected) | Both production senders are **toll-free**, not 10DLC long codes. A2P 10DLC does not apply; toll-free verification does. API exposes ClickSend `status.label` per number (see ClickSend facts). |
 | A.3: cert-expiry is email/push only; heat index is frontend-only | CONFIRMED | `cert-expiry-reminders/index.ts`; `src/components/safety/HeatIllnessAlert.tsx:13` `heatIndexF` |
 
 **Counts:** CONFIRMED 18 · PARTIALLY CORRECT 3 · WRONG 3 · HYPOTHESIS 1 (two-number production use). None of the WRONG items change Chunk 1’s unified-log design (filename prefix and reminder dryRun are additive).
@@ -120,37 +120,46 @@ The skill reference `export-pattern.md` uses `accessor:` callbacks — that is *
 
 ## ClickSend account facts
 
-**Filled 2026-09-09** from `./scripts/clicksend-audit.sh` → `docs/sms-upgrade/clicksend-audit-2026-09-09.json` (gitignored). Account: All Terrain Tree Service / `shane@alltts.com`.
+**Source:** `./scripts/clicksend-audit.sh` with production credentials (2026-09-09 verify re-run `clicksend-audit-2026-09-09-verify.json`). Read-only GETs only.
 
 ### Dedicated numbers (`/v3/numbers`)
 
-| Number | Notes | Status |
-|--------|-------|--------|
-| `+18338612650` | PO# | REGISTERED |
-| `+18443781444` | RTO # | REGISTERED |
-| `+18335183807` | Safety# | REGISTRATION_INITIATED |
+All three are **`number_type: tollfree`** (not standard 10-digit long codes). **A2P 10DLC registration does not apply.** Carrier compliance is **toll-free verification**.
+
+| Number | Notes (ClickSend) | Type | Verification / registration status (API) |
+|--------|-------------------|------|------------------------------------------|
+| `+18338612650` | PO# | toll-free | `REGISTERED` — “registered and you can start using it immediately” |
+| `+18443781444` | RTO # | toll-free | `REGISTERED` — same |
+| `+18335183807` | Safety# | toll-free | `REGISTRATION_INITIATED` — registration in progress; email updates follow. Confirm remaining dashboard steps if sends on this number are needed. |
 
 ### Outbound `from` values (history page, last ~1000)
 
-| from | status | count |
-|------|--------|-------|
-| `+18338612650` | Sent | 53 |
-| `+18443781444` | Sent | 43 |
-| `+18443781444` | Failed | 3 |
-| `+14792004421` | Received | 1 (inbound/noise — not a dedicated ATTS number) |
+| `from` | Status | Count | Share of Sent |
+|--------|--------|------:|--------------:|
+| `+18338612650` | Sent | 53 | 55.2% |
+| `+18443781444` | Sent | 43 | 44.8% |
+| `+18443781444` | Failed | 3 | — |
+| `+14792004421` | Received | 1 | (inbound attributed in history feed; not a dedicated account number) |
 
-**Two-number HYPOTHESIS → CONFIRMED (refined):** production history uses **two registered dedicated numbers** (`+18338612650` and `+18443781444`), not merely “dedicated vs ClickSend default.” Code still hardcodes `+18443781444` for reminder/escalation/payroll; `CLICKSEND_FROM_NUMBER` remains **unset** on the project (mass dry-run returned `fromNumber: null`). Chunk 4 must register/choose senders explicitly.
+**Two-number HYPOTHESIS → RESOLVED:**
+
+1. Scheduled paths (reminder / escalation / payroll) hard-default `from` to `+18443781444` when env is empty.
+2. **`CLICKSEND_FROM_NUMBER` is confirmed unset in production Edge Function secrets.** Mass SMS therefore sends with no explicit `from`; ClickSend selects a sender (observed mix includes both registered toll-free numbers).
+3. Chunk 4 (sender registry) closes the ambiguity by making every path read an explicit registry row.
 
 ### Opt-out list
 
-- List id `3406168` — name “Opt-Out List”
-- Size: **1** contact
-- First production reconcile diff-only run (2026-09-09): `clicksend_only_count=1`, `app_opted_out_count=0` (phone last4 `6644`). Apply mode still off.
+- List id `3406168` (“Opt-Out List”): **1** contact (last4 `6644`).
+- Cross-check vs `app_users`: phone matches **two** rows (roles `admin` and `employee`); both have `sms_marketing_opt_out=false` and `sms_operational_opt_out=false`. See deploy log “first confirmed sync gap”.
+
+### Inbound
+
+- Recent inbound API page: **0** messages (`total=0`). STOP traffic is reflected in the opt-out contact list rather than durable inbound history in this account snapshot.
 
 ### Still open / dashboard-only
 
-- A2P 10DLC / toll-free registration details beyond ClickSend’s number status labels — confirm in dashboard for `+18335183807`.
-- Which business process intentionally uses PO# vs RTO# — operations decision for Chunk 4.
+- Toll-free verification paperwork beyond ClickSend’s `status.label` (e.g. brand docs, rejection reasons for `+18335183807`) — confirm in ClickSend dashboard if needed.
+- Whether mass SMS should pin `+18443781444` vs `+18338612650` — Chunk 4 decision.
 
 ## Design check
 
@@ -222,7 +231,7 @@ Code-level proof: `sendSMS()` body/URL/auth unchanged; wrapper only adds a DB in
 
 **Chunk 3 — Inbound opt-out.** `clicksend-inbound-webhook` (`x-internal-key` or ClickSend token, GET probe like `notify-admins-new-signup`), parse STOP/START/HELP, write `sms_opt_out_events`, set flags (policy TBD). Nightly recon function GET ClickSend opt-out list, dry-run diff first, kill switch. Do not change send filters until recon is trusted.
 
-**Chunk 4 — Sender registry.** `sms_sender_numbers` (E.164, purpose, 10DLC status, last verified). Every function reads `from` from it (fallback remains current env default until rows exist). Fix mass empty-`from`. Admin-only UI can wait; a seed row for `+18443781444` is enough.
+**Chunk 4 — Sender registry.** `sms_sender_numbers` (E.164, purpose, **toll-free verification status**, last verified). Every function reads `from` from it (fallback remains current env default until rows exist). Fix mass empty-`from` now that `CLICKSEND_FROM_NUMBER` is confirmed unset. Admin-only UI can wait; seed rows for both registered toll-free numbers.
 
 **Chunk 5 — Consent.** `sms_consent_records` + onboarding checkbox in `useAuthForm.ts` (not Home.tsx) and a profile control. Operational vs announcement categories. Timestamped. Do not silently backfill.
 
@@ -232,7 +241,7 @@ Code-level proof: `sendSMS()` body/URL/auth unchanged; wrapper only adds a DB in
 
 ## Open questions for Braden
 
-1. Confirm with ClickSend (dashboard or support): which sending numbers are active, what each is for, and current A2P 10DLC brand/campaign status. Paste `CLICKSEND_USERNAME` + API key into repo `.env` and `~/.cursor/mcp.json` (toggle **send-sms off**) so the next session can finish account facts.
+1. Confirm in ClickSend dashboard any remaining toll-free verification steps for `+18335183807` (REGISTRATION_INITIATED). Active senders `+18338612650` / `+18443781444` are REGISTERED toll-free.
 2. Stay on ClickSend (add inbound webhook) or timebox a ClickSend-vs-Twilio look this week?
 3. HR/legal: consent language and cadence (annual re-confirm?) for the onboarding checkbox.
 4. Retention: SOP draft is 5 years for opt-out/consent-export records, 2 years for routine send logs — confirm or override.

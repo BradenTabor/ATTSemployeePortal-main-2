@@ -92,8 +92,13 @@ fi
 
 echo ""
 echo "📋 Configuration:"
-echo "   Key prefix: ${SUPABASE_SERVICE_ROLE_KEY:0:20}..."
-echo "   DB URL: ${SUPABASE_DB_URL:0:50}..."
+# Never echo connection strings, passwords, or tokens — even truncated.
+# A truncated DB URL still contains user:password before the host.
+echo "   Service role key: set ($(printf '%s' "$SUPABASE_SERVICE_ROLE_KEY" | wc -c | tr -d ' ') chars)"
+# Redact userinfo from any URI before printing host only
+_db_host=$(printf '%s' "$SUPABASE_DB_URL" | sed -E 's|^[a-zA-Z][a-zA-Z0-9+.-]*://[^@]*@||; s|/.*||; s|\?.*||')
+echo "   DB host: ${_db_host:-<unparseable>}"
+unset _db_host
 echo ""
 
 # Confirm before proceeding

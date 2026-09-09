@@ -227,3 +227,25 @@ Opt-out list `3406168` (“Opt-Out List”): **1** contact.
 3. Watch reconcile diffs for one week before enabling apply or send-path filters.
 4. Optional: rotate database password if concerned that `deploy-cron-auth.sh` printed a DB URL prefix including credentials when it failed DNS lookup.
 5. Fix `deploy-cron-auth.sh` to use pooler URL / Management API path so future runs work without direct `db.<ref>.supabase.co` DNS.
+
+
+---
+
+## First confirmed sync gap (post-deploy verification)
+
+**Date observed:** 2026-09-09 (reconcile dry-run + ClickSend opt-out list)
+
+| Field | Value |
+|-------|-------|
+| ClickSend opt-out list | `3406168` (“Opt-Out List”), size **1** |
+| Phone last4 | `6644` |
+| ClickSend `date_added` | 2026-03-04T22:51:37Z |
+| `app_users` match | **Yes — 2 rows** share this E.164 (roles: `admin`, `employee`) |
+| App flags | Both rows: `sms_marketing_opt_out=false`, `sms_operational_opt_out=false` |
+| Messages app believed delivered **after** opt-out | **726** live rows in `sms_message_log_compat` (`is_dry_run=false`, `sent_at >= opt-out`) |
+| Breakdown | `safety_briefing_escalation_t2` 268 · `safety_briefing_reminder` 266 · `payroll_reminder` 192 |
+| Also on `sms_escalation_recipients` | **Yes — 2 active** rows (explains high tier-2 volume) |
+| Apply mode | **Still off** (`sms_optout_reconcile_config.apply_enabled=false`). No flags changed. |
+
+This is the first production instance of the ClickSend↔app opt-out divergence this project was built to detect. Evidence only — Braden review before any apply.
+

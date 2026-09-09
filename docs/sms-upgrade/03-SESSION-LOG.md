@@ -142,3 +142,68 @@ Append-only. Newest entry at the bottom.
 **Docs:** `06-DEPLOY-LOG.md`; runbook webhook URL + Braden steps; session log; PR #3 undrafted for review.
 
 **Not done (intentional):** no live SMS; no apply mode; no operational opt-out filter on reminder/escalation; reconcile cron disabled.
+
+---
+
+## 2026-09-09 — Session 5 (cron monitoring blind spot + Chunk 4 prep)
+
+**A — Monitoring**
+
+- Root cause: `get_recent_cron_failures` only filtered `cron.job_run_details.status = 'failed'`. Jobs use async `net.http_post`, so queue success → cron `succeeded` / `1 row` even when the Edge Function returns 401. Failures lived only in `net._http_response`.
+- Fix applied (prod + migration file): `20260909173000_cron_failures_detect_http_non_2xx.sql` — extends `cron_job_runs` (`effective_status`, `http_status_code`) and `get_recent_cron_failures` to UNION non-2xx / timed_out / error_msg from `net._http_response` (time-correlated to HTTP cron runs).
+- History window: `pg_net.ttl = 6 hours`. Oldest retained row today was 10:20 UTC; **18× 401** all in the safety-briefing-reminder-push slot; later jobs today (10:40 SMS, 12:30 forecast, 15:00 compliance, 16:00 escalation) were 200. Pre-today duration **unknowable** from pg_net. No other job showed 401s in the retained window.
+- Alert proposal (not built): add a single “Cron health” row to the existing admin compliance / safety settings surface (or a line on the monthly compliance email) that calls `get_recent_cron_failures(1)` and flags any `http_failed` / SQL failed jobname + timestamp — no new pager stack.
+
+**B — Blocked history**
+
+- Proposal only: `docs/sms-upgrade/08-BLOCKED-HISTORY-PROPOSAL.md` (derived view flag + optional `sms_provider_opt_out_snapshot`; no row rewrites).
+- Distinct numbers affected: **1** (last4 `6644`, 726 post-opt-out compat rows). No opt-out flags changed.
+
+**C — Chunk 4**
+
+- Plan: `docs/sms-upgrade/09-CHUNK4-PLAN.md`. Not implemented.
+- From-distribution: PO# majority is **purchase-order approval SMS** outside this portal (bodies + API user), not mis-routed briefing SMS. Portal scheduled paths correctly use RTO#.
+- Audit’s 3 RTO Failed (last-~1000 page): 2026-09-09 10:40 UTC → last4 `6286`, `4421`, `1454`; ClickSend `status_code` 301 / Absent Subscriber (phone off / out of range ≥12h).
+
+**D — Housekeeping**
+
+- `deploy-cron-auth.sh` credential-echo fix is present in working tree (**not committed** this session). No script echoes a live connection string (host-only after redact).
+- Cron inventory: noted monthly-safety-drawing `x-drawing-secret` as intentional Bearer exception.
+
+**Not done:** Chunk 4 implementation; blocked-history view; opt-out flag changes; commit of deploy-cron-auth.sh / this session’s files (unless requested).
+
+---
+
+## 2026-09-09 — Session 6 (consolidated follow-up A–G; no Chunk 4 impl)
+
+**A — ClickSend wiring pre-flight**
+
+- Kill-switches present: `sms_inbound_webhook_config={"enabled":true}`; `sms_optout_reconcile_config={"apply_enabled":false}`.
+- Missing inbound row would **not** skip (code only skips when `enabled === false`); no seed migration needed.
+- Auth shapes: `x-internal-key`, `Authorization: Bearer INTERNAL_SECRET`, `Authorization: Bearer service_role`.
+- Contingency (design only): `10-WEBHOOK-AUTH-FALLBACK.md`.
+- GET health: `{"ok":true,"name":"clicksend-inbound-webhook"}` HTTP 200.
+
+**B — Runbook**
+
+- Rewrote `05-CHUNK3-RUNBOOK.md`: pre-flight block, both-numbers requirement, ranked §7 STOP tests, first-week queries, real project URL throughout.
+
+**C — 6644 briefing**
+
+- `11-OPTOUT-6644-BRIEFING.md`: opt-out 2026-03-04T22:51:37Z; 726 rows (t2 268 / reminder 266 / payroll 192); 2 active escalation recipient rows; **132/132** t2 days had overdue≥4; roles admin+employee; **no** other escalation last4 on ClickSend opt-out list.
+
+**D — Cron monitoring**
+
+- Root cause unchanged: async `net.http_post` → cron `succeeded` despite Edge 401.
+- Fix already in prod (`20260909173000`); `get_recent_cron_failures(1)` returns the 401s.
+- pg_net window: oldest retained ~10:20 UTC today; **18×401** only on `safety-briefing-reminder-push` that slot; pre-today duration unknowable (ttl ~6h). Alert proposal noted in cron inventory (not built).
+
+**E / F**
+
+- `08-BLOCKED-HISTORY-PROPOSAL.md` / `09-CHUNK4-PLAN.md` confirmed; distinct blocked numbers = **1** (`6644`). From-distribution = external PO traffic. Audit’s 3 RTO failures = May 11–13 301s last4 `4451`/`4451`/`4421`.
+
+**G**
+
+- `deploy-cron-auth.sh` credential-echo fix confirmed (host-only). `12-BRADEN-TODO.md` written. Commits per section. No opt-out flags / escalation rows / historical SMS rows changed.
+
+**Gates:** lint / typecheck / build (this session).
