@@ -108,7 +108,45 @@ WHERE key IN ('sms_inbound_webhook_config', 'sms_optout_reconcile_config');
 
 If ClickSend allows **no** custom headers: stop and read `docs/sms-upgrade/10-WEBHOOK-AUTH-FALLBACK.md` before changing code.
 
-Full steps: `docs/sms-upgrade/05-CHUNK3-RUNBOOK.md` §2.
+### 4c. Warning — clean the opt-out list *before* apply mode is ever switched on
+
+Wiring the rule is safe. The thing downstream of it is not, and it is easier to fix now than later.
+
+Reconciliation compares ClickSend's Opt-Out List to `app_users`. Once `sms_optout_reconcile_config.apply_enabled` is set to `true`, every entry on that list that matches an employee gets **both** `sms_operational_opt_out` and `sms_marketing_opt_out` set to `true` on their account. Since Session 9 the send paths actually honour those flags, so that person is immediately dropped from **safety briefing reminders, safety briefing escalations (including Tier 2 static recipients), and payroll hours SMS**.
+
+The flags do not expire and nobody is notified. **Enabling apply while stale entries sit on the list silently removes those people from operational SMS.** The exclusion is written to the run logs, but nothing surfaces it — you would find out when someone mentions they stopped getting texts.
+
+**There is at least one stale entry today: last-4 `6644`, dated 2026-03-04 — your own handset.** It is on both your admin and employee `app_users` rows and on both the Tier 1 and Tier 2 escalation lists, so applying it would mute the escalation chain at two points at once. Almost certainly a STOP sent while testing, not a withdrawal of consent.
+
+**Do with it:** clear the entry from the **ClickSend dashboard** (SMS → Opt-Out List) rather than honour it. Texting START from the handset achieves the same removal if you prefer to do it from the phone. Then re-run the review query in runbook §6a and confirm `6644` no longer appears in `clicksend_only`.
+
+#### The pre-condition for clearing: the STOP has to survive the clearing
+
+That opt-out list entry was, until 2026-09-09, the **only** surviving record of the STOP anywhere. ClickSend's message history retains roughly four months. The STOP is dated 2026-03-04; the oldest message retrievable on the account today is 2026-05-11, and the inbound endpoint returns nothing at all. The original message is gone. Clearing the list entry would have destroyed the last copy of a TCPA-relevant fact, and a dashboard screenshot pasted into Slack is a picture, not a compliance record.
+
+So the STOP has been copied into a table we own and back up. `sms_opt_out_events` now holds one `admin_manual` row: phone `+18703656644`, keyword `STOP`, `received_at` = **2026-03-04T22:51:37Z** (the real time ClickSend recorded it, not the time it was written down), both `applied_*` columns `false` because no flag was changed then and none is changed now, and a `raw_message` that states in full that this is a reconstruction from the opt-out list rather than a live inbound event. Written by migration `20260909210000_sms_optout_6644_historical_record.sql`.
+
+**Confirm the record exists before you clear anything** (SQL editor):
+
+```sql
+SELECT phone_e164, keyword, source, received_at,
+       applied_operational, applied_marketing, raw_message
+FROM public.sms_opt_out_events
+WHERE phone_e164 = '+18703656644' AND source = 'admin_manual';
+-- expect exactly 1 row, received_at 2026-03-04 22:51:37+00, both applied_* false
+```
+
+One row back, and the ClickSend entry is a duplicate of a record you already hold — clear it. No row, stop and find out why.
+
+Note the record does **not** yet show up in the admin SMS Communications export: that section reads the outbound send log (`sms_message_log_compat`), and opt-out events have no export section of their own. The query above is the way to produce it for an auditor today. Giving opt-out events their own export section is worth doing and is filed as a follow-up, not done here.
+
+**Note the tension with item 1 above**, which says not to delete the opt-out entry because the dated record is the TCPA evidence. It is resolved rather than balanced: **nothing is destroyed.** The dated record still exists — in Postgres, inside the nightly backups, in a table an admin can query — so clearing the provider-side copy costs no evidence. Item 1's requirement that the *decision* be written down still stands on its own ("this was a test STOP on my own handset, dated 2026-03-04, 530 messages delivered afterwards"); it is just no longer the thing standing between you and losing the record.
+
+Do **not** extend this reasoning to anyone else's entry. What makes `6644` clearable is that it is your own handset, its origin is known, and the STOP has been preserved first. Absent all three, the entry stays.
+
+Every other entry on the list gets the same treatment before apply is enabled — confirmed as a genuine opt-out to honour, or cleared first. Runbook §6a has the query that resolves the list to names, roles and escalation-list membership in one pass.
+
+Full steps: `docs/sms-upgrade/05-CHUNK3-RUNBOOK.md` §2. Apply-mode criteria: §6.
 
 ---
 
@@ -123,6 +161,8 @@ curl -X POST "https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/clicksend-op
 ```
 
 **Confirm:** `clicksend_only` / `app_only` explainable; then (only with approval) set `apply_enabled` and enable cron per runbook §5–6.
+
+**Before `apply_enabled`:** re-read §4c above. Every `clicksend_only` entry must be confirmed as a genuine opt-out or cleared from ClickSend first — apply mutes matching employees across all operational SMS, permanently and silently. Runbook §6a is the review query.
 
 **Expect residue:** the opt-out list is shared with the purchase-order app, so `clicksend_only` can contain non-employees who will never match `app_users`. The reconcile function skips them without error; they are just not labelled as such. Normal, not a bug.
 

@@ -474,3 +474,189 @@ redeploy of `safety-briefing-reminder-sms` and `safety-briefing-escalation-sms`.
 **Not changed:** no opt-out flag, no phone number, no historical row, no ClickSend-side
 configuration. **No SMS sent** — every run was `dryRun: true`, and the newest rows in
 `sms_escalation_send_log` (16:00 UTC) and `sms_message_log` (16:23 UTC) both predate this session.
+
+---
+
+## 2026-09-09 — Session 10 (documenting the apply-mode trap; docs only)
+
+Nothing executed, nothing deployed. This session writes down an interaction that was understood
+in conversation and would have been lost, plus one long-standing gap in the gates.
+
+**A — the apply-mode interaction, stated end to end**
+
+Three things built in separate sessions now compose into a hazard that none of them carried alone:
+
+1. ClickSend's opt-out list holds last-4 `6644` from a STOP dated **2026-03-04**.
+2. `clicksend-optout-reconcile` diffs that list against `app_users`, and in apply mode sets
+   **both** opt-out flags on every entry that resolves to a user.
+3. The Session 9 send-path filter means those flags are now honoured by safety briefing
+   reminder, safety briefing escalation (statics included) and payroll SMS.
+
+So the moment `sms_optout_reconcile_config.apply_enabled` is set `true`, `6644` is dropped from
+every operational SMS path. Permanently — the flags do not expire — and quietly. The exclusion
+is logged, but no one is told, and the person only finds out by noticing they stopped getting
+texts.
+
+The individual pieces are all correct. Reconciliation *should* honour the provider's list; the
+filter *should* honour the flags. The hazard is that the list contains entries nobody has
+adjudicated, and a stale entry is indistinguishable from a real withdrawal of consent without a
+human who knows the history. `6644` is the known case: it is the developer's own handset, and a
+test STOP is the likely origin.
+
+The previous phrasing of the pre-condition — runbook §6 criterion 2, *"`clicksend_only` entries
+are explainable"* — was too weak to carry this. "Explainable" reads as a reporting nicety. It is
+actually the only thing standing between apply mode and silently muting active crew.
+
+**Changes:**
+
+- **`05-CHUNK3-RUNBOOK.md` §6** — criterion 2 rewritten to require every `clicksend_only` entry
+  be individually reviewed and either confirmed as a genuine opt-out to honour or **cleared from
+  ClickSend first**. New subsection spells out the mechanism, why the list is append-only in
+  practice, and names `6644` as a known stale entry sitting on both escalation tiers.
+- **New §6a — the review query.** The opt-out list is not in Postgres, so it is two steps: a
+  `curl` piped through `jq`/`sed` that emits the current `clicksend_only` numbers as a paste-ready
+  SQL `VALUES` block, then a query joining them to `app_users` via `normalize_phone_to_e164()`
+  for last-4, role, name, active flag, current opt-out flags, `sms_escalation_recipients` tier
+  membership, and 90-day send count from `sms_message_log_compat`. A table says what each row
+  shape means and what to do about it. Point of the query is that the review is five minutes,
+  not a research project — the previous alternative was resolving last-4s by hand.
+- **`12-BRADEN-TODO.md` §4c** — same warning in the human-facing list, since item 4 is where the
+  inbound rule gets wired and apply mode is the next thing after it. Records that `6644` is to be
+  **cleared from the ClickSend dashboard, not honoured**. Flags the tension with item 1, which
+  says never delete an opt-out entry because the dated record is the TCPA evidence: resolution is
+  to write the decision down and screenshot the entry *first*, then clear. One cross-reference
+  line added to item 5, which is where `apply_enabled` actually gets set.
+
+Deliberately **not** done: no flag changed, no ClickSend entry cleared, no `apply_enabled`
+touched. Clearing `6644` is Braden's call on his own handset and is recorded as such.
+
+**B — Edge Functions have no typecheck gate (`KNOWN-ISSUES.md`)**
+
+`deno check` cannot resolve `npm:openai@^4.52.5` and aborts on module resolution, so it checks
+nothing at all. **Pre-dates the SMS work** — the trigger is five AI functions importing
+`https://esm.sh/openai@4` while `supabase/functions/deno.json` pins only `@supabase/supabase-js`.
+The exact link between the CDN specifier and the `npm:` form in the error text was inferred, not
+traced; that is recorded as an inference.
+
+Verified while writing it up, because the consequence is wider than the error suggests:
+`tsconfig.app.json` has `include: ["src"]`, and root `tsconfig.json` excludes `supabase/**` six
+ways — so `npm run typecheck` was never going to reach Edge Function code even if `deno check`
+worked. `tests/**` is outside it too, so the Vitest-covered `_shared/` helpers are verified for
+behaviour and not for types. Net: lint + typecheck + build give **zero** type coverage of
+anything under `supabase/functions/`. `deno lint` is the whole gate.
+
+Fix direction recorded (pin `openai` in the import map, triage what `deno check` then reports,
+remove `@ts-nocheck` file by file, wire the gate only once green). Noted that step 1 alone makes
+the check *run* without making it *pass*, which is worse than today if it lands in CI at that
+point. **Not fixed — explicitly out of scope for this session.**
+
+**Gates:** not run. Markdown only — no file under `src/`, `supabase/` or `tests/` was touched.
+
+**Production changes:** none. No SQL, no deploy, no Edge Function invocation, no ClickSend read
+or write.
+
+---
+
+## 2026-09-09 — Session 11A (preserving the 6644 STOP before it can be cleared)
+
+Session 10 resolved the item-1/§4c conflict by requiring a written decision plus a screenshot
+before clearing `6644` from ClickSend's Opt-Out List. That was not sufficient, and this session
+replaced it with something that is.
+
+**The retention concern was real — confirmed, not assumed.**
+
+ClickSend retains message history for roughly four months. Queried read-only via the MCP
+`get--v3-sms-history` tool:
+
+| Query | Result |
+|---|---|
+| `from:+18703656644`, 2026-03-01 → 2026-03-08 | 0 rows |
+| `status:Received`, same window | 0 rows |
+| no filter, same window | 0 rows |
+| no filter, whole account, `date:asc` | 5,411 rows; **oldest is 2026-05-11T10:40:03Z** |
+| `GET /v3/sms/inbound` (read-only curl, per the audit script's own pattern) | `total: 0` |
+
+The retention floor is 2026-05-11, about four months back from today, exactly as documented.
+The 2026-03-04 STOP is **past it and unrecoverable**. The inbound endpoint holds nothing either,
+which is expected — no inbound rule has ever been wired (TODO item 4).
+
+So the Opt-Out List contact **was** the last surviving record of that STOP anywhere:
+
+```
+list_id 3406168 "Opt-Out List" · contact_id 1548059062
++18703656644 · braden tabor · bradenleetabor@gmail.com · ATTS
+date_added = date_updated = 1772664697 = 2026-03-04T22:51:37Z
+```
+
+One dashboard click from gone, on a list the shared purchase-order app also writes to.
+
+**Inertness check before writing anything (this was the gate, and it nearly failed).**
+
+Read the code and then the live catalog rather than assuming. Codebase: the only writers are
+`clicksend-inbound-webhook` (insert, plus a `provider_message_id` dedup read — ours is `NULL`, and
+the unique index is partial on `WHERE provider_message_id IS NOT NULL`, so it cannot collide) and
+`clicksend-optout-reconcile` (insert only, after it has already written `app_users`). Neither
+reads the table to make a decision. `_shared/smsOptOutFilter.ts`, which gates the safety-critical
+send paths, reads `app_users` and `app_settings` only. Nothing under `src/` references the table.
+
+Live catalog (`emqqxfzahmwnehxcpxzp`, read-only): **zero** triggers (including internal), rules,
+views, matviews, functions, foreign keys, publications, and `cron.job` entries reference
+`sms_opt_out_events`. The table was empty. `apply_enabled` is still `false`.
+
+**The near-miss:** `run_data_retention` (cron `run-data-retention`, 03:00 daily, active) is not a
+per-table function — it is a generic loop over `data_retention_policies` that deletes anything
+older than `retention_days` from whatever table is listed. A backdated row is precisely what such
+a policy deletes first. Checked the policy table: seven rows, `sms_opt_out_events` is not among
+them, so the row is safe today. **But this is a live hazard for the whole table**, not just this
+row: the moment anyone adds a retention policy keyed on `received_at`, the oldest and most
+evidentially valuable opt-out records are the first destroyed. Recorded here because it will not
+be obvious to whoever adds that policy.
+
+**Written:** migration `20260909210000_sms_optout_6644_historical_record.sql` — one row,
+`source = 'admin_manual'`, `keyword = 'STOP'`, `received_at = 2026-03-04T22:51:37Z` (the real
+provider timestamp, not `now()`), `applied_operational` and `applied_marketing` both `false`
+because no flag was changed then and none is changed now, `provider_message_id` `NULL` because no
+provider id survives. `raw_message` states in full that this is a reconstruction from the opt-out
+list, cites the list/contact ids and the retention evidence, records that the message body was
+never captured so the keyword is inferred from ClickSend's own classification, and names both
+`app_users` rows that share the handset.
+
+`user_id` is the **admin** row `c1d477de…`, not arbitrarily: the ClickSend contact carries
+`bradenleetabor@gmail.com`, which matches that account exactly. The employee row `61d09ffe…`
+shares the phone and is named in `raw_message`, since one uuid column cannot hold both. The
+webhook, faced with the same ambiguity, takes an arbitrary `.find()` match — worth fixing when
+Chunk 5 lands consent records.
+
+**Applied to production**, guarded and proven:
+
+- `app_users` fingerprint `md5(string_agg(t::text,'|' ORDER BY t.user_id))` =
+  `b42df8300155d4eb128ea907860be54b` (21 rows) **before and after** — byte-identical.
+- Insert is `WHERE NOT EXISTS`-guarded; re-running the migration immediately returned
+  `INSERT 0 0` and the table still holds exactly 1 row.
+- Recorded in `supabase_migrations.schema_migrations` as `20260909210000`.
+- No SMS sent, no ClickSend write, no Edge Function invoked, no flag touched.
+
+Connection note: `SUPABASE_DB_URL` in `.env` points at `db.<ref>.supabase.co`, which now resolves
+AAAA-only and fails on an IPv4-only machine. The working route is the session pooler at
+`aws-1-us-east-1.pooler.supabase.com:5432` as `postgres.<ref>`. Same password — so TODO item 3's
+rotation still applies, and whoever rotates it should fix the host in `.env` at the same time.
+
+**`12-BRADEN-TODO.md` §4c rewritten.** The pre-condition for clearing is no longer "a screenshot
+exists" but "the row is in `sms_opt_out_events`", with the confirming query inline. The warning
+against extending the reasoning to anyone else's entry is kept and sharpened to the three things
+that make `6644` specifically clearable. The tension with item 1 is kept and named, but it is now
+*resolved* rather than balanced: nothing is destroyed, so there is no longer anything to trade off.
+
+**The row does not appear in the SMS Communications export, and that is a gap.** That export
+section reads `sms_message_log_compat`, which unions the outbound send logs
+(`sms_message_log`, `sms_escalation_send_log`, and the other legacy tables). It is a record of
+what we sent. `sms_opt_out_events` is a record of what was said back to us, has no export section,
+and is reachable only by SQL. For a TCPA question — "were you told to stop, and when" — the
+inbound record is the more important of the two, so it **should** have its own export section.
+Not built here: this session was scoped to docs plus one inert row, and adding an export section
+is a code change. Filed as a follow-up and noted inline in §4c so nobody assumes the export
+already carries it.
+
+**Gates:** not run for this half — one SQL migration and one Markdown file, nothing under `src/`.
+
+**Production changes:** exactly one row inserted into `sms_opt_out_events`. Nothing else.

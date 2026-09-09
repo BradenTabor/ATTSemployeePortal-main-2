@@ -209,9 +209,85 @@ WHERE jobname = 'clicksend-optout-reconcile';
 Do **not** set `apply_enabled: true` until all of the following:
 
 1. At least **7 days** of diff-only cron runs reviewed
-2. `clicksend_only` entries are explainable (real STOPs, not data bugs)
+2. **Every entry currently in `clicksend_only` has been individually reviewed** and either (a) confirmed as a genuine opt-out to honour, or (b) cleared from ClickSend's Opt-Out List first. See the warning below — this is the pre-condition that bites.
 3. Inbound webhook verified with a **non-destructive** test first (see §7) — full STOP only on a phone you control, followed by START
 4. Braden approves turning on apply
+
+### Why criterion 2 is a hard pre-condition, not a formality
+
+Apply mode is not a report. For every `clicksend_only` entry that resolves to an `app_users` row, reconciliation sets **both** `sms_operational_opt_out` and `sms_marketing_opt_out` to `true` on that user (`clicksend-optout-reconcile/index.ts` apply loop). Since Session 9 the send paths actually read `sms_operational_opt_out`, so those flags now have teeth: that person is immediately excluded from **safety briefing reminder, safety briefing escalation (including Tier 2 static recipients), and payroll hours SMS**.
+
+The exclusion is logged, but nobody is notified, and the flags do not expire. Turning on apply with a stale entry on the list is how an active crew member silently stops receiving operational SMS — the exact failure mode this project exists to catch, arriving through the control built to prevent it.
+
+**ClickSend's opt-out list is append-only in practice.** An entry from a STOP sent during testing, from a number that has since changed hands, or from the shared purchase-order app looks identical to a real withdrawal of consent. Only a human who knows the history can tell them apart, which is why this cannot be automated away.
+
+**A known stale entry exists today:** last-4 `6644`, opted out 2026-03-04, is the developer's own handset from a test STOP. It resolves to two `app_users` rows (admin + employee) and sits on both the Tier 1 and Tier 2 escalation lists. Enabling apply before that entry is cleared from the ClickSend dashboard would opt that person out of every operational SMS path. See `12-BRADEN-TODO.md` item 1 and `13-UNREACHABLE-CREW.md` §1.
+
+### 6a. Review query — resolve `clicksend_only` to people
+
+ClickSend's opt-out list is not stored in Postgres, so this is a two-step: pull the current list, then resolve it against `app_users`.
+
+**Step 1 — get the current `clicksend_only` numbers:**
+
+```bash
+curl -sS -X POST "https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/clicksend-optout-reconcile" \
+  -H "Authorization: Bearer <INTERNAL_SECRET or service role>" \
+  -H "Content-Type: application/json" \
+  -d '{}' \
+| jq -r '.diff.clicksend_only[].phone_e164' | sed "s/.*/  ('&'),/"
+```
+
+That prints one SQL `VALUES` row per entry, ready to paste.
+
+**Step 2 — resolve them (Supabase SQL editor):**
+
+```sql
+WITH clicksend_only(phone_e164) AS (
+  VALUES
+    -- paste step 1 output here; drop the trailing comma on the last row
+    ('+18703656644')
+)
+SELECT
+  right(regexp_replace(c.phone_e164, '\D', '', 'g'), 4)      AS last4,
+  COALESCE(au.role, '(no app_users row)')                     AS role,
+  au.full_name,
+  au.is_active,
+  au.sms_operational_opt_out                                  AS op_flag_now,
+  au.sms_marketing_opt_out                                    AS mkt_flag_now,
+  esc.tiers                                                   AS escalation_tiers,
+  snd.sends_90d,
+  snd.last_sent_at
+FROM clicksend_only c
+LEFT JOIN public.app_users au
+  ON public.normalize_phone_to_e164(au.phone_number) = c.phone_e164
+ AND au.email NOT ILIKE '%@atts.test%'
+LEFT JOIN LATERAL (
+  SELECT string_agg(DISTINCT r.tier::text, ',' ORDER BY r.tier::text) AS tiers
+  FROM public.sms_escalation_recipients r
+  WHERE r.is_active
+    AND public.normalize_phone_to_e164(r.phone_e164) = c.phone_e164
+) esc ON true
+LEFT JOIN LATERAL (
+  SELECT count(*) AS sends_90d, max(l.sent_at) AS last_sent_at
+  FROM public.sms_message_log_compat l
+  WHERE NOT l.is_dry_run
+    AND l.sent_at > now() - interval '90 days'
+    AND public.normalize_phone_to_e164(l.phone_e164) = c.phone_e164
+) snd ON true
+ORDER BY (au.user_id IS NULL), last4;
+```
+
+How to read each row, and what to do:
+
+| What you see | What it means | Action before apply |
+|---|---|---|
+| `role` is `(no app_users row)`, `sends_90d = 0` | Purchase-order app recipient or a departed number. Apply skips it (`user_id` is null). | Nothing. Expected residue — see §8. |
+| A real role, and you can account for the STOP | Genuine withdrawal of consent | Leave it. Apply will honour it, correctly. |
+| A real role, and the STOP was a test or is unexplained | **Stale.** Apply will silently mute this person. | Clear the entry in the ClickSend dashboard **first**, re-run step 1, confirm it is gone. |
+| `escalation_tiers` is non-empty | Also a static escalation recipient — an escalation may go out short, or to nobody | Resolve before apply; a shortened Tier 2 is the loudest failure but still a failure. |
+| `sends_90d` is high | Actively messaged today; honouring this changes live behaviour immediately | Highest priority to resolve either way. |
+
+**Do not delete a genuine opt-out entry to make this table clean.** The dated ClickSend record is the evidence of what was asked and when. Clearing is only for entries you can positively identify as not being a consent withdrawal.
 
 Then:
 
