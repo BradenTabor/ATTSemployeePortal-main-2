@@ -65,7 +65,28 @@ Nothing to do here; noted so you know the export can now be handed to an auditor
 
 **Also:** Update any local `.env` / CI secret that still holds `SUPABASE_DB_URL` or the DB password; re-test `npx supabase db query --linked` (or your usual SQL path) once.
 
-**Confirm:** Old password rejected; new password works for one read-only query (e.g. `SELECT 1`).
+**Fix the host at the same time — it is currently wrong, and it is a one-line change while you are already in the file.** `SUPABASE_DB_URL` in `.env` points at the direct database host:
+
+```
+postgresql://postgres:<password>@db.emqqxfzahmwnehxcpxzp.supabase.co:5432/postgres
+```
+
+That hostname now resolves **AAAA-only** — an IPv6 address and no A record at all (verified 2026-09-09: `dig +short db.<ref>.supabase.co A` returns nothing, `AAAA` returns `2600:1f18:…`). On an IPv4-only machine or network it therefore fails to connect, and the failure surfaces as a DNS/host error rather than anything that points at IPv6, which is why it reads as a broken credential rather than a broken route.
+
+The working route is the **session pooler**, which is dual-stack:
+
+```
+postgresql://postgres.emqqxfzahmwnehxcpxzp:<password>@aws-1-us-east-1.pooler.supabase.com:5432/postgres
+```
+
+Two things to get right, both easy to miss:
+
+- **The username changes**, from `postgres` to `postgres.<project-ref>`. The pooler uses it to identify the tenant; with a bare `postgres` it rejects the connection with `FATAL: (ENOIDENTIFIER) no tenant identifier provided`, which does not obviously mean "your username is missing the project ref".
+- **The password does not change.** It is the same credential you are about to rotate — so rotate once, then paste the new password into the pooler-form URL rather than the direct-host one.
+
+**This also explains a failure already in the record.** Session 6 logged *"Cron auth: script DNS-failed on direct DB host; SQL applied via Management API path"* — that is `scripts/deploy-cron-auth.sh` hitting exactly this. The script was not broken and the credential was not wrong; the host it was handed has no IPv4 address. Anyone re-running it after the rotation should expect it to work once `SUPABASE_DB_URL` carries the pooler host. Session 11A and this session both connected successfully via the pooler form above.
+
+**Confirm:** Old password rejected; new password works for one read-only query (e.g. `SELECT 1`) **using the pooler host and the `postgres.<ref>` username**.
 
 ---
 
@@ -138,7 +159,9 @@ WHERE phone_e164 = '+18703656644' AND source = 'admin_manual';
 
 One row back, and the ClickSend entry is a duplicate of a record you already hold — clear it. No row, stop and find out why.
 
-Note the record does **not** yet show up in the admin SMS Communications export: that section reads the outbound send log (`sms_message_log_compat`), and opt-out events have no export section of their own. The query above is the way to produce it for an auditor today. Giving opt-out events their own export section is worth doing and is filed as a follow-up, not done here.
+**The record now has its own export section**, so the SQL above is a confirmation step rather than the only way to produce it. Admin Compliance Audit → Export → **SMS Opt-Out Events**, which reads `sms_opt_out_events` directly and is deliberately separate from SMS Communications (that one reads the outbound send log and answers "what did we send"; this one answers "were we told to stop"). Two things to know when you open it: set the **From** date back before 2026-03-04, because `received_at` on this row is the real event time and the panel defaults to the last 90 days; and the Source column reads *"Admin-entered (not a live inbound message)"* with the Raw Message leading *"RETROSPECTIVE RECORD — reconstructed 2026-09-09, not a live inbound event"*, so an auditor cannot mistake it for a captured text. Procedure: `11-COMPLIANCE-SOP.md` §5.6.
+
+**The table is also now protected from the nightly retention job.** `run_data_retention()` deletes oldest-first from whatever is listed in `data_retention_policies`, and this row is backdated to March, so it would have been the first thing deleted had anyone ever added a policy for the table. There is now an explicit `enabled = false` policy row with the reason recorded, plus a table comment. Nothing for you to do; noted so that a future "let's add retention to the SMS tables" conversation starts from the right place. Detail: `16-RETENTION-GUARD-ASSESSMENT.md`.
 
 **Note the tension with item 1 above**, which says not to delete the opt-out entry because the dated record is the TCPA evidence. It is resolved rather than balanced: **nothing is destroyed.** The dated record still exists — in Postgres, inside the nightly backups, in a table an admin can query — so clearing the provider-side copy costs no evidence. Item 1's requirement that the *decision* be written down still stands on its own ("this was a test STOP on my own handset, dated 2026-03-04, 530 messages delivered afterwards"); it is just no longer the thing standing between you and losing the record.
 

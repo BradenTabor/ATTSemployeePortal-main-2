@@ -717,3 +717,216 @@ therefore the compliance export, so a type error there corrupts the evidence rat
 `tests/`.
 
 **Production changes:** none.
+
+---
+
+## 2026-09-09 — Session 12 (retention guard; opt-out export; typecheck rescope)
+
+Three things, committed separately. Two of them close gaps this log named in Session 11 and then
+did not act on.
+
+### A — the backdated opt-out row is now protected from `run_data_retention()`
+
+Session 11A found the hazard and wrote it down here. A note in a session log does not reach the
+person writing the SQL, so this session put it where that person will be standing.
+
+**What `run_data_retention()` actually does with `enabled = false` — read from production, not
+inferred.** Its driving cursor is `SELECT … FROM data_retention_policies p WHERE p.enabled AND
+EXISTS(table) AND EXISTS(column)`. The filter is on the **cursor**, so a disabled policy is never
+entered into the loop: no `DELETE`, no `safety_audit_log` row, no archive copy, and **no output
+row at all** — the function returns one row per *processed* policy, so a disabled table is absent
+from the result rather than reported as zero. Proved by running that exact predicate read-only:
+eight policy rows exist, seven come back, `sms_opt_out_events` does not.
+
+**Applied — `20260909220000_sms_retention_protection.sql`:**
+
+- `COMMENT ON TABLE sms_opt_out_events` — do not add to `data_retention_policies`; `received_at` is
+  intentionally backdated to the real event time so oldest-first deletion takes the most
+  evidentially valuable rows first; TCPA opt-out documentation is 5 years minimum.
+- `COMMENT ON TABLE sms_message_log` — **it is similarly exposed and the answer is different.** It
+  has a `sent_at` column and `11-COMPLIANCE-SOP.md` §5.7 already proposes 2 years for routine send
+  logs, which is a live invitation to add a policy. So the comment does not forbid; it requires
+  legal/HR sign-off, an `archive_table_name` rather than outright deletion, and a recorded reason —
+  because a send to someone who had opted out is not a routine send log, it is the evidence of the
+  violation.
+- `notes text` column on `data_retention_policies` (there was no reason column; adding one was
+  three lines), plus a column comment saying the function does not read it.
+- An explicit `enabled = false` row for `sms_opt_out_events` with the reason in `notes`.
+  `retention_days` is `365000` (~999 years) as a backstop if someone flips `enabled` without
+  reading — the cutoff lands in 1027 AD and matches nothing, while staying inside Postgres's date
+  range. `ON CONFLICT DO NOTHING`, not `DO UPDATE`, so a replay cannot overwrite a later human
+  decision.
+
+Applied to production via the session pooler, run twice: second run gave `INSERT 0 0` and a
+`column "notes" already exists, skipping` notice. `app_users` fingerprint
+`b42df8300155d4eb128ea907860be54b` (21 rows) — **identical to Session 11A's**, nothing touched.
+Registered as `20260909220000` in `supabase_migrations.schema_migrations`.
+
+**The honest limit of what those three guards buy, recorded because it is easy to overstate.**
+Every existing retention migration in this repo uses `ON CONFLICT (table_name) DO UPDATE SET …
+enabled = EXCLUDED.enabled`. Copy-paste that shape for `sms_opt_out_events` and it **overwrites the
+disabled row** — `enabled` flips true and the ~999-year backstop is replaced by whatever the new row
+carries. The `UNIQUE` constraint does not save you, because swallowing it is the entire point of
+`ON CONFLICT`. So the marker row raises the odds someone *reads* the warning and makes the absence
+of retention legible in a `SELECT`; it does not make the deletion impossible.
+
+### A.3 — hard guard inside `run_data_retention()`: assessed, recommended against
+
+Written up in full in `16-RETENTION-GUARD-ASSESSMENT.md`, including the alternative's diff,
+unapplied. Recommendation is **against**, on four grounds, the first of which is specific rather
+than general:
+
+1. **The repo cannot currently reproduce the live function body.** Two migrations define
+   `run_data_retention()`: `20260216100003_retention_audit_trail.sql` installs the rich body
+   (pre-delete `safety_audit_log` row, `archive_table_name` support) and
+   `20260229150000_data_retention_policies.sql` installs a bare-`DELETE` body. `20260216100003`
+   sorts **first**, so a clean forward replay ends on the simple one. Production runs the rich one.
+   Whoever writes the guard will open the file named after the feature — `20260229150000` — copy
+   that body, add the guard, and ship a `CREATE OR REPLACE` that silently strips the retention audit
+   trail and archive support from a nightly job, in a migration whose stated purpose is improving
+   retention safety.
+2. Seven live policies depend on the function nightly, including `safety_incidents` at 1825 days
+   (OSHA 1904.33). Blast radius of editing it is every compliance table; blast radius of the problem
+   is one SMS table.
+3. A hardcoded protected-table array inside the function is a second source of truth competing with
+   `data_retention_policies`, updated by a different kind of change than the one that adds
+   protection. It will drift, and by then people will believe it covers tables it does not — worse
+   than believing nothing covers them.
+4. It fires at 03:00, hours after the migration that caused the problem was reviewed as fine. The
+   reason this hazard exists is that nobody reads the 03:00 output.
+
+**Recommended instead:** a `BEFORE INSERT OR UPDATE` trigger on `data_retention_policies` that
+raises when a protected table is set `enabled = true`. Fails in the transaction that made the
+mistake, touches nothing the other seven tables depend on, and closes the `ON CONFLICT DO UPDATE`
+hole specifically. Diff is in the assessment doc, **not applied**. If anyone does still want the
+in-function guard, the prerequisite is reconciling the two competing definitions first — dump
+`pg_get_functiondef` from production, commit it, confirm a replay lands on it, then edit.
+
+### A.4 — the vendor-list argument, in `KNOWN-ISSUES.md`
+
+New entry: *"A vendor list is not a system of record: the PO app can write to the ClickSend Opt-Out
+List"*. The point is narrower and worse than "vendors can have outages". The list is account-level
+and the purchase-order app (`webhook-approval-for-6061.bolt.host`, owner unidentified) shares the
+account, so it has the same **write** access to the list that held the only surviving copy of the
+6644 STOP. Had it cleared or rewritten that entry there would have been no deletion event, no
+before-state, and nothing anywhere else to notice — a TCPA-relevant fact would have ceased to exist
+silently. Survival to 2026-09-09 was luck.
+
+Residual exposure recorded honestly: every *other* entry on that list is still held only by
+ClickSend and still writable by the PO app. Reconciliation surfaces an entry that **appears**; it
+cannot notice one that **disappears**, because a removal is indistinguishable from an entry that was
+never there.
+
+### B — SMS Opt-Out Events export section
+
+Session 11A called this "the real gap in the compliance deliverable" and filed it as a follow-up.
+Built here. The send-log export proves what was sent; it cannot prove what was received and
+honoured, which is the half that answers a TCPA allegation.
+
+Second section in `ComplianceDataExportPanel.tsx`, **separate from SMS Communications and not
+merged** — different facts, and an auditor needs to read them as such. Reads `sms_opt_out_events`
+directly, date-ranged on `received_at`, same `SectionConfig` / `ExportColumn` shape as every other
+section. Columns: received_at, recipient (`app_users` join on `user_id`, falling back to phone
+last-4), keyword, source, applied_operational, applied_marketing, raw_message. Phone masked in
+preview, full E.164 in CSV only, absent from PDF — the existing rule, unchanged. Test accounts
+excluded by the same `@atts.test` filter. Reuses the three load states and `logReportExported`,
+with its own unavailable message naming migration `20260909110000` rather than the send log's
+`20260902200000`.
+
+**B.3 — does the 6644 row read as a reconstruction?** `source = 'admin_manual'` on its own does
+**not**: it is equally consistent with a live opt-out taken by phone. So the source column renders
+a reader-facing label, `"Admin-entered (not a live inbound message)"`, and the raw_message excerpt
+leads with the provenance note. Rendered against the actual production row:
+
+```
+SOURCE  : Admin-entered (not a live inbound message)
+EXCERPT : RETROSPECTIVE RECORD — reconstructed 2026-09-09, not a live inbound event. Source of
+          truth: ClickSend Opt-Out List (list_id 3406168, contact_id 1548059062, date…
+```
+
+CSV carries the raw_message in full (1,108 chars) rather than an excerpt, because that column is
+the evidence. One trap worth knowing and now written into the SOP: `received_at` is 2026-03-04 and
+the panel defaults to the last 90 days, so the row is **invisible unless the From date is moved
+back** — an auditor accepting the default would conclude no opt-out events exist.
+
+Also fixed while in the file: the From/To date inputs had `<label>` elements with no `htmlFor` and
+no `id` on the input, so they were unlabelled to assistive tech and unreachable by
+`getByLabel`. Given ids and testids.
+
+`11-COMPLIANCE-SOP.md` §5.6 rewritten to cover both sections with a table stating which question
+each answers, plus a table decoding the three `source` values by evidential weight and a paragraph
+on why `Applied = No` is not a failure but always needs a sentence of explanation. §5.7 gained the
+retention exception.
+
+New spec `tests/e2e/sms-opt-out-events-export.spec.ts`, mirroring the send-log spec's structure
+(unavailable vs. real-zero must never be conflated) and adding two assertions of its own: that the
+section is not merged into SMS Communications, and that a `RETROSPECTIVE RECORD` row also carries
+the "not a live inbound message" source label.
+
+**Gates:** `npm run lint`, `npm run typecheck`, `npm run build` — all pass.
+
+**The spec could not be run here, and that is pre-existing.** `loginAs` fails with
+`Invalid login credentials` because the E2E test users do not exist in this environment. Confirmed
+by running the existing `sms-communications-export.spec.ts`, which fails identically at the same
+line. `npm run test:setup` would create real accounts in production, so it was not run. The query
+itself **was** verified end-to-end: the exact PostgREST select the section issues, run against
+production, returns the 6644 row with every selected column present.
+
+### C — typecheck plan rescoped
+
+`15-TYPECHECK-REMEDIATION-PLAN.md` rewritten. The previous version's implicit goal was "get
+`deno check` working over the tree", which the 84%/17,246-line figure makes a project rather than a
+fix.
+
+**Recommended scope is now `_shared/smsOptOutFilter.ts` (164 lines) and `_shared/smsMessageLog.ts`
+(113) and nothing else** — the two unpragma'd helpers on the safety-critical path.
+
+**What that scope actually requires, measured rather than estimated.** Neither file references
+`Deno.*`, imports `@supabase/supabase-js`, or imports any URL specifier —
+`smsOptOutFilter.ts` takes its client as a structural `type SupabaseLike = { from: … }` precisely
+so it does not have to. The full transitive closure is three files and 293 lines
+(`+ _shared/phoneE164.ts`, 16 lines, zero imports). So: no Deno install, no import-map repair, no
+entrypoint list, no pragma removal. One ~12-line tsconfig with `allowImportingTsExtensions` and a
+`lib` that supplies `console`.
+
+Probed read-only in `/tmp`, outside the repo, and the finding decides the scope: under
+`tsc --strict --noEmit` the only errors were three `TS2584: Cannot find name 'console'`, an artefact
+of the probe declaring `"types": []`. With a four-line ambient declaration it **exits zero**. Both
+helpers are already type-clean. The work is therefore wiring a gate around passing code, not fixing
+errors — which also means it can enter CI the day it is written, avoiding the permanently-red-gate
+trap that makes the full-tree path dangerous. Probe directory deleted; nothing left in the repo.
+
+Full-tree `deno check` kept as a separate, later, **explicitly-not-recommended-now** section with
+the 2,739-line day-one figure attached and the note that the number measures the smallest visible
+slice of the work, not the work.
+
+**The `@supabase/supabase-js` specifier collapse promoted to a standalone prerequisite** (24 ×
+`npm:`, 6 × `esm.sh/…@2.39.0`, 6 × `esm.sh/…@2`). It is worth doing on its own merits with no
+typechecker involved: three copies of the client are downloaded and instantiated at runtime today,
+one pinned to a stale 2.39.0. And it is a prerequisite for counting, because Deno treats the three
+as distinct modules with mutually-unassignable types, so a share of any error count is that alone —
+collapse first, count second, or a tractable job gets estimated as an intractable one.
+
+**C.4 honoured: no config changed.** `tsconfig.json`, `tsconfig.app.json`,
+`supabase/functions/deno.json`, `package.json`, `.github/workflows/ci.yml` all untouched. Still a
+plan.
+
+### D — housekeeping
+
+`12-BRADEN-TODO.md`: the `SUPABASE_DB_URL` host fix is written into **item 3 (password rotation)**,
+not item 1 — the instruction's own wording is "fix the host during rotation", and item 1 is the 6644
+conversation. `db.<ref>.supabase.co` resolves **AAAA-only** (verified: `dig … A` empty, `AAAA`
+returns `2600:1f18:…`), so it fails on IPv4-only machines; the working route is
+`aws-1-us-east-1.pooler.supabase.com:5432`, same password, but the **username must become
+`postgres.<ref>`** or the pooler rejects it with `FATAL: (ENOIDENTIFIER) no tenant identifier
+provided` — a message that does not obviously mean "your username is missing the project ref".
+This also explains Session 6's *"script DNS-failed on direct DB host"* for
+`scripts/deploy-cron-auth.sh`: the script was fine, the host it was handed has no A record.
+
+§4c updated: the "no export section, filed as a follow-up" paragraph is replaced by how to use the
+one that now exists, including the From-date trap, and a note that the table is now retention-
+protected.
+
+**Production changes this session:** three `COMMENT`s, one `ADD COLUMN IF NOT EXISTS`, one
+`data_retention_policies` row (`enabled = false`), one `schema_migrations` row. No SMS sent, no
+ClickSend write, no Edge Function invoked, no opt-out flag touched, no `app_users` change.
