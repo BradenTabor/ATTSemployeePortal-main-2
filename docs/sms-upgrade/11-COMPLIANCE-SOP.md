@@ -117,13 +117,36 @@ The existing monthly compliance summary email (sent to the configurable executiv
 
 Use this procedure whenever ATTS needs to demonstrate SMS compliance — for an internal audit, a legal request, or a regulatory inquiry.
 
-7.  Open the admin Compliance Data Export panel and locate the “SMS Communications” section (companion PRD, FR4).
+**There are two SMS sections in the export panel, and a complete audit response needs both.** They are separate on purpose: they record different facts and must not be merged or substituted for one another.
 
-8.  Set the date range covering the period requested.
+| Section | The question it answers | Reads |
+|---|---|---|
+| **SMS Communications** | *What did we send, to whom, when, and did it arrive?* | The unified outbound send log (`sms_message_log_compat`) |
+| **SMS Opt-Out Events** | *Was anyone told to stop — when, by what route, and did we honour it?* | The inbound opt-out event log (`sms_opt_out_events`) |
 
-9.  Click Load to preview the record count, then Export CSV or Export PDF as needed.
+The send log alone cannot answer a TCPA allegation. The allegation is not "you sent messages"; it is "you were asked to stop and kept sending". Proving the first half without the second demonstrates volume, not compliance. Conversely the opt-out log alone shows a request was recorded but not whether sending actually ceased. **Export both for the same date range and read them together.**
 
-10. The export includes: recipient (name/role), message type/category, timestamp, provider submission status, carrier delivery status, opt-out status at time of send, and consent basis.
+7.  Open the admin Compliance Data Export panel (companion PRD, FR4).
+
+8.  Set the same date range on **both** the “SMS Communications” and “SMS Opt-Out Events” sections. Note that opt-out events can be **backdated to the real time the request was made**, not the time the row was written — a retrospectively reconstructed record from March will not appear in a range starting in June. When the period requested is open-ended, start the opt-out range at the beginning of SMS operations rather than accepting the default 90-day window.
+
+9.  Click Load on each to preview the record count, then Export CSV or Export PDF as needed.
+
+10. **SMS Communications** includes: recipient (name/role), message type/category, timestamp, provider submission status, carrier delivery status, opt-out status at time of send, and consent basis.
+
+    **SMS Opt-Out Events** includes: timestamp received, recipient (name where the number resolves to an employee account, phone last-4 where it does not), keyword (STOP/START/HELP/OTHER), source, whether the operational flag was applied, whether the marketing flag was applied, and the raw message.
+
+> **Read the Source column before quoting any opt-out row.** It states what kind of fact the row is, and the three kinds carry different evidential weight.
+>
+> | Source | What it means |
+> |---|---|
+> | **Inbound reply (live, via webhook)** | The recipient sent this message and the app received it at the timestamp shown. Strongest evidence. |
+> | **Provider opt-out list (reconciliation)** | The number was found on ClickSend's account-level opt-out list during a nightly reconciliation. Evidence that an opt-out exists, but the timestamp is when we *found* it, not necessarily when it was requested. |
+> | **Admin-entered (not a live inbound message)** | Written by a person, not received as a text. Could be an opt-out taken by phone or in person, or a **retrospective reconstruction** of an event whose original record is gone. The Raw Message column states which, in full, and leads with the words `RETROSPECTIVE RECORD` where it is one. |
+>
+> There is at least one retrospective record in production today: the 2026-03-04 STOP from last-4 `6644`, reconstructed on 2026-09-09 from ClickSend's opt-out list entry because the original inbound message had aged out of the provider's ~4-month history. Its Raw Message names the list and contact IDs, the provider timestamp it was dated from, and the fact that the message body was never captured so the keyword is inferred. **Do not present it as a captured inbound message** — present it as what it says it is.
+>
+> **“Applied (Operational)” / “Applied (Marketing)” = No is not a compliance failure on its own, but it always needs a sentence of explanation.** It means the event was logged without changing enforcement state. Legitimate reasons: the flag already held that value, reconciliation was running in review-only mode (`apply_enabled = false`), or the row is a retrospective record of an event that changed nothing at the time. An auditor will read `No` as "we were asked and did nothing", so say which reason applies and point at the send log for the period after the event.
 
 > **Read the two status columns correctly — they are different facts.**
 >
@@ -153,6 +176,10 @@ Use this procedure whenever ATTS needs to demonstrate SMS compliance — for an 
 | Compliance export records (what was exported, when, by whom, for what purpose) | 5 years                                                                                                      | Demonstrates an active, ongoing compliance program if ever questioned.         |
 
 These durations are proposed defaults pending legal/HR sign-off (see Change Request, Open Question B.9.4) and should be implemented using the same run_data_retention() mechanism already in place for DVIR, JSA, and incident records, so retention stays centrally configurable rather than hard-coded per table.
+
+> **One exception, and it is not negotiable: `sms_opt_out_events` must never be given a retention policy.** `run_data_retention()` deletes oldest-first, and `received_at` on that table is deliberately backdated to the real time the recipient asked to stop — so the oldest rows are the most evidentially valuable, and a policy would destroy them first. Some of those rows have no other surviving copy anywhere. An explicit `enabled = false` row exists in `data_retention_policies` for the table, with the reason in its `notes` column, so the absence of retention reads as a decision rather than an oversight; the table comment carries the same warning. Do not enable it, and do not add it via the `ON CONFLICT ... DO UPDATE` pattern the other retention migrations use, which would overwrite that row. See `16-RETENTION-GUARD-ASSESSMENT.md`.
+>
+> The **send** log (`sms_message_log`) is a genuine decision rather than a prohibition, but it is not a routine one: every row deleted stops being available to the SMS Communications export, and a send to someone who had already opted out is not a routine send log — it is the evidence of the violation. If a policy is added, set `archive_table_name` so rows are copied rather than destroyed, and record the reason in `notes`.
 
 ### 5.8 If a compliance issue is found
 

@@ -11,6 +11,14 @@ export const SMS_LOG_UNAVAILABLE_MESSAGE =
 export const SMS_LOG_COLUMN_MISSING_MESSAGE =
   "SMS log is missing the delivery-receipt columns — migration 20260909190000 has not been applied to this environment.";
 
+/**
+ * The opt-out event log is a separate table from the send log and shipped in a separate
+ * migration, so it can be missing while the send log is present. Naming its own migration
+ * keeps the remedy actionable instead of pointing at the wrong one.
+ */
+export const SMS_OPT_OUT_EVENTS_UNAVAILABLE_MESSAGE =
+  "SMS opt-out event log not available — migration 20260909110000 has not been applied to this environment.";
+
 /** PostgREST missing-relation / Postgres undefined-table only — no free-text regex. */
 export function isSmsLogRelationMissing(error: {
   code?: string | null;

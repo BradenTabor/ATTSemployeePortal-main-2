@@ -35,6 +35,7 @@ import {
   SmsLogUnavailableError,
   SMS_LOG_COLUMN_MISSING_MESSAGE,
   SMS_LOG_UNAVAILABLE_MESSAGE,
+  SMS_OPT_OUT_EVENTS_UNAVAILABLE_MESSAGE,
 } from "../../lib/smsExportLoadState";
 import { useAuth } from "../../contexts/AuthContext";
 import { dvirExportColumns, equipmentExportColumns, DVIR_PDF_EXPORT_COLUMNS, EQUIPMENT_PDF_EXPORT_COLUMNS } from "../../pages/mechanic/equipment-logs/exportColumns";
@@ -220,8 +221,10 @@ function ExportSection<T>({
             <div className="p-3 sm:p-4 space-y-3">
               <div className="flex flex-wrap items-end gap-2">
                 <div className="flex-1 min-w-[120px]">
-                  <label className="text-xs text-white/50 block mb-1">From</label>
+                  <label className="text-xs text-white/50 block mb-1" htmlFor={`${config.id}-from`}>From</label>
                   <input
+                    id={`${config.id}-from`}
+                    data-testid={`export-section-${config.id}-from`}
                     type="date"
                     value={from}
                     onChange={(e) => setFrom(e.target.value)}
@@ -229,8 +232,10 @@ function ExportSection<T>({
                   />
                 </div>
                 <div className="flex-1 min-w-[120px]">
-                  <label className="text-xs text-white/50 block mb-1">To</label>
+                  <label className="text-xs text-white/50 block mb-1" htmlFor={`${config.id}-to`}>To</label>
                   <input
+                    id={`${config.id}-to`}
+                    data-testid={`export-section-${config.id}-to`}
                     type="date"
                     value={to}
                     onChange={(e) => setTo(e.target.value)}
@@ -620,6 +625,94 @@ const SMS_PDF_COLUMNS: ExportColumn<SmsExportRow>[] = [
 ];
 
 // -----------------------------------------------------------------------------
+// SMS Opt-Out Events — inbound signals, deliberately separate from the send log
+// -----------------------------------------------------------------------------
+
+interface SmsOptOutEventRow {
+  received_at: string;
+  recipient: string;
+  phone_e164: string | null;
+  phone_masked: string;
+  keyword: string;
+  source: string;
+  applied_operational: boolean;
+  applied_marketing: boolean;
+  raw_message: string | null;
+  raw_message_excerpt: string;
+}
+
+/**
+ * `admin_manual` on its own does not tell a reader whether the row was a live event or
+ * something written down afterwards, so each label says which it is.
+ */
+const OPT_OUT_SOURCE_LABELS: Record<string, string> = {
+  webhook: "Inbound reply (live, via webhook)",
+  reconciliation: "Provider opt-out list (reconciliation)",
+  admin_manual: "Admin-entered (not a live inbound message)",
+};
+
+function formatOptOutSource(value: unknown): string {
+  if (typeof value !== "string" || value.length === 0) return "—";
+  return OPT_OUT_SOURCE_LABELS[value] ?? value;
+}
+
+function formatAppliedFlag(value: unknown): string {
+  if (value === true) return "Yes";
+  if (value === false) return "No";
+  return "—";
+}
+
+const RAW_MESSAGE_EXCERPT_CHARS = 160;
+
+function excerptRawMessage(value: string | null | undefined): string {
+  if (!value) return "—";
+  const collapsed = value.replace(/\s+/g, " ").trim();
+  if (collapsed.length <= RAW_MESSAGE_EXCERPT_CHARS) return collapsed;
+  return `${collapsed.slice(0, RAW_MESSAGE_EXCERPT_CHARS)}…`;
+}
+
+const OPT_OUT_EXPORT_NOTES = [
+  "This section records inbound opt-out signals — what recipients said to us, and what the app did about it. The SMS Communications section records what we sent. They answer different questions and are deliberately not merged.",
+  "Source states whether the row was a live inbound message, a match found against the provider's opt-out list during reconciliation, or an entry made by an admin. Admin-entered rows were not received as messages; read the Raw Message column for their provenance.",
+  "Applied (Operational) and Applied (Marketing) record whether this event changed the corresponding opt-out flag on the recipient's account. \"No\" means the event was logged without changing enforcement state — the flag was already in that state, the row was entered retrospectively, or reconciliation was running in review-only mode.",
+  "Raw Message is exported in full in CSV and excerpted in PDF and on screen. Where the original message body was never captured, the column carries a provenance note instead — it is not a verbatim quote of what the recipient sent.",
+];
+
+const OPT_OUT_CSV_COLUMNS: ExportColumn<SmsOptOutEventRow>[] = [
+  { header: "Received At", key: "received_at", format: (v) => formatDateForExport(v as string, true), width: 22 },
+  { header: "Recipient", key: "recipient", format: (v) => formatValue(v), width: 24 },
+  { header: "Phone (E.164)", key: "phone_e164", format: (v) => formatValue(v), width: 16 },
+  { header: "Keyword", key: "keyword", format: (v) => formatValue(v), width: 10 },
+  { header: "Source", key: "source", format: formatOptOutSource, width: 34 },
+  { header: "Applied (Operational)", key: "applied_operational", format: formatAppliedFlag, width: 20 },
+  { header: "Applied (Marketing)", key: "applied_marketing", format: formatAppliedFlag, width: 18 },
+  { header: "Raw Message", key: "raw_message", format: (v) => formatValue(v), width: 60 },
+];
+
+/** On-screen preview: mask phone to last 4; no full E.164. */
+const OPT_OUT_PREVIEW_COLUMNS: ExportColumn<SmsOptOutEventRow>[] = [
+  { header: "Received At", key: "received_at", format: (v) => formatDateForExport(v as string, true), width: 22 },
+  { header: "Recipient", key: "recipient", format: (v) => formatValue(v), width: 22 },
+  { header: "Phone", key: "phone_masked", format: (v) => formatValue(v), width: 10 },
+  { header: "Keyword", key: "keyword", format: (v) => formatValue(v), width: 10 },
+  { header: "Source", key: "source", format: formatOptOutSource, width: 30 },
+  { header: "Applied (Op)", key: "applied_operational", format: formatAppliedFlag, width: 12 },
+  { header: "Applied (Mkt)", key: "applied_marketing", format: formatAppliedFlag, width: 12 },
+  { header: "Raw Message", key: "raw_message_excerpt", format: (v) => formatValue(v), width: 40 },
+];
+
+/** PDF: no phone column (full E.164 is CSV-only). */
+const OPT_OUT_PDF_COLUMNS: ExportColumn<SmsOptOutEventRow>[] = [
+  { header: "Received At", key: "received_at", format: (v) => formatDateForExport(v as string, true), width: 22 },
+  { header: "Recipient", key: "recipient", format: (v) => formatValue(v), width: 22 },
+  { header: "Keyword", key: "keyword", format: (v) => formatValue(v), width: 10 },
+  { header: "Source", key: "source", format: formatOptOutSource, width: 32 },
+  { header: "Applied (Op)", key: "applied_operational", format: formatAppliedFlag, width: 12 },
+  { header: "Applied (Mkt)", key: "applied_marketing", format: formatAppliedFlag, width: 12 },
+  { header: "Raw Message", key: "raw_message_excerpt", format: (v) => formatValue(v), width: 50 },
+];
+
+// -----------------------------------------------------------------------------
 // Panel
 // -----------------------------------------------------------------------------
 
@@ -996,6 +1089,103 @@ export default function ComplianceDataExportPanel() {
               delivery_detail: r.delivery_status_text,
               opt_out_snapshot: formatOptOutSnapshot(r.opt_out_state_at_send),
               price: r.price,
+            };
+          });
+      },
+    },
+    {
+      id: "sms_opt_out_events",
+      title: "SMS Opt-Out Events",
+      description:
+        "Inbound STOP/START/HELP replies, reconciliation matches against the provider's opt-out list, and admin-entered opt-out records. Separate from SMS Communications: this is what was said to us, not what we sent. Phone last-4 in preview; full E.164 in CSV only.",
+      reportType: "SMS Opt-Out Events",
+      filenamePrefix: "SMS_Opt_Out_Events",
+      columns: OPT_OUT_CSV_COLUMNS as ExportColumn<unknown>[],
+      pdfColumns: OPT_OUT_PDF_COLUMNS as ExportColumn<unknown>[],
+      previewColumns: OPT_OUT_PREVIEW_COLUMNS as ExportColumn<unknown>[],
+      exportNotes: OPT_OUT_EXPORT_NOTES,
+      getRowCount: (d) => d.length,
+      formatCountLabel: (count) =>
+        count === 0
+          ? "0 records in range (query succeeded; no opt-out events in this date range)."
+          : `${count} record${count !== 1 ? "s" : ""} loaded.`,
+      fetchData: async (fromDate, toDate) => {
+        const { data, error } = await supabase
+          .from("sms_opt_out_events")
+          .select(
+            "id, phone_e164, user_id, keyword, raw_message, source, applied_operational, applied_marketing, received_at"
+          )
+          .gte("received_at", `${fromDate}T00:00:00`)
+          .lte("received_at", `${toDate}T23:59:59.999`)
+          .order("received_at", { ascending: false })
+          .limit(PAGE_SIZE);
+
+        const loadState = classifySmsExportQueryResult({ data, error });
+        if (loadState === "unavailable") {
+          logger.warn("[ComplianceDataExportPanel] sms_opt_out_events unavailable", {
+            message: error?.message,
+            code: error?.code,
+          });
+          throw new SmsLogUnavailableError(SMS_OPT_OUT_EVENTS_UNAVAILABLE_MESSAGE);
+        }
+        if (loadState === "error") {
+          throw new Error(error?.message ?? "Failed to load SMS opt-out events");
+        }
+
+        type OptOutRow = {
+          id: string;
+          phone_e164: string | null;
+          user_id: string | null;
+          keyword: string;
+          raw_message: string | null;
+          source: string;
+          applied_operational: boolean;
+          applied_marketing: boolean;
+          received_at: string;
+        };
+
+        const rows = (data ?? []) as OptOutRow[];
+        const userIds = [...new Set(rows.map((r) => r.user_id).filter((id): id is string => Boolean(id)))];
+
+        const profileByUserId = new Map<string, { full_name: string | null; email: string | null }>();
+        const testUserIds = new Set<string>();
+
+        if (userIds.length > 0) {
+          const { data: profiles, error: profileError } = await supabase
+            .from("app_users")
+            .select("user_id, full_name, email")
+            .in("user_id", userIds);
+          if (profileError) throw new Error(profileError.message);
+          for (const p of profiles ?? []) {
+            const row = p as { user_id: string; full_name: string | null; email: string | null };
+            if (row.email && /@atts\.test/i.test(row.email)) {
+              testUserIds.add(row.user_id);
+              continue;
+            }
+            profileByUserId.set(row.user_id, { full_name: row.full_name, email: row.email });
+          }
+        }
+
+        return rows
+          .filter((r) => !r.user_id || !testUserIds.has(r.user_id))
+          .map((r): SmsOptOutEventRow => {
+            const profile = r.user_id ? profileByUserId.get(r.user_id) : undefined;
+            const phoneMasked = maskPhoneLast4(r.phone_e164);
+            const recipient =
+              (profile?.full_name && profile.full_name.trim()) ||
+              profile?.email?.trim() ||
+              phoneMasked;
+            return {
+              received_at: r.received_at,
+              recipient,
+              phone_e164: r.phone_e164,
+              phone_masked: phoneMasked,
+              keyword: r.keyword,
+              source: r.source,
+              applied_operational: r.applied_operational,
+              applied_marketing: r.applied_marketing,
+              raw_message: r.raw_message,
+              raw_message_excerpt: excerptRawMessage(r.raw_message),
             };
           });
       },
