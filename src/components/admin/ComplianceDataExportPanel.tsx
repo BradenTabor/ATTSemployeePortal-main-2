@@ -58,10 +58,25 @@ interface SectionConfig<T> {
   columns: ExportColumn<T>[];
   /** Optional slim column set for PDF (fewer columns, short headers, full data). */
   pdfColumns?: ExportColumn<T>[];
+  /** Optional on-screen preview columns (e.g. masked phone). Falls back to no table. */
+  previewColumns?: ExportColumn<T>[];
   reportType: string;
   filenamePrefix: string;
   fetchData: (from: string, to: string) => Promise<T[]>;
   getRowCount: (data: T[]) => number;
+}
+
+function maskPhoneLast4(phone: string | null | undefined): string {
+  if (!phone) return "—";
+  const digits = phone.replace(/\D/g, "");
+  const last4 = digits.slice(-4);
+  return last4.length > 0 ? `***${last4}` : "—";
+}
+
+function cellPreviewValue<T>(col: ExportColumn<T>, row: T): string {
+  const raw = row[col.key];
+  if (col.format) return col.format(raw, row);
+  return formatValue(raw);
 }
 
 function ExportSection<T>({
@@ -153,12 +168,18 @@ function ExportSection<T>({
 
   const count = data ? config.getRowCount(data) : 0;
 
+  const previewRows = data && config.previewColumns ? data.slice(0, 5) : [];
+
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] overflow-hidden">
+    <div
+      className="rounded-xl border border-white/10 bg-white/[0.02] overflow-hidden"
+      data-testid={`export-section-${config.id}`}
+    >
       <button
         type="button"
         onClick={() => setExpanded((e) => !e)}
         className="w-full p-3 sm:p-4 flex items-center justify-between gap-2 text-left hover:bg-white/[0.02]"
+        aria-expanded={expanded}
       >
         <div>
           <h3 className="text-sm font-medium text-white">{config.title}</h3>
@@ -199,6 +220,7 @@ function ExportSection<T>({
                   type="button"
                   onClick={handleLoad}
                   disabled={loading}
+                  data-testid={`export-section-${config.id}-load`}
                   className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 text-sm font-medium disabled:opacity-50 min-h-[40px]"
                 >
                   <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
@@ -208,9 +230,40 @@ function ExportSection<T>({
               {error && <p role="alert" className="text-xs text-red-400">{error}</p>}
               {data !== null && (
                 <>
-                  <p className="text-xs text-white/60">
+                  <p className="text-xs text-white/60" data-testid={`export-section-${config.id}-count`}>
                     {count} record{count !== 1 ? "s" : ""} loaded.
                   </p>
+                  {previewRows.length > 0 && config.previewColumns && (
+                    <div className="overflow-x-auto rounded-lg border border-white/10">
+                      <table className="min-w-full text-xs text-white/80">
+                        <thead className="bg-white/[0.04] text-white/50">
+                          <tr>
+                            {config.previewColumns.map((col) => (
+                              <th key={String(col.key)} className="px-2 py-1.5 text-left font-medium whitespace-nowrap">
+                                {col.header}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {previewRows.map((row, idx) => (
+                            <tr key={idx} className="border-t border-white/5">
+                              {config.previewColumns!.map((col) => (
+                                <td key={String(col.key)} className="px-2 py-1.5 whitespace-nowrap max-w-[12rem] truncate">
+                                  {cellPreviewValue(col, row)}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {count > previewRows.length && (
+                        <p className="px-2 py-1 text-[10px] text-white/40 border-t border-white/5">
+                          Showing first {previewRows.length} of {count}. Full phone numbers appear in CSV only.
+                        </p>
+                      )}
+                    </div>
+                  )}
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
@@ -430,6 +483,75 @@ const INCIDENT_LOG_COLUMNS: ExportColumn<IncidentLogRow>[] = [
   { header: "Severity", key: "severity", format: (v) => formatValue(v), width: 12 },
   { header: "Reported At", key: "reported_at", format: (v) => formatDateForExport(v as string, true), width: 20 },
 ];
+
+interface SmsExportRow {
+  sent_at: string;
+  recipient: string;
+  role: string;
+  phone_e164: string | null;
+  phone_masked: string;
+  message_type: string;
+  category: string;
+  provider_status: string | null;
+  opt_out_snapshot: string;
+  price: number | null;
+}
+
+function formatOptOutSnapshot(value: unknown): string {
+  if (!value || typeof value !== "object") return "—";
+  const o = value as { operational?: boolean; marketing?: boolean };
+  const parts: string[] = [];
+  if (typeof o.operational === "boolean") parts.push(`op:${o.operational ? "out" : "in"}`);
+  if (typeof o.marketing === "boolean") parts.push(`mkt:${o.marketing ? "out" : "in"}`);
+  return parts.length > 0 ? parts.join(", ") : "—";
+}
+
+const SMS_CSV_COLUMNS: ExportColumn<SmsExportRow>[] = [
+  { header: "Date/Time", key: "sent_at", format: (v) => formatDateForExport(v as string, true), width: 22 },
+  { header: "Recipient", key: "recipient", format: (v) => formatValue(v), width: 22 },
+  { header: "Role", key: "role", format: (v) => formatValue(v), width: 14 },
+  { header: "Phone (E.164)", key: "phone_e164", format: (v) => formatValue(v), width: 16 },
+  { header: "Message Type", key: "message_type", format: (v) => formatValue(v), width: 24 },
+  { header: "Category", key: "category", format: (v) => formatValue(v), width: 12 },
+  { header: "Delivery Status", key: "provider_status", format: (v) => formatValue(v), width: 14 },
+  { header: "Opt-out at Send", key: "opt_out_snapshot", format: (v) => formatValue(v), width: 18 },
+  { header: "Cost", key: "price", format: (v) => (v == null ? "—" : formatCurrency(v as number)), width: 10 },
+];
+
+/** On-screen preview: mask phone to last 4; no full E.164. */
+const SMS_PREVIEW_COLUMNS: ExportColumn<SmsExportRow>[] = [
+  { header: "Date/Time", key: "sent_at", format: (v) => formatDateForExport(v as string, true), width: 22 },
+  { header: "Recipient", key: "recipient", format: (v) => formatValue(v), width: 22 },
+  { header: "Role", key: "role", format: (v) => formatValue(v), width: 14 },
+  { header: "Phone", key: "phone_masked", format: (v) => formatValue(v), width: 10 },
+  { header: "Type", key: "message_type", format: (v) => formatValue(v), width: 20 },
+  { header: "Status", key: "provider_status", format: (v) => formatValue(v), width: 12 },
+  { header: "Cost", key: "price", format: (v) => (v == null ? "—" : formatCurrency(v as number)), width: 10 },
+];
+
+/** PDF: no phone column (full E.164 is CSV-only). */
+const SMS_PDF_COLUMNS: ExportColumn<SmsExportRow>[] = [
+  { header: "Date/Time", key: "sent_at", format: (v) => formatDateForExport(v as string, true), width: 22 },
+  { header: "Recipient", key: "recipient", format: (v) => formatValue(v), width: 22 },
+  { header: "Role", key: "role", format: (v) => formatValue(v), width: 12 },
+  { header: "Type", key: "message_type", format: (v) => formatValue(v), width: 22 },
+  { header: "Category", key: "category", format: (v) => formatValue(v), width: 12 },
+  { header: "Status", key: "provider_status", format: (v) => formatValue(v), width: 12 },
+  { header: "Opt-out", key: "opt_out_snapshot", format: (v) => formatValue(v), width: 16 },
+  { header: "Cost", key: "price", format: (v) => (v == null ? "—" : formatCurrency(v as number)), width: 10 },
+];
+
+function isMissingRelationError(error: { message?: string; code?: string } | null): boolean {
+  if (!error) return false;
+  const msg = error.message ?? "";
+  return (
+    error.code === "PGRST205" ||
+    error.code === "42P01" ||
+    /sms_message_log_compat/i.test(msg) ||
+    /does not exist/i.test(msg) ||
+    /could not find the table/i.test(msg)
+  );
+}
 
 // -----------------------------------------------------------------------------
 // Panel
@@ -698,6 +820,105 @@ export default function ComplianceDataExportPanel() {
           .limit(PAGE_SIZE);
         if (error) throw new Error(error.message);
         return (data ?? []) as SafetyIncidentRow[];
+      },
+    },
+    {
+      id: "sms",
+      title: "SMS Communications",
+      description: "Unified SMS send log (live sends only; dry-runs excluded). Phone last-4 in preview; full E.164 in CSV only.",
+      reportType: "SMS Communications",
+      filenamePrefix: "SMS_Communications",
+      columns: SMS_CSV_COLUMNS as ExportColumn<unknown>[],
+      pdfColumns: SMS_PDF_COLUMNS as ExportColumn<unknown>[],
+      previewColumns: SMS_PREVIEW_COLUMNS as ExportColumn<unknown>[],
+      getRowCount: (d) => d.length,
+      fetchData: async (fromDate, toDate) => {
+        const { data, error } = await supabase
+          .from("sms_message_log_compat")
+          .select(
+            "id, user_id, phone_e164, message_type, category, provider_status, opt_out_state_at_send, price, sent_at, is_dry_run"
+          )
+          .eq("is_dry_run", false)
+          .gte("sent_at", `${fromDate}T00:00:00`)
+          .lte("sent_at", `${toDate}T23:59:59.999`)
+          .order("sent_at", { ascending: false })
+          .limit(PAGE_SIZE);
+
+        if (error) {
+          if (isMissingRelationError(error)) {
+            logger.warn("[ComplianceDataExportPanel] sms_message_log_compat unavailable; returning empty set", {
+              message: error.message,
+              code: error.code,
+            });
+            return [] as SmsExportRow[];
+          }
+          throw new Error(error.message);
+        }
+
+        type CompatRow = {
+          id: string;
+          user_id: string | null;
+          phone_e164: string | null;
+          message_type: string;
+          category: string;
+          provider_status: string | null;
+          opt_out_state_at_send: unknown;
+          price: number | null;
+          sent_at: string;
+        };
+
+        const rows = (data ?? []) as CompatRow[];
+        const userIds = [...new Set(rows.map((r) => r.user_id).filter((id): id is string => Boolean(id)))];
+
+        const profileByUserId = new Map<string, { full_name: string | null; role: string | null; email: string | null }>();
+        const testUserIds = new Set<string>();
+
+        if (userIds.length > 0) {
+          const { data: profiles, error: profileError } = await supabase
+            .from("app_users")
+            .select("user_id, full_name, role, email")
+            .in("user_id", userIds);
+          if (profileError) throw new Error(profileError.message);
+          for (const p of profiles ?? []) {
+            const row = p as {
+              user_id: string;
+              full_name: string | null;
+              role: string | null;
+              email: string | null;
+            };
+            if (row.email && /@atts\.test/i.test(row.email)) {
+              testUserIds.add(row.user_id);
+              continue;
+            }
+            profileByUserId.set(row.user_id, {
+              full_name: row.full_name,
+              role: row.role,
+              email: row.email,
+            });
+          }
+        }
+
+        return rows
+          .filter((r) => !r.user_id || !testUserIds.has(r.user_id))
+          .map((r): SmsExportRow => {
+            const profile = r.user_id ? profileByUserId.get(r.user_id) : undefined;
+            const phoneMasked = maskPhoneLast4(r.phone_e164);
+            const recipient =
+              (profile?.full_name && profile.full_name.trim()) ||
+              (r.user_id ? profile?.email?.trim() || r.user_id.slice(0, 8) : phoneMasked);
+            return {
+              sent_at: r.sent_at,
+              recipient,
+              role: profile?.role ?? (r.user_id ? "—" : "static"),
+              phone_e164: r.phone_e164,
+              phone_masked: phoneMasked,
+              message_type: r.message_type,
+              category: r.category,
+              provider_status: r.provider_status,
+              opt_out_snapshot: formatOptOutSnapshot(r.opt_out_state_at_send),
+              price: r.price,
+            };
+          });
       },
     },
   ];

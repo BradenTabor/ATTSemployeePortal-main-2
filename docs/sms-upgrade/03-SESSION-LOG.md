@@ -59,3 +59,13 @@ Append-only. Newest entry at the bottom.
 5. Retention, consent language, DOT/CDL scope: still with Braden; affect Chunks 5–6 only.
 
 **Gates:** lint / typecheck / build after Part A+D commits.
+
+**Part D — Chunk 2 (SMS export section)**
+
+- Added `SMS Communications` `SectionConfig` to `ComplianceDataExportPanel.tsx`: reads `sms_message_log_compat`, `is_dry_run=false`, date on `sent_at`, join `app_users` for name/role, exclude `%@atts.test%`, preview last-4 / CSV full E.164 / PDF no phone, `logReportExported`.
+- Soft-empty when relation missing (pre-`db push`) so Load empty-state does not hard-fail.
+- Fixed stale `accessor:` docs in `.cursor/skills/scaffold-admin-page/references/export-pattern.md` → `key` + `format`.
+- E2E: `tests/e2e/sms-communications-export.spec.ts`. Not executed here: Playwright prod guard (no `.env.test` / local Supabase). Spec is ready once a test project is configured.
+- Docs: `04-CHUNK2-VERIFICATION.md`.
+- Gates: lint ✅ typecheck ✅ build ✅.
+
