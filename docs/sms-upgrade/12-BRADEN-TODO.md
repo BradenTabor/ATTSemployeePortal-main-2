@@ -2,9 +2,42 @@
 
 Priority order. Anything an agent can automate is **not** listed.
 
+Reordered 2026-09-09. The two items now at the top are both “a crew member is not receiving safety messages and nothing in the app says so.” Credential rotation held at #3 rather than dropping down the list.
+
 ---
 
-## 1. Rotate the database password that was echoed in a prior session
+## 1. Have the last4-`6644` conversation with safety ownership
+
+**Briefing (shareable, roles not names):** `docs/sms-upgrade/11-OPTOUT-6644-BRIEFING.md`
+
+**Why this is now first:** all **132** tier-2 escalation days that included this number involved real overdue crew — minimum 4, average ~12.9, never zero. These were not empty alerts. They were notifications about crew who had missed a safety briefing, sent to a handset the carrier has been blocking since 2026-03-04.
+
+**Decide between:** (a) the person texts START themselves, or (b) move escalation recipients off that number. Do **not** admin-force re-enable — app flags do not override a carrier-level STOP, and re-subscribing someone who opted out is the part that carries TCPA exposure.
+
+**Confirm:** Written decision recorded (even a Slack note); no silent flag flips without that decision.
+
+---
+
+## 2. Verify the phone numbers on file for last4 `4421` and `6286`
+
+**Detail:** `docs/sms-upgrade/11-OPTOUT-6644-BRIEFING.md` → “Silent unreachability”.
+
+Different root cause from `6644`. Nobody opted out here. The carrier accepts the message and then fails to deliver it, and because the app only records ClickSend’s *submission* response, our logs show every one of these as `SUCCESS`.
+
+| last4 | Role | Failed / sent | Since |
+|---|---|---:|---|
+| `4421` | active `employee` | **133 / 136** | 2026-05-13, continuous |
+| `6286` | active `employee`, hired 2026-08-31 | **6 / 6** | never received an SMS |
+
+**Do:** check the phone number on each account is correct and SMS-capable (not a landline, not mistyped). ClickSend reports `Absent Subscriber` for both; for a number that has never once accepted a message that usually means the number itself is wrong.
+
+**Confirm:** Either the number is corrected, or you have confirmed it is right and the person knows they are not getting texts. Do not change opt-out flags — they are already `false` for both.
+
+**Related, larger:** closing the blind spot permanently means ingesting ClickSend delivery receipts so `provider_status` reflects reality. Scoped work, not a drive-by. Flag it if you want it prioritised.
+
+---
+
+## 3. Rotate the database password that was echoed in a prior session
 
 **Where:** Supabase Dashboard → Project `ATTS portal APP 2` (`emqqxfzahmwnehxcpxzp`) → **Project Settings** → **Database** → **Database password** → Reset / generate new.
 
@@ -14,7 +47,7 @@ Priority order. Anything an agent can automate is **not** listed.
 
 ---
 
-## 2. Wire the ClickSend inbound rule — **RTO# only**
+## 4. Wire the ClickSend inbound rule — **RTO# only**
 
 **Where:** [ClickSend Dashboard](https://dashboard.clicksend.com) → **SMS** → **Inbound SMS / Rules** (or **Numbers** → inbound).
 
@@ -35,7 +68,7 @@ Priority order. Anything an agent can automate is **not** listed.
 - Header: `x-internal-key` = `INTERNAL_SECRET` from Supabase → Edge Functions → Secrets  
   (or `Authorization: Bearer <INTERNAL_SECRET>` if that is the only option)
 
-### 2b. Before you save that rule — pin the mass-SMS sender
+### 4b. Before you save that rule — pin the mass-SMS sender
 
 **Recommendation: set Edge Function secret `CLICKSEND_FROM_NUMBER = +18443781444` now, ahead of Chunk 4.** (An agent did not set it; this is your call.)
 
@@ -57,17 +90,7 @@ Full steps: `docs/sms-upgrade/05-CHUNK3-RUNBOOK.md` §2.
 
 ---
 
-## 3. Have the last4-`6644` conversation with safety ownership
-
-**Briefing (shareable, roles not names):** `docs/sms-upgrade/11-OPTOUT-6644-BRIEFING.md`
-
-**Decide between:** (a) person texts START themselves, or (b) move escalation recipients off that number. Do **not** admin-force re-enable.
-
-**Confirm:** Written decision recorded (even a Slack note); no silent flag flips without that decision.
-
----
-
-## 4. After inbound has been live ~1 week — review diffs before apply
+## 5. After inbound has been live ~1 week — review diffs before apply
 
 **Where:** Manual reconcile:
 
@@ -79,10 +102,12 @@ curl -X POST "https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/clicksend-op
 
 **Confirm:** `clicksend_only` / `app_only` explainable; then (only with approval) set `apply_enabled` and enable cron per runbook §5–6.
 
+**Expect residue:** the opt-out list is shared with the purchase-order app, so `clicksend_only` can contain non-employees who will never match `app_users`. The reconcile function skips them without error; they are just not labelled as such. Normal, not a bug.
+
 ---
 
-## 5. When Safety# (`+18335183807`) becomes REGISTERED — authorize Chunk 4
+## 6. When Safety# (`+18335183807`) becomes REGISTERED — authorize Chunk 4
 
 **Where:** ClickSend numbers UI / re-run `./scripts/clicksend-audit.sh`.
 
-**Confirm:** Status `REGISTERED`, then schedule Chunk 4 per `docs/sms-upgrade/09-CHUNK4-PLAN.md` (no send-path change until then).
+**Confirm:** Status `REGISTERED`, then schedule Chunk 4 per `docs/sms-upgrade/09-CHUNK4-PLAN.md` (no send-path change until then). If you set `CLICKSEND_FROM_NUMBER` per §4b, delete it as part of Chunk 4 so the sender registry is the only source of truth.

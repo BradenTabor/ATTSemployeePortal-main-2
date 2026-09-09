@@ -207,3 +207,47 @@ Append-only. Newest entry at the bottom.
 - `deploy-cron-auth.sh` credential-echo fix confirmed (host-only). `12-BRADEN-TODO.md` written. Commits per section. No opt-out flags / escalation rows / historical SMS rows changed.
 
 **Gates:** lint / typecheck / build (this session).
+
+---
+
+## 2026-09-09 — Session 7 (durable cron failures, RTO#-only wiring, silent unreachability)
+
+**A — Cron failure monitor now outlives pg_net**
+
+- Problem with Session 5/6's fix: detection was correct but `pg_net.ttl` ≈ 6h, so the evidence expired before any report could read it. A monthly compliance line against 6-hour data would almost never observe a failure.
+- New migration `20260909180000_cron_http_failures_durable.sql`, applied to prod via `db query --linked` + `migration repair --status applied`:
+  - `public.cron_http_failures` — durable row per non-2xx/timed-out cron HTTP response (`jobname`, `function_name`, `cron_runid`, `status_code`, `response_excerpt`, `occurred_at`). RLS admin-SELECT, `GRANT ALL` to service_role, same shape as the other log tables.
+  - `public.sweep_cron_http_failures(lookback_hours default 8)` — SECURITY DEFINER, idempotent via unique `(response_id, occurred_at)`. Pair rather than bare `response_id` so a pg_net sequence reset cannot silently suppress inserts. 8h lookback > 6h TTL, so a skipped sweep cannot open a gap.
+  - pg_cron job `cron-http-failure-sweep`, `7 */2 * * *`, jobid 114, active. **Pure SQL** — no Edge Function, no service-role Bearer, so it survives the exact auth failure it exists to detect.
+  - Attribution: responses carry no URL, so correlate to the nearest preceding `net.http_post` cron run within 2 minutes; when the `cron.job` row is gone (job recreated), fall back to the fixed UTC slot rather than storing `orphaned-job-N`.
+  - `get_recent_cron_failures(days)` reads the durable table first, unions the not-yet-swept tail from `net._http_response`, dedupes on response id. `cron-http-failure-sweep` added to the monitored list in both the function and `cron_job_runs`.
+- Verified in prod: first sweep inserted **19** rows (18× HTTP 401 + 1 timeout, all `safety-briefing-reminder-push`, 2026-09-09 10:20 UTC). Second sweep inserted **0** (idempotent). `get_recent_cron_failures(7)` returns 19, not 38 (dedupe correct).
+- **A.5 — no backfill, none possible.** Stated in `docs/cron-jobs-inventory.md`: pre-2026-09-09 cron failure history is unrecoverable. `net._http_response` had already discarded it and `cron.job_run_details` recorded those runs as `succeeded`.
+- **A.4 alert proposal (not built):** “Cron health (last 7 days)” section on `weekly-safety-audit-report` (Fri 5 PM CST, existing recipients via `email_recipient_lists`, already section-composed). Must print an explicit “0 cron failures this week” when clean so a missing report is distinguishable from a healthy one — the report is itself an HTTP cron and can fail the same way. Escalation if Friday is too slow: have the 2-hour SQL sweep insert a `notification_events` row (`admin_notice` / `high` / role `admin`), the only path whose detection does not depend on Edge Function auth.
+
+**B — Shared ClickSend account changes the wiring plan**
+
+- Runbook + TODO now wire **`+18443781444` (RTO#) only**. PO# gated on two written pre-conditions: who owns `webhook-approval-for-6061.bolt.host`, and whether PO# already has an inbound rule that ours would replace.
+- Discovery report gained a “Shared ClickSend account” section. **Reconcile handles non-employee opt-outs cleanly**: `computeOptOutReconcileDiff` emits `clicksend_only` with `user_id: null` (`_shared/smsOptOut.ts:70–79`), apply loop skips them (`clicksend-optout-reconcile/index.ts:213–214`). No error path. The gap is reporting — they are unlabelled and recur every run, and runbook §6 gates apply-mode on `clicksend_only` being “explainable”. Not fixed this session.
+- **B.3 recommendation (not executed): set `CLICKSEND_FROM_NUMBER = +18443781444` now.** Verified in code that reminder / escalation / payroll already resolve to that value (`?? "+18443781444"`), so it is a no-op for three of four paths; only `send-mass-sms` (`?? ""`) changes. Leaving it unset means a blast can emit from PO#, whose STOP replies land on the number we are deliberately not wiring. External PO app does not read Supabase secrets. Secret was **not** set.
+
+**C — Silent unreachability (read-only ClickSend history)**
+
+- **Headline:** `sms_message_log_compat` holds 3,046 live sends since 2026-05-01 and **zero** failures; ClickSend recorded **319**. `sendSMS()` stores the submission response and nothing ingests the later `301` delivery status. The requested compat-view sweep is therefore structurally unable to find these numbers.
+- Earlier “3 failures on 2026-05-11/12/13” was a sampling artifact of one unfiltered history page.
+- `4451` is **not** a case: 97 of 104 delivered, no `app_users` row, number retired 2026-08-12 (same person now at `0665`).
+- `4421`: active `employee`, **133 of 136 failed** since 2026-05-01, continuous, ongoing. Three deliveries total.
+- `6286`: active `employee` hired 2026-08-31, **6 of 6 failed** — has never received an SMS.
+- `1779`: 60 of 104 failed, no `app_users` row, sends stopped 2026-08-12.
+- `1454` / `0665` / `9829`: low intermittent failure, normal.
+- PO#-sourced failures (`0398`, `6644`, `9951`, `3619`, `2876`, `5979`, `9971`) out of scope; `9971` has no `app_users` row, corroborating the shared-account finding.
+- Recorded as a separate section in `11-OPTOUT-6644-BRIEFING.md`, deliberately not merged into the opt-out narrative.
+
+**D — Housekeeping**
+
+- `12-BRADEN-TODO.md` reprioritised: `6644` conversation to #1 (132/132 escalation days had real overdue crew, avg ~12.9, min 4); new #2 is verifying the `4421` / `6286` phone numbers; DB password rotation held at #3.
+- Commits: one per section (A, B, C, D).
+
+**Gates:** lint ✅ typecheck ✅ build ✅
+
+**Production changes:** the `cron_http_failures` table, `sweep_cron_http_failures()`, the `cron-http-failure-sweep` job, and the `cron_job_runs` / `get_recent_cron_failures` replacements. Nothing else. No SMS sent (not even dry-run), no opt-out flags touched, no `CLICKSEND_FROM_NUMBER`, no ClickSend writes, no Edge Function deploys, no changes to any legacy SMS log table or `app_users`.
