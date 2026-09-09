@@ -369,3 +369,108 @@ contact list; the portal sends ad-hoc to a raw `to` number.
 `sms_operational_opt_out` send-path filter in Chunk 3. It excused the absence of the only
 control that would have stopped the sends. Full record in `KNOWN-ISSUES.md` →
 "Corrected belief: ClickSend enforces STOP at the carrier".
+
+---
+
+## 2026-09-09 — Session 9 (the deferral is lifted: opt-out is enforced in the app)
+
+The corrected-belief entry above is the *why*. This is the *what*.
+
+**A — the send-path filter, added to both briefing paths**
+
+Chunk 3 deferred filtering on `sms_operational_opt_out` because a premature filter might suppress
+a safety briefing while the carrier blocked opted-out numbers anyway. The second half was never
+true, so the trade was never real. The filter is in.
+
+- Shared helper `supabase/functions/_shared/smsOptOutFilter.ts`, so all three operational send
+  paths agree on what "opted out" means. `payroll-hours-reminder-sms` already filtered;
+  `safety-briefing-reminder-sms` and `safety-briefing-escalation-sms` now do too.
+- **Nothing else in recipient selection moved.** Not the overdue definition, not tiering, not
+  `company_calendar`, not `user_absences`. The dry-runs below are the proof: `overdue_count`
+  stays at 10 in every configuration tested. The filter subtracts from the *recipient* list and
+  leaves the *overdue* list alone, which is what makes the audit trail readable — you can see
+  both who was overdue and who was not messaged about it.
+- **No exclusion is silent.** Each one records `{kind, user_id, phone_last4, reason}` in the run's
+  suppression log next to the absence exclusions that were already there, plus a per-run count.
+  A person vanishing from the briefing list is explainable from the logs alone.
+- **Kill switch** `app_settings.sms_send_optout_filter_config`, migration `20260909200000`,
+  default ON. A missing row or an unreadable value also resolves to ON — the failure mode of the
+  config is "keep honouring opt-outs", not "start messaging opted-out people".
+
+**A.3 — opted-out Tier 2 static recipients**
+
+`sms_escalation_recipients` has no opt-out column, so state is resolved by matching `phone_e164`
+against `normalize_phone_to_e164(app_users.phone_number)`; any one matching row opted out means
+the person opted out. Chosen behaviour: **skip the send, and be loud about it.**
+
+- Each skip emits a warning into the response and the logs, naming the last4.
+- If the filter empties Tier 2 entirely, that logs at **error** level and still writes an audit
+  row with `recipient_count = 0` — a safety escalation that reached nobody must leave a record,
+  not a gap.
+- A static with **no** `app_users` row is unresolvable, and unresolvable is not consent. Those are
+  still sent to, and listed under `tier2_static_optout_unresolved` so the ambiguity is visible.
+
+The alternative — send anyway because it is a safety escalation — was rejected. A person who
+texted STOP has withdrawn consent, and "safety" is not a legal exemption from that. But a
+silently shortened escalation list is the exact failure this project exists to catch, so the cost
+of honouring consent is paid in noise, loudly, rather than in silence.
+
+Tier 1 managers who have opted out are skipped, and their crew is **not** rerouted to Tier 2. That
+would be a change to tiering, which was out of scope. The exclusion names the manager so the gap
+is visible rather than inferred.
+
+**A.5 — verified against production, dry-run only**
+
+Kill switch OFF reproduces pre-filter behaviour exactly, so it doubles as the before/after control:
+
+| | overdue | eligible | excluded | Tier 2 statics |
+|---|---:|---:|---:|---|
+| Filter **OFF** (= before) | 10 | 10 | 0 | 3 → 3 |
+| Filter **ON**, nobody flagged | 10 | 10 | 0 | 3 → 3 |
+| Filter **ON**, one account flagged | **10** | **9** | **1** | **3 → 2** |
+
+Identical with nobody flagged, as required. The single-account test used Braden's `employee` row
+(`61d09ffe…`), chosen because that one number is both an overdue recipient *and* a Tier 2 static —
+one flag exercises both paths. Exactly one recipient dropped from each, the exclusion appeared in
+both suppression logs with `reason: sms_operational_opt_out`, Tier 2 raised
+`"Tier2 static recipient ending 6644 excluded"`, and `overdue_count` did not move. Tier 1 showed 0
+exclusions, correctly — that user has no supervisor, so he was never in a Tier 1 crew.
+
+The flag was reverted. `app_users` is byte-identical to its pre-test state:
+`md5 = b42df8300155d4eb128ea907860be54b`, 21 rows, **0 flagged**, before and after. The test
+`UPDATE` ran inside `SET LOCAL session_replication_role = replica` so the `updated_at` trigger did
+not fire; that row's `updated_at` still reads `2026-06-28 03:24:54`, untouched.
+
+**B — the false claim, corrected in seven files**
+
+`SMS_ESCALATION.md`, `PAYROLL_SMS_REMINDER.md`, `11-COMPLIANCE-SOP.md` §5.3, `05-CHUNK3-RUNBOOK.md`,
+`00-BUILD-BRIEF.md`, `08-BLOCKED-HISTORY-PROPOSAL.md`, `12-PROJECT-SCOPE.md`. Corrected in place
+with strikethrough, not deleted, so the withdrawn reasoning stays auditable.
+
+**C — checked against ClickSend's own words, not just our receipts**
+
+New `14-CLICKSEND-OPTOUT-DOCS.md`. Verdict: **ambiguous, resolving against the broad reading.**
+ClickSend says "any future messages to that number will be blocked", but every mechanism it
+documents is list-scoped — *"you must store your contact lists in ClickSend for the system to
+work"*, the STOP keyword is *"available in SMS Campaign only"*, and the opt-out rule is a
+`MOVE_CONTACT` list operation. The v3 **Send SMS** reference, the endpoint this portal calls,
+never mentions opt-outs at all. No account-level enforcement covering ad-hoc sends is documented.
+Asking support whether one exists is recorded as a follow-up; **nothing was enabled or requested.**
+
+**D — the unreachable crew**
+
+`13-UNREACHABLE-CREW.md`: `6644` closed on delivery (530 delivered, false alarm), still open on
+consent. `4421` and `6286` remain the live cases, now carrying last-successful-delivery dates
+(**2026-05-12** and **never**) and the question to put to each man.
+
+**E — housekeeping**
+
+The sms-upgrade skill now prefers a service-role query over minting an auth session for admin-view
+verification, after Session 8's magic link moved `last_sign_in_at` on a real account. It also
+requires fingerprinting `app_users` around any verification that touches it.
+
+**Gates:** see below. **Production changes:** migration `20260909200000` (one `app_settings` row);
+redeploy of `safety-briefing-reminder-sms` and `safety-briefing-escalation-sms`.
+**Not changed:** no opt-out flag, no phone number, no historical row, no ClickSend-side
+configuration. **No SMS sent** — every run was `dryRun: true`, and the newest rows in
+`sms_escalation_send_log` (16:00 UTC) and `sms_message_log` (16:23 UTC) both predate this session.

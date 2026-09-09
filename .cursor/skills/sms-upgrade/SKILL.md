@@ -26,7 +26,9 @@ reviewed: 2026-09-02
 - New migration filenames must sort after 20260627170000 (use 202609DDHHMM00_ prefix).
 - Never commit to main. All work happens on branch feat/sms-upgrade. Never force-push.
 - Gates after every code change: npm run lint && npm run typecheck && npm run build must all pass. If a gate fails, fix it before moving on; if you cannot fix it in 3 attempts, stop and report.
-- Use logger.* not console.*; follow the two-toast rule; use @/ imports — per project-conventions.
+- Use logger.* not console.*; follow the two-toast rule; use @/ imports — per project-conventions. (Deno Edge Functions are the exception: they use console.* — src/lib/logger.ts is not importable there.)
+- **Verify with a service-role query, not a minted auth session.** When verification needs data only an admin can see, use `npx supabase db query --linked` (or the Supabase MCP). Do NOT mint a magic link for a real account: it moves `auth.users.last_sign_in_at` on that account, which is a real side effect on real data and pollutes the sign-in audit trail. Session 8 did this and disclosed it correctly, but it must not become routine.
+- **Prove you changed nothing.** Before and after any verification that touches `app_users`, capture `md5(string_agg(t::text,'|' ORDER BY t.user_id))` over the table and assert it is unchanged. If a temporary flag flip is unavoidable, wrap it in `BEGIN; SET LOCAL session_replication_role = replica; … COMMIT;` so the `updated_at` trigger does not leave a trace the revert cannot undo.
 
 ## Where things live today
 
@@ -54,7 +56,8 @@ reviewed: 2026-09-02
 | Field | Added by | Meaning |
 |---|---|---|
 | `app_users.sms_marketing_opt_out` | `20260320120000_…` | Excluded from admin mass SMS. |
-| `app_users.sms_operational_opt_out` | `20260521120000_…` | Excluded from payroll (and should be honored by all operational sends — verify each function reads it). |
+| `app_users.sms_operational_opt_out` | `20260521120000_…` | Enforced by **all three** operational send paths as of `20260909200000_…`: payroll, safety-briefing reminder, safety-briefing escalation (Tier 1 managers + Tier 2 statics). Shared helper `_shared/smsOptOutFilter.ts`. Kill switch `app_settings.sms_send_optout_filter_config` (default ON; missing row or read error also resolve to ON). |
+| Tier 2 static recipients | `sms_escalation_recipients` | **No opt-out column.** State is resolved by matching `phone_e164` to `normalize_phone_to_e164(app_users.phone_number)`; any one matching row opted out means the person opted out. Statics with no `app_users` row are unresolvable and are sent to. Opted-out statics are skipped with a loud warning; an emptied Tier 2 list logs at error level and still writes an audit row. |
 | `app_users.phone_number` | `20260308100000_…`; normalized `20260310130003_…`; **backfilled from `auth.users` by `20260320120001_backfill_app_users_phone_from_auth.sql`** | No consent record exists anywhere. |
 | Escalation static recipients | `sms_escalation_recipients` (tier 2) | E.164, `is_active`. |
 
