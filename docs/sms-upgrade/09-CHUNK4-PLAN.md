@@ -11,7 +11,9 @@
 | `+18443781444` | RTO# | REGISTERED | Portal scheduled SMS default (reminder / escalation / payroll hardcode). Escalation + reminder + payroll live here today. |
 | `+18335183807` | Safety# | REGISTRATION_INITIATED | **Unused** for outbound. Intended home for safety briefing + escalation once registered. |
 
-`CLICKSEND_FROM_NUMBER` secret is **unset** in prod. Mass SMS therefore omits `from` and ClickSend falls back to the account default (observed as PO# in practice when `from` is empty).
+~~`CLICKSEND_FROM_NUMBER` secret is **unset** in prod.~~ **Set 2026-09-09 to `+18443781444` (RTO#).** Mass SMS previously omitted `from`, so ClickSend fell back to the account default — observed as PO# in practice — which meant a blast could originate from a number whose STOP replies are not wired to anything. Verified by `send-mass-sms` dry-run: `fromNumber` now reports `+18443781444` where it previously reported `null`. No-op for reminder / escalation / payroll, which already hardcode the same number.
+
+> **This secret is a stopgap, and Chunk 4 removes it.** It is a single global sender for every message type, which is exactly the thing the sender registry exists to replace: once routing rules resolve a `from` per category, this secret degrades to an optional override and should be deleted rather than left as a second, invisible source of truth. Step 6 under “Migration without changing live sends” is where it goes.
 
 ### Why the “from” distribution looks wrong (finding, not guess)
 
@@ -95,10 +97,10 @@ resolveFromNumber(purpose: SmsPurpose, opts?: { allowFallback: boolean }): strin
 
 1. Add table + seed matching **current** effective senders (RTO# for safety+payroll; PO# recorded but unused by portal scheduled paths).
 2. Replace hardcoded `CLICKSEND_FROM_NUMBER ?? "+18443781444"` with `resolveFromNumber(...)` that returns the **same** E.164 under current seed.
-3. Mass SMS: set `from` from registry `mass` purpose (initially PO# or RTO# — **Braden chooses**; until then keep current empty-from behavior behind a feature flag only if needed; preferred: explicit number before next mass blast).
+3. Mass SMS: set `from` from registry `mass` purpose (initially PO# or RTO# — **Braden chooses**). The empty-`from` case this step guarded against is already closed by the `CLICKSEND_FROM_NUMBER` stopgap above; the registry supersedes it rather than fixing it again.
 4. Do **not** point safety traffic at `+18335183807` until ClickSend status is REGISTERED (verify via audit script / numbers API).
 5. Dry-run all four functions; confirm `from_number` on `sms_message_log` matches pre-change.
-6. Remove hardcode defaults from Edge Functions; secret `CLICKSEND_FROM_NUMBER` becomes optional override only.
+6. Remove hardcode defaults from Edge Functions, then **delete the `CLICKSEND_FROM_NUMBER` secret**. Leaving it set once the registry is authoritative gives two answers to “which number sends this?”, and the secret is the one nobody will think to check.
 
 ## F.3 — The three RTO# failures in the 2026-09-09 audit window
 
