@@ -603,7 +603,8 @@ Deno.serve(async (req: Request) => {
     else if (overdueD1 === 0) tier1.skippedReason = "No overdue";
     else if (tier1AlreadySent) tier1.skippedReason = "Already sent today";
     // Zero-overdue audit log: insert so Slack/admin can distinguish "ran, nobody overdue" from "cron failed"
-    if (overdueD1 === 0 && !tier1AlreadySent) {
+    // Never write on dry-run (Chunk 1 guarantee: dry-run must not touch legacy log tables).
+    if (overdueD1 === 0 && !tier1AlreadySent && !dryRun) {
       await supabase.from("sms_escalation_send_log").insert({
         tier: 1,
         date_checked: D1,
@@ -675,8 +676,8 @@ Deno.serve(async (req: Request) => {
     else if (tier2AlreadySent) tier2.skippedReason = "Already sent today";
     else if (dryRun && tier2Phones.length > 0 && tier2CombinedCount > 0) tier2.dryRunWouldSend = true;
     else if (!CLICKSEND_USERNAME || !CLICKSEND_PASSWORD) tier2.skippedReason = "ClickSend not configured";
-    // Zero-overdue audit log
-    if (tier2CombinedCount === 0 && !tier2AlreadySent) {
+    // Zero-overdue audit log — live runs only (dry-run must not write legacy tables).
+    if (tier2CombinedCount === 0 && !tier2AlreadySent && !dryRun) {
       await supabase.from("sms_escalation_send_log").insert({
         tier: 2,
         date_checked: D2,
@@ -981,7 +982,7 @@ Deno.serve(async (req: Request) => {
     if (skipCalendar) tier1Single.skippedReason = "Date in company_calendar";
     else if (overdueCountSingle === 0) tier1Single.skippedReason = "No overdue";
     else if (tier1AlreadySentSingle) tier1Single.skippedReason = "Already sent today";
-    if (overdueCountSingle === 0 && !tier1AlreadySentSingle) {
+    if (overdueCountSingle === 0 && !tier1AlreadySentSingle && !dryRun) {
       await supabase.from("sms_escalation_send_log").insert({
         tier: 1,
         date_checked: todayStr,
@@ -1057,7 +1058,7 @@ Deno.serve(async (req: Request) => {
     else if (tier2AlreadySentSingle) tier2Single.skippedReason = "Already sent today";
     else if (dryRun && tier2PhonesSingle.length > 0 && tier2CombinedCountSingle > 0) tier2Single.dryRunWouldSend = true;
     else if (!CLICKSEND_USERNAME || !CLICKSEND_PASSWORD) tier2Single.skippedReason = "ClickSend not configured";
-    if (tier2CombinedCountSingle === 0 && !tier2AlreadySentSingle) {
+    if (tier2CombinedCountSingle === 0 && !tier2AlreadySentSingle && !dryRun) {
       await supabase.from("sms_escalation_send_log").insert({
         tier: 2,
         date_checked: todayStr,

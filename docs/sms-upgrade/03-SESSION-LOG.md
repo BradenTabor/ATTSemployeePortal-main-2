@@ -69,3 +69,32 @@ Append-only. Newest entry at the bottom.
 - Docs: `04-CHUNK2-VERIFICATION.md`.
 - Gates: lint ✅ typecheck ✅ build ✅.
 
+
+---
+
+## 2026-09-09 — Session 2 (soft-empty fix + Chunk 1–2 local verification)
+
+**Part A — Soft-empty export bug**
+
+- Replaced `isMissingRelationError` free-text regex soft-`[]` with `classifySmsExportQueryResult` (`PGRST205`/`42P01` → unavailable only).
+- Three UI states: unavailable (amber, no count, no export), error (red alert), empty (`0 records in range…`).
+- Unit tests `tests/unit/sms-export-load-state.test.ts` — 6/6 pass.
+- E2E split into pre-migration unavailable vs post-migration count.
+- `scripts/test-sms-migration-local.sh` skips exit 0 when Docker absent.
+- Commit: `cd3822e` fix(sms): distinguish unavailable SMS export from empty range.
+
+**Part B — Verify Chunks 1–2 on local Supabase**
+
+- Docker/Colima running; `open -a Docker` N/A (Desktop not installed).
+- Full `supabase db reset` / migration replay from zero: **FAILED** on known `20241205_job_tracker` → `app_users` ordering (per CONVENTIONS).
+- `bash supabase/.localgate/run.sh`: **GATE PASSED**, +11 forward migrations; Sept 2 field-audit then SMS applied in order with no conflict.
+- Bootstrapped local `supabase start` (exclude vector/logflare/mailpit) + loaded `atts_gate` public schema.
+- Compat seed verified (5 rows; name join + last-4 fallback).
+- Dry-ran all four SMS Edge Functions locally: reminder sent=2, escalation dryRunWouldSend t1+t2, payroll eligible_count=3, mass countWithPhone=3; unified DRY_RUN rows written; legacy counts unchanged. Fixed escalation zero-overdue legacy insert missing `!dryRun`.
+- E2E against local: post-migration **PASS**, pre-migration **SKIP** (view present).
+- Docs: `02-CHUNK1-VERIFICATION.md`, `04-CHUNK2-VERIFICATION.md` updated with actual output.
+
+**Gates:** lint ✅ typecheck ✅ build ✅
+
+**Do not start Chunk 3** (per session brief).
+
