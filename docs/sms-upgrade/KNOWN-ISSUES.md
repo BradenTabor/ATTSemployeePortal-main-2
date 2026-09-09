@@ -116,3 +116,52 @@ deserves direct verification, not inference. It went unverified for six months.
 `docs/sms-upgrade/11-COMPLIANCE-SOP.md`, `docs/sms-upgrade/05-CHUNK3-RUNBOOK.md`,
 `docs/sms-upgrade/00-BUILD-BRIEF.md`, `docs/sms-upgrade/08-BLOCKED-HISTORY-PROPOSAL.md`,
 `docs/sms-upgrade/12-PROJECT-SCOPE.md`.
+
+---
+
+## A vendor list is not a system of record: the PO app can write to the ClickSend Opt-Out List
+
+**Status:** Recorded 2026-09-09. **Not a bug to fix — a standing constraint on how evidence is
+stored.** Read it before anyone proposes relying on ClickSend for a compliance fact again.
+
+**The fact.** The ClickSend Opt-Out List (list `3406168`) held, until 2026-09-09, the *only*
+surviving copy of the 2026-03-04 STOP from last-4 `6644` — the original inbound message aged out
+of ClickSend's ~4-month history retention and `/v3/sms/inbound` returns zero rows. That list is
+account-level, and the ATTS portal is **not the only application on the account**. The
+purchase-order approval app (`webhook-approval-for-6061.bolt.host`, sending from PO#
+`+18338612650`, owner unidentified — see `12-BRADEN-TODO.md` §4) shares the same ClickSend
+account and therefore has the same **write** access to that list: its own inbound STOP handling,
+its own dashboard sessions, its own API credentials can add to it, and can remove from it.
+
+**Why that matters more than it first sounds.** The record was not merely fragile in the ordinary
+"a vendor could have an outage" sense. It was mutable by a system this repo does not own, cannot
+read the source of, and has no change log for. Had the PO app cleared or rewritten that entry —
+deliberately, or as cleanup, or by a shared-account admin tidying a list they assumed was theirs —
+there would have been no deletion event to find, no before-state to diff against, and nothing
+anywhere else to notice the loss. A TCPA-relevant fact would have ceased to exist and no alarm
+would have sounded. The evidence's survival to 2026-09-09 was luck, not design.
+
+**The general rule this is an argument for.** A vendor list can be a *source* — something you
+reconcile against and copy from — but it cannot be the system of record for a compliance fact.
+Systems of record need three properties a shared vendor list structurally cannot offer: a single
+identified owner, an audit trail of changes, and backups you control. Screenshots do not
+substitute; a dashboard screenshot pasted into Slack is a picture of a claim, not a record of one.
+
+**What was done about it.** Migration `20260909210000_sms_optout_6644_historical_record.sql`
+copied the STOP into `sms_opt_out_events`, a table in a database ATTS owns and backs up nightly,
+with `received_at` set to the real provider timestamp rather than the write time.
+`20260909220000_sms_retention_protection.sql` then protected that table from `run_data_retention()`
+(comments, a policy `notes` column, an explicit `enabled = false` policy row). The remaining
+un-guarded path is assessed in `16-RETENTION-GUARD-ASSESSMENT.md`.
+
+**What is still true and unaddressed.** Every *other* entry on that opt-out list is still held
+only by ClickSend, still writable by the PO app, and still un-mirrored into Postgres. Nightly
+reconciliation (`clicksend-optout-reconcile`) reads the list and would surface an entry that
+appears; it does **not** notice an entry that silently *disappears*, because a removal looks
+identical to an entry that was never there. That is the residual exposure, and it is the reason
+`12-BRADEN-TODO.md` §4c requires the STOP to be copied into Postgres *before* any list entry is
+cleared, rather than after.
+
+**Do not wire an inbound rule on PO#** (`12-BRADEN-TODO.md` §4). Same root cause, opposite
+direction: writing to a shared vendor surface we do not own is as unsafe as reading from it as
+though it were authoritative.
