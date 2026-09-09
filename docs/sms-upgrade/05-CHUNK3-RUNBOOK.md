@@ -12,6 +12,10 @@ When a crew member replies **STOP** to an ATTS SMS, ClickSend blocks future send
 
 **Important:** Reminder and escalation send paths still do **not** filter on `sms_operational_opt_out` until reconciliation has been watched and trusted (see [Deferred: send-path filters](#deferred-send-path-filters)).
 
+**Production webhook URL:**
+
+`https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/clicksend-inbound-webhook`
+
 ---
 
 ## 1. Deploy Edge Functions
@@ -35,19 +39,40 @@ Ensure these secrets exist on the project (Supabase Dashboard → Edge Functions
 
 ## 2. Point ClickSend inbound rule at the webhook
 
-**Deployed production webhook URL (2026-09-09):**
+### Before you start (pre-flight)
 
-`https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/clicksend-inbound-webhook`
+Run these in the Supabase SQL editor (project `emqqxfzahmwnehxcpxzp`) so wiring does not fail silently:
 
-GET health check returns: `{"ok":true,"name":"clicksend-inbound-webhook"}`.
+```sql
+SELECT key, value
+FROM public.app_settings
+WHERE key IN ('sms_inbound_webhook_config', 'sms_optout_reconcile_config');
+```
+
+Expect:
+
+- `sms_inbound_webhook_config` → `{"enabled": true}`  
+  If this row is missing, the webhook **still processes** inbound (it only skips when `enabled === false`). Prefer the row present and `true`.
+- `sms_optout_reconcile_config` → `{"apply_enabled": false}`  
+  Leave apply off until a week of diffs is reviewed.
+
+**Where to find `INTERNAL_SECRET`:** Supabase Dashboard → Edge Functions → Secrets → `INTERNAL_SECRET`. Copy it only into the ClickSend rule UI. Do not paste it into chat, tickets, or this runbook.
+
+Confirm GET health:
+
+```bash
+curl -sS "https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/clicksend-inbound-webhook"
+# → {"ok":true,"name":"clicksend-inbound-webhook"}
+```
 
 ### Exact ClickSend dashboard steps (Braden — web UI only)
 
 1. Log in to [ClickSend Dashboard](https://dashboard.clicksend.com) as the ATTS account (`shane@alltts.com` / All Terrain Tree Service).
 2. Go to **SMS** → **Inbound SMS** / **Rules** (or **Numbers** → inbound settings, depending on UI version).
-3. Select **each** registered sender number that receives crew replies — at minimum the two REGISTERED numbers in use today:
-   - `+18443781444` (notes: RTO #) — code default for reminder / escalation / payroll
-   - `+18338612650` (notes: PO #) — also appears heavily in outbound history  
+3. **Wire BOTH registered numbers that send to crew today — not either/or:**
+   - `+18443781444` (RTO #)
+   - `+18338612650` (PO #)  
+   **Why both:** Edge secret `CLICKSEND_FROM_NUMBER` is **unset**. Scheduled portal jobs hardcode RTO#, but mass SMS and other account traffic often leave `from` empty so ClickSend picks an account number (frequently PO#). Crew reply to whichever number texted them. Wiring only one number catches roughly **half** of STOP/HELP replies.  
    Optionally prepare the same rule for `+18335183807` (Safety #) once registration completes.
 4. Add an **Inbound Rule** per number:
    - **Action:** Forward to URL (POST)
@@ -55,20 +80,20 @@ GET health check returns: `{"ok":true,"name":"clicksend-inbound-webhook"}`.
    - **Method:** POST
 5. Attach auth header (required — webhook rejects unauthenticated POST):
    - Header name: `x-internal-key`
-   - Header value: the project’s `INTERNAL_SECRET` (Supabase Dashboard → Edge Functions → Secrets). Do not paste the secret into chat or tickets.
+   - Header value: the project’s `INTERNAL_SECRET` (from Edge Function secrets).
    - If ClickSend only supports `Authorization`, use `Authorization: Bearer <INTERNAL_SECRET>` instead.
-6. Save the rule.
-7. Smoke-test from a spare phone only after Braden is ready: reply **HELP** first (should not flip opt-out), then confirm logs; do **not** use a real crew member’s STOP for the first test if avoidable.
+   - If ClickSend supports **no** custom headers, stop and use the contingency in `docs/sms-upgrade/10-WEBHOOK-AUTH-FALLBACK.md` (not implemented yet).
+6. Save the rule on **both** numbers.
+7. Smoke-test only with the ranked options in [§7](#7-verify-inbound-stop-smoke-test). Prefer ClickSend’s simulator / HELP before any real STOP.
 8. Leave nightly reconcile cron **disabled** until a full week of diff-only runs has been reviewed.
 
 ### Webhook auth (required)
 
-ClickSend must send a header Supabase accepts. Use the same pattern as other internal webhooks:
+Accepted today (any one):
 
-- Header name: `x-internal-key`
-- Header value: your `INTERNAL_SECRET` (from Edge Function secrets)
-
-Alternatively, configure ClickSend to send `Authorization: Bearer <INTERNAL_SECRET>` if custom headers are supported.
+- `x-internal-key: <INTERNAL_SECRET>`
+- `Authorization: Bearer <INTERNAL_SECRET>`
+- `Authorization: Bearer <service_role JWT>` (internal/cron style; not for ClickSend)
 
 **Health check:** Open the URL in a browser (GET). You should see:
 
@@ -112,7 +137,7 @@ The reconcile function runs in **diff-only** mode by default.
 **Manual diff (safe):**
 
 ```bash
-curl -X POST "https://<project-ref>.supabase.co/functions/v1/clicksend-optout-reconcile" \
+curl -X POST "https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/clicksend-optout-reconcile" \
   -H "Authorization: Bearer <INTERNAL_SECRET or service role>" \
   -H "Content-Type: application/json" \
   -d '{}'
@@ -160,7 +185,7 @@ Do **not** set `apply_enabled: true` until all of the following:
 
 1. At least **7 days** of diff-only cron runs reviewed
 2. `clicksend_only` entries are explainable (real STOPs, not data bugs)
-3. Inbound webhook verified with a test STOP on a non-production test number
+3. Inbound webhook verified with a **non-destructive** test first (see §7) — full STOP only on a phone you control, followed by START
 4. Braden approves turning on apply
 
 Then:
@@ -174,8 +199,9 @@ WHERE key = 'sms_optout_reconcile_config';
 Manual apply run:
 
 ```bash
-curl -X POST ".../clicksend-optout-reconcile" \
-  -H "Authorization: Bearer ..." \
+curl -X POST "https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/clicksend-optout-reconcile" \
+  -H "Authorization: Bearer <INTERNAL_SECRET or service role>" \
+  -H "Content-Type: application/json" \
   -d '{"apply": true}'
 ```
 
@@ -183,7 +209,11 @@ curl -X POST ".../clicksend-optout-reconcile" \
 
 ## 7. Verify inbound STOP (smoke test)
 
-Use ClickSend’s **Test Inbound SMS** (Dashboard → SMS → Inbound) or reply STOP from a test phone mapped to an employee with a known `app_users.phone_number`.
+**Ranked options — use the safest that works:**
+
+1. **Preferred — ClickSend Test Inbound SMS simulator** (Dashboard → SMS → Inbound / Rules → Test), if your account UI exposes it. Non-destructive; confirms the rule reaches our URL without a real carrier STOP.
+2. **Braden’s own phone only:** reply **HELP** first (webhook should log `help_logged`, flip **no** opt-out flags). Only if a full path test is required, reply **STOP**, confirm flags + `sms_opt_out_events`, then immediately reply **START** so the carrier block is undone by the handset owner.
+3. **Never a crew member’s phone.** A real STOP is a permanent carrier-level block that **only the phone’s owner** can undo by texting START. You cannot reverse it from ClickSend admin, Supabase, or the ATTS app.
 
 Check:
 
@@ -198,7 +228,36 @@ FROM public.app_users
 WHERE phone_number LIKE '%<last4>';
 ```
 
-Both flags should be `true` after STOP.
+After a deliberate STOP on a phone you control, both flags should be `true`. After START, carrier consent is restored; confirm app flags match policy before relying on apply mode.
+
+---
+
+## 8. First week after wiring
+
+Every few days (SQL editor), confirm real inbound traffic:
+
+```sql
+-- Recent inbound events (expect HELP/STOP/START after crew replies)
+SELECT keyword, source, applied_operational, applied_marketing,
+       right(regexp_replace(phone_e164, '[^0-9]', '', 'g'), 4) AS last4,
+       received_at
+FROM public.sms_opt_out_events
+WHERE received_at > now() - interval '7 days'
+ORDER BY received_at DESC
+LIMIT 50;
+
+-- Diff-only reconcile (manual curl from §4) — note summary.clicksend_count vs app
+```
+
+**Normal:** occasional `sms_opt_out_events` rows when someone replies HELP/STOP/START; reconcile `clicksend_only` / `app_only` lists are small and explainable.
+
+**Misconfigured rule (act on this):** **zero** inbound events over a week while crew are known to reply to SMS, or ClickSend inbound history shows replies but `sms_opt_out_events` stays empty — re-check both numbers’ rules, auth header, and webhook GET health.
+
+Also watch cron HTTP health:
+
+```sql
+SELECT * FROM public.get_recent_cron_failures(1);
+```
 
 ---
 
