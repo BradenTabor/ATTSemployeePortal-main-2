@@ -29,12 +29,48 @@ All cron jobs that call Edge Functions require a valid **service role** key. Mig
 - **refresh-compliance-summary-90d** – refreshes materialized view (no Edge Function).
 - **refresh-cert-analytics** – refreshes cert analytics views (no Edge Function).
 - **monthly-safety-drawing** – **intentional auth exception:** uses header `x-drawing-secret` from `app.settings.drawing_secret`, **not** a Bearer service-role token. Do not “fix” this job by injecting `Authorization: Bearer …` via `deploy-cron-auth.sh`; leave the drawing-secret header as-is.
+- **cron-http-failure-sweep** – runs `sweep_cron_http_failures()` every 2 hours at `:07`. Pure SQL, no Edge Function, so it keeps working even when the thing it monitors (service-role Bearer auth) is broken. See below.
 
-## Monitoring note (HTTP non-2xx)
+## Monitoring (HTTP non-2xx)
 
-`cron.job_run_details.status` is `succeeded` whenever `net.http_post` queues successfully — even if the Edge Function returns 401. Use `public.get_recent_cron_failures(days)` / `public.cron_job_runs.effective_status` (migration `20260909173000_cron_failures_detect_http_non_2xx`) which also reads `net._http_response`. **Retention:** `pg_net.ttl` ≈ **6 hours**.
+`cron.job_run_details.status` is `succeeded` whenever `net.http_post` queues successfully — even if the Edge Function returns 401. Migration `20260909173000_cron_failures_detect_http_non_2xx` taught `public.get_recent_cron_failures(days)` and `public.cron_job_runs.effective_status` to also read `net._http_response`, which is where the real status code lands.
 
-**Alert proposal (not built):** smallest reliable path is a single “Cron health” line on the existing monthly compliance email (or a one-row card on the admin safety/compliance settings page) that calls `get_recent_cron_failures(1)` and names any `http_failed` / SQL-failed `jobname` + timestamp — no new pager stack.
+### Why detection alone was not enough
+
+`pg_net.ttl` ≈ **6 hours**. A detector limited to a 6-hour window cannot feed a weekly or monthly report — the evidence expires before anyone reads it.
+
+Migration `20260909180000_cron_http_failures_durable` closes that:
+
+| Object | Purpose |
+|---|---|
+| `public.cron_http_failures` | Durable row per non-2xx / timed-out cron HTTP response: `jobname`, `function_name`, `status_code`, `response_excerpt`, `occurred_at`. RLS admin-SELECT, same shape as the other log tables. |
+| `public.sweep_cron_http_failures(lookback_hours default 8)` | Copies non-2xx rows out of `net._http_response` before the TTL discards them. Idempotent via unique `(response_id, occurred_at)`; the 8-hour lookback exceeds the 6-hour TTL so a skipped sweep cannot open a gap. |
+| `cron-http-failure-sweep` | pg_cron job, `7 */2 * * *`. Two-hour interval against a six-hour window leaves two missed sweeps of headroom. |
+
+`get_recent_cron_failures(days)` now reads the durable table first and unions the not-yet-swept tail still sitting in `net._http_response`, deduped by response id. It answers for weeks instead of hours.
+
+`cron-http-failure-sweep` is itself in the monitored job list — a silently broken sweep would re-blind the monitor, which is the exact failure this work exists to close.
+
+### History limit — read this before asking for a trend
+
+**Cron failure history before 2026-09-09 is unrecoverable.** Nothing was backfilled and nothing can be: `net._http_response` had already discarded it, and `cron.job_run_details` recorded those runs as `succeeded` because queuing the request did succeed. The durable table starts empty on 2026-09-09 and grows forward only. Any statement about how long the `safety-briefing-reminder-push` 401s had been running before that date is a guess, not a measurement.
+
+### Alert proposal (not built)
+
+The durable table makes the monthly compliance email useful as a **summary**, but monthly is too slow for a job like `safety-briefing-reminder-sms`. Smallest same-week signal, using something already in the app: add a **“Cron health (last 7 days)”** section to `weekly-safety-audit-report` (Fri 5 PM CST, already emailed to leadership via `email_recipient_lists.list_key = 'weekly_safety_audit'`, already built from composable HTML sections) that calls `get_recent_cron_failures(7)` and lists failing `jobname` + count + last timestamp. It must print an explicit **“0 cron failures this week”** line when clean, so a missing report is distinguishable from a healthy one — that matters because the report is itself an HTTP cron job and can fail the same way. If Friday latency proves too slow, the escalation is to have the 2-hour SQL sweep insert a `notification_events` row (`category='admin_notice'`, `severity='high'`, `target_type='role'`, `target_ref='admin'`, deduped to one per job per day); that is the only path whose detection step does not depend on the Edge Function auth most likely to be broken.
+
+### Queries
+
+```sql
+-- Durable history (weeks)
+SELECT jobname, status_code, count(*), min(occurred_at), max(occurred_at)
+FROM public.cron_http_failures
+WHERE occurred_at > now() - interval '30 days'
+GROUP BY 1, 2 ORDER BY 3 DESC;
+
+-- Force a sweep now (safe, idempotent)
+SELECT public.sweep_cron_http_failures();
+```
 
 ## Making sure all HTTP jobs work
 
