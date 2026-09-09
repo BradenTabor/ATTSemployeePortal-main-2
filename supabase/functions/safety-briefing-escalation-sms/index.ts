@@ -19,6 +19,14 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { sendAndLogSMS, smsMessageLogInsert } from "../_shared/clicksend.ts";
+import {
+  loadOptOutFilterConfig,
+  logOptOutSummary,
+  resolveStaticRecipientOptOuts,
+  staticRecipientExclusion,
+  type OptOutExclusion,
+} from "../_shared/smsOptOutFilter.ts";
+import { phoneLast4 } from "../_shared/phoneE164.ts";
 
 const INTERNAL_SECRET = Deno.env.get("INTERNAL_SECRET") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -264,6 +272,82 @@ Deno.serve(async (req: Request) => {
 
   const todayStr = getChicagoToday();
   const escMode = Deno.env.get("ESCALATION_MODE") ?? "single_day";
+  const optOutFilter = await loadOptOutFilterConfig(supabase);
+
+  /**
+   * Tier 2 statics carry no opt-out column, so state is resolved by phone match.
+   * Skipping an opted-out static is correct (they said STOP) but it shortens a
+   * safety escalation list, so it is never silent: each drop is recorded, and an
+   * emptied list is logged at error level.
+   */
+  async function filterTier2Statics(phones: string[], overdueCount: number) {
+    const log: Record<string, unknown> = {
+      optout_filter_enabled: optOutFilter.enabled,
+      optout_filter_source: optOutFilter.source,
+      tier2_static_recipients_before: phones.length,
+    };
+    const warnings: string[] = [];
+    const exclusions: OptOutExclusion[] = [];
+
+    if (!optOutFilter.enabled || phones.length === 0) {
+      log.tier2_static_recipients_after = phones.length;
+      log.tier2_static_excluded_count = 0;
+      return { phones, exclusions, warnings, log };
+    }
+
+    const { optedOut, unresolved, resolutionError } =
+      await resolveStaticRecipientOptOuts(supabase, phones);
+
+    if (resolutionError) {
+      // Fail open: an unreadable lookup must not empty a safety escalation list.
+      const warning = `Tier2 opt-out lookup failed (${resolutionError}); sent to all static recipients unfiltered`;
+      warnings.push(warning);
+      console.error("[safety-briefing-escalation-sms] OPTOUT_TIER2_LOOKUP_FAILED", {
+        error: resolutionError,
+        recipientCount: phones.length,
+      });
+      log.tier2_static_optout_lookup_error = resolutionError;
+      log.tier2_static_recipients_after = phones.length;
+      log.tier2_static_excluded_count = 0;
+      return { phones, exclusions, warnings, log };
+    }
+
+    const kept = phones.filter((p) => {
+      if (!optedOut.has(p)) return true;
+      exclusions.push(staticRecipientExclusion(p, optedOut.get(p)!.userIds));
+      return false;
+    });
+
+    for (const exc of exclusions) {
+      const warning = `Tier2 static recipient ending ${exc.phone_last4} excluded: sms_operational_opt_out`;
+      warnings.push(warning);
+      console.error("[safety-briefing-escalation-sms] OPTOUT_TIER2_STATIC_EXCLUDED", {
+        phone_last4: exc.phone_last4,
+        user_id: exc.user_id,
+        remaining_recipients: kept.length,
+      });
+    }
+
+    // Worst case: the escalation list is now empty while crew are still overdue.
+    if (kept.length === 0 && phones.length > 0 && overdueCount > 0) {
+      const warning =
+        "CRITICAL: every active tier 2 escalation recipient has opted out — no escalation was delivered";
+      warnings.push(warning);
+      console.error("[safety-briefing-escalation-sms] OPTOUT_TIER2_LIST_EMPTY", {
+        overdueCount,
+        excludedCount: exclusions.length,
+        action: "add a replacement recipient in sms_escalation_recipients",
+      });
+      log.tier2_static_list_emptied = true;
+    }
+
+    log.tier2_static_recipients_after = kept.length;
+    log.tier2_static_excluded_count = exclusions.length;
+    log.tier2_static_excluded = exclusions;
+    // Statics with no app_users row have no knowable consent state — they are sent to.
+    log.tier2_static_optout_unresolved = unresolved.map((p) => phoneLast4(p));
+    return { phones: kept, exclusions, warnings, log };
+  }
 
   if (escMode === "legacy") {
   // --- Legacy path: D1/D2, week reset, lookback, Tier 2 D2 section ---
@@ -297,8 +381,8 @@ Deno.serve(async (req: Request) => {
   const skipTier2Calendar = calendarSet.has(D2);
 
   const errors: string[] = [];
-  const tier1: { overdueCount: number; sent: boolean; skippedReason?: string; dateChecked?: string; dryRunWouldSend?: boolean; totalPrice?: number } = { overdueCount: 0, sent: false };
-  const tier2: { overdueCount: number; sent: boolean; skippedReason?: string; dateChecked?: string; dryRunWouldSend?: boolean; totalPrice?: number } = { overdueCount: 0, sent: false };
+  const tier1: { overdueCount: number; sent: boolean; skippedReason?: string; dateChecked?: string; dryRunWouldSend?: boolean; totalPrice?: number; warnings?: string[]; excludedOperationalOptOut?: number } = { overdueCount: 0, sent: false };
+  const tier2: { overdueCount: number; sent: boolean; skippedReason?: string; dateChecked?: string; dryRunWouldSend?: boolean; totalPrice?: number; warnings?: string[]; excludedOperationalOptOut?: number } = { overdueCount: 0, sent: false };
 
   // Fetch announcements for D1 and D2 (normalize to YYYY-MM-DD)
   const { data: announcements, error: annErr } = await supabase
@@ -409,6 +493,11 @@ Deno.serve(async (req: Request) => {
 
   const suppressionLogTier1: Record<string, unknown> = {};
   const suppressionLogTier2: Record<string, unknown> = {};
+  // Held by reference: the message-building loop below pushes into it before any insert runs.
+  const tier1OptOutExclusions: OptOutExclusion[] = [];
+  suppressionLogTier1.optout_filter_enabled = optOutFilter.enabled;
+  suppressionLogTier1.optout_filter_source = optOutFilter.source;
+  suppressionLogTier1.excluded_operational_opt_out = tier1OptOutExclusions;
   if (skipTier1Calendar) suppressionLogTier1.dates_skipped_calendar = [D1];
   if (skipTier2Calendar) suppressionLogTier2.dates_skipped_calendar = [D2];
   suppressionLogTier1.users_excluded_absences = absentByDate[D1].size;
@@ -500,7 +589,10 @@ Deno.serve(async (req: Request) => {
     .eq("is_active", true)
     .eq("tier", 2)
     .order("sort_order", { ascending: true });
-  const tier2Phones = (recipients ?? []).map((r: { phone_e164: string }) => r.phone_e164);
+  const tier2PhonesAll = (recipients ?? []).map((r: { phone_e164: string }) => r.phone_e164);
+  const tier2Filter = await filterTier2Statics(tier2PhonesAll, tier2CombinedCount);
+  const tier2Phones = tier2Filter.phones;
+  Object.assign(suppressionLogTier2, tier2Filter.log);
 
   function alreadySentToday(tier: number, dateChecked: string): Promise<boolean> {
     return supabase
@@ -538,6 +630,24 @@ Deno.serve(async (req: Request) => {
         const phone = managerPhoneMap[_managerId];
         if (phone) {
           const meta = managerMeta[_managerId];
+          // Orphan classification above is deliberately left untouched: an
+          // opted-out manager still counts as "has a phone", so nobody is
+          // re-tiered. The crew simply lose the Tier 1 nudge, recorded here.
+          if (optOutFilter.enabled && meta?.optOutState?.operational === true) {
+            tier1OptOutExclusions.push({
+              kind: "tier1_manager",
+              user_id: meta.userId ?? null,
+              phone_last4: phoneLast4(phone),
+              reason: "sms_operational_opt_out",
+              affected_user_ids: users.map((u) => u.user_id),
+            });
+            console.warn("[safety-briefing-escalation-sms] OPTOUT_TIER1_MANAGER_EXCLUDED", {
+              phone_last4: phoneLast4(phone),
+              user_id: meta.userId ?? null,
+              crew_without_tier1_nudge: users.length,
+            });
+            continue;
+          }
           messages.push({
             to: phone,
             body,
@@ -546,6 +656,8 @@ Deno.serve(async (req: Request) => {
           });
         }
       }
+      suppressionLogTier1.excluded_operational_opt_out_count = tier1OptOutExclusions.length;
+      suppressionLogTier1.tier1_managers_messaged = messages.length;
       if (messages.length > 0 && dryRun) {
         await sendAndLogSMS(messages, {
           username: CLICKSEND_USERNAME,
@@ -620,6 +732,14 @@ Deno.serve(async (req: Request) => {
       });
     }
   }
+  suppressionLogTier1.excluded_operational_opt_out_count = tier1OptOutExclusions.length;
+  tier1.excludedOperationalOptOut = tier1OptOutExclusions.length;
+  if (tier1OptOutExclusions.length > 0) {
+    tier1.warnings = tier1OptOutExclusions.map(
+      (e) =>
+        `Tier1 manager ending ${e.phone_last4} excluded (sms_operational_opt_out); ${e.affected_user_ids?.length ?? 0} overdue crew received no Tier 1 nudge`,
+    );
+  }
   tier1.dateChecked = D1;
 
   // --- Tier 2: static recipients; include D2 overdue + D1 orphans (routed to tier 2), allow overlap ---
@@ -668,23 +788,29 @@ Deno.serve(async (req: Request) => {
       if (sendResult.error) errors.push(`Tier2: ${sendResult.error}`);
     }
   } else {
+    const tier2EmptiedByOptOut = suppressionLogTier2.tier2_static_list_emptied === true;
     if (skipTier2Lookback) tier2.skippedReason = "Max lookback exceeded";
     else if (skipTier2Calendar) tier2.skippedReason = "Date in company_calendar";
     else if (skipTier2WeekReset) tier2.skippedReason = "Week reset (D2 before this Monday)";
     else if (tier2CombinedCount === 0) tier2.skippedReason = "No overdue";
+    else if (tier2EmptiedByOptOut) tier2.skippedReason = "All tier 2 recipients opted out";
     else if (tier2Phones.length === 0) tier2.skippedReason = "No recipients";
     else if (tier2AlreadySent) tier2.skippedReason = "Already sent today";
     else if (dryRun && tier2Phones.length > 0 && tier2CombinedCount > 0) tier2.dryRunWouldSend = true;
     else if (!CLICKSEND_USERNAME || !CLICKSEND_PASSWORD) tier2.skippedReason = "ClickSend not configured";
-    // Zero-overdue audit log — live runs only (dry-run must not write legacy tables).
-    if (tier2CombinedCount === 0 && !tier2AlreadySent && !dryRun) {
+    // Audit log — live runs only (dry-run must not write legacy tables).
+    // Also fires when the opt-out filter emptied the list, so a suppressed
+    // escalation is never a run with no row at all.
+    if ((tier2CombinedCount === 0 || tier2EmptiedByOptOut) && !tier2AlreadySent && !dryRun) {
       await supabase.from("sms_escalation_send_log").insert({
         tier: 2,
         date_checked: D2,
-        overdue_count: 0,
+        overdue_count: tier2CombinedCount,
         recipient_count: 0,
         success: true,
-        error_message: null,
+        error_message: tier2EmptiedByOptOut
+          ? "All tier 2 escalation recipients opted out of operational SMS"
+          : null,
         total_price: 0,
         results: null,
         employee_user_ids: [],
@@ -693,6 +819,7 @@ Deno.serve(async (req: Request) => {
       });
     }
   }
+  if (tier2Filter.warnings.length > 0) tier2.warnings = tier2Filter.warnings;
   tier2.dateChecked = D2;
 
   // Verbose console log for first-week verification (suppression behavior)
@@ -723,6 +850,23 @@ Deno.serve(async (req: Request) => {
     suppressionLogTier2,
   });
 
+  logOptOutSummary("safety-briefing-escalation-sms", {
+    mode: "legacy",
+    date: todayStr,
+    filterEnabled: optOutFilter.enabled,
+    filterSource: optOutFilter.source,
+    overdueD1,
+    overdueD2,
+    tier1ManagersExcluded: tier1OptOutExclusions.length,
+    tier1ExcludedUserIds: tier1OptOutExclusions.map((e) => e.user_id),
+    tier2StaticsBefore: tier2PhonesAll.length,
+    tier2StaticsAfter: tier2Phones.length,
+    tier2StaticsExcluded: tier2Filter.exclusions.length,
+    dryRun,
+  });
+
+  tier2.excludedOperationalOptOut = tier2Filter.exclusions.length;
+
   const payload: Record<string, unknown> = {
     tier1: { ...tier1 },
     tier2: { ...tier2 },
@@ -730,6 +874,7 @@ Deno.serve(async (req: Request) => {
   };
   if (dryRun) {
     payload.dryRun = true;
+    payload.optOutFilter = optOutFilter;
     payload.totalFieldUsers = totalFieldUsers;
     payload.weekMonday = weekMonday;
     payload.weekResetApplied = { tier1: skipTier1WeekReset, tier2: skipTier2WeekReset };
@@ -815,9 +960,11 @@ Deno.serve(async (req: Request) => {
     .filter((u) => !absentToday.has(u.user_id));
 
   const errorsSingle: string[] = [];
-  const tier1Single: { overdueCount: number; sent: boolean; skippedReason?: string; dateChecked?: string; dryRunWouldSend?: boolean; totalPrice?: number } = { overdueCount: 0, sent: false };
-  const tier2Single: { overdueCount: number; sent: boolean; skippedReason?: string; dateChecked?: string; dryRunWouldSend?: boolean; totalPrice?: number } = { overdueCount: 0, sent: false };
+  const tier1Single: { overdueCount: number; sent: boolean; skippedReason?: string; dateChecked?: string; dryRunWouldSend?: boolean; totalPrice?: number; warnings?: string[]; excludedOperationalOptOut?: number } = { overdueCount: 0, sent: false };
+  const tier2Single: { overdueCount: number; sent: boolean; skippedReason?: string; dateChecked?: string; dryRunWouldSend?: boolean; totalPrice?: number; warnings?: string[]; excludedOperationalOptOut?: number } = { overdueCount: 0, sent: false };
 
+  // Held by reference: the Tier 1 message loop pushes into it before any insert runs.
+  const tier1OptOutExclusionsSingle: OptOutExclusion[] = [];
   const suppressionLogTier1Single: Record<string, unknown> = {
     date_checked: todayStr,
     users_excluded_absences: absentToday.size,
@@ -826,8 +973,11 @@ Deno.serve(async (req: Request) => {
     announcement_id: announcementIdSingle,
     completed_set_size: completedSetSingle.size,
     field_users_count: totalFieldUsersSingle,
+    optout_filter_enabled: optOutFilter.enabled,
+    optout_filter_source: optOutFilter.source,
   };
   const suppressionLogTier2Single: Record<string, unknown> = { ...suppressionLogTier1Single };
+  suppressionLogTier1Single.excluded_operational_opt_out = tier1OptOutExclusionsSingle;
 
   if (skipCalendar) {
     suppressionLogTier1Single.dates_skipped_calendar = [todayStr];
@@ -887,7 +1037,10 @@ Deno.serve(async (req: Request) => {
     .eq("is_active", true)
     .eq("tier", 2)
     .order("sort_order", { ascending: true });
-  const tier2PhonesSingle = (recipientsSingle ?? []).map((r: { phone_e164: string }) => r.phone_e164);
+  const tier2PhonesAllSingle = (recipientsSingle ?? []).map((r: { phone_e164: string }) => r.phone_e164);
+  const tier2FilterSingle = await filterTier2Statics(tier2PhonesAllSingle, overdueCountSingle);
+  const tier2PhonesSingle = tier2FilterSingle.phones;
+  Object.assign(suppressionLogTier2Single, tier2FilterSingle.log);
 
   async function alreadySentTodaySingle(tier: number, dateChecked: string): Promise<boolean> {
     const { data } = await supabase
@@ -921,6 +1074,24 @@ Deno.serve(async (req: Request) => {
         const names = users.map((u) => abbreviateName(u.full_name));
         const crewTotal = managerCrewCountSingle[_mid] ?? users.length;
         const meta = managerMetaSingle[_mid];
+        // Orphan classification above is deliberately left untouched: an
+        // opted-out manager still counts as "has a phone", so nobody is
+        // re-tiered. The crew simply lose the Tier 1 nudge, recorded here.
+        if (optOutFilter.enabled && meta?.optOutState?.operational === true) {
+          tier1OptOutExclusionsSingle.push({
+            kind: "tier1_manager",
+            user_id: meta.userId ?? null,
+            phone_last4: phoneLast4(phone),
+            reason: "sms_operational_opt_out",
+            affected_user_ids: users.map((u) => u.user_id),
+          });
+          console.warn("[safety-briefing-escalation-sms] OPTOUT_TIER1_MANAGER_EXCLUDED", {
+            phone_last4: phoneLast4(phone),
+            user_id: meta.userId ?? null,
+            crew_without_tier1_nudge: users.length,
+          });
+          continue;
+        }
         messages.push({
           to: phone,
           body: buildSMSBody(names, users.length, crewTotal, 1, todayStr),
@@ -928,6 +1099,8 @@ Deno.serve(async (req: Request) => {
           optOutState: meta?.optOutState ?? null,
         });
       }
+      suppressionLogTier1Single.excluded_operational_opt_out_count = tier1OptOutExclusionsSingle.length;
+      suppressionLogTier1Single.tier1_managers_messaged = messages.length;
       if (messages.length > 0 && dryRun) {
         await sendAndLogSMS(messages, {
           username: CLICKSEND_USERNAME,
@@ -1052,20 +1225,26 @@ Deno.serve(async (req: Request) => {
       if (sendResult.error) errorsSingle.push(`Tier2: ${sendResult.error}`);
     }
   } else {
+    const tier2EmptiedByOptOutSingle = suppressionLogTier2Single.tier2_static_list_emptied === true;
     if (skipCalendar) tier2Single.skippedReason = "Date in company_calendar";
     else if (tier2CombinedCountSingle === 0) tier2Single.skippedReason = "No overdue";
+    else if (tier2EmptiedByOptOutSingle) tier2Single.skippedReason = "All tier 2 recipients opted out";
     else if (tier2PhonesSingle.length === 0) tier2Single.skippedReason = "No recipients";
     else if (tier2AlreadySentSingle) tier2Single.skippedReason = "Already sent today";
     else if (dryRun && tier2PhonesSingle.length > 0 && tier2CombinedCountSingle > 0) tier2Single.dryRunWouldSend = true;
     else if (!CLICKSEND_USERNAME || !CLICKSEND_PASSWORD) tier2Single.skippedReason = "ClickSend not configured";
-    if (tier2CombinedCountSingle === 0 && !tier2AlreadySentSingle && !dryRun) {
+    // Also fires when the opt-out filter emptied the list, so a suppressed
+    // escalation is never a run with no row at all.
+    if ((tier2CombinedCountSingle === 0 || tier2EmptiedByOptOutSingle) && !tier2AlreadySentSingle && !dryRun) {
       await supabase.from("sms_escalation_send_log").insert({
         tier: 2,
         date_checked: todayStr,
-        overdue_count: 0,
+        overdue_count: tier2CombinedCountSingle,
         recipient_count: 0,
         success: true,
-        error_message: null,
+        error_message: tier2EmptiedByOptOutSingle
+          ? "All tier 2 escalation recipients opted out of operational SMS"
+          : null,
         total_price: 0,
         results: null,
         employee_user_ids: [],
@@ -1074,6 +1253,16 @@ Deno.serve(async (req: Request) => {
       });
     }
   }
+  suppressionLogTier1Single.excluded_operational_opt_out_count = tier1OptOutExclusionsSingle.length;
+  tier1Single.excludedOperationalOptOut = tier1OptOutExclusionsSingle.length;
+  if (tier1OptOutExclusionsSingle.length > 0) {
+    tier1Single.warnings = tier1OptOutExclusionsSingle.map(
+      (e) =>
+        `Tier1 manager ending ${e.phone_last4} excluded (sms_operational_opt_out); ${e.affected_user_ids?.length ?? 0} overdue crew received no Tier 1 nudge`,
+    );
+  }
+  tier2Single.excludedOperationalOptOut = tier2FilterSingle.exclusions.length;
+  if (tier2FilterSingle.warnings.length > 0) tier2Single.warnings = tier2FilterSingle.warnings;
   tier2Single.dateChecked = todayStr;
 
   console.log("[safety-briefing-escalation-sms] single_day", {
@@ -1083,6 +1272,20 @@ Deno.serve(async (req: Request) => {
     orphanedCount: orphanedSingle.length,
   });
 
+  logOptOutSummary("safety-briefing-escalation-sms", {
+    mode: "single_day",
+    date: todayStr,
+    filterEnabled: optOutFilter.enabled,
+    filterSource: optOutFilter.source,
+    overdueCount: overdueCountSingle,
+    tier1ManagersExcluded: tier1OptOutExclusionsSingle.length,
+    tier1ExcludedUserIds: tier1OptOutExclusionsSingle.map((e) => e.user_id),
+    tier2StaticsBefore: tier2PhonesAllSingle.length,
+    tier2StaticsAfter: tier2PhonesSingle.length,
+    tier2StaticsExcluded: tier2FilterSingle.exclusions.length,
+    dryRun,
+  });
+
   const payloadSingle: Record<string, unknown> = {
     tier1: { ...tier1Single },
     tier2: { ...tier2Single },
@@ -1090,6 +1293,7 @@ Deno.serve(async (req: Request) => {
   };
   if (dryRun) {
     payloadSingle.dryRun = true;
+    payloadSingle.optOutFilter = optOutFilter;
     payloadSingle.totalFieldUsers = totalFieldUsersSingle;
     payloadSingle.suppressionLog = { tier1: suppressionLogTier1Single, tier2: suppressionLogTier2Single };
     // Preview the would-be SMS bodies (single-day format)
