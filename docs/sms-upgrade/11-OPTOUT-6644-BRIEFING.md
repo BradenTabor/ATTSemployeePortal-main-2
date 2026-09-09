@@ -75,3 +75,73 @@ Active `sms_escalation_recipients` last4s today: `0398`, `6644`, `9951` (each wi
 
 - Not authorization to change flags or recipients.
 - Not a claim that every ClickSend “SUCCESS” / “delivered” status after STOP was truthful end-to-end; the list membership is the compliance signal we trust for “do not treat as consented.”
+
+---
+
+# Silent unreachability — a separate problem from the `6644` opt-out
+
+**Date of evidence:** 2026-09-09. **Source:** ClickSend `/v3/sms/history`, read-only. **Nothing was changed.**
+
+This is deliberately kept apart from the opt-out narrative above. Different root cause, different remedy, different people affected. `6644` is a **consent** problem: the carrier is refusing delivery because someone texted STOP, and only they can undo it. What follows is a **reachability** problem: the carrier is accepting the message and then failing to deliver it, and nobody has ever been told.
+
+## The finding that matters most
+
+**The app cannot see delivery failures at all.**
+
+| Source | Live sends since 2026-05-01 | Failures recorded |
+|---|---:|---:|
+| `sms_message_log_compat` (`is_dry_run = false`) | 3,046 | **0** |
+| ClickSend history, same period | — | **319** account-wide |
+
+`sendSMS()` records ClickSend’s *submission* response. `301 / Rejected by the recipient network` and `301 / Absent Subscriber` are assigned **later**, when the carrier reports back. Nothing in this system ingests that second status, so every one of those 319 failures is stored in our own log as `SUCCESS`.
+
+The sharpest illustration: for last4 `4421`, `sms_message_log_compat` shows **142 rows, all `SUCCESS`**, over a period in which the handset actually received **three** messages.
+
+This is why the requested sweep — “list any phone in `sms_message_log_compat` whose recent sends are predominantly failures” — returns nothing. Not because there are no such phones, but because the column that would identify them is always `SUCCESS`. The sweep below was therefore run against ClickSend instead.
+
+## Correction to the earlier three-failure finding
+
+Previous sessions reported “3 sends rejected on 2026-05-11/12/13 to last4 `4451` (×2) and `4421`.” That came from scanning one unfiltered page of recent history and is a **sampling artifact**. The real all-time count is **319 failures**, and the May dates were simply where that page happened to end.
+
+`4451` in particular is **not** an unreachability case:
+
+| | `4451` | `4421` |
+|---|---|---|
+| Matching `app_users` row (non-test) | **none** | 1, role `employee`, `active` |
+| Last sign-in | — | 2026-07-13 |
+| Sends since 2026-05-01 | 104 | 136 |
+| Delivered | **97** | **3** (2026-05-11, 05-12, 09-02) |
+| Failed | 7 | 133 (134 all-time) |
+| Failure window | 2026-05-11 → 06-25, intermittent | 2026-05-13 → 2026-09-09, **continuous** |
+| Sends after 2026-08-12 | none | daily |
+
+`4451`’s May failures were transient; it kept receiving normally for three more months. It has no `app_users` row because the number was retired around 2026-08-12 — the same person now appears at last4 `0665` (message bodies address the same first name).
+
+## The actual unreachability cases
+
+Portal traffic only (`from = +18443781444`). Counts are messages, not people.
+
+| last4 | `app_users` | Failed | Total sent | Fail rate | Window | Read |
+|---|---|---:|---:|---:|---|---|
+| **`4421`** | active `employee`, last sign-in 2026-07-13 | 133 | 136 | **98%** | 2026-05-13 → 2026-09-09, ongoing | **Four months of daily safety briefings and every payroll reminder, undelivered.** Real unreachability. |
+| **`6286`** | active `employee`, created 2026-08-31 | 6 | 6 | **100%** | 2026-09-03 → 2026-09-09, ongoing | **A new hire who has never received a single SMS.** Every message ever addressed to them failed. |
+| `1779` | **none** | 60 | 104 | 58% | 2026-05-30 → 2026-08-12, then no sends | Degrading, then the number left the system. Likely departure or number change; no live exposure today. |
+| `4451` | **none** | 7 | 104 | 7% | 2026-05-11 → 06-25 | Transient. Not a case. |
+| `1454` | active `employee` | 5 | 44 in Aug alone | low | intermittent | Normal phone-off behaviour. |
+| `0665` | active `employee` | 2 | — | low | 2026-09-04 | Normal. |
+| `9829` | active `employee` | 1 | — | low | 2026-08-22 | Normal. |
+
+Failures on `0398`, `6644`, `9951`, `3619`, `2876`, `5979`, `9971` are overwhelmingly from **PO# (`+18338612650`)** — the purchase-order application outside this repo. `9971` has no `app_users` row at all. Those are out of scope here and are the shared-account case described in `01-DISCOVERY-REPORT.md`.
+
+## Why `4421` and `6286` are worse than they look
+
+Both have `sms_operational_opt_out = false` and `sms_marketing_opt_out = false`. Neither is on the ClickSend opt-out list. From inside the app, both look perfectly healthy and reachable — the compliance dashboard, the escalation logic, and the export all treat their briefing reminders as delivered.
+
+For `6286` the failure text is `Absent Subscriber. Phone is out of range or switched off. Likely to have been unavailable for 12 hours or more.` For a phone number that has *never once* accepted a message, the more likely explanations are a wrong or mistyped number on the account, or a landline / non-SMS line. That is checkable in a minute by a human and is not checkable by us.
+
+## What is deliberately not proposed here
+
+No flag changes, no recipient-list edits, no send-path filter. Two things a human should decide:
+
+1. **Confirm the numbers.** For `4421` and `6286`, verify the phone on file is correct and SMS-capable. That single check may resolve both.
+2. **Decide whether “delivered” should mean delivered.** Closing the blind spot means ingesting ClickSend’s delivery receipts (the same inbound webhook mechanism Chunk 3 wires up can carry them) and recording a real `provider_status`. That is a scoped piece of work, not a fix to make in passing.
