@@ -32,3 +32,30 @@ Append-only. Newest entry at the bottom.
 - Supabase MCP was authenticated to other projects, not ATTS prod `emqqxfzahmwnehxcpxzp`, so live SMS log queries were not possible.
 - Reminder dry-run is new; cron empty-body still sends live. Mass SMS still includes `@atts.test` and still uses unset `from`.
 - `sms_operational_opt_out` is still not checked by reminder or escalation (intentional — no behavior change).
+
+---
+
+## 2026-09-09 — Migration fix, PWA split, Braden decisions, Chunk 2 prep
+
+**Part A — Postgres 16 migration bug**
+
+- `sms_compat_uuid` used `CAST(... AS bit(128)) AS uuid`, which fails on PG16 (`cannot cast type bit to uuid`). Fixed to `md5(p_seed)::uuid`.
+- Added `scripts/test-sms-migration-local.sh` (throwaway `postgres:16`, stubs, seed, assert compat count=3). Replay PASS: `compat_row_count=3`, `source_tables=mass_sms_log,payroll_reminder_sms_log,sms_escalation_send_log`.
+- Corrected `02-CHUNK1-VERIFICATION.md`: prior “verified” claim was text-only; original SQL was broken.
+
+**Part B — Split unrelated PWA work**
+
+- Created `feat/pwa-app-update` at `694be04` (commits `ec1327c`, `694be04`).
+- Removed those two commits from `feat/sms-upgrade` via `git reset --hard 9b144ca` (suggested `rebase --onto 9b144ca ec1327c~1` was a no-op because `ec1327c~1 == 9b144ca`).
+- Session log was never modified by the PWA commits (only created in `9b144ca`); kept on SMS branch.
+- Force-pushed `feat/sms-upgrade` with `--force-with-lease` (draft PR #3; agent-only pushes). Separate draft PR for PWA.
+
+**Part C — Braden decisions (do not re-ask)**
+
+1. **STOP → both opt-out flags** (`sms_operational_opt_out` + `sms_marketing_opt_out`). Safety contact after STOP is out-of-band (call/supervisor). Recorded in `01-DISCOVERY-REPORT.md` Q6; act in Chunk 3.
+2. **Mass SMS `@atts.test` + unset `from`:** leave alone until Chunk 4. Recorded in Q7; Chunk 2 must not drive-by.
+3. **ClickSend account facts:** still unavailable; re-run audit script each session; fill discovery section on first success. Two-number HYPOTHESIS stays open.
+4. **Supabase MCP** is authenticated to other projects, not ATTS prod `emqqxfzahmwnehxcpxzp` — config item for Braden; agent must not switch it.
+5. Retention, consent language, DOT/CDL scope: still with Braden; affect Chunks 5–6 only.
+
+**Gates:** lint / typecheck / build after Part A+D commits.

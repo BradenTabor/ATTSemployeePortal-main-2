@@ -1,7 +1,46 @@
 # Chunk 1 verification
 
-**Date:** 2026-09-02
+**Date:** 2026-09-02 (updated 2026-09-09)
 **What shipped:** `sms_message_log` + `sms_message_log_compat` + `sendAndLogSMS` / persist on all four send paths. `sendSMS()` POST URL, auth, and SUCCESS/THROTTLED handling unchanged.
+
+## Correction: original migration was broken on Postgres 16
+
+Chunk 1 originally claimed the migration was verified. That was **text-only** (unit tests asserting SQL string contents). The shipped `sms_compat_uuid` body used:
+
+```sql
+SELECT CAST(CAST(('x' || md5(p_seed)) AS bit(128)) AS uuid);
+```
+
+On PostgreSQL 16 this aborts with `ERROR: cannot cast type bit to uuid`, so `supabase db push` fails before the compat view is created. Verified by applying the broken migration to a real Postgres 16 instance.
+
+**Fix (2026-09-09):** replace that line with `SELECT md5(p_seed)::uuid;` — verified to apply cleanly end-to-end on Postgres 16.
+
+## Local migration replay
+
+Executable regression (not string matching):
+
+```bash
+./scripts/test-sms-migration-local.sh
+```
+
+Starts throwaway `postgres:16` on `:5499`, stubs `authenticated` / `service_role`, `is_admin()`, `set_updated_at()`, and the three legacy tables; seeds one realistic row each; applies `20260902200000_sms_message_log.sql`; asserts `sms_message_log_compat` returns exactly 3 rows with each `source_table` once.
+
+Actual output (2026-09-09):
+
+```
+=== Starting throwaway Postgres 16 on :5499 ===
+=== Waiting for readiness ===
+=== Creating stubs (roles, helpers, legacy tables) ===
+=== Seeding one row per legacy table ===
+=== Applying supabase/migrations/20260902200000_sms_message_log.sql ===
+=== Asserting sms_message_log_compat ===
+compat_row_count=3
+source_tables=mass_sms_log,payroll_reminder_sms_log,sms_escalation_send_log
+
+PASS: migration applied; sms_message_log_compat returned 3 rows (one per legacy source_table).
+```
+
+What this proves: the fixed UUID helper runs on PG16, the migration applies end-to-end, and the compat view unnests one row from each of `sms_escalation_send_log`, `payroll_reminder_sms_log`, and `mass_sms_log`.
 
 ## Unit tests
 
@@ -11,7 +50,9 @@
 - Dry-run helper sets `provider_status = DRY_RUN` and `is_dry_run = true`.
 - Migration SQL contains UNION ALL of `sms_escalation_send_log`, `payroll_reminder_sms_log`, and `mass_sms_log` plus `is_admin()` RLS.
 
-No Deno test runner exists in this repo; the logging helper is tested via Vitest (no jsr imports). An e2e against the compat view needs a live Postgres with the three legacy tables populated — not possible without applying the migration.
+These unit checks remain useful for the TypeScript helper but **do not** replace the local migration replay above.
+
+No Deno test runner exists in this repo; the logging helper is tested via Vitest (no jsr imports). Live-data verification against ATTS prod still requires applying the migration to a Supabase project (not done in agent sessions without explicit approval).
 
 ## Function dry-run (before/after eligible counts)
 

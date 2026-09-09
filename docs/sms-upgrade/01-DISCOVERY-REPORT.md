@@ -120,6 +120,8 @@ The skill reference `export-pattern.md` uses `accessor:` callbacks — that is *
 
 ## ClickSend account facts
 
+**Still unavailable as of 2026-09-09:** no `CLICKSEND_*` in `.env`, no `clicksend` MCP registered. Two-number HYPOTHESIS remains open. Re-run `scripts/clicksend-audit.sh` at the start of every future session; fill this section on first success.
+
 ClickSend read access unavailable in this session.
 
 - `./scripts/clicksend-audit.sh` exited 2: `CLICKSEND_USERNAME` / `CLICKSEND_API_KEY` (or `CLICKSEND_PASSWORD`) are not set in the environment or `.env`. (The script originally sourced `.env` and crashed on an unquoted webhook URL; it now parses only `CLICKSEND_*` keys.)
@@ -220,7 +222,13 @@ Code-level proof: `sendSMS()` body/URL/auth unchanged; wrapper only adds a DB in
 4. Retention: SOP draft is 5 years for opt-out/consent-export records, 2 years for routine send logs — confirm or override.
 5. Should DOT medical / CDL expiry join the cert-expiry SMS category?
 6. STOP policy: set **both** `sms_operational_opt_out` and `sms_marketing_opt_out`, or marketing-only (operational safety texts keep going)?
+   **DECIDED (Braden, 2026-09-09):** STOP sets **both** flags true. Carrier blocks all traffic from that sender regardless of app state; marketing-only would make the app record knowingly false. Reaching an opted-out employee about safety is out-of-band (call/supervisor), not SMS. Build Chunk 3 to this spec.
 7. Mass SMS currently includes `@atts.test` accounts and does not set `from`. Leave as-is until Chunk 4, or treat test-account exclusion as a drive-by? (Chunk 1 will not change it.)
+   **DECIDED (Braden, 2026-09-09):** Leave both alone for now. `from` is fixed in Chunk 4 via sender registry; `@atts.test` filter rides along there. Do not drive-by in Chunk 2.
+
+
+
+**Still with Braden (affect Chunks 5–6, not Chunk 2):** Q3 consent language, Q4 retention, Q5 DOT/CDL scope.
 
 ## Blockers
 

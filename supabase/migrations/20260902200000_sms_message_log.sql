@@ -72,7 +72,7 @@ RETURNS uuid
 LANGUAGE sql
 IMMUTABLE
 AS $$
-  SELECT CAST(CAST(('x' || md5(p_seed)) AS bit(128)) AS uuid);
+  SELECT md5(p_seed)::uuid;
 $$;
 
 CREATE OR REPLACE VIEW public.sms_message_log_compat
