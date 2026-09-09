@@ -18,7 +18,7 @@ Each item from `00-BUILD-BRIEF.md` “Where things live today” and Change Requ
 | Payroll Thu/Fri/Sat 8 AM Central, kill switch `payroll_reminder_sms_config`, default from `+18443781444` | CONFIRMED | `payroll-hours-reminder-sms/index.ts:5–6,21,168–180`; `docs/PAYROLL_SMS_REMINDER.md` |
 | Mass SMS admin JWT, dry-run by default, 15-min cooldown, batches of 500, **default `from` is `""`** | CONFIRMED | `send-mass-sms/index.ts:6–8,26–28,91,178–181` |
 | Cron inventory in `docs/cron-jobs-inventory.md` | CONFIRMED | rows for reminder 10:40 UTC, escalation 16:00 UTC, payroll utc13/utc14 |
-| Two production `from` numbers | **CONFIRMED (refined 2026-09-09)** | Audit shows outbound history using both `+18338612650` (PO#) and `+18443781444` (RTO #). Not merely “dedicated vs ClickSend default.” `CLICKSEND_FROM_NUMBER` still unset. See ClickSend account facts. |
+| Two production `from` numbers | **CONFIRMED (refined 2026-09-09)** | Audit shows outbound history using both `+18338612650` (PO#) and `+18443781444` (RTO #). Not merely “dedicated vs ClickSend default.” `CLICKSEND_FROM_NUMBER` **set to `+18443781444` on 2026-09-09** (was unset). See ClickSend account facts. |
 | “Every function already has a dryRun pattern” (ground rule 2) | WRONG | Reminder has **no** `dryRun` / `x-dry-run` handling at all (`safety-briefing-reminder-sms/index.ts` — no matches). Escalation: body + `x-dry-run` (`:233–236`). Payroll: **body only** `dryRun === true` (`:152`), no header. Mass: body, default dry-run (`:91`). |
 | Newest migration prefix is `20260627170000` | WRONG | `20260627170000_restore_corrective_actions_audit_branch.sql` exists, but later files `20260902120000_field_audit_submit_pipeline.sql` and `20260902130000_field_audit_escalate_site_scope.sql` already sort after it. Chunk 1 will use `20260902200000_…`. |
 
@@ -154,7 +154,11 @@ All three are **`number_type: tollfree`** (not standard 10-digit long codes). **
 
 ### Shared ClickSend account (added 2026-09-09)
 
-The ATTS ClickSend account is **not** exclusive to this portal. `+18338612650` (PO#) carries **purchase-order approval SMS from an application outside this repo** (`webhook-approval-for-6061.bolt.host`), sending through the same credentials and the same subaccount (`739548`, API user `shane@alltts.com`). Owner of that application is currently **unknown** — see `12-BRADEN-TODO.md`.
+The ATTS ClickSend account is **not** exclusive to this portal. `+18338612650` (PO#) carries **purchase-order approval SMS from an application outside this repo** sending through the same credentials and the same subaccount (`739548`, API user `shane@alltts.com`). Owner of that application is currently **unknown** — see `12-BRADEN-TODO.md`.
+
+> **Concrete lead for the ownership question: the app is hosted at `webhook-approval-for-6061.bolt.host`.** That hostname is the starting point — a Bolt deployment, so whoever owns the Bolt project owns the sender. Resolve it before PO# is touched, since wiring that number would change inbound behaviour on a system we do not own.
+
+**Quantified 2026-09-09, once delivery receipts were ingested:** of **5,404** receipts pulled from ClickSend history, **2,772 (51%) match no portal send at all**. That is the purchase-order traffic. It is now retained rather than discarded — `sms_delivery_receipt.is_matched = false` is standing, queryable evidence of the shared account instead of an anecdote.
 
 Three consequences, in order of how much they change what we do:
 

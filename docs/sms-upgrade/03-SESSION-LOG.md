@@ -251,3 +251,99 @@ Append-only. Newest entry at the bottom.
 **Gates:** lint ✅ typecheck ✅ build ✅
 
 **Production changes:** the `cron_http_failures` table, `sweep_cron_http_failures()`, the `cron-http-failure-sweep` job, and the `cron_job_runs` / `get_recent_cron_failures` replacements. Nothing else. No SMS sent (not even dry-run), no opt-out flags touched, no `CLICKSEND_FROM_NUMBER`, no ClickSend writes, no Edge Function deploys, no changes to any legacy SMS log table or `app_users`.
+
+---
+
+## 2026-09-09 — Session 8 (delivery receipts: the export stops over-claiming)
+
+**The problem this session closes.** `sms_message_log` recorded ClickSend's response at
+*submission* time, which is almost always `SUCCESS`. Nothing captured what the carrier did
+afterwards. So the compliance export asserted delivery it could not substantiate: 3,046 sends
+since 2026-05-01 with zero logged failures, while ClickSend held 319.
+
+**A — Told the truth first, before building anything**
+
+- Renamed the SMS export status column to **"Provider Status (submission)"** across CSV, PDF
+  and preview. Underlying column name unchanged.
+- Added an export footer carried by both CSV and PDF. `ExportMetadata` gained `notes?: string[]`
+  so the caveat renders under the table rather than being pasted into a title.
+- Same caveat into `11-COMPLIANCE-SOP.md` §5.6 and `12-BRADEN-TODO.md`. Committed on its own
+  (`d48a89e`) — the honest position while Part B was still being built.
+
+**B — Pull, not push**
+
+- **B.1.** Checked the actual API rather than assuming. Three options exist, not two:
+  | Option | Verdict |
+  |---|---|
+  | Callback URL (push) | Rejected — one dashboard field on an account shared with the purchase-order app; a wrong value fails silently and forever, and it can be overwritten by whoever owns that app. |
+  | `GET /v3/sms/receipts` (pull) | Rejected — **read-once**. Reading a receipt removes it, so a failed run loses data and backfill is impossible. |
+  | `GET /v3/sms/history` (pull) | **Chosen.** Read-only, paginated, re-readable, retains ~4 months, carries `status` + `status_code` + `status_text` + `error_code` per message. Reuses the reconcile function's shape and cannot be broken by a misconfigured rule. |
+- **B.2.** Migration `20260909190000` adds `delivery_status`, `delivery_status_at`,
+  `delivery_error_code`, `delivery_raw` to `sms_message_log`. `provider_status` is never
+  rewritten — submission and delivery are different facts and both belong in the audit trail.
+- **B.3.** `clicksend-delivery-receipts` Edge Function, deployed `--no-verify-jwt`, diff-only
+  by default, kill switch `app_settings.sms_delivery_receipts_config`, cron created **DISABLED**.
+- **Idempotency is enforced in the database, not the caller.** A `BEFORE UPDATE` trigger on
+  `sms_delivery_receipt` returns `NULL` when nothing about a receipt changed, cancelling the
+  write outright. That way a replay is a true no-op regardless of who runs it — cron, manual
+  replay, or the backfill script. Proven in prod: two consecutive `apply` runs submitted 117
+  receipts each and `max(updated_at)` did not move.
+- **Unmatched receipts are kept, not dropped.** 2,772 of 5,404 receipts (51%) match no portal
+  send. That is the purchase-order app's traffic, and `is_matched = false` makes it queryable
+  evidence instead of an anecdote.
+- **B.4 backfill.** Seeded from a full history pull. **2,632** receipts matched portal sends.
+  Since 2026-05-01: **2,595 delivered, 229 failed, 80 handed to the network without a final
+  receipt, 143 unknown** (pre-2026-05-11, outside ClickSend's retention). The 143 read
+  `No receipt` in the export — unknown, deliberately not presented as either outcome.
+- **B.5.** Export now carries submission and delivery as two separate columns, plus
+  `Delivery Detail` in CSV. Caveat revised to describe what is now actually known.
+- **B.6.** Unit tests for mapping, normalisation, matching and idempotency. New localgate
+  assertion covers the trigger; it compares `ctid`, not `updated_at`, because the gate runs in
+  one transaction where `now()` is frozen and would make the test vacuous.
+
+**C — `CLICKSEND_FROM_NUMBER` set to `+18443781444`**
+
+Verified by `send-mass-sms` dry-run: `fromNumber` reports `+18443781444`, previously `null`.
+No send. Recorded in `09-CHUNK4-PLAN.md` as a stopgap that Chunk 4 **deletes** rather than
+demotes to an override.
+
+**D — Four unreachable numbers, and a correction**
+
+New `13-UNREACHABLE-CREW.md` (full phone numbers, flagged internal-only).
+
+- **`6644` — the previous briefing's central assumption was wrong.** It reasoned that being on
+  ClickSend's opt-out list means the carrier stops delivering, and flagged that as unverified.
+  The receipts verify it and it is false: **530 delivered vs 2 failed**, 36 in September. The
+  opt-out list only suppresses sends addressed *to that list*; the portal sends ad-hoc to a raw
+  number, so it is never consulted. The problem inverts — not "safety alerts went missing", but
+  "someone who texted STOP received 500+ messages and the provider holds the dated record".
+  Corrected in place with strikethrough so the withdrawn reasoning stays auditable.
+- **`4421`** (Tracer, `+14792004421`): 2 delivered / 133 failed. Number is well-formed with a
+  valid 479 area code — reads as a disconnected or reassigned mobile, not a typo.
+- **`6286`** (James David Mcleod, `8707196286`): 0 delivered / 6 failed, `Absent Subscriber`
+  every time. The odd storage format is **ruled out** as the cause — the send path normalises
+  it and ClickSend received the correct `+18707196286`.
+- **`1779`** (`+14795181779`): no `app_users` row, sends stopped on their own 2026-08-12.
+  Confirm the departure, nothing else.
+
+**E — Housekeeping**
+
+`01-DISCOVERY-REPORT.md` records `webhook-approval-for-6061.bolt.host` as the concrete lead for
+PO# ownership, and the now-quantified 51% shared-account share.
+
+**Gates:** lint ✅ typecheck ✅ build ✅ unit ✅ localgate ✅ (baseline + 16 forward migrations)
+
+**Production changes:** migration `20260909190000` (four additive columns, `sms_delivery_receipt`,
+compat view gaining delivery columns at the end, disabled cron); the
+`clicksend-delivery-receipts` function; 5,404 receipt rows; the `CLICKSEND_FROM_NUMBER` secret.
+
+**Not changed:** no `provider_status`, body, recipient, timestamp, opt-out flag or phone number
+on any existing row. Verified by an md5 fingerprint over `sms_message_log`,
+`sms_escalation_send_log`, `payroll_reminder_sms_log`, `mass_sms_log` and `app_users` taken
+before and after the backfill — byte-identical. No SMS sent. No ClickSend writes; the opt-out
+list was read, never modified.
+
+**One side effect worth recording:** verifying C required an admin session, so a magic link was
+minted for `bradenleetabor@gmail.com` via the admin API (no email sent) and revoked immediately
+after. That moved `auth.users.last_sign_in_at` for that account to 2026-09-09 18:27 UTC. No
+application data was touched, but the timestamp is not the user's own sign-in.
