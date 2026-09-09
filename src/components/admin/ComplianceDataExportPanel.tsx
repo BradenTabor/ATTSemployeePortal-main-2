@@ -30,8 +30,10 @@ import { cn } from "../../lib/utils";
 import { logger } from "../../lib/logger";
 import {
   classifySmsExportQueryResult,
+  isSmsLogColumnMissing,
   isSmsLogUnavailableError,
   SmsLogUnavailableError,
+  SMS_LOG_COLUMN_MISSING_MESSAGE,
   SMS_LOG_UNAVAILABLE_MESSAGE,
 } from "../../lib/smsExportLoadState";
 import { useAuth } from "../../contexts/AuthContext";
@@ -536,8 +538,25 @@ interface SmsExportRow {
   message_type: string;
   category: string;
   provider_status: string | null;
+  delivery_status: string | null;
+  delivery_detail: string | null;
   opt_out_snapshot: string;
   price: number | null;
+}
+
+/** Delivery outcomes as stored by the receipt ingestion, in reader-facing wording. */
+const DELIVERY_STATUS_LABELS: Record<string, string> = {
+  delivered: "Delivered to handset",
+  sent_to_network: "Sent to network (no receipt)",
+  failed: "Failed at carrier",
+  cancelled: "Cancelled",
+  queued: "Queued",
+  unknown: "Unknown",
+};
+
+function formatDeliveryStatus(value: unknown): string {
+  if (typeof value !== "string" || value.length === 0) return "No receipt";
+  return DELIVERY_STATUS_LABELS[value] ?? value;
 }
 
 function formatOptOutSnapshot(value: unknown): string {
@@ -554,9 +573,12 @@ function formatOptOutSnapshot(value: unknown): string {
  * carrier delivery receipt, and the column is named so no reader assumes it is one.
  */
 const SMS_SUBMISSION_STATUS_HEADER = "Provider Status (submission)";
+const SMS_DELIVERY_STATUS_HEADER = "Delivery Status (carrier receipt)";
 
-const SMS_SUBMISSION_STATUS_CAVEAT =
-  "Status reflects the provider's acceptance of the message at submission time, not carrier delivery confirmation.";
+const SMS_STATUS_CAVEATS = [
+  "Provider Status (submission) reflects the provider's acceptance of the message at submission time, not carrier delivery confirmation.",
+  "Delivery Status (carrier receipt) is the outcome the carrier reported afterwards. \"No receipt\" means no delivery receipt has been ingested for that message — most often because it predates the provider's ~4-month history retention — and is not evidence of either delivery or failure.",
+];
 
 const SMS_CSV_COLUMNS: ExportColumn<SmsExportRow>[] = [
   { header: "Date/Time", key: "sent_at", format: (v) => formatDateForExport(v as string, true), width: 22 },
@@ -566,6 +588,8 @@ const SMS_CSV_COLUMNS: ExportColumn<SmsExportRow>[] = [
   { header: "Message Type", key: "message_type", format: (v) => formatValue(v), width: 24 },
   { header: "Category", key: "category", format: (v) => formatValue(v), width: 12 },
   { header: SMS_SUBMISSION_STATUS_HEADER, key: "provider_status", format: (v) => formatValue(v), width: 22 },
+  { header: SMS_DELIVERY_STATUS_HEADER, key: "delivery_status", format: formatDeliveryStatus, width: 24 },
+  { header: "Delivery Detail", key: "delivery_detail", format: (v) => formatValue(v), width: 30 },
   { header: "Opt-out at Send", key: "opt_out_snapshot", format: (v) => formatValue(v), width: 18 },
   { header: "Cost", key: "price", format: (v) => (v == null ? "—" : formatCurrency(v as number)), width: 10 },
 ];
@@ -578,6 +602,7 @@ const SMS_PREVIEW_COLUMNS: ExportColumn<SmsExportRow>[] = [
   { header: "Phone", key: "phone_masked", format: (v) => formatValue(v), width: 10 },
   { header: "Type", key: "message_type", format: (v) => formatValue(v), width: 20 },
   { header: SMS_SUBMISSION_STATUS_HEADER, key: "provider_status", format: (v) => formatValue(v), width: 20 },
+  { header: SMS_DELIVERY_STATUS_HEADER, key: "delivery_status", format: formatDeliveryStatus, width: 22 },
   { header: "Cost", key: "price", format: (v) => (v == null ? "—" : formatCurrency(v as number)), width: 10 },
 ];
 
@@ -589,6 +614,7 @@ const SMS_PDF_COLUMNS: ExportColumn<SmsExportRow>[] = [
   { header: "Type", key: "message_type", format: (v) => formatValue(v), width: 22 },
   { header: "Category", key: "category", format: (v) => formatValue(v), width: 12 },
   { header: SMS_SUBMISSION_STATUS_HEADER, key: "provider_status", format: (v) => formatValue(v), width: 20 },
+  { header: SMS_DELIVERY_STATUS_HEADER, key: "delivery_status", format: formatDeliveryStatus, width: 22 },
   { header: "Opt-out", key: "opt_out_snapshot", format: (v) => formatValue(v), width: 16 },
   { header: "Cost", key: "price", format: (v) => (v == null ? "—" : formatCurrency(v as number)), width: 10 },
 ];
@@ -865,13 +891,14 @@ export default function ComplianceDataExportPanel() {
     {
       id: "sms",
       title: "SMS Communications",
-      description: "Unified SMS send log (live sends only; dry-runs excluded). Phone last-4 in preview; full E.164 in CSV only.",
+      description:
+        "Unified SMS send log (live sends only; dry-runs excluded). Submission status and carrier delivery status are separate columns. Phone last-4 in preview; full E.164 in CSV only.",
       reportType: "SMS Communications",
       filenamePrefix: "SMS_Communications",
       columns: SMS_CSV_COLUMNS as ExportColumn<unknown>[],
       pdfColumns: SMS_PDF_COLUMNS as ExportColumn<unknown>[],
       previewColumns: SMS_PREVIEW_COLUMNS as ExportColumn<unknown>[],
-      exportNotes: [SMS_SUBMISSION_STATUS_CAVEAT],
+      exportNotes: SMS_STATUS_CAVEATS,
       getRowCount: (d) => d.length,
       formatCountLabel: (count) =>
         count === 0
@@ -881,7 +908,7 @@ export default function ComplianceDataExportPanel() {
         const { data, error } = await supabase
           .from("sms_message_log_compat")
           .select(
-            "id, user_id, phone_e164, message_type, category, provider_status, opt_out_state_at_send, price, sent_at, is_dry_run"
+            "id, user_id, phone_e164, message_type, category, provider_status, delivery_status, delivery_status_text, opt_out_state_at_send, price, sent_at, is_dry_run"
           )
           .eq("is_dry_run", false)
           .gte("sent_at", `${fromDate}T00:00:00`)
@@ -895,7 +922,9 @@ export default function ComplianceDataExportPanel() {
             message: error?.message,
             code: error?.code,
           });
-          throw new SmsLogUnavailableError();
+          throw new SmsLogUnavailableError(
+            isSmsLogColumnMissing(error) ? SMS_LOG_COLUMN_MISSING_MESSAGE : SMS_LOG_UNAVAILABLE_MESSAGE
+          );
         }
         if (loadState === "error") {
           throw new Error(error?.message ?? "Failed to load SMS log");
@@ -908,6 +937,8 @@ export default function ComplianceDataExportPanel() {
           message_type: string;
           category: string;
           provider_status: string | null;
+          delivery_status: string | null;
+          delivery_status_text: string | null;
           opt_out_state_at_send: unknown;
           price: number | null;
           sent_at: string;
@@ -961,6 +992,8 @@ export default function ComplianceDataExportPanel() {
               message_type: r.message_type,
               category: r.category,
               provider_status: r.provider_status,
+              delivery_status: r.delivery_status,
+              delivery_detail: r.delivery_status_text,
               opt_out_snapshot: formatOptOutSnapshot(r.opt_out_state_at_send),
               price: r.price,
             };

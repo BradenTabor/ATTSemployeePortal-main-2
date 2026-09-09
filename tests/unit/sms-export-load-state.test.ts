@@ -32,22 +32,19 @@ describe("classifySmsExportQueryResult", () => {
     ).toBe("error");
   });
 
-  it('arbitrary error whose message contains "does not exist" → error (NOT unavailable)', () => {
-    expect(
-      classifySmsExportQueryResult({
-        data: null,
-        error: {
-          code: "42703",
-          message: 'column "phone_e164" does not exist',
-        },
-      })
-    ).toBe("error");
-    expect(
-      isSmsLogRelationMissing({
-        code: "42703",
-        message: 'column "phone_e164" does not exist',
-      })
-    ).toBe(false);
+  it("missing column → unavailable (environment is behind on migrations), but not a missing relation", () => {
+    const missingColumn = {
+      code: "42703",
+      message: 'column "delivery_status" does not exist',
+    };
+    expect(classifySmsExportQueryResult({ data: null, error: missingColumn })).toBe("unavailable");
+    expect(isSmsLogRelationMissing(missingColumn)).toBe(false);
+  });
+
+  it('error whose message contains "does not exist" but carries no schema code → error', () => {
+    const vague = { code: "XX000", message: 'something "does not exist"' };
+    expect(classifySmsExportQueryResult({ data: null, error: vague })).toBe("error");
+    expect(isSmsLogRelationMissing(vague)).toBe(false);
   });
 
   it("success with [] → empty", () => {

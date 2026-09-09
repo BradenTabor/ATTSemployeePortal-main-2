@@ -117,9 +117,23 @@ Use this procedure whenever ATTS needs to demonstrate SMS compliance — for an 
 
 9.  Click Load to preview the record count, then Export CSV or Export PDF as needed.
 
-10. The export includes: recipient (name/role), message type/category, timestamp, provider submission status, opt-out status at time of send, and consent basis.
+10. The export includes: recipient (name/role), message type/category, timestamp, provider submission status, carrier delivery status, opt-out status at time of send, and consent basis.
 
-> **Read the status column correctly.** The column is titled **“Provider Status (submission)”** and both the CSV and PDF carry the line: *“Status reflects the provider's acceptance of the message at submission time, not carrier delivery confirmation.”* A `SUCCESS` value means ClickSend accepted the message for sending. It does **not** mean the handset received it. Carrier-level failures (blocked, absent subscriber, rejected) occur after this point and are not yet ingested, so this export cannot be used to assert that a specific person received a specific message. If an auditor or legal request asks for proof of receipt, say so explicitly rather than supplying this export as if it answered the question.
+> **Read the two status columns correctly — they are different facts.**
+>
+> | Column | What it means |
+> |---|---|
+> | **Provider Status (submission)** | What ClickSend said when it *accepted* the message for sending. `SUCCESS` means accepted. It does **not** mean the handset received it. |
+> | **Delivery Status (carrier receipt)** | What the carrier reported *afterwards*: `Delivered to handset`, `Failed at carrier`, `Sent to network (no receipt)`, or `No receipt`. |
+>
+> Both CSV and PDF carry these lines under the table:
+>
+> - *“Provider Status (submission) reflects the provider's acceptance of the message at submission time, not carrier delivery confirmation.”*
+> - *“Delivery Status (carrier receipt) is the outcome the carrier reported afterwards. ‘No receipt’ means no delivery receipt has been ingested for that message — most often because it predates the provider's ~4-month history retention — and is not evidence of either delivery or failure.”*
+>
+> **Proof of receipt lives in the delivery column only.** A row reading `SUCCESS` / `Delivered to handset` is defensible evidence the message reached the handset. A row reading `SUCCESS` / `Failed at carrier` is a message that was never received, and there are real examples of these — since 2026-05-01 the portal submitted 3,047 messages with zero submission failures, while the carrier reported **229 failures**. A row reading `No receipt` is unknown, not delivered; do not present it as either.
+>
+> If an auditor or legal request asks for proof that a specific person received a specific message, answer from the delivery column and say plainly when it reads `No receipt`.
 
 11. Store the exported file per the retention schedule below and log that an export occurred (who requested it, for what purpose, and the date range) — this export-of-an-export record is itself part of demonstrating an active compliance program.
 

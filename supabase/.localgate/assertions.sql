@@ -4179,4 +4179,95 @@ BEGIN
   RAISE NOTICE 'OK: Chunk 4 behavioral — escalate creates 1 CA (assignee=audited person) + 1 ledger (-5, raffle=false) + 2 notifications (employee high + foreman / general_foreman fallback), idempotent on re-tap, and the restored audit branch logs the CA.';
 END $$;
 
+-- ---------------------------------------------------------------------------
+-- Delivery receipts: submission and delivery are separate facts, and re-ingesting
+-- an already-seen receipt must not write anything at all.
+-- ---------------------------------------------------------------------------
+-- Note on the observable used below: this whole file runs in one transaction, where
+-- now() is frozen, so updated_at cannot tell a real write from a skipped one. ctid
+-- can — a cancelled UPDATE leaves the tuple exactly where it was.
+DO $$
+DECLARE
+  v_first  tid;
+  v_second tid;
+  v_seen       timestamptz;
+  v_seen_after timestamptz;
+  v_status text;
+  v_err    text;
+BEGIN
+  IF to_regclass('public.sms_delivery_receipt') IS NULL THEN
+    RAISE EXCEPTION 'GATE FAILED — sms_delivery_receipt missing';
+  END IF;
+
+  PERFORM 1 FROM information_schema.columns
+   WHERE table_schema='public' AND table_name='sms_message_log' AND column_name='delivery_status';
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'GATE FAILED — sms_message_log.delivery_status missing';
+  END IF;
+
+  -- The compat view must expose submission and delivery side by side.
+  PERFORM 1 FROM information_schema.columns
+   WHERE table_schema='public' AND table_name='sms_message_log_compat'
+     AND column_name IN ('provider_status','delivery_status','delivery_status_text')
+  HAVING count(*) = 3;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'GATE FAILED — compat view must expose provider_status + delivery_status + delivery_status_text';
+  END IF;
+
+  INSERT INTO public.sms_delivery_receipt
+    (provider_message_id, delivery_status, delivery_status_at, delivery_error_code, is_matched, source, raw)
+  VALUES ('GATE-IDEMPOTENT-1', 'delivered', '2026-09-01T00:00:00Z', '4', true, 'history_pull', '{"a":1}'::jsonb);
+
+  SELECT ctid, first_seen_at INTO v_first, v_seen
+    FROM public.sms_delivery_receipt WHERE provider_message_id='GATE-IDEMPOTENT-1';
+
+  -- Same receipt again: the trigger must cancel the write outright.
+  INSERT INTO public.sms_delivery_receipt
+    (provider_message_id, delivery_status, delivery_status_at, delivery_error_code, is_matched, source, raw)
+  VALUES ('GATE-IDEMPOTENT-1', 'delivered', '2026-09-01T00:00:00Z', '4', true, 'history_pull', '{"a":1}'::jsonb)
+  ON CONFLICT (provider_message_id) DO UPDATE SET
+    delivery_status = EXCLUDED.delivery_status,
+    delivery_status_at = EXCLUDED.delivery_status_at,
+    delivery_error_code = EXCLUDED.delivery_error_code,
+    is_matched = EXCLUDED.is_matched,
+    source = EXCLUDED.source,
+    raw = EXCLUDED.raw,
+    updated_at = now();
+
+  SELECT ctid INTO v_second
+    FROM public.sms_delivery_receipt WHERE provider_message_id='GATE-IDEMPOTENT-1';
+  IF v_second IS DISTINCT FROM v_first THEN
+    RAISE EXCEPTION 'GATE FAILED — re-ingesting an identical receipt rewrote the row (ctid % -> %)', v_first, v_second;
+  END IF;
+
+  -- A real status change must still land, and must not rewrite first_seen_at.
+  INSERT INTO public.sms_delivery_receipt
+    (provider_message_id, delivery_status, delivery_status_at, delivery_error_code, is_matched, source, raw)
+  VALUES ('GATE-IDEMPOTENT-1', 'failed', '2026-09-01T00:00:00Z', '12', true, 'history_pull', '{"a":1}'::jsonb)
+  ON CONFLICT (provider_message_id) DO UPDATE SET
+    delivery_status = EXCLUDED.delivery_status,
+    delivery_error_code = EXCLUDED.delivery_error_code,
+    raw = EXCLUDED.raw;
+
+  SELECT ctid, delivery_status, delivery_error_code, first_seen_at
+    INTO v_second, v_status, v_err, v_seen_after
+    FROM public.sms_delivery_receipt WHERE provider_message_id='GATE-IDEMPOTENT-1';
+  IF v_second IS NOT DISTINCT FROM v_first THEN
+    RAISE EXCEPTION 'GATE FAILED — a changed delivery_status did not rewrite the row';
+  END IF;
+  IF v_status <> 'failed' OR v_err <> '12' THEN
+    RAISE EXCEPTION 'GATE FAILED — changed receipt landed as %/% (expected failed/12)', v_status, v_err;
+  END IF;
+  IF v_seen_after IS DISTINCT FROM v_seen THEN
+    RAISE EXCEPTION 'GATE FAILED — first_seen_at moved on update (% -> %)', v_seen, v_seen_after;
+  END IF;
+
+  -- Unmatched receipts (shared ClickSend account) must be storable, not rejected.
+  INSERT INTO public.sms_delivery_receipt
+    (provider_message_id, delivery_status, is_matched, source)
+  VALUES ('GATE-UNMATCHED-1', 'failed', false, 'history_pull');
+
+  RAISE NOTICE 'OK: SMS delivery receipts — compat view carries submission + delivery, re-ingest is a true no-op, real status changes land, first_seen_at is stable, unmatched receipts are retained.';
+END $$;
+
 ROLLBACK;

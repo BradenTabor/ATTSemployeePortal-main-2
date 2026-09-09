@@ -33,9 +33,9 @@ Different root cause from `6644`. Nobody opted out here. The carrier accepts the
 
 **Confirm:** Either the number is corrected, or you have confirmed it is right and the person knows they are not getting texts. Do not change opt-out flags — they are already `false` for both.
 
-**Related, larger:** closing the blind spot permanently means ingesting ClickSend delivery receipts as a separate fact alongside the submission response. Scoped work, not a drive-by. Flag it if you want it prioritised.
+**Blind spot now closed.** Delivery receipts are ingested and the compliance export carries **two** status columns: “Provider Status (submission)” and “Delivery Status (carrier receipt)”. The `4421` and `6286` failures above still read `SUCCESS` on submission — that column was never wrong, it was just never delivery — but they now also read **`Failed at carrier`**, which is the fact that matters. Since 2026-05-01 the export shows 2,595 delivered, 229 failed, 80 handed to the network without a final receipt, and 143 too old for the provider's history retention.
 
-**Meanwhile — do not export the SMS report as proof of receipt.** The compliance export's status column has been renamed from “Delivery Status” to **“Provider Status (submission)”**, and both CSV and PDF now carry the line: *“Status reflects the provider's acceptance of the message at submission time, not carrier delivery confirmation.”* Until delivery receipts are ingested, a `SUCCESS` row proves only that ClickSend accepted the message — the `4421` and `6286` failures above are all logged as `SUCCESS`.
+Nothing to do here; noted so you know the export can now be handed to an auditor, provided you read the delivery column and not the submission column.
 
 ---
 
