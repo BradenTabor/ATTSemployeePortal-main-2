@@ -69,12 +69,19 @@ curl -sS "https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/clicksend-inboun
 
 1. Log in to [ClickSend Dashboard](https://dashboard.clicksend.com) as the ATTS account (`shane@alltts.com` / All Terrain Tree Service).
 2. Go to **SMS** → **Inbound SMS** / **Rules** (or **Numbers** → inbound settings, depending on UI version).
-3. **Wire BOTH registered numbers that send to crew today — not either/or:**
-   - `+18443781444` (RTO #)
-   - `+18338612650` (PO #)  
-   **Why both:** Edge secret `CLICKSEND_FROM_NUMBER` is **unset**. Scheduled portal jobs hardcode RTO#, but mass SMS and other account traffic often leave `from` empty so ClickSend picks an account number (frequently PO#). Crew reply to whichever number texted them. Wiring only one number catches roughly **half** of STOP/HELP replies.  
-   Optionally prepare the same rule for `+18335183807` (Safety #) once registration completes.
-4. Add an **Inbound Rule** per number:
+3. **Wire `+18443781444` (RTO #) only. Do NOT touch `+18338612650` (PO #) yet.**
+
+   An earlier version of this runbook told you to wire both numbers. That instruction was written before we established that **PO# carries purchase-order approval SMS from an application outside this repo, on the same ClickSend account** (see `01-DISCOVERY-REPORT.md` → “Shared ClickSend account”). Adding or replacing an inbound rule on PO# could break or silently overwrite a rule that the purchase-order system depends on, and we do not own that system.
+
+   **Pre-conditions before PO# is wired at all — both must be answered in writing:**
+
+   - [ ] **(a)** Who owns the purchase-order approval application (`webhook-approval-for-6061.bolt.host`)? Named person or team.
+   - [ ] **(b)** Does PO# already have an inbound rule? If yes, what is its target URL, and would adding ours replace it or run alongside it? ClickSend’s UI does not always make “replace vs add” obvious — confirm before saving anything.
+
+   Until both are answered, PO# stays untouched. Same for `+18335183807` (Safety #) — it is still `REGISTRATION_INITIATED`, so there is nothing to wire.
+
+   **What wiring RTO# alone does and does not cover:** every scheduled portal send path (reminder, escalation, payroll) resolves `from` to `+18443781444`, so all of that traffic is covered. The one gap is **admin mass SMS**, which sends with no explicit `from` and lets ClickSend pick an account number — observed to pick PO# about 55% of the time. Close that gap by setting `CLICKSEND_FROM_NUMBER` to `+18443781444` (see [§2a](#2a-pin-the-mass-sms-sender-first)) rather than by wiring PO#.
+4. Add an **Inbound Rule** on RTO# only:
    - **Action:** Forward to URL (POST)
    - **URL:** `https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/clicksend-inbound-webhook`
    - **Method:** POST
@@ -83,9 +90,27 @@ curl -sS "https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/clicksend-inboun
    - Header value: the project’s `INTERNAL_SECRET` (from Edge Function secrets).
    - If ClickSend only supports `Authorization`, use `Authorization: Bearer <INTERNAL_SECRET>` instead.
    - If ClickSend supports **no** custom headers, stop and use the contingency in `docs/sms-upgrade/10-WEBHOOK-AUTH-FALLBACK.md` (not implemented yet).
-6. Save the rule on **both** numbers.
+6. Save the rule.
 7. Smoke-test only with the ranked options in [§7](#7-verify-inbound-stop-smoke-test). Prefer ClickSend’s simulator / HELP before any real STOP.
 8. Leave nightly reconcile cron **disabled** until a full week of diff-only runs has been reviewed.
+
+### 2a. Pin the mass-SMS sender first
+
+**Recommended: do this before step 4, not after.** Wiring inbound on RTO# only is complete *if* nothing the portal sends can come from another number. Mass SMS is the one path that can.
+
+Set the Edge Function secret `CLICKSEND_FROM_NUMBER = +18443781444` (Supabase Dashboard → Edge Functions → Secrets).
+
+Why this is a small change, not a risky one:
+
+| Send path | `from` today | After setting the secret |
+|---|---|---|
+| `safety-briefing-reminder-sms` | `CLICKSEND_FROM_NUMBER ?? "+18443781444"` | unchanged — already resolves to RTO# |
+| `safety-briefing-escalation-sms` | same | unchanged |
+| `payroll-hours-reminder-sms` | same | unchanged |
+| `send-mass-sms` | `CLICKSEND_FROM_NUMBER ?? ""` → ClickSend picks | pinned to RTO# |
+| Purchase-order app (external) | its own config | unaffected — it does not read Supabase secrets |
+
+So three of four paths are a literal no-op, one path stops being able to emit from an unwired number, and the external PO system cannot be touched by this. Chunk 4 replaces the env var with the sender registry and should delete it then; note that in `09-CHUNK4-PLAN.md` when you set it.
 
 ### Webhook auth (required)
 
@@ -251,7 +276,9 @@ LIMIT 50;
 
 **Normal:** occasional `sms_opt_out_events` rows when someone replies HELP/STOP/START; reconcile `clicksend_only` / `app_only` lists are small and explainable.
 
-**Misconfigured rule (act on this):** **zero** inbound events over a week while crew are known to reply to SMS, or ClickSend inbound history shows replies but `sms_opt_out_events` stays empty — re-check both numbers’ rules, auth header, and webhook GET health.
+**Misconfigured rule (act on this):** **zero** inbound events over a week while crew are known to reply to SMS, or ClickSend inbound history shows replies but `sms_opt_out_events` stays empty — re-check the RTO# rule, auth header, and webhook GET health.
+
+**Expected in the reconcile diff (not a bug):** `clicksend_only` entries with no matching employee. The opt-out list is shared with the purchase-order application, so it can contain PO recipients who are not ATTS employees and will never match `app_users`. See `01-DISCOVERY-REPORT.md` → “Shared ClickSend account”.
 
 Also watch cron HTTP health:
 

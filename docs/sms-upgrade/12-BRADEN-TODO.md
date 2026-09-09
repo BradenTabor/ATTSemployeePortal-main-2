@@ -14,23 +14,32 @@ Priority order. Anything an agent can automate is **not** listed.
 
 ---
 
-## 2. Wire ClickSend inbound rules (both numbers)
+## 2. Wire the ClickSend inbound rule — **RTO# only**
 
 **Where:** [ClickSend Dashboard](https://dashboard.clicksend.com) → **SMS** → **Inbound SMS / Rules** (or **Numbers** → inbound).
 
-**Do for both:**
+**Wire:** `+18443781444` (RTO#).  
+**Do NOT wire:** `+18338612650` (PO#). This reverses an earlier instruction in this file.
 
-- `+18443781444` (RTO#)
-- `+18338612650` (PO#)
+**Why the change:** PO# carries purchase-order approval SMS from an application outside this repo, sharing the same ClickSend account. Adding a rule there could break or overwrite one that system depends on, and we do not own it.
 
-**Each rule:**
+**Pre-conditions before PO# is wired at all — answer both in writing first:**
+
+- [ ] **(a)** Who owns the purchase-order approval app (`webhook-approval-for-6061.bolt.host`)? Named person or team.
+- [ ] **(b)** Does PO# already have an inbound rule? Target URL, and would saving ours replace it or add alongside?
+
+**Rule to create on RTO#:**
 
 - Action: Forward to URL (POST)
 - URL: `https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/clicksend-inbound-webhook`
 - Header: `x-internal-key` = `INTERNAL_SECRET` from Supabase → Edge Functions → Secrets  
   (or `Authorization: Bearer <INTERNAL_SECRET>` if that is the only option)
 
-**Why both:** `CLICKSEND_FROM_NUMBER` is unset; crew reply to whichever number texted them. One rule ≈ half the STOPs.
+### 2b. Before you save that rule — pin the mass-SMS sender
+
+**Recommendation: set Edge Function secret `CLICKSEND_FROM_NUMBER = +18443781444` now, ahead of Chunk 4.** (An agent did not set it; this is your call.)
+
+Reasoning. Wiring inbound on RTO# only is complete if nothing the portal sends can originate elsewhere. Three of the four send paths already resolve `from` to `+18443781444` in code, so setting the secret is a literal no-op for them. The exception is admin mass SMS, which sends with `from` empty and lets ClickSend choose an account number — observed choosing PO# about 55% of the time. If a blast goes out from PO#, every STOP reply to it lands on the number we are deliberately not wiring and is lost. A lost STOP is both a compliance exposure and unrecoverable after the fact, whereas setting the secret costs a one-line revert plus a note to delete it when Chunk 4's sender registry lands. The external purchase-order app does not read Supabase secrets, so it cannot be affected either way. The asymmetry favours setting it.
 
 **Pre-flight (SQL editor):**
 

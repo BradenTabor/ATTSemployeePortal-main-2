@@ -152,6 +152,27 @@ All three are **`number_type: tollfree`** (not standard 10-digit long codes). **
 - List id `3406168` (“Opt-Out List”): **1** contact (last4 `6644`).
 - Cross-check vs `app_users`: phone matches **two** rows (roles `admin` and `employee`); both have `sms_marketing_opt_out=false` and `sms_operational_opt_out=false`. See deploy log “first confirmed sync gap”.
 
+### Shared ClickSend account (added 2026-09-09)
+
+The ATTS ClickSend account is **not** exclusive to this portal. `+18338612650` (PO#) carries **purchase-order approval SMS from an application outside this repo** (`webhook-approval-for-6061.bolt.host`), sending through the same credentials and the same subaccount (`739548`, API user `shane@alltts.com`). Owner of that application is currently **unknown** — see `12-BRADEN-TODO.md`.
+
+Three consequences, in order of how much they change what we do:
+
+**1. Do not wire an inbound rule on PO# yet.** `05-CHUNK3-RUNBOOK.md` originally said to wire both numbers. It now wires RTO# only, with two written pre-conditions before PO# is touched: who owns the purchase-order system, and whether PO# already has an inbound rule that ours would break or overwrite.
+
+**2. The ClickSend opt-out list is shared across both applications.** Reconciliation will therefore surface opt-outs belonging to purchase-order recipients who are not ATTS employees and will never match a row in `app_users`. This is a **normal case, not an error** — confirmed against the code:
+
+| Stage | File | Behavior on a non-employee opt-out |
+|---|---|---|
+| Diff | `_shared/smsOptOut.ts:70-79` | Emits a `clicksend_only` entry with `user_id: null`. No throw, no warning. |
+| Apply | `clicksend-optout-reconcile/index.ts:213-214` | `if (!entry.user_id) continue;` — skipped silently, not counted in `applied_count`. |
+
+So the function handles it cleanly. **The gap is reporting, not correctness:** those entries appear in `clicksend_only` on every run, forever, and are visually indistinguishable from a genuine un-synced *employee* opt-out. Runbook §6 gates apply-mode on “`clicksend_only` entries are explainable”, so whoever reviews that list must know to expect permanent non-employee residue. Not fixed in this session; if it becomes noisy, the smallest fix is to split the diff into `clicksend_only_matched` / `clicksend_only_unknown`.
+
+Evidence that non-employee recipients exist on this account: of the phone numbers ClickSend has failed to deliver to, last4 `9971`, `4451`, and `1779` have **no** `app_users` row (non-test). `9971` receives PO traffic only.
+
+**3. Sender attribution in ClickSend history is account-wide, not portal-wide.** Any count taken from `/v3/sms/history` without filtering `from = +18443781444` mixes portal traffic with purchase-order traffic. Earlier per-number failure counts in this project were taken from unfiltered history pages and undercounted portal failures as a result — see `11-OPTOUT-6644-BRIEFING.md` → “Silent unreachability”.
+
 ### Inbound
 
 - Recent inbound API page: **0** messages (`total=0`). STOP traffic is reflected in the opt-out contact list rather than durable inbound history in this account snapshot.
