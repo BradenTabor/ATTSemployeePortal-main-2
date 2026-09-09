@@ -3,6 +3,23 @@
 **Date of evidence:** 2026-09-09  
 **Purpose:** Facts for a human decision. Do **not** flip opt-out flags, edit `sms_escalation_recipients`, or rewrite history based on this doc alone.
 
+> ### ⚠️ Corrected 2026-09-09 — read this before the rest of the page
+>
+> This briefing assumed that being on the provider's opt-out list means the carrier stops
+> delivering. Carrier delivery receipts, ingested later the same day, show that is **false**
+> for this number: **530 delivered vs 2 failed** since 2026-05-11, including 36 delivered in
+> September. The opt-out list only suppresses sends addressed *to that list*, and the portal
+> sends ad-hoc to a raw number, so the list is never consulted.
+>
+> The 132 tier-2 escalations below therefore **did** arrive. The concern is not that safety
+> alerts went missing — it is that someone who texted STOP kept receiving messages, which is
+> the TCPA-relevant fact and is worse than the reachability story this page was written around.
+>
+> Everything else here — list membership, the 2026-03-04 date, the volumes, the routing — still
+> holds. Only the "carrier blocks delivery" inference is withdrawn. The corrected write-up,
+> alongside the three other unreachable numbers, is in
+> [`13-UNREACHABLE-CREW.md`](./13-UNREACHABLE-CREW.md).
+
 ---
 
 ## What happened
@@ -37,7 +54,7 @@ Of **132** distinct tier-2 run days since 2026-03-04 that included this number i
 - **132 / 132** had `overdue_count > 0`
 - Range: min **4**, max **17**, avg **~12.9** overdue crew
 
-So these were not “empty” escalations. They were alerts about real missed briefings that this recipient may not have received (carrier opt-out). That is the materially worse case.
+So these were not “empty” escalations. They were alerts about real missed briefings. ~~That this recipient may not have received (carrier opt-out).~~ **Withdrawn — see the correction at the top: the receipts show these were delivered.** The volume stands as the reason this number matters; the non-delivery does not.
 
 ---
 
@@ -45,7 +62,7 @@ So these were not “empty” escalations. They were alerts about real missed br
 
 They **cannot simply be re-enabled from the app or ClickSend dashboard by an admin “turning SMS back on.”**
 
-- The **carrier** blocks delivery once STOP is recorded; app flags do not override that.
+- ~~The **carrier** blocks delivery once STOP is recorded; app flags do not override that.~~ **Withdrawn** — the receipts show delivery continued. The consent problem is unaffected: the provider holds a dated record that we were told to stop, and we did not.
 - Under TCPA, **re-subscribing someone who opted out** (sending again without a clear re-opt-in from them) is what gets penalized.
 - App-side flag flips without a user-initiated START do **not** restore legal or carrier consent.
 
