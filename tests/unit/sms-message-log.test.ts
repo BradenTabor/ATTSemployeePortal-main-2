@@ -92,4 +92,18 @@ describe("sms_message_log_compat migration", () => {
     expect(sql).toContain("UNION ALL");
     expect(sql).toContain("public.is_admin()");
   });
+
+  it("attributes legacy rows via normalize_phone_to_e164 join", () => {
+    const sql = readFileSync(
+      resolve(
+        process.cwd(),
+        "supabase/migrations/20260909100000_sms_compat_legacy_phone_user_attribution.sql"
+      ),
+      "utf8"
+    );
+    expect(sql).toContain("normalize_phone_to_e164");
+    expect(sql).toContain("LEFT JOIN public.app_users au_esc");
+    expect(sql).toContain("LEFT JOIN public.app_users au_pay");
+    expect(sql).toContain("CREATE OR REPLACE VIEW public.sms_message_log_compat");
+  });
 });

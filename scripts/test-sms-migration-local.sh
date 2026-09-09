@@ -10,6 +10,7 @@ PGPASSWORD=postgres
 export PGPASSWORD
 PSQL=(psql -h 127.0.0.1 -p "$PORT" -U postgres -d postgres -v ON_ERROR_STOP=1 -q)
 MIGRATION="supabase/migrations/20260902200000_sms_message_log.sql"
+ATTRIBUTION_MIGRATION="supabase/migrations/20260909100000_sms_compat_legacy_phone_user_attribution.sql"
 
 cleanup() {
   docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
@@ -30,6 +31,10 @@ if ! command -v psql >/dev/null 2>&1; then
 fi
 if [[ ! -f "$MIGRATION" ]]; then
   echo "FAIL: missing $MIGRATION"
+  exit 1
+fi
+if [[ ! -f "$ATTRIBUTION_MIGRATION" ]]; then
+  echo "FAIL: missing $ATTRIBUTION_MIGRATION"
   exit 1
 fi
 
@@ -118,10 +123,25 @@ CREATE TABLE public.mass_sms_log (
   batch_details jsonb,
   created_at timestamptz NOT NULL DEFAULT now()
 );
+
+CREATE TABLE public.app_users (
+  user_id uuid PRIMARY KEY,
+  email text,
+  phone_number text,
+  sms_marketing_opt_out boolean NOT NULL DEFAULT false,
+  sms_operational_opt_out boolean NOT NULL DEFAULT false
+);
 SQL
 
-echo "=== Seeding one row per legacy table ==="
+echo "=== Seeding one row per legacy table + app_users for phone attribution ==="
 "${PSQL[@]}" <<'SQL'
+INSERT INTO public.app_users (user_id, email, phone_number)
+VALUES (
+  'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee',
+  'casey.crew@alltts.com',
+  '+15551234001'
+);
+
 INSERT INTO public.sms_escalation_send_log (
   id, tier, date_checked, overdue_count, recipient_count, success, total_price, results
 ) VALUES (
@@ -132,7 +152,7 @@ INSERT INTO public.sms_escalation_send_log (
   1,
   true,
   0.0075,
-  '[{"to":"+15551230001","status":"SUCCESS","messageId":"esc-msg-1","price":"0.0075"}]'::jsonb
+  '[{"to":"+15551234001","status":"SUCCESS","messageId":"esc-msg-1","price":"0.0075"}]'::jsonb
 );
 
 INSERT INTO public.payroll_reminder_sms_log (
@@ -163,6 +183,9 @@ SQL
 
 echo "=== Applying $MIGRATION ==="
 "${PSQL[@]}" -f "$MIGRATION"
+
+echo "=== Applying $ATTRIBUTION_MIGRATION ==="
+"${PSQL[@]}" -f "$ATTRIBUTION_MIGRATION"
 
 echo "=== Asserting sms_message_log_compat ==="
 RESULT=$("${PSQL[@]}" -t -A <<'SQL'
@@ -202,5 +225,29 @@ fi
 # Smoke the uuid helper that previously failed on PG16
 "${PSQL[@]}" -c "SELECT public.sms_compat_uuid('seed-check');" >/dev/null
 
+echo "=== Asserting legacy phone attribution ==="
+MATCHED=$("${PSQL[@]}" -t -A -c "
+  SELECT user_id::text
+  FROM public.sms_message_log_compat
+  WHERE source_table = 'sms_escalation_send_log'
+    AND phone_e164 = '+15551234001';
+")
+if [[ "$MATCHED" != "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee" ]]; then
+  echo "FAIL: matched phone should resolve Casey user_id, got '$MATCHED'"
+  exit 1
+fi
+
+UNMATCHED=$("${PSQL[@]}" -t -A -c "
+  SELECT COALESCE(user_id::text, 'NULL')
+  FROM public.sms_message_log_compat
+  WHERE source_table = 'payroll_reminder_sms_log'
+    AND phone_e164 = '+15551230002';
+")
+if [[ "$UNMATCHED" != "NULL" ]]; then
+  echo "FAIL: unmatched phone should emit user_id NULL, got '$UNMATCHED'"
+  exit 1
+fi
+
 echo ""
 echo "PASS: migration applied; sms_message_log_compat returned 3 rows (one per legacy source_table)."
+echo "PASS: matched legacy phone -> user_id resolved; unmatched -> NULL row preserved."
