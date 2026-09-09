@@ -20,7 +20,7 @@ All cron jobs that call Edge Functions require a valid **service role** key. Mig
 | payroll-hours-reminder-sms-utc14 | 0 14 * * 4,5,6 | Thu–Sat 8:00 AM CST | payroll-hours-reminder-sms |
 | payroll-hours-reminder-sms-utc13 | 0 13 * * 4,5,6 | Thu–Sat 8:00 AM CDT | payroll-hours-reminder-sms |
 
-**Payroll SMS DST:** Both UTC jobs run year-round; only the invocation at true 8:00 AM America/Chicago sends (wall-clock guard in the Edge Function). See [PAYROLL_SMS_REMINDER.md](./PAYROLL_SMS_REMINDER.md).
+**Payroll SMS DST:** Both UTC jobs run year-round; only the invocation at true 8:00 AM America/Chicago sends (wall-clock guard in the Edge Function). See [PAYROLL_SMS_REMINDER.md](./PAYROLL_SMS_REMINDER.md). Per-recipient audit rows live in `sms_message_log` once Chunk 1 is applied (legacy per-run tables are unchanged).
 
 ## Other cron jobs (no HTTP auth)
 

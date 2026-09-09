@@ -6,6 +6,16 @@
  * Single place for Basic auth, request construction (source), POST, and per-message status handling.
  */
 
+import {
+  buildSmsMessageLogRows,
+  dryRunResultsFor,
+  persistSmsMessageLog,
+  type SmsLogMessageInput,
+  type SmsMessageCategory,
+  type SmsMessageLogInsert,
+  type SmsOptOutState,
+} from "./smsMessageLog.ts";
+
 const CLICKSEND_SMS_URL = "https://rest.clicksend.com/v3/sms/send";
 const DEFAULT_SOURCE = "atts-safety";
 
@@ -140,5 +150,76 @@ export async function sendSMS(
     totalPrice,
     httpStatus: res.status,
     error: allSuccess ? undefined : results.map((r) => `${r.to}: ${r.status}`).join("; "),
+  };
+}
+
+export type LoggedSmsMessage = ClickSendMessage & {
+  userId?: string | null;
+  optOutState?: SmsOptOutState | null;
+  templateKey?: string | null;
+};
+
+export interface SendAndLogOptions {
+  insert: (rows: SmsMessageLogInsert[]) => Promise<{ error: { message: string } | null }>;
+  messageType: string;
+  category: SmsMessageCategory;
+  fromNumber?: string | null;
+  runId?: string | null;
+  sourceTable?: string | null;
+  isDryRun: boolean;
+  afterSend?: (result: SendSMSResult) => Promise<string | null | undefined>;
+}
+
+/**
+ * Send (or dry-run) then write one sms_message_log row per recipient.
+ * sendSMS() itself is unchanged — this wrapper is the logging choke point.
+ */
+export async function sendAndLogSMS(
+  messages: LoggedSmsMessage[],
+  config: { username: string; password: string; from?: string },
+  log: SendAndLogOptions
+): Promise<SendSMSResult> {
+  const result: SendSMSResult = log.isDryRun
+    ? { success: true, results: dryRunResultsFor(messages), totalPrice: 0 }
+    : await sendSMS(messages, config);
+
+  let runId = log.runId ?? null;
+  if (log.afterSend) {
+    const resolved = await log.afterSend(result);
+    if (resolved) runId = resolved;
+  }
+
+  const logMessages: SmsLogMessageInput[] = messages.map((m) => ({
+    to: m.to,
+    body: m.body,
+    userId: m.userId,
+    optOutState: m.optOutState,
+    templateKey: m.templateKey,
+  }));
+
+  const rows = buildSmsMessageLogRows({
+    messages: logMessages,
+    results: result.results,
+    messageType: log.messageType,
+    category: log.category,
+    fromNumber: log.fromNumber ?? config.from ?? null,
+    runId,
+    sourceTable: log.sourceTable ?? null,
+    isDryRun: log.isDryRun,
+  });
+  await persistSmsMessageLog(log.insert, rows);
+  return result;
+}
+
+export function smsMessageLogInsert(
+  supabase: {
+    from: (table: string) => {
+      insert: (rows: SmsMessageLogInsert[]) => Promise<{ error: { message: string } | null }>;
+    };
+  }
+) {
+  return async (rows: SmsMessageLogInsert[]) => {
+    const { error } = await supabase.from("sms_message_log").insert(rows);
+    return { error };
   };
 }

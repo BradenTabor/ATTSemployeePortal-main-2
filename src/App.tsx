@@ -5,7 +5,6 @@ import { Toaster } from "./components/ui/Toaster";
 import { ToastOverlayProvider } from "./components/ui/ToastOverlay";
 // Lazy-loaded to keep main-index bundle under size limit
 const AppNotificationShell = lazy(() => import("./components/AppNotificationShell"));
-const DeployVersionChecker = lazy(() => import("./components/DeployVersionChecker").then((m) => ({ default: m.DeployVersionChecker })));
 const IOSInstallPrompt = lazy(() => import("./components/pwa").then((m) => ({ default: m.IOSInstallPrompt })));
 // Admin/granted-only floating "Award" entry + modal — most users never render it.
 const ManualAwardsGlobalEntry = lazy(() =>
@@ -118,9 +117,8 @@ export default function App() {
         </OfflineQueueProvider>
         {/* Corner toasts for non-form notifications */}
         <Toaster />
-        {/* Deploy version check + prompts (lazy-loaded for bundle size) */}
+        {/* Install prompt (lazy-loaded for bundle size). App updates are handled by AppNotificationShell → AppUpdatePrompt. */}
         <Suspense fallback={null}>
-          <DeployVersionChecker />
           <IOSInstallPrompt />
         </Suspense>
         {/* DevTools - dev only and opt-in (VITE_QUERY_DEVTOOLS=true); its floating toggle collides with the Award dock */}

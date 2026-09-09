@@ -72,21 +72,21 @@ These are critical-path test scripts to run before shipping offline mode to prod
 
 ## Test 4: Service Worker Update with Non-Empty Queue
 
-**Purpose:** Verify SW update doesn't activate while queue has items.
+**Purpose:** Verify the automatic update never reloads while queue has items (see `docs/APP_UPDATE_PIPELINE.md`).
 
 **Steps:**
-1. Deploy a new version of the app (or simulate by modifying a cached asset).
+1. Deploy a new version of the app (or run the local deploy simulation from `docs/APP_UPDATE_PIPELINE.md`).
 2. While there are queued offline submissions:
-   a. The "New version available" prompt should appear.
-   b. If the user clicks "Update Now", the update should be deferred with a message: "Sync your pending submissions first."
-3. Sync all submissions.
-4. Click "Update Now" again.
-5. Verify: the SW updates and the app reloads with the new version.
+   a. The update banner appears ("Waiting for N pending submissions") with **Update now** / **Later**.
+   b. No countdown starts; `__ATTS_UPDATE__.state().countdownEndsAt` is `null`.
+   c. **Update now** still works (explicit user choice) — drafts and the queue persist in IndexedDB across the reload.
+3. Go online and let the queue sync.
+4. Verify: within ~5 s of the queue draining, the countdown starts (on a safe route) and the app reloads once with the new version, followed by the "Updated to version …" pill.
 
 **Pass criteria:**
-- Update is deferred while queue is non-empty.
-- Update proceeds after queue is cleared.
-- No data loss during the update.
+- No automatic reload while queue is non-empty.
+- Automatic update proceeds after queue is cleared.
+- No data loss during the update; exactly one reload.
 
 ---
 

@@ -11,7 +11,7 @@
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { sendSMS } from "../_shared/clicksend.ts";
+import { sendAndLogSMS, smsMessageLogInsert } from "../_shared/clicksend.ts";
 
 const INTERNAL_SECRET = Deno.env.get("INTERNAL_SECRET") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -149,7 +149,8 @@ Deno.serve(async (req: Request) => {
     return json({ error: "Invalid JSON body" }, 400);
   }
 
-  const dryRun = body.dryRun === true;
+  const dryRun =
+    body.dryRun === true || req.headers.get("x-dry-run")?.toLowerCase() === "true";
   const forceDayRaw = body.force_day;
   const hasForceDay =
     forceDayRaw === 1 || forceDayRaw === 2 || forceDayRaw === 3;
@@ -211,7 +212,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: userRows, error: usersErr } = await supabase
     .from("app_users")
-    .select("user_id, phone_number, full_name, sms_operational_opt_out")
+    .select("user_id, phone_number, full_name, sms_operational_opt_out, sms_marketing_opt_out")
     .eq("status", "active")
     .not("email", "ilike", "%@atts.test")
     .not("phone_number", "is", null);
@@ -223,7 +224,12 @@ Deno.serve(async (req: Request) => {
   let excludedInvalidPhone = 0;
   let excludedOperationalOptOut = 0;
   const skippedUsers: { user_id: string; reason: string }[] = [];
-  const toSend: { user_id: string; to: string; body: string }[] = [];
+  const toSend: {
+    user_id: string;
+    to: string;
+    body: string;
+    optOutState: { operational: boolean; marketing: boolean };
+  }[] = [];
 
   for (const row of userRows ?? []) {
     if (row.sms_operational_opt_out === true) {
@@ -246,7 +252,15 @@ Deno.serve(async (req: Request) => {
       });
       continue;
     }
-    toSend.push({ user_id: row.user_id, to: e164, body: built.body });
+    toSend.push({
+      user_id: row.user_id,
+      to: e164,
+      body: built.body,
+      optOutState: {
+        operational: row.sms_operational_opt_out === true,
+        marketing: row.sms_marketing_opt_out === true,
+      },
+    });
   }
 
   const sampleMessages = {
@@ -256,6 +270,28 @@ Deno.serve(async (req: Request) => {
   };
 
   if (dryRun) {
+    await sendAndLogSMS(
+      toSend.map((m) => ({
+        to: m.to,
+        body: m.body,
+        source: "atts-payroll",
+        userId: m.user_id,
+        optOutState: m.optOutState,
+      })),
+      {
+        username: CLICKSEND_USERNAME,
+        password: CLICKSEND_PASSWORD,
+        from: CLICKSEND_FROM_NUMBER,
+      },
+      {
+        insert: smsMessageLogInsert(supabase),
+        messageType: "payroll_reminder",
+        category: "operational",
+        fromNumber: CLICKSEND_FROM_NUMBER,
+        sourceTable: "payroll_reminder_sms_log",
+        isDryRun: true,
+      }
+    );
     return json({
       dryRun: true,
       date: todayStr,
@@ -346,11 +382,21 @@ Deno.serve(async (req: Request) => {
         to: m.to,
         body: m.body,
         source: "atts-payroll",
+        userId: m.user_id,
+        optOutState: m.optOutState,
       }));
-      const result = await sendSMS(messages, {
+      const result = await sendAndLogSMS(messages, {
         username: CLICKSEND_USERNAME,
         password: CLICKSEND_PASSWORD,
         from: CLICKSEND_FROM_NUMBER,
+      }, {
+        insert: smsMessageLogInsert(supabase),
+        messageType: "payroll_reminder",
+        category: "operational",
+        fromNumber: CLICKSEND_FROM_NUMBER,
+        runId: logId,
+        sourceTable: "payroll_reminder_sms_log",
+        isDryRun: false,
       });
       const sent =
         result.results?.filter((r) => r.status === "SUCCESS" || r.status === "THROTTLED")

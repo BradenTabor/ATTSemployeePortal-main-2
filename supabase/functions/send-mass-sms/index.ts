@@ -11,6 +11,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { sendSMS } from "../_shared/clicksend.ts";
+import { buildSmsMessageLogRows, persistSmsMessageLog } from "../_shared/smsMessageLog.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -102,7 +103,7 @@ Deno.serve(async (req: Request) => {
     const baseRecipientFilter = () => {
       let q = svc
         .from("app_users")
-        .select("user_id, phone_number, sms_marketing_opt_out")
+        .select("user_id, phone_number, sms_marketing_opt_out, sms_operational_opt_out")
         .not("phone_number", "is", null)
         .limit(10000);
       if (userIds?.length) {
@@ -153,13 +154,26 @@ Deno.serve(async (req: Request) => {
     }
 
     const { data: rows } = await baseRecipientFilter();
-    const recipients: { to: string }[] = [];
+    const recipients: {
+      to: string;
+      user_id: string;
+      optOutState: { operational: boolean; marketing: boolean };
+    }[] = [];
     for (const r of rows ?? []) {
       if (r.sms_marketing_opt_out === true) continue;
       const phone = r.phone_number != null ? String(r.phone_number).trim() : "";
       if (!phone) continue;
       const e164 = toE164(phone);
-      if (e164) recipients.push({ to: e164 });
+      if (e164) {
+        recipients.push({
+          to: e164,
+          user_id: r.user_id,
+          optOutState: {
+            operational: r.sms_operational_opt_out === true,
+            marketing: r.sms_marketing_opt_out === true,
+          },
+        });
+      }
     }
 
     if (recipients.length === 0) {
@@ -171,15 +185,31 @@ Deno.serve(async (req: Request) => {
     let totalSent = 0;
     let totalFailed = 0;
     let totalPrice = 0;
+    const loggedMessages: {
+      to: string;
+      body: string;
+      userId: string;
+      optOutState: { operational: boolean; marketing: boolean };
+    }[] = [];
+    const allResults: { to: string; status: string; messageId?: string; price?: string }[] = [];
 
     for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
       const chunk = recipients.slice(i, i + BATCH_SIZE);
       const messages = chunk.map((r) => ({ to: r.to, body: bodyText }));
+      for (const r of chunk) {
+        loggedMessages.push({
+          to: r.to,
+          body: bodyText,
+          userId: r.user_id,
+          optOutState: r.optOutState,
+        });
+      }
       const result = await sendSMS(messages, {
         username: CLICKSEND_USERNAME,
         password: CLICKSEND_PASSWORD,
         from: CLICKSEND_FROM_NUMBER || undefined,
       });
+      if (result.results) allResults.push(...result.results);
       const batchIndex = Math.floor(i / BATCH_SIZE);
       const sent = result.results?.filter((r) => r.status === "SUCCESS" || r.status === "THROTTLED").length ?? 0;
       const failed = (result.results?.length ?? 0) - sent;
@@ -212,7 +242,7 @@ Deno.serve(async (req: Request) => {
     const status = allSuccess ? "completed" : anySuccess ? "partial" : "failed";
     const messagePreview = bodyText.slice(0, MESSAGE_PREVIEW_LENGTH);
 
-    await svc.from("mass_sms_log").insert({
+    const { data: logRow } = await svc.from("mass_sms_log").insert({
       admin_user_id: user.id,
       message_preview: messagePreview,
       sent_count: totalSent,
@@ -220,7 +250,24 @@ Deno.serve(async (req: Request) => {
       total_price: totalPrice,
       status,
       batch_details: batches,
-    });
+    }).select("id").maybeSingle();
+
+    await persistSmsMessageLog(
+      async (logRows) => {
+        const { error } = await svc.from("sms_message_log").insert(logRows);
+        return { error };
+      },
+      buildSmsMessageLogRows({
+        messages: loggedMessages,
+        results: allResults,
+        messageType: "mass_sms",
+        category: "marketing",
+        fromNumber: CLICKSEND_FROM_NUMBER || null,
+        runId: logRow?.id ?? null,
+        sourceTable: "mass_sms_log",
+        isDryRun: false,
+      })
+    );
 
     return json({
       success: allSuccess,

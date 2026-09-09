@@ -181,6 +181,8 @@ VALUES
 
    You’ll see `total_price` and `results` (per-recipient status) when a send was attempted.
 
+   From Chunk 1 onward, each recipient also gets a row in `sms_message_log` (and the `sms_message_log_compat` view, which still shows pre-cutover `sms_escalation_send_log.results`). Filter `is_dry_run = false` for real sends. Do not deploy this logging until that migration is applied.
+
 ---
 
 ## Summary checklist
@@ -192,7 +194,7 @@ VALUES
 | 3 | In Supabase, set secrets: `CLICKSEND_USERNAME`, `CLICKSEND_PASSWORD`. |
 | 4 | Deploy the function and run `./scripts/deploy-cron-auth.sh` to set cron auth. |
 | 5 | Insert tier 2 rows into `sms_escalation_recipients` (E.164 phones). Tier 1 is dynamic (per-manager); ensure `app_users.manager_id` and manager phone numbers are populated. |
-| 6 | Confirm cron row and optional manual curl; check `sms_escalation_send_log` after a run. |
+| 6 | Confirm cron row and optional manual curl; check `sms_escalation_send_log` (and `sms_message_log` after Chunk 1) after a run. |
 
 ---
 

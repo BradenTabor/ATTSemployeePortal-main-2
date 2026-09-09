@@ -51,9 +51,9 @@ SET value = '{"enabled": false}'::jsonb
 WHERE key = 'payroll_reminder_sms_config';
 ```
 
-## Dry run (side-effect-free)
+## Dry run (side-effect-free for ClickSend + legacy log)
 
-No log row, no SMS, no idempotency slot consumed:
+No row in `payroll_reminder_sms_log`, no SMS, no idempotency slot consumed. After Chunk 1, dry-run **does** write `sms_message_log` rows with `is_dry_run = true` (exclude those from compliance exports).
 
 ```bash
 curl -s -X POST "https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/payroll-hours-reminder-sms" \
