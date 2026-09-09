@@ -1,7 +1,8 @@
 # What ClickSend actually documents about opt-outs
 
 **Session 9, 2026-09-09.** Retrieved directly from ClickSend's own help centre and API
-reference. This page exists because the conclusion in
+reference, then checked a second time by an independent pass that reached the same verdict
+without seeing the first. This page exists because the conclusion in
 [`08-BLOCKED-HISTORY-PROPOSAL.md`](./08-BLOCKED-HISTORY-PROPOSAL.md) and the send-path filter in
 [`05-CHUNK3-RUNBOOK.md`](./05-CHUNK3-RUNBOOK.md) both rest on the claim that ClickSend does *not*
 screen ad-hoc sends against the opt-out list. That claim was inferred from delivery receipts. It
@@ -79,6 +80,18 @@ obligations appear:
 The split is consistent: opt-out machinery is documented on the campaign/list surface, not the
 ad-hoc surface.
 
+**Cross-checked against a second rendering.** The developers site is a single-page app, so "no
+matches" could in principle be a rendering artefact rather than a fact about the content. The
+same spec served through ClickSend's Redoc mirror (<https://dev25.redoc.ly/messaging/sms/>)
+gives the same result: zero occurrences of "opt-out", "unsubscribe", or "suppress".
+
+**And there is no way to observe suppression even if it happened.** ClickSend documents no
+response code, error, or delivery-receipt status meaning "suppressed due to opt-out". So the
+docs give us no way to distinguish "suppression is not implemented on this path" from
+"suppression is implemented and silently drops the message". Our receipts settle it — 530 rows
+marked `Delivered` are not silent drops — but it is worth noting that without those receipts the
+question would be unanswerable from the vendor's side.
+
 ## 4. The one place ClickSend claims universal screening
 
 The **ActiveCampaign integration guide**
@@ -99,6 +112,10 @@ Three reasons not to rely on it:
    selected, the recipient may still receive messages after replying STOP."* So the screen is
    list-identity-sensitive, not number-sensitive.
 3. It is contradicted by our production data.
+
+The same page also treats the opt-out list as a **per-send-action parameter** rather than an
+account property — *"Opt-out list (optional): Select an opt-out list to automatically capture
+unsubscribes."* Something you select per action is not something that screens every send.
 
 ## 5. What our data says
 
@@ -125,6 +142,26 @@ What exists is adjacent but does not cover us:
 | `PUT /lists/{list_id}/remove-opted-out-contacts/{opt_out_list_id}` | Scrubs opted-out contacts *out of* a list | Operates on lists we do not maintain |
 | Inbound rules (`MOVE_CONTACT` / `CREATE_CONTACT`) | Puts a STOP replier onto the Opt-Out List | Populates the list; does not enforce against ad-hoc sends |
 | Share opt-out lists across subaccounts | Propagates the list between subaccounts | Propagation, not enforcement |
+
+The subaccount guidance is quietly decisive on this, because it shows opt-out state is stored as
+*list data to be duplicated* rather than enforced centrally
+(<https://help.clicksend.com/en/articles/42263-managing-subaccounts>):
+
+> If you have subaccounts that don't share contact lists, you'll need to set up an opt-out rule
+> for each subaccount.
+
+An account-level block would not need per-subaccount rules.
+
+**No US-specific enforcement either.** ATTS sends on +1 routes, so it is worth ruling out a
+region-specific mechanism. ClickSend's United States page
+(<https://help.clicksend.com/en/articles/43598-united-states-of-america-1>) is about carrier
+registration and sender obligations. Its only opt-out language imposes a duty on *us*, and
+describes no ClickSend mechanism at all:
+
+> Honor Opt-Out Requests: All opt-out requests must be acknowledged and actioned promptly.
+
+That is the CTIA principle. Under the current architecture, the send-path filter added this
+session is the only thing in the system that discharges it.
 
 **Recommended follow-up, not taken here:** ask ClickSend support directly whether account-level
 suppression for `to`-addressed sends can be enabled — email support@clicksend.com, quoting the
