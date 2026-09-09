@@ -660,3 +660,60 @@ already carries it.
 **Gates:** not run for this half — one SQL migration and one Markdown file, nothing under `src/`.
 
 **Production changes:** exactly one row inserted into `sms_opt_out_events`. Nothing else.
+
+---
+
+## 2026-09-09 — Session 11B (sequencing the typecheck fix; plan only, nothing changed)
+
+Session 10 recorded the Edge Function typecheck gap in `KNOWN-ISSUES.md` with a four-step fix
+direction. This session turns that into an ordered plan with an explicit stopping point, because
+the fix direction as written invites someone to do step 1 and land it.
+
+**New: `docs/sms-upgrade/15-TYPECHECK-REMEDIATION-PLAN.md`.** A plan, not a fix. The ordering is
+the content: (1) make `deno check` runnable, (2) run it and count errors per file, (3) triage into
+fix-now / fix-later-with-`@ts-expect-error` / won't-fix, (4) gate CI last and only once green.
+
+**Why the order matters, stated in the doc:** pinning the import map alone makes the check *run*
+without making it *pass*. Landing that in CI is strictly worse than today — currently CI is green
+and everyone knows Edge Functions are unchecked; after step 1 in CI, it is red for reasons
+unrelated to the change under review, and people learn to bypass it within a week. A
+permanently-red gate is worse than a missing one.
+
+**Facts gathered while writing it (read-only, no config touched):**
+
+- 58 TypeScript files under `supabase/functions/`, **17,246 lines**. 38 files / 14,507 lines —
+  **84%** — carry `// @ts-nocheck`. A working `deno check` would, on day one, check 2,739 lines.
+- **`deno` is not installed on this machine.** Which is why step 2's number does not exist yet,
+  and also means the `npm:openai@^4.52.5` error text in `KNOWN-ISSUES.md` came from some other
+  surface — most likely `supabase functions deploy`/`serve`, which bundles its own Deno. Step 1a
+  is therefore "install Deno, pinned to the Edge Runtime's version", not "edit the import map".
+- **The `openai` import is not the biggest problem.** Specifier census across the 58 files found
+  `@supabase/supabase-js` imported **three different ways**: `npm:@supabase/supabase-js@2` (24
+  uses), `https://esm.sh/@supabase/supabase-js@2.39.0` (6), `https://esm.sh/@supabase/supabase-js@2`
+  (6). Deno treats those as three distinct modules with three distinct copies of the same types, so
+  a `SupabaseClient` from one is not assignable to a `SupabaseClient` from another. A meaningful
+  share of whatever step 2 reports is probably that, and it collapses in one commit rather than
+  needing per-file fixes. Also present: `https://deno.land/std@0.168.0/http/server.ts` (11 uses,
+  old enough to predate `Deno.serve`) and `https://esm.sh/openai@4` (5).
+- Step 2's count needs two caveats recorded alongside it: the `@ts-nocheck` files report zero while
+  the pragma is present, and removing one pragma can *raise* the count in files that already pass,
+  because their imports stop resolving to `any`.
+
+**Highest-value targets named, with the reason:** `_shared/smsOptOutFilter.ts` (164 lines) and
+`_shared/smsMessageLog.ts` (113 lines). Neither carries `@ts-nocheck`, so both are in scope the
+moment the checker runs — no pragma removal, no extra diff. Both are Vitest-covered for behaviour
+(`sms-opt-out-filter.test.ts`, `sms-message-log.test.ts`) and unchecked for types, since Vitest
+transpiles through esbuild without checking and `tests/**` sits outside every `tsconfig`. That is
+the specific danger: a green test run reads as verification when it covers only half of what is
+being claimed. The filter gates every operational send path, so a type error there mutes a crew
+member or sends to someone who said STOP; the message log feeds `sms_message_log_compat` and
+therefore the compliance export, so a type error there corrupts the evidence rather than the send.
+
+**Explicitly not done (B.2):** no change to `tsconfig.json`, `tsconfig.app.json`,
+`supabase/functions/deno.json`, `.github/workflows/ci.yml`, or any `@ts-nocheck` pragma. No
+`deno check` was run, because it cannot be — see above.
+
+**Gates:** not run for this half. One new Markdown file, nothing under `src/`, `supabase/` or
+`tests/`.
+
+**Production changes:** none.

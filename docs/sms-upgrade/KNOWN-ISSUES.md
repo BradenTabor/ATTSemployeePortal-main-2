@@ -34,6 +34,47 @@ Local-only examples (would try to apply on a naïve push): `20260608120000` … 
 
 ---
 
+## Edge Functions have no typecheck gate — `deno check` cannot resolve `npm:openai@^4.52.5`
+
+**Status:** Recorded 2026-09-09. **Pre-dates the SMS work; not caused by it and not fixed by it.** Do not fix inside an SMS chunk.
+
+**Symptom:** `deno check` over `supabase/functions/` fails to resolve `npm:openai@^4.52.5` and aborts. Because it aborts on module resolution rather than on a type error, it type-checks nothing — including files that have no relationship to OpenAI.
+
+**Where it comes from:** five functions import the OpenAI client from a CDN specifier rather than the pinned import map:
+
+`generate-safety-announcement`, `generate-attendance-summary`, `generate-fixes-summary`, `generate-maintenance-summary`, `get-smart-defaults` — each `import OpenAI from 'https://esm.sh/openai@4'`.
+
+`supabase/functions/deno.json` maps only `@supabase/supabase-js`, so `openai@4` is resolved by esm.sh at check time and the resolution fails. The exact link between the CDN specifier and the `npm:` form in the error text was **not** traced — the failure was observed, the mechanism inferred. Worth ten minutes of confirmation before anyone attempts a fix.
+
+**What this means in practice — the gap, stated plainly:**
+
+| Path | Lint | Typecheck |
+|---|---|---|
+| `src/**` (app) | `npm run lint` (ESLint) | `npm run typecheck` (`tsc --noEmit -p tsconfig.app.json`) |
+| `supabase/functions/**` (Deno) | `deno lint` only | **none** |
+
+`npm run typecheck` runs `tsc --noEmit -p tsconfig.app.json`, whose `include` is `["src"]`, and root `tsconfig.json` excludes `supabase/**` six different ways. So nothing in `supabase/functions/` is reachable by the TypeScript gate regardless of the Deno problem. Most function `index.ts` files also carry `// @ts-nocheck` for Deno compatibility, which would suppress checking even if they were in scope. The three gates this project runs after every change — lint, typecheck, build — collectively provide **zero** type coverage of Edge Function code.
+
+Everything shipped in Chunks 1–4 rests on `deno lint`, unit tests, and local dry-runs. Worth noting which side of the line each piece falls on:
+
+- The `_shared/` SMS helpers (`phoneE164.ts`, `smsOptOut.ts`, `smsOptOutFilter.ts`, `smsMessageLog.ts`, `smsDeliveryReceipts.ts`) do **not** carry `@ts-nocheck` and are the parts covered by Vitest. But Vitest transpiles via esbuild without type-checking, and `tests/**` is outside `tsconfig.app.json` too — so even these are tested for behaviour, not for types.
+- The function entrypoints (`clicksend-inbound-webhook`, `clicksend-optout-reconcile`, `clicksend-delivery-receipts`, the four send paths) carry `@ts-nocheck` and have no unit coverage of their own.
+
+A type error in an Edge Function therefore reaches production and surfaces as a runtime failure, and the cron paths fail asynchronously (see the `cron_http_failures` work in Session 7). Behavioural unit tests over `_shared/**` are the substitute gate, which is part of why logic belongs in `_shared/**` rather than in `index.ts`.
+
+**What a fix would need (not attempted):**
+
+1. Pin `openai` in `supabase/functions/deno.json` `imports` (e.g. `"openai": "npm:openai@4"`) and change the five CDN imports to the bare specifier — the same shape `@supabase/supabase-js` already uses. Confirm the pinned version's types actually resolve under `deno check` before committing.
+2. Confirm `deno check supabase/functions/**/*.ts` then completes, and triage what it reports. Expect a first run to surface real errors that have accumulated unchecked — this is the part that makes it a task rather than a one-liner.
+3. Remove `// @ts-nocheck` file by file as each is made to pass, not in bulk.
+4. Add `deno check` to the gate set only once it is green, so it does not land as a permanently-red step.
+
+Steps 2 and 3 are the cost. Step 1 alone may make `deno check` run without making it pass, which is a worse state than today if it is wired into CI at that point.
+
+**Related:** GitHub issue #5 covers the migration-replay gap; this is the equivalent gap for Edge Function types. No issue filed yet.
+
+---
+
 ## Corrected belief: "ClickSend enforces STOP at the carrier"
 
 **Status:** Belief withdrawn 2026-09-09. Correction shipped the same day.
