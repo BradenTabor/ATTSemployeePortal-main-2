@@ -122,3 +122,23 @@ Append-only. Newest entry at the bottom.
 
 **Gates:** lint ✅ typecheck ✅ build ✅ vitest SMS suite 29/29 ✅
 
+
+---
+
+## 2026-09-09 — Session 4 (production deploy Chunks 1–3)
+
+**Pre-flight:** Wrong Supabase account (ATS drone Org) blocked first attempt; logged out; correct login linked `emqqxfzahmwnehxcpxzp`. Cron window safe after 16:00 escalation.
+
+**Migrations (first):** Applied `20260902200000`, `20260909100000`, `20260909110000` via `db query --linked` + `migration repair --status applied` (db push blocked by remote history mismatch). Compat view: **4050** rows (esc 3006 / pay 1035 / mass 9).
+
+**Secrets:** `INTERNAL_SECRET`, `CLICKSEND_USERNAME`, `CLICKSEND_PASSWORD` present; **`CLICKSEND_FROM_NUMBER` unset** (finding).
+
+**Functions:** Deployed four modified SMS functions + `clicksend-inbound-webhook` / `clicksend-optout-reconcile` (`--no-verify-jwt`). Cron auth: script DNS-failed on direct DB host; SQL applied via Management API path; reconcile cron **active=false**.
+
+**Dry-runs only:** Payroll `force_day=1` → eligible 19, 19× `sms_message_log` DRY_RUN rows; legacy tables unchanged 411/48/9. Reminder/escalation skipped “Already sent today”; escalation overdue **11** matches live tier log. Mass dry-run: `countWithPhone=19`, `fromNumber=null`. Webhook GET ok. Reconcile diff-only: 1 clicksend-only contact; apply_enabled false.
+
+**ClickSend audit:** Two REGISTERED numbers in outbound history (`+18338612650`, `+18443781444`); Safety# pending; opt-out list size 1. Discovery section filled.
+
+**Docs:** `06-DEPLOY-LOG.md`; runbook webhook URL + Braden steps; session log; PR #3 undrafted for review.
+
+**Not done (intentional):** no live SMS; no apply mode; no operational opt-out filter on reminder/escalation; reconcile cron disabled.

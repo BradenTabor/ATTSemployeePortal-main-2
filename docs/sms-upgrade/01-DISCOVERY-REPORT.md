@@ -18,7 +18,7 @@ Each item from `00-BUILD-BRIEF.md` “Where things live today” and Change Requ
 | Payroll Thu/Fri/Sat 8 AM Central, kill switch `payroll_reminder_sms_config`, default from `+18443781444` | CONFIRMED | `payroll-hours-reminder-sms/index.ts:5–6,21,168–180`; `docs/PAYROLL_SMS_REMINDER.md` |
 | Mass SMS admin JWT, dry-run by default, 15-min cooldown, batches of 500, **default `from` is `""`** | CONFIRMED | `send-mass-sms/index.ts:6–8,26–28,91,178–181` |
 | Cron inventory in `docs/cron-jobs-inventory.md` | CONFIRMED | rows for reminder 10:40 UTC, escalation 16:00 UTC, payroll utc13/utc14 |
-| HYPOTHESIS: two production `from` numbers = dedicated `+18443781444` vs ClickSend default when mass `from` is unset | HYPOTHESIS (unresolved) | Code matches the hypothesis. `mass_sms_log.batch_details` stores `{index,sent,failed,error}` only — **no `from`**. Escalation/payroll `results` store `{to,status,messageId,price}` — **no `from`**. ClickSend history was not readable this session. |
+| Two production `from` numbers | **CONFIRMED (refined 2026-09-09)** | Audit shows outbound history using both `+18338612650` (PO#) and `+18443781444` (RTO #). Not merely “dedicated vs ClickSend default.” `CLICKSEND_FROM_NUMBER` still unset. See ClickSend account facts. |
 | “Every function already has a dryRun pattern” (ground rule 2) | WRONG | Reminder has **no** `dryRun` / `x-dry-run` handling at all (`safety-briefing-reminder-sms/index.ts` — no matches). Escalation: body + `x-dry-run` (`:233–236`). Payroll: **body only** `dryRun === true` (`:152`), no header. Mass: body, default dry-run (`:91`). |
 | Newest migration prefix is `20260627170000` | WRONG | `20260627170000_restore_corrective_actions_audit_branch.sql` exists, but later files `20260902120000_field_audit_submit_pipeline.sql` and `20260902130000_field_audit_escalate_site_scope.sql` already sort after it. Chunk 1 will use `20260902200000_…`. |
 
@@ -120,21 +120,37 @@ The skill reference `export-pattern.md` uses `accessor:` callbacks — that is *
 
 ## ClickSend account facts
 
-**Still unavailable as of 2026-09-09:** no `CLICKSEND_*` in `.env`, no `clicksend` MCP registered. Two-number HYPOTHESIS remains open. Re-run `scripts/clicksend-audit.sh` at the start of every future session; fill this section on first success.
+**Filled 2026-09-09** from `./scripts/clicksend-audit.sh` → `docs/sms-upgrade/clicksend-audit-2026-09-09.json` (gitignored). Account: All Terrain Tree Service / `shane@alltts.com`.
 
-ClickSend read access unavailable in this session.
+### Dedicated numbers (`/v3/numbers`)
 
-- `./scripts/clicksend-audit.sh` exited 2: `CLICKSEND_USERNAME` / `CLICKSEND_API_KEY` (or `CLICKSEND_PASSWORD`) are not set in the environment or `.env`. (The script originally sourced `.env` and crashed on an unquoted webhook URL; it now parses only `CLICKSEND_*` keys.)
-- No `clicksend` MCP server is registered in this agent session (catalog search for `clicksend`: zero tools). `send-sms` was therefore never callable here.
-- Supabase MCP is authenticated to other org projects (`wxftkrdwvzpggjrdntdf`, `vwilvdckfronjftrboje`), **not** `emqqxfzahmwnehxcpxzp`, so live `sms_*` log rows could not be queried.
+| Number | Notes | Status |
+|--------|-------|--------|
+| `+18338612650` | PO# | REGISTERED |
+| `+18443781444` | RTO # | REGISTERED |
+| `+18335183807` | Safety# | REGISTRATION_INITIATED |
 
-Answers that need the account:
+### Outbound `from` values (history page, last ~1000)
 
-- (a) Which `from` numbers appear in outbound history — unknown. Code-level: three crons default `+18443781444`; mass omits `from` when the secret is unset.
-- (b) Dedicated numbers on `/v3/numbers` — unknown.
-- (c) Opt-out contact list / size / cross-check vs `app_users` — unknown. `prod_schema.sql` is DDL only (no phone seed data). Live-DB cross-check still needed.
-- (d) Recent inbound STOP count — unknown.
-- A2P 10DLC registration status — **confirm in dashboard / with ClickSend support** (not exposed by the ClickSend API).
+| from | status | count |
+|------|--------|-------|
+| `+18338612650` | Sent | 53 |
+| `+18443781444` | Sent | 43 |
+| `+18443781444` | Failed | 3 |
+| `+14792004421` | Received | 1 (inbound/noise — not a dedicated ATTS number) |
+
+**Two-number HYPOTHESIS → CONFIRMED (refined):** production history uses **two registered dedicated numbers** (`+18338612650` and `+18443781444`), not merely “dedicated vs ClickSend default.” Code still hardcodes `+18443781444` for reminder/escalation/payroll; `CLICKSEND_FROM_NUMBER` remains **unset** on the project (mass dry-run returned `fromNumber: null`). Chunk 4 must register/choose senders explicitly.
+
+### Opt-out list
+
+- List id `3406168` — name “Opt-Out List”
+- Size: **1** contact
+- First production reconcile diff-only run (2026-09-09): `clicksend_only_count=1`, `app_opted_out_count=0` (phone last4 `6644`). Apply mode still off.
+
+### Still open / dashboard-only
+
+- A2P 10DLC / toll-free registration details beyond ClickSend’s number status labels — confirm in dashboard for `+18335183807`.
+- Which business process intentionally uses PO# vs RTO# — operations decision for Chunk 4.
 
 ## Design check
 

@@ -35,14 +35,31 @@ Ensure these secrets exist on the project (Supabase Dashboard → Edge Functions
 
 ## 2. Point ClickSend inbound rule at the webhook
 
-1. Log in to [ClickSend Dashboard](https://dashboard.clicksend.com).
-2. Go to **SMS** → **Numbers** (or **Inbound SMS** / **Rules**, depending on UI version).
-3. Select the ATTS sender number (e.g. `+18443781444`).
-4. Add an **Inbound Rule**:
+**Deployed production webhook URL (2026-09-09):**
+
+`https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/clicksend-inbound-webhook`
+
+GET health check returns: `{"ok":true,"name":"clicksend-inbound-webhook"}`.
+
+### Exact ClickSend dashboard steps (Braden — web UI only)
+
+1. Log in to [ClickSend Dashboard](https://dashboard.clicksend.com) as the ATTS account (`shane@alltts.com` / All Terrain Tree Service).
+2. Go to **SMS** → **Inbound SMS** / **Rules** (or **Numbers** → inbound settings, depending on UI version).
+3. Select **each** registered sender number that receives crew replies — at minimum the two REGISTERED numbers in use today:
+   - `+18443781444` (notes: RTO #) — code default for reminder / escalation / payroll
+   - `+18338612650` (notes: PO #) — also appears heavily in outbound history  
+   Optionally prepare the same rule for `+18335183807` (Safety #) once registration completes.
+4. Add an **Inbound Rule** per number:
    - **Action:** Forward to URL (POST)
-   - **URL:** `https://<project-ref>.supabase.co/functions/v1/clicksend-inbound-webhook`
+   - **URL:** `https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/clicksend-inbound-webhook`
    - **Method:** POST
-5. Save the rule.
+5. Attach auth header (required — webhook rejects unauthenticated POST):
+   - Header name: `x-internal-key`
+   - Header value: the project’s `INTERNAL_SECRET` (Supabase Dashboard → Edge Functions → Secrets). Do not paste the secret into chat or tickets.
+   - If ClickSend only supports `Authorization`, use `Authorization: Bearer <INTERNAL_SECRET>` instead.
+6. Save the rule.
+7. Smoke-test from a spare phone only after Braden is ready: reply **HELP** first (should not flip opt-out), then confirm logs; do **not** use a real crew member’s STOP for the first test if avoidable.
+8. Leave nightly reconcile cron **disabled** until a full week of diff-only runs has been reviewed.
 
 ### Webhook auth (required)
 
