@@ -72,6 +72,8 @@ interface SectionConfig<T> {
   getRowCount: (data: T[]) => number;
   /** Optional count label (e.g. empty range vs loaded). */
   formatCountLabel?: (count: number) => string;
+  /** Caveats written into the CSV header and under the PDF table, and shown above the preview. */
+  exportNotes?: string[];
 }
 
 function maskPhoneLast4(phone: string | null | undefined): string {
@@ -152,6 +154,7 @@ function ExportSection<T>({
           exportedBy,
           filters: { "Date From": from, "Date To": to },
           totalRecords: data.length,
+          notes: config.exportNotes,
         };
         const dateContext = `${from}_to_${to}`;
         const filename = generateFilename(config.filenamePrefix, dateContext, format === "csv" ? "csv" : "pdf");
@@ -264,6 +267,15 @@ function ExportSection<T>({
                       ? config.formatCountLabel(count)
                       : `${count} record${count !== 1 ? "s" : ""} loaded.`}
                   </p>
+                  {config.exportNotes?.map((note) => (
+                    <p
+                      key={note}
+                      className="text-xs text-white/50"
+                      data-testid={`export-section-${config.id}-note`}
+                    >
+                      {note}
+                    </p>
+                  ))}
                   {previewRows.length > 0 && config.previewColumns && (
                     <div className="overflow-x-auto rounded-lg border border-white/10">
                       <table className="min-w-full text-xs text-white/80">
@@ -537,6 +549,15 @@ function formatOptOutSnapshot(value: unknown): string {
   return parts.length > 0 ? parts.join(", ") : "—";
 }
 
+/**
+ * The status ClickSend returns when it accepts a message for sending. It is not a
+ * carrier delivery receipt, and the column is named so no reader assumes it is one.
+ */
+const SMS_SUBMISSION_STATUS_HEADER = "Provider Status (submission)";
+
+const SMS_SUBMISSION_STATUS_CAVEAT =
+  "Status reflects the provider's acceptance of the message at submission time, not carrier delivery confirmation.";
+
 const SMS_CSV_COLUMNS: ExportColumn<SmsExportRow>[] = [
   { header: "Date/Time", key: "sent_at", format: (v) => formatDateForExport(v as string, true), width: 22 },
   { header: "Recipient", key: "recipient", format: (v) => formatValue(v), width: 22 },
@@ -544,7 +565,7 @@ const SMS_CSV_COLUMNS: ExportColumn<SmsExportRow>[] = [
   { header: "Phone (E.164)", key: "phone_e164", format: (v) => formatValue(v), width: 16 },
   { header: "Message Type", key: "message_type", format: (v) => formatValue(v), width: 24 },
   { header: "Category", key: "category", format: (v) => formatValue(v), width: 12 },
-  { header: "Delivery Status", key: "provider_status", format: (v) => formatValue(v), width: 14 },
+  { header: SMS_SUBMISSION_STATUS_HEADER, key: "provider_status", format: (v) => formatValue(v), width: 22 },
   { header: "Opt-out at Send", key: "opt_out_snapshot", format: (v) => formatValue(v), width: 18 },
   { header: "Cost", key: "price", format: (v) => (v == null ? "—" : formatCurrency(v as number)), width: 10 },
 ];
@@ -556,7 +577,7 @@ const SMS_PREVIEW_COLUMNS: ExportColumn<SmsExportRow>[] = [
   { header: "Role", key: "role", format: (v) => formatValue(v), width: 14 },
   { header: "Phone", key: "phone_masked", format: (v) => formatValue(v), width: 10 },
   { header: "Type", key: "message_type", format: (v) => formatValue(v), width: 20 },
-  { header: "Status", key: "provider_status", format: (v) => formatValue(v), width: 12 },
+  { header: SMS_SUBMISSION_STATUS_HEADER, key: "provider_status", format: (v) => formatValue(v), width: 20 },
   { header: "Cost", key: "price", format: (v) => (v == null ? "—" : formatCurrency(v as number)), width: 10 },
 ];
 
@@ -567,7 +588,7 @@ const SMS_PDF_COLUMNS: ExportColumn<SmsExportRow>[] = [
   { header: "Role", key: "role", format: (v) => formatValue(v), width: 12 },
   { header: "Type", key: "message_type", format: (v) => formatValue(v), width: 22 },
   { header: "Category", key: "category", format: (v) => formatValue(v), width: 12 },
-  { header: "Status", key: "provider_status", format: (v) => formatValue(v), width: 12 },
+  { header: SMS_SUBMISSION_STATUS_HEADER, key: "provider_status", format: (v) => formatValue(v), width: 20 },
   { header: "Opt-out", key: "opt_out_snapshot", format: (v) => formatValue(v), width: 16 },
   { header: "Cost", key: "price", format: (v) => (v == null ? "—" : formatCurrency(v as number)), width: 10 },
 ];
@@ -850,6 +871,7 @@ export default function ComplianceDataExportPanel() {
       columns: SMS_CSV_COLUMNS as ExportColumn<unknown>[],
       pdfColumns: SMS_PDF_COLUMNS as ExportColumn<unknown>[],
       previewColumns: SMS_PREVIEW_COLUMNS as ExportColumn<unknown>[],
+      exportNotes: [SMS_SUBMISSION_STATUS_CAVEAT],
       getRowCount: (d) => d.length,
       formatCountLabel: (count) =>
         count === 0

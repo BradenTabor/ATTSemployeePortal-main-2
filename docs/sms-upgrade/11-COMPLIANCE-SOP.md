@@ -117,7 +117,9 @@ Use this procedure whenever ATTS needs to demonstrate SMS compliance — for an 
 
 9.  Click Load to preview the record count, then Export CSV or Export PDF as needed.
 
-10. The export includes: recipient (name/role), message type/category, timestamp, delivery status, opt-out status at time of send, and consent basis.
+10. The export includes: recipient (name/role), message type/category, timestamp, provider submission status, opt-out status at time of send, and consent basis.
+
+> **Read the status column correctly.** The column is titled **“Provider Status (submission)”** and both the CSV and PDF carry the line: *“Status reflects the provider's acceptance of the message at submission time, not carrier delivery confirmation.”* A `SUCCESS` value means ClickSend accepted the message for sending. It does **not** mean the handset received it. Carrier-level failures (blocked, absent subscriber, rejected) occur after this point and are not yet ingested, so this export cannot be used to assert that a specific person received a specific message. If an auditor or legal request asks for proof of receipt, say so explicitly rather than supplying this export as if it answered the question.
 
 11. Store the exported file per the retention schedule below and log that an export occurred (who requested it, for what purpose, and the date range) — this export-of-an-export record is itself part of demonstrating an active compliance program.
 

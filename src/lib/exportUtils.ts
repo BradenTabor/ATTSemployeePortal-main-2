@@ -85,6 +85,8 @@ export interface ExportMetadata {
   filters: Record<string, string>;
   /** Total number of records */
   totalRecords: number;
+  /** Caveats about how the data should be read; rendered in the CSV header and under the PDF table. */
+  notes?: string[];
 }
 
 /**
@@ -435,12 +437,17 @@ export function generateMetadataHeader(metadata: ExportMetadata): string {
     .map(([k, v]) => `${k}: ${v}`)
     .join(', ') || 'None';
   
+  const noteLines = (metadata.notes ?? [])
+    .filter((n) => n.trim().length > 0)
+    .map((n) => `Note: ${n}`)
+    .join('\n');
+
   return `
 ${metadata.reportType}
 Generated: ${format(metadata.generatedAt, 'MMMM dd, yyyy \'at\' h:mm a')}
 Exported By: ${metadata.exportedBy}
 Filters Applied: ${filterStr}
-Total Records: ${metadata.totalRecords}
+Total Records: ${metadata.totalRecords}${noteLines ? `\n${noteLines}` : ''}
 `.trim();
 }
 
@@ -702,6 +709,36 @@ export class DataExporter<T = Record<string, unknown>> {
           }
         },
       });
+      const notes = (metadata?.notes ?? []).filter((n) => n.trim().length > 0);
+      if (notes.length > 0) {
+        const lastAutoTable = (doc as unknown as { lastAutoTable?: { finalY?: number } }).lastAutoTable;
+        let noteY = (lastAutoTable?.finalY ?? yPos) + 8;
+        doc.setFontSize(8);
+        doc.setTextColor(80);
+        for (const note of notes) {
+          const lines = doc.splitTextToSize(note, tableWidth) as string[];
+          const blockHeight = lines.length * 4;
+          if (noteY + blockHeight > doc.internal.pageSize.getHeight() - 18) {
+            doc.addPage();
+            noteY = 15;
+            // didDrawPage only fires for autoTable pages; draw this page's footer by hand.
+            doc.setTextColor(150);
+            doc.text(
+              `Page ${doc.getNumberOfPages()} of ${totalPagesPlaceholder}`,
+              pageWidth / 2,
+              doc.internal.pageSize.getHeight() - 10,
+              { align: 'center' }
+            );
+            if (metadata) {
+              doc.text(`Exported by: ${metadata.exportedBy}`, marginMm, doc.internal.pageSize.getHeight() - 10);
+            }
+            doc.setTextColor(80);
+          }
+          doc.text(lines, marginMm, noteY);
+          noteY += blockHeight + 2;
+        }
+        doc.setTextColor(0);
+      }
       doc.putTotalPages(totalPagesPlaceholder);
       // Save
       const pdfFilename = filename.endsWith('.pdf') ? filename : `${filename}.pdf`;
