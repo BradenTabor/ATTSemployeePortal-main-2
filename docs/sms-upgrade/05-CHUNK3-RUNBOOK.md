@@ -296,7 +296,7 @@ SELECT * FROM public.get_recent_cron_failures(1);
 
 ~~Premature filtering could silently suppress safety-briefing SMS to crew who are still reachable — a worse failure than the gap being closed.~~
 
-**Why the reasoning collapsed.** The deferral traded one risk against another: premature filtering might suppress a briefing, but the carrier was blocking opted-out numbers anyway, so the gap was tolerable. The second half was never true. ClickSend's opt-out list is only consulted for list-addressed sends, and the portal sends ad-hoc to raw numbers. There was no enforcement anywhere in the chain — not in the app, not at the carrier. The deferral was protecting against a hypothetical while a real, ongoing consent violation ran unchecked.
+**Why the reasoning collapsed.** The deferral traded one risk against another: premature filtering might suppress a briefing, but the carrier was blocking opted-out numbers anyway, so the gap was tolerable. The second half was never true. ClickSend's opt-out list is only consulted for list-addressed sends, and the portal sends ad-hoc to raw numbers. There was no enforcement anywhere in the chain — not in the app, not at the carrier. The deferral was protecting against a hypothetical while a real, ongoing consent violation ran unchecked. ClickSend's documentation on this, quoted and cited, is in [`14-CLICKSEND-OPTOUT-DOCS.md`](./14-CLICKSEND-OPTOUT-DOCS.md).
 
 **Both paths now filter** (`safety-briefing-reminder-sms`, `safety-briefing-escalation-sms`), matching `payroll-hours-reminder-sms`.
 
