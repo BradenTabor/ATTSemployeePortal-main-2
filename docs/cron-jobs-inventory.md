@@ -22,13 +22,19 @@ All cron jobs that call Edge Functions require a valid **service role** key. Mig
 
 **Payroll SMS DST:** Both UTC jobs run year-round; only the invocation at true 8:00 AM America/Chicago sends (wall-clock guard in the Edge Function). See [PAYROLL_SMS_REMINDER.md](./PAYROLL_SMS_REMINDER.md). Per-recipient audit rows live in `sms_message_log` once Chunk 1 is applied (legacy per-run tables are unchanged).
 
-## Other cron jobs (no HTTP auth)
+## Other cron jobs (no HTTP service-role Bearer)
 
 - **update-expired-certs** – runs `update_expired_certifications()` (no Edge Function).
 - **run-data-retention** – runs `run_data_retention()` (no Edge Function).
 - **refresh-compliance-summary-90d** – refreshes materialized view (no Edge Function).
 - **refresh-cert-analytics** – refreshes cert analytics views (no Edge Function).
-- **monthly-safety-drawing** – uses `x-drawing-secret` and `app.settings.drawing_secret` (different auth).
+- **monthly-safety-drawing** – **intentional auth exception:** uses header `x-drawing-secret` from `app.settings.drawing_secret`, **not** a Bearer service-role token. Do not “fix” this job by injecting `Authorization: Bearer …` via `deploy-cron-auth.sh`; leave the drawing-secret header as-is.
+
+## Monitoring note (HTTP non-2xx)
+
+`cron.job_run_details.status` is `succeeded` whenever `net.http_post` queues successfully — even if the Edge Function returns 401. Use `public.get_recent_cron_failures(days)` / `public.cron_job_runs.effective_status` (migration `20260909173000_cron_failures_detect_http_non_2xx`) which also reads `net._http_response`. **Retention:** `pg_net.ttl` ≈ **6 hours**.
+
+**Alert proposal (not built):** smallest reliable path is a single “Cron health” line on the existing monthly compliance email (or a one-row card on the admin safety/compliance settings page) that calls `get_recent_cron_failures(1)` and names any `http_failed` / SQL-failed `jobname` + timestamp — no new pager stack.
 
 ## Making sure all HTTP jobs work
 
