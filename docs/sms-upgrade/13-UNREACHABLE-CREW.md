@@ -1,4 +1,10 @@
-# Unreachable crew — four numbers, four different reasons
+# Unreachable crew — two live cases, two closed
+
+> **Updated 2026-09-09 (Session 9).** `6644` is **resolved as a false alarm on delivery** —
+> the messages arrived, 530 of them. It stays on this page because it remains an
+> **opt-out-enforcement** case, and that half is now closed in code: the send paths filter on
+> `sms_operational_opt_out` as of migration `20260909200000`. The two genuinely unreachable
+> people are **`4421`** and **`6286`**; they are unchanged and still failing as of today.
 
 > **This file contains full phone numbers.** It is an internal action list: Braden needs to
 > compare each number against the person's actual handset, and last-4 is not enough to do
@@ -16,21 +22,35 @@ is the normal case here, not an anomaly.
 delivered, and not failed.
 
 **Change nothing from this document alone.** No phone numbers, no opt-out flags, no rows.
+Session 9 changed none of them: the `app_users` table was fingerprinted before and after the
+opt-out filter verification and is byte-identical (`b42df8300155d4eb128ea907860be54b`, 21 rows,
+0 rows flagged).
 
 ---
 
-## The four at a glance
+## At a glance
 
-| last4 | Who | Number on file | Root cause | Delivered / failed (receipted) | Action |
-|---|---|---|---|---:|---|
-| `6644` | Braden Tabor (admin + employee accounts) | `+18703656644` | **Opted out at the provider, but still receiving** | 530 / 2 | Consent decision — see §1 |
-| `4421` | Tracer, `employee`, active | `+14792004421` | Carrier rejects a well-formed number | 2 / 133 | Verify the handset — see §2 |
-| `6286` | James David Mcleod, `employee`, active | `8707196286` | Never once accepted by the carrier | 0 / 6 | Verify the handset — see §3 |
-| `1779` | Not in `app_users` | `+14795181779` | Probable departure, already stopped | 43 / 61 | Confirm only — see §4 |
+| last4 | Who | Number on file | Root cause | Delivered / failed (receipted) | Last successful delivery | State |
+|---|---|---|---|---:|---|---|
+| `4421` | Tracer, `employee`, active | `+14792004421` | Carrier rejects a well-formed number | 2 / 133 | **2026-05-12** (~4 months ago) | **LIVE** — verify the handset, §2 |
+| `6286` | James David Mcleod, `employee`, active | `8707196286` | Never once accepted by the carrier | 0 / 6 | **never** | **LIVE** — verify the handset, §3 |
+| `6644` | Braden Tabor (admin + employee accounts) | `+18703656644` | Delivery fine; **opted out and still receiving** | 530 / 2 | 2026-09-09 (today) | Delivery **resolved**; consent decision open, §1 |
+| `1779` | Not in `app_users` | `+14795181779` | Probable departure, already stopped | 43 / 61 | 2026-08-12 | Closed — confirm only, §4 |
 
 ---
 
-## 1. `6644` — the briefing's central assumption was wrong
+## 1. `6644` — false alarm on delivery; still an opt-out-enforcement case
+
+> **Resolved 2026-09-09 (delivery half).** ~~This number is unreachable / its safety
+> escalations went missing.~~ **Withdrawn.** The messages arrived: 530 delivered against 2
+> failed since the 2026-03-04 opt-out, most recently **today**. Nothing was ever lost, and
+> there is no missed-alert backlog to reconstruct.
+>
+> **Still open (consent half).** The number has been on ClickSend's opt-out list since
+> 2026-03-04 and kept receiving. As of migration `20260909200000` the send paths filter on
+> `app_users.sms_operational_opt_out`, so the *mechanism* is fixed — but this number's flags
+> are still `false`, so the filter does not apply to it. Nothing suppresses these sends today.
+> That is a decision for Braden (below), not a code gap.
 
 **This corrects `11-OPTOUT-6644-BRIEFING.md`.** That document reasoned that because this
 number is on ClickSend's opt-out list, *"the carrier blocks delivery once STOP is recorded"*,
@@ -66,24 +86,37 @@ likely origin. That is a plausible explanation, not a verified one.
   clear the provider record. Do not clear it by deleting the list entry; the dated opt-out is
   the evidence, and removing it destroys the only proof of what was asked and when.
 
-Either way the send path should consult the opt-out list before sending. That is a code fix,
-not a Braden action, and it is not yet scoped.
+~~Either way the send path should consult the opt-out list before sending. That is a code fix,
+not a Braden action, and it is not yet scoped.~~ **Done 2026-09-09.** The send paths now filter
+on `app_users.sms_operational_opt_out` (migration `20260909200000`, kill switch
+`app_settings.sms_send_optout_filter_config`). Note what that does *not* do: the filter reads
+the **app** flag, not ClickSend's list. This number's flags are still `false`, so nothing is
+suppressed for it until (a) or (b) is chosen and the flag is set accordingly.
+
+**Verified, so nobody has to re-derive it:** setting `sms_operational_opt_out = true` on the
+`employee` row for this number drops it from the briefing reminder *and* removes it from the
+tier 2 escalation list with a logged warning. Confirmed by dry-run on 2026-09-09 and reverted;
+no flag is set today.
 
 ---
 
-## 2. `4421` — Tracer
+## 2. `4421` — Tracer — **LIVE CASE**
 
 | | |
 |---|---|
-| **Number on file** | `+14792004421` |
+| **Exact number on file** | `+14792004421` |
 | **Role / status** | `employee`, active |
 | **Hire date** | 2023-02-20 |
 | **Last app sign-in** | 2026-07-13 |
 | **Account created** | 2026-01-12 |
-| **Receipted outcome** | **2 delivered, 133 failed, 1 handed to network** (plus 45 sends too old for retention) |
+| **Delivered / failed (receipted)** | **2 delivered, 133 failed**, 1 handed to network (plus 45 sends too old for retention) |
+| **Date of last successful delivery** | **2026-05-12** — nothing has reached this handset in roughly four months |
 | **Carrier reasons** | `Rejected by the recipient network` ×68, `Absent Subscriber` ×64, `receipt expired` ×1 |
-| **Opt-out flags** | both `false` — nobody opted out |
+| **Opt-out flags** | both `false` — nobody opted out, so the new send-path filter does not touch this case |
 | **Still sending?** | Yes. Last attempt **2026-09-09**. |
+
+> **Ask him:** *"Is 479-200-4421 still your number, or did you change phones or carriers around
+> mid-May?"*
 
 **Is the number obviously wrong?** No — and that is what makes it awkward. `+14792004421` is
 correctly formatted E.164 with a valid Arkansas 479 area code. Nothing about it looks
@@ -100,19 +133,23 @@ changed carriers or handsets since February, that is the answer.
 
 ---
 
-## 3. `6286` — James David Mcleod
+## 3. `6286` — James David Mcleod — **LIVE CASE**
 
 | | |
 |---|---|
-| **Number on file** | `8707196286` |
+| **Exact number on file** | `8707196286` (stored unnormalised; sent as `+18707196286`) |
 | **Role / status** | `employee`, active |
 | **Hire date** | **not set** |
 | **Last app sign-in** | 2026-08-31 21:22 UTC |
 | **Account created** | 2026-08-31 21:22 UTC |
-| **Receipted outcome** | **0 delivered, 6 failed** — has never received a single message |
+| **Delivered / failed (receipted)** | **0 delivered, 6 failed** — has never received a single message |
+| **Date of last successful delivery** | **never** — there has not been one |
 | **Carrier reason** | `Absent Subscriber` ×6, every attempt |
-| **Opt-out flags** | both `false` |
+| **Opt-out flags** | both `false` — the new send-path filter does not touch this case |
 | **Still sending?** | Yes. Last attempt **2026-09-09**. |
+
+> **Ask him:** *"What number should we be texting you on? Nothing we have sent since you
+> started on 31 August has reached you."*
 
 **Is the number obviously wrong?** The formatting is inconsistent but is **not** the cause —
 worth stating plainly so nobody chases it. The number is stored as bare `8707196286` rather
