@@ -98,3 +98,27 @@ Append-only. Newest entry at the bottom.
 
 **Do not start Chunk 3** (per session brief).
 
+---
+
+## 2026-09-09 — Session 3 (Chunk 3: inbound opt-out sync + legacy attribution)
+
+**Part A — Legacy phone attribution**
+
+- New migration `20260909100000_sms_compat_legacy_phone_user_attribution.sql`: `normalize_phone_to_e164()` + `CREATE OR REPLACE VIEW sms_message_log_compat` with `LEFT JOIN app_users` on escalation/payroll legacy branches only.
+- Extended `scripts/test-sms-migration-local.sh`: Casey seed `+15551234001` → `user_id` resolved; payroll `+15551230002` unmatched → `NULL` row preserved.
+
+**Part B — Chunk 3 inbound opt-out sync**
+
+- `20260909110000_sms_opt_out_events.sql`: `sms_opt_out_events` table, RLS (admin SELECT, service insert), unique `provider_message_id`, kill-switch seeds, disabled `clicksend-optout-reconcile` pg_cron.
+- Edge Functions: `clicksend-inbound-webhook`, `clicksend-optout-reconcile` (auth mirrors `notify-admins-new-signup`; deploy `--no-verify-jwt`).
+- Shared: `_shared/phoneE164.ts`, `_shared/smsOptOut.ts` (keyword parse, reconcile diff).
+- Unit tests: `tests/unit/sms-opt-out-inbound.test.ts` (18 tests). Local e2e: `scripts/test-sms-inbound-webhook-local.sh` — STOP flips both flags; duplicate POST no-op.
+- Runbook: `docs/sms-upgrade/05-CHUNK3-RUNBOOK.md`.
+- Send-path filters on reminder/escalation **unchanged** (deferred until reconciliation trusted).
+
+**Part C — Housekeeping**
+
+- GitHub issue #5: `20241205_job_tracker` replay failure (also `docs/sms-upgrade/KNOWN-ISSUES.md`).
+
+**Gates:** lint ✅ typecheck ✅ build ✅ vitest SMS suite 29/29 ✅
+
