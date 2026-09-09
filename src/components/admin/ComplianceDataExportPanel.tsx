@@ -28,6 +28,12 @@ import {
 import { logReportExported } from "../../lib/safetyAuditLog";
 import { cn } from "../../lib/utils";
 import { logger } from "../../lib/logger";
+import {
+  classifySmsExportQueryResult,
+  isSmsLogUnavailableError,
+  SmsLogUnavailableError,
+  SMS_LOG_UNAVAILABLE_MESSAGE,
+} from "../../lib/smsExportLoadState";
 import { useAuth } from "../../contexts/AuthContext";
 import { dvirExportColumns, equipmentExportColumns, DVIR_PDF_EXPORT_COLUMNS, EQUIPMENT_PDF_EXPORT_COLUMNS } from "../../pages/mechanic/equipment-logs/exportColumns";
 import type { DVIRReport } from "../../pages/mechanic/equipment-logs/types";
@@ -64,6 +70,8 @@ interface SectionConfig<T> {
   filenamePrefix: string;
   fetchData: (from: string, to: string) => Promise<T[]>;
   getRowCount: (data: T[]) => number;
+  /** Optional count label (e.g. empty range vs loaded). */
+  formatCountLabel?: (count: number) => string;
 }
 
 function maskPhoneLast4(phone: string | null | undefined): string {
@@ -98,10 +106,12 @@ function ExportSection<T>({
   const [exporting, setExporting] = useState<ExportFormat | null>(null);
   const [data, setData] = useState<T[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [unavailableMessage, setUnavailableMessage] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
 
   const handleLoad = useCallback(async () => {
     setError(null);
+    setUnavailableMessage(null);
     const fromTrim = from.trim();
     const toTrim = to.trim();
     if (!fromTrim || !toTrim) {
@@ -117,8 +127,14 @@ function ExportSection<T>({
       const rows = await config.fetchData(fromTrim, toTrim);
       setData(rows);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load");
       setData(null);
+      if (isSmsLogUnavailableError(e)) {
+        setUnavailableMessage(e.message || SMS_LOG_UNAVAILABLE_MESSAGE);
+        setError(null);
+      } else {
+        setUnavailableMessage(null);
+        setError(e instanceof Error ? e.message : "Failed to load");
+      }
     } finally {
       setLoading(false);
     }
@@ -227,11 +243,26 @@ function ExportSection<T>({
                   Load
                 </button>
               </div>
+              {unavailableMessage && (
+                <div
+                  role="status"
+                  data-testid={`export-section-${config.id}-unavailable`}
+                  className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200"
+                >
+                  <p className="font-medium text-amber-300">SMS log unavailable</p>
+                  <p className="mt-1 text-amber-200/90">{unavailableMessage}</p>
+                  <p className="mt-1 text-amber-200/70">
+                    Export is disabled until the migration is applied. This is not an empty date range.
+                  </p>
+                </div>
+              )}
               {error && <p role="alert" className="text-xs text-red-400">{error}</p>}
-              {data !== null && (
+              {data !== null && !unavailableMessage && (
                 <>
                   <p className="text-xs text-white/60" data-testid={`export-section-${config.id}-count`}>
-                    {count} record{count !== 1 ? "s" : ""} loaded.
+                    {config.formatCountLabel
+                      ? config.formatCountLabel(count)
+                      : `${count} record${count !== 1 ? "s" : ""} loaded.`}
                   </p>
                   {previewRows.length > 0 && config.previewColumns && (
                     <div className="overflow-x-auto rounded-lg border border-white/10">
@@ -541,18 +572,6 @@ const SMS_PDF_COLUMNS: ExportColumn<SmsExportRow>[] = [
   { header: "Cost", key: "price", format: (v) => (v == null ? "—" : formatCurrency(v as number)), width: 10 },
 ];
 
-function isMissingRelationError(error: { message?: string; code?: string } | null): boolean {
-  if (!error) return false;
-  const msg = error.message ?? "";
-  return (
-    error.code === "PGRST205" ||
-    error.code === "42P01" ||
-    /sms_message_log_compat/i.test(msg) ||
-    /does not exist/i.test(msg) ||
-    /could not find the table/i.test(msg)
-  );
-}
-
 // -----------------------------------------------------------------------------
 // Panel
 // -----------------------------------------------------------------------------
@@ -832,6 +851,10 @@ export default function ComplianceDataExportPanel() {
       pdfColumns: SMS_PDF_COLUMNS as ExportColumn<unknown>[],
       previewColumns: SMS_PREVIEW_COLUMNS as ExportColumn<unknown>[],
       getRowCount: (d) => d.length,
+      formatCountLabel: (count) =>
+        count === 0
+          ? "0 records in range (query succeeded; no SMS in this date range)."
+          : `${count} record${count !== 1 ? "s" : ""} loaded.`,
       fetchData: async (fromDate, toDate) => {
         const { data, error } = await supabase
           .from("sms_message_log_compat")
@@ -844,15 +867,16 @@ export default function ComplianceDataExportPanel() {
           .order("sent_at", { ascending: false })
           .limit(PAGE_SIZE);
 
-        if (error) {
-          if (isMissingRelationError(error)) {
-            logger.warn("[ComplianceDataExportPanel] sms_message_log_compat unavailable; returning empty set", {
-              message: error.message,
-              code: error.code,
-            });
-            return [] as SmsExportRow[];
-          }
-          throw new Error(error.message);
+        const loadState = classifySmsExportQueryResult({ data, error });
+        if (loadState === "unavailable") {
+          logger.warn("[ComplianceDataExportPanel] sms_message_log_compat unavailable", {
+            message: error?.message,
+            code: error?.code,
+          });
+          throw new SmsLogUnavailableError();
+        }
+        if (loadState === "error") {
+          throw new Error(error?.message ?? "Failed to load SMS log");
         }
 
         type CompatRow = {

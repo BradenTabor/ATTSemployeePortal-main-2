@@ -17,8 +17,12 @@ cleanup() {
 trap cleanup EXIT
 
 if ! command -v docker >/dev/null 2>&1; then
-  echo "FAIL: docker is required"
-  exit 1
+  echo "SKIP: docker not installed — SMS migration local replay requires Docker."
+  exit 0
+fi
+if ! docker info >/dev/null 2>&1; then
+  echo "SKIP: Docker daemon is not running — SMS migration local replay skipped."
+  exit 0
 fi
 if ! command -v psql >/dev/null 2>&1; then
   echo "FAIL: psql is required"
