@@ -79,15 +79,21 @@ Complete this checklist before the message type goes live (ties to the Change Re
 
 ### 5.3 Handling opt-out requests
 
-- Carrier-level: a recipient may reply STOP directly to any message; ClickSend enforces this at the carrier level immediately regardless of app state.
+> **Corrected 2026-09-09.** This section previously stated: *"Carrier-level: a recipient may reply STOP directly to any message; ClickSend enforces this at the carrier level immediately regardless of app state."* **That is false.** ClickSend's opt-out list is only consulted for sends addressed to a contact list. Every ATTS send is ad-hoc to a raw `to` number, so the carrier consults nothing and suppresses nothing. Delivery receipts proved it: a number on ClickSend's opt-out list since 2026-03-04 received 530 further messages. **The carrier is not a backstop. Application-side filtering is the enforcement mechanism, and it is the only one.**
 
-- Application-level (target state): an inbound webhook updates the correct opt-out flag (sms_operational_opt_out or sms_marketing_opt_out) within minutes of the STOP reply.
+- **Enforcement (application-side, live):** every operational send path — `payroll-hours-reminder-sms`, `safety-briefing-reminder-sms`, `safety-briefing-escalation-sms` — excludes recipients with `app_users.sms_operational_opt_out = true` at recipient-selection time. `send-mass-sms` excludes `sms_marketing_opt_out`. This is what stops a message going out.
 
-- Interim / backstop procedure, until the webhook above is confirmed reliable: an admin reviews the ClickSend account-level opt-out list at least weekly and manually reconciles it against app_users. Every manual reconciliation is itself logged (who reviewed, when, what changed) so the reconciliation step is auditable.
+- **Kill switch:** `app_settings.sms_send_optout_filter_config` → `{"enabled": true}`. Default ON; a missing row or an unreadable settings table also resolves to ON, so the filter cannot be disabled by an outage. Setting `{"enabled": false}` disables enforcement without a redeploy and **must** be treated as a compliance incident: record who disabled it, when, and why, and re-enable at the earliest opportunity.
 
-- A federal rule effective April 2025 requires opt-out requests to be honored within 10 business days of the request. The reconciliation cadence above (weekly, minimum) exists specifically to keep ATTS inside that window until the automated webhook is live.
+- **Auditability:** every excluded recipient is written to the run's `suppression_log` (`excluded_operational_opt_out`, with `user_id` and phone last-4) and counted in a structured per-run log line. A person dropping off a send list is explainable from the logs alone. An opted-out Tier 2 escalation recipient is skipped with a loud warning; a Tier 2 list emptied entirely by the filter logs at error level and still writes an audit row, because a silently shortened safety escalation list is the failure this control exists to prevent.
 
-- An admin may also manually set an opt-out flag for an employee (e.g., on request outside of a text reply); this must be logged the same way as a carrier-triggered opt-out.
+- **Setting the flag (inbound):** an inbound webhook (`clicksend-inbound-webhook`) parses STOP/START/HELP and sets the correct flag within minutes. **Not yet wired to a ClickSend inbound rule** — until it is, flags change only by admin action or by the nightly reconciliation.
+
+- **Reconciliation, not a backstop:** an admin reviews the ClickSend account-level opt-out list at least weekly and reconciles it against `app_users`, logging who reviewed, when, and what changed. Note the change in what this step is *for*: it is no longer a safety net behind carrier enforcement (there is none) — it is a second source of truth for **discovering** opt-outs the webhook has not captured. Suppression still depends entirely on the app-side flag being set.
+
+- A federal rule effective April 2025 requires opt-out requests to be honored within 10 business days of the request. Because the carrier does not enforce anything, that clock is met only by the flag being set (webhook or reconciliation) **and** the send-path filter being enabled. Both are required; neither alone is sufficient.
+
+- An admin may also manually set an opt-out flag for an employee (e.g., on request outside of a text reply); this must be logged the same way as a webhook-triggered opt-out.
 
 ### 5.4 Sender / number registry
 

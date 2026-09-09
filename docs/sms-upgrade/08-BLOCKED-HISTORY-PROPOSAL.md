@@ -1,11 +1,19 @@
-# Blocked-but-recorded SMS history — non-destructive annotation proposal
+# ~~Blocked-but-recorded SMS history~~ — premise falsified 2026-09-09
 
-**Status:** Proposal only. Do not implement in this session.  
+> **This proposal's founding premise was wrong and the document is retained only for audit trail.**
+> It assumed messages to an opted-out number were *blocked* and therefore mislabelled as sent.
+> Delivery receipts (Session 8) show the opposite: **530 delivered vs 2 failed** for last4 `6644`.
+> Nothing was blocked. The compat rows saying "sent" were, on this point, accurate.
+> The problem inverts — not "a false audit trail of blocked messages" but "a true audit trail of
+> 500+ messages delivered to someone who texted STOP." There is no blocked history to annotate.
+> Superseded by `13-UNREACHABLE-CREW.md` and the send-path filter (`20260909200000`).
+
+**Status:** ~~Proposal only. Do not implement in this session.~~ **Do not implement. Premise falsified.**
 **Constraint:** Do NOT delete or rewrite any historical `sms_message_log` / compat / legacy rows. Do NOT flip opt-out flags for last4 `6644` (Braden decision pending).
 
-## Problem
+## ~~Problem~~ (withdrawn)
 
-ClickSend’s opt-out list (`3406168`) has one contact (last4 `6644`, `date_added` 2026-03-04T22:51:37Z). After that timestamp the app continued to enqueue SMS to that number. ClickSend / the carrier blocked delivery, but `sms_message_log_compat` still presents those rows as ordinary sends (legacy branches have no carrier-level “blocked” status). Compliance export currently reads them as sent — a false audit trail.
+ClickSend’s opt-out list (`3406168`) has one contact (last4 `6644`, `date_added` 2026-03-04T22:51:37Z). After that timestamp the app continued to enqueue SMS to that number. ~~ClickSend / the carrier blocked delivery, but `sms_message_log_compat` still presents those rows as ordinary sends (legacy branches have no carrier-level “blocked” status). Compliance export currently reads them as sent — a false audit trail.~~ **Withdrawn:** the carrier blocked nothing. ClickSend's opt-out list is only consulted for list-addressed sends and the portal sends ad-hoc to a raw number, so the list was never applied. The messages were delivered.
 
 **Scope confirmed:** ClickSend opt-out list size = **1**. Only last4 **6644** is affected (**726** live compat rows with `sent_at >=` opt-out). No other distinct numbers appear on the provider opt-out list.
 

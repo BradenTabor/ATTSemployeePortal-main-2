@@ -347,3 +347,25 @@ list was read, never modified.
 minted for `bradenleetabor@gmail.com` via the admin API (no email sent) and revoked immediately
 after. That moved `auth.users.last_sign_in_at` for that account to 2026-09-09 18:27 UTC. No
 application data was touched, but the timestamp is not the user's own sign-in.
+
+---
+
+## 2026-09-09 — Session 9, Part B (corrected belief: there is no carrier STOP backstop)
+
+**Believed:** that ClickSend enforced STOP at the carrier, so an opted-out number could not be
+reached regardless of app state. Stated as fact in `SMS_ESCALATION.md`, `11-COMPLIANCE-SOP.md`
+§5.3, `PAYROLL_SMS_REMINDER.md`, `05-CHUNK3-RUNBOOK.md`, `00-BUILD-BRIEF.md`,
+`08-BLOCKED-HISTORY-PROPOSAL.md` and `12-PROJECT-SCOPE.md`.
+
+**Proved false by:** the Session 8 delivery-receipt ingest. Last4 `6644` has been on ClickSend's
+opt-out list since 2026-03-04T22:51:37Z and recorded **530 delivered vs 2 failed** afterwards.
+A carrier that blocks cannot deliver 530. The list is only consulted for sends addressed to a
+contact list; the portal sends ad-hoc to a raw `to` number.
+
+**When:** believed from project inception (docs predate Chunk 1); contradicted by receipts on
+2026-09-09 (Session 8); corrected across the repo on 2026-09-09 (Session 9).
+
+**Why it mattered:** the belief was the stated justification for deferring the
+`sms_operational_opt_out` send-path filter in Chunk 3. It excused the absence of the only
+control that would have stopped the sends. Full record in `KNOWN-ISSUES.md` →
+"Corrected belief: ClickSend enforces STOP at the carrier".

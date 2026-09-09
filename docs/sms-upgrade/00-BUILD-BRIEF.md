@@ -67,7 +67,7 @@ None of these tables is exposed in the frontend (`grep` of `src/` for the table 
 | `app_users.phone_number` | `20260308100000_…`; normalized `20260310130003_…`; **backfilled from `auth.users` by `20260320120001_backfill_app_users_phone_from_auth.sql`** | No consent record exists anywhere. |
 | Escalation static recipients | `sms_escalation_recipients` (tier 2) | E.164, `is_active`. |
 
-Known, self-documented gap: `docs/PAYROLL_SMS_REMINDER.md` § "Inbound STOP gap (v1)" — ClickSend blocks STOP'd numbers at the carrier, but nothing sets the app flags. There is **no inbound webhook function** in `supabase/functions/`.
+Known, self-documented gap: `docs/PAYROLL_SMS_REMINDER.md` § "Inbound STOP gap (v1)" — ~~ClickSend blocks STOP'd numbers at the carrier, but nothing sets the app flags.~~ **Corrected 2026-09-09:** ClickSend does **not** block STOP'd numbers on ad-hoc sends (its opt-out list applies only to list-addressed sends), so the gap was larger than described — nothing set the app flags *and* nothing blocked delivery. Both halves are now addressed: `clicksend-inbound-webhook` sets the flags (pending an inbound rule), and the send paths filter on them.
 
 Phone number is touched in UI at: `src/pages/Home.tsx`, `src/pages/TeamContacts.tsx`, `src/pages/admin/AdminRTO.tsx`.
 

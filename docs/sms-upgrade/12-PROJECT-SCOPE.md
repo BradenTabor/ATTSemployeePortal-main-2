@@ -20,7 +20,7 @@ ATTS already runs several automated SMS flows to crew/employees through ClickSen
 
 ## 2. Objectives
 
-1.  Make opt-out status trustworthy: what the app believes matches what the carrier is actually blocking, within a defined window.
+1.  Make opt-out status trustworthy and *enforced*: what the app believes matches what the provider recorded, within a defined window, **and** the app actually suppresses the send. (Revised 2026-09-09: the original objective read "matches what the carrier is actually blocking", which presumed carrier-side enforcement. There is none — ClickSend's opt-out list is only consulted for list-addressed sends, and every ATTS send is ad-hoc to a raw number. Syncing status is necessary but not sufficient; the send-path filter is what makes it real.)
 
 2.  Make compliance provable on demand: one export produces a complete, accurate SMS record for any date range without a developer writing SQL.
 

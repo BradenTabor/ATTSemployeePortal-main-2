@@ -4,13 +4,13 @@ For admins and operators. No developer shell access required for dashboard steps
 
 ## What this chunk does
 
-When a crew member replies **STOP** to an ATTS SMS, ClickSend blocks future sends at the carrier. This chunk:
+When a crew member replies **STOP** to an ATTS SMS, ClickSend records the number on its opt-out list. ~~ClickSend blocks future sends at the carrier.~~ **Withdrawn 2026-09-09 — it does not.** That list is only consulted for sends addressed to a contact list; the portal sends ad-hoc to a raw `to` number, so nothing at the carrier suppresses the send. This chunk:
 
 1. Records the inbound message in `sms_opt_out_events`
 2. Sets **both** `sms_operational_opt_out` and `sms_marketing_opt_out` to `true` on the matching employee (`app_users`)
 3. Nightly reconciliation (disabled by default) compares ClickSend’s opt-out list to the app
 
-**Important:** Reminder and escalation send paths still do **not** filter on `sms_operational_opt_out` until reconciliation has been watched and trusted (see [Deferred: send-path filters](#deferred-send-path-filters)).
+**Important (updated 2026-09-09):** setting the flags is only half the job — the flags are what the send paths read. Reminder and escalation **now filter** on `sms_operational_opt_out`, matching payroll. See [Deferred: send-path filters](#deferred-send-path-filters), which records why the deferral was lifted.
 
 **Production webhook URL:**
 
@@ -238,7 +238,7 @@ curl -X POST "https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/clicksend-op
 
 1. **Preferred — ClickSend Test Inbound SMS simulator** (Dashboard → SMS → Inbound / Rules → Test), if your account UI exposes it. Non-destructive; confirms the rule reaches our URL without a real carrier STOP.
 2. **Braden’s own phone only:** reply **HELP** first (webhook should log `help_logged`, flip **no** opt-out flags). Only if a full path test is required, reply **STOP**, confirm flags + `sms_opt_out_events`, then immediately reply **START** so the carrier block is undone by the handset owner.
-3. **Never a crew member’s phone.** A real STOP is a permanent carrier-level block that **only the phone’s owner** can undo by texting START. You cannot reverse it from ClickSend admin, Supabase, or the ATTS app.
+3. **Never a crew member’s phone.** A real STOP puts the number on ClickSend's opt-out list and (once the webhook is wired) sets both app flags. Only the phone's owner can clear the provider-side entry by texting START. ~~A real STOP is a permanent carrier-level block.~~ **Corrected 2026-09-09** — it is not a carrier block; the provider list does not suppress ad-hoc sends. The app flags *are* a real block, and an admin can clear those, but doing so overrides a recorded STOP and is a compliance decision, not a test cleanup step.
 
 Check:
 
@@ -288,17 +288,27 @@ SELECT * FROM public.get_recent_cron_failures(1);
 
 ---
 
-## Deferred: send-path filters
+## ~~Deferred: send-path filters~~ — deferral lifted 2026-09-09
 
-**Not changed in Chunk 3.** `safety-briefing-reminder-sms` and `safety-briefing-escalation-sms` do not check `sms_operational_opt_out`.
+~~**Not changed in Chunk 3.** `safety-briefing-reminder-sms` and `safety-briefing-escalation-sms` do not check `sms_operational_opt_out`.~~
 
-**Lift this deferral when:**
+~~**Lift this deferral when:** reconciliation diff has been stable for 7+ days; inbound webhook has processed real STOP events without false positives; product owner explicitly approves adding the filter (separate change).~~
 
-- Reconciliation diff has been stable for 7+ days
-- Inbound webhook has processed real STOP events without false positives
-- Product owner explicitly approves adding the filter (separate change)
+~~Premature filtering could silently suppress safety-briefing SMS to crew who are still reachable — a worse failure than the gap being closed.~~
 
-Premature filtering could silently suppress safety-briefing SMS to crew who are still reachable — a worse failure than the gap being closed.
+**Why the reasoning collapsed.** The deferral traded one risk against another: premature filtering might suppress a briefing, but the carrier was blocking opted-out numbers anyway, so the gap was tolerable. The second half was never true. ClickSend's opt-out list is only consulted for list-addressed sends, and the portal sends ad-hoc to raw numbers. There was no enforcement anywhere in the chain — not in the app, not at the carrier. The deferral was protecting against a hypothetical while a real, ongoing consent violation ran unchecked.
+
+**Both paths now filter** (`safety-briefing-reminder-sms`, `safety-briefing-escalation-sms`), matching `payroll-hours-reminder-sms`.
+
+Two facts made the change low-risk on the day it landed: no `app_users` row had `sms_operational_opt_out = true`, so the filter suppressed nobody; and the inbound webhook is still not wired to a ClickSend rule, so the flag cannot change without deliberate admin action.
+
+Safeguards that replace the deferral:
+
+- Kill switch `app_settings.sms_send_optout_filter_config` → `{"enabled": false}` disables the filter in seconds, no redeploy.
+- Every exclusion lands in `suppression_log` with `user_id` and phone last-4, plus a structured per-run count in the function logs.
+- An opted-out Tier 2 static recipient is skipped with a loud warning; an emptied Tier 2 list logs at error level and still writes an audit row.
+
+Verified against production before and after: overdue 10 / eligible 10 / field users 16, byte-identical either side of the change. Flagging one account dropped exactly that one recipient and surfaced the exclusion in the audit output.
 
 ---
 

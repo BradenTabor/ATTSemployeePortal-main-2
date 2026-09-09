@@ -95,12 +95,12 @@ WHERE date_checked = 'YYYY-MM-DD'  -- Chicago date
 
 ## STOP / operational opt-out
 
-- **Carrier (ClickSend):** Recipients can reply STOP; ClickSend blocks future delivery at the carrier level.
-- **App (`sms_operational_opt_out`):** Admin sets `true` on `app_users` to exclude from operational SMS.
+- **Carrier (ClickSend):** ~~Recipients can reply STOP; ClickSend blocks future delivery at the carrier level.~~ **Withdrawn 2026-09-09.** A STOP reply moves the number onto ClickSend's opt-out list, but that list is only consulted for sends addressed to a contact list. This function sends ad-hoc to a raw `to` number, so **the carrier does not block anything**. Proved by delivery receipts: a number on the opt-out list since 2026-03-04 received 530 further messages.
+- **App (`sms_operational_opt_out`):** The only enforcement that exists. This function has always filtered on it; the safety-briefing reminder and escalation paths now do too.
 
-**Inbound STOP gap (v1):** When a recipient replies STOP, ClickSend blocks delivery, but the app does **not** automatically set `sms_operational_opt_out = true` (no inbound webhook yet). The function may still include the user in batches; audit may show send attempts, but **no SMS is delivered** to STOP-blocked numbers. Admin must set the flag manually when notified.
+**~~Inbound STOP gap (v1)~~ — corrected 2026-09-09:** the original text claimed *"no SMS is delivered to STOP-blocked numbers."* That was false and it was the load-bearing assumption behind deferring send-path filters. There is no carrier backstop. The real gap is narrower and still open: until the inbound webhook is wired to a ClickSend inbound rule, a STOP reply does not set `sms_operational_opt_out`, so an admin must still set the flag manually when notified.
 
-**Follow-up:** ClickSend inbound webhook → auto-set `sms_operational_opt_out`.
+**Follow-up:** wire the `clicksend-inbound-webhook` inbound rule → auto-set `sms_operational_opt_out`.
 
 ## Cost (approve before first live week)
 
