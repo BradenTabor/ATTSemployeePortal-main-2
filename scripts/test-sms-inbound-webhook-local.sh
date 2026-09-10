@@ -73,33 +73,57 @@ if ! psql "$DB_URL" -v ON_ERROR_STOP=1 -t -A -c \
   psql "$DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260909110000_sms_opt_out_events.sql
 fi
 
-echo "=== Resetting test app_users opt-out flags ==="
+echo "=== Resetting test fixture (auth.users + app_users) ==="
 psql "$DB_URL" -v ON_ERROR_STOP=1 <<SQL
-UPDATE public.app_users
-SET phone_number = '$PHONE',
+-- Minimal auth user so app_users FK is satisfied (local e2e only).
+INSERT INTO auth.users (
+  id, instance_id, aud, role, email, encrypted_password,
+  email_confirmed_at, raw_app_meta_data, raw_user_meta_data,
+  created_at, updated_at
+)
+VALUES (
+  '$USER_ID',
+  '00000000-0000-0000-0000-000000000000',
+  'authenticated',
+  'authenticated',
+  'local-inbound-e2e@alltts.com',
+  crypt('local-e2e-not-a-login', gen_salt('bf')),
+  now(),
+  '{"provider":"email","providers":["email"]}'::jsonb,
+  '{}'::jsonb,
+  now(),
+  now()
+)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.app_users (user_id, email, full_name, role, phone_number, sms_operational_opt_out, sms_marketing_opt_out)
+VALUES (
+  '$USER_ID',
+  'local-inbound-e2e@alltts.com',
+  'Local Inbound E2E',
+  'employee',
+  '$PHONE',
+  false,
+  false
+)
+ON CONFLICT (user_id) DO UPDATE
+SET phone_number = EXCLUDED.phone_number,
     sms_operational_opt_out = false,
-    sms_marketing_opt_out = false
-WHERE user_id = '$USER_ID';
+    sms_marketing_opt_out = false,
+    email = EXCLUDED.email;
 
 DELETE FROM public.sms_opt_out_events WHERE provider_message_id = '$PROVIDER_MSG_ID';
 SQL
 
-PAYLOAD=$(cat <<EOF
-{
-  "message_id": "$PROVIDER_MSG_ID",
-  "from": "$PHONE",
-  "to": "+18443781444",
-  "body": "STOP",
-  "timestamp": $(date +%s)
-}
-EOF
-)
-
-echo "=== POST #1 STOP payload ==="
+echo "=== POST #1 STOP payload (form-urlencoded — ClickSend shape) ==="
 RESP1=$(curl -sS -w "\n%{http_code}" -X POST "$FUNCTIONS_URL" \
   -H "Authorization: Bearer $SERVICE_KEY" \
-  -H "Content-Type: application/json" \
-  -d "$PAYLOAD")
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  --data-urlencode "message_id=$PROVIDER_MSG_ID" \
+  --data-urlencode "from=$PHONE" \
+  --data-urlencode "to=+18443781444" \
+  --data-urlencode "body=STOP" \
+  --data-urlencode "timestamp=$(date +%s)")
 HTTP1=$(echo "$RESP1" | tail -n1)
 BODY1=$(echo "$RESP1" | sed '$d')
 echo "http=$HTTP1 body=$BODY1"
@@ -126,8 +150,12 @@ fi
 echo "=== POST #2 duplicate payload (idempotency) ==="
 RESP2=$(curl -sS -w "\n%{http_code}" -X POST "$FUNCTIONS_URL" \
   -H "Authorization: Bearer $SERVICE_KEY" \
-  -H "Content-Type: application/json" \
-  -d "$PAYLOAD")
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  --data-urlencode "message_id=$PROVIDER_MSG_ID" \
+  --data-urlencode "from=$PHONE" \
+  --data-urlencode "to=+18443781444" \
+  --data-urlencode "body=STOP" \
+  --data-urlencode "timestamp=$(date +%s)")
 HTTP2=$(echo "$RESP2" | tail -n1)
 BODY2=$(echo "$RESP2" | sed '$d')
 echo "http=$HTTP2 body=$BODY2"
@@ -149,4 +177,4 @@ if [[ "$EVENT_COUNT2" != "1" ]]; then
 fi
 
 echo ""
-echo "PASS: STOP flipped both flags; duplicate POST was a no-op."
+echo "PASS: form-urlencoded STOP flipped both flags; duplicate POST was a no-op."
