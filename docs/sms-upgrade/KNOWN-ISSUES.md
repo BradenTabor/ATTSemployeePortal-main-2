@@ -210,7 +210,16 @@ functions wide, and it is not this.
 
 ## Edge Functions have no typecheck gate — `deno check` cannot resolve `npm:openai@^4.52.5`
 
-**Status:** Recorded 2026-09-09. **Pre-dates the SMS work; not caused by it and not fixed by it.** Do not fix inside an SMS chunk.
+**Status:** Recorded 2026-09-09. **Pre-dates the SMS work; not caused by it.** **Partially narrowed the same day and still open** — see "What has since been gated" below. Do not attempt the rest inside an SMS chunk.
+
+**What has since been gated (2026-09-09).** `npm run typecheck` now also runs
+`tsc -p supabase/functions/tsconfig.shared.json`, covering `_shared/smsOptOutFilter.ts`,
+`_shared/smsMessageLog.ts` and `_shared/phoneE164.ts` — **293 lines of 17,246**, chosen because
+they gate safety-critical sends and feed the compliance export. That is a gate, not coverage. The
+38 `@ts-nocheck` files, including all four send paths and every function entrypoint, are still
+unchecked, `deno check` still cannot resolve `npm:openai@^4.52.5`, and everything below this
+paragraph is still true of them. Scope and reasoning:
+`15-TYPECHECK-REMEDIATION-PLAN.md`.
 
 **Symptom:** `deno check` over `supabase/functions/` fails to resolve `npm:openai@^4.52.5` and aborts. Because it aborts on module resolution rather than on a type error, it type-checks nothing — including files that have no relationship to OpenAI.
 
@@ -227,7 +236,7 @@ functions wide, and it is not this.
 | `src/**` (app) | `npm run lint` (ESLint) | `npm run typecheck` (`tsc --noEmit -p tsconfig.app.json`) |
 | `supabase/functions/**` (Deno) | `deno lint` only | **none** |
 
-`npm run typecheck` runs `tsc --noEmit -p tsconfig.app.json`, whose `include` is `["src"]`, and root `tsconfig.json` excludes `supabase/**` six different ways. So nothing in `supabase/functions/` is reachable by the TypeScript gate regardless of the Deno problem. Most function `index.ts` files also carry `// @ts-nocheck` for Deno compatibility, which would suppress checking even if they were in scope. The three gates this project runs after every change — lint, typecheck, build — collectively provide **zero** type coverage of Edge Function code.
+`tsc --noEmit -p tsconfig.app.json` has `include: ["src"]`, and root `tsconfig.json` excludes `supabase/**` six different ways. So nothing in `supabase/functions/` was reachable by the TypeScript gate regardless of the Deno problem, and most function `index.ts` files also carry `// @ts-nocheck` for Deno compatibility, which would suppress checking even if they were in scope. As of 2026-09-09 the three files named above are reachable via the second `tsc` project; **everything else in `supabase/functions/` still has zero type coverage from lint, typecheck and build combined.**
 
 Everything shipped in Chunks 1–4 rests on `deno lint`, unit tests, and local dry-runs. Worth noting which side of the line each piece falls on:
 

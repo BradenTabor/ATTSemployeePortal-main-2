@@ -1,7 +1,58 @@
 # Edge Function typecheck — remediation plan
 
-**Status:** plan only. Written 2026-09-09, **rescoped the same day**. **Nothing has been changed to
-produce it** — no `tsconfig`, no import map, no CI workflow, no `@ts-nocheck` removed.
+**Status:** the **recommended scope is done**, applied 2026-09-09. Everything else in this
+document is still plan only — no import map change, no CI workflow change, no `@ts-nocheck`
+removed, no specifier collapse. The full-tree `deno check` path below remains the documented
+**not-now** option and should stay that way.
+
+## What was applied
+
+| File | Change |
+|---|---|
+| `supabase/functions/tsconfig.shared.json` | New. `strict`, `noEmit`, `allowImportingTsExtensions`, `types: []`, and an explicit four-entry `files` list. |
+| `supabase/functions/_shared/deno-globals.d.ts` | New. Declares `console` and nothing else. |
+| `package.json` | `typecheck` is now `tsc --noEmit -p tsconfig.app.json && tsc -p supabase/functions/tsconfig.shared.json`. |
+
+No workflow edit was needed: CI already runs `npm run typecheck`, so the gate entered CI with the
+same commit.
+
+**`files`, not `include`.** A glob would silently widen the gate on the next file added to
+`_shared/`, which is how a green gate turns red for reasons unrelated to the change under review.
+`phoneE164.ts` is listed explicitly even though it would be pulled in transitively, so the checked
+set is readable from the config alone.
+
+**Verification, both directions.** `npm run typecheck` exits 0 on the unmodified tree. With one
+deliberate type error introduced into `smsOptOutFilter.ts` (`entry.userIds.push(row)` in place of
+`entry.userIds.push(row.user_id)`, line 106 — the shape of a real slip in the static-recipient
+opt-out match), it fails:
+
+```
+supabase/functions/_shared/smsOptOutFilter.ts(106,24): error TS2345: Argument of type
+'AppUserPhoneRow' is not assignable to parameter of type 'string'.
+```
+
+npm exit code 2. The break was reverted; `git diff` on that file is empty, `npm run typecheck`
+exits 0 again, and both helpers' Vitest suites still pass (15 tests). Worth noting what that
+demonstrates beyond the gate working: those 15 behavioural tests pass **with the break in place**,
+because Vitest transpiles through esbuild without type-checking. The two gates catch different
+things, which is the whole argument for having both.
+
+**What it still does not buy — the exit criterion was "a gate", not "coverage".** 293 lines of
+17,246. The 38 `@ts-nocheck` files, including all four send paths, remain unchecked. This is not
+"Edge Functions are typechecked now"; the `KNOWN-ISSUES.md` entry stays open and should be read as
+still open.
+
+**How to widen it.** Add one file at a time to the `files` array after confirming it passes on its
+own. `_shared/smsOptOut.ts` and `_shared/smsDeliveryReceipts.ts` are the obvious next two and have
+not been probed. If a newly added file needs a runtime global, declare it in `deno-globals.d.ts`
+deliberately rather than widening `lib`.
+
+---
+
+## The plan as written before it was applied
+
+Kept below unchanged, because the reasoning is what justifies the scope and the not-now sections
+are still live.
 
 Background and the original observation: `KNOWN-ISSUES.md` → *"Edge Functions have no typecheck
 gate"*.
@@ -229,9 +280,10 @@ pass in situ.
 
 ---
 
-## Out of scope here
+## Out of scope
 
-Not touched, deliberately: `tsconfig.json`, `tsconfig.app.json`, `supabase/functions/deno.json`,
-`package.json`, `.github/workflows/ci.yml`, and every `@ts-nocheck` pragma. The `/tmp` probe that
-produced the "already type-clean" finding was run outside the repo and left nothing behind. This
-document is the plan; executing it is separate work.
+Still not touched, deliberately: `tsconfig.json`, `tsconfig.app.json`,
+`supabase/functions/deno.json`, `.github/workflows/ci.yml`, and every `@ts-nocheck` pragma.
+`package.json` was the one exception — a single line, so the new project runs where CI already runs
+`npm run typecheck`. The `/tmp` probe that produced the "already type-clean" finding was run
+outside the repo and left nothing behind.
