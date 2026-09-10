@@ -1258,9 +1258,10 @@ reachable in-app today; only SMS is broken. That changes the recommendation from
 "message him in the app and ask for a working number".
 
 **Incidental finding, not SMS.** Both accounts carry
-`manager_id = 06aafe0d-c620-4e25-b73d-72645a14d5ef`, which exists in neither `app_users` nor
+`manager_id = 06aafe0d-c620-4e25-b73d-72645a14d5ef`, ~~which exists in neither `app_users` nor
 `auth.users`. **14 accounts point at it.** Anything that escalates to "their manager" has nowhere
-to go. Flagged, not fixed — it belongs in its own ticket.
+to go.~~ **Struck Session 15:** the UUID is `app_users.id` for Steve Curtis (active
+`general_foreman`); Auth is on `user_id`. See `20-ORPHANED-MANAGER-ID.md`.
 
 ### Production changes this session
 
@@ -1269,6 +1270,67 @@ HELP). **No SMS sent. No inbound rule created. No opt-out flag changed. No `app_
 migration. No Edge Function deployed.** Two Edge Functions were invoked — `clicksend-optout-reconcile`
 twice in diff-only mode (reads only; `apply_enabled` is false) and `clicksend-inbound-webhook` once
 with the synthetic HELP above.
+
+---
+
+## Session 15 — 2026-09-10 — merge PR #3 red, close out
+
+### A — Merge despite red CI (Braden's explicit decision)
+
+**Rationale, recorded verbatim in the merge commit body and here:** CI has failed on every
+branch including main since 2026-06-28, so it is not a gate any branch can pass; the canopy
+redesign running in production today also shipped past it; and leaving `feat/sms-upgrade`
+unmerged is an active risk, because any Edge Function deploy from main silently disables
+opt-out enforcement. Merging red does not lower a bar that is already on the floor.
+
+**A.1 re-confirm before merge:** `mergeable: MERGEABLE`, `0` behind `main`, no conflicts.
+Next SMS/HTTP send cron was morning (reminder 10:40 UTC / escalation 16:00 UTC).
+`cron-http-failure-sweep` at 02:07 UTC was inside 45 minutes but is pure SQL (not a send path);
+treated as non-blocking for this gate.
+
+**A.2** Merged PR #3 with `--merge` (history preserved, not squash). Merge commit:
+**`24ecc86f2557a767b35265eb00fc45b31c90ea67`**. Body names the red CI failures: E2E
+production-credentials guard, dead Playwright `--output` flag, missing Supabase env vars in
+four suites, ~30 pre-existing assertion failures in `tests/unit/compliance-helpers.test.ts`.
+
+**A.3** Frontend production deploy **triggered and succeeded** on that commit.
+`version.json` → commit `24ecc86f2557a767b35265eb00fc45b31c90ea67`, built
+`2026-09-10T01:49:40.838Z`. GitHub deployment `6362887210` state `success`.
+
+**A.4** Bundle check (same method as Session 14; before = 0 hits everywhere):
+
+| Needle | Before | After (file → count) |
+|---|---:|---|
+| `SMS Communications` | 0 | `ComplianceAuditSection-UJpnHNVO.js` → **4** |
+| `SMS Opt-Out Events` | 0 | `ComplianceAuditSection-UJpnHNVO.js` → **2** |
+| `sms_opt_out_events` | 0 | `ComplianceAuditSection-UJpnHNVO.js` → **3** |
+| `sms_message_log` | 0 | `ComplianceAuditSection-UJpnHNVO.js` → **2** |
+
+### B — CI repair filed, not fixed
+
+`19-CI-REPAIR-PLAN.md`. Config vs debt split. `compliance-helpers`: **24 fail under `TZ=UTC`,
+81/81 pass locally** — brittle `new Date(y,m,d,h,mi)` fixtures, not product regressions.
+`assertSafeE2ETarget` must not be weakened. CI non-functional since 2026-06-28 noted.
+
+### C — `6286` app-use claim corrected
+
+`13-UNREACHABLE-CREW.md` §3 struck in place. Durable pitfall in `KNOWN-ISSUES.md`. Question for
+Braden sharpened to in-app: texts bouncing, what number should we have?
+
+### D — Manager UUID re-checked
+
+`20-ORPHANED-MANAGER-ID.md`. Resolves to Steve Curtis; escalation Tier 1 texts him; orphan
+handling is **not** catching these 14 while the FK is set. Session 14 "neither table" claim
+was `id` vs `user_id`. No reassignment.
+
+### E — Braden TODO
+
+Merge marked done; ClickSend inbound rule added as dashboard-only with §2c click-path; three
+remaining items (§1 HELP, §2 crew phones, §3 reconcile week) confirmed standing.
+
+**Production changes this session:** merge to `main` + Vercel production frontend deploy.
+**No SMS sent. No ClickSend write. No opt-out flag change. No migration. No Edge Function
+deploy from this session.** Docs commits on `docs/sms-upgrade-closeout`.
 
 ## 2026-09-10 — Session 16 (inbound webhook: ?k= auth + form-urlencoded bodies)
 
