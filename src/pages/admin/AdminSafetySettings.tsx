@@ -671,8 +671,9 @@ function BriefingsTab() {
 
       <SectionCard title="Questions (JSON Editor)">
         <p className="text-xs text-white/40 mb-2">
-          Edit the question pool as JSON. Each category must have at least one question with 2+ options. 
-          Questions rotate daily by day-of-year.
+          Edit the question pool as JSON. Knowledge questions need correctOptionId and explanation so
+          workers see the right answer. Check-ins use kind: "checkin" plus optional coaching. Questions
+          rotate daily by day-of-year; a live hazard/PPE question is injected when field data exists.
         </p>
         {questionsJsonError && (
           <div className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300 mb-2">

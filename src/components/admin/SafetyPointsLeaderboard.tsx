@@ -213,7 +213,7 @@ export default function SafetyPointsLeaderboard({
                   <div className={cn("px-3 py-1.5 bg-gradient-to-r to-transparent border-b", t.statBg, t.border)}>
                     <div className="flex items-center justify-between text-[9px]">
                       <span className={t.roleText}>Pts: <span className={cn("font-bold", t.points)}>{stats.total_combined_points}</span></span>
-                      <span className={t.roleText}>Avg: <span className="font-bold text-emerald-300">{stats.avg_compliance_rate}%</span></span>
+                      <span className={t.roleText}>Fill: <span className="font-bold text-emerald-300">{stats.form_fill_rate ?? stats.avg_compliance_rate}%</span></span>
                     </div>
                   </div>
                 )}

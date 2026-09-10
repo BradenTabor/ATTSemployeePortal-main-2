@@ -41,11 +41,12 @@ export async function exportAnalyticsPdf(options: AnalyticsPdfOptions): Promise<
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   const summaryLines = [
-    `Active users: ${stats.active_users} / ${stats.total_users}`,
-    `Total points: ${stats.total_combined_points.toLocaleString()}`,
-    `Avg. compliance rate: ${stats.avg_compliance_rate}%`,
-    `Full compliance days: ${stats.total_compliance_days}`,
-    `Announcement engagement: ${stats.announcement_engagement_rate}%`,
+    `Field crew: ${stats.field_users ?? stats.total_users} (${stats.active_users} with activity)`,
+    `Form fill: ${stats.form_fill_rate ?? stats.avg_compliance_rate}% (${stats.completed_form_slots ?? '—'} / ${stats.expected_form_slots ?? '—'} slots)`,
+    `Full packet: ${stats.full_packet_rate ?? 0}% (${stats.days_with_full_packet ?? 0} person-days)`,
+    `Announcement reach: ${stats.announcement_reach ?? stats.announcement_engagement_rate}%`,
+    `Ledger points: ${stats.total_combined_points.toLocaleString()} (forms ${stats.total_compliance_points}, announce ${stats.total_announcement_points}, other ${stats.other_points ?? 0})`,
+    `Recorded full-packet rate (includes empty attendance): ${stats.full_packet_among_recorded ?? 0}%`,
   ];
   summaryLines.forEach((line) => {
     doc.text(line, 40, y);
@@ -61,13 +62,14 @@ export async function exportAnalyticsPdf(options: AnalyticsPdfOptions): Promise<
   const topN = leaderboard.slice(0, 15);
   autoTable(doc, {
     startY: y,
-    head: [['Rank', 'Name', 'Role', 'Points', 'Compliance %', 'Streak']],
+    head: [['Rank', 'Name', 'Role', 'Points', 'Fill %', 'Packet %', 'Streak']],
     body: topN.map((e) => [
       String(e.rank),
       e.full_name || '—',
       e.role || '—',
       String(e.total_points),
-      `${e.compliance_rate ?? 0}%`,
+      `${e.form_fill_rate ?? e.compliance_rate ?? 0}%`,
+      `${e.full_packet_rate ?? 0}%`,
       String(e.current_streak ?? 0),
     ]),
     theme: 'striped',

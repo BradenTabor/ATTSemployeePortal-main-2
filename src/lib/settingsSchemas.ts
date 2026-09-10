@@ -20,8 +20,14 @@ const BriefingOptionSchema = z.object({
 const BriefingQuestionSchema = z.object({
   id: z.string().min(1),
   category: z.enum(['tree_safety', 'personal_health', 'announcement']),
+  kind: z.enum(['knowledge', 'checkin']).optional(),
   text: z.string().min(1),
   options: z.array(BriefingOptionSchema).min(2),
+  correctOptionId: z.string().min(1).optional(),
+  explanation: z.string().min(1).optional(),
+  standardRef: z.string().min(1).optional(),
+  roles: z.array(z.enum(['employee', 'foreman', 'general_foreman', 'mechanic'])).optional(),
+  coaching: z.record(z.string(), z.string()).optional(),
 });
 
 // ─── Safety Announcement Config ──────────────────────────────────────────────

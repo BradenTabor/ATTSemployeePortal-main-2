@@ -11,9 +11,11 @@ import { useLatestAnnouncementQuery } from './queries/useAnnouncementsQuery';
 import type { Announcement } from './queries/useAnnouncementsQuery';
 import {
   getTodaysQuestions,
+  QUESTION_POOL,
   type BriefingQuestion,
   PERSONALIZED_FALLBACK,
 } from '../config/safetyBriefing';
+import { resolveQuestionPool, type QuestionPool } from '../lib/briefing';
 import { logger } from '../lib/logger';
 import { subDays } from 'date-fns';
 
@@ -32,6 +34,7 @@ export interface SafetyBriefingStatusResult {
   hasCompletedToday: boolean;
   todayDateString: string;
   questions: BriefingQuestion[];
+  questionPool: QuestionPool;
 }
 
 /**
@@ -54,12 +57,20 @@ export function useSafetyBriefingStatus(): SafetyBriefingStatusResult {
         .eq('key', 'safety_briefing_config')
         .maybeSingle();
       if (!data?.value || typeof data.value !== 'object') return null;
-      return data.value as { enabled?: boolean; required_roles?: string[] };
+      return data.value as {
+        enabled?: boolean;
+        required_roles?: string[];
+        questions?: QuestionPool;
+      };
     },
     staleTime: 60_000,
   });
   const briefingEnabled = briefingSettingsRaw?.enabled ?? true;
   const requiredRoles: string[] = briefingSettingsRaw?.required_roles ?? ['employee', 'foreman', 'general_foreman', 'mechanic'];
+  const questionPool: QuestionPool = resolveQuestionPool(
+    briefingSettingsRaw?.questions,
+    QUESTION_POOL,
+  );
 
   const { data: latestAnnouncement, isLoading: announcementLoading } = useLatestAnnouncementQuery();
 
@@ -93,7 +104,7 @@ export function useSafetyBriefingStatus(): SafetyBriefingStatusResult {
   const roleRequired = role != null && requiredRoles.includes(role);
   const mustComplete =
     briefingEnabled && roleRequired && todayAnnouncement != null && !hasCompletedToday;
-  const questions = getTodaysQuestions(todayDateString);
+  const questions = getTodaysQuestions(todayDateString, questionPool, role);
 
   return {
     mustComplete,
@@ -102,6 +113,7 @@ export function useSafetyBriefingStatus(): SafetyBriefingStatusResult {
     hasCompletedToday,
     todayDateString,
     questions,
+    questionPool,
   };
 }
 
@@ -240,8 +252,16 @@ export interface FocusItem {
  * Structured "Your focus today" items derived from the same data as usePersonalizedSafetyContent.
  * Reuses the same query keys so data is shared. Returns up to 3 focus items (certs, hazards, incidents).
  */
+export interface BriefingPersonalSignals {
+  certExpiresAt: string | null;
+  recentHazards: string[];
+  recentPpe: string[];
+  hasRecentIncident: boolean;
+}
+
 export function usePersonalizedFocusItems(userId: string | undefined): {
   focusItems: FocusItem[];
+  signals: BriefingPersonalSignals;
   isLoading: boolean;
 } {
   const today = new Date();
@@ -258,7 +278,7 @@ export function usePersonalizedFocusItems(userId: string | undefined): {
       if (!userId) return null;
       const { data, error } = await supabase
         .from('daily_jsa')
-        .select('hazards_present')
+        .select('hazards_present, ppe')
         .eq('user_id', userId)
         .gte('created_at', sevenDaysAgo)
         .order('created_at', { ascending: false })
@@ -308,32 +328,51 @@ export function usePersonalizedFocusItems(userId: string | undefined): {
     retry: false,
   });
 
-  const focusItems: FocusItem[] = [];
-  if (certData && Array.isArray(certData) && certData.length > 0) {
-    const first = certData[0] as { expires_at?: string };
-    const exp = first.expires_at ? first.expires_at.slice(0, 10) : '';
-    focusItems.push({
-      title: 'Certification expiring soon',
-      body: `You have a certification expiring on ${exp}. Stay current!`,
-    });
-  }
-  if (jsaData && Array.isArray(jsaData) && jsaData.length > 0) {
-    const hazards = new Set<string>();
-    for (const row of jsaData as { hazards_present?: Record<string, unknown> }[]) {
+  const recentHazards: string[] = [];
+  const recentPpe: string[] = [];
+  if (jsaData && Array.isArray(jsaData)) {
+    const hazardSet = new Set<string>();
+    const ppeSet = new Set<string>();
+    for (const row of jsaData as { hazards_present?: Record<string, unknown>; ppe?: unknown }[]) {
       if (row.hazards_present && typeof row.hazards_present === 'object') {
         Object.keys(row.hazards_present).forEach((k) => {
-          if (row.hazards_present![k]) hazards.add(k);
+          if (row.hazards_present![k]) hazardSet.add(k);
+        });
+      }
+      if (row.ppe && typeof row.ppe === 'object') {
+        Object.entries(row.ppe as Record<string, unknown>).forEach(([k, v]) => {
+          if (v && typeof v === 'object' && 'required' in (v as object) && (v as { required?: boolean }).required) {
+            ppeSet.add(k);
+          } else if (v === true) {
+            ppeSet.add(k);
+          }
         });
       }
     }
-    if (hazards.size > 0) {
-      focusItems.push({
-        title: 'Pay extra attention today',
-        body: `You've reported: ${[...hazards].slice(0, 3).join(', ')}. Double-check escape routes and conditions.`,
-      });
-    }
+    recentHazards.push(...hazardSet);
+    recentPpe.push(...ppeSet);
   }
-  if (incidentData && Array.isArray(incidentData) && incidentData.length > 0) {
+
+  const certExpiresAt =
+    certData && Array.isArray(certData) && certData.length > 0
+      ? ((certData[0] as { expires_at?: string }).expires_at ?? null)
+      : null;
+  const hasRecentIncident = Boolean(incidentData && Array.isArray(incidentData) && incidentData.length > 0);
+
+  const focusItems: FocusItem[] = [];
+  if (certExpiresAt) {
+    focusItems.push({
+      title: 'Certification expiring soon',
+      body: `You have a certification expiring on ${certExpiresAt.slice(0, 10)}. Stay current!`,
+    });
+  }
+  if (recentHazards.length > 0) {
+    focusItems.push({
+      title: 'Pay extra attention today',
+      body: `You've reported: ${recentHazards.slice(0, 3).join(', ')}. Double-check escape routes and conditions.`,
+    });
+  }
+  if (hasRecentIncident) {
     focusItems.push({
       title: 'Stay vigilant',
       body: "You've reported a recent incident. Keep watching for hazards and communicate with your crew.",
@@ -342,6 +381,12 @@ export function usePersonalizedFocusItems(userId: string | undefined): {
 
   return {
     focusItems: focusItems.slice(0, 3),
+    signals: {
+      certExpiresAt,
+      recentHazards,
+      recentPpe,
+      hasRecentIncident,
+    },
     isLoading: jsaLoading || certLoading || incidentLoading,
   };
 }
@@ -507,9 +552,16 @@ export function useBriefingDailySnapshot(todayDateString: string): {
 
 export interface SubmitBriefingAnswersPayload {
   announcementId: string;
-  answers: { question_id: string; selected_option_id: string; category: BriefingQuestion['category'] }[];
+  answers: {
+    question_id: string;
+    selected_option_id: string;
+    category: BriefingQuestion['category'];
+    is_correct?: boolean | null;
+  }[];
   /** Optional open-ended response (e.g. "What's one thing you'll watch for today?"). Max 200 chars. */
   openEndedResponse?: string | null;
+  knowledgeScore?: number;
+  knowledgeTotal?: number;
 }
 
 /**
@@ -526,16 +578,41 @@ export function useSubmitSafetyBriefingAnswers() {
       const todayDateString = getTodayDateString();
 
       const openEnded = payload.openEndedResponse?.trim().slice(0, 200) || null;
-      const { data: answerRow, error: insertAnswerError } = await supabase
+      const baseAnswer = {
+        user_id: user.id,
+        announcement_id: payload.announcementId,
+        briefing_date: todayDateString,
+        ...(openEnded ? { open_ended_response: openEnded } : {}),
+      };
+      const scoredAnswer = {
+        ...baseAnswer,
+        ...(payload.knowledgeTotal != null
+          ? {
+              knowledge_score: payload.knowledgeScore ?? 0,
+              knowledge_total: payload.knowledgeTotal,
+            }
+          : {}),
+      };
+
+      let { data: answerRow, error: insertAnswerError } = await supabase
         .from('safety_briefing_answers')
-        .insert({
-          user_id: user.id,
-          announcement_id: payload.announcementId,
-          briefing_date: todayDateString,
-          ...(openEnded ? { open_ended_response: openEnded } : {}),
-        })
+        .insert(scoredAnswer)
         .select('id')
         .single();
+
+      if (
+        insertAnswerError &&
+        insertAnswerError.code !== '23505' &&
+        (insertAnswerError.code === '42703' || /knowledge_/i.test(insertAnswerError.message))
+      ) {
+        const retry = await supabase
+          .from('safety_briefing_answers')
+          .insert(baseAnswer)
+          .select('id')
+          .single();
+        answerRow = retry.data;
+        insertAnswerError = retry.error;
+      }
 
       if (insertAnswerError) {
         if (insertAnswerError.code === '23505') {
@@ -551,12 +628,26 @@ export function useSubmitSafetyBriefingAnswers() {
         question_id: a.question_id,
         selected_option_id: a.selected_option_id,
         category: a.category,
+        ...(a.is_correct !== undefined ? { is_correct: a.is_correct } : {}),
       }));
 
       const { error: itemsError } = await supabase.from('safety_briefing_answer_items').insert(items);
       if (itemsError) {
-        logger.error('Failed to insert safety_briefing_answer_items', itemsError);
-        throw itemsError;
+        if (itemsError.code === '42703' || /is_correct|knowledge_/i.test(itemsError.message)) {
+          const legacyItems = items.map((item) => {
+            const { is_correct, ...rest } = item;
+            void is_correct;
+            return rest;
+          });
+          const { error: retryError } = await supabase.from('safety_briefing_answer_items').insert(legacyItems);
+          if (retryError) {
+            logger.error('Failed to insert safety_briefing_answer_items', retryError);
+            throw retryError;
+          }
+        } else {
+          logger.error('Failed to insert safety_briefing_answer_items', itemsError);
+          throw itemsError;
+        }
       }
 
       return { alreadyCompleted: false } as const;
