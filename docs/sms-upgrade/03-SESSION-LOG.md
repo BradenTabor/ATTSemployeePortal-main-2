@@ -1124,3 +1124,148 @@ as a `loginAs` failure one layer further from anyone reading it.
 `data_retention_policies`, one `schema_migrations` row. No SMS sent, no ClickSend write, no Edge
 Function invoked, no opt-out flag touched, no `app_users` change, no `run_data_retention()` change.
 The local Supabase stack received seeded test users and one opt-out row; it is a throwaway.
+
+---
+
+## 2026-09-10 — Session 14 (the merge that did not happen; two ClickSend writes; the crew brief)
+
+Five things were asked for. Two landed, one was correctly refused, one was blocked by a gate,
+and one was answered from the outside without needing the merge at all.
+
+### The merge is blocked, and not by anything in the PR
+
+`feat/sms-upgrade` is **not** behind `main` — merge-base is `209fa4f`, which *is* `origin/main`
+HEAD, so the canopy redesign is already underneath this branch. 47 commits ahead, 0 behind,
+`mergeable: MERGEABLE`, **zero conflicts**. 75 files.
+
+CI is red, which is the documented stop condition, so nothing was merged. But the failures have
+nothing to do with this PR and it is worth writing down why, because "CI is red" reads like a
+verdict on the branch and it is not:
+
+- **E2E, all three shards:** `Refusing to run against PRODUCTION Supabase (emqqxfzahmwnehxcpxzp)`.
+  The repo's own safety guard, firing correctly. CI is configured with production credentials, so
+  the guard will refuse every run until that is changed. `Merge reports` fails separately on
+  `error: unknown option '--output=tests/e2e-report'` — a Playwright CLI flag that no longer
+  exists.
+- **CI (typecheck/lint/test/build):** `Missing Supabase environment variables` from
+  `src/lib/supabaseClient.ts` in four unrelated suites, plus ~30 pre-existing assertion failures
+  in `tests/unit/compliance-helpers.test.ts`. Nothing SMS.
+
+**Every run on `main` since 2026-06-28 is also a failure**, including the canopy redesign commit
+that is live in production right now. So this is not a gate the branch can pass — it is a gate
+nothing in this repo has passed in three months. Merging PR #3 requires either fixing CI as its
+own piece of work or an explicit human decision to merge red. Not a call to make unattended.
+
+### The export panel is not live, and that was answerable from outside
+
+No guessing required. `https://att-semployee-portal-main-2.vercel.app/version.json` reports
+commit **`209fa4f82c892fcb79f81b05883dfc185864f309`**, built `2026-09-02T23:20:03Z` — that is
+`origin/main` HEAD. Production deploys from `main`.
+
+`git show origin/main:src/components/admin/ComplianceDataExportPanel.tsx | grep -c SMS` → **0**.
+Confirmed against the shipped bundle rather than the source: fetched `index-B71C_ZTA.js` and all
+four compliance chunks and searched for `SMS Communications`, `SMS Opt-Out Events`,
+`sms_opt_out_events`, `sms_message_log`. Zero hits in every file.
+
+So the two SMS export sections exist only on the branch. **This is the standing argument for the
+merge** — and note the sharper version of it: production runs Edge Functions and migrations
+deployed from `feat/sms-upgrade`, against a frontend built from `main`. The opt-out enforcement
+in the send paths is live because the *functions* were deployed directly. Any redeploy of Edge
+Functions from `main` turns it off silently.
+
+### ClickSend write one — refused, and the reason is not the one you would guess
+
+The obvious finding would have been "the API cannot create inbound rules". That is **false**.
+`POST /v3/automations/sms/inbound` exists, is documented, and works.
+
+The actual blocker is narrower and easier to miss: **the inbound rule model has no header field.**
+Not in ClickSend's docs, not in their PHP SDK's `InboundSMSRule`, not in the OpenAPI spec.
+`webhook_type` picks `post`/`get`/`json`, which is encoding, not authentication. A rule created
+over the API would POST with no `x-internal-key`, `isAuthorized()` would return 401, and every
+real STOP would vanish — behind a dashboard entry that looks correct. That is worse than no rule.
+
+The authorised write was "an inbound rule **with header `x-internal-key`**". A headerless rule is
+a different write, so none was created.
+
+A second, independent reason to stop: **three rules already apply to RTO#**, all via
+`dedicated_number: "*"` — `2126344` Send-to-messenger, `2126345` Opt-out contact
+(`MOVE_CONTACT` → list `3406168`), `2126343` Default rule (`EMAIL_USER`). Rule `2126345` is the
+mechanism that put `6644` on the opt-out list in March. Untouched.
+
+The browser click-path that *can* attach the header is now `05-CHUNK3-RUNBOOK.md` §2c, with §2b
+recording the API finding so it is not re-derived.
+
+### ClickSend write two — done, precondition first
+
+Deleted contact `1548059062` from list `3406168` (`+18703656644`, last-4 `6644`, added
+`2026-03-04T22:51:37Z`).
+
+**The precondition was checked before anything was deleted, not after.** Re-read the
+`sms_opt_out_events` row at `received_at = 2026-03-04 22:51:37+00` and confirmed it present:
+`id c5fb5bb8-…`, keyword `STOP`, `source admin_manual`, both `applied_*` false, `raw_message`
+stating in full that it is a reconstruction. Had that row been missing, the ClickSend entry would
+have been the last surviving copy of a TCPA-relevant fact and the delete would have destroyed it.
+
+Reconcile, diff-only, before: `clicksend_only: [{6644}]`, `clicksend_count: 1`.
+After: `clicksend_only: []`, `clicksend_count: 0`.
+
+No other ClickSend write. No contact edit, no list change, no settings change, **no send**.
+
+### Webhook proof — and a synthetic row that must not be mistaken for a real one
+
+**Read this before interpreting any `sms_opt_out_events` row from 2026-09-10.**
+
+`POST` to the production `clicksend-inbound-webhook` with `Authorization: Bearer <service role>`,
+body `{"from":"+15005550001","to":"+18443781444","body":"HELP","message_id":"SYNTHETIC-CONNECTIVITY-TEST-20260910T012404Z"}`.
+Response `{"skipped":true,"reason":"help_logged","keyword":"HELP"}`, HTTP 200.
+
+Row written: `id be4f1089-0f1f-4827-a5a6-3bfef8f6c594`, `phone_e164 +15005550001`, `keyword HELP`,
+`user_id null`, `applied_operational false`, `applied_marketing false`, `source webhook`,
+`received_at 2026-09-10 01:24:05.33+00`.
+
+**That row is a synthetic connectivity test, not a real inbound event.** `+15005550001` is a
+reserved test number that matches no employee, which is why `user_id` is null. The
+`provider_message_id` is deliberately self-identifying: `SYNTHETIC-CONNECTIVITY-TEST-…`. HELP was
+chosen precisely because it logs and flips nothing; STOP was not simulated and must not be.
+
+**What this proves:** the function is deployed and reachable, auth works, the keyword parser
+works, `user_id` resolution correctly finds no match, and the insert into `sms_opt_out_events`
+succeeds against production.
+
+**What it does not prove, and this is the whole gap:** it says nothing about whether ClickSend
+calls us. The test POSTed directly at the endpoint and skipped the provider entirely. The
+ClickSend-to-webhook hop is the one link no simulation can exercise, and it stays unproven until
+a real inbound text traverses it — Braden's HELP from his own handset to `+18443781444`, after
+the rule in §2c exists.
+
+### The two crew members
+
+`17-CREW-CONTACT-CHECK.md`. Both cases are carrier-side delivery refusals, not consent: `4421`
+2 delivered / 133 failed, last success 2026-05-12; `6286` 0 delivered / 6 failed, never a
+success. Both still being texted as of 2026-09-09.
+
+**The cheap explanation was checked first and does not hold.** Neither has a second phone number
+anywhere — `app_users`, `auth.users.phone`, `auth.users.raw_user_meta_data`, `rto_requests`,
+`sms_escalation_recipients`, or the full set of numbers either account has ever been texted at.
+A stale primary with a good alternate would have resolved both without a conversation. There
+isn't one.
+
+**One correction to `13-UNREACHABLE-CREW.md` §3.** It says `6286` has never opened the app since
+his account was created. That was read from `auth.users.last_sign_in_at`, which only advances on a
+fresh sign-in and so sat at 2026-08-31 while his session persisted. `user_activity_sessions` has
+him at **2026-09-09 21:00 UTC**, with three completed briefings (08-31, 09-01, 09-03). He is
+reachable in-app today; only SMS is broken. That changes the recommendation from "chase him" to
+"message him in the app and ask for a working number".
+
+**Incidental finding, not SMS.** Both accounts carry
+`manager_id = 06aafe0d-c620-4e25-b73d-72645a14d5ef`, which exists in neither `app_users` nor
+`auth.users`. **14 accounts point at it.** Anything that escalates to "their manager" has nowhere
+to go. Flagged, not fixed — it belongs in its own ticket.
+
+### Production changes this session
+
+One ClickSend contact deleted (`1548059062`), one `sms_opt_out_events` row inserted (the synthetic
+HELP). **No SMS sent. No inbound rule created. No opt-out flag changed. No `app_users` change. No
+migration. No Edge Function deployed.** Two Edge Functions were invoked — `clicksend-optout-reconcile`
+twice in diff-only mode (reads only; `apply_enabled` is false) and `clicksend-inbound-webhook` once
+with the synthetic HELP above.
