@@ -436,3 +436,58 @@ cleared, rather than after.
 **Do not wire an inbound rule on PO#** (`12-BRADEN-TODO.md` §4). Same root cause, opposite
 direction: writing to a shared vendor surface we do not own is as unsafe as reading from it as
 though it were authoritative.
+
+---
+
+## Deprioritised: the database password rotation, and the IPv6-only direct host behind it
+
+**Decision, 2026-09-10:** Braden has explicitly deprioritised rotating the Supabase database
+password. It has been removed from `12-BRADEN-TODO.md` so the list reflects what he is actually
+going to do. It is recorded here instead of deleted, because the reason to rotate has not gone
+away — only its priority has.
+
+**What the item was.** A prior agent session echoed the project database password into a
+transcript. Standard practice is to treat any credential that reaches a chat log as
+compromised and rotate it: Supabase Dashboard → project `ATTS portal APP 2`
+(`emqqxfzahmwnehxcpxzp`) → Project Settings → Database → Database password → Reset.
+
+**Residual risk while it is not rotated.** The password grants direct Postgres access with full
+privileges, outside RLS. Nothing suggests it has been used by anyone but us. The exposure is a
+transcript, not a public repo, so the realistic threat is narrow — which is presumably why the
+priority call went the way it did. If the transcript is ever exported, shared, or fed to a
+third-party tool, rotate the same day and treat that as the trigger.
+
+### The IPv6 detail — worth keeping even if the rotation never happens
+
+This is the part that would have been genuinely lost, because it is not really about the
+password at all. `SUPABASE_DB_URL` in `.env` points at the direct database host:
+
+```
+postgresql://postgres:<password>@db.emqqxfzahmwnehxcpxzp.supabase.co:5432/postgres
+```
+
+That hostname resolves **AAAA-only** — an IPv6 address and no A record (verified 2026-09-09:
+`dig +short db.<ref>.supabase.co A` returns nothing; `AAAA` returns `2600:1f18:…`). On an
+IPv4-only machine or network it cannot connect, and the failure surfaces as a DNS or host
+error. **It reads as a bad credential when it is a bad route**, which is the trap.
+
+The working route is the session pooler, which is dual-stack:
+
+```
+postgresql://postgres.emqqxfzahmwnehxcpxzp:<password>@aws-1-us-east-1.pooler.supabase.com:5432/postgres
+```
+
+Two things that are easy to miss:
+
+- **The username changes**, from `postgres` to `postgres.<project-ref>`. The pooler uses it to
+  identify the tenant. With a bare `postgres` it fails with
+  `FATAL: (ENOIDENTIFIER) no tenant identifier provided`, which does not obviously mean "your
+  username is missing the project ref".
+- **The password does not change.** Same credential either way. If the rotation ever does
+  happen, paste the new password into the pooler-form URL, not the direct-host one.
+
+**This already explains a failure in the record.** Session 6 logged *"Cron auth: script
+DNS-failed on direct DB host; SQL applied via Management API path"* — that is
+`scripts/deploy-cron-auth.sh` hitting exactly this. The script was not broken and the
+credential was not wrong; the host it was handed has no IPv4 address. Sessions 11A, 13 and 14
+all connected successfully via the pooler form above.
