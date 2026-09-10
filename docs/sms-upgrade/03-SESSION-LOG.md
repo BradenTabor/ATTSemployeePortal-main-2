@@ -930,3 +930,197 @@ protected.
 **Production changes this session:** three `COMMENT`s, one `ADD COLUMN IF NOT EXISTS`, one
 `data_retention_policies` row (`enabled = false`), one `schema_migrations` row. No SMS sent, no
 ClickSend write, no Edge Function invoked, no opt-out flag touched, no `app_users` change.
+
+---
+
+## 2026-09-09 — Session 13 (retention guard applied; a migration divergence that is not SMS; the 12-line typecheck gate)
+
+Four commits, each gated on `lint` + `typecheck` + `build`. One production change: a trigger.
+
+### A — the retention guard is applied
+
+`20260909230000_retention_protected_tables_guard.sql`. Session 12's recommendation — a
+`BEFORE INSERT OR UPDATE` trigger on `data_retention_policies` rather than a guard inside
+`run_data_retention()` — accepted and built. `run_data_retention()` was not touched, and part B
+below is the reason that mattered more than it looked.
+
+**Two things changed between the sketch in `16-RETENTION-GUARD-ASSESSMENT.md` and what shipped.**
+
+**1. The prohibition dropped its `IF NEW.enabled` condition.** The sketch refused only
+`enabled = true`, which does not close the hole it was written for. `INSERT … ON CONFLICT DO
+UPDATE` fires `BEFORE INSERT` for the attempted row and then `BEFORE UPDATE` for the conflicting
+one, and the `enabled` value on either pass is whatever the copy-paste happened to carry. Refusing
+the whole row for a protected table — any INSERT, any UPDATE, plus an `OLD.table_name` check so a
+policy cannot be renamed off the table — is the only formulation with no ordering left to reason
+about. It also matches what the table's own `COMMENT` says without qualification.
+
+Cost, recorded rather than discovered later: the marker row from `20260909220000` is now immutable,
+and re-running that migration against a database that already has both the row and the trigger will
+fail, because `BEFORE INSERT` fires before `ON CONFLICT` is evaluated so its no-op `DO NOTHING`
+insert is refused rather than ignored. A clean forward replay is unaffected (this sorts later) and
+`localgate/run.sh` drops its database every run, so it is not a workflow here. The fix if it is
+ever needed is to drop the trigger for the duration, not to weaken it.
+
+`DELETE` is deliberately unguarded: removing the marker row loses the record of the decision but
+not the protection — a table with no policy is never entered into the loop — and it is not a bypass
+because the follow-up INSERT is refused.
+
+**2. `sms_message_log` is guarded, but not prohibited — and this was the question worth answering.**
+The two tables' comments say materially different things. `sms_opt_out_events` says *"Do not enable
+it"*, full stop. `sms_message_log` says retention is a deliberate decision requiring legal/HR
+sign-off, `archive_table_name` set rather than deleting outright, and a reason in `notes`. An
+outright block on the second would forbid what its own documentation permits — and would be dropped
+by the first person who completed the sign-off correctly. **A guard removed by someone doing
+everything right is the worst way to lose a control.**
+
+So the rule for `sms_message_log` is conditional: an `enabled` policy is refused unless
+`archive_table_name` **and** `notes` are both non-blank. Disabled marker rows pass. Correctly-formed
+signed-off policies pass. What it rejects is exactly the four-column
+`(table_name, date_column, retention_days, enabled)` copy-paste every other retention migration in
+this repo uses — the realistic accident, and the one shape the comment already forbids.
+
+Its limit stated so nobody over-reads it: this enforces the *form* of sign-off, not sign-off.
+`archive_table_name = 'x'`, `notes = 'x'` satisfies it. It converts a silent copy-paste into a
+deliberate act that leaves a written reason in the row. That is all it claims.
+
+**Testing.** Local Postgres 17 with the real `data_retention_policies` DDL and all eight production
+rows reproduced. Nine cases: plain INSERT, `ON CONFLICT DO UPDATE`, `SET enabled = true`, and
+rename-away all refused; unprotected-table INSERT and `ON CONFLICT DO UPDATE` both normal;
+`sms_message_log` refused bare, allowed with archive + notes, allowed disabled. Semantic hash of the
+table unchanged across the refused writes.
+
+Then production. Both live tests were chosen so they could not mutate anything **even if the guard
+had failed to install**: the plain INSERT would have hit `UNIQUE (table_name)`, and the `ON CONFLICT`
+variant used `DO UPDATE SET enabled = data_retention_policies.enabled`, writing the value the row
+already holds. Both refused with the trigger's message. Policy hash
+`e71385db549d7c9b8f43db2ed5123769` before and after, 8 rows, 7 enabled. `migration repair --status
+applied 20260909230000`.
+
+### B — two migrations define `run_data_retention()`, and replay installs the wrong one
+
+Found while assessing where to put the guard above; **unrelated to SMS and more serious than the
+question that found it.** Written up in `KNOWN-ISSUES.md` as a standalone entry. Not fixed here,
+deliberately.
+
+`20260216100003_retention_audit_trail.sql` (85-line body: pre-counts, writes a `safety_audit_log`
+row before deleting, honours `archive_table_name`) sorts **before**
+`20260229150000_data_retention_policies.sql` (33-line bare `DELETE`) — which is the migration that
+*creates* the table and seeds the first policies. So the base migration sorts after an enhancement
+written against it, and its `CREATE OR REPLACE` overwrites it. Proximate cause is a hand-typed
+timestamp: **`20260229` is not a real date** — 2026 is not a leap year.
+
+Production runs the audited body. Verified twice: `pg_get_functiondef` from the linked project
+(2,975 chars, contains `safety_audit_log` and `archive_table_name`), and a line-by-line diff of the
+body dumped into `localgate/prod_schema.sql` against `20260216100003` — byte-identical apart from
+`pg_dump` writing `$_$` instead of `$$`. Both versions are in `schema_migrations`; there is no
+applied-at column, so the out-of-order application is inferred from the resulting state, not read.
+
+**What the replay version loses:** the pre-delete audit row entirely (`records_deleted`,
+`date_range_start`, `date_range_end`, `retention_policy_days`, `executed_at`); archive support
+entirely — the cursor does not even `SELECT p.archive_table_name`, so the `CREATE TABLE IF NOT
+EXISTS … INSERT INTO archive SELECT …` branch is absent; the zero-row short circuit; and the
+`COMMENT` describing the behaviour. **Consequence:** an environment built from migrations runs the
+nightly `run-data-retention` cron (`0 3 * * *`, active) against `safety_incidents` (OSHA 1904.33,
+1825 days) and six other tables with no audit row. Archive loss is latent today — all seven enabled
+policies have `archive_table_name IS NULL` — but the audit-trail loss is active from the first run.
+
+**Why nothing caught it.** `localgate/run.sh` baselines from a prod schema dump containing the
+*correct* body and replays only migrations above anchor `20260608230400`. Neither file is above it.
+The gate is green and will stay green. Compounding: full replay from zero already fails on
+`20241205_job_tracker`, so nobody walks the path the defect lives on.
+
+**Fix direction recommended, not written:** a forward migration installing the production body
+authoritatively, from `pg_get_functiondef`. Its real cost is the prerequisite — confirming a clean
+replay lands on it requires the `20241205_job_tracker` ordering bug fixed first. It rewrites a
+nightly `SECURITY DEFINER` job that deletes OSHA records and must not ride along with anything.
+
+**The repo is not the source of truth for this function.** Anyone opening
+`20260229150000_data_retention_policies.sql` — the file named after the feature — reads a body that
+is not what runs. This is exactly why the guard went on the table and not in the function.
+
+**Cheap scan for the same pattern.** Two mechanical passes, not a 170-migration audit. 202 distinct
+functions, 55 defined more than once — not a finding on its own, since redefinition is how this repo
+evolves a function and the last file is normally the intended one. The pass that matters looks for
+the *signature* of this defect: the last-sorting body being materially smaller than an earlier one.
+**`run_data_retention` is the only hit, and it is not close** — −52 lines, against a next-largest
+delta of −16 (`safety_audit_log_insert`), −13 (`award_points`), −7 (`get_user_lifetime_earned`), all
+three of which are deliberate later rewrites identifiable from their filenames. Stated limit: line
+count is a proxy for "lost a branch" and would miss a same-length semantic regression. Proving the
+repo reproduces production for *any* function means diffing `pg_get_functiondef` against the
+last-sorting definition, 202 times. That is the real audit and this is not it.
+
+### C — the typecheck gate, wired
+
+`15-TYPECHECK-REMEDIATION-PLAN.md`'s recommended scope is now done, and the plan says so; the
+full-tree `deno check` path stays the documented not-now option.
+
+`supabase/functions/tsconfig.shared.json` (new), `_shared/deno-globals.d.ts` (new, declares
+`console` and nothing else), and one line in `package.json`: `typecheck` is now
+`tsc --noEmit -p tsconfig.app.json && tsc -p supabase/functions/tsconfig.shared.json`. No workflow
+edit — CI already runs `npm run typecheck`, so the gate entered CI with the commit.
+
+`files`, not `include`, so the gate cannot silently widen when a file lands in `_shared/`.
+`types: []` plus the ambient `.d.ts` rather than `"lib": ["dom"]`, because the DOM lib would also
+resolve `window`, `document` and `fetch` — wrong for Deno, and it would let real mistakes through in
+exchange for the one global these files use.
+
+**Verified both directions.** Clean tree exits 0. With `entry.userIds.push(row)` in place of
+`entry.userIds.push(row.user_id)` at `smsOptOutFilter.ts:106` — the shape of a real slip in the
+static-recipient opt-out match — it fails:
+
+```
+supabase/functions/_shared/smsOptOutFilter.ts(106,24): error TS2345: Argument of type
+'AppUserPhoneRow' is not assignable to parameter of type 'string'.
+```
+
+npm exit 2. Break reverted, `git diff` empty, exits 0 again. **The 15 Vitest tests over these two
+files pass with the break in place** — esbuild transpiles without checking types — which is the
+whole argument for having both gates.
+
+Scope stated so it is not over-read: 293 lines of 17,246. The 38 `@ts-nocheck` files, including all
+four send paths, are still unchecked. `KNOWN-ISSUES.md` corrected, since it claimed zero Edge
+Function type coverage and that is now false for three files and still true for the other 55.
+
+### D — two small fixes
+
+**D.1 — the opt-out export no longer hides its own most important row.** The section inherited the
+panel-wide 90-day default, so the 2026-03-04 record — the one an auditor is most likely asking about
+— was invisible unless someone moved the From date back. New optional `defaultRangeDays` on
+`SectionConfig`; the opt-out section takes 2 years, everything else keeps 90 days. The asymmetry is
+deliberate and written into `11-COMPLIANCE-SOP.md` §5.6 as such: the send log is high-volume and a
+wide default loads thousands of rows nobody asked for, while opt-out events are low-volume,
+long-lived, and weighted toward their oldest rows. Also surfaced in the section description and in
+the export notes that travel with the CSV and PDF.
+
+**D.2 — the two export specs had never run. So they were run.** Recorded in `KNOWN-ISSUES.md`, with
+a correction: the reason Sessions 11A and 12 gave — that `npm run test:setup` would create real
+accounts in production — was **wrong**. `assertSafeE2ETarget()` already refuses the production ref
+without an explicit verbose override, and `.env.test` already points at a local stack. The safe path
+existed and was wired; nobody had used it. Worth saying plainly, because "we must build a safe
+target first" sounds like a much bigger blocker than "run `supabase start`", and it kept two specs
+unrun for two sessions.
+
+Seeded 6/6 test users into the local project, applied `20260909210000` locally so the provenance
+assertions are reached rather than short-circuiting on an empty range, and ran both specs:
+**3 passed, 2 skipped, 0 failed.**
+
+**Running them found a bug — in the spec.**
+`expect(section).not.toContainText(/SMS Communications/i)` could never pass: the opt-out section's
+description names the other section *on purpose*, to explain the separation the assertion was
+guarding. A plain-text search was the wrong instrument. Replaced with a check for no such heading
+and no `Provider Status` / `Delivery Status` columns. That assertion had been written, reviewed,
+committed and cited as covering the separation, and was never capable of passing — which is the
+entire case for running a spec before trusting it.
+
+**What is still unverified, written down so the pass is not over-read.** Both specs' `unavailable`
+test — the never-conflate-a-missing-table-with-a-zero-count contract that is the reason both files
+exist — `test.skip()`s itself wherever the tables are present, which is everywhere they can
+currently run. **The most load-bearing assertion in each file is the one still unrun.** Verified
+against local seeded data, not production; Chromium only; never run in CI on this branch, where
+`e2e.yml`'s `continue-on-error: true` seed step would let a refused seed pass silently and surface
+as a `loginAs` failure one layer further from anyone reading it.
+
+**Production changes this session:** one trigger and one trigger function on
+`data_retention_policies`, one `schema_migrations` row. No SMS sent, no ClickSend write, no Edge
+Function invoked, no opt-out flag touched, no `app_users` change, no `run_data_retention()` change.
+The local Supabase stack received seeded test users and one opt-out row; it is a throwaway.
