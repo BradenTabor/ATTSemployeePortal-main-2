@@ -112,6 +112,78 @@ Why this is a small change, not a risky one:
 
 So three of four paths are a literal no-op, one path stops being able to emit from an unwired number, and the external PO system cannot be touched by this. Chunk 4 replaces the env var with the sender registry and should delete it then; note that in `09-CHUNK4-PLAN.md` when you set it.
 
+### 2b. Why this cannot be created from the API — checked 2026-09-10
+
+An agent session was authorised to create this rule over the ClickSend REST API. It did not,
+and this section records why so that nobody re-litigates it.
+
+**The API can create inbound rules.** `POST /v3/automations/sms/inbound` exists and is
+documented. Body: `dedicated_number`, `rule_name`, `message_search_type`, `message_search_term`,
+`action`, `action_address`, `enabled`, and `webhook_type` (required when `action = URL`).
+`GET` on the same path lists rules; `DELETE /v3/automations/sms/inbound/{inbound_rule_id}`
+removes one. So "the API does not support it" is **false** and should not be written down as
+the reason.
+
+**The API cannot attach a header.** There is no header field anywhere in the inbound rule
+model — not in ClickSend's own docs, not in their PHP SDK's `InboundSMSRule`, not in the
+OpenAPI spec. `webhook_type` selects `post` / `get` / `json`, which is the *encoding*, not the
+authentication. A rule created this way would POST with no `x-internal-key` and no
+`Authorization`, `isAuthorized()` in `clicksend-inbound-webhook/index.ts` would reject it, and
+every real STOP would 401 into nothing. That is worse than an unwired number, because the
+dashboard would show a rule that looks correct.
+
+**Three wildcard rules already apply to RTO#.** No rule is scoped to `+18443781444`
+specifically, but all three existing rules use `dedicated_number: "*"`, which matches every
+number on the account including RTO#:
+
+| `inbound_rule_id` | Rule name | Match | Action | Target |
+|---|---|---|---|---|
+| 2126344 | Send to messenger | type 5, `stop` | `SEND_TO_MESSENGER` | — |
+| 2126345 | Opt-out contact | starts with `stop` | `MOVE_CONTACT` | list `3406168` (Opt-Out List) |
+| 2126343 | Default rule | any message | `EMAIL_USER` | account email |
+
+Rule 2126345 is the mechanism that put last-4 `6644` on the opt-out list in March. **Do not
+delete or repoint any of these.** A new `URL` rule is expected to run alongside them, not
+replace them — but ClickSend's UI does not state that clearly, which is exactly why this is a
+dashboard step for a human and not an API call from a script.
+
+### 2c. Exact dashboard click-path — Braden
+
+Do this in the browser. It is the only route that can attach the auth header.
+
+1. Sign in at <https://dashboard.clicksend.com> as the ATTS account (`shane@alltts.com`).
+2. Left nav → **SMS** → **Inbound SMS**. If that entry is not present, **Automations** →
+   **SMS** → **Inbound**. Both land on the same rules list.
+3. You should see the three rules in the table above. Leave every one of them alone.
+4. Click **Create new rule** (top right; some account skins label it **+ Add Rule**).
+5. Fill the form:
+   - **Dedicated number** — pick `+18443781444` from the dropdown. **Not** `*`, and **not**
+     `+18338612650` (PO#, Braden's Bolt purchase-order app — see §2 and `12-BRADEN-TODO.md`).
+   - **Rule name** — `ATTS portal inbound opt-out`
+   - **When message** — *Any message* (search type 0). Leave the search term empty. The
+     webhook parses STOP / START / HELP itself; filtering here would drop the others.
+   - **Action** — *Forward to URL*
+   - **URL** — `https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/clicksend-inbound-webhook`
+   - **Method / webhook type** — `POST` (`json` if the form offers encoding separately)
+   - **Enabled** — on
+6. Find the headers control. Depending on the account skin it is **Advanced**, **Custom
+   headers**, or a **+ Add header** link under the URL field. Add:
+   - Name: `x-internal-key`
+   - Value: the project's `INTERNAL_SECRET`, copied from Supabase Dashboard → Edge Functions →
+     Secrets. Do not paste it into chat, a ticket, or this file.
+   - If the form only accepts `Authorization`, use `Bearer <INTERNAL_SECRET>` instead. Both are
+     accepted by the function.
+7. **Save.**
+8. Re-open the rule list and confirm there are now four rules and the three originals are
+   unchanged.
+9. Smoke-test with §7 — the simulator if your account exposes it, otherwise a **HELP** text
+   from your own handset. Never a crew STOP.
+
+**If step 6 has no headers control at all** — the form offers only a URL and a method — stop
+there, save nothing, and read `10-WEBHOOK-AUTH-FALLBACK.md`. The query-parameter fallback it
+describes is a code change that has not been made; a headerless rule saved in the meantime
+would 401 silently on every real reply.
+
 ### Webhook auth (required)
 
 Accepted today (any one):
