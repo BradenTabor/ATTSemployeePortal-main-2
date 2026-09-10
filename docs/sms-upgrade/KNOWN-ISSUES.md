@@ -34,6 +34,180 @@ Local-only examples (would try to apply on a naïve push): `20260608120000` … 
 
 ---
 
+## Two migrations define `run_data_retention()`, and a clean replay installs the wrong one
+
+**Status:** Recorded 2026-09-09. **Nothing about this is SMS work** — it surfaced while assessing
+where to put the opt-out retention guard (`16-RETENTION-GUARD-ASSESSMENT.md`), and it is more
+serious than the question that found it. **Not fixed here, deliberately.** A fix rewrites a nightly
+`SECURITY DEFINER` job that deletes from OSHA-mandated tables; that needs its own review, not a
+paragraph at the end of an SMS session.
+
+### The two files
+
+| Migration | Body | What else the file does |
+|---|---:|---|
+| `20260216100003_retention_audit_trail.sql` | 85 lines | Nothing else. It exists only to add the audit trail and archive support. |
+| `20260229150000_data_retention_policies.sql` | 33 lines | **Creates** `data_retention_policies`, seeds the first three policies, sets up RLS. This is the base feature migration. |
+
+### Why replay order produces the wrong one
+
+Migrations apply in lexicographic order of the version prefix, and `20260216100003` sorts **before**
+`20260229150000`. So the base migration sorts *after* an enhancement written against it, and
+`CREATE OR REPLACE FUNCTION` in the base file overwrites the enhanced body with the original. A
+forward replay from zero therefore ends on the 33-line body.
+
+The proximate cause is a hand-written timestamp: **`20260229` is not a real date** — 2026 is not a
+leap year — so it was typed rather than generated, and it was typed thirteen days into the future
+relative to a change that already depended on it.
+
+### Production runs the *other* body
+
+Verified two independent ways on 2026-09-09:
+
+- `pg_get_functiondef('public.run_data_retention'::regproc)` against the linked project returns
+  **2,975 characters** and contains both `safety_audit_log` and `archive_table_name`.
+- The function body dumped into `supabase/.localgate/prod_schema.sql` (lines 7721–7818) is
+  **byte-identical** to `20260216100003_retention_audit_trail.sql`, apart from `pg_dump` writing
+  the dollar-quote tag as `$_$` instead of `$$`.
+
+Both versions are present in `supabase_migrations.schema_migrations`
+(`20260216100003 / retention_audit_trail`, `20260229150000 / data_retention_policies`). That table
+has no applied-at column, so the order cannot be read directly — but production can only hold the
+audit-trail body if `20260216100003` was applied **after** `20260229150000`, out of version order.
+The state is the evidence; the mechanism (dashboard apply, manual re-run, out-of-order CLI push)
+is not recoverable from what is in the database.
+
+### What the replay version loses, concretely
+
+Diff of the two bodies, stated as losses relative to what production actually runs:
+
+1. **The audit row.** The production body counts the doomed rows first, then writes a
+   `safety_audit_log` entry **before** deleting:
+   `event_type = 'data_retention_delete'`, `table_name`, and a `payload_snapshot` carrying
+   `records_deleted`, `date_range_start`, `date_range_end`, `retention_policy_days`, `executed_at`.
+   The replay body writes nothing anywhere. After a deletion there is no record that it happened,
+   how many rows went, or what date range they covered — and the rows themselves are gone, so the
+   loss is unreconstructable.
+2. **Archive support, entirely.** The replay body's driving cursor does not even
+   `SELECT p.archive_table_name`, so the whole `IF archive_table_name IS NOT NULL` branch is
+   absent: no `CREATE TABLE IF NOT EXISTS <archive> (LIKE <source> INCLUDING DEFAULTS)`, no
+   `INSERT INTO <archive> SELECT * FROM <source> WHERE …` before the `DELETE`. A policy that sets
+   `archive_table_name` would be silently downgraded to a hard delete — the column would still be
+   there, still settable, still read by nobody.
+3. **The zero-row short circuit.** The production body returns `0` and `CONTINUE`s without issuing
+   a statement when nothing matches. The replay body issues the `DELETE` regardless. Same returned
+   value, but a write attempt on every table every night.
+4. **The `COMMENT ON FUNCTION`**, which reverts to text that does not mention the audit log or the
+   archive — so `\df+` stops describing the behaviour the function is supposed to have.
+
+**Which of those bite today.** All seven enabled policies currently have `archive_table_name IS
+NULL`, so loss 2 is **latent** — real, but not yet reached. Loss 1 is **active on all seven**: in
+a replayed environment every nightly deletion is unaudited from the first run.
+
+### The consequence
+
+Cron job `run-data-retention` (`0 3 * * *`, active) calls this function nightly. In an environment
+built from migrations rather than from a production baseline, it silently deletes from **seven**
+tables with no audit row:
+
+| Table | Date column | Retention |
+|---|---|---:|
+| `safety_incidents` | `incident_date` | 1825 days (OSHA 1904.33, 5 years) |
+| `daily_jsa` | `job_date` | 365 |
+| `daily_equipment_inspections` | `inspection_date` | 365 |
+| `dvir_reports` | `report_date` | 90 |
+| `telemetry_events` | `created_at` | 90 |
+| `user_activity_sessions` | `last_seen_at` | 30 |
+| `notification_outbox` | `created_at` | 30 |
+
+(The eighth row, `sms_opt_out_events`, is `enabled = false` and is now additionally protected by
+`20260909230000_retention_protected_tables_guard.sql`.)
+
+**The retention audit trail was built as a compliance control** — that is the entire content of
+`20260216100003`, whose sibling migrations in the same batch are `cert_records_audit_triggers` and
+`protect_equipment_user_id`. A replayed environment loses that control without any signal, and
+because production is fine, nobody looking at production would find it.
+
+### Why the project's own gate cannot catch this
+
+`supabase/.localgate/run.sh` baselines from `prod_schema.sql` — which contains the **correct**
+body — and then applies only migrations with a version above `baseline_anchor.txt`
+(`20260608230400`). Neither of these two files is above that anchor, so neither is ever replayed.
+The gate is green and will stay green. This is a second, independent reason the divergence has
+survived: the one tool that replays migrations here starts downstream of it.
+
+It also compounds with the entry above — full replay from zero already fails on
+`20241205_job_tracker` — so "replay from zero" is not a path anyone currently walks, which is
+exactly why a defect on that path went unnoticed.
+
+### Fix direction — recommended, not applied
+
+**Do not repair this by editing either existing file.** Editing an applied migration changes
+history that production has already recorded and does nothing to a database that has already run
+it.
+
+The right shape is a **forward migration that installs the production body authoritatively**:
+
+1. Dump the live definition: `SELECT pg_get_functiondef('public.run_data_retention'::regproc);`
+2. Commit it verbatim as a new `CREATE OR REPLACE FUNCTION` in a migration that sorts after
+   everything, with a comment naming this entry and both superseded files.
+3. Confirm a clean forward replay now lands on that body — and note that confirming it requires
+   the `20241205_job_tracker` ordering bug above to be fixed first, or a replay harness that
+   starts below the anchor. **That prerequisite is the real cost of this fix**, and it should be
+   priced in before anyone starts.
+4. Only then consider whether the two originals deserve a comment pointing forward.
+
+Applying it is a deliberate, separately reviewed change to a nightly job that deletes OSHA records.
+It should not ride along with anything.
+
+### It also means the repo is not the source of truth for this function
+
+Stated plainly because it changes how the function should be read: **for `run_data_retention()`,
+the migration files are not authoritative.** Anyone who opens
+`20260229150000_data_retention_policies.sql` — the file named after the feature, and the natural
+place to look — reads a body that is not what runs. Anyone who writes a `CREATE OR REPLACE` based
+on it silently regresses production. This is precisely why
+`16-RETENTION-GUARD-ASSESSMENT.md` recommended against putting the opt-out guard inside this
+function and used a trigger on `data_retention_policies` instead.
+
+### Cheap scan for the same pattern elsewhere
+
+Not a full audit of the ~170 migrations. Two mechanical passes over the migration directory:
+
+**Pass 1 — functions defined in more than one migration:** 202 distinct functions, **55** defined
+more than once. That count on its own is not a finding. Redefinition is the normal way this repo
+evolves a function, and in the normal case the *last* file is the intended one, which is what
+replay produces.
+
+**Pass 2 — the actual signature of the defect:** the replay-winning (last-sorting) definition being
+materially *smaller* than an earlier one, which is what "a base migration sorting after its own
+enhancement" looks like. With a threshold of "last body is under 75% of the largest earlier body
+and at least 8 lines shorter", **`run_data_retention` is the only hit in the repo**, and it is not
+close:
+
+| Function | Last-sorting body | Largest earlier body | Delta |
+|---|---:|---:|---:|
+| `run_data_retention` | 33 | 85 | **−52** |
+| `safety_audit_log_insert` | 54 | 70 | −16 |
+| `award_points` | 98 | 111 | −13 |
+| `get_user_lifetime_earned` | 6 | 13 | −7 |
+
+The three near-misses were checked by filename and are deliberate later rewrites, not regressions:
+`20260627170000_restore_corrective_actions_audit_branch.sql` is a named consolidation,
+`20260608210000_award_points_admin_deductions.sql` is a rewrite of `award_points`, and
+`20260608230100_gamification_phase2_gate1_season_framework.sql` re-expresses
+`get_user_lifetime_earned` against the season framework. In each of those the later file is
+plainly the newer intent; in `run_data_retention` the later file is the older intent.
+
+**What this scan does not cover, stated so it is not over-read.** Line count is a proxy for
+"lost a branch", so it finds this shape and would miss a semantic regression of similar length —
+a changed predicate, a dropped `SECURITY DEFINER`, a different `search_path`. Establishing that
+the repo reproduces production for *any* given function requires diffing `pg_get_functiondef`
+against the last-sorting definition, function by function. That is the real audit, it is 202
+functions wide, and it is not this.
+
+---
+
 ## Edge Functions have no typecheck gate — `deno check` cannot resolve `npm:openai@^4.52.5`
 
 **Status:** Recorded 2026-09-09. **Pre-dates the SMS work; not caused by it and not fixed by it.** Do not fix inside an SMS chunk.
