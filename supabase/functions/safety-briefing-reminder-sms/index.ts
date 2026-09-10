@@ -11,7 +11,14 @@
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { sendSMS } from "../_shared/clicksend.ts";
+import { sendAndLogSMS, smsMessageLogInsert } from "../_shared/clicksend.ts";
+import {
+  isOperationallyOptedOut,
+  loadOptOutFilterConfig,
+  logOptOutSummary,
+  type OptOutExclusion,
+} from "../_shared/smsOptOutFilter.ts";
+import { phoneLast4 } from "../_shared/phoneE164.ts";
 
 const INTERNAL_SECRET = Deno.env.get("INTERNAL_SECRET") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -69,6 +76,17 @@ Deno.serve(async (req: Request) => {
       status: 401,
       headers: { "Content-Type": "application/json" },
     });
+  }
+
+  let dryRun = req.headers.get("x-dry-run")?.toLowerCase() === "true";
+  try {
+    const text = await req.text();
+    if (text) {
+      const parsed = JSON.parse(text);
+      if (parsed && typeof parsed.dryRun === "boolean") dryRun = parsed.dryRun;
+    }
+  } catch {
+    // leave dryRun as-is
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -147,7 +165,7 @@ Deno.serve(async (req: Request) => {
   // Active field users (full_name for personalized morning nudge)
   const { data: fieldUsers, error: usersErr } = await supabase
     .from("app_users")
-    .select("user_id, phone_number, created_at, full_name")
+    .select("user_id, phone_number, created_at, full_name, sms_operational_opt_out, sms_marketing_opt_out")
     .in("role", FIELD_ROLES)
     .eq("status", "active")
     .not("email", "ilike", "%@atts.test");
@@ -166,8 +184,25 @@ Deno.serve(async (req: Request) => {
     .or(`briefing_date.eq.${todayStr},announcement_id.eq.${todayAnnouncementId}`);
   const completedSet = new Set((completed ?? []).map((r: { user_id: string }) => r.user_id));
 
-  const overdue: { user_id: string; phone_number: string; first_name: string | null }[] = [];
-  for (const u of fieldUsers as { user_id: string; phone_number: string | null; created_at: string; full_name: string | null }[]) {
+  const optOutFilter = await loadOptOutFilterConfig(supabase);
+
+  // `overdue` keeps the unchanged overdue definition (audit denominator).
+  // `recipients` is `overdue` minus operational opt-outs (who we actually text).
+  const overdue: {
+    user_id: string;
+    phone_number: string;
+    first_name: string | null;
+    optOutState: { operational: boolean; marketing: boolean };
+  }[] = [];
+  const optOutExclusions: OptOutExclusion[] = [];
+  for (const u of fieldUsers as {
+    user_id: string;
+    phone_number: string | null;
+    created_at: string;
+    full_name: string | null;
+    sms_operational_opt_out?: boolean;
+    sms_marketing_opt_out?: boolean;
+  }[]) {
     if (completedSet.has(u.user_id)) continue;
     if (absentSet.has(u.user_id)) continue;
     if (u.created_at && u.created_at > cutoffStr) continue;
@@ -178,8 +213,51 @@ Deno.serve(async (req: Request) => {
       user_id: u.user_id,
       phone_number: e164,
       first_name: getFirstName(u.full_name),
+      optOutState: {
+        operational: u.sms_operational_opt_out === true,
+        marketing: u.sms_marketing_opt_out === true,
+      },
     });
   }
+
+  const recipients = optOutFilter.enabled
+    ? overdue.filter((o) => {
+        if (!o.optOutState.operational) return true;
+        optOutExclusions.push({
+          kind: "recipient",
+          user_id: o.user_id,
+          phone_last4: phoneLast4(o.phone_number),
+          reason: "sms_operational_opt_out",
+        });
+        return false;
+      })
+    : overdue;
+
+  const suppressionLog: Record<string, unknown> = {
+    date_checked: todayStr,
+    users_excluded_absences: absentSet.size,
+    field_users_count: fieldUsers.length,
+    completed_set_size: completedSet.size,
+    overdue_count: overdue.length,
+    optout_filter_enabled: optOutFilter.enabled,
+    optout_filter_source: optOutFilter.source,
+    excluded_operational_opt_out_count: optOutExclusions.length,
+    excluded_operational_opt_out: optOutExclusions,
+    recipient_count_after_optout: recipients.length,
+    note:
+      "employee_user_ids lists actual send targets (post opt-out filter); overdue_count is the unfiltered overdue set.",
+  };
+
+  logOptOutSummary("safety-briefing-reminder-sms", {
+    date: todayStr,
+    filterEnabled: optOutFilter.enabled,
+    filterSource: optOutFilter.source,
+    overdueCount: overdue.length,
+    recipientCount: recipients.length,
+    excludedOperationalOptOut: optOutExclusions.length,
+    excludedUserIds: optOutExclusions.map((e) => e.user_id),
+    dryRun,
+  });
 
   // Idempotency: already sent tier 0 for today? (check before zero-overdue insert so we don't double-insert)
   const { data: existingLog } = await supabase
@@ -193,8 +271,23 @@ Deno.serve(async (req: Request) => {
   if (existingLog?.sent_at) {
     const sentAtChicago = new Date(existingLog.sent_at).toLocaleDateString("en-CA", { timeZone: TZ });
     if (sentAtChicago === todayStr) {
+      // Dry-run reports the computed selection anyway; otherwise a same-day
+      // verification run can never observe what the filter would have done.
       return new Response(
-        JSON.stringify({ skipped: true, reason: "Already sent today", date: todayStr }),
+        JSON.stringify({
+          skipped: true,
+          reason: "Already sent today",
+          date: todayStr,
+          ...(dryRun
+            ? {
+                dryRun: true,
+                overdue_count: overdue.length,
+                eligible_count: recipients.length,
+                excluded_operational_opt_out: optOutExclusions.length,
+                suppressionLog,
+              }
+            : {}),
+        }),
         { status: 200, headers: { "Content-Type": "application/json" } }
       );
     }
@@ -202,59 +295,116 @@ Deno.serve(async (req: Request) => {
 
   // Zero-overdue audit log: when nobody to notify, still log so admin can distinguish "ran, 0 overdue" from "cron failed"
   if (overdue.length === 0) {
-    await supabase.from("sms_escalation_send_log").insert({
-      tier: 0,
-      date_checked: todayStr,
-      overdue_count: 0,
-      recipient_count: 0,
-      success: true,
-      error_message: null,
-      total_price: 0,
-      results: null,
-      employee_user_ids: [],
-    });
+    if (!dryRun) {
+      await supabase.from("sms_escalation_send_log").insert({
+        tier: 0,
+        date_checked: todayStr,
+        overdue_count: 0,
+        recipient_count: 0,
+        success: true,
+        error_message: null,
+        total_price: 0,
+        results: null,
+        employee_user_ids: [],
+        suppression_log: suppressionLog,
+      });
+    }
     return new Response(
-      JSON.stringify({ sent: 0, reason: "No overdue users with phone", date: todayStr }),
+      JSON.stringify({ sent: 0, reason: "No overdue users with phone", date: todayStr, dryRun }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   }
 
-  if (!CLICKSEND_USERNAME || !CLICKSEND_PASSWORD) {
+  // Overdue crew exist but every one of them opted out. Distinct from "0 overdue" —
+  // record the real overdue count so the gap is never read as a quiet day.
+  if (recipients.length === 0) {
+    console.warn("[safety-briefing-reminder-sms] OPTOUT_ALL_RECIPIENTS_EXCLUDED", {
+      date: todayStr,
+      overdueCount: overdue.length,
+      excludedUserIds: optOutExclusions.map((e) => e.user_id),
+    });
+    if (!dryRun) {
+      await supabase.from("sms_escalation_send_log").insert({
+        tier: 0,
+        date_checked: todayStr,
+        overdue_count: overdue.length,
+        recipient_count: 0,
+        success: true,
+        error_message: null,
+        total_price: 0,
+        results: null,
+        employee_user_ids: [],
+        suppression_log: suppressionLog,
+      });
+    }
+    return new Response(
+      JSON.stringify({
+        sent: 0,
+        reason: "All overdue users opted out of operational SMS",
+        date: todayStr,
+        overdue_count: overdue.length,
+        excluded_operational_opt_out: optOutExclusions.length,
+        suppressionLog,
+        dryRun,
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  if (!dryRun && (!CLICKSEND_USERNAME || !CLICKSEND_PASSWORD)) {
     return new Response(
       JSON.stringify({ error: "ClickSend not configured", overdueCount: overdue.length }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   }
 
-  const messages = overdue.map((o) => ({
+  const messages = recipients.map((o) => ({
     to: o.phone_number,
     body: buildReminderBody(o.first_name),
+    userId: o.user_id,
+    optOutState: o.optOutState,
   }));
-  const sendResult = await sendSMS(messages, {
+  const sendResult = await sendAndLogSMS(messages, {
     username: CLICKSEND_USERNAME,
     password: CLICKSEND_PASSWORD,
     from: CLICKSEND_FROM_NUMBER,
-  });
-
-  await supabase.from("sms_escalation_send_log").insert({
-    tier: 0,
-    date_checked: todayStr,
-    overdue_count: overdue.length,
-    recipient_count: overdue.length,
-    success: sendResult.success,
-    error_message: sendResult.error ?? null,
-    total_price: sendResult.totalPrice ?? 0,
-    results: sendResult.results ?? null,
-    employee_user_ids: overdue.map((o) => o.user_id),
+  }, {
+    insert: smsMessageLogInsert(supabase),
+    messageType: "safety_briefing_reminder",
+    category: "operational",
+    fromNumber: CLICKSEND_FROM_NUMBER,
+    sourceTable: "sms_escalation_send_log",
+    isDryRun: dryRun,
+    afterSend: dryRun
+      ? undefined
+      : async (result) => {
+          const { data } = await supabase.from("sms_escalation_send_log").insert({
+            tier: 0,
+            date_checked: todayStr,
+            overdue_count: overdue.length,
+            recipient_count: recipients.length,
+            success: result.success,
+            error_message: result.error ?? null,
+            total_price: result.totalPrice ?? 0,
+            results: result.results ?? null,
+            employee_user_ids: recipients.map((o) => o.user_id),
+            suppression_log: suppressionLog,
+          }).select("id").maybeSingle();
+          return data?.id ?? null;
+        },
   });
 
   return new Response(
     JSON.stringify({
-      sent: overdue.length,
+      sent: recipients.length,
+      overdue_count: overdue.length,
+      excluded_operational_opt_out: optOutExclusions.length,
       success: sendResult.success,
       date: todayStr,
       error: sendResult.error,
       totalPrice: sendResult.totalPrice,
+      dryRun,
+      ...(dryRun ? { suppressionLog } : {}),
     }),
     { status: 200, headers: { "Content-Type": "application/json" } }
   );

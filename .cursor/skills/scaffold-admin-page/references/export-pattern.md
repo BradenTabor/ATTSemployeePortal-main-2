@@ -4,27 +4,37 @@
 
 ```typescript
 import { DataExporter, generateFilename } from "../../lib/exportUtils";
-import type { ExportMetadata } from "../../lib/exportUtils";
+import type { ExportMetadata, ExportColumn } from "../../lib/exportUtils";
 ```
 
 ## Column Definitions
 
+Use `ExportColumn<T>` with `key` + optional `format` (and optional `width` / `includeInPdf`).
+**Do not** use an `accessor:` callback shape — that is stale and is not what `exportUtils.ts` implements.
+
 ```typescript
+interface Row {
+  date: string;
+  employeeName: string;
+  status: string;
+}
+
 // CSV columns (can include all fields)
-const csvColumns = [
-  { header: "Date", accessor: (item: DataType) => item.date },
-  { header: "Employee", accessor: (item: DataType) => item.employeeName },
-  { header: "Status", accessor: (item: DataType) => item.status },
-  // ... all columns
+const csvColumns: ExportColumn<Row>[] = [
+  { header: "Date", key: "date", format: (v) => String(v ?? "—"), width: 14 },
+  { header: "Employee", key: "employeeName", format: (v) => String(v ?? "—"), width: 22 },
+  { header: "Status", key: "status", format: (v) => String(v ?? "—"), width: 12 },
 ];
 
 // PDF columns (fewer columns — must fit page width)
-const pdfColumns = [
-  { header: "Date", accessor: (item: DataType) => item.date, width: 80 },
-  { header: "Employee", accessor: (item: DataType) => item.employeeName, width: 120 },
-  { header: "Status", accessor: (item: DataType) => item.status, width: 80 },
+const pdfColumns: ExportColumn<Row>[] = [
+  { header: "Date", key: "date", format: (v) => String(v ?? "—"), width: 80 },
+  { header: "Employee", key: "employeeName", format: (v) => String(v ?? "—"), width: 120 },
+  { header: "Status", key: "status", format: (v) => String(v ?? "—"), width: 80 },
 ];
 ```
+
+See also `ComplianceDataExportPanel.tsx` (`SectionConfig` with `columns` / `pdfColumns` / optional `previewColumns`) for the admin compliance export pattern, including `logReportExported` after each export.
 
 ## Export Handler
 
@@ -34,7 +44,7 @@ const [exporting, setExporting] = useState<"csv" | "pdf" | null>(null);
 const handleExport = useCallback(async (format: "csv" | "pdf") => {
   setExporting(format);
   try {
-    const exporter = new DataExporter<DataType>();
+    const exporter = new DataExporter<Row>();
     const metadata: ExportMetadata = {
       reportType: "Report Name",
       generatedAt: new Date(),
@@ -84,5 +94,5 @@ const handleExport = useCallback(async (format: "csv" | "pdf") => {
 - `DataExporter` handles CSV download and PDF generation (uses jsPDF internally)
 - `generateFilename` creates a timestamped filename: `Report_Prefix_date_context_2026-02-17.csv`
 - PDF orientation: use `landscape` for tables with 5+ columns, `portrait` for narrow tables
-- Always log the export event for the audit trail
+- Always log the export event for the audit trail (`logReportExported` in compliance panel)
 - Disable export buttons when `filteredData.length === 0`

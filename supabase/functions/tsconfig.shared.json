@@ -1,0 +1,44 @@
+{
+  // Narrow type gate over the two unpragma'd shared SMS helpers, run as the
+  // second line of `npm run typecheck`. Scope and reasoning:
+  // docs/sms-upgrade/15-TYPECHECK-REMEDIATION-PLAN.md.
+  //
+  // This checks 293 lines of the 17,246 in supabase/functions/. It is NOT a
+  // typecheck of Edge Functions — the 38 files carrying `// @ts-nocheck`,
+  // including all four send paths, remain unchecked. It gates the two helpers
+  // that decide who gets dropped from a safety-critical send and that write the
+  // log feeding the compliance export.
+  //
+  // `files`, not `include`: a glob would silently widen the gate on the next
+  // file added to _shared/, which is how a green gate turns red for reasons
+  // unrelated to the change under review. Widen it deliberately, one file at a
+  // time, after confirming the file is clean.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    // The imports use Deno's explicit `./phoneE164.ts` form, which plain tsc
+    // rejects without this.
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "verbatimModuleSyntax": true,
+    // No @types packages: nothing from node_modules belongs in a Deno file's
+    // ambient scope. Runtime globals come from _shared/deno-globals.d.ts.
+    "types": [],
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "skipLibCheck": true
+  },
+  "files": [
+    "_shared/deno-globals.d.ts",
+    "_shared/phoneE164.ts",
+    "_shared/smsOptOutFilter.ts",
+    "_shared/smsMessageLog.ts"
+  ]
+}

@@ -1,0 +1,181 @@
+# What ClickSend actually documents about opt-outs
+
+**Session 9, 2026-09-09.** Retrieved directly from ClickSend's own help centre and API
+reference, then checked a second time by an independent pass that reached the same verdict
+without seeing the first. This page exists because the conclusion in
+[`08-BLOCKED-HISTORY-PROPOSAL.md`](./08-BLOCKED-HISTORY-PROPOSAL.md) and the send-path filter in
+[`05-CHUNK3-RUNBOOK.md`](./05-CHUNK3-RUNBOOK.md) both rest on the claim that ClickSend does *not*
+screen ad-hoc sends against the opt-out list. That claim was inferred from delivery receipts. It
+is load-bearing, so it was checked against the vendor's own words.
+
+## Verdict
+
+**Ambiguous, and the ambiguity resolves against the broad reading.**
+
+ClickSend states a broad blocking rule in prose, but every mechanism it documents to implement
+that rule is scoped to **contact lists**, and the API reference for the ad-hoc send endpoint —
+the one this portal uses — never mentions opt-outs at all. ClickSend nowhere addresses the
+specific question "does a `to`-addressed send get screened against the opt-out list?" Our own
+receipt data answers it: **no**.
+
+Do not treat this page as license to ignore the vendor. Treat it as the reason the enforcement
+now lives in our code, where it is observable, rather than in a vendor behaviour nobody has
+confirmed in writing.
+
+---
+
+## 1. The broad claim
+
+From **Understanding opt-outs**
+(<https://help.clicksend.com/en/articles/42308-understanding-opt-outs>, updated 2026-07-07):
+
+> As soon as a user opts out, their contact information will be automatically removed from your
+> **active lists**. This means you don't need to manually update your records.
+>
+> Once a contact has opted out, any future messages to that number or email will be blocked.
+
+Read alone, the second sentence says what we assumed for months. Read with the first, it is
+already list-scoped: the described mechanism is *removal from lists*, and "blocked" is the
+consequence of no longer being on a list you send to.
+
+## 2. The qualifier that scopes it
+
+From **Managing opt-outs**
+(<https://help.clicksend.com/en/articles/43124-managing-opt-outs>, updated 2026-07-07):
+
+> The automatic opt-out system is already set up on your account. Once the recipient opts-out
+> they will be moved to the opt-out contact list. Just remember, **you must use the correct opt
+> out method and store your contact lists in ClickSend for the system to work.**
+
+That last clause is the whole ballgame. The system works *if your contacts are stored in
+ClickSend as lists*. ATTS stores its recipients in Supabase `app_users` and passes raw numbers
+to the API. There are no ATTS contact lists in ClickSend for anyone to be removed from.
+
+The same page also confines the STOP keyword itself:
+
+> Recipients can reply with the keyword "STOP" (or a custom keyword) to unsubscribe
+> automatically. **Available in SMS Campaign only.**
+
+And the opt-out rule it tells you to build is literally a list-move operation:
+
+> Under Action select **MOVE_CONTACT** and under Contact List select **Opt-Out List**.
+
+## 3. The endpoint we actually use is silent
+
+The REST v3 **Send SMS** reference
+(<https://developers.clicksend.com/docs/messaging/sms/other/send-sms>) — the `POST /v3/sms/send`
+endpoint with a `messages[].to` array, which is exactly what
+`supabase/functions/_shared/clicksend.ts` calls — documents `to`, `from`, `body`, `schedule`,
+`custom_string`, `country`, `source`, and the list-id alternative. **It contains no mention of
+"opt-out", "opt out", "unsubscribe", or "STOP" anywhere in the page.** No pre-send screening is
+described, promised, or hinted at.
+
+By contrast, the **SMS Campaigns** reference
+(<https://developers.clicksend.com/docs/messaging/sms-campaigns>) is where the opt-out
+obligations appear:
+
+> You are required to add an opt-out message to the end of your message body if you are sending
+> marketing message.
+
+The split is consistent: opt-out machinery is documented on the campaign/list surface, not the
+ad-hoc surface.
+
+**Cross-checked against a second rendering.** The developers site is a single-page app, so "no
+matches" could in principle be a rendering artefact rather than a fact about the content. The
+same spec served through ClickSend's Redoc mirror (<https://dev25.redoc.ly/messaging/sms/>)
+gives the same result: zero occurrences of "opt-out", "unsubscribe", or "suppress".
+
+**And there is no way to observe suppression even if it happened.** ClickSend documents no
+response code, error, or delivery-receipt status meaning "suppressed due to opt-out". So the
+docs give us no way to distinguish "suppression is not implemented on this path" from
+"suppression is implemented and silently drops the message". Our receipts settle it — 530 rows
+marked `Delivered` are not silent drops — but it is worth noting that without those receipts the
+question would be unanswerable from the vendor's side.
+
+## 4. The one place ClickSend claims universal screening
+
+The **ActiveCampaign integration guide**
+(<https://help.clicksend.com/en/articles/42331-integration-guide-activecampaign>) is the
+strongest statement in the other direction:
+
+> Opt-out status is not synced back to ActiveCampaign, but **ClickSend will always check the
+> opt-out list before sending any SMS.**
+>
+> Even if a contact appears active in ActiveCampaign, ClickSend will block SMS delivery if the
+> number is opted out in ClickSend.
+
+Three reasons not to rely on it:
+
+1. It is scoped to one integration, describing sends that ClickSend itself originates from lists
+   it owns — not third-party API calls to `/sms/send`.
+2. The **same page** immediately undercuts the universality: *"If different contact lists are
+   selected, the recipient may still receive messages after replying STOP."* So the screen is
+   list-identity-sensitive, not number-sensitive.
+3. It is contradicted by our production data.
+
+The same page also treats the opt-out list as a **per-send-action parameter** rather than an
+account property — *"Opt-out list (optional): Select an opt-out list to automatically capture
+unsubscribes."* Something you select per action is not something that screens every send.
+
+## 5. What our data says
+
+`+18703656644` has been on the ClickSend opt-out list since **2026-03-04**. Since that date the
+portal has sent it **530 messages that ClickSend's own delivery receipts mark `Delivered`**,
+against 2 failed, most recently today. If ad-hoc sends were screened, that number would be zero.
+
+This is the decisive evidence. Vendor prose says one thing; the vendor's own receipts say
+another. See [`13-UNREACHABLE-CREW.md` §1](./13-UNREACHABLE-CREW.md).
+
+---
+
+## 6. Is there account-level enforcement that would cover ad-hoc sends?
+
+**Nothing documented. No.** Searching the help centre and the v3 API reference turns up no
+account-wide "suppress all sends to opted-out numbers" toggle, no global blocklist that applies
+to `to`-addressed messages, and no send-time screening option on `/sms/send`.
+
+What exists is adjacent but does not cover us:
+
+| Feature | What it does | Why it does not help |
+|---|---|---|
+| Opt-Out List (Contacts → Opt-Outs) | A contact list, importable and exportable | Screening happens on list-addressed sends; we address raw numbers |
+| `PUT /lists/{list_id}/remove-opted-out-contacts/{opt_out_list_id}` | Scrubs opted-out contacts *out of* a list | Operates on lists we do not maintain |
+| Inbound rules (`MOVE_CONTACT` / `CREATE_CONTACT`) | Puts a STOP replier onto the Opt-Out List | Populates the list; does not enforce against ad-hoc sends |
+| Share opt-out lists across subaccounts | Propagates the list between subaccounts | Propagation, not enforcement |
+
+The subaccount guidance is quietly decisive on this, because it shows opt-out state is stored as
+*list data to be duplicated* rather than enforced centrally
+(<https://help.clicksend.com/en/articles/42263-managing-subaccounts>):
+
+> If you have subaccounts that don't share contact lists, you'll need to set up an opt-out rule
+> for each subaccount.
+
+An account-level block would not need per-subaccount rules.
+
+**No US-specific enforcement either.** ATTS sends on +1 routes, so it is worth ruling out a
+region-specific mechanism. ClickSend's United States page
+(<https://help.clicksend.com/en/articles/43598-united-states-of-america-1>) is about carrier
+registration and sender obligations. Its only opt-out language imposes a duty on *us*, and
+describes no ClickSend mechanism at all:
+
+> Honor Opt-Out Requests: All opt-out requests must be acknowledged and actioned promptly.
+
+That is the CTIA principle. Under the current architecture, the send-path filter added this
+session is the only thing in the system that discharges it.
+
+**Recommended follow-up, not taken here:** ask ClickSend support directly whether account-level
+suppression for `to`-addressed sends can be enabled — email support@clicksend.com, quoting the
+530-delivered figure above as the reproduction. If such a setting exists it is worth having as a
+second layer *behind* the application filter, never instead of it. **This has not been enabled or
+requested.** Per the hard constraints, no vendor-side configuration was changed.
+
+---
+
+## 7. What this changes
+
+Nothing in the code — the filter added in this session already assumes no carrier backstop. What
+it changes is the confidence level: the application-side filter in
+`_shared/smsOptOutFilter.ts` is now known to be **the only** opt-out enforcement in the chain,
+confirmed against vendor documentation rather than inferred from receipts alone. If it is
+disabled via `app_settings.sms_send_optout_filter_config`, opted-out people receive messages.
+There is nothing underneath it.

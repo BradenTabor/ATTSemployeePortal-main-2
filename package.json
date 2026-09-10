@@ -16,7 +16,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "preview:ci": "vite preview --host 127.0.0.1 --port 4173",
-    "typecheck": "tsc --noEmit -p tsconfig.app.json",
+    "typecheck": "tsc --noEmit -p tsconfig.app.json && tsc -p supabase/functions/tsconfig.shared.json",
     "test": "vitest run",
     "test:unit": "vitest run --config tests/vitest.config.ts",
     "test:unit:watch": "vitest --config tests/vitest.config.ts",

@@ -78,6 +78,19 @@ CREATE OR REPLACE FUNCTION net.http_get(
   timeout_milliseconds integer DEFAULT 5000
 ) RETURNS bigint LANGUAGE sql AS $$ SELECT 0::bigint $$;
 
+-- Async response table pg_net writes into. The cron HTTP-failure detector reads it
+-- directly, so the gate needs the column shape to resolve those views/functions.
+CREATE TABLE IF NOT EXISTS net._http_response (
+  id bigint,
+  status_code integer,
+  content_type text,
+  headers jsonb,
+  content text,
+  timed_out boolean,
+  error_msg text,
+  created timestamptz NOT NULL DEFAULT now()
+);
+
 -- supabase webhooks ---------------------------------------------------------
 CREATE SCHEMA IF NOT EXISTS supabase_functions;
 
