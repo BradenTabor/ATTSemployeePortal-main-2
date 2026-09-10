@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  firstNonEmptyTrimmed,
   isAuthorized,
   parseInboundBody,
   receivedAtFromPayload,
   redactUrl,
+  resolveInboundMessageText,
   timingSafeEqual,
 } from "../../supabase/functions/_shared/inboundWebhookHelpers";
 import {
@@ -192,6 +194,41 @@ describe("receivedAtFromPayload", () => {
     expect(receivedAtFromPayload({ timestamp: "9999999999" }, fixedNow)).toBe(
       "2026-09-10T12:00:00.000Z",
     );
+  });
+
+  it("uses timestamp when present and valid; ignores timestamp_send on the payload shape", () => {
+    // receivedAtFromPayload only reads `timestamp` — timestamp_send must never be wired in.
+    expect(
+      receivedAtFromPayload({ timestamp: "1725984000" }, fixedNow),
+    ).toBe(new Date(1725984000 * 1000).toISOString());
+  });
+
+  it("falls back to now when timestamp is absent (timestamp_send must not substitute)", () => {
+    expect(receivedAtFromPayload({ timestamp: null }, fixedNow)).toBe(
+      "2026-09-10T12:00:00.000Z",
+    );
+  });
+});
+
+describe("resolveInboundMessageText / firstNonEmptyTrimmed", () => {
+  it("falls through empty body to original_body", () => {
+    expect(resolveInboundMessageText("", "STOP")).toBe("STOP");
+    expect(firstNonEmptyTrimmed("", "STOP")).toBe("STOP");
+  });
+
+  it("falls through whitespace body to original_body", () => {
+    expect(resolveInboundMessageText("   ", "STOP")).toBe("STOP");
+  });
+
+  it("prefers non-empty body when both are present", () => {
+    expect(resolveInboundMessageText("STOP", "STOP")).toBe("STOP");
+    expect(resolveInboundMessageText("START", "STOP")).toBe("START");
+  });
+
+  it("returns empty when both are empty/whitespace", () => {
+    expect(resolveInboundMessageText("", "")).toBe("");
+    expect(resolveInboundMessageText("  ", "   ")).toBe("");
+    expect(resolveInboundMessageText(null, undefined)).toBe("");
   });
 });
 
@@ -452,6 +489,127 @@ describe("handleInboundWebhook", () => {
         from: PHONE,
         body: "STOP",
         timestamp: ts,
+      }),
+      now: () => new Date("2026-09-10T12:00:00.000Z"),
+    });
+    expect(db.events[0]?.received_at).toBe(new Date(Number(ts) * 1000).toISOString());
+  });
+
+  it("body empty + original_body STOP → flips both flags, keyword STOP", async () => {
+    const { res, db, json } = await postStop({
+      contentType: "application/x-www-form-urlencoded",
+      body: formBody({
+        message_id: "EMPTY-BODY-STOP",
+        from: PHONE,
+        body: "",
+        original_body: "STOP",
+        timestamp: "1725984000",
+      }),
+    });
+    expect(res.status).toBe(200);
+    expect(json).toMatchObject({
+      ok: true,
+      keyword: "STOP",
+      applied_operational: true,
+      applied_marketing: true,
+    });
+    expect(db.users[0]?.sms_operational_opt_out).toBe(true);
+    expect(db.users[0]?.sms_marketing_opt_out).toBe(true);
+    expect(db.events[0]?.keyword).toBe("STOP");
+  });
+
+  it("body whitespace + original_body STOP → flips both flags, keyword STOP", async () => {
+    const { res, db, json } = await postStop({
+      contentType: "application/x-www-form-urlencoded",
+      body: formBody({
+        message_id: "WS-BODY-STOP",
+        from: PHONE,
+        body: "   ",
+        original_body: "STOP",
+        timestamp: "1725984000",
+      }),
+    });
+    expect(res.status).toBe(200);
+    expect(json).toMatchObject({
+      ok: true,
+      keyword: "STOP",
+      applied_operational: true,
+      applied_marketing: true,
+    });
+    expect(db.users[0]?.sms_operational_opt_out).toBe(true);
+    expect(db.users[0]?.sms_marketing_opt_out).toBe(true);
+    expect(db.events[0]?.keyword).toBe("STOP");
+  });
+
+  it("body STOP + original_body STOP → unchanged happy path (no regression)", async () => {
+    const { res, db, json } = await postStop({
+      contentType: "application/x-www-form-urlencoded",
+      body: formBody({
+        message_id: "BOTH-STOP",
+        from: PHONE,
+        body: "STOP",
+        original_body: "STOP",
+        timestamp: "1725984000",
+      }),
+    });
+    expect(res.status).toBe(200);
+    expect(json).toMatchObject({
+      ok: true,
+      keyword: "STOP",
+      applied_operational: true,
+      applied_marketing: true,
+    });
+    expect(db.events).toHaveLength(1);
+  });
+
+  it("both body fields empty → 200 {skipped: empty_body}, keyword OTHER, row written", async () => {
+    const { res, db, json } = await postStop({
+      contentType: "application/x-www-form-urlencoded",
+      body: formBody({
+        message_id: "BOTH-EMPTY",
+        from: PHONE,
+        body: "",
+        original_body: "",
+      }),
+    });
+    expect(res.status).toBe(200);
+    expect(json).toEqual({ skipped: true, reason: "empty_body" });
+    expect(db.events).toHaveLength(1);
+    expect(db.events[0]?.keyword).toBe("OTHER");
+    expect(db.users[0]?.sms_operational_opt_out).toBe(false);
+    expect(db.users[0]?.sms_marketing_opt_out).toBe(false);
+  });
+
+  it("timestamp absent + timestamp_send present → received_at is now(), not timestamp_send", async () => {
+    const fixedNow = "2026-09-10T12:00:00.000Z";
+    // An old outbound send time — must NOT become received_at.
+    const outboundSendTs = "1700000000";
+    const { db } = await postStop({
+      contentType: "application/x-www-form-urlencoded",
+      body: formBody({
+        message_id: "TS-SEND-ONLY",
+        from: PHONE,
+        body: "STOP",
+        timestamp_send: outboundSendTs,
+      }),
+      now: () => new Date(fixedNow),
+    });
+    expect(db.events[0]?.received_at).toBe(fixedNow);
+    expect(db.events[0]?.received_at).not.toBe(
+      new Date(Number(outboundSendTs) * 1000).toISOString(),
+    );
+  });
+
+  it("timestamp present and valid → used for received_at (unchanged)", async () => {
+    const ts = "1725984000";
+    const { db } = await postStop({
+      contentType: "application/json",
+      body: JSON.stringify({
+        message_id: "TS-VALID",
+        from: PHONE,
+        body: "STOP",
+        timestamp: Number(ts),
+        timestamp_send: 1700000000,
       }),
       now: () => new Date("2026-09-10T12:00:00.000Z"),
     });

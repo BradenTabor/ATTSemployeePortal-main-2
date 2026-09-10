@@ -200,6 +200,20 @@ Details and residual platform-log risk: `10-WEBHOOK-AUTH-FALLBACK.md`.
 {"ok":true,"name":"clicksend-inbound-webhook"}
 ```
 
+### Field mapping (inbound webhook payload)
+
+ClickSend POSTs form-urlencoded keys matching the inbound SMS object. We normalize, then apply these rules:
+
+| ClickSend field | Our use |
+|---|---|
+| `body` | Preferred source for keyword parse (STOP/START/HELP). |
+| `original_body` | Used **only** when `body` is empty or whitespace after trim. ClickSend docs pair this with `original_message_id` (outbound); defensive fallthrough exists because keyword-scoped rules can POST an empty `body`. Exact-match keyword parse means a long outbound body will not false-fire STOP. |
+| `timestamp` | Authoritative `received_at` when present and plausible. |
+| `timestamp_send` | **Never** used for `received_at`. Logged as non-authoritative. Missing/invalid `timestamp` → `now()`. |
+| both body fields empty | 200 `{skipped:true, reason:"empty_body"}`, keyword `OTHER`, audit row still written. Distinct from `unknown_keyword`. |
+
+Full auth + parse notes: `10-WEBHOOK-AUTH-FALLBACK.md`.
+
 ---
 
 ## 3. Kill switches (`app_settings`)

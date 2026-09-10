@@ -59,7 +59,11 @@ In-function: every `console.*` that touches the request URL uses `redactUrl()`, 
 
 Both shapes normalize to one internal payload before keyword / E.164 / idempotency / insert logic.
 
-Field names: documented ClickSend inbound SMS object keys (`message_id`, `from`, `to`, `body`, `original_body`, `original_message_id`, `timestamp`, `timestamp_send`, `custom_string`, `_keyword`). Help article confirms form-urlencoded but does not enumerate parameter names; we map the API object keys. String timestamps are coerced and validated (reject before 2020 or >24h future → fall back to now).
+Field names: documented ClickSend inbound SMS object keys (`message_id`, `from`, `to`, `body`, `original_body`, `original_message_id`, `timestamp`, `timestamp_send`, `custom_string`, `_keyword`). Help article confirms form-urlencoded but does not enumerate parameter names; we map the API object keys.
+
+**Message text resolution (2026-09-10):** `resolveInboundMessageText` picks the first non-empty string after trim, preferring `body` then `original_body`. Do **not** use `??` — empty string is a live ClickSend case under keyword-scoped inbound rules. Both empty/whitespace → 200 `{skipped:true, reason:"empty_body"}` with an `OTHER` audit row (distinct from `unknown_keyword`).
+
+**received_at resolution (2026-09-10):** use `timestamp` only. Never fall back to `timestamp_send` (that is the original outbound send time on inbound objects). Missing/invalid `timestamp` → `now()`. `timestamp_send` is retained on the normalized payload and logged as non-authoritative. String timestamps are coerced and validated (reject before 2020 or >24h future → fall back to now).
 
 ## Kill switch unchanged
 

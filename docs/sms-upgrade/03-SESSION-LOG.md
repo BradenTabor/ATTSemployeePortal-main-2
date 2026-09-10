@@ -1290,3 +1290,33 @@ Supabase platform request logs still capture the full URL including `?k=`. Accep
 
 No live SMS. No opt-out flag / escalation / historical row changes. Reconcile cron still disabled. `apply_enabled` untouched. Inbound ClickSend rule still for Braden to paste.
 
+## 2026-09-10 — Session 17 (inbound field-mapping: empty body + timestamp_send)
+
+Two silent-success bugs in `clicksend-inbound-webhook` field mapping. Both returned HTTP 200 and wrote a row while doing the wrong thing.
+
+### A — empty-string body fallthrough
+
+`??` (and whitespace-blind reads) do not fall through when ClickSend POSTs `body=""` or `body="   "` under a keyword-scoped inbound rule (account has rule 2126345 "Opt-out contact"). Keyword became OTHER, flags stayed false, row still written.
+
+**Fix:** `resolveInboundMessageText` / `firstNonEmptyTrimmed` — first non-empty after trim, prefer `body` then `original_body`. Both empty → 200 `{skipped:true, reason:"empty_body"}` with keyword OTHER row (distinct from `unknown_keyword`).
+
+### B — timestamp_send is not a received_at alias
+
+`timestamp` = inbound receive time. `timestamp_send` on inbound objects is the original outbound send time (paired with `original_message_id` / `original_body`). Using it stamped opt-outs earlier than the opt-out.
+
+**Fix:** `received_at` from `timestamp` only; missing/invalid → `now()`. `timestamp_send` kept on the normalized payload and logged; never fed to `receivedAtFromPayload`.
+
+### Docs note (ClickSend)
+
+Published examples: `body` = inbound reply; `original_body` = original outbound text ("This is the original message…"); specific-message endpoint returns `timestamp`, list/test often return `timestamp_send`. No prose defines keyword-stripping into `original_body`. Defensive body fallthrough kept because empty `body` is a live risk; exact-match keyword parse limits false STOP from outbound text.
+
+### Tests / gates / deploy
+
+- `tests/unit/sms-inbound-webhook.test.ts` — empty/whitespace body, both-empty `empty_body`, timestamp_send ignored, valid timestamp unchanged.
+- Gates: lint, typecheck, build.
+- Deployed `clicksend-inbound-webhook --no-verify-jwt`.
+
+### Not done this session
+
+No live SMS. No opt-out flag / escalation recipient / historical row / cron state changes.
+

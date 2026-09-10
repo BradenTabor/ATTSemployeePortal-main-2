@@ -9,15 +9,32 @@
  * Help article https://help.clicksend.com/en/articles/42270-inbound-messaging-rules
  * confirms application/x-www-form-urlencoded POSTs but does not enumerate parameter names;
  * we map the documented inbound object keys, and keep the same names as JSON aliases.
+ *
+ * Field semantics (from ClickSend examples + original_message_id prose):
+ *   body            — inbound reply text (keyword parse source of truth)
+ *   original_body   — body of the original outbound message being replied to
+ *                     (paired with original_message_id). Defensive fallthrough only
+ *                     when body is empty/whitespace — see resolveInboundMessageText.
+ *   timestamp       — inbound receive time (specific-message endpoint)
+ *   timestamp_send  — original outbound send time on inbound objects; NEVER use
+ *                     for received_at (a late now() beats a pre-event stamp)
  */
 
 export interface NormalizedInboundPayload {
   message_id: string | null;
   from: string | null;
   to: string | null;
+  /** Raw inbound body as posted (may be empty/whitespace). */
   body: string;
+  /** Original outbound body when present; never authoritative for received_at. */
   original_body: string | null;
+  /** Inbound receive timestamp only — never populated from timestamp_send. */
   timestamp: number | string | null;
+  /**
+   * Original outbound send time when present. Preserved for non-authoritative
+   * inspection (logs); never fed to receivedAtFromPayload.
+   */
+  timestamp_send: number | string | null;
 }
 
 export interface WebhookAuthSecrets {
@@ -101,30 +118,71 @@ function firstString(
   return null;
 }
 
+/** Preserve empty strings; only coerce finite numbers. Absent → null. */
+function optionalStringField(
+  record: Record<string, unknown>,
+  key: string,
+): string | null {
+  const value = record[key];
+  if (typeof value === "string") return value;
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  return null;
+}
+
+function optionalTimestampField(
+  record: Record<string, unknown>,
+  key: string,
+): number | string | null {
+  const value = record[key];
+  if (typeof value === "number" || typeof value === "string") return value;
+  return null;
+}
+
+/**
+ * First candidate that is a non-empty string after trim.
+ * `??` is wrong here — empty string is live (keyword-scoped ClickSend rules
+ * can POST body=""). Whitespace-only must also fall through.
+ */
+export function firstNonEmptyTrimmed(
+  ...candidates: Array<string | null | undefined>
+): string {
+  for (const candidate of candidates) {
+    if (typeof candidate !== "string") continue;
+    const trimmed = candidate.trim();
+    if (trimmed.length > 0) return trimmed;
+  }
+  return "";
+}
+
+/**
+ * Resolve the inbound message text used for keyword parsing.
+ * Prefer `body`; when body is empty/whitespace, use `original_body`.
+ */
+export function resolveInboundMessageText(
+  body: string | null | undefined,
+  originalBody: string | null | undefined,
+): string {
+  return firstNonEmptyTrimmed(body, originalBody);
+}
+
 /**
  * Map raw ClickSend (or legacy JSON) fields into one internal shape.
  * Documented names preferred; existing JSON names are the same set (aliases).
+ * Does NOT collapse body←original_body or timestamp←timestamp_send — callers
+ * use resolveInboundMessageText / receivedAtFromPayload for those decisions.
  */
 export function normalizeInboundPayload(
   raw: Record<string, unknown>,
 ): NormalizedInboundPayload {
-  const body =
-    firstString(raw, ["body"]) ??
-    firstString(raw, ["original_body"]) ??
-    "";
-  const timestampRaw = raw.timestamp ?? raw.timestamp_send ?? null;
-  let timestamp: number | string | null = null;
-  if (typeof timestampRaw === "number" || typeof timestampRaw === "string") {
-    timestamp = timestampRaw;
-  }
-
+  const bodyField = optionalStringField(raw, "body");
   return {
     message_id: firstString(raw, ["message_id"]),
     from: firstString(raw, ["from"]),
     to: firstString(raw, ["to"]),
-    body,
-    original_body: firstString(raw, ["original_body"]),
-    timestamp,
+    body: bodyField ?? "",
+    original_body: optionalStringField(raw, "original_body"),
+    timestamp: optionalTimestampField(raw, "timestamp"),
+    timestamp_send: optionalTimestampField(raw, "timestamp_send"),
   };
 }
 

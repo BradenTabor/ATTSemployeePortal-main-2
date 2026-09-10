@@ -13,6 +13,7 @@ import {
   parseInboundBody,
   receivedAtFromPayload,
   redactUrl,
+  resolveInboundMessageText,
   type WebhookAuthSecrets,
 } from "./inboundWebhookHelpers.ts";
 
@@ -101,9 +102,19 @@ export async function handleInboundWebhook(
 
     const payload = parsed.payload;
     const providerMessageId = payload.message_id?.trim() || null;
-    const rawMessage = payload.body || payload.original_body || "";
+    // Explicit helper — do NOT use ?? here; empty/whitespace body must fall through.
+    const rawMessage = resolveInboundMessageText(
+      payload.body,
+      payload.original_body,
+    );
     const keyword = parseInboundKeyword(rawMessage);
     const phoneE164 = toE164(payload.from);
+
+    if (payload.timestamp_send != null) {
+      console.warn(
+        `[clicksend-inbound-webhook] non-authoritative timestamp_send=${String(payload.timestamp_send)} (not used for received_at)`,
+      );
+    }
 
     if (!phoneE164) {
       return json({ skipped: true, reason: "invalid_sender_phone" });
@@ -118,6 +129,46 @@ export async function handleInboundWebhook(
       if (existing) {
         return json({ skipped: true, reason: "duplicate" });
       }
+    }
+
+    // Both body and original_body empty/whitespace → still audit the row, distinct reason.
+    if (!rawMessage) {
+      const { data: emptyMatchedUsers } = await supabase
+        .from("app_users")
+        .select("user_id, phone_number, sms_operational_opt_out, sms_marketing_opt_out, email")
+        .not("email", "ilike", "%@atts.test%");
+      const emptyUsers = (emptyMatchedUsers as Array<{
+        user_id: string;
+        phone_number: string | null;
+      }> | null) ?? [];
+      const emptyUser =
+        emptyUsers.find((u) => toE164(u.phone_number) === phoneE164) ?? null;
+
+      const emptyInsert = await supabase.from("sms_opt_out_events").insert({
+        phone_e164: phoneE164,
+        user_id: emptyUser?.user_id ?? null,
+        keyword: "OTHER",
+        raw_message: "",
+        provider_message_id: providerMessageId,
+        source: "webhook",
+        applied_operational: false,
+        applied_marketing: false,
+        received_at: receivedAtFromPayload(payload, now),
+      });
+      if (emptyInsert.error) {
+        if (emptyInsert.error.code === "23505" && providerMessageId) {
+          return json({ skipped: true, reason: "duplicate" });
+        }
+        console.error(
+          `[clicksend-inbound-webhook] empty_body insert failed url=${safeUrl}`,
+          emptyInsert.error.message,
+        );
+        return json({ error: "Failed to log opt-out event" }, 500);
+      }
+      console.warn(
+        `[clicksend-inbound-webhook] empty_body url=${safeUrl} provider_message_id=${providerMessageId ?? "(none)"}`,
+      );
+      return json({ skipped: true, reason: "empty_body" });
     }
 
     const { data: matchedUsers } = await supabase
