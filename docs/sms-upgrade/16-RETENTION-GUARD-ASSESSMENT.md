@@ -1,13 +1,13 @@
 # Hard guard against retention deleting the opt-out audit trail — assessment
 
-**Status:** assessment only, written 2026-09-09. **Nothing in this document is applied.** The
-three guards that *were* applied are in migration `20260909220000_sms_retention_protection.sql`
-(table comments, a `notes` column, an explicit `enabled = false` policy row). This document
-covers the fourth thing that was asked about and deliberately not built: a hard guard inside
-`run_data_retention()` itself.
+**Status:** assessment written 2026-09-09; **recommendation accepted and applied the same day** in
+`20260909230000_retention_protected_tables_guard.sql`. The earlier three guards are in
+`20260909220000_sms_retention_protection.sql` (table comments, a `notes` column, an explicit
+`enabled = false` policy row). `run_data_retention()` was **not** modified and should not be —
+see "Why not inside `run_data_retention()`" below, and the KNOWN-ISSUES.md entry it produced.
 
 **Recommendation: against modifying `run_data_retention()`. For a `BEFORE INSERT OR UPDATE`
-trigger on `data_retention_policies` instead.** Reasoning below, then the diff.
+trigger on `data_retention_policies` instead.** Reasoning below, then what shipped.
 
 ---
 
@@ -131,9 +131,75 @@ flipping a boolean. That is the intended friction, but it is friction, and it sh
 deliberate choice rather than a surprise. The `EXCEPTION` message names the escape hatch so the
 person hitting it is not stuck.
 
-### Diff — not applied
+### What shipped
 
-Would be `supabase/migrations/<later-timestamp>_retention_protected_tables_guard.sql`:
+`supabase/migrations/20260909230000_retention_protected_tables_guard.sql`, applied to production
+2026-09-09 and recorded in `schema_migrations`. It differs from the sketch below in two ways that
+were decided during implementation; both are argued in the next two sections.
+
+1. **The prohibition is unconditional, not `IF NEW.enabled`.** Any policy row for
+   `sms_opt_out_events` is refused on INSERT *and* UPDATE regardless of the `enabled` value, and
+   `OLD.table_name` is checked on UPDATE so a row cannot be renamed off the protected table.
+2. **`sms_message_log` is guarded too, but by a weaker, conditional rule** — not added to the
+   prohibited list.
+
+### Why the prohibition had to drop the `IF NEW.enabled` condition
+
+The sketch below refused only `NEW.enabled = true`. That does not close the hole it was written
+for. `INSERT ... ON CONFLICT (table_name) DO UPDATE` fires `BEFORE INSERT` for the attempted row
+and then `BEFORE UPDATE` for the conflicting one, and the `enabled` value carried by either pass
+is whatever the copy-paste happened to bring — a migration that seeds `enabled = false` and is
+later amended, or one whose `EXCLUDED` list is edited, walks straight through an
+`enabled`-conditional guard on the way to a row that a subsequent statement flips. Refusing the
+whole row is the only formulation with no ordering left to reason about, and it matches what the
+table's own `COMMENT` says without qualification: *do not enable it*.
+
+Cost of the stronger form, stated: the marker row from `20260909220000` is now immutable rather
+than merely load-bearing, and re-running that migration on its own against a database that already
+has both the row and the trigger will fail — `BEFORE INSERT` fires before `ON CONFLICT` is
+evaluated, so its no-op `DO NOTHING` insert is refused rather than ignored. A clean forward replay
+is unaffected because this migration sorts later, and `supabase/.localgate/run.sh` drops and
+recreates its database on every run, so this is not a workflow here. It is still real, and the fix
+if it is ever needed is to drop the trigger for the duration, not to weaken it.
+
+`DELETE` is deliberately left unguarded. Removing the marker row loses the record of the decision
+but not the protection — a table with no policy is never entered into `run_data_retention()`'s
+loop — and it is not a bypass either, because the follow-up INSERT is refused.
+
+### Why `sms_message_log` is guarded conditionally rather than prohibited
+
+**Recommendation: do not add it to the prohibited list.** Its `COMMENT` and
+`sms_opt_out_events`' `COMMENT` say materially different things, and the guard should not flatten
+that difference:
+
+| | `sms_opt_out_events` | `sms_message_log` |
+|---|---|---|
+| What the COMMENT says | "DO NOT ADD THIS TABLE… Do not enable it." | "RETENTION IS A DELIBERATE DECISION HERE, NOT A DEFAULT… confirm with legal/HR sign-off, set `archive_table_name` rather than deleting outright, record the reason in `notes`." |
+| Is a policy ever legitimate? | No | Yes, with sign-off |
+| What an outright block would do | Enforce the documented rule | Forbid what the documented process explicitly allows |
+
+An outright block on `sms_message_log` would be the guard contradicting its own documentation, and
+the first person to complete the sign-off the comment asks for would find the trigger in their way
+and drop it. A guard that gets dropped protects nothing — and it would be dropped by someone doing
+everything right, which is the worst way to lose a control.
+
+But "comment only" leaves the checkable half unenforced. The comment states three conditions;
+`archive_table_name` set and a reason in `notes` are mechanically checkable, sign-off is not. So
+the rule is: **an `enabled` policy for `sms_message_log` is refused unless `archive_table_name` and
+`notes` are both non-blank.** A disabled marker row passes freely. A correctly-formed, signed-off
+policy passes. What it rejects is exactly the four-column
+`(table_name, date_column, retention_days, enabled)` copy-paste that every other retention
+migration in this repo uses — which is the realistic accident, and the one shape the comment
+already forbids.
+
+Limit stated plainly so nobody over-reads it: this enforces the *form* of sign-off, not sign-off.
+Someone can satisfy it with `archive_table_name = 'x'` and `notes = 'x'`. It converts a silent
+copy-paste into a deliberate act that leaves a written reason in the row, and that is all it
+claims to do.
+
+### Original sketch — superseded by the above, kept for the diff
+
+Was to be `supabase/migrations/<later-timestamp>_retention_protected_tables_guard.sql`:
 
 ```sql
 -- Refuse to enable a retention policy on a table whose oldest rows are its most
@@ -176,6 +242,35 @@ CREATE TRIGGER guard_retention_protected_tables
 
 Note it deliberately allows the `enabled = false` row to be inserted and updated freely — the
 marker row from `20260909220000` must stay writable, and only `enabled = true` is refused.
+**This is the part that was changed before shipping**, for the reason given above: an
+`enabled`-conditional guard does not close the `ON CONFLICT DO UPDATE` hole it was written for.
+
+### Verification
+
+Run against a local Postgres 17 with the `data_retention_policies` DDL and all eight production
+policy rows reproduced, then repeated against production itself.
+
+| Case | Result |
+|---|---|
+| Plain `INSERT` of an enabled policy for `sms_opt_out_events` | refused |
+| `INSERT … ON CONFLICT (table_name) DO UPDATE SET enabled = EXCLUDED.enabled` | refused |
+| `UPDATE … SET enabled = true` on the marker row | refused |
+| `UPDATE … SET table_name = 'something_else'` on the marker row | refused (`OLD.table_name` check) |
+| `INSERT` of a policy for an unprotected table | inserted normally |
+| `ON CONFLICT DO UPDATE` against `dvir_reports` | updated normally |
+| `sms_message_log`, four-column copy-paste, `enabled = true` | refused (sign-off rule) |
+| `sms_message_log`, `enabled = true` with `archive_table_name` + `notes` | inserted normally |
+| `sms_message_log`, `enabled = false`, no archive, no notes | inserted normally |
+
+Semantic hash of `data_retention_policies` (`table_name|date_column|retention_days|enabled|archive_table_name|notes`,
+ordered by `table_name`) taken before and after the refused writes: **unchanged**, locally and in
+production (`e71385db549d7c9b8f43db2ed5123769`, 8 rows, 7 enabled, both times). The seven live
+policies were not touched.
+
+The two production tests were chosen so that they could not mutate anything even if the guard had
+failed to install: the plain `INSERT` would have hit `UNIQUE (table_name)`, and the `ON CONFLICT`
+variant used `DO UPDATE SET enabled = data_retention_policies.enabled`, which writes the value the
+row already holds.
 
 ### If someone later does want the in-function guard anyway
 
