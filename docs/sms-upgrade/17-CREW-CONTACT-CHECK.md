@@ -157,14 +157,14 @@ safety) that he fills into forms. They are other people's numbers, not his.
 So in both cases the number on file is the only number we have ever had, and there is nothing to
 fall back to. The conversation is the only way to resolve either one.
 
-### Also found — a dangling manager reference, not an SMS problem
+### Also found — a manager_id that looked dangling (Session 14), then resolved
 
-Both accounts have `manager_id = 06aafe0d-c620-4e25-b73d-72645a14d5ef`, and **that user does not
-exist** in `app_users` or in `auth.users`. **14 accounts** point at it. It is unrelated to
-delivery and nothing here depends on it, but it means neither of these two has a manager the
-system can resolve — so anything that escalates to "their manager" has nowhere to go. Recorded
-here because it surfaced while looking for crew assignment; it belongs in its own ticket, not
-this one.
+Both accounts have `manager_id = 06aafe0d-c620-4e25-b73d-72645a14d5ef`. Session 14 filed that
+UUID as missing from both `app_users` and `auth.users`. **Struck on re-check 2026-09-10:** it
+is `app_users.id` for Steve Curtis (`general_foreman`, active, phone last-4 `9951`); Auth lives
+on `app_users.user_id`, so looking the UUID up in `auth.users` is the wrong column and returns
+empty. **14 accounts** point at him; escalation Tier 1 resolves and texts him. Full write-up:
+`20-ORPHANED-MANAGER-ID.md`. Unrelated to the delivery failures on this page.
 
 ---
 

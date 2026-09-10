@@ -1,10 +1,30 @@
 # Braden TODO — human-only remaining actions
 
 Anything an agent can automate is **not** listed. Rewritten 2026-09-10 to reflect what is
-actually left rather than what was once true.
+actually left rather than what was once true. Updated again after PR #3 merged to `main`.
 
-**Three things remain.** Everything else on this list has either been done or been dropped for
-a stated reason — both recorded below so nothing disappears silently.
+**Three things remain** (plus one dashboard-only ClickSend step that unlocks §1). Everything
+else on this list has either been done or been dropped for a stated reason — both recorded
+below so nothing disappears silently.
+
+---
+
+## 0. Merge — **done**
+
+PR #3 (`feat/sms-upgrade`) merged to `main` on 2026-09-10 as
+`24ecc86f2557a767b35265eb00fc45b31c90ea67` (merge commit, history preserved, CI red by
+explicit decision). Production frontend deploy succeeded on that commit; SMS export strings
+are in the live bundle. CI repair is filed separately as `19-CI-REPAIR-PLAN.md` — not a
+blocker for the three items below.
+
+---
+
+## Dashboard-only (before §1): ClickSend inbound rule for RTO#
+
+**Not code.** Create the inbound automation rule that POSTs replies on `+18443781444` to the
+production webhook **with** header `x-internal-key`. The API cannot attach that header — use
+the browser click-path in `05-CHUNK3-RUNBOOK.md` **§2c** (steps 1–6). Without this rule, §1's
+HELP text never leaves ClickSend.
 
 ---
 
@@ -18,9 +38,9 @@ arrives, because the simulation skipped ClickSend entirely.
 
 Only a real inbound text crosses that gap.
 
-**Order matters — do the inbound rule first.** There is no rule forwarding RTO# to the webhook
-yet (see §5), so a HELP text today reaches ClickSend and stops there. Create the rule via the
-click-path in `05-CHUNK3-RUNBOOK.md` §2c, then text HELP.
+**Order matters — do the inbound rule first** (dashboard-only item above / runbook §2c). There
+is no rule forwarding RTO# to the webhook yet, so a HELP text today reaches ClickSend and stops
+there. Create the rule via the click-path in `05-CHUNK3-RUNBOOK.md` §2c, then text HELP.
 
 **Do:** from your own handset, text `HELP` to `+18443781444`.
 
