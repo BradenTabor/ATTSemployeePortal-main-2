@@ -39,6 +39,8 @@
     "_shared/deno-globals.d.ts",
     "_shared/phoneE164.ts",
     "_shared/smsOptOutFilter.ts",
-    "_shared/smsMessageLog.ts"
+    "_shared/smsMessageLog.ts",
+    "_shared/inboundWebhookHelpers.ts",
+    "_shared/inboundWebhookHandler.ts"
   ]
 }

@@ -85,7 +85,7 @@ export default function SafetyComplianceHub() {
 
   return (
     <DashboardLayout title="Safety & Compliance" pageHeading>
-      <div className="min-h-screen rounded-[25px] bg-gradient-to-b from-stone-950 via-stone-900 to-stone-950 text-white px-3 py-4 sm:px-4 sm:py-6 pb-20 sm:pb-24 w-full min-w-0">
+      <div className="min-h-screen w-full min-w-0 rounded-[25px] bg-ink-950 px-3 py-4 pb-20 text-bone-50 sm:px-4 sm:py-6 sm:pb-24">
         <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 w-full min-w-0">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div className="flex items-center gap-2 sm:gap-3">
@@ -93,8 +93,10 @@ export default function SafetyComplianceHub() {
                 <Shield className="w-6 h-6 sm:w-8 sm:h-8 text-amber-400" aria-hidden />
               </div>
               <div>
-                <h1 className="type-display font-light text-bone-50 text-[clamp(1.6rem,3.8vw,2.6rem)]">Safety & Compliance</h1>
-                <p className="text-xs sm:text-sm text-white/60">
+                <h1 className="text-[1.6rem] sm:text-[2rem] font-semibold tracking-tight text-bone-50 leading-tight">
+                  Safety & Compliance
+                </h1>
+                <p className="text-sm text-bone-200/65">
                   Analytics · Risk Calibration · Compliance Audit · Briefing Compliance
                 </p>
               </div>

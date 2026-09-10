@@ -403,5 +403,13 @@ export const queryKeys = {
     pastWinners: (limit: number) =>
       ['safety-rewards', 'past-winners', limit] as const,
   },
+
+  safetyAnalytics: {
+    all: ['safety-analytics'] as const,
+    dashboard: (period: string, limit: number) =>
+      ['safety-analytics', 'dashboard', period, limit] as const,
+    userDetail: (userId: string, period: string) =>
+      ['safety-analytics', 'user', userId, period] as const,
+  },
 };
 
