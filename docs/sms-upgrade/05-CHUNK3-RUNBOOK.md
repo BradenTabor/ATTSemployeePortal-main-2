@@ -31,7 +31,8 @@ Ensure these secrets exist on the project (Supabase Dashboard → Edge Functions
 
 | Secret | Purpose |
 |--------|---------|
-| `INTERNAL_SECRET` | Shared with webhook auth header (same as other internal functions) |
+| `CLICKSEND_WEBHOOK_SECRET` | **ClickSend inbound rule URL** (`?k=`). Dedicated; used by nothing else. |
+| `INTERNAL_SECRET` | Header auth for internal/synthetic POSTs (not usable in ClickSend UI) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Auto-injected by Supabase |
 | `CLICKSEND_USERNAME` / `CLICKSEND_PASSWORD` | Only needed for reconciliation (not inbound webhook) |
 
@@ -56,7 +57,7 @@ Expect:
 - `sms_optout_reconcile_config` → `{"apply_enabled": false}`  
   Leave apply off until a week of diffs is reviewed.
 
-**Where to find `INTERNAL_SECRET`:** Supabase Dashboard → Edge Functions → Secrets → `INTERNAL_SECRET`. Copy it only into the ClickSend rule UI. Do not paste it into chat, tickets, or this runbook.
+**Where to find `CLICKSEND_WEBHOOK_SECRET`:** Supabase Dashboard → Edge Functions → Secrets → `CLICKSEND_WEBHOOK_SECRET`. Copy it only into the ClickSend rule **URL** as `?k=<value>`. Do not paste it into chat, tickets, screenshots, or this runbook. Do **not** put `INTERNAL_SECRET` in the URL.
 
 Confirm GET health:
 
@@ -83,16 +84,13 @@ curl -sS "https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/clicksend-inboun
    **What wiring RTO# alone does and does not cover:** every scheduled portal send path (reminder, escalation, payroll) resolves `from` to `+18443781444`, so all of that traffic is covered. The one gap is **admin mass SMS**, which sends with no explicit `from` and lets ClickSend pick an account number — observed to pick PO# about 55% of the time. Close that gap by setting `CLICKSEND_FROM_NUMBER` to `+18443781444` (see [§2a](#2a-pin-the-mass-sms-sender-first)) rather than by wiring PO#.
 4. Add an **Inbound Rule** on RTO# only:
    - **Action:** Forward to URL (POST)
-   - **URL:** `https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/clicksend-inbound-webhook`
-   - **Method:** POST
-5. Attach auth header (required — webhook rejects unauthenticated POST):
-   - Header name: `x-internal-key`
-   - Header value: the project’s `INTERNAL_SECRET` (from Edge Function secrets).
-   - If ClickSend only supports `Authorization`, use `Authorization: Bearer <INTERNAL_SECRET>` instead.
-   - If ClickSend supports **no** custom headers, stop and use the contingency in `docs/sms-upgrade/10-WEBHOOK-AUTH-FALLBACK.md` (not implemented yet).
-6. Save the rule.
-7. Smoke-test only with the ranked options in [§7](#7-verify-inbound-stop-smoke-test). Prefer ClickSend’s simulator / HELP before any real STOP.
-8. Leave nightly reconcile cron **disabled** until a full week of diff-only runs has been reviewed.
+   - **URL (credential-bearing):**  
+     `https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/clicksend-inbound-webhook?k=<CLICKSEND_WEBHOOK_SECRET>`  
+     Replace `<CLICKSEND_WEBHOOK_SECRET>` with the Edge Function secret of that name. Paste this into the URL field **only** — ClickSend has no header fields (support confirmed in writing 2026-09-09; see `10-WEBHOOK-AUTH-FALLBACK.md`).
+   - **Method:** POST (form-urlencoded — ClickSend’s default for URL actions)
+5. Save the rule. Treat the saved URL as a secret: do not screenshot it or paste it into tickets/chat.
+6. Smoke-test only with the ranked options in [§7](#7-verify-inbound-stop-smoke-test). Prefer ClickSend’s simulator / HELP before any real STOP.
+7. Leave nightly reconcile cron **disabled** until a full week of diff-only runs has been reviewed.
 
 ### 2a. Pin the mass-SMS sender first
 
@@ -124,13 +122,14 @@ documented. Body: `dedicated_number`, `rule_name`, `message_search_type`, `messa
 removes one. So "the API does not support it" is **false** and should not be written down as
 the reason.
 
-**The API cannot attach a header.** There is no header field anywhere in the inbound rule
-model — not in ClickSend's own docs, not in their PHP SDK's `InboundSMSRule`, not in the
-OpenAPI spec. `webhook_type` selects `post` / `get` / `json`, which is the *encoding*, not the
-authentication. A rule created this way would POST with no `x-internal-key` and no
-`Authorization`, `isAuthorized()` in `clicksend-inbound-webhook/index.ts` would reject it, and
-every real STOP would 401 into nothing. That is worse than an unwired number, because the
-dashboard would show a rule that looks correct.
+**Auth cannot be a header.** There is no header field anywhere in the inbound rule model —
+not in ClickSend's own docs, not in their PHP SDK's `InboundSMSRule`, not in the OpenAPI
+spec, and **ClickSend support confirmed in writing 2026-09-09** that the UI offers a URL
+field only. `webhook_type` selects `post` / `get` / `json` (encoding), not authentication.
+Production auth is therefore the URL query parameter `?k=<CLICKSEND_WEBHOOK_SECRET>`
+(implemented 2026-09-10 — see `10-WEBHOOK-AUTH-FALLBACK.md`). Creating the rule via API
+with `action_address` set to that full URL is possible; this runbook still prefers the
+dashboard so a human owns the secret paste.
 
 **Three wildcard rules already apply to RTO#.** No rule is scoped to `+18443781444`
 specifically, but all three existing rules use `dedicated_number: "*"`, which matches every
@@ -149,7 +148,7 @@ dashboard step for a human and not an API call from a script.
 
 ### 2c. Exact dashboard click-path — Braden
 
-Do this in the browser. It is the only route that can attach the auth header.
+Do this in the browser. Paste the credential-bearing URL into the URL field only.
 
 1. Sign in at <https://dashboard.clicksend.com> as the ATTS account (`shane@alltts.com`).
 2. Left nav → **SMS** → **Inbound SMS**. If that entry is not present, **Automations** →
@@ -163,36 +162,39 @@ Do this in the browser. It is the only route that can attach the auth header.
    - **When message** — *Any message* (search type 0). Leave the search term empty. The
      webhook parses STOP / START / HELP itself; filtering here would drop the others.
    - **Action** — *Forward to URL*
-   - **URL** — `https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/clicksend-inbound-webhook`
-   - **Method / webhook type** — `POST` (`json` if the form offers encoding separately)
+   - **URL** —  
+     `https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/clicksend-inbound-webhook?k=<CLICKSEND_WEBHOOK_SECRET>`  
+     Copy `CLICKSEND_WEBHOOK_SECRET` from Supabase Dashboard → Edge Functions → Secrets.
+     Do not paste the real secret into chat, a ticket, a screenshot, or this file.
+   - **Method / webhook type** — `POST` (ClickSend sends **form-urlencoded**, not JSON)
    - **Enabled** — on
-6. Find the headers control. Depending on the account skin it is **Advanced**, **Custom
-   headers**, or a **+ Add header** link under the URL field. Add:
-   - Name: `x-internal-key`
-   - Value: the project's `INTERNAL_SECRET`, copied from Supabase Dashboard → Edge Functions →
-     Secrets. Do not paste it into chat, a ticket, or this file.
-   - If the form only accepts `Authorization`, use `Bearer <INTERNAL_SECRET>` instead. Both are
-     accepted by the function.
+6. There is **no headers control** (support confirmed 2026-09-09). Do not look for
+   `x-internal-key`. Auth is entirely in the `?k=` query parameter.
 7. **Save.**
 8. Re-open the rule list and confirm there are now four rules and the three originals are
    unchanged.
 9. Smoke-test with §7 — the simulator if your account exposes it, otherwise a **HELP** text
    from your own handset. Never a crew STOP.
 
-**If step 6 has no headers control at all** — the form offers only a URL and a method — stop
-there, save nothing, and read `10-WEBHOOK-AUTH-FALLBACK.md`. The query-parameter fallback it
-describes is a code change that has not been made; a headerless rule saved in the meantime
-would 401 silently on every real reply.
-
 ### Webhook auth (required)
 
-Accepted today (any one):
+Accepted today (any one), in this order:
 
-- `x-internal-key: <INTERNAL_SECRET>`
+- `x-internal-key: <INTERNAL_SECRET>` (internal / curl tests)
 - `Authorization: Bearer <INTERNAL_SECRET>`
 - `Authorization: Bearer <service_role JWT>` (internal/cron style; not for ClickSend)
+- `?k=<CLICKSEND_WEBHOOK_SECRET>` — **ClickSend production path**; disabled if secret unset
 
-**Health check:** Open the URL in a browser (GET). You should see:
+**ClickSend rule URL (paste into URL field only):**
+
+```
+https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/clicksend-inbound-webhook?k=<SECRET>
+```
+
+The URL is credential-bearing. Do not share, screenshot, or paste into support tickets.
+Details and residual platform-log risk: `10-WEBHOOK-AUTH-FALLBACK.md`.
+
+**Health check:** Open the URL **without** `?k=` in a browser (GET). You should see:
 
 ```json
 {"ok":true,"name":"clicksend-inbound-webhook"}

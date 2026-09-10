@@ -1269,3 +1269,24 @@ HELP). **No SMS sent. No inbound rule created. No opt-out flag changed. No `app_
 migration. No Edge Function deployed.** Two Edge Functions were invoked — `clicksend-optout-reconcile`
 twice in diff-only mode (reads only; `apply_enabled` is false) and `clicksend-inbound-webhook` once
 with the synthetic HELP above.
+
+## 2026-09-10 — Session 16 (inbound webhook: ?k= auth + form-urlencoded bodies)
+
+ClickSend support (2026-09-09, in writing): inbound rules have **no custom header field**; POSTs are **`application/x-www-form-urlencoded`**. Both broke `clicksend-inbound-webhook`. Fixed in one change.
+
+### Implemented
+
+- **Auth:** additive `?k=<CLICKSEND_WEBHOOK_SECRET>` after existing header checks. Dedicated secret (not `INTERNAL_SECRET`). Unset secret → query path disabled (never open). Constant-time compare. `redactUrl()` on every in-function URL log.
+- **Body:** Content-Type branch (form / JSON / try-both); normalize to one payload; string timestamp coerce + plausibility window; unparseable → 200 `{skipped:unparseable_body}`.
+- **Secret:** `CLICKSEND_WEBHOOK_SECRET` set on project `emqqxfzahmwnehxcpxzp` (value never committed / never printed).
+- **Docs:** `10-WEBHOOK-AUTH-FALLBACK.md` → implemented; `05-CHUNK3-RUNBOOK.md` §2 rewritten for URL-param method.
+- **Tests:** `tests/unit/sms-inbound-webhook.test.ts` (17); local script uses `--data-urlencode`.
+
+### Residual risk (documented)
+
+Supabase platform request logs still capture the full URL including `?k=`. Accepted: secret is single-purpose; rotate + update ClickSend rule URL if exposed.
+
+### Not done this session
+
+No live SMS. No opt-out flag / escalation / historical row changes. Reconcile cron still disabled. `apply_enabled` untouched. Inbound ClickSend rule still for Braden to paste.
+

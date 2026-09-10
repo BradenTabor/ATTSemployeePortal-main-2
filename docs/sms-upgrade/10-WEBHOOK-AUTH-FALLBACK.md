@@ -1,62 +1,66 @@
-# Webhook auth fallback — query-parameter shared secret (proposal only)
+# Webhook auth fallback — query-parameter shared secret (**implemented**)
 
-**Status:** Design contingency. Do **not** implement unless ClickSend inbound rules prove unable to send custom headers.  
-**Function today:** `clicksend-inbound-webhook` accepts only:
+**Status:** Implemented 2026-09-10.  
+**Function:** `clicksend-inbound-webhook`
+
+## Why this exists
+
+ClickSend support confirmed in writing (**2026-09-09**):
+
+1. Inbound SMS rules let you enter a **destination URL only**. There is **no field** for custom HTTP headers — not `x-internal-key`, not `Authorization: Bearer`.
+2. ClickSend POSTs inbound message data as **`application/x-www-form-urlencoded`**.
+
+Both facts broke the previous webhook (header-only auth + `req.json()` only). This fallback is the production auth path for ClickSend; header auth remains for internal/synthetic tests.
+
+## Auth order (additive)
 
 1. `x-internal-key: <INTERNAL_SECRET>`
 2. `Authorization: Bearer <INTERNAL_SECRET>`
-3. `Authorization: Bearer <SUPABASE_SERVICE_ROLE_KEY>`
+3. `Authorization: Bearer <SUPABASE_SERVICE_ROLE_KEY>` (headers only — never as a query param)
+4. `?k=<CLICKSEND_WEBHOOK_SECRET>` — **only when that secret is set**
 
-No query-string auth exists. Unauthenticated POST → HTTP 401.
+If `CLICKSEND_WEBHOOK_SECRET` is unset/empty, the query-param path is **disabled entirely**. An unset secret never means “allow”.
 
-## Problem
+### Dedicated secret (not `INTERNAL_SECRET`)
 
-If ClickSend’s inbound rule UI supports **no** custom headers (neither `x-internal-key` nor `Authorization`), every real STOP/START/HELP POST will 401 and opt-outs will never reach `sms_opt_out_events`.
+`INTERNAL_SECRET` is shared with other internal functions. Putting it in a URL would leak it through referrers, proxy logs, browser history, and screenshots, and would compromise all of those functions at once.
 
-## Proposal
+`CLICKSEND_WEBHOOK_SECRET` is single-purpose: used only by this webhook’s `?k=` check. Rotate it independently if exposed.
 
-Accept an optional shared secret as a URL query parameter, e.g.:
+Compare with a constant-time helper (`timingSafeEqual` on UTF-8 bytes; length mismatch returns false immediately).
 
-`https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/clicksend-inbound-webhook?k=<INTERNAL_SECRET>`
+## ClickSend rule URL
 
-Authorize when **any** of: existing header shapes **or** `k` (or `secret`) equals `INTERNAL_SECRET`. Prefer keeping header paths; query param is fallback only.
-
-### Why this is weaker than a header
-
-- Query strings are more often written to **access logs**, CDN logs, browser history, and Referer headers than custom headers.
-- The secret appears in the ClickSend rule URL field (UI screenshots, support exports, shoulder-surfing).
-- URL length / logging pipelines are harder to scrub consistently than a single header name.
-
-### Mitigations (required if implemented)
-
-1. **Rotate on exposure** — treat any paste into chat/tickets as compromise; rotate `INTERNAL_SECRET` and update the ClickSend rule URL the same day.
-2. **Constant-time compare** — compare `k` to `INTERNAL_SECRET` with a constant-time equality helper (same as header path should use); never early-return on length mismatch in a way that leaks timing.
-3. **Log scrubbing** — before any `console`/`logger` of `req.url`, strip `k` / `secret` query params. Do not log full request URLs. Supabase platform logs may still retain the URL — assume residual risk and rotate if a log export is shared.
-4. **Least privilege** — do not accept the service-role JWT as a query param (headers only for that). Query param = `INTERNAL_SECRET` only.
-5. **Kill switch unchanged** — `sms_inbound_webhook_config.enabled` still gates processing after auth.
-
-### Exact code change (sketch — not applied)
-
-In `supabase/functions/clicksend-inbound-webhook/index.ts`, extend `isAuthorized`:
-
-```ts
-function isAuthorized(req: Request): boolean {
-  const internalKey = req.headers.get("x-internal-key");
-  const authHeader = req.headers.get("Authorization");
-  const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
-  const url = new URL(req.url);
-  const querySecret = url.searchParams.get("k") ?? url.searchParams.get("secret");
-  return (
-    timingSafeEqual(internalKey, INTERNAL_SECRET) ||
-    timingSafeEqual(bearerToken, INTERNAL_SECRET) ||
-    timingSafeEqual(bearerToken, SUPABASE_SERVICE_ROLE_KEY) ||
-    timingSafeEqual(querySecret, INTERNAL_SECRET)
-  );
-}
+```
+https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/clicksend-inbound-webhook?k=<SECRET>
 ```
 
-ClickSend rule URL becomes the health URL plus `?k=…` (secret from Edge Function secrets, never committed). GET health probe should ignore `k` for the public ok JSON (auth only required on POST).
+Paste that into ClickSend’s **URL field and nothing else**. The URL itself is credential-bearing — do not share, screenshot, or paste into a support ticket.
 
-### Decision rule
+GET health probes ignore auth (public `{"ok":true,...}`). Auth is required on POST only.
 
-Try headers first in the ClickSend UI. Implement this fallback only after a documented failed attempt to attach `x-internal-key` or `Authorization`.
+## Log scrubbing
+
+In-function: every `console.*` that touches the request URL uses `redactUrl()`, which replaces `k`’s value with `[REDACTED]`. Never log the raw URL from this function.
+
+### Residual risk (accepted, documented)
+
+**Supabase platform-level request logging (API gateway / Edge runtime infrastructure) is outside the function’s control and will still capture the full request URL, including `?k=<secret>`.** In-function scrubbing does not remove that.
+
+**Mitigation:** the secret is single-purpose (`CLICKSEND_WEBHOOK_SECRET`). Rotating it affects only this one ClickSend inbound rule — update the rule URL the same day. Treat any paste into chat/tickets/log exports as compromise.
+
+## Body parsing
+
+| Content-Type | Behavior |
+|---|---|
+| `application/x-www-form-urlencoded` | `URLSearchParams` (ClickSend production) |
+| `application/json` | `JSON.parse` (internal tests) |
+| missing / other | try form, then JSON; both fail → **200** `{skipped:true, reason:"unparseable_body"}` (not 500 — avoids ClickSend retry storms) |
+
+Both shapes normalize to one internal payload before keyword / E.164 / idempotency / insert logic.
+
+Field names: documented ClickSend inbound SMS object keys (`message_id`, `from`, `to`, `body`, `original_body`, `original_message_id`, `timestamp`, `timestamp_send`, `custom_string`, `_keyword`). Help article confirms form-urlencoded but does not enumerate parameter names; we map the API object keys. String timestamps are coerced and validated (reject before 2020 or >24h future → fall back to now).
+
+## Kill switch unchanged
+
+`sms_inbound_webhook_config.enabled` still gates processing after auth.
