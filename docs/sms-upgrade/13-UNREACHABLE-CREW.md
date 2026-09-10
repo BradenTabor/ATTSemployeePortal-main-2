@@ -160,12 +160,22 @@ number and reported the subscriber absent, six times out of six.
 For a number that has **never once** accepted a message, that most often means the digits
 themselves are wrong, or it is a landline / VoIP line that cannot receive SMS.
 
-**Two other signals that this record was created in a hurry:** `hire_date` is empty, and the
-last sign-in timestamp is the same minute as account creation — he has never opened the app
-since the account was made on 2026-08-31.
+**Two other signals that this record was created in a hurry:** `hire_date` is empty, and
+~~the last sign-in timestamp is the same minute as account creation — he has never opened the
+app since the account was made on 2026-08-31.~~
 
-**Do:** this is a new hire who has received nothing at all, including payroll reminders.
-Confirm the number directly with him, and while you are in the record, set the hire date.
+> **Struck 2026-09-10.** That read `auth.users.last_sign_in_at`, which does **not** advance
+> while a session persists — it only moves on a fresh sign-in. So it sat at account-creation
+> time (2026-08-31 21:22 UTC) while he kept using the app. `user_activity_sessions` has a
+> session from **2026-09-09 21:00 UTC**, and he has **three completed briefings** (08-31,
+> 09-01, 09-03). He **has** opened the app. He is reachable in-app today; **only SMS is
+> broken.** That sharpens the question for Braden from "chase a new hire who never logged in"
+> to *"your texts are bouncing — what number should we have?"* (ask in-app). See also
+> `KNOWN-ISSUES.md` → *`auth.users.last_sign_in_at` is not "last used the app"*.
+
+**Do:** this is a new hire who has received nothing at all by SMS, including payroll reminders.
+Message him **in the app**, confirm the number directly, and while you are in the record, set
+the hire date.
 
 ---
 

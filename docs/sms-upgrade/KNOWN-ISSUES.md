@@ -491,3 +491,34 @@ DNS-failed on direct DB host; SQL applied via Management API path"* — that is
 `scripts/deploy-cron-auth.sh` hitting exactly this. The script was not broken and the
 credential was not wrong; the host it was handed has no IPv4 address. Sessions 11A, 13 and 14
 all connected successfully via the pooler form above.
+
+---
+
+## `auth.users.last_sign_in_at` is not "last used the app"
+
+**Status:** Durable pitfall. Recorded 2026-09-10 after it produced a false "never opened the
+app" claim for last-4 `6286` in `13-UNREACHABLE-CREW.md` §3.
+
+**What it does:** Supabase Auth advances `auth.users.last_sign_in_at` on a **fresh sign-in**
+(password / magic link / OAuth). It does **not** move while an existing session is refreshed or
+while the user keeps using the app under a persisted refresh token (~7-day window).
+
+**Wrong query people reach for:**
+
+```sql
+SELECT email, last_sign_in_at FROM auth.users WHERE id = '<user_id>';
+-- "last_sign_in_at == created_at ⇒ never came back"  ← FALSE
+```
+
+**What to use instead for "has this person used the app":**
+
+- `user_activity_sessions` (or whatever session/activity table is current) for recent presence
+- completed form / briefing rows (`safety_briefings`, etc.) as behavioural proof
+- `app_users` / domain tables for hire and role state — not Auth's sign-in column alone
+
+**SMS impact:** None directly. It corrupted an unreachable-crew recommendation: `6286` was
+filed as a new hire who never opened the app; he had a session on 2026-09-09 and three
+completed briefings. Corrected position: reachable in-app, only SMS is broken.
+
+**Also remember:** minting a magic link for verification moves `last_sign_in_at` as a real side
+effect — see the SMS skill hard constraint against that. Service-role queries only.
