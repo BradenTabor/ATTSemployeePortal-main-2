@@ -258,6 +258,94 @@ Steps 2 and 3 are the cost. Step 1 alone may make `deno check` run without makin
 
 ---
 
+## The two SMS export Playwright specs had never executed — now partly verified, and one assertion was wrong
+
+**Status:** Recorded 2026-09-09. **Partly resolved the same day.** Read the "still unverified"
+section before treating either spec as coverage.
+
+### What was true until now
+
+`tests/e2e/sms-communications-export.spec.ts` (Session 11A) and
+`tests/e2e/sms-opt-out-events-export.spec.ts` (Session 12) were both **written and committed
+without ever having run**. Every attempt failed in `loginAs()` with `Invalid login credentials`,
+because the `@atts.test` users the helper signs in as do not exist in the production project the
+default `.env` points at. Both sessions disclosed this. It is recorded here separately because a
+committed spec file is read as coverage by default, and these were not.
+
+### The reason given at the time was partly wrong, and the correction matters
+
+Sessions 11A and 12 recorded that `npm run test:setup` was not run because it *"would create real
+accounts in production"*. **It would not have.** `tests/setup/e2eEnv.ts` already exports
+`assertSafeE2ETarget()`, which both `seedTestUsers.ts` and `playwright.config.ts` call, and which
+**refuses** to run when the resolved Supabase URL is project ref `emqqxfzahmwnehxcpxzp` unless the
+operator sets `E2E_ALLOW_PROD=I_UNDERSTAND_THIS_WRITES_TEST_DATA_TO_PROD`. `.env.test` is
+committed-adjacent (gitignored, with a `.env.test.example` template) and already points at
+`http://127.0.0.1:54321`.
+
+So the "safe fix" this entry would have asked someone to build — a non-production target and
+seeded test users — **already existed and was already wired**. What was missing was only that
+nobody had started the local stack and pointed the specs at it. That is worth stating plainly,
+because "we need to build a safe path first" is a much larger-sounding blocker than "run
+`supabase start`", and it kept two specs unrun for two sessions.
+
+### What has now been verified
+
+Against a local Supabase stack (`http://127.0.0.1:54321`, 113 public tables including
+`sms_message_log`, `sms_message_log_compat`, `sms_opt_out_events`):
+
+1. `npm run test:setup` — seeded 6/6 `@atts.test` users into the **local** project. The guard
+   allowed it because the target is not production.
+2. `20260909210000_sms_optout_6644_historical_record.sql` applied to the **local** database only,
+   so the opt-out section has a row and the provenance assertions are actually reached rather than
+   short-circuiting on an empty range.
+3. `npx playwright test tests/e2e/sms-communications-export.spec.ts tests/e2e/sms-opt-out-events-export.spec.ts --project=chromium`
+   → **3 passed, 2 skipped, 0 failed.**
+
+### Running them found a bug — in the spec, not the app
+
+`sms-opt-out-events-export.spec.ts` asserted
+`await expect(section).not.toContainText(/SMS Communications/i)` as its "the two sections are not
+merged" check. That assertion **cannot pass and never could**: the opt-out section's own
+description says *"Separate from SMS Communications: this is what was said to us, not what we
+sent"* — it names the other section deliberately, to explain the separation it is being tested
+for. A plain-text search was the wrong instrument.
+
+Replaced with two assertions that mean what the test says: the opt-out section contains **no
+heading** matching `/SMS Communications/`, and **no `th`** matching the send log's distinctive
+`Provider Status` / `Delivery Status` columns.
+
+This is the whole argument for running a spec before trusting it. The assertion had been reviewed,
+committed, and cited as covering the separation, and it was never capable of passing.
+
+### Still unverified — do not read the pass as full coverage
+
+- **The two `unavailable` branches have still never executed.** Both specs' first test asserts
+  that a *missing table* renders an "unavailable" warning rather than a count of zero — the
+  never-conflate-these-two contract that is the reason both specs exist. Both `test.skip()`
+  themselves when the table is present, which it is everywhere the specs can currently run. That
+  branch needs an environment where `sms_message_log` / `sms_opt_out_events` are absent, and it
+  has no such environment today. **The most load-bearing assertion in each file is the one still
+  unrun.**
+- **Verified against local, not production.** The local stack's data is seeded, so the specs
+  confirm the UI contract, not the production content.
+- **Never run in CI on this branch.** `.github/workflows/e2e.yml` triggers on
+  `push`/`pull_request` to `main`/`master` only, and seeds from repository secrets whose target is
+  not visible from the repo. If that secret resolves to the production ref, `assertSafeE2ETarget()`
+  will refuse and the seed step (`continue-on-error: true`) will pass silently while `loginAs`
+  fails downstream — the same failure this entry is about, one layer further away from anyone
+  reading it.
+- **Chromium only.** The mobile and tablet projects were not run.
+
+### What a fuller fix would need — not built
+
+A disposable environment where the SMS tables can be **absent**, so the `unavailable` branches
+execute. Either a second local database provisioned below the SMS migrations, or a spec-level
+mechanism to force the unavailable state. Both are real work and neither is SMS-chunk work.
+Separately, `e2e.yml`'s seed step should not be `continue-on-error: true` — a seed that fails
+turns every downstream auth failure into noise.
+
+---
+
 ## Corrected belief: "ClickSend enforces STOP at the carrier"
 
 **Status:** Belief withdrawn 2026-09-09. Correction shipped the same day.

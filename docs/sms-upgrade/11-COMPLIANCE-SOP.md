@@ -128,7 +128,9 @@ The send log alone cannot answer a TCPA allegation. The allegation is not "you s
 
 7.  Open the admin Compliance Data Export panel (companion PRD, FR4).
 
-8.  Set the same date range on **both** the “SMS Communications” and “SMS Opt-Out Events” sections. Note that opt-out events can be **backdated to the real time the request was made**, not the time the row was written — a retrospectively reconstructed record from March will not appear in a range starting in June. When the period requested is open-ended, start the opt-out range at the beginning of SMS operations rather than accepting the default 90-day window.
+8.  Set the same date range on **both** the “SMS Communications” and “SMS Opt-Out Events” sections. Note that opt-out events can be **backdated to the real time the request was made**, not the time the row was written — a retrospectively reconstructed record from March will not appear in a range starting in June. When the period requested is open-ended, start the opt-out range at the beginning of SMS operations.
+
+    > **The two sections open on different default ranges, and that is deliberate — not an inconsistency to “fix”.** SMS Communications opens on the **last 90 days**; SMS Opt-Out Events opens on the **last 2 years**. The send log is high-volume and a wide default would load thousands of rows nobody asked for, so a short window with an explicit widening is the right shape there. Opt-out events are the opposite: low-volume, long-lived, and the **oldest** rows carry the most evidential weight, because the question is always "when were we told, and what did we send afterwards". A 90-day default on that section would have hidden the 2026-03-04 record described below, and an auditor accepting the default would have concluded no opt-out events existed. Whenever you deliberately set the same range on both, you are widening the send log rather than narrowing the opt-out log — do it in that direction.
 
 9.  Click Load on each to preview the record count, then Export CSV or Export PDF as needed.
 

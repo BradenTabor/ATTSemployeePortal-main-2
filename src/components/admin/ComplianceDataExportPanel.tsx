@@ -44,10 +44,21 @@ import type { EquipmentInspection } from "../../pages/mechanic/equipment-logs/ty
 
 const PAGE_SIZE = 5000;
 
-function getDefaultDateRange(): { from: string; to: string } {
+/** Days back the From field is pre-filled with when a section does not ask for more. */
+const DEFAULT_RANGE_DAYS = 90;
+
+/**
+ * Days back for opt-out events. Deliberately wider than every other section:
+ * opt-out records are low-volume and long-lived, and the oldest row is the one
+ * that matters most, so a 90-day default hides the evidence instead of paging it.
+ * See 11-COMPLIANCE-SOP.md 5.6.
+ */
+const OPT_OUT_RANGE_DAYS = 730;
+
+function getDefaultDateRange(days: number = DEFAULT_RANGE_DAYS): { from: string; to: string } {
   const to = new Date();
   const from = new Date(to);
-  from.setDate(from.getDate() - 89);
+  from.setDate(from.getDate() - (days - 1));
   return {
     from: from.toISOString().slice(0, 10),
     to: to.toISOString().slice(0, 10),
@@ -77,6 +88,8 @@ interface SectionConfig<T> {
   formatCountLabel?: (count: number) => string;
   /** Caveats written into the CSV header and under the PDF table, and shown above the preview. */
   exportNotes?: string[];
+  /** Days back to pre-fill the From field with. Defaults to DEFAULT_RANGE_DAYS. */
+  defaultRangeDays?: number;
 }
 
 function maskPhoneLast4(phone: string | null | undefined): string {
@@ -676,6 +689,7 @@ const OPT_OUT_EXPORT_NOTES = [
   "Source states whether the row was a live inbound message, a match found against the provider's opt-out list during reconciliation, or an entry made by an admin. Admin-entered rows were not received as messages; read the Raw Message column for their provenance.",
   "Applied (Operational) and Applied (Marketing) record whether this event changed the corresponding opt-out flag on the recipient's account. \"No\" means the event was logged without changing enforcement state — the flag was already in that state, the row was entered retrospectively, or reconciliation was running in review-only mode.",
   "Raw Message is exported in full in CSV and excerpted in PDF and on screen. Where the original message body was never captured, the column carries a provenance note instead — it is not a verbatim quote of what the recipient sent.",
+  "This section defaults to the last 2 years, not the 90 days the other sections use. Opt-out records are low-volume and long-lived, and the oldest ones carry the most evidential weight, so a short default would hide them. Widen the From date further if the question covers a longer period.",
 ];
 
 const OPT_OUT_CSV_COLUMNS: ExportColumn<SmsOptOutEventRow>[] = [
@@ -1097,8 +1111,9 @@ export default function ComplianceDataExportPanel() {
       id: "sms_opt_out_events",
       title: "SMS Opt-Out Events",
       description:
-        "Inbound STOP/START/HELP replies, reconciliation matches against the provider's opt-out list, and admin-entered opt-out records. Separate from SMS Communications: this is what was said to us, not what we sent. Phone last-4 in preview; full E.164 in CSV only.",
+        "Inbound STOP/START/HELP replies, reconciliation matches against the provider's opt-out list, and admin-entered opt-out records. Separate from SMS Communications: this is what was said to us, not what we sent. Phone last-4 in preview; full E.164 in CSV only. Defaults to the last 2 years rather than 90 days — these records are low-volume and the oldest ones matter most.",
       reportType: "SMS Opt-Out Events",
+      defaultRangeDays: OPT_OUT_RANGE_DAYS,
       filenamePrefix: "SMS_Opt_Out_Events",
       columns: OPT_OUT_CSV_COLUMNS as ExportColumn<unknown>[],
       pdfColumns: OPT_OUT_PDF_COLUMNS as ExportColumn<unknown>[],
@@ -1201,16 +1216,21 @@ export default function ComplianceDataExportPanel() {
         </span>
       </div>
       <div className="space-y-2">
-        {sections.map((section) => (
-          <ExportSection
-            key={section.id}
-            config={section}
-            defaultFrom={defaultRange.from}
-            defaultTo={defaultRange.to}
-            exportedBy={user?.email ?? "Admin"}
-            onExport={onExport}
-          />
-        ))}
+        {sections.map((section) => {
+          const range = section.defaultRangeDays
+            ? getDefaultDateRange(section.defaultRangeDays)
+            : defaultRange;
+          return (
+            <ExportSection
+              key={section.id}
+              config={section}
+              defaultFrom={range.from}
+              defaultTo={range.to}
+              exportedBy={user?.email ?? "Admin"}
+              onExport={onExport}
+            />
+          );
+        })}
       </div>
     </div>
   );

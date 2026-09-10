@@ -47,7 +47,12 @@ test.describe('SMS Opt-Out Events export', () => {
 
     await expect(sendLogSection).toBeVisible();
     await expect(sendLogSection.getByRole('heading', { name: /SMS Communications/i })).toBeVisible();
-    await expect(section).not.toContainText(/SMS Communications/i);
+
+    // Not a text search: this section's description names the other one on purpose,
+    // to explain the separation. What must not appear here is the other section's
+    // heading or its distinctive send-log columns.
+    await expect(section.getByRole('heading', { name: /SMS Communications/i })).toHaveCount(0);
+    await expect(section.locator('th', { hasText: /Provider Status|Delivery Status/i })).toHaveCount(0);
   });
 
   test('unavailable: Load shows the opt-out migration warning, not a zero count', async ({ page }) => {
