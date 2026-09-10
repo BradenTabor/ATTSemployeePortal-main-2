@@ -1,198 +1,211 @@
 # Braden TODO — human-only remaining actions
 
-Priority order. Anything an agent can automate is **not** listed.
+Anything an agent can automate is **not** listed. Rewritten 2026-09-10 to reflect what is
+actually left rather than what was once true.
 
-Reordered 2026-09-09, then revised the same day once carrier delivery receipts were ingested. Items 1 and 2 are both “an SMS fact the app could not see”, though they turned out to be opposite problems: #1 is a message arriving that should not have, #2 is messages not arriving with nothing in the app saying so. Credential rotation held at #3 rather than dropping down the list.
-
----
-
-## 1. Have the last4-`6644` conversation with safety ownership
-
-**Briefing (shareable, roles not names):** `docs/sms-upgrade/11-OPTOUT-6644-BRIEFING.md`  
-**Full detail incl. phone numbers (internal):** `docs/sms-upgrade/13-UNREACHABLE-CREW.md` §1
-
-**The question changed.** Delivery receipts landed after that briefing was written and reversed its premise. The carrier is **not** blocking this number — 530 delivered vs 2 failed since May, 36 in September. So the 132 tier-2 escalations did arrive.
-
-**What is actually wrong:** the number has been on ClickSend's opt-out list since 2026-03-04, and has received 500+ messages since. The provider holds a dated record that we were asked to stop and did not. That is the TCPA exposure, and it is worse than the missed-alerts story it replaces.
-
-**Note it is your own number** (`+18703656644`, on both your admin and employee accounts, and on the tier-1 and tier-2 escalation lists). A STOP sent while testing is the likely origin — but that needs to be stated, not assumed.
-
-**Decide between:** (a) the STOP was deliberate → route escalations off that number and honour it, or (b) it was a test → write that down, then text START from the handset. Either way **do not delete the opt-out list entry** — the dated record is the evidence of what was asked and when.
-
-**Confirm:** Written decision recorded (even a Slack note); no silent flag flips without that decision.
+**Three things remain.** Everything else on this list has either been done or been dropped for
+a stated reason — both recorded below so nothing disappears silently.
 
 ---
 
-## 2. Verify the phone numbers on file for last4 `4421` and `6286`
+## 1. Text HELP to `+18443781444` from your own phone
 
-**Detail incl. full phone numbers:** `docs/sms-upgrade/13-UNREACHABLE-CREW.md` §2–§3.
+**Why this and nothing else.** It is the one link in the chain no automated test can exercise.
+A simulated POST straight at the webhook was run on 2026-09-10 and passed — auth, keyword
+parsing and the database write all work, and the row landed correctly. What that proves stops
+at our doorstep. It says nothing about whether **ClickSend actually calls us** when a real text
+arrives, because the simulation skipped ClickSend entirely.
 
-Different root cause from `6644`. Nobody opted out here. The carrier accepts the message and then refuses to deliver it. These two are now confirmed by delivery receipts, not inferred.
+Only a real inbound text crosses that gap.
 
-| last4 | Who | Number on file | Delivered / failed | Since |
-|---|---|---|---:|---|
-| `4421` | Tracer, active `employee` | `+14792004421` | **2 / 133** | 2026-05-13, continuous |
-| `6286` | James David Mcleod, active `employee` | `8707196286` | **0 / 6** | never received anything |
+**Order matters — do the inbound rule first.** There is no rule forwarding RTO# to the webhook
+yet (see §5), so a HELP text today reaches ClickSend and stops there. Create the rule via the
+click-path in `05-CHUNK3-RUNBOOK.md` §2c, then text HELP.
 
-**Do:** confirm each number against the person's actual handset — one-minute check each.
+**Do:** from your own handset, text `HELP` to `+18443781444`.
 
-- `4421` looks **fine on paper**: correctly formatted, valid 479 area code. But 98% failure split between “rejected by network” and “absent subscriber” is what a disconnected or reassigned mobile looks like. Ask whether they changed number or carrier. Worth noting the account is named just `Tracer` with no surname, so check it is a real person's handset and not a role account.
-- `6286` has **never once** accepted a message, including payroll. The odd formatting is *not* the cause — the send path normalises it and ClickSend received the correct `+18707196286` — so the digits themselves are likely wrong, or it is a landline/VoIP line. He also has never opened the app since his account was created on 2026-08-31, and his `hire_date` is empty; set it while you are in the record.
+**Why HELP and not STOP:** HELP is logged and changes no flags. STOP would set both opt-out
+flags on every `app_users` row matching your number and put you back on the provider's opt-out
+list — the exact state that was just cleaned up.
 
-**Confirm:** Either the number is corrected, or you have confirmed it is right and the person knows they are not getting texts. Do not change opt-out flags — they are already `false` for both.
-
-**Blind spot now closed.** Delivery receipts are ingested and the compliance export carries **two** status columns: “Provider Status (submission)” and “Delivery Status (carrier receipt)”. The `4421` and `6286` failures above still read `SUCCESS` on submission — that column was never wrong, it was just never delivery — but they now also read **`Failed at carrier`**, which is the fact that matters. Since 2026-05-01 the export shows 2,595 delivered, 229 failed, 80 handed to the network without a final receipt, and 143 too old for the provider's history retention.
-
-Nothing to do here; noted so you know the export can now be handed to an auditor, provided you read the delivery column and not the submission column.
-
-**Confirm:** Either each number is corrected, or you have confirmed it is right and the person knows they are not getting texts. Do not change opt-out flags — they are already `false` for both.
-
----
-
-## 2b. Confirm one departure — last4 `1779`
-
-**Detail:** `docs/sms-upgrade/13-UNREACHABLE-CREW.md` §4.
-
-`+14795181779` has no `app_users` row and stopped receiving messages on 2026-08-12 by itself, which is what a normal departure looks like. In the receipted window it shows 43 delivered / 61 failed.
-
-**Do:** confirm the person left, and roughly when. **Nothing else.** Listed only because if they have *not* left, they belong alongside `4421` above and currently receive nothing.
-
----
-
-## 3. Rotate the database password that was echoed in a prior session
-
-**Where:** Supabase Dashboard → Project `ATTS portal APP 2` (`emqqxfzahmwnehxcpxzp`) → **Project Settings** → **Database** → **Database password** → Reset / generate new.
-
-**Also:** Update any local `.env` / CI secret that still holds `SUPABASE_DB_URL` or the DB password; re-test `npx supabase db query --linked` (or your usual SQL path) once.
-
-**Fix the host at the same time — it is currently wrong, and it is a one-line change while you are already in the file.** `SUPABASE_DB_URL` in `.env` points at the direct database host:
-
-```
-postgresql://postgres:<password>@db.emqqxfzahmwnehxcpxzp.supabase.co:5432/postgres
-```
-
-That hostname now resolves **AAAA-only** — an IPv6 address and no A record at all (verified 2026-09-09: `dig +short db.<ref>.supabase.co A` returns nothing, `AAAA` returns `2600:1f18:…`). On an IPv4-only machine or network it therefore fails to connect, and the failure surfaces as a DNS/host error rather than anything that points at IPv6, which is why it reads as a broken credential rather than a broken route.
-
-The working route is the **session pooler**, which is dual-stack:
-
-```
-postgresql://postgres.emqqxfzahmwnehxcpxzp:<password>@aws-1-us-east-1.pooler.supabase.com:5432/postgres
-```
-
-Two things to get right, both easy to miss:
-
-- **The username changes**, from `postgres` to `postgres.<project-ref>`. The pooler uses it to identify the tenant; with a bare `postgres` it rejects the connection with `FATAL: (ENOIDENTIFIER) no tenant identifier provided`, which does not obviously mean "your username is missing the project ref".
-- **The password does not change.** It is the same credential you are about to rotate — so rotate once, then paste the new password into the pooler-form URL rather than the direct-host one.
-
-**This also explains a failure already in the record.** Session 6 logged *"Cron auth: script DNS-failed on direct DB host; SQL applied via Management API path"* — that is `scripts/deploy-cron-auth.sh` hitting exactly this. The script was not broken and the credential was not wrong; the host it was handed has no IPv4 address. Anyone re-running it after the rotation should expect it to work once `SUPABASE_DB_URL` carries the pooler host. Session 11A and this session both connected successfully via the pooler form above.
-
-**Confirm:** Old password rejected; new password works for one read-only query (e.g. `SELECT 1`) **using the pooler host and the `postgres.<ref>` username**.
-
----
-
-## 4. Wire the ClickSend inbound rule — **RTO# only**
-
-**Where:** [ClickSend Dashboard](https://dashboard.clicksend.com) → **SMS** → **Inbound SMS / Rules** (or **Numbers** → inbound).
-
-**Wire:** `+18443781444` (RTO#).  
-**Do NOT wire:** `+18338612650` (PO#). This reverses an earlier instruction in this file.
-
-**Why the change:** PO# carries purchase-order approval SMS from an application outside this repo, sharing the same ClickSend account. Adding a rule there could break or overwrite one that system depends on, and we do not own it.
-
-**Pre-conditions before PO# is wired at all — answer both in writing first:**
-
-- [ ] **(a)** Who owns the purchase-order approval app (`webhook-approval-for-6061.bolt.host`)? Named person or team.
-- [ ] **(b)** Does PO# already have an inbound rule? Target URL, and would saving ours replace it or add alongside?
-
-**Rule to create on RTO#:**
-
-- Action: Forward to URL (POST)
-- URL: `https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/clicksend-inbound-webhook`
-- Header: `x-internal-key` = `INTERNAL_SECRET` from Supabase → Edge Functions → Secrets  
-  (or `Authorization: Bearer <INTERNAL_SECRET>` if that is the only option)
-
-### 4b. Before you save that rule — pin the mass-SMS sender
-
-**Recommendation: set Edge Function secret `CLICKSEND_FROM_NUMBER = +18443781444` now, ahead of Chunk 4.** (An agent did not set it; this is your call.)
-
-Reasoning. Wiring inbound on RTO# only is complete if nothing the portal sends can originate elsewhere. Three of the four send paths already resolve `from` to `+18443781444` in code, so setting the secret is a literal no-op for them. The exception is admin mass SMS, which sends with `from` empty and lets ClickSend choose an account number — observed choosing PO# about 55% of the time. If a blast goes out from PO#, every STOP reply to it lands on the number we are deliberately not wiring and is lost. A lost STOP is both a compliance exposure and unrecoverable after the fact, whereas setting the secret costs a one-line revert plus a note to delete it when Chunk 4's sender registry lands. The external purchase-order app does not read Supabase secrets, so it cannot be affected either way. The asymmetry favours setting it.
-
-**Pre-flight (SQL editor):**
+**Confirm** (SQL editor):
 
 ```sql
-SELECT key, value FROM app_settings
-WHERE key IN ('sms_inbound_webhook_config', 'sms_optout_reconcile_config');
--- expect enabled:true and apply_enabled:false
-```
-
-**Confirm:** Browser GET on the webhook URL returns `{"ok":true,"name":"clicksend-inbound-webhook"}`. Then use runbook §7 ranked smoke test (simulator → HELP on your phone → never a crew STOP). Expect a row in `sms_opt_out_events` within a minute.
-
-If ClickSend allows **no** custom headers: stop and read `docs/sms-upgrade/10-WEBHOOK-AUTH-FALLBACK.md` before changing code.
-
-### 4c. Warning — clean the opt-out list *before* apply mode is ever switched on
-
-Wiring the rule is safe. The thing downstream of it is not, and it is easier to fix now than later.
-
-Reconciliation compares ClickSend's Opt-Out List to `app_users`. Once `sms_optout_reconcile_config.apply_enabled` is set to `true`, every entry on that list that matches an employee gets **both** `sms_operational_opt_out` and `sms_marketing_opt_out` set to `true` on their account. Since Session 9 the send paths actually honour those flags, so that person is immediately dropped from **safety briefing reminders, safety briefing escalations (including Tier 2 static recipients), and payroll hours SMS**.
-
-The flags do not expire and nobody is notified. **Enabling apply while stale entries sit on the list silently removes those people from operational SMS.** The exclusion is written to the run logs, but nothing surfaces it — you would find out when someone mentions they stopped getting texts.
-
-**There is at least one stale entry today: last-4 `6644`, dated 2026-03-04 — your own handset.** It is on both your admin and employee `app_users` rows and on both the Tier 1 and Tier 2 escalation lists, so applying it would mute the escalation chain at two points at once. Almost certainly a STOP sent while testing, not a withdrawal of consent.
-
-**Do with it:** clear the entry from the **ClickSend dashboard** (SMS → Opt-Out List) rather than honour it. Texting START from the handset achieves the same removal if you prefer to do it from the phone. Then re-run the review query in runbook §6a and confirm `6644` no longer appears in `clicksend_only`.
-
-#### The pre-condition for clearing: the STOP has to survive the clearing
-
-That opt-out list entry was, until 2026-09-09, the **only** surviving record of the STOP anywhere. ClickSend's message history retains roughly four months. The STOP is dated 2026-03-04; the oldest message retrievable on the account today is 2026-05-11, and the inbound endpoint returns nothing at all. The original message is gone. Clearing the list entry would have destroyed the last copy of a TCPA-relevant fact, and a dashboard screenshot pasted into Slack is a picture, not a compliance record.
-
-So the STOP has been copied into a table we own and back up. `sms_opt_out_events` now holds one `admin_manual` row: phone `+18703656644`, keyword `STOP`, `received_at` = **2026-03-04T22:51:37Z** (the real time ClickSend recorded it, not the time it was written down), both `applied_*` columns `false` because no flag was changed then and none is changed now, and a `raw_message` that states in full that this is a reconstruction from the opt-out list rather than a live inbound event. Written by migration `20260909210000_sms_optout_6644_historical_record.sql`.
-
-**Confirm the record exists before you clear anything** (SQL editor):
-
-```sql
-SELECT phone_e164, keyword, source, received_at,
-       applied_operational, applied_marketing, raw_message
+SELECT keyword, source, applied_operational, applied_marketing,
+       right(regexp_replace(phone_e164,'\D','','g'),4) AS last4, received_at
 FROM public.sms_opt_out_events
-WHERE phone_e164 = '+18703656644' AND source = 'admin_manual';
--- expect exactly 1 row, received_at 2026-03-04 22:51:37+00, both applied_* false
+ORDER BY received_at DESC LIMIT 5;
 ```
 
-One row back, and the ClickSend entry is a duplicate of a record you already hold — clear it. No row, stop and find out why.
+Expect a `HELP` row with `source = 'webhook'` and both `applied_*` false, within a minute.
 
-**The record now has its own export section**, so the SQL above is a confirmation step rather than the only way to produce it. Admin Compliance Audit → Export → **SMS Opt-Out Events**, which reads `sms_opt_out_events` directly and is deliberately separate from SMS Communications (that one reads the outbound send log and answers "what did we send"; this one answers "were we told to stop"). Two things to know when you open it: set the **From** date back before 2026-03-04, because `received_at` on this row is the real event time and the panel defaults to the last 90 days; and the Source column reads *"Admin-entered (not a live inbound message)"* with the Raw Message leading *"RETROSPECTIVE RECORD — reconstructed 2026-09-09, not a live inbound event"*, so an auditor cannot mistake it for a captured text. Procedure: `11-COMPLIANCE-SOP.md` §5.6.
-
-**The table is also now protected from the nightly retention job.** `run_data_retention()` deletes oldest-first from whatever is listed in `data_retention_policies`, and this row is backdated to March, so it would have been the first thing deleted had anyone ever added a policy for the table. There is now an explicit `enabled = false` policy row with the reason recorded, plus a table comment. Nothing for you to do; noted so that a future "let's add retention to the SMS tables" conversation starts from the right place. Detail: `16-RETENTION-GUARD-ASSESSMENT.md`.
-
-**Note the tension with item 1 above**, which says not to delete the opt-out entry because the dated record is the TCPA evidence. It is resolved rather than balanced: **nothing is destroyed.** The dated record still exists — in Postgres, inside the nightly backups, in a table an admin can query — so clearing the provider-side copy costs no evidence. Item 1's requirement that the *decision* be written down still stands on its own ("this was a test STOP on my own handset, dated 2026-03-04, 530 messages delivered afterwards"); it is just no longer the thing standing between you and losing the record.
-
-Do **not** extend this reasoning to anyone else's entry. What makes `6644` clearable is that it is your own handset, its origin is known, and the STOP has been preserved first. Absent all three, the entry stays.
-
-Every other entry on the list gets the same treatment before apply is enabled — confirmed as a genuine opt-out to honour, or cleared first. Runbook §6a has the query that resolves the list to names, roles and escalation-list membership in one pass.
-
-Full steps: `docs/sms-upgrade/05-CHUNK3-RUNBOOK.md` §2. Apply-mode criteria: §6.
+**If nothing appears:** the rule, the header, or the URL is wrong. Re-check the webhook is
+reachable — open the URL in a browser, it should return
+`{"ok":true,"name":"clicksend-inbound-webhook"}` — then re-check the rule's header field
+against `05-CHUNK3-RUNBOOK.md` §2c step 6.
 
 ---
 
-## 5. After inbound has been live ~1 week — review diffs before apply
+## 2. Two crew phone conversations — last-4 `4421` and `6286`
 
-**Where:** Manual reconcile:
+**Full detail, with the exact words to say:** `docs/sms-upgrade/17-CREW-CONTACT-CHECK.md`.
+
+Two active employees are not receiving SMS. Neither opted out; the carrier accepts the message
+and then refuses to deliver it. Confirmed by carrier receipts, not by submission status.
+
+| last4 | Who | Number on file | Delivered / failed | Last success |
+|---|---|---|---:|---|
+| `4421` | Tracer, active `employee` | `+14792004421` | **2 / 133** | 2026-05-12 |
+| `6286` | James David Mcleod, active `employee` | `8707196286` | **0 / 6** | never |
+
+**Neither has an alternate number anywhere in the system** — that was checked first, across
+`app_users`, `auth.users` (column and metadata), `rto_requests`, the escalation recipient list,
+and every number either account has ever been texted at. There is nothing to fall back to, so
+the conversation is the only way to resolve either one.
+
+- **`4421`** — ask whether 479-200-4421 is still his number, or whether the phone or carrier
+  changed around mid-May. Also ask whether the `Tracer` login is one person or a shared crew
+  account; it is stored as a single word with no surname, unlike every other employee.
+- **`6286`** — ask what number to text, and specifically whether it is a mobile that can
+  receive SMS. Nothing has reached him since he started on 31 August, including payroll.
+  **He does use the app** (session on 2026-09-09, three briefings completed), so you can reach
+  him in-app today. Set his `hire_date` while you are in the record — it is empty.
+
+**Confirm:** either the number is corrected, or you have confirmed it is right and the person
+knows they are not receiving texts.
+
+**Do not change the opt-out flags.** Both read `false` for both flags, correctly. This is a
+delivery failure, not a consent one.
+
+---
+
+## 3. After inbound has been live ~1 week — review the diffs before apply mode
+
+**Do:** run the reconcile manually every few days and read the diff.
 
 ```bash
-curl -X POST "https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/clicksend-optout-reconcile" \
+curl -sS -X POST "https://emqqxfzahmwnehxcpxzp.supabase.co/functions/v1/clicksend-optout-reconcile" \
   -H "Authorization: Bearer <INTERNAL_SECRET>" \
   -H "Content-Type: application/json" -d '{}'
 ```
 
-**Confirm:** `clicksend_only` / `app_only` explainable; then (only with approval) set `apply_enabled` and enable cron per runbook §5–6.
+**Baseline as of 2026-09-10 is clean:** `clicksend_count: 0`, `clicksend_only: []`,
+`app_only: []`. The single stale entry has been cleared (see Done §D). Anything that appears
+from here is new and traceable to a specific reply.
 
-**Before `apply_enabled`:** re-read §4c above. Every `clicksend_only` entry must be confirmed as a genuine opt-out or cleared from ClickSend first — apply mutes matching employees across all operational SMS, permanently and silently. Runbook §6a is the review query.
+**Do not set `apply_enabled` until:**
 
-**Expect residue:** the opt-out list is shared with the purchase-order app, so `clicksend_only` can contain non-employees who will never match `app_users`. The reconcile function skips them without error; they are just not labelled as such. Normal, not a bug.
+1. Seven days of diffs reviewed.
+2. Every `clicksend_only` entry individually confirmed as a genuine opt-out to honour, **or**
+   cleared from ClickSend first. Runbook §6a resolves the list to names, roles and escalation
+   membership in one query.
+3. The inbound webhook has been verified with a real HELP (§1 above).
+
+**Why criterion 2 is the one that bites.** Apply mode is not a report. Every matching entry
+sets **both** opt-out flags on that employee, and the send paths now honour them — so that
+person drops out of safety briefing reminders, safety briefing escalations including Tier 2
+statics, and payroll SMS. The flags do not expire, nobody is notified, and the only trace is a
+line in the run log. Turning apply on with a stale entry present is how an active crew member
+silently stops getting operational SMS.
+
+**Expect residue:** the opt-out list is shared with the purchase-order app, so `clicksend_only`
+can contain non-employees who will never match `app_users`. Reconcile skips them. Normal.
+
+Full criteria: `05-CHUNK3-RUNBOOK.md` §6.
 
 ---
 
-## 6. When Safety# (`+18335183807`) becomes REGISTERED — authorize Chunk 4
+# Done
 
-**Where:** ClickSend numbers UI / re-run `./scripts/clicksend-audit.sh`.
+## A. `6644` — closed, both halves
 
-**Confirm:** Status `REGISTERED`, then schedule Chunk 4 per `docs/sms-upgrade/09-CHUNK4-PLAN.md` (no send-path change until then). If you set `CLICKSEND_FROM_NUMBER` per §4b, delete it as part of Chunk 4 so the sender registry is the only source of truth.
+The delivery half was a false alarm: 530 delivered against 2 failed since the March opt-out.
+Nothing was ever lost.
+
+The consent half is now closed too. The STOP was copied into `sms_opt_out_events` first
+(migration `20260909210000`, `received_at` = the real provider timestamp
+`2026-03-04T22:51:37Z`, both `applied_*` false, `raw_message` stating plainly that it is a
+reconstruction), and **only then** was the ClickSend list entry removed — contact `1548059062`
+from list `3406168`, deleted 2026-09-10 after the Postgres row was re-read and confirmed
+present. The record survives the clearing, which was the pre-condition.
+
+**The decision this enacts, stated so it is on the record:** the March STOP was a test sent
+from your own handset while exercising the opt-out path, not a withdrawal of consent. The
+dated evidence is preserved in a table ATTS owns and backs up.
+
+Reconcile before: `clicksend_only: [6644]`. After: `[]`.
+
+## B. Delivery blind spot — closed
+
+The compliance export now carries two status columns, "Provider Status (submission)" and
+"Delivery Status (carrier receipt)". The `4421` and `6286` failures read `SUCCESS` on
+submission — that column was never wrong, it just never meant delivery — and now also read
+`Failed at carrier`, which is the fact that matters. Since 2026-05-01: 2,595 delivered, 229
+failed, 80 handed to the network without a final receipt, 143 too old for provider retention.
+
+Nothing to do. Noted so you know the export can be handed to an auditor, provided the reader
+looks at the delivery column.
+
+## C. Webhook write path — verified end to end, short of ClickSend
+
+A simulated `HELP` POST to the production webhook on 2026-09-10, from the reserved test number
+`+15005550001`, returned `{"skipped":true,"reason":"help_logged"}` and wrote the expected row:
+keyword `HELP`, `user_id` null, both `applied_*` false. Auth, parsing and the write path work.
+
+The ClickSend-to-webhook hop is **not** covered by this. That is §1.
+
+## D. ClickSend opt-out list — cleared and reconciled
+
+See §A. List `3406168` now holds zero contacts; reconcile reports `clicksend_count: 0`.
+
+---
+
+# Dropped, with reasons
+
+## `+18338612650` (PO#) — will not be wired
+
+**Removed from this list.** You own the Bolt purchase-order app that runs on this number, so
+the earlier open questions about who owns it and what its inbound rule points at are answered.
+
+The reason not to wire it is now the opposite of the original one. `CLICKSEND_FROM_NUMBER` is
+set to `+18443781444`, so **no portal traffic originates from PO# any more** — which was the
+only gap wiring it would have closed. Wiring it now would do nothing useful and one actively
+harmful thing: pull replies intended for the Bolt app into the ATTS webhook, where they would
+be parsed as opt-out keywords against a number that has nothing to do with the portal.
+
+Leave it alone. Same for `+18335183807` (Safety#) — still `REGISTRATION_INITIATED`, so there is
+nothing to wire.
+
+## Database password rotation — deprioritised
+
+**Removed from this list at your direction.** The decision, the residual risk, and the IPv6
+finding underneath it are recorded in `KNOWN-ISSUES.md` → *"Deprioritised: the database password
+rotation, and the IPv6-only direct host behind it"*.
+
+Keep the IPv6 part in mind independently of the rotation: `db.<ref>.supabase.co` is AAAA-only,
+so on an IPv4 network it fails as a DNS error that looks like a bad credential. Use the session
+pooler host with the `postgres.<project-ref>` username. That is what
+`scripts/deploy-cron-auth.sh` was hitting in Session 6.
+
+---
+
+# Parked — no action, watch only
+
+## Confirm one departure — last-4 `1779`
+
+`+14795181779` has no `app_users` row and stopped receiving messages on 2026-08-12 by itself,
+which is what a normal departure looks like. Confirm the person left and roughly when, if it
+ever comes up. Listed only because if they have *not* left, they belong alongside §2 and
+currently receive nothing. Detail: `13-UNREACHABLE-CREW.md` §4.
+
+## Safety# (`+18335183807`) reaching REGISTERED
+
+When ClickSend moves it off `REGISTRATION_INITIATED`, Chunk 4 can be scheduled per
+`09-CHUNK4-PLAN.md`. Re-run `./scripts/clicksend-audit.sh` to check. No send-path change until
+then. When Chunk 4's sender registry lands, delete the `CLICKSEND_FROM_NUMBER` secret so the
+registry is the only source of truth.
+
+## Nightly reconcile cron
+
+Still disabled, deliberately. Enable it only after §3 is satisfied — runbook §5 has the
+`cron.alter_job` statement. Diff-only either way until `apply_enabled` is set.
