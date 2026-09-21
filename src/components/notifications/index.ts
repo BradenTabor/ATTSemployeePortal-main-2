@@ -5,8 +5,7 @@
  */
 
 export { EnableNotificationsButton } from './EnableNotificationsButton';
-export { PWAUpdatePrompt } from './PWAUpdatePrompt';
-export { RequiredUpdatePrompt } from './RequiredUpdatePrompt';
+export { AppUpdatePrompt } from './AppUpdatePrompt';
 export { PushNotificationPrompt } from './PushNotificationPrompt';
 // WhatsNewOnboarding is intentionally NOT re-exported here: it pulls in
 // ~75 KB (feature previews, phone mockup, confetti) and must stay a separate

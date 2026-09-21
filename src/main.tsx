@@ -2,6 +2,7 @@
 import "./init/perf-init";
 import "./init/disable-zoom";
 import "./init/offline-init";
+import "./init/app-update-init";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { AuthProvider } from "./contexts/AuthContext";
