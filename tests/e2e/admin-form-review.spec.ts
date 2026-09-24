@@ -44,7 +44,7 @@ test('admin can open saved paper JSA photos at full size', async ({ page }, test
     await page.getByText(f.name, { exact: true }).filter({ visible: true }).first().click();
     await expect(page.getByRole('dialog', { name: 'JSA details' })).toContainText(f.name);
     await expect(page.getByRole('dialog', { name: 'JSA details' })).toContainText('Sep 24, 2026');
-    await expect(page.getByText('Review Signer', { exact: false }).first()).toBeVisible();
+    await expect(page.getByRole('dialog', { name: 'JSA details' }).getByText('Review Signer', { exact: true })).toBeVisible();
     await imageLoads(page, 'Paper JSA page');
     await page.getByRole('img', { name: 'Paper JSA page', exact: true }).click();
     await imageLoads(page, 'Paper JSA page (full size)');
