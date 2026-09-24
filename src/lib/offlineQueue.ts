@@ -263,13 +263,14 @@ export async function getAllItems(): Promise<QueuedSubmission[]> {
  * Processing order: text-only submissions first, then photo submissions.
  * Each tier is processed in FIFO order.
  */
-export async function processQueue(
+async function runQueue(
   submitter: OfflineSubmitter,
   options?: {
     conflictCheck?: (item: QueuedSubmission) => Promise<boolean>;
     onProgress?: (progress: SyncProgress) => void;
     /** Called when a conflict is detected, with the discarded item. */
-    onConflict?: (item: QueuedSubmission) => void;
+    onConflict?: (item: QueuedSubmission) => void | Promise<void>;
+    userId?: string;
     /** Called after each individual item syncs successfully. */
     onItemSynced?: (item: QueuedSubmission) => void;
     /** Called when an item fails (after retry logic). */
@@ -278,7 +279,7 @@ export async function processQueue(
 ): Promise<{ processed: number; failed: number; discarded: number }> {
   const db = await getDB();
   const items = await getAllActionable(db);
-  const sorted = sortByPriority(items);
+  const sorted = sortByPriority(items.filter(item => !options?.userId || !item.userId || item.userId === options.userId));
 
   let processed = 0;
   let failed = 0;
@@ -286,6 +287,12 @@ export async function processQueue(
 
   for (let i = 0; i < sorted.length; i++) {
     const item = sorted[i];
+    // Persist an identity before the first request. A response lost after the
+    // server commits must not turn a retry into a second safety record.
+    if (item.payload.__offlineQueueId && !item.payload.__recordId && !item.payload.id) {
+      item.payload.id = crypto.randomUUID();
+      await db.put(STORE_NAME, item);
+    }
 
     // Max retries exceeded
     if (item.retryCount >= maxRetries(item)) {
@@ -309,7 +316,7 @@ export async function processQueue(
 
     // Conflict check
     if (options?.conflictCheck && (await options.conflictCheck(item))) {
-      options?.onConflict?.(item);
+      await options?.onConflict?.(item);
       await db.delete(STORE_NAME, item.id);
       discarded++;
       continue;
@@ -355,6 +362,14 @@ export async function processQueue(
   }
 
   return { processed, failed, discarded };
+}
+
+let activeSync: ReturnType<typeof runQueue> | null = null;
+
+/** Coalesce automatic reconnection and a simultaneous manual Sync click. */
+export function processQueue(...args: Parameters<typeof runQueue>): ReturnType<typeof runQueue> {
+  if (!activeSync) activeSync = runQueue(...args).finally(() => { activeSync = null; });
+  return activeSync;
 }
 
 /**

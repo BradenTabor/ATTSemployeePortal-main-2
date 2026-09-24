@@ -96,6 +96,7 @@ export default function DailyJSAForm() {
   );
   const [loadingRecord, setLoadingRecord] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [queuedSubmission, setQueuedSubmission] = useState(false);
   // QA-002: Prevent duplicate submissions with atomic ref check
   const submittingRef = useRef(false);
   // Skip fetch when we already applied passed state from create (effect re-runs after clearing state)
@@ -937,6 +938,8 @@ export default function DailyJSAForm() {
           'Validation Error',
           `Please fix ${errorCount} ${errorCount === 1 ? 'issue' : 'issues'} before completing. ${errorDetails}`,
         );
+        submittingRef.current = false;
+        setSaving(false);
         return;
       }
       
@@ -1005,12 +1008,13 @@ export default function DailyJSAForm() {
 
       if (result.queued) {
         clearDraft();
-        markAsSaved();
+        markAsSaved(form);
         formToast.success(
           "Queued for when you're back online",
           "Your JSA will be submitted automatically when you have a connection.",
           { autoDismiss: 6000 }
         );
+        setQueuedSubmission(true);
         return;
       }
 
@@ -1038,6 +1042,7 @@ export default function DailyJSAForm() {
       setForm((prev) => ({
         ...prev,
         status: targetStatus,
+        jsaPhotoPaths: result.photoPaths ?? prev.jsaPhotoPaths,
         updatedAt: nowIso,
         statusChangedAt,
         completedAt,
@@ -1125,7 +1130,7 @@ export default function DailyJSAForm() {
               replace: true,
               state: {
                 fromCreate: true,
-                form,
+                form: { ...form, jsaPhotoPaths: result.photoPaths ?? form.jsaPhotoPaths },
                 persistedStatus: targetStatus,
                 completedSteps: Array.from(completedSteps),
                 currentStep,
@@ -1351,6 +1356,18 @@ export default function DailyJSAForm() {
     />
   );
 
+  if (queuedSubmission) {
+    return (
+      <DashboardLayout title="Daily JSA" hideHeader pageHeading>
+        <div className="mx-auto max-w-lg p-6 text-white" role="status">
+          <h1 className="text-xl font-semibold">JSA saved on this device</h1>
+          <p className="mt-3 text-white/70">It will sync automatically when your connection returns. You can safely leave this form.</p>
+          <button type="button" onClick={() => navigate(getRoleDashboard(role))} className="mt-6 rounded-xl bg-emerald-600 px-5 py-3 font-semibold">Return to dashboard</button>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout title="Daily JSA" hideHeader pageHeading>
       <div
@@ -1459,7 +1476,7 @@ export default function DailyJSAForm() {
                       handleInputChange("circuitNumber", values.circuitNumber);
                     }}
                   />
-                  <label className="flex items-center gap-1 text-xs sm:text-sm font-medium text-white/70 mb-0.5 sm:mb-1 uppercase mt-2 font-mono font-medium tracking-[0.14em]">
+                  <label htmlFor="paper-jsa-location" className="flex items-center gap-1 text-xs sm:text-sm font-medium text-white/70 mb-0.5 sm:mb-1 uppercase mt-2 font-mono font-medium tracking-[0.14em]">
                     Work Location <span className="text-emerald-400">*</span>
                   </label>
                   <input
@@ -1468,6 +1485,7 @@ export default function DailyJSAForm() {
                     onChange={(e) => handleInputChange("workLocation", e.target.value)}
                     onBlur={() => handleFieldBlur("workLocation")}
                     placeholder="Street, city, project"
+                    id="paper-jsa-location"
                     className={cn(
                       "w-full rounded-lg border bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus-visible:ring-2",
                       allErrors.workLocation

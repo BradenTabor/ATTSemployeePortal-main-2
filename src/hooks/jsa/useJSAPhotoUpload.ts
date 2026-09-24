@@ -5,6 +5,9 @@ import { compressImage } from '../../lib/imageCompression';
 import { validators } from '../../lib/formValidation';
 import { getAuthUserFast } from '../../lib/authUser';
 import { mapSettledWithConcurrency, UPLOAD_CONCURRENCY } from '../../lib/asyncPool';
+import { storePhoto, getPhoto, deletePhoto as deleteLocalPhoto } from '../../lib/offlinePhotoStore';
+
+export const LOCAL_JSA_PHOTO_PREFIX = 'local-jsa-photo://';
 
 /** Maximum number of paper JSA photos per record. */
 export const MAX_JSA_PHOTOS = 5;
@@ -101,6 +104,7 @@ export function useJSAPhotoUpload() {
   const uploadMultiple = useCallback(async (
     files: File[],
     existingPaths: string[] = [],
+    saveOnDevice = false,
   ): Promise<UploadResult> => {
     const successful: string[] = [];
     const failed: Array<{ file: File; error: Error }> = [];
@@ -136,9 +140,18 @@ export function useJSAPhotoUpload() {
       toUpload.push(file);
     }
 
-    const settled = await mapSettledWithConcurrency(toUpload, UPLOAD_CONCURRENCY, (file, i) =>
-      uploadPhoto(file, existingPaths.length + i + 1),
-    );
+    const settled = await mapSettledWithConcurrency(toUpload, UPLOAD_CONCURRENCY, async (file, i) => {
+      if (!saveOnDevice) return uploadPhoto(file, existingPaths.length + i + 1);
+      const error = validators.photoFile(file);
+      if (error) throw new Error(error);
+      const user = await getAuthUserFast();
+      if (!user?.id) throw new Error('Sign in before adding photos');
+      const id = await storePhoto({
+        queueId: `jsa-draft:${user.id}`, formType: 'jsa', fieldName: `jsa_page_${i + 1}`,
+        blob: file, fileName: file.name, contentType: file.type, compressed: false,
+      });
+      return LOCAL_JSA_PHOTO_PREFIX + id;
+    });
     settled.forEach((result, i) => {
       if (result.status === 'fulfilled') {
         successful.push(result.value);
@@ -155,6 +168,10 @@ export function useJSAPhotoUpload() {
    * Delete a single photo from storage.
    */
   const deletePhoto = useCallback(async (filePath: string): Promise<void> => {
+    if (filePath.startsWith(LOCAL_JSA_PHOTO_PREFIX)) {
+      await deleteLocalPhoto(filePath.slice(LOCAL_JSA_PHOTO_PREFIX.length));
+      return;
+    }
     const { error } = await supabase.storage
       .from('jsa-photos')
       .remove([filePath]);
@@ -188,6 +205,10 @@ export function useJSAPhotoUpload() {
     path: string,
     expiresIn: number = SIGNED_URL_EXPIRY.display,
   ): Promise<string | null> => {
+    if (path.startsWith(LOCAL_JSA_PHOTO_PREFIX)) {
+      const photo = await getPhoto(path.slice(LOCAL_JSA_PHOTO_PREFIX.length));
+      return photo ? URL.createObjectURL(photo.blob) : null;
+    }
     const { data, error } = await supabase.storage
       .from('jsa-photos')
       .createSignedUrl(path, expiresIn);

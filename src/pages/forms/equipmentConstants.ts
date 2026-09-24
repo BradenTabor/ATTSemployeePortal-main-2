@@ -62,6 +62,11 @@ export interface EquipmentFormState {
 }
 
 export type PhotoTypes = "overview" | "damage" | "attachments" | "hydraulic";
+
+export function requiresEquipmentLockout(form: EquipmentFormState): boolean {
+  return ['chipper', 'sky_trim', 'geo_boy'].includes(form.template) &&
+    [...Object.values(form.generalChecklist), ...Object.values(form.specificChecklist)].includes('F');
+}
 export type PhotoState = Partial<Record<PhotoTypes, File>>;
 
 /**

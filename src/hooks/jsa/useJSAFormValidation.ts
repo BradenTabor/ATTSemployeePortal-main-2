@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useFormValidation, type ValidationRule } from '../useFormValidation';
 import { validators } from '../../lib/formValidation';
 import type { DailyJsaFormState } from '../../pages/forms/dailyJSAFormState';
@@ -99,11 +99,17 @@ export function useJSAFormValidation(form: DailyJsaFormState) {
     shouldShowError,
     validateAll,
     markSubmitAttempted,
+    submitAttempted,
     handleFieldBlur,
   } = useFormValidation<FormValidationState>(form as FormValidationState, validationRules as ValidationRule<FormValidationState>[], {
     validateOnChange: true,
     showErrorsAfterSubmitAttempt: false,
   });
+
+  // After a failed submit, checklist and photo changes must clear stale errors too.
+  useEffect(() => {
+    if (submitAttempted) validateAll();
+  }, [submitAttempted, validateAll]);
 
   // Additional validation: spans (digital only), electrical hazards
   const additionalErrors = useMemo(() => {

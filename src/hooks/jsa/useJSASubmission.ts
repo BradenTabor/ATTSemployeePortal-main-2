@@ -2,9 +2,11 @@ import { useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { logger } from '../../lib/logger';
 import { isOnline, addToQueue } from '../../lib/offlineQueue';
-import { storePhotosForQueue } from '../../lib/offlinePhotoStore';
+import { storePhotosForQueue, getPhoto, deletePhoto as deleteLocalPhoto } from '../../lib/offlinePhotoStore';
 import type { DailyJSA, DailyJsaFormState, JobSelection, SharedUser } from '../../pages/forms/dailyJSAFormState';
-import { useJSAPhotoUpload } from './useJSAPhotoUpload';
+import { useJSAPhotoUpload, LOCAL_JSA_PHOTO_PREFIX } from './useJSAPhotoUpload';
+
+import { compressImage } from '../../lib/imageCompression';
 
 const JOB_OPTIONS = [
   { key: "jarraff", label: "Jarraff Trimmer" },
@@ -30,6 +32,7 @@ interface SubmissionOptions {
 interface SubmissionResult {
   success: boolean;
   recordId?: string;
+  photoPaths?: string[];
   error?: Error;
   /** True when submission was queued for offline sync (no insert performed). */
   queued?: boolean;
@@ -44,7 +47,7 @@ interface SubmissionResult {
  * Extracted to reduce DailyJSAForm component size
  */
 export function useJSASubmission() {
-  const { rollbackUploads } = useJSAPhotoUpload();
+  const { rollbackUploads, uploadPhoto } = useJSAPhotoUpload();
 
   const submitJSA = useCallback(async (
     mode: "draft" | "complete",
@@ -169,7 +172,77 @@ export function useJSASubmission() {
       payload.created_at = nowIso;
     }
 
+    const uploadedPaths: string[] = [];
+    const localPaths = (form.jsaPhotoPaths ?? []).filter(path => path.startsWith(LOCAL_JSA_PHOTO_PREFIX));
+    const releaseLocalPhotos = async () => {
+      try { await Promise.all(localPaths.map(path => deleteLocalPhoto(path.slice(LOCAL_JSA_PHOTO_PREFIX.length)))); }
+      catch (error) { logger.warn('JSA saved, but draft photo cleanup failed', error); }
+    };
     try {
+      const pendingFiles = [...(options.pendingPhotoFiles ?? [])];
+      for (const path of localPaths) {
+        const photo = await getPhoto(path.slice(LOCAL_JSA_PHOTO_PREFIX.length));
+        if (!photo || photo.queueId !== `jsa-draft:${userId}`) throw new Error('A saved photo is missing. Please reattach it before submitting.');
+        pendingFiles.push(new File([photo.blob], photo.fileName, { type: photo.contentType }));
+      }
+      payload.jsa_photo_paths = (form.jsaPhotoPaths ?? []).filter(path => !path.startsWith(LOCAL_JSA_PHOTO_PREFIX));
+      if (!isOnline()) {
+          const queuedPayload: Record<string, unknown> = { ...payload, user_id: userId };
+          if (isEditMode && recordId) {
+            queuedPayload.__recordId = recordId;
+            delete queuedPayload.user_id;
+            delete queuedPayload.created_at;
+          }
+          // Generate a queue ID first so we can link photos to it
+          const tempQueueId = `atts-q-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+          // Store pending photo files in offline photo store (if any)
+          let photoIds: string[] = [];
+          if (pendingFiles.length > 0) {
+            const photoEntries = [];
+            for (let i = 0; i < pendingFiles.length; i++) {
+              const file = pendingFiles[i];
+              const compressed = await compressImage(file, {
+                maxSizeMB: 2,
+                maxWidthOrHeight: 2048,
+                initialQuality: 0.85,
+                useWebWorker: true,
+              });
+              photoEntries.push({
+                fieldName: `jsa_page_${i + 1}`,
+                blob: compressed as Blob,
+                fileName: file.name,
+                contentType: compressed.type || 'image/jpeg',
+                compressed: true,
+              });
+            }
+            photoIds = await storePhotosForQueue(tempQueueId, 'jsa', photoEntries);
+            // Clear photo paths from payload (they'll be set during sync)
+            // Existing remote photos stay attached when new photos are queued.
+          }
+
+          // Embed the queue ID in the payload so the submitter can find photos
+          (queuedPayload as Record<string, unknown>).__offlineQueueId = tempQueueId;
+
+          await addToQueue('jsa', queuedPayload as unknown as Record<string, unknown>, {
+            userId,
+            dateFor: payload.job_date ?? undefined,
+            photoIds,
+          });
+          logger.info('[JSA] Offline: queued for sync when back online', {
+            job_date: payload.job_date,
+            photoCount: photoIds.length,
+          });
+          await releaseLocalPhotos();
+          return { success: true, queued: true };
+        }
+
+      for (let i = 0; i < pendingFiles.length; i++) {
+        const path = await uploadPhoto(pendingFiles[i], (payload.jsa_photo_paths?.length ?? 0) + 1);
+        uploadedPaths.push(path);
+        payload.jsa_photo_paths = [...(payload.jsa_photo_paths ?? []), path];
+      }
+
       if (isEditMode && recordId) {
         // Update existing record
         const updatePayload = {
@@ -191,7 +264,7 @@ export function useJSASubmission() {
         const { error: updateError } = await supabase
           .from("daily_jsa")
           .update(updatePayload)
-          .eq("id", recordId);
+          .eq("id", recordId).select("id").single();
 
         if (updateError) {
           logger.error('[JSA] Update failed', {
@@ -246,7 +319,8 @@ export function useJSASubmission() {
           logger.error('Audit logging error:', err);
         });
 
-        return { success: true };
+        await releaseLocalPhotos();
+        return { success: true, photoPaths: payload.jsa_photo_paths ?? [] };
       } else {
         // Insert new record
         const insertPayload = { 
@@ -255,52 +329,6 @@ export function useJSASubmission() {
           observer_signatures: payload.observer_signatures || [],
           shared_with_users: payload.shared_with_users || [],
         };
-
-        if (!isOnline()) {
-          // Generate a queue ID first so we can link photos to it
-          const tempQueueId = `atts-q-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-
-          // Store pending photo files in offline photo store (if any)
-          let photoIds: string[] = [];
-          const pendingFiles = options.pendingPhotoFiles ?? [];
-          if (pendingFiles.length > 0) {
-            const { compressImage } = await import('../../lib/imageCompression');
-            const photoEntries = [];
-            for (let i = 0; i < pendingFiles.length; i++) {
-              const file = pendingFiles[i];
-              const compressed = await compressImage(file, {
-                maxSizeMB: 2,
-                maxWidthOrHeight: 2048,
-                initialQuality: 0.85,
-                useWebWorker: true,
-              });
-              photoEntries.push({
-                fieldName: `jsa_page_${i + 1}`,
-                blob: compressed as Blob,
-                fileName: file.name,
-                contentType: compressed.type || 'image/jpeg',
-                compressed: true,
-              });
-            }
-            photoIds = await storePhotosForQueue(tempQueueId, 'jsa', photoEntries);
-            // Clear photo paths from payload (they'll be set during sync)
-            (insertPayload as Record<string, unknown>).jsa_photo_paths = [];
-          }
-
-          // Embed the queue ID in the payload so the submitter can find photos
-          (insertPayload as Record<string, unknown>).__offlineQueueId = tempQueueId;
-
-          await addToQueue('jsa', insertPayload as unknown as Record<string, unknown>, {
-            userId,
-            dateFor: payload.job_date ?? undefined,
-            photoIds,
-          });
-          logger.info('[JSA] Offline: queued for sync when back online', {
-            job_date: payload.job_date,
-            photoCount: photoIds.length,
-          });
-          return { success: true, queued: true };
-        }
 
         logger.debug('[JSA] Inserting new record', {
           user_id: userId,
@@ -313,40 +341,12 @@ export function useJSASubmission() {
           .select("id")
           .single();
 
-        if (insertError) {
-          logger.error('[JSA] Insert failed', {
-            error: insertError,
-          });
-
-          // Rollback uploaded JSA photos on failed submission to prevent orphans.
-          // Signal the rollback via `photosRolledBack` so the caller can clear its
-          // jsaPhotoPaths state — otherwise the form retains stale paths pointing to
-          // deleted storage objects, causing broken images if the user retries.
-          let photosRolledBack = false;
-          if (form.jsaPhotoPaths && form.jsaPhotoPaths.length > 0) {
-            logger.info('[JSA] Rolling back uploaded photos after failed insert', {
-              photo_count: form.jsaPhotoPaths.length,
-            });
-            try {
-              await rollbackUploads(form.jsaPhotoPaths);
-              photosRolledBack = true;
-            } catch (rollbackErr) {
-              logger.error('[JSA] Photo rollback also failed — photos may be orphaned', { rollbackErr });
-              // photosRolledBack stays false; caller should NOT clear paths since
-              // the photos still exist in storage and can be referenced on retry.
-            }
-          }
-
-          const msg =
-            insertError && typeof insertError === 'object' && 'message' in insertError
-              ? String((insertError as { message?: string }).message)
-              : 'JSA insert failed';
-          return { success: false, error: new Error(msg || 'JSA insert failed'), photosRolledBack };
-        }
-
-        return { success: true, recordId: data?.id };
+        if (insertError) throw new Error(insertError.message);
+        await releaseLocalPhotos();
+        return { success: true, recordId: data?.id, photoPaths: payload.jsa_photo_paths ?? [] };
       }
     } catch (error) {
+      if (uploadedPaths.length) await rollbackUploads(uploadedPaths);
       let err: Error;
       if (error instanceof Error) {
         err = error;
@@ -358,7 +358,7 @@ export function useJSASubmission() {
       }
       return { success: false, error: err };
     }
-  }, [rollbackUploads]);
+  }, [rollbackUploads, uploadPhoto]);
 
   return { submitJSA };
 }

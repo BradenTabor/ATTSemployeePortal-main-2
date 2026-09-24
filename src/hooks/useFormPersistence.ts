@@ -107,6 +107,7 @@ export function useFormPersistence<T>({
   
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSavedFormRef = useRef<string>('');
+  const submittedFormRef = useRef<string | null>(null);
 
   // Internal save function (synchronous)
   const performSave = useCallback((
@@ -115,6 +116,7 @@ export function useFormPersistence<T>({
     completedSteps: Set<number>
   ) => {
     if (!userId || isEditMode) return false;
+    if (JSON.stringify(form) === submittedFormRef.current) return true;
 
     try {
       const draft: DraftData<T> = {
@@ -223,6 +225,7 @@ export function useFormPersistence<T>({
     // Snapshot the saved form so an identical saveDraft is a correct no-op.
     if (form !== undefined) {
       lastSavedFormRef.current = JSON.stringify(form);
+      submittedFormRef.current = lastSavedFormRef.current;
     }
 
     setHasUnsavedChanges(false);

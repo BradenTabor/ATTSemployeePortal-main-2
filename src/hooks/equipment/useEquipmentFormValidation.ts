@@ -2,7 +2,7 @@ import { useMemo, useCallback } from 'react';
 import { useFormValidation, type ValidationRule } from '../useFormValidation';
 import { validators } from '../../lib/formValidation';
 import type { EquipmentFormState, PhotoState, EquipmentFormFieldKey } from '../../pages/forms/equipmentConstants';
-import { GENERAL_ITEMS, EQUIPMENT_NUMBERS_BY_TYPE } from '../../pages/forms/equipmentConstants';
+import { GENERAL_ITEMS, EQUIPMENT_NUMBERS_BY_TYPE, getSpecificItems, requiresEquipmentLockout } from '../../pages/forms/equipmentConstants';
 
 /** Base form state type used by validation hook */
 type ExtendedFormState = EquipmentFormState & { photos?: PhotoState };
@@ -41,16 +41,48 @@ export function useEquipmentFormValidation(
     {
       field: 'generalChecklist',
       validator: (value: unknown) => {
-        const count = Object.keys((value as Record<string, unknown>) || {}).filter(
-          (key) => (value as Record<string, unknown>)[key] === "P" || (value as Record<string, unknown>)[key] === "F" || (value as Record<string, unknown>)[key] === "N/A"
-        ).length;
+        const checklist = (value ?? {}) as Record<string, unknown>;
+        const count = GENERAL_ITEMS.filter(({ id }) => ['P', 'F', 'N/A'].includes(String(checklist[id]))).length;
         if (count < GENERAL_ITEMS.length) {
           return `Complete general checklist: ${count}/${GENERAL_ITEMS.length} items checked`;
         }
         return null;
       },
     },
-  ], [form.equipmentType]);
+    {
+      field: 'specificChecklist',
+      validator: (value: unknown) => {
+        const items = getSpecificItems(form.template);
+        if (!items.length) return 'Select an equipment-specific checklist template';
+        const checklist = (value ?? {}) as Record<string, unknown>;
+        const count = items.filter(({ id }) => ['P', 'F', 'N/A'].includes(String(checklist[id]))).length;
+        return count === items.length ? null : `Complete equipment-specific checklist: ${count}/${items.length} items checked`;
+      },
+    },
+    {
+      field: 'notes',
+      validator: (value: unknown) => {
+        const hasFail = [...Object.values(form.generalChecklist), ...Object.values(form.specificChecklist)].includes('F');
+        return hasFail && !String(value ?? '').trim() ? 'Defect notes are required when any item fails' : null;
+      },
+    },
+    {
+      field: 'lotoData',
+      validator: () => {
+        if (!requiresEquipmentLockout(form)) return null;
+        const data = form.lotoData;
+        return data?.procedure_followed && data.lockout_device_applied && data.tagout_attached &&
+          data.zero_energy_verified && data.authorized_employee.trim() && data.lockout_datetime &&
+          Number.isFinite(Date.parse(data.lockout_datetime))
+          ? null : 'Complete all lockout/tagout checks, authorized employee, and lockout date/time';
+      },
+    },
+    {
+      field: 'inspectionDate',
+      validator: (value: unknown) => !value || !/^\d{4}-\d{2}-\d{2}$/.test(String(value)) || !Number.isFinite(Date.parse(String(value)))
+        ? 'Enter a valid inspection date' : null,
+    },
+  ], [form]);
 
   const extendedFormState = useMemo(() => ({
     ...form,

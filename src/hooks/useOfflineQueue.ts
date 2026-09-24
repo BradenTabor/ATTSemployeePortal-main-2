@@ -31,10 +31,11 @@ import { logger } from '../lib/logger';
 export interface UseOfflineQueueOptions {
   /** Submitter to use when processing the queue (e.g. from app/context). */
   submitter: OfflineSubmitter | null;
+  userId?: string;
   /** Optional conflict check: if returns true, queued item is discarded. */
   conflictCheck?: (item: QueuedSubmission) => Promise<boolean>;
   /** Called when a conflict is detected and item is discarded. */
-  onConflict?: (item: QueuedSubmission) => void;
+  onConflict?: (item: QueuedSubmission) => void | Promise<void>;
   /** Run processQueue automatically when coming back online. */
   processOnOnline?: boolean;
 }
@@ -139,7 +140,7 @@ function showItemFailedToast(item: QueuedSubmission, error: string): void {
 // ---------------------------------------------------------------------------
 
 export function useOfflineQueue(options: UseOfflineQueueOptions): UseOfflineQueueReturn {
-  const { submitter, conflictCheck, onConflict, processOnOnline = true } = options;
+  const { submitter, conflictCheck, onConflict, processOnOnline = true, userId } = options;
   const networkIsOnline = useNetworkStore((s) => s.isOnline);
   const [queueLength, setQueueLength] = useState(0);
   const [pendingItems, setPendingItems] = useState<QueuedSubmission[]>([]);
@@ -160,6 +161,7 @@ export function useOfflineQueue(options: UseOfflineQueueOptions): UseOfflineQueu
 
   // Common sync callback wiring
   const buildProcessOptions = useCallback(() => ({
+    userId,
     conflictCheck,
     onConflict,
     onProgress: (progress: SyncProgress) => setSyncProgress(progress),
@@ -170,7 +172,7 @@ export function useOfflineQueue(options: UseOfflineQueueOptions): UseOfflineQueu
     onItemFailed: (item: QueuedSubmission, error: string) => {
       showItemFailedToast(item, error);
     },
-  }), [conflictCheck, onConflict]);
+  }), [conflictCheck, onConflict, userId]);
 
   // Process queue when coming back online
   useEffect(() => {
@@ -207,7 +209,7 @@ export function useOfflineQueue(options: UseOfflineQueueOptions): UseOfflineQueu
     return () => clearTimeout(timer);
     // Only trigger when going from offline -> online
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [networkIsOnline]);
+  }, [networkIsOnline, userId, submitter]);
 
   const addToQueue = useCallback(
     async (

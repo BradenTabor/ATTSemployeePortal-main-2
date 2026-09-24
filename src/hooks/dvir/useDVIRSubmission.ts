@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { formatInTimeZone } from 'date-fns-tz';
 import { supabase } from '../../lib/supabaseClient';
 import { CONFIG } from '../../lib/config';
 import { logger } from '../../lib/logger';
@@ -148,9 +149,9 @@ export function useDVIRSubmission() {
           // Build payload with placeholder photo paths
           const offlinePayload: Record<string, unknown> = {
             __offlineQueueId: tempQueueId,
+            report_date: formatInTimeZone(new Date(), 'America/Chicago', 'yyyy-MM-dd'),
             inspection_type: inspectionType,
             user_id: userId,
-            user_email: userEmail,
             created_at: new Date().toISOString(),
             truck_number: form.truckNumber,
             mileage: Number(form.mileage),
@@ -191,7 +192,7 @@ export function useDVIRSubmission() {
 
           await addToQueue('dvir', offlinePayload, {
             userId,
-            dateFor: new Date().toISOString().split('T')[0],
+            dateFor: formatInTimeZone(new Date(), 'America/Chicago', 'yyyy-MM-dd'),
             photoIds,
           });
 

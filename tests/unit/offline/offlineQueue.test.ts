@@ -51,6 +51,26 @@ describe('offlineQueue', () => {
     }
   });
 
+  it('coalesces simultaneous automatic and manual syncs', async () => {
+    await addToQueue('jsa', { __offlineQueueId: 'q', notes: 'once' }, { userId: 'worker' });
+    const submit = successSubmitter();
+    const [automatic, manual] = await Promise.all([
+      processQueue(submit, { userId: 'worker' }),
+      processQueue(submit, { userId: 'worker' }),
+    ]);
+    expect(submit).toHaveBeenCalledTimes(1);
+    expect(automatic).toEqual(manual);
+    expect(vi.mocked(submit).mock.calls[0][1].id).toEqual(expect.any(String));
+  });
+
+  it('keeps another account’s submissions on the device', async () => {
+    await addToQueue('jsa', { notes: 'private' }, { userId: 'other' });
+    const submit = successSubmitter();
+    await processQueue(submit, { userId: 'worker' });
+    expect(submit).not.toHaveBeenCalled();
+    expect(await getQueueLength()).toBe(1);
+  });
+
   describe('addToQueue', () => {
     it('adds an item and returns a unique ID', async () => {
       const id = await addToQueue('dvir', { truckNumber: 'B132' });

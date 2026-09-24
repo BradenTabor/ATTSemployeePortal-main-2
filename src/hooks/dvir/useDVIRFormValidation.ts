@@ -40,7 +40,8 @@ export function useDVIRFormValidation(
     {
       field: 'vehicleTrailerChecklist',
       validator: (value: unknown) => {
-        const count = Object.keys((value as Record<string, unknown>) || {}).length;
+        const checklist = (value ?? {}) as Record<string, unknown>;
+        const count = VEHICLE_TRAILER_ITEMS.filter(({ id }) => ['P', 'F', 'N/A'].includes(String(checklist[id]))).length;
         if (count < VEHICLE_TRAILER_ITEMS.length) {
           return `Complete vehicle inspection: ${count}/${VEHICLE_TRAILER_ITEMS.length} items checked`;
         }

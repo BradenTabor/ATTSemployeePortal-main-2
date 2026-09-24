@@ -21,6 +21,7 @@ import { VoiceInputButton } from "../../components/forms/VoiceInputButton";
 import { formToast } from "../../lib/formToast";
 import { validators as formValidators } from "../../lib/formValidation";
 import { useFormDraftLifecycle } from "../../hooks/useFormDraftLifecycle";
+import { usePhotoDraft } from "../../hooks/usePhotoDraft";
 import { DraftRecoveryModal } from "../../components/forms/DraftRecoveryModal";
 import { FormSuccessCelebration } from "../../components/forms/FormSuccessCelebration";
 import { useAuth } from "../../contexts/AuthContext";
@@ -117,6 +118,12 @@ export default function DVIRForm() {
       sessionStorage.getItem("dvir-template") !== null;
   }
   const hasIncomingTemplate = incomingTemplateRef.current;
+  const draftPhotos = useMemo(() => ({ ...extraPhotos, ...(oilDipstickPhoto ? { oilDipstick: oilDipstickPhoto } : {}) }), [extraPhotos, oilDipstickPhoto]);
+  usePhotoDraft('dvir', user?.id, draftPhotos, (saved) => {
+    const { oilDipstick, ...extra } = saved;
+    setOilDipstickPhoto(oilDipstick ?? null);
+    setExtraPhotos(extra);
+  }, !hasIncomingTemplate);
 
   // Draft lifecycle (persistence + auto-restore + recovery modal + autosave +
   // flush-on-unmount + beforeunload), extracted into a shared hook. The page
@@ -339,12 +346,11 @@ export default function DVIRForm() {
 
         setForm(prev => ({
           ...prev,
-          driversName: data.full_name || prev.driversName,
-          driversLicenseNumber: data.drivers_license_number || prev.driversLicenseNumber,
-          driversLicenseClass: data.drivers_license_class || prev.driversLicenseClass,
-          driversLicenseExp: data.drivers_license_expiration 
-            ? formatDateForDisplay(data.drivers_license_expiration as unknown as string)
-            : prev.driversLicenseExp,
+          driversName: prev.driversName || data.full_name || '',
+          driversLicenseNumber: prev.driversLicenseNumber || data.drivers_license_number || '',
+          driversLicenseClass: prev.driversLicenseClass || data.drivers_license_class || '',
+          driversLicenseExp: prev.driversLicenseExp || (data.drivers_license_expiration
+            ? formatDateForDisplay(data.drivers_license_expiration as unknown as string) : ''),
         }));
       } catch (err) {
         logger.error("Unexpected error loading driver info for DVIR:", err);
@@ -545,7 +551,7 @@ export default function DVIRForm() {
 
   useEffect(() => {
     if (fullName && !form.driversName) {
-      setForm(prev => ({ ...prev, driversName: fullName }));
+      setForm(prev => ({ ...prev, driversName: prev.driversName || fullName }));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps -- One-time pre-fill; draft restore runs first.
   }, [fullName]);
@@ -1382,7 +1388,11 @@ export default function DVIRForm() {
       </div>
       
       {/* Draft Recovery Modal */}
-      <DraftRecoveryModal {...draftRecoveryModalProps} />
+      <DraftRecoveryModal {...draftRecoveryModalProps} onDiscard={() => {
+        draftRecoveryModalProps.onDiscard();
+        setOilDipstickPhoto(null);
+        setExtraPhotos({});
+      }} />
       
       {/* Success Celebration with Remaining Forms Nudge */}
       <FormSuccessCelebration

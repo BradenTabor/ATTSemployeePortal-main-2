@@ -43,7 +43,9 @@ export async function compressImage(
       maxSizeMB: opts.maxSizeMB,
       maxWidthOrHeight: opts.maxWidthOrHeight,
       initialQuality: opts.initialQuality,
-      useWebWorker: opts.useWebWorker,
+      // The library's worker imports a CDN script. Use the bundled main-thread
+      // implementation offline so capturing a photo never waits for that URL.
+      useWebWorker: opts.useWebWorker && (typeof navigator === 'undefined' || navigator.onLine),
     });
 
     const outName = file.name.replace(/\.[^.]+$/, '.jpg') || file.name;
