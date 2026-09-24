@@ -57,7 +57,7 @@ export function OfflineQueueProvider({ children }: { children: ReactNode }) {
     await archiveConflict(
       item.id,
       item.formType,
-      item.payload,
+      { ...item.payload, __offlineUserId: item.userId || item.payload.user_id },
       reason,
       { photoIds: item.photoIds },
     );
@@ -71,7 +71,7 @@ export function OfflineQueueProvider({ children }: { children: ReactNode }) {
 
   const value = useOfflineQueue({
     submitter: user?.id ? submitOfflineForm : null,
-    userId: user?.id,
+    userId: user?.id ?? '',
     conflictCheck,
     onConflict,
     processOnOnline: true,

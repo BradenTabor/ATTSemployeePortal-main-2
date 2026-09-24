@@ -2,14 +2,22 @@ import { supabase } from './supabaseClient';
 import { getPhotosForQueue, deletePhotosForQueue, type OfflinePhoto } from './offlinePhotoStore';
 import { mapWithConcurrency, UPLOAD_CONCURRENCY } from './asyncPool';
 import { logger } from './logger';
-import type { OfflineSubmitter, QueuedSubmission } from './offlineQueue';
+import { OfflineAuthError, type OfflineSubmitter, type QueuedSubmission } from './offlineQueue';
 import { formatInTimeZone } from 'date-fns-tz';
+
+function submissionError(error: { message: string; statusCode?: string | number; code?: string }): Error {
+  if (String(error.statusCode) === '401' || error.code === 'PGRST301' || /jwt.*expired/i.test(error.message)) {
+    return new OfflineAuthError('Sign in to sync pending submissions. Your forms and photos are still saved.');
+  }
+  return new Error(error.message);
+}
 
 /** Upload a single offline photo blob to Supabase Storage with upsert: true. */
 async function uploadOfflinePhoto(
   photo: OfflinePhoto,
   bucket: string,
   userId: string,
+  authorization: string,
 ): Promise<string> {
   const ext = photo.fileName.split('.').pop() || 'jpg';
   const filePath = `${userId}/${photo.id}-${photo.fieldName}.${ext}`;
@@ -20,11 +28,12 @@ async function uploadOfflinePhoto(
       cacheControl: '3600',
       upsert: true, // Idempotent: re-upload on interrupted retry won't 409
       contentType: photo.contentType || 'image/jpeg',
+      headers: { Authorization: authorization },
     });
 
   if (error) {
     logger.error(`[OfflineQueue] Photo upload failed: ${photo.fieldName}`, error);
-    throw new Error(`Photo upload failed (${photo.fieldName}): ${error.message}`);
+    throw submissionError(error);
   }
 
   return data.path;
@@ -35,6 +44,7 @@ async function uploadQueuePhotos(
   queueId: string,
   bucket: string,
   userId: string,
+  authorization: string,
 ): Promise<Map<string, string>> {
   const photos = await getPhotosForQueue(queueId);
   const pathMap = new Map<string, string>();
@@ -42,7 +52,7 @@ async function uploadQueuePhotos(
   // Bounded parallelism — a queued DVIR can hold five photos, and the sync
   // usually happens the moment the truck gets one bar of LTE back.
   const paths = await mapWithConcurrency(photos, UPLOAD_CONCURRENCY, (photo) =>
-    uploadOfflinePhoto(photo, bucket, userId),
+    uploadOfflinePhoto(photo, bucket, userId, authorization),
   );
   photos.forEach((photo, i) => pathMap.set(photo.fieldName, paths[i]));
 
@@ -58,11 +68,12 @@ async function submitJSA(
   photoIds: string[],
   queueId: string,
   userId: string,
+  authorization: string,
   recordId?: string,
 ): Promise<void> {
   // If there are offline photos, upload them first
   if (photoIds.length > 0) {
-    const pathMap = await uploadQueuePhotos(queueId, 'jsa-photos', userId);
+    const pathMap = await uploadQueuePhotos(queueId, 'jsa-photos', userId, authorization);
     if (pathMap.size > 0) {
       // Merge photo paths into the payload
       const existingPaths = (payload.jsa_photo_paths as string[] | undefined) ?? [];
@@ -75,9 +86,9 @@ async function submitJSA(
   const query = recordId
     ? supabase.from("daily_jsa").update(payload).eq('id', recordId)
     : supabase.from("daily_jsa").insert([payload]);
-  const { error } = await query.select("id").single();
+  const { error } = await query.select("id").setHeader("Authorization", authorization).single();
 
-  if (error) throw new Error(error.message);
+  if (error) throw submissionError(error);
 
   // Integrity check: read back the record
   // (we trust the insert returned OK + the uploads returned paths)
@@ -93,9 +104,10 @@ async function submitDVIR(
   _photoIds: string[],
   queueId: string,
   userId: string,
+  authorization: string,
 ): Promise<void> {
   // Upload all photos from offline store
-  const pathMap = await uploadQueuePhotos(queueId, 'dvir-photos', userId);
+  const pathMap = await uploadQueuePhotos(queueId, 'dvir-photos', userId, authorization);
 
   // Replace placeholder paths with real storage paths
   if (pathMap.has('oil_dipstick')) payload.oil_dipstick_path = pathMap.get('oil_dipstick');
@@ -113,9 +125,10 @@ async function submitDVIR(
     .from("dvir_reports")
     .insert([insertPayload])
     .select("id, oil_dipstick_path, tire_photo_path, coolant_photo_path, damage_photo_path, detail_clean_truck_photo_path")
+    .setHeader("Authorization", authorization)
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) throw submissionError(error);
 
   const dvirPhotoFields: Array<{ key: string; col: keyof NonNullable<typeof data> }> = [
     { key: 'oil_dipstick', col: 'oil_dipstick_path' },
@@ -145,9 +158,10 @@ async function submitEquipment(
   _photoIds: string[],
   queueId: string,
   userId: string,
+  authorization: string,
 ): Promise<void> {
   // Upload all photos from offline store
-  const pathMap = await uploadQueuePhotos(queueId, 'equipment-inspection-photos', userId);
+  const pathMap = await uploadQueuePhotos(queueId, 'equipment-inspection-photos', userId, authorization);
 
   // Replace placeholder paths with real storage paths
   if (pathMap.has('overview')) payload.overview_photo_path = pathMap.get('overview');
@@ -170,9 +184,10 @@ async function submitEquipment(
     .from("daily_equipment_inspections")
     .insert([payload])
     .select("id, overview_photo_path, damage_photo_path, attachments_photo_path, hydraulic_photo_path, additional_photo_paths")
+    .setHeader("Authorization", authorization)
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) throw submissionError(error);
 
   const equipmentPhotoFields: Array<{ key: string; col: keyof NonNullable<typeof data> }> = [
     { key: 'overview', col: 'overview_photo_path' },
@@ -211,10 +226,11 @@ async function submitNearMiss(
   photoIds: string[],
   queueId: string,
   userId: string,
+  authorization: string,
 ): Promise<void> {
   const bucket = 'jsa-photos'; // Reuse safety photos bucket for near-miss
   if (photoIds.length > 0) {
-    const pathMap = await uploadQueuePhotos(queueId, bucket, userId);
+    const pathMap = await uploadQueuePhotos(queueId, bucket, userId, authorization);
     const paths = Array.from(pathMap.values());
     const nearMissData = (payload.near_miss_data as Record<string, unknown>) ?? {};
     payload.near_miss_data = { ...nearMissData, photo_paths: paths };
@@ -224,9 +240,10 @@ async function submitNearMiss(
     .from('safety_incidents')
     .insert([payload])
     .select('id')
+    .setHeader("Authorization", authorization)
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) throw submissionError(error);
 
   if (photoIds.length > 0) {
     await deletePhotosForQueue(queueId);
@@ -236,10 +253,14 @@ async function submitNearMiss(
 /** Keep queue metadata on the device; only database fields cross this boundary. */
 export const submitOfflineForm: OfflineSubmitter = async (formType, queuedPayload, photoIds) => {
   const { data: { session }, error } = await supabase.auth.getSession();
-  if (error || !session) throw new Error(error?.message || 'Sign in to sync pending submissions');
+  if (error || !session?.access_token || (session.expires_at && session.expires_at <= Date.now() / 1000)) {
+    throw new OfflineAuthError('Sign in to sync pending submissions. Your forms and photos are still saved.');
+  }
+  const authorization = `Bearer ${session.access_token}`;
   const userId = session.user.id;
-  if (queuedPayload.user_id && queuedPayload.user_id !== userId) {
-    throw new Error('Sign in with the account that saved this submission');
+  const ownerId = queuedPayload.__offlineUserId || queuedPayload.user_id;
+  if (ownerId && ownerId !== userId) {
+    throw new OfflineAuthError('Sign in with the account that saved this submission');
   }
   const queueId = String(queuedPayload.__offlineQueueId || '');
   const recordId = typeof queuedPayload.__recordId === 'string' ? queuedPayload.__recordId : undefined;
@@ -247,8 +268,8 @@ export const submitOfflineForm: OfflineSubmitter = async (formType, queuedPayloa
   const tables = { jsa: 'daily_jsa', dvir: 'dvir_reports', equipment: 'daily_equipment_inspections', near_miss: 'safety_incidents' } as const;
   if (!recordId && payload.id && formType in tables) {
     const table = tables[formType as keyof typeof tables];
-    const { data, error: lookupError } = await supabase.from(table).select('id').eq('id', payload.id).maybeSingle();
-    if (lookupError) throw new Error(lookupError.message);
+    const { data, error: lookupError } = await supabase.from(table).select('id').eq('id', payload.id).setHeader('Authorization', authorization).maybeSingle();
+    if (lookupError) throw submissionError(lookupError);
     if (data) { await deletePhotosForQueue(queueId); return; }
   }
   if (recordId && formType === 'jsa') {
@@ -262,10 +283,10 @@ export const submitOfflineForm: OfflineSubmitter = async (formType, queuedPayloa
     if (photoIds.some(id => !storedIds.has(id))) throw new Error('A queued photo is missing. Keep this submission for recovery; do not discard it.');
   }
   switch (formType) {
-    case 'jsa': return submitJSA(payload, photoIds, queueId, userId, recordId);
-    case 'dvir': return submitDVIR(payload, photoIds, queueId, userId);
-    case 'equipment': return submitEquipment(payload, photoIds, queueId, userId);
-    case 'near_miss': return submitNearMiss(payload, photoIds, queueId, userId);
+    case 'jsa': return submitJSA(payload, photoIds, queueId, userId, authorization, recordId);
+    case 'dvir': return submitDVIR(payload, photoIds, queueId, userId, authorization);
+    case 'equipment': return submitEquipment(payload, photoIds, queueId, userId, authorization);
+    case 'near_miss': return submitNearMiss(payload, photoIds, queueId, userId, authorization);
     default: throw new Error(`Unknown form type: ${formType}`);
   }
 };
@@ -273,6 +294,9 @@ export const submitOfflineForm: OfflineSubmitter = async (formType, queuedPayloa
 /** A second truck or post-trip inspection is not a duplicate of a pre-trip. */
 export async function hasOfflineConflict(item: QueuedSubmission, userId: string): Promise<boolean> {
   if (item.userId && item.userId !== userId) return false;
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token || session.user.id !== userId) throw new OfflineAuthError('Sign in with the account that saved this submission');
+  const authorization = `Bearer ${session.access_token}`;
   if (item.formType === 'dvir') {
     const truck = item.payload.truck_number;
     const created = item.payload.created_at;
@@ -282,14 +306,14 @@ export async function hasOfflineConflict(item: QueuedSubmission, userId: string)
     if (!truck || !date) return false;
     const { data, error } = await supabase.from('dvir_reports').select('id')
       .eq('user_id', userId).eq('report_date', date).eq('truck_number', truck)
-      .eq('inspection_type', item.payload.inspection_type || 'pre_trip').limit(1).maybeSingle();
+      .eq('inspection_type', item.payload.inspection_type || 'pre_trip').limit(1).setHeader('Authorization', authorization).maybeSingle();
     if (error) throw new Error(error.message);
     return Boolean(data && data.id !== item.payload.id);
   }
   if (item.formType === 'equipment' && item.dateFor && item.payload.equipment_number) {
     const { data, error } = await supabase.from('daily_equipment_inspections').select('id')
       .eq('user_id', userId).eq('inspection_date', item.dateFor)
-      .eq('equipment_number', item.payload.equipment_number).limit(1).maybeSingle();
+      .eq('equipment_number', item.payload.equipment_number).limit(1).setHeader('Authorization', authorization).maybeSingle();
     if (error) throw new Error(error.message);
     return Boolean(data && data.id !== item.payload.id);
   }

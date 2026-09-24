@@ -54,6 +54,8 @@ export type OfflineSubmitter = (
   photoIds: string[],
 ) => Promise<void>;
 
+export class OfflineAuthError extends Error {}
+
 /** Progress callback emitted during processQueue. */
 export interface SyncProgress {
   /** Current submission index (1-based). */
@@ -144,7 +146,11 @@ async function getAllActionable(db: IDBPDatabase): Promise<QueuedSubmission[]> {
   const all = await db.getAll(STORE_NAME);
   return (all as Record<string, unknown>[])
     .map(normalizeEntry)
-    .filter((i) => i.status === 'pending' || i.status === 'failed');
+    .filter((i) => i.status === 'pending' || i.status === 'failed' || i.status === 'syncing');
+}
+
+export function belongsToUser(item: QueuedSubmission, userId: string): boolean {
+  return Boolean(userId && (item.userId || item.payload.user_id) === userId);
 }
 
 /**
@@ -231,18 +237,17 @@ export async function addToQueue(
 /**
  * Get count of actionable items (pending + failed) in the queue.
  */
-export async function getQueueLength(): Promise<number> {
-  const db = await getDB();
-  const items = await getAllActionable(db);
-  return items.length;
+export async function getQueueLength(userId?: string): Promise<number> {
+  return (await getPendingItems(userId)).length;
 }
 
 /**
  * Get all pending/failed items for UI display.
  */
-export async function getPendingItems(): Promise<QueuedSubmission[]> {
+export async function getPendingItems(userId?: string): Promise<QueuedSubmission[]> {
   const db = await getDB();
-  const items = await getAllActionable(db);
+  const items = (await db.getAll(STORE_NAME)).map(normalizeEntry)
+    .filter(item => item.status !== 'synced' && (userId === undefined || belongsToUser(item, userId)));
   return items.sort((a, b) => a.timestamp - b.timestamp);
 }
 
@@ -279,7 +284,7 @@ async function runQueue(
 ): Promise<{ processed: number; failed: number; discarded: number }> {
   const db = await getDB();
   const items = await getAllActionable(db);
-  const sorted = sortByPriority(items.filter(item => !options?.userId || !item.userId || item.userId === options.userId));
+  const sorted = sortByPriority(items.filter(item => options?.userId === undefined || belongsToUser(item, options.userId)));
 
   let processed = 0;
   let failed = 0;
@@ -289,7 +294,7 @@ async function runQueue(
     const item = sorted[i];
     // Persist an identity before the first request. A response lost after the
     // server commits must not turn a retry into a second safety record.
-    if (item.payload.__offlineQueueId && !item.payload.__recordId && !item.payload.id) {
+    if (!item.payload.__recordId && !item.payload.id) {
       item.payload.id = crypto.randomUUID();
       await db.put(STORE_NAME, item);
     }
@@ -336,13 +341,24 @@ async function runQueue(
     await db.put(STORE_NAME, item);
 
     try {
-      await submitter(item.formType, item.payload, item.photoIds);
+      await submitter(item.formType, {
+        ...item.payload,
+        ...(item.userId ? { __offlineUserId: item.userId } : {}),
+      }, item.photoIds);
       await db.delete(STORE_NAME, item.id);
       processed++;
       // Notify per-item success
       options?.onItemSynced?.(item);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
+      if (err instanceof OfflineAuthError) {
+        item.status = 'pending';
+        item.error = message;
+        await db.put(STORE_NAME, item);
+        failed++;
+        options?.onItemFailed?.(item, message);
+        break; // Authentication failures must not exhaust photo retries.
+      }
       logger.warn('[offlineQueue] Submit failed', {
         id: item.id,
         formType: item.formType,

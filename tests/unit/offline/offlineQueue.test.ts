@@ -6,7 +6,8 @@
  * concurrent guard, and idempotent re-processing.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest';
+import { openDB, type IDBPDatabase } from 'idb';
 import {
   addToQueue,
   getQueueLength,
@@ -18,6 +19,7 @@ import {
   retryManual,
   type OfflineSubmitter,
   type QueuedSubmission,
+  OfflineAuthError,
 } from '@/lib/offlineQueue';
 
 // ---------------------------------------------------------------------------
@@ -42,6 +44,12 @@ function failSubmitter(msg = 'Network error'): OfflineSubmitter {
 // ---------------------------------------------------------------------------
 
 describe('offlineQueue', () => {
+  let testDB: IDBPDatabase;
+  beforeAll(async () => {
+    await getAllItems();
+    testDB = await openDB('atts-offline-queue', 2);
+  });
+  afterAll(() => testDB.close());
   // The module caches its IDB connection, so deleteDatabase in afterEach is
   // insufficient. Clear the store contents via the public API instead.
   beforeEach(async () => {
@@ -63,12 +71,44 @@ describe('offlineQueue', () => {
     expect(vi.mocked(submit).mock.calls[0][1].id).toEqual(expect.any(String));
   });
 
+  it('recovers a syncing item left behind by an app restart', async () => {
+    const id = await addToQueue('jsa', { __offlineQueueId: 'photos', id: 'stable-record' }, { userId: 'worker' });
+    const item = await testDB.get('submissions', id);
+    await testDB.put('submissions', { ...item, status: 'syncing' });
+    const submit = successSubmitter();
+    expect((await processQueue(submit, { userId: 'worker' })).processed).toBe(1);
+    expect(submit).toHaveBeenCalledWith('jsa', expect.objectContaining({ id: 'stable-record' }), []);
+    expect(await getQueueItem(id)).toBeUndefined();
+  });
+
+  it('keeps manual-retry items visible while excluding them from automatic replay', async () => {
+    const id = await addToQueue('equipment', {}, { userId: 'worker', photoIds: ['photo'] });
+    await testDB.put('submissions', { ...await testDB.get('submissions', id), status: 'failed_manual' });
+    expect((await getPendingItems()).map(item => item.id)).toContain(id);
+    const submit = successSubmitter();
+    await processQueue(submit, { userId: 'worker' });
+    expect(submit).not.toHaveBeenCalled();
+  });
+
   it('keeps another account’s submissions on the device', async () => {
     await addToQueue('jsa', { notes: 'private' }, { userId: 'other' });
     const submit = successSubmitter();
     await processQueue(submit, { userId: 'worker' });
     expect(submit).not.toHaveBeenCalled();
     expect(await getQueueLength()).toBe(1);
+  });
+
+  it('does not consume retries when the session expires', async () => {
+    const id = await addToQueue('jsa', { user_id: 'worker' }, { userId: 'worker', photoIds: ['photo'] });
+    for (let i = 0; i < 4; i++) await processQueue(async () => { throw new OfflineAuthError('Sign in again'); }, { userId: 'worker' });
+    expect(await getQueueItem(id)).toMatchObject({ status: 'pending', retryCount: 0, photoIds: ['photo'] });
+  });
+
+  it('scopes pending and manual-retry items to their owner', async () => {
+    const mine = await addToQueue('jsa', {}, { userId: 'worker' });
+    await addToQueue('equipment', {}, { userId: 'other' });
+    expect((await getPendingItems('worker')).map(item => item.id)).toEqual([mine]);
+    expect(await getPendingItems('')).toEqual([]);
   });
 
   describe('addToQueue', () => {

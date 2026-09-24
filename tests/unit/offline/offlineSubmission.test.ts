@@ -4,13 +4,14 @@ import type { QueuedSubmission } from '../../../src/lib/offlineQueue';
 
 const mocks = vi.hoisted(() => {
   const query: Record<string, ReturnType<typeof vi.fn>> = {};
-  for (const method of ['insert', 'update', 'select', 'eq', 'limit']) query[method] = vi.fn(() => query);
+  for (const method of ['insert', 'update', 'select', 'eq', 'limit', 'setHeader']) query[method] = vi.fn(() => query);
   query.single = vi.fn(async () => ({ data: { id: 'saved' }, error: null }));
   query.maybeSingle = vi.fn(async () => ({ data: null, error: null }));
-  return { query, from: vi.fn(() => query), getSession: vi.fn(), photos: vi.fn(), cleanup: vi.fn() };
+  return { query, from: vi.fn(() => query), getSession: vi.fn(), photos: vi.fn(), cleanup: vi.fn(), upload: vi.fn() };
 });
 vi.mock('../../../src/lib/supabaseClient', () => ({ supabase: {
   from: mocks.from, auth: { getSession: mocks.getSession },
+  storage: { from: () => ({ upload: mocks.upload }) },
 } }));
 vi.mock('../../../src/lib/offlinePhotoStore', () => ({
   getPhotosForQueue: mocks.photos, deletePhotosForQueue: mocks.cleanup,
@@ -18,7 +19,7 @@ vi.mock('../../../src/lib/offlinePhotoStore', () => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mocks.getSession.mockResolvedValue({ data: { session: { user: { id: 'worker' } } }, error: null });
+  mocks.getSession.mockResolvedValue({ data: { session: { user: { id: 'worker' }, access_token: 'worker-token' } }, error: null });
   mocks.photos.mockResolvedValue([]);
   mocks.query.single.mockResolvedValue({ data: { id: 'saved' }, error: null });
   mocks.query.maybeSingle.mockResolvedValue({ data: null, error: null });
@@ -61,6 +62,42 @@ describe('actual offline replay boundary', () => {
   it('never submits another account’s saved inspection', async () => {
     await expect(submitOfflineForm('dvir', { user_id: 'another-worker' }, [])).rejects.toThrow('account');
     expect(mocks.from).not.toHaveBeenCalled();
+  });
+  it('rejects expired credentials without uploading or deleting photos', async () => {
+    mocks.getSession.mockResolvedValue({ data: { session: { user: { id: 'worker' }, access_token: 'expired', expires_at: 1 } }, error: null });
+    await expect(submitOfflineForm('jsa', { user_id: 'worker' }, ['photo'])).rejects.toThrow('Sign in');
+    expect(mocks.upload).not.toHaveBeenCalled();
+    expect(mocks.cleanup).not.toHaveBeenCalled();
+  });
+  it('preserves the queue when the token expires during an upload', async () => {
+    mocks.photos.mockResolvedValue([{ id: 'photo', fieldName: 'hydraulic', fileName: 'photo.jpg', blob: new Blob(['image']) }]);
+    mocks.upload.mockResolvedValueOnce({ data: null, error: { message: 'JWT expired', statusCode: '401' } });
+    await expect(submitOfflineForm('equipment', { user_id: 'worker', __offlineQueueId: 'q' }, ['photo'])).rejects.toThrow('Sign in');
+    expect(mocks.cleanup).not.toHaveBeenCalled();
+    expect(mocks.query.insert).not.toHaveBeenCalled();
+  });
+  it('preserves photos after an interrupted upload and retries the same object path', async () => {
+    mocks.photos.mockResolvedValue([{ id: 'photo', fieldName: 'hydraulic', fileName: 'photo.jpg', blob: new Blob(['image']), contentType: 'image/jpeg' }]);
+    mocks.upload.mockResolvedValueOnce({ data: null, error: { message: 'Network interrupted' } })
+      .mockResolvedValueOnce({ data: { path: 'worker/photo-hydraulic.jpg' }, error: null });
+    const payload = { user_id: 'worker', __offlineQueueId: 'q', id: 'stable-record' };
+    await expect(submitOfflineForm('equipment', payload, ['photo'])).rejects.toThrow('Network interrupted');
+    expect(mocks.query.insert).not.toHaveBeenCalled();
+    expect(mocks.cleanup).not.toHaveBeenCalled();
+    await submitOfflineForm('equipment', payload, ['photo']);
+    expect(mocks.upload.mock.calls[0][0]).toBe(mocks.upload.mock.calls[1][0]);
+    expect(mocks.cleanup).toHaveBeenCalledWith('q');
+  });
+  it('pins upload and insert authorization to the original account during a switch', async () => {
+    mocks.photos.mockResolvedValue([{ id: 'photo', fieldName: 'oil_dipstick', fileName: 'photo.jpg', blob: new Blob(['image']) }]);
+    mocks.upload.mockImplementationOnce(async () => {
+      mocks.getSession.mockResolvedValue({ data: { session: { user: { id: 'other' }, access_token: 'other-token' } }, error: null });
+      return { data: { path: 'worker/photo-oil_dipstick.jpg' }, error: null };
+    });
+    await submitOfflineForm('dvir', { user_id: 'worker', __offlineQueueId: 'q' }, ['photo']);
+    expect(mocks.upload.mock.calls[0][2].headers.Authorization).toBe('Bearer worker-token');
+    expect(mocks.query.setHeader).toHaveBeenCalledWith('Authorization', 'Bearer worker-token');
+    expect(mocks.query.setHeader).not.toHaveBeenCalledWith('Authorization', 'Bearer other-token');
   });
   it('recognizes a committed submission after its original response was lost', async () => {
     mocks.query.maybeSingle.mockResolvedValue({ data: { id: 'stable-id' }, error: null });
