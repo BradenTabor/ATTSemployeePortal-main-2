@@ -191,7 +191,7 @@ export function JsaWizard({
   };
 
   return (
-    <div className="relative flex flex-col h-full overflow-hidden" data-testid="jsa-wizard">
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden" data-testid="jsa-wizard">
       {/* Premium Header - Mobile Optimized */}
       <div
         className="flex-shrink-0 border-b border-emerald-500/20"
@@ -409,12 +409,12 @@ export function JsaWizard({
             className={cn(
               "inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-medium transition-all touch-manipulation min-w-[80px]",
               isFirstStep
-                ? "opacity-30 cursor-not-allowed text-white/40"
+                ? "cursor-not-allowed bg-white/5 border border-white/10 text-white/60"
                 : "bg-white/10 text-white hover:bg-white/15 border border-white/10"
             )}
           >
             <ArrowLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">Back</span>
+            <span>Back</span>
           </button>
 
           {/* Center: Save with Mode Selector - Visual differentiation */}
@@ -452,7 +452,7 @@ export function JsaWizard({
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
                   transition={{ duration: 0.15, ease: "easeOut" }}
-                  className="fixed bottom-20 inset-x-0 mx-auto w-[calc(100vw-2rem)] max-w-[280px] z-50"
+                  className="absolute bottom-[calc(100%+0.75rem)] left-1/2 -ml-[140px] w-[280px] max-h-[60dvh] overflow-y-auto z-50"
                 >
                   <div className="bg-gray-900/98 backdrop-blur-xl border border-white/15 rounded-xl shadow-2xl shadow-black/50 overflow-hidden">
                     {/* Header */}
@@ -564,7 +564,7 @@ export function JsaWizard({
                 className={cn(
                   "inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all touch-manipulation min-w-[80px]",
                   saving || !isValid
-                    ? "opacity-40 cursor-not-allowed bg-amber-700/30 text-white/50"
+                    ? "cursor-not-allowed border border-white/20 bg-white/10 text-white/70"
                     : "bg-gradient-to-r from-amber-600 to-amber-700 text-white hover:from-amber-500 hover:to-amber-600"
                 )}
                 aria-label={saving ? "Submitting..." : !isValid ? "Please fix validation errors" : "Submit JSA form"}
@@ -572,7 +572,7 @@ export function JsaWizard({
               >
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                 {!saving && <Check className="w-4 h-4" />}
-                <span className="hidden sm:inline">{saving ? "Submitting..." : "Done"}</span>
+                <span>{saving ? "Saving..." : "Done"}</span>
               </button>
               {completeError && (
                 <p role="alert" className="text-sm text-red-400 mt-2 text-right">
@@ -591,7 +591,7 @@ export function JsaWizard({
               }}
               className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl bg-emerald-600/80 px-3 py-2.5 text-sm font-semibold text-white hover:bg-emerald-500 transition-all touch-manipulation min-w-[80px] border border-emerald-500/30"
             >
-              <span className="hidden sm:inline">Next</span>
+              <span>Next</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           )}
@@ -599,7 +599,7 @@ export function JsaWizard({
 
         {/* Validation hint - only show on last step */}
         {isLastStep && !isValid && (
-          <div className="text-center text-[10px] text-amber-300/70 pb-1 -mt-1 space-y-0.5">
+          <div className="max-h-16 overflow-y-auto px-3 text-center text-xs text-amber-200 pb-1 -mt-1 space-y-0.5">
             <p className="mb-1 font-medium">Please fix the following issues:</p>
             <div className="space-y-0.5">
               {(() => {
