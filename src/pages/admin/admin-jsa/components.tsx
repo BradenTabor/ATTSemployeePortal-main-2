@@ -3,6 +3,8 @@
  */
 
 import React from "react";
+import { JsaPhotoSection } from "../../../components/history/JsaDetailModal";
+import { PPE_ITEMS } from "../../forms/dailyJSAFormState";
 import {
   User,
   Users,
@@ -385,6 +387,13 @@ export function SelectedJsaDetail({
 
         {record.submission_type !== "paper" && (
         <>
+        <DetailCard title="Personal protective equipment" icon={<Shield className="w-4 h-4" />}>
+          {PPE_ITEMS.map(({ key, label }) => (
+            <DetailRow key={key} label={label} value={record.ppe?.[key]?.required
+              ? `Required · ${record.ppe[key].condition || "Condition not recorded"}`
+              : "Not required"} />
+          ))}
+        </DetailCard>
         <DetailCard title="Jobs & Weather" icon={<Thermometer className="w-4 h-4" />}>
           <ChipSection title="Jobs Performed" chips={jobs.map((job) => job.label ?? job.key)} emptyText="No jobs selected." />
           <ChipSection title="Conditions" chips={weatherConditions} />
@@ -433,6 +442,10 @@ export function SelectedJsaDetail({
           )}
         </DetailCard>
         </>
+        )}
+
+        {Array.isArray(record.jsa_photo_paths) && record.jsa_photo_paths.length > 0 && (
+          <JsaPhotoSection key={record.id} paths={record.jsa_photo_paths} />
         )}
 
         <DetailCard title="Notes & Signature" icon={<AlignLeft className="w-4 h-4" />} className={isFullscreen ? "md:col-span-2" : ""}>

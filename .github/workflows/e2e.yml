@@ -2,9 +2,9 @@
 # Merge job produces a single HTML report from all shards.
 #
 # Required GitHub Secrets (Settings > Secrets and variables > Actions):
-#   - VITE_SUPABASE_URL: Your Supabase project URL
-#   - VITE_SUPABASE_ANON_KEY: Your Supabase anonymous key
-#   - SUPABASE_SERVICE_ROLE_KEY: Your Supabase service role key (for test user seeding)
+#   - E2E_SUPABASE_URL: Dedicated NONPRODUCTION Supabase project URL
+#   - E2E_SUPABASE_ANON_KEY: Test project anonymous key
+#   - E2E_SUPABASE_SERVICE_ROLE_KEY: Test project service role key for seeding
 
 name: E2E
 
@@ -17,11 +17,11 @@ on:
 
 env:
   CI: true
-  PLAYWRIGHT_BASE_URL: http://localhost:5173
+  PLAYWRIGHT_BASE_URL: http://localhost:5183
   # Supabase environment variables (from GitHub secrets)
-  VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-  VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-  SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+  VITE_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+  VITE_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
+  SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.E2E_SUPABASE_SERVICE_ROLE_KEY }}
 
 jobs:
   e2e:
@@ -45,6 +45,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Validate nonproduction test configuration
+        run: |
+          test -n "$VITE_SUPABASE_URL" && test -n "$VITE_SUPABASE_ANON_KEY" && test -n "$SUPABASE_SERVICE_ROLE_KEY" || {
+            echo "::error::Configure E2E_SUPABASE_URL, E2E_SUPABASE_ANON_KEY, and E2E_SUPABASE_SERVICE_ROLE_KEY for a dedicated test project."
+            exit 1
+          }
+          npx tsx -e 'import { assertSafeE2ETarget } from "./tests/setup/e2eEnv"; assertSafeE2ETarget("GitHub E2E");'
+
       # Chromium only for faster CI; use `npx playwright install --with-deps` for all browsers
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
@@ -53,16 +61,10 @@ jobs:
       - name: Generate test fixtures
         run: npm run test:fixtures
 
-      # Seed test users if service role key is available
       - name: Seed test users
-        if: env.SUPABASE_SERVICE_ROLE_KEY != ''
         run: npm run test:setup
-        continue-on-error: true
 
       - name: Run Playwright tests (shard ${{ matrix.shard }}/${{ matrix.shards }})
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: >
           npx playwright test
           --project=chromium
@@ -70,6 +72,7 @@ jobs:
           --reporter=blob
 
       - name: Upload blob report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: blob-${{ matrix.shard }}
@@ -102,11 +105,13 @@ jobs:
         with:
           path: blob-reports
           pattern: blob-*
-          merge-multiple: false
+          merge-multiple: true
 
       - name: Merge Playwright reports
+        env:
+          PLAYWRIGHT_HTML_OUTPUT_DIR: tests/e2e-report
         run: |
-          npx playwright merge-reports blob-reports --reporter=html --output=tests/e2e-report
+          npx playwright merge-reports blob-reports --reporter=html
 
       - name: Upload merged HTML report
         uses: actions/upload-artifact@v4
