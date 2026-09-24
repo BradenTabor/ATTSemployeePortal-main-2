@@ -21,6 +21,7 @@ import {
   HardDrive,
   Clock,
 } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { cn } from '../lib/utils';
 import { useOfflineQueueContext } from '../hooks/useOfflineQueueContext';
 import { useStorageQuota } from '../hooks/useStorageQuota';
@@ -240,7 +241,7 @@ export function OfflineQueuePanel({ open, onClose }: OfflineQueuePanelProps) {
 
   const isSyncing = syncing || syncProgress !== null;
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {open && (
         <>
@@ -482,6 +483,7 @@ export function OfflineQueuePanel({ open, onClose }: OfflineQueuePanelProps) {
           </AnimatePresence>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }
