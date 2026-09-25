@@ -2,13 +2,15 @@
  * Helper/utility functions for AdminJSA page
  */
 
+import { parseISO } from 'date-fns';
+
 // =============================================================================
 // DATE FORMATTING
 // =============================================================================
 
 export function formatDate(value?: string | null): string {
   if (!value) return "—";
-  const d = new Date(value);
+  const d = parseISO(value);
   if (Number.isNaN(d.getTime())) return value;
   return d.toLocaleDateString(undefined, {
     month: "short",

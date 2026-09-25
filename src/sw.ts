@@ -1,5 +1,5 @@
 /// <reference lib="webworker" />
-import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
+import { precacheAndRoute, cleanupOutdatedCaches, createHandlerBoundToURL } from 'workbox-precaching';
 import { clientsClaim } from 'workbox-core';
 import { registerRoute, NavigationRoute } from 'workbox-routing';
 import { NetworkFirst, CacheFirst } from 'workbox-strategies';
@@ -124,15 +124,9 @@ registerRoute(
 
 // 5. Navigation fallback — serve cached index.html for all navigation requests (SPA)
 //    This ensures the app shell loads offline even for deep-link routes like /forms/jsa
-const navigationHandler = new NetworkFirst({
-  cacheName: 'navigation-cache',
-  networkTimeoutSeconds: 4,
-  plugins: [
-    new CacheableResponsePlugin({ statuses: [0, 200] }),
-  ],
-});
-
-registerRoute(new NavigationRoute(navigationHandler));
+// Keep HTML and chunks on the same installed release. Network-first navigation
+// could mix a new server shell with an old worker (or replay stale deep links).
+registerRoute(new NavigationRoute(createHandlerBoundToURL('/index.html')));
 
 // ============================================
 // Push Notification Handler (iOS Safari Compatible)
@@ -260,7 +254,7 @@ self.addEventListener('message', (event) => {
 
   switch (event.data.type) {
     case 'SKIP_WAITING':
-      self.skipWaiting();
+      event.waitUntil(self.skipWaiting());
       break;
 
     case 'CHECK_QUEUE_EMPTY':

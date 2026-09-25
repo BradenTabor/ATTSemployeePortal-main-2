@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
+import { createPortal } from "react-dom";
+import { Z } from "../../lib/zIndex";
+import { useModalOverlay } from "../../hooks/useModalOverlay";
 import { useAdminJSAQuery } from "../../hooks/queries/useAdminJSAQuery";
 import { useDailyJSAStats } from "../../hooks/queries/useDailyJSAStats";
 import { motion, AnimatePresence } from "framer-motion";
@@ -146,14 +149,14 @@ export function AdminJSAContent() {
     if (typeof saved.showFilters === "boolean") setShowFilters(saved.showFilters);
   }, []);
 
-  // Update selectedId when records change (select first if current selection not in list)
+  // Preserve an explicit selection; loading/filtering must not open a dialog.
   useEffect(() => {
     if (records.length > 0) {
       setSelectedId((prev) => {
         if (prev && records.some((row) => row.id === prev)) {
           return prev;
         }
-        return records[0]?.id ?? null;
+        return null;
       });
     } else {
       setSelectedId(null);
@@ -363,8 +366,13 @@ export function AdminJSAContent() {
   }, [sortField, sortDirection, statusFilter, dateFilter, dateEndFilter, searchQuery, signatureFilter, userFilter, allUsers, user?.id, role, typeFilter]);
 
   // Keyboard shortcuts
+  const closeDetail = useCallback(() => {
+    if (!document.querySelector('[aria-label="Paper JSA photo (full size)"]')) setSelectedId(null);
+  }, []);
+  const { modalRef } = useModalOverlay({ isOpen: selectedId !== null, onClose: closeDetail, zIndex: Z.modal });
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (document.querySelector('[aria-label="Paper JSA photo (full size)"]')) return;
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
       if (e.key === "ArrowLeft" && page > 1) {
@@ -1083,7 +1091,7 @@ export function AdminJSAContent() {
         </div>
 
         {/* Detail Panel - Overlay Modal */}
-        <AnimatePresence mode="wait">
+        {createPortal(<AnimatePresence mode="wait">
           {selectedRecord && (
             <>
               {/* Backdrop */}
@@ -1093,10 +1101,16 @@ export function AdminJSAContent() {
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
                 onClick={() => setSelectedId(null)}
-                className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40"
+                className="fixed inset-0 bg-black/70 backdrop-blur-sm"
+                style={{ zIndex: Z.modal - 1 }}
               />
               {/* Modal */}
               <motion.div
+                ref={modalRef}
+                role="dialog"
+                aria-modal="true"
+                aria-label="JSA details"
+                style={{ zIndex: Z.modal }}
                 key={isDetailFullscreen ? "fullscreen" : "modal"}
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1123,7 +1137,7 @@ export function AdminJSAContent() {
               </motion.div>
             </>
           )}
-        </AnimatePresence>
+        </AnimatePresence>, document.body)}
 
         {/* Keyboard shortcut hint - Desktop only */}
         <div className="hidden sm:block mt-4 text-center text-[10px] sm:text-xs text-[#B8C4B6]/60">

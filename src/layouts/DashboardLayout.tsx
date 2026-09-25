@@ -53,7 +53,7 @@ export default function DashboardLayout({
           hideHeader
             ? "pt-[env(safe-area-inset-top)]"
             : "pt-[max(1.25rem,env(safe-area-inset-top))] sm:pt-[max(1.75rem,env(safe-area-inset-top))]"
-        } pb-6 safe-area-inset-bottom`}
+        } pb-[calc(6rem+env(safe-area-inset-bottom,0px))]`}
       >
         {!hideHeader && (
           <InstrumentBar title={title} hideTitle={pageHeading} className="mx-auto mb-8 w-full max-w-[1400px]" />

@@ -896,7 +896,7 @@ export default function TreeFellingJSAForm() {
             type="button"
             onClick={() => handleSubmit(true)}
             disabled={submitting || isLoading}
-            className="rounded-lg bg-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-white/20 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
+            className="min-h-[44px] inline-flex items-center justify-center rounded-lg bg-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-white/20 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
             aria-label="Save draft"
           >
             Save draft
@@ -905,14 +905,14 @@ export default function TreeFellingJSAForm() {
             type="button"
             onClick={() => handleSubmit(false)}
             disabled={submitting || isLoading}
-            className="rounded-lg bg-amber-500/20 px-4 py-2 text-sm font-medium text-amber-400 hover:bg-amber-500/30 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
+            className="min-h-[44px] inline-flex items-center justify-center rounded-lg bg-amber-500/20 px-4 py-2 text-sm font-medium text-amber-400 hover:bg-amber-500/30 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
             aria-label={isEditMode ? "Update Tree Felling JSA" : "Submit Tree Felling JSA"}
           >
             {isEditMode ? "Update" : "Submit"}
           </button>
           <Link
             to="/forms"
-            className="rounded-lg border border-white/20 px-4 py-2 text-sm text-gray-300 hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
+            className="min-h-[44px] inline-flex items-center justify-center rounded-lg border border-white/20 px-4 py-2 text-sm text-gray-300 hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
             aria-label="Back to Forms"
           >
             Back to Forms

@@ -27,8 +27,9 @@ const { mockInsert, mockUpdate, mockFrom } = vi.hoisted(() => {
           }),
         }),
         update: (payload: unknown) => ({
-          eq: (_col: string, id: string) =>
-            Promise.resolve(mockUpdate(payload, id)),
+          eq: (_col: string, id: string) => ({
+            select: () => ({ single: () => Promise.resolve(mockUpdate(payload, id)) }),
+          }),
         }),
       };
     }

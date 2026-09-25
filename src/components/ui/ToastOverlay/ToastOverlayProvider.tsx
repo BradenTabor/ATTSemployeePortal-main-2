@@ -145,7 +145,10 @@ export function ToastOverlayProvider({ children }: ToastOverlayProviderProps) {
 
   // Update current toast state (for loading -> success/error transitions)
   const updateState = useCallback(async (config: Partial<ShowToastConfig>) => {
-    if (!state.visible) return;
+    if (!state.visible) {
+      await show({ ...config, type: config.type ?? 'info', message: config.message ?? '' });
+      return;
+    }
 
     // Clear existing timer
     clearAutoDismissTimer();
@@ -184,7 +187,7 @@ export function ToastOverlayProvider({ children }: ToastOverlayProviderProps) {
         dismiss();
       }, autoDismiss);
     }
-  }, [state.visible, state.type, clearAutoDismissTimer, dismiss]);
+  }, [state.visible, state.type, clearAutoDismissTimer, dismiss, show]);
 
   // Handle ESC key to dismiss (respects lockBackground)
   useEffect(() => {

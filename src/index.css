@@ -400,6 +400,13 @@ input[type="datetime-local"] {
 
   /* Dynamic viewport height with a 100vh fallback for older WebKit (iOS < 15.4).
      Prevents content from hiding behind the mobile browser toolbar. */
+  /* iPhone zooms focused controls below 16px, moving form navigation off screen. */
+  @media (max-width: 767px) {
+    [data-scroll-container] :is(input, select, textarea),
+    [data-testid="form-viewport"] :is(input, select, textarea) {
+      font-size: 16px;
+    }
+  }
   .h-dvh-safe { height: 100vh; height: 100dvh; }
   .min-h-dvh-safe { min-height: 100vh; min-height: 100dvh; }
   .max-h-dvh-safe { max-height: 100vh; max-height: 100dvh; }

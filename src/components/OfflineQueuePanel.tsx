@@ -21,11 +21,11 @@ import {
   HardDrive,
   Clock,
 } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { cn } from '../lib/utils';
 import { useOfflineQueueContext } from '../hooks/useOfflineQueueContext';
 import { useStorageQuota } from '../hooks/useStorageQuota';
-import { getConflicts, deleteConflict, clearConflicts, type SyncConflict } from '../lib/syncConflicts';
-import { deletePhotosForQueue } from '../lib/offlinePhotoStore';
+import { getConflicts, deleteConflict, type SyncConflict } from '../lib/syncConflicts';
 import type { QueuedSubmission } from '../lib/offlineQueue';
 
 interface OfflineQueuePanelProps {
@@ -100,13 +100,13 @@ function QueueItem({
           <Clock className="w-3 h-3 text-white/30" />
           <span className="text-xs text-white/40">{formatTimestamp(item.timestamp)}</span>
         </div>
-        {isFailed && item.error && (
+        {item.error && (
           <p className="text-xs text-red-400/80 mt-1 line-clamp-2">{item.error}</p>
         )}
       </div>
 
       <div className="flex items-center gap-1 shrink-0">
-        {item.status === 'failed_manual' && (
+        {isFailed && (
           <button
             type="button"
             onClick={() => onRetry(item.id)}
@@ -166,10 +166,12 @@ function ConflictItem({
 }
 
 export function OfflineQueuePanel({ open, onClose }: OfflineQueuePanelProps) {
-  const { pendingItems, processQueueNow, removeFromQueue, retryManual, isOnline, syncProgress } = useOfflineQueueContext();
+  const { userId, pendingItems, processQueueNow, removeFromQueue, retryManual, isOnline, syncProgress } = useOfflineQueueContext();
   const storage = useStorageQuota();
   const [activeTab, setActiveTab] = useState<Tab>('queue');
-  const [conflicts, setConflicts] = useState<SyncConflict[]>([]);
+  const [storedConflicts, setConflicts] = useState<SyncConflict[]>([]);
+  const conflicts = storedConflicts.filter(item => userId === undefined ||
+    Boolean(userId && (item.payload.__offlineUserId || item.payload.user_id) === userId));
   const [syncing, setSyncing] = useState(false);
   const [discardConfirmId, setDiscardConfirmId] = useState<string | null>(null);
   const discardCancelRef = useRef<HTMLButtonElement>(null);
@@ -179,10 +181,9 @@ export function OfflineQueuePanel({ open, onClose }: OfflineQueuePanelProps) {
     if (open && activeTab === 'conflicts') {
       getConflicts().then(setConflicts);
     }
-  }, [open, activeTab]);
+  }, [open, activeTab, userId]);
 
   const handleDiscard = useCallback(async (id: string) => {
-    await deletePhotosForQueue(id);
     await removeFromQueue(id);
   }, [removeFromQueue]);
 
@@ -202,14 +203,15 @@ export function OfflineQueuePanel({ open, onClose }: OfflineQueuePanelProps) {
   }, [discardConfirmId]);
 
   const handleDeleteConflict = useCallback(async (id: string) => {
+    if (!conflicts.some(item => item.id === id)) return;
     await deleteConflict(id);
     setConflicts((prev) => prev.filter((c) => c.id !== id));
-  }, []);
+  }, [conflicts]);
 
   const handleClearConflicts = useCallback(async () => {
-    await clearConflicts();
-    setConflicts([]);
-  }, []);
+    await Promise.all(conflicts.map(item => deleteConflict(item.id)));
+    setConflicts(prev => prev.filter(item => !conflicts.some(visible => visible.id === item.id)));
+  }, [conflicts]);
 
   const [lastSyncResult, setLastSyncResult] = useState<{
     processed: number;
@@ -228,13 +230,18 @@ export function OfflineQueuePanel({ open, onClose }: OfflineQueuePanelProps) {
     }
   }, [processQueueNow]);
 
+  const handleRetry = useCallback(async (id: string) => {
+    await retryManual(id);
+    if (isOnline) await handleSyncAll();
+  }, [retryManual, isOnline, handleSyncAll]);
+
   useEffect(() => {
     if (!open) setLastSyncResult(null);
   }, [open]);
 
   const isSyncing = syncing || syncProgress !== null;
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {open && (
         <>
@@ -332,7 +339,7 @@ export function OfflineQueuePanel({ open, onClose }: OfflineQueuePanelProps) {
                       key={item.id}
                       item={item}
                       onDiscard={requestDiscard}
-                      onRetry={retryManual}
+                      onRetry={handleRetry}
                     />
                   ))
                   )}
@@ -476,6 +483,7 @@ export function OfflineQueuePanel({ open, onClose }: OfflineQueuePanelProps) {
           </AnimatePresence>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

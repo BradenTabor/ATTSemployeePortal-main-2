@@ -75,3 +75,4 @@ supabase/.localgate/prod_applied_versions.txt
 
 # ClickSend audit snapshots (contain phone numbers)
 docs/sms-upgrade/clicksend-audit-*.json
+.vercel/

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import LoadingScreen from "@/components/LoadingScreen";
 import { EASE_CANOPY_IN } from "@/motion/presets";
 
@@ -15,6 +15,8 @@ interface SessionOverlayProps {
  * and dissolves out once auth resolves.
  */
 export default function SessionOverlay({ isLoading, playSound = false }: SessionOverlayProps) {
+  const reduceMotion = useReducedMotion();
+
   useEffect(() => {
     if (!isLoading || !playSound) return;
     const audio = new Audio("/assets/login-chime.mp3");
@@ -31,7 +33,7 @@ export default function SessionOverlay({ isLoading, playSound = false }: Session
           key="session-overlay"
           initial={{ opacity: 1 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0, transition: { duration: 0.45, ease: EASE_CANOPY_IN } }}
+          exit={{ opacity: 0, transition: { duration: reduceMotion ? 0 : 0.18, ease: EASE_CANOPY_IN } }}
         >
           <LoadingScreen message="Restoring your session" />
         </motion.div>

@@ -1,6 +1,10 @@
 import '@testing-library/jest-dom/vitest';
 import 'fake-indexeddb/auto';
 
+// Unit tests must not depend on developer credentials or connect to production.
+vi.stubEnv('VITE_SUPABASE_URL', 'http://127.0.0.1:54321');
+vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'unit-test-placeholder');
+
 // ---------------------------------------------------------------------------
 // IndexedDB cleanup between tests — fake-indexeddb may not support
 // indexedDB.databases(), so we hardcode the known DB names from our modules.

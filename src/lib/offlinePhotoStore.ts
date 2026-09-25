@@ -13,6 +13,7 @@
 
 import { openDB, deleteDB, type IDBPDatabase } from 'idb';
 import { logger } from './logger';
+import { readBlobBytes } from './blobBytes';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -112,8 +113,9 @@ export async function storePhoto(
 ): Promise<string> {
   const db = await getDB();
   const id = generatePhotoId();
-  const entry: OfflinePhoto = {
+  const entry = {
     ...photo,
+    blob: await readBlobBytes(photo.blob),
     id,
     createdAt: Date.now(),
   };
@@ -158,12 +160,19 @@ export async function storePhotosForQueue(
   return ids;
 }
 
+type StoredPhoto = Omit<OfflinePhoto, 'blob'> & { blob: Blob | ArrayBuffer };
+function restoreBlob(photo: StoredPhoto): OfflinePhoto {
+  return { ...photo, blob: photo.blob instanceof ArrayBuffer
+    ? new Blob([photo.blob], { type: photo.contentType }) : photo.blob };
+}
+
 /**
  * Retrieve all photos for a specific queue entry.
  */
 export async function getPhotosForQueue(queueId: string): Promise<OfflinePhoto[]> {
   const db = await getDB();
-  return db.getAllFromIndex(STORE_NAME, 'byQueueId', queueId);
+  const photos = await db.getAllFromIndex(STORE_NAME, 'byQueueId', queueId);
+  return photos.map(restoreBlob);
 }
 
 /**
@@ -171,7 +180,8 @@ export async function getPhotosForQueue(queueId: string): Promise<OfflinePhoto[]
  */
 export async function getPhoto(id: string): Promise<OfflinePhoto | undefined> {
   const db = await getDB();
-  return db.get(STORE_NAME, id);
+  const photo = await db.get(STORE_NAME, id);
+  return photo ? restoreBlob(photo) : undefined;
 }
 
 /**
@@ -212,7 +222,7 @@ export async function getStorageUsage(): Promise<{ count: number; totalBytes: nu
   const all = await db.getAll(STORE_NAME);
   let totalBytes = 0;
   for (const photo of all) {
-    totalBytes += (photo as OfflinePhoto).blob.size;
+    totalBytes += restoreBlob(photo).blob.size;
   }
   return { count: all.length, totalBytes };
 }

@@ -66,7 +66,19 @@ export function useFormValidation<T extends Record<string, unknown>>(
   } = options;
 
   // Error state
-  const [errors, setErrors] = useState<Partial<Record<keyof T, string>>>({});
+  const [recordedErrors, setErrors] = useState<Partial<Record<keyof T, string>>>({});
+  // Re-evaluate reported fields against current values. A select's blur can
+  // arrive before React commits its change; that stale error must not lock Submit.
+  const errors = useMemo(() => {
+    if (!validateOnChange) return recordedErrors;
+    const current: Partial<Record<keyof T, string>> = {};
+    for (const field of Object.keys(recordedErrors) as (keyof T)[]) {
+      const rule = rules.find(rule => rule.field === field);
+      const error = rule ? rule.validator(form[field], form) : recordedErrors[field];
+      if (error) current[field] = error;
+    }
+    return current;
+  }, [recordedErrors, form, rules, validateOnChange]);
   
   // Async error state
   const [asyncErrors, setAsyncErrors] = useState<Partial<Record<keyof T, string>>>({});

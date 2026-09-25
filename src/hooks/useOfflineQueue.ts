@@ -15,7 +15,8 @@ import { toast as sonnerToast } from 'sonner';
 import {
   addToQueue as addToQueueLib,
   getPendingItems,
-  getQueueLength,
+  belongsToUser,
+  getQueueItem,
   processQueue,
   removeFromQueue,
   retryManual as retryManualLib,
@@ -27,19 +28,22 @@ import {
 import { useNetworkStore } from '../lib/networkStatus';
 import { useSyncHistory, getFormLabel } from '../lib/syncHistory';
 import { logger } from '../lib/logger';
+import { deletePhotosForQueue } from '../lib/offlinePhotoStore';
 
 export interface UseOfflineQueueOptions {
   /** Submitter to use when processing the queue (e.g. from app/context). */
   submitter: OfflineSubmitter | null;
+  userId?: string;
   /** Optional conflict check: if returns true, queued item is discarded. */
   conflictCheck?: (item: QueuedSubmission) => Promise<boolean>;
   /** Called when a conflict is detected and item is discarded. */
-  onConflict?: (item: QueuedSubmission) => void;
+  onConflict?: (item: QueuedSubmission) => void | Promise<void>;
   /** Run processQueue automatically when coming back online. */
   processOnOnline?: boolean;
 }
 
 export interface UseOfflineQueueReturn {
+  userId?: string;
   isOnline: boolean;
   queueLength: number;
   pendingItems: QueuedSubmission[];
@@ -139,17 +143,15 @@ function showItemFailedToast(item: QueuedSubmission, error: string): void {
 // ---------------------------------------------------------------------------
 
 export function useOfflineQueue(options: UseOfflineQueueOptions): UseOfflineQueueReturn {
-  const { submitter, conflictCheck, onConflict, processOnOnline = true } = options;
+  const { submitter, conflictCheck, onConflict, processOnOnline = true, userId } = options;
   const networkIsOnline = useNetworkStore((s) => s.isOnline);
-  const [queueLength, setQueueLength] = useState(0);
   const [pendingItems, setPendingItems] = useState<QueuedSubmission[]>([]);
   const [syncProgress, setSyncProgress] = useState<SyncProgress | null>(null);
 
   const refreshPending = useCallback(async () => {
-    const [length, items] = await Promise.all([getQueueLength(), getPendingItems()]);
-    setQueueLength(length);
+    const items = await getPendingItems(userId);
     setPendingItems(items);
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     const id = setTimeout(() => {
@@ -160,6 +162,7 @@ export function useOfflineQueue(options: UseOfflineQueueOptions): UseOfflineQueu
 
   // Common sync callback wiring
   const buildProcessOptions = useCallback(() => ({
+    userId,
     conflictCheck,
     onConflict,
     onProgress: (progress: SyncProgress) => setSyncProgress(progress),
@@ -170,7 +173,7 @@ export function useOfflineQueue(options: UseOfflineQueueOptions): UseOfflineQueu
     onItemFailed: (item: QueuedSubmission, error: string) => {
       showItemFailedToast(item, error);
     },
-  }), [conflictCheck, onConflict]);
+  }), [conflictCheck, onConflict, userId]);
 
   // Process queue when coming back online
   useEffect(() => {
@@ -207,7 +210,7 @@ export function useOfflineQueue(options: UseOfflineQueueOptions): UseOfflineQueu
     return () => clearTimeout(timer);
     // Only trigger when going from offline -> online
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [networkIsOnline]);
+  }, [networkIsOnline, userId, submitter]);
 
   const addToQueue = useCallback(
     async (
@@ -226,42 +229,51 @@ export function useOfflineQueue(options: UseOfflineQueueOptions): UseOfflineQueu
     if (!submitter) return { processed: 0, failed: 0, discarded: 0 };
     setSyncProgress({ current: 0, total: 0, formType: 'jsa', hasPhotos: false });
 
-    const result = await processQueue(submitter, buildProcessOptions());
-    setSyncProgress(null);
+    try {
+      const result = await processQueue(submitter, buildProcessOptions());
 
-    if (result.processed > 0) {
-      useNetworkStore.getState().recordSync();
-      useSyncHistory.getState().addCycleSummary(result);
-    }
-    // Summary toast only when >1 item; single-item sync already gets per-item toast (see buildProcessOptions.onItemSynced)
-    if (result.processed + result.failed > 1) {
-      showCycleSummaryToast(result.processed, result.failed, result.discarded);
-    }
+      if (result.processed > 0) {
+        useNetworkStore.getState().recordSync();
+        useSyncHistory.getState().addCycleSummary(result);
+      }
+      // Summary toast only when >1 item; single-item sync already gets per-item toast (see buildProcessOptions.onItemSynced)
+      if (result.processed + result.failed > 1) {
+        showCycleSummaryToast(result.processed, result.failed, result.discarded);
+      }
 
-    await refreshPending();
-    return result;
+      return result;
+    } finally {
+      setSyncProgress(null);
+      await refreshPending();
+    }
   }, [submitter, buildProcessOptions, refreshPending]);
 
   const removeFromQueueById = useCallback(
     async (id: string) => {
+      const item = await getQueueItem(id);
+      if (!item || (userId !== undefined && !belongsToUser(item, userId))) return;
       await removeFromQueue(id);
+      await deletePhotosForQueue(String(item.payload.__offlineQueueId || id));
       await refreshPending();
     },
-    [refreshPending],
+    [refreshPending, userId],
   );
 
   const retryManual = useCallback(
     async (id: string) => {
+      const item = await getQueueItem(id);
+      if (!item || (userId !== undefined && !belongsToUser(item, userId))) return;
       await retryManualLib(id);
       await refreshPending();
     },
-    [refreshPending],
+    [refreshPending, userId],
   );
 
   return {
+    userId,
     isOnline: networkIsOnline,
-    queueLength,
-    pendingItems,
+    queueLength: pendingItems.filter(item => userId === undefined || belongsToUser(item, userId)).length,
+    pendingItems: pendingItems.filter(item => userId === undefined || belongsToUser(item, userId)),
     syncProgress,
     addToQueue,
     processQueueNow,

@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, useRef, ReactNode, useCallback, useMemo } from 'react';
-import { User, Session, type PostgrestSingleResponse } from '@supabase/supabase-js';
+import { User, Session, type AuthChangeEvent, type PostgrestSingleResponse } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
 import { logger } from "../lib/logger";
 import { setCurrentUserId, clearSession as clearTelemetrySession, clearTelemetryStorage } from '../lib/telemetry';
@@ -364,9 +364,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     initializeAuth();
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const handleAuthChange = async (event: AuthChangeEvent, session: Session | null) => {
       logger.info(`[AuthContext] Auth state changed: ${event}`, session?.user?.email || 'No user');
 
       if (event === 'SIGNED_OUT') {
@@ -459,6 +457,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // ✅ Any auth change finishes loading
         setLoading(false);
       }
+    };
+
+    // Auth callbacks run inside the SDK session lock. Defer requests until it
+    // releases that lock so reloads and reconnects cannot stall form uploads.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setTimeout(() => {
+        if (mounted) void handleAuthChange(event, session).catch(error => {
+          logger.error('Auth state update failed', error);
+          if (mounted) setLoading(false);
+        });
+      }, 0);
     });
 
     // Refetch profile when network recovers (e.g. after ERR_NETWORK_CHANGED)

@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { fromZonedTime } from 'date-fns-tz';
 import {
   getTodayDateString,
   getTimeUntilCutoff,
@@ -36,10 +37,8 @@ function createChicagoDate(
   hour: number = 12,
   minute: number = 0
 ): Date {
-  // Chicago is UTC-6 in winter, UTC-5 in summer (DST)
-  // For simplicity in tests, we create dates that work correctly
-  // when converted back via toLocaleString
-  return new Date(year, month - 1, day, hour, minute, 0, 0);
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return fromZonedTime(`${year}-${pad(month)}-${pad(day)}T${pad(hour)}:${pad(minute)}:00`, 'America/Chicago');
 }
 
 // Fixed test dates (Chicago timezone)

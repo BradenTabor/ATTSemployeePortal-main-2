@@ -11,7 +11,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { useOfflineQueue } from '@/hooks/useOfflineQueue';
 import { useNetworkStore } from '@/lib/networkStatus';
 import { useSyncHistory } from '@/lib/syncHistory';
@@ -62,6 +62,16 @@ describe('useOfflineQueue', () => {
   }
 
   describe('initial state', () => {
+    it('hides the previous account’s queue immediately and rejects its discard', async () => {
+      const mine = await offlineQueueLib.addToQueue('jsa', { privateNote: 'worker-only' }, { userId: 'worker' });
+      const { result, rerender } = renderHook(({ userId }) => useOfflineQueue({ submitter: mockSubmitter, userId }), { initialProps: { userId: 'worker' } });
+      await waitFor(() => expect(result.current.pendingItems).toHaveLength(1));
+      rerender({ userId: 'other' });
+      expect(result.current.pendingItems).toEqual([]);
+      expect(result.current.queueLength).toBe(0);
+      await act(async () => { await result.current.removeFromQueue(mine); });
+      expect(await offlineQueueLib.getQueueItem(mine)).toBeDefined();
+    });
     it('returns correct defaults', async () => {
       const { result } = renderHook(() =>
         useOfflineQueue({ submitter: mockSubmitter }),

@@ -8,6 +8,7 @@
  */
 
 import * as fs from 'fs';
+import sharp from 'sharp';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -22,51 +23,11 @@ if (!fs.existsSync(FIXTURES_DIR)) {
   fs.mkdirSync(FIXTURES_DIR, { recursive: true });
 }
 
-/**
- * Generate a simple PPM image (can be converted to other formats)
- * PPM is a simple uncompressed format that's easy to generate
- * NOTE: Currently unused but kept for potential future use
- */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function generatePPM(width: number, height: number, label: string): Buffer {
-  const header = `P6\n${width} ${height}\n255\n`;
-  const headerBuffer = Buffer.from(header, 'ascii');
-  
-  // Create pixel data (RGB)
-  const pixels = Buffer.alloc(width * height * 3);
-  
-  // Fill with a gradient pattern
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const idx = (y * width + x) * 3;
-      // Green gradient for ATTS brand color
-      pixels[idx] = Math.floor((x / width) * 100);     // R
-      pixels[idx + 1] = Math.floor(100 + (y / height) * 155); // G (green dominant)
-      pixels[idx + 2] = Math.floor((x / width) * 80);  // B
-    }
-  }
-  
-  return Buffer.concat([headerBuffer, pixels]);
-}
-
-/**
- * Generate a minimal valid JPEG-like structure
- * This is a placeholder - real tests should use actual images
- */
-function generateMinimalJPEG(sizeKB: number = 10): Buffer {
-  // JPEG magic bytes and minimal structure
-  const header = Buffer.from([
-    0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01,
-    0x01, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00
-  ]);
-  
-  // Fill to desired size
-  const padding = Buffer.alloc(sizeKB * 1024 - header.length - 2, 0x00);
-  
-  // JPEG end marker
-  const footer = Buffer.from([0xFF, 0xD9]);
-  
-  return Buffer.concat([header, padding, footer]);
+/** Real decodable JPEG data; trailing padding preserves file-size boundary fixtures. */
+async function generateMinimalJPEG(sizeKB: number = 10): Promise<Buffer> {
+  const jpeg = await sharp({ create: { width: 640, height: 480, channels: 3, background: '#228b55' } })
+    .jpeg({ quality: 85 }).toBuffer();
+  return Buffer.concat([jpeg, Buffer.alloc(Math.max(0, sizeKB * 1024 - jpeg.length))]);
 }
 
 /**
@@ -94,7 +55,7 @@ async function generateFixtures(): Promise<void> {
   ];
   
   for (const img of standardImages) {
-    const buffer = generateMinimalJPEG(50); // 50KB each
+    const buffer = await generateMinimalJPEG(50); // 50KB each
     const filepath = path.join(FIXTURES_DIR, img.name);
     fs.writeFileSync(filepath, buffer);
     fixtures.push({ name: img.name, size: buffer.length, description: img.label });
@@ -102,14 +63,14 @@ async function generateFixtures(): Promise<void> {
   }
   
   // Large image for size limit testing
-  const largeImage = generateMinimalJPEG(5000); // 5MB
+  const largeImage = await generateMinimalJPEG(5000); // 5MB
   const largePath = path.join(FIXTURES_DIR, 'large-image.jpg');
   fs.writeFileSync(largePath, largeImage);
   fixtures.push({ name: 'large-image.jpg', size: largeImage.length, description: 'Large image for size testing' });
   console.log(`  ✓ Created large-image.jpg (${Math.round(largeImage.length / 1024 / 1024)}MB)`);
   
   // Very large image (for rejection testing)
-  const hugeImage = generateMinimalJPEG(15000); // 15MB
+  const hugeImage = await generateMinimalJPEG(15000); // 15MB
   const hugePath = path.join(FIXTURES_DIR, 'huge-image.jpg');
   fs.writeFileSync(hugePath, hugeImage);
   fixtures.push({ name: 'huge-image.jpg', size: hugeImage.length, description: 'Huge image for rejection testing' });
@@ -123,7 +84,7 @@ async function generateFixtures(): Promise<void> {
   console.log(`  ✓ Created invalid-file.pdf (${invalidPdf.length} bytes)`);
   
   // Special characters in filename
-  const specialChars = generateMinimalJPEG(30);
+  const specialChars = await generateMinimalJPEG(30);
   const specialPath = path.join(FIXTURES_DIR, 'special-chars (1).jpg');
   fs.writeFileSync(specialPath, specialChars);
   fixtures.push({ name: 'special-chars (1).jpg', size: specialChars.length, description: 'Special chars in name' });
@@ -146,7 +107,7 @@ async function generateFixtures(): Promise<void> {
   
   // Note about real images
   console.log('');
-  console.log('NOTE: These are placeholder files with valid headers.');
+  console.log('Fixtures are decodable JPEG images with size-boundary padding.');
   console.log('For visual testing, replace with actual photos.');
   console.log('');
 }

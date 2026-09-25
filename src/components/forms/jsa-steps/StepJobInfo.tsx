@@ -181,8 +181,13 @@ function PhotoThumbnail({ path, onRemove, isRemoving, getSignedUrl }: PhotoThumb
 
   useEffect(() => {
     let cancelled = false;
+    let objectUrl: string | null = null;
     getSignedUrl(path)
       .then((signedUrl) => {
+        if (signedUrl?.startsWith('blob:')) {
+          objectUrl = signedUrl;
+          if (cancelled) URL.revokeObjectURL(signedUrl);
+        }
         if (!cancelled) {
           setLoadError(false);
           if (signedUrl) setUrl(signedUrl);
@@ -194,7 +199,7 @@ function PhotoThumbnail({ path, onRemove, isRemoving, getSignedUrl }: PhotoThumb
           logger.error("[StepJobInfo] Photo thumbnail load failed", path, err);
         }
       });
-    return () => { cancelled = true; };
+    return () => { cancelled = true; if (objectUrl) URL.revokeObjectURL(objectUrl); };
   }, [path, getSignedUrl]);
 
   return (
@@ -263,23 +268,20 @@ export function PaperJsaUpload({ photoPaths, onPathsChange, required }: PaperJsa
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-    // Reset the input so the same file can be selected again if needed
-    if (fileInputRef.current) fileInputRef.current.value = "";
-
     setUploading(true);
     setFailedFiles([]);
 
     try {
-      const result = await uploadMultiple(files, photoPaths);
+      const result = await uploadMultiple(files, photoPaths, true);
 
       if (result.successful.length > 0) {
         const newPaths = [...photoPaths, ...result.successful];
         onPathsChange(newPaths);
         formToast.success(
-          "Photo Uploaded",
+          "Photo Saved on Device",
           result.successful.length === 1
-            ? "Paper JSA photo saved. It will be included when this JSA is exported."
-            : `${result.successful.length} paper JSA photos saved. They will be included when this JSA is exported.`
+            ? "Your photo is ready. Submit the JSA to upload it or queue it for reconnection."
+            : `${result.successful.length} photos are ready to submit with your JSA.`
         );
       }
 
@@ -296,6 +298,8 @@ export function PaperJsaUpload({ photoPaths, onPathsChange, required }: PaperJsa
       const message = err instanceof Error ? err.message : "Photo upload failed. Please try again.";
       formToast.error("Upload Failed", message);
     } finally {
+      // Safari can invalidate a file when its input is cleared before reading.
+      if (fileInputRef.current) fileInputRef.current.value = "";
       setUploading(false);
     }
   }, [photoPaths, onPathsChange, uploadMultiple]);
@@ -360,12 +364,12 @@ export function PaperJsaUpload({ photoPaths, onPathsChange, required }: PaperJsa
               {!online && (
                 <div className="flex items-center gap-2 text-amber-200 text-[10px] sm:text-xs p-2 rounded-lg border border-amber-500/30 bg-amber-500/10">
                   <WifiOff className="w-3.5 h-3.5 flex-shrink-0" />
-                  Photo upload requires an internet connection. You can add photos after reconnecting.
+                  Photos are saved on this device and will upload when your JSA syncs.
                 </div>
               )}
 
               {/* Upload button */}
-              {online && remainingSlots > 0 && (
+              {remainingSlots > 0 && (
                 <div className="space-y-1.5">
                   <button
                     type="button"
@@ -398,7 +402,7 @@ export function PaperJsaUpload({ photoPaths, onPathsChange, required }: PaperJsa
                     multiple
                     onChange={handleFileSelect}
                     className="hidden"
-                    disabled={uploading || !online}
+                    disabled={uploading}
                     aria-label="Add photos for JSA (take photo or choose file)"
                   />
                   <p className="text-[10px] text-white/30 text-center">
@@ -439,7 +443,7 @@ export function PaperJsaUpload({ photoPaths, onPathsChange, required }: PaperJsa
               {/* Photo thumbnails */}
               {photoPaths.length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                  <AnimatePresence mode="popLayout">
+                  <AnimatePresence mode="sync">
                     {photoPaths.map((path) => (
                       <PhotoThumbnail
                         key={path}

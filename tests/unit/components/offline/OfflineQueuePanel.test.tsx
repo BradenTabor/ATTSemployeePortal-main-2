@@ -135,17 +135,18 @@ describe('OfflineQueuePanel', () => {
     expect(screen.getByText('3')).toBeInTheDocument();
   });
 
-  it('shows retry button only for failed_manual items', () => {
+  it('shows retry buttons for failed uploads without waiting for the retry limit', () => {
     mockPendingItems = [
       makePendingItem({ id: 'q-1', status: 'pending' }),
       makePendingItem({ id: 'q-2', status: 'failed_manual', error: 'Upload failed' }),
+      makePendingItem({ id: 'q-3', status: 'failed', error: 'Connection lost' }),
     ];
 
     render(<OfflineQueuePanel open={true} onClose={vi.fn()} />);
 
-    // Only one retry button should be rendered (for the failed_manual item)
+    // Pending work has no Retry button; both failed states remain recoverable.
     const retryButtons = screen.getAllByTitle('Retry');
-    expect(retryButtons).toHaveLength(1);
+    expect(retryButtons).toHaveLength(2);
   });
 
   it('shows discard button for all items', () => {

@@ -113,7 +113,7 @@ function SectionHeader({
   );
 }
 
-function JsaPhotoSection({ paths }: { paths: string[] }) {
+export function JsaPhotoSection({ paths }: { paths: string[] }) {
   const [urlState, setUrlState] = useState<{
     pathsKey: string;
     urls: Map<string, string>;
@@ -237,8 +237,8 @@ function JsaPhotoSection({ paths }: { paths: string[] }) {
         )}
       </div>
 
-      {expandedUrl && (
-        <div style={{ zIndex: Z.modal }}
+      {expandedUrl && createPortal(
+        <div style={{ zIndex: Z.modalNested }}
           role="dialog"
           aria-modal="true"
           aria-label="Paper JSA photo (full size)"
@@ -277,7 +277,7 @@ function JsaPhotoSection({ paths }: { paths: string[] }) {
             className="max-w-full max-h-full object-contain rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60"
             onClick={(e) => e.stopPropagation()}
           />
-        </div>
+        </div>, document.body
       )}
     </>
   );

@@ -16,6 +16,7 @@ import { DateField } from "../../components/forms/GlassyPickers";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../contexts/AuthContext";
 import { useFormDraftLifecycle } from "../../hooks/useFormDraftLifecycle";
+import { usePhotoDraft } from "../../hooks/usePhotoDraft";
 import { DraftRecoveryModal } from "../../components/forms/DraftRecoveryModal";
 import { AutoSaveIndicator } from "../../components/forms/AutoSaveIndicator";
 import { FormSuccessCelebration } from "../../components/forms/FormSuccessCelebration";
@@ -57,6 +58,7 @@ import {
   createInitialEquipmentFormState,
   normalizeFormStateFromDraft,
   getTodayChicagoDate,
+  requiresEquipmentLockout,
 } from "./equipmentConstants";
 import { LOTOSection } from "../../components/forms/LOTOSection";
 import { ValidationSummary } from "../../components/forms/ValidationSummary";
@@ -94,6 +96,12 @@ export default function DailyEquipmentInspectionForm() {
   const [photos, setPhotos] = useState<PhotoState>({});
   /** Phase 2: optional batch of extra photos */
   const [additionalPhotos, setAdditionalPhotos] = useState<File[]>([]);
+  const draftPhotos = useMemo(() => ({ ...photos, ...Object.fromEntries(additionalPhotos.map((file, i) => [`additional_${i}`, file])) }), [photos, additionalPhotos]);
+  usePhotoDraft('equipment', user?.id, draftPhotos, (saved) => {
+    setPhotos(Object.fromEntries(Object.entries(saved).filter(([key]) => !key.startsWith('additional_'))));
+    setAdditionalPhotos(Object.entries(saved).filter(([key]) => key.startsWith('additional_'))
+      .sort(([a], [b]) => Number(a.slice(11)) - Number(b.slice(11))).map(([, file]) => file));
+  });
   const additionalPhotosInputRef = useRef<HTMLInputElement | null>(null);
   const overviewRef = useRef<HTMLInputElement | null>(null);
   const damageRef = useRef<HTMLInputElement | null>(null);
@@ -687,8 +695,7 @@ export default function DailyEquipmentInspectionForm() {
     return generalHasF || specificHasF;
   }, [form.generalChecklist, form.specificChecklist]);
 
-  const LOTO_APPLICABLE_TEMPLATES: EquipmentTemplate[] = ["chipper", "sky_trim", "geo_boy"];
-  const showLOTO = hasAnyFail && form.template && LOTO_APPLICABLE_TEMPLATES.includes(form.template);
+  const showLOTO = requiresEquipmentLockout(form);
 
   const generalCompleteCount = useMemo(
     () =>
@@ -1326,10 +1333,13 @@ export default function DailyEquipmentInspectionForm() {
           </section>
 
           {showLOTO && (
+            <div data-field-id="lotoData">
             <LOTOSection
               value={form.lotoData ?? null}
               onChange={(data) => setForm((prev) => ({ ...prev, lotoData: data }))}
             />
+            {allErrors.lotoData && <p role="alert" className="mt-2 text-sm text-rose-400">{allErrors.lotoData}</p>}
+            </div>
           )}
 
           {/* Card: Photos (Camera Capture) */}
@@ -1466,17 +1476,25 @@ export default function DailyEquipmentInspectionForm() {
           <section className="rounded-leaf-sm border border-white/10 bg-gradient-to-br from-[#0B100D] via-[#040605] to-[#040605] p-4 sm:p-5 space-y-3 shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
             <div>
               <p className="text-[9px] uppercase text-emerald-200/70 font-mono font-medium tracking-[0.14em]">
-                Optional
+                {hasAnyFail ? 'Required for failed items' : 'Optional'}
               </p>
               <h2 className="text-sm sm:text-base font-semibold text-white">Notes</h2>
             </div>
             <textarea
+              id="equipment-notes"
+              name="notes"
+              aria-label="Defect notes"
+              data-field-id="notes"
+              aria-required={hasAnyFail}
+              aria-invalid={Boolean(allErrors.notes)}
+              aria-describedby={allErrors.notes ? 'equipment-notes-error' : undefined}
               value={form.notes}
               onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
               rows={2}
               className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60"
               placeholder="Describe deficiencies, damage, or follow-ups..."
             />
+            {allErrors.notes && <p id="equipment-notes-error" role="alert" className="text-sm text-rose-400">{allErrors.notes}</p>}
             
             {/* Phase 2: Optional additional photos (batch upload) */}
             <div className="space-y-2">
@@ -1490,7 +1508,12 @@ export default function DailyEquipmentInspectionForm() {
                 aria-label="Add extra photos"
                 onChange={(e) => {
                   const files = e.target.files ? Array.from(e.target.files) : [];
-                  setAdditionalPhotos(prev => [...prev, ...files]);
+                  const valid = files.filter(file => {
+                    const error = formValidators.photoFile(file);
+                    if (error) formToast.error('Invalid Photo', error);
+                    return !error;
+                  });
+                  setAdditionalPhotos(prev => [...prev, ...valid]);
                   e.target.value = "";
                 }}
               />
@@ -1545,7 +1568,11 @@ export default function DailyEquipmentInspectionForm() {
       </div>
       
       {/* Draft Recovery Modal */}
-      <DraftRecoveryModal {...draftRecoveryModalProps} />
+      <DraftRecoveryModal {...draftRecoveryModalProps} onDiscard={() => {
+        draftRecoveryModalProps.onDiscard();
+        setPhotos({});
+        setAdditionalPhotos([]);
+      }} />
       
       {/* Success Celebration with Remaining Forms Nudge */}
       <FormSuccessCelebration

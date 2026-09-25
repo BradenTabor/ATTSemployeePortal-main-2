@@ -19,6 +19,9 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { logger } from "../../lib/logger";
+import { formatDate } from "../../lib/dateUtils";
+import { LOTOSection } from "../forms/LOTOSection";
+import type { LOTOData } from "../../types/electricalHazard";
 import type { PostgrestFilterBuilder } from "@supabase/postgrest-js";
 
 // Scroll reveal wrapper component
@@ -70,6 +73,9 @@ interface EquipmentInspection {
   damage_photo_path: string | null;
   attachments_photo_path: string | null;
   hydraulic_photo_path: string | null;
+  additional_photo_paths: string[] | null;
+  loto_required: boolean | null;
+  loto_data: LOTOData | null;
   mechanic_fixes: string | null;
   last_mechanic_updated_at: string | null;
   [key: string]: unknown;
@@ -328,6 +334,9 @@ export function EquipmentInspectionControlCenter({
           damage_photo_path,
           attachments_photo_path,
           hydraulic_photo_path,
+          additional_photo_paths,
+          loto_required,
+          loto_data,
           mechanic_fixes,
           last_mechanic_updated_at
         `,
@@ -432,7 +441,7 @@ export function EquipmentInspectionControlCenter({
     return data.publicUrl ?? null;
   }, []);
 
-  type PhotoEntry = { label: (typeof PHOTO_DEFINITIONS)[number]["label"]; url: string };
+  type PhotoEntry = { label: string; url: string };
 
   const photoEntries = useMemo<PhotoEntry[]>(() => {
     if (!selectedInspection) return [];
@@ -444,6 +453,10 @@ export function EquipmentInspectionControlCenter({
       if (url) {
         entries.push({ label: photo.label, url });
       }
+    }
+    for (const [index, path] of (selectedInspection.additional_photo_paths ?? []).entries()) {
+      const url = getPublicUrl(path);
+      if (url) entries.push({ label: `Additional Photo ${index + 1}`, url });
     }
     return entries;
   }, [selectedInspection, getPublicUrl]);
@@ -763,7 +776,7 @@ export function EquipmentInspectionControlCenter({
                               <div className="flex items-center gap-2 text-xs text-white/50">
                                 <span>{selectedInspection.equipment_type || "Equipment"}</span>
                                 <span className="text-white/20">•</span>
-                                <span>{new Date(selectedInspection.inspection_date).toLocaleDateString()}</span>
+                                <span>{formatDate(selectedInspection.inspection_date)}</span>
                               </div>
                             </div>
                           </div>
@@ -868,6 +881,11 @@ export function EquipmentInspectionControlCenter({
                         </details>
 
                         {/* Photos Section - Collapsible */}
+                        {selectedInspection.loto_required && (
+                          selectedInspection.loto_data
+                            ? <LOTOSection value={selectedInspection.loto_data} onChange={() => {}} disabled />
+                            : <p role="alert" className="text-sm text-amber-200">Lockout/tagout required; no details recorded.</p>
+                        )}
                         <details className="group">
                           <summary className="flex items-center justify-between cursor-pointer py-2 text-xs font-medium text-white/60 hover:text-white/80 transition-colors">
                             <span className="flex items-center gap-1.5">
@@ -970,4 +988,3 @@ export function EquipmentInspectionControlCenter({
     </div>
   );
 }
-

@@ -122,7 +122,7 @@ export function ToastOverlayCard({ state, onDismiss }: ToastOverlayCardProps) {
           type="button"
           onClick={onDismiss}
           className={cn(
-            'absolute top-4 right-4 p-2 rounded-xl',
+            'absolute top-4 right-4 z-10 p-2 rounded-xl',
             'text-white/40 hover:text-white hover:bg-white/10',
             'transition-colors duration-150',
             'min-w-[44px] min-h-[44px] flex items-center justify-center',

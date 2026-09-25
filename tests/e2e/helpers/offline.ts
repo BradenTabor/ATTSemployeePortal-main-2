@@ -13,12 +13,15 @@
  *   test to the internal schema — see version notes on each helper.
  */
 
-import { expect, type Page, type BrowserContext } from '@playwright/test';
+import { expect, type Page, type BrowserContext, type Route } from '@playwright/test';
 
 // ---------------------------------------------------------------------------
 // Schema constants — keep in sync with src/lib/offlineQueue.ts
 // Target: Offline Queue v2 (DB_VERSION = 2)
 // ---------------------------------------------------------------------------
+const offlineHttpPattern = /^https?:/;
+const blockOfflineHttp = (route: Route) => route.abort('internetdisconnected');
+
 const QUEUE_DB_NAME = 'atts-offline-queue';
 const QUEUE_DB_VERSION = 2;
 const QUEUE_STORE_NAME = 'submissions';
@@ -47,7 +50,14 @@ export async function goOffline(
   context: BrowserContext,
   bannerTimeoutMs = 12_000,
 ): Promise<void> {
-  await context.setOffline(true);
+  if (context.browser()?.browserType().name() === 'webkit') {
+    // WebKit's protocol offline switch also breaks local File/Blob reads.
+    // Block every HTTP request while leaving local camera-file I/O available.
+    await context.route(offlineHttpPattern, blockOfflineHttp);
+    await page.evaluate(() => Object.defineProperty(navigator, 'onLine', { value: false, configurable: true }));
+  } else {
+    await context.setOffline(true);
+  }
 
   // Manually fire the DOM event — Playwright's protocol-level offline
   // doesn't reliably trigger it in all engines (especially headless WebKit).
@@ -94,8 +104,13 @@ export async function goOnline(
   context: BrowserContext,
 ): Promise<void> {
   await context.setOffline(false);
+  await context.unroute(offlineHttpPattern, blockOfflineHttp);
 
   await page.evaluate(() => {
+    // Undo goOffline's fallback override; otherwise the heartbeat marks us offline again.
+    if (Object.prototype.hasOwnProperty.call(navigator, 'onLine')) {
+      Reflect.deleteProperty(navigator, 'onLine');
+    }
     window.dispatchEvent(new Event('online'));
   });
 

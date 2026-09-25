@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Camera, ChevronLeft, FileText } from "lucide-react";
 import DashboardLayout from "../../layouts/DashboardLayout";
+import { FormViewport } from "../../components/forms/FormViewport";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
 import { logger } from "../../lib/logger";
@@ -96,6 +97,7 @@ export default function DailyJSAForm() {
   );
   const [loadingRecord, setLoadingRecord] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [queuedSubmission, setQueuedSubmission] = useState(false);
   // QA-002: Prevent duplicate submissions with atomic ref check
   const submittingRef = useRef(false);
   // Skip fetch when we already applied passed state from create (effect re-runs after clearing state)
@@ -937,6 +939,8 @@ export default function DailyJSAForm() {
           'Validation Error',
           `Please fix ${errorCount} ${errorCount === 1 ? 'issue' : 'issues'} before completing. ${errorDetails}`,
         );
+        submittingRef.current = false;
+        setSaving(false);
         return;
       }
       
@@ -1005,12 +1009,13 @@ export default function DailyJSAForm() {
 
       if (result.queued) {
         clearDraft();
-        markAsSaved();
+        markAsSaved(form);
         formToast.success(
           "Queued for when you're back online",
           "Your JSA will be submitted automatically when you have a connection.",
           { autoDismiss: 6000 }
         );
+        setQueuedSubmission(true);
         return;
       }
 
@@ -1038,6 +1043,7 @@ export default function DailyJSAForm() {
       setForm((prev) => ({
         ...prev,
         status: targetStatus,
+        jsaPhotoPaths: result.photoPaths ?? prev.jsaPhotoPaths,
         updatedAt: nowIso,
         statusChangedAt,
         completedAt,
@@ -1125,7 +1131,7 @@ export default function DailyJSAForm() {
               replace: true,
               state: {
                 fromCreate: true,
-                form,
+                form: { ...form, jsaPhotoPaths: result.photoPaths ?? form.jsaPhotoPaths },
                 persistedStatus: targetStatus,
                 completedSteps: Array.from(completedSteps),
                 currentStep,
@@ -1351,15 +1357,21 @@ export default function DailyJSAForm() {
     />
   );
 
+  if (queuedSubmission) {
+    return (
+      <DashboardLayout title="Daily JSA" hideHeader pageHeading>
+        <div className="mx-auto max-w-lg p-6 text-white" role="status">
+          <h1 className="text-xl font-semibold">JSA saved on this device</h1>
+          <p className="mt-3 text-white/70">It will sync automatically when your connection returns. You can safely leave this form.</p>
+          <button type="button" onClick={() => navigate(getRoleDashboard(role))} className="mt-6 rounded-xl bg-emerald-600 px-5 py-3 font-semibold">Return to dashboard</button>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout title="Daily JSA" hideHeader pageHeading>
-      <div
-        className="fixed inset-0 flex flex-col"
-        style={{
-          background:
-            "linear-gradient(180deg, rgba(11,16,13,1) 0%, rgba(4,6,5,1) 50%, rgba(0,0,0,1) 100%)",
-        }}
-      >
+      <FormViewport>
         {/* Offline form indicator */}
         <OfflineFormIndicator offlineCapable={true} className="mx-3 mt-2" />
 
@@ -1404,7 +1416,7 @@ export default function DailyJSAForm() {
 
         {/* Paper JSA: single-page layout */}
         {form.submissionType === "paper" ? (
-          <div className="relative flex flex-col h-full overflow-hidden" data-testid="jsa-paper-view">
+          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden" data-testid="jsa-paper-view">
             <div
               className="flex-shrink-0 border-b border-emerald-500/20 flex items-center justify-between px-3 py-2 sm:px-5 sm:py-2.5"
               style={{
@@ -1459,7 +1471,7 @@ export default function DailyJSAForm() {
                       handleInputChange("circuitNumber", values.circuitNumber);
                     }}
                   />
-                  <label className="flex items-center gap-1 text-xs sm:text-sm font-medium text-white/70 mb-0.5 sm:mb-1 uppercase mt-2 font-mono font-medium tracking-[0.14em]">
+                  <label htmlFor="paper-jsa-location" className="flex items-center gap-1 text-xs sm:text-sm font-medium text-white/70 mb-0.5 sm:mb-1 uppercase mt-2 font-mono font-medium tracking-[0.14em]">
                     Work Location <span className="text-emerald-400">*</span>
                   </label>
                   <input
@@ -1468,6 +1480,7 @@ export default function DailyJSAForm() {
                     onChange={(e) => handleInputChange("workLocation", e.target.value)}
                     onBlur={() => handleFieldBlur("workLocation")}
                     placeholder="Street, city, project"
+                    id="paper-jsa-location"
                     className={cn(
                       "w-full rounded-lg border bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus-visible:ring-2",
                       allErrors.workLocation
@@ -1532,7 +1545,7 @@ export default function DailyJSAForm() {
               </div>
             </div>
             <div
-              className="relative z-10 flex-shrink-0 border-t border-white/10 py-3 px-4 flex flex-col items-center gap-2"
+              className="relative z-10 flex-shrink-0 border-t border-white/10 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] px-4 flex flex-col items-center gap-2"
               style={{
                 background:
                   "linear-gradient(0deg, rgba(4,6,5,0.98) 0%, rgba(11,16,13,0.95) 100%)",
@@ -1544,7 +1557,7 @@ export default function DailyJSAForm() {
                 onClick={() => handleSave("complete")}
                 data-testid="paper-jsa-save"
                 className={cn(
-                  "w-full max-w-xs rounded-xl px-4 py-2.5 text-sm font-semibold transition-all",
+                  "w-full max-w-xs min-h-[44px] rounded-xl px-4 py-2.5 text-sm font-semibold transition-all",
                   isFormValid && !saving
                     ? "bg-emerald-600 text-white hover:bg-emerald-500"
                     : "opacity-60 cursor-not-allowed bg-white/10 text-white/60"
@@ -1589,7 +1602,8 @@ export default function DailyJSAForm() {
                   aria-label="Switch to upload a photo of a paper JSA form instead"
                 >
                   <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" aria-hidden />
-                  Upload Paper JSA
+                  <span className="sm:hidden">Paper JSA</span>
+                  <span className="hidden sm:inline">Upload Paper JSA</span>
                 </button>
               ) : (
                 <button
@@ -1628,7 +1642,7 @@ export default function DailyJSAForm() {
         
         {/* Full Compliance Celebration (when all 3 forms complete) */}
         <FullCelebration {...celebrationProps} />
-      </div>
+      </FormViewport>
     </DashboardLayout>
   );
 }

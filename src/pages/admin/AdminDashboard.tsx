@@ -21,6 +21,7 @@ import { DateField } from "../../components/forms/GlassyPickers";
 import { glass, canopy } from "../../lib/glass";
 import AdminKpiBand from "../../components/dashboard/AdminKpiBand";
 import AdminQuickAccess from "../../components/dashboard/AdminQuickAccess";
+import AdminMonitorAccess from "../../components/dashboard/AdminMonitorAccess";
 import { Eyebrow } from "../../components/canopy/Eyebrow";
 import { SectionRail } from "../../components/canopy/SectionRail";
 import { useActiveSection } from "../../components/canopy/useActiveSection";
@@ -503,6 +504,7 @@ export default function AdminDashboard() {
 
               {/* 02 · Quick access */}
               <SectionShell id={SECTION_IDS.quick} index={2} label="Quick access" reduce={reduce}>
+                <AdminMonitorAccess key={session?.user.id} />
                 <AdminQuickAccess />
               </SectionShell>
 

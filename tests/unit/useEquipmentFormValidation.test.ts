@@ -11,6 +11,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useEquipmentFormValidation } from '../../src/hooks/equipment';
 import {
   GENERAL_ITEMS,
+  getSpecificItems,
   type EquipmentFormState,
   type PhotoState,
   type ChecklistValue,
@@ -45,6 +46,8 @@ function createValidFormState(overrides: Partial<EquipmentFormState> = {}): Equi
     submittedBy: 'Test User',
     equipmentType: 'Jarraff',
     equipmentNumber: 'J-109',
+    template: 'sky_trim',
+    specificChecklist: Object.fromEntries(getSpecificItems('sky_trim').map(item => [item.id, 'P'])),
     generalChecklist: createFullGeneralChecklist(),
     ...overrides,
   });
@@ -245,5 +248,37 @@ describe('useEquipmentFormValidation', () => {
       expect(result.current.getFieldError('equipmentNumber')).toBeUndefined();
       expect(result.current.getFieldError('equipmentType')).toBeUndefined();
     });
+  });
+});
+
+
+describe('equipment safety regression checks', () => {
+  const photo = { hydraulic: new File(['photo'], 'hydraulic.jpg', { type: 'image/jpeg' }) };
+  function validate(overrides: Partial<EquipmentFormState>) {
+    const form = createValidFormState(overrides);
+    const { result } = renderHook(() => useEquipmentFormValidation(form, photo));
+    act(() => { result.current.validateAll(); });
+    return result.current.allErrors;
+  }
+  it('rejects an empty equipment-specific checklist', () => {
+    expect(validate({ specificChecklist: {} }).specificChecklist).toContain('Complete equipment-specific');
+  });
+  it('counts known checklist items rather than arbitrary keys', () => {
+    const fake = Object.fromEntries(GENERAL_ITEMS.map((_, i) => ['fake' + i, 'P' as const]));
+    expect(validate({ generalChecklist: fake }).generalChecklist).toBeDefined();
+  });
+  it('requires notes and completed lockout when an applicable machine fails', () => {
+    const generalChecklist = { ...createFullGeneralChecklist(), engine_oil_level: 'F' as const };
+    const errors = validate({ generalChecklist, notes: ' ', lotoData: null });
+    expect(errors.notes).toBeDefined();
+    expect(errors.lotoData).toBeDefined();
+  });
+  it('accepts documented failures with all lockout details', () => {
+    expect(validate({
+      generalChecklist: { ...createFullGeneralChecklist(), engine_oil_level: 'F' },
+      notes: 'Oil leak; machine removed from service',
+      lotoData: { procedure_followed: true, lockout_device_applied: true, tagout_attached: true,
+        zero_energy_verified: true, authorized_employee: 'Test Worker', lockout_datetime: '2026-09-22T08:30' },
+    })).toEqual({});
   });
 });

@@ -28,7 +28,7 @@ export default function ProtectedRoute({
 
   // 🔹 While auth is still figuring out who we are, just show a lightweight loading screen
   if (loading) {
-    return <LoadingScreen />;
+    return <LoadingScreen message="Checking your session…" />;
   }
 
   // 🔹 After loading: if there is still no session, bounce to home/login
