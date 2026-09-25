@@ -44,50 +44,60 @@
     -->
     <style>
       html, body { margin: 0; background: #040605; }
+      /* Shared by the HTML splash and React LoadingScreen: no font or JS dependency. */
       .boot {
-        position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center;
-        justify-content: center; overflow: hidden; background: #040605; color: #F4F7F2;
+        position: fixed; inset: 0; display: grid; place-items: center;
+        box-sizing: border-box; overflow: auto; padding: 32px 24px;
+        background: #040605; color: #F4F7F2;
         font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
         -webkit-font-smoothing: antialiased;
       }
-      .boot-glow {
-        position: absolute; left: 50%; top: 50%; width: 70vmin; height: 70vmin; border-radius: 9999px;
-        transform: translate(-50%, -50%);
-        background: radial-gradient(circle, rgba(61,220,132,0.14), rgba(61,220,132,0.04) 45%, transparent 70%);
-        animation: boot-breathe 4s ease-in-out infinite;
+      .boot-content { position: relative; width: min(100%, 360px); text-align: center; }
+      .boot-content::before {
+        content: ""; position: absolute; inset: -80px -24px; pointer-events: none;
+        background: radial-gradient(ellipse, rgba(61,220,132,0.09), transparent 70%);
       }
       .boot-tile {
-        position: relative; display: grid; place-items: center; width: 84px; height: 84px;
-        border-radius: 26px 8px 26px 8px; border: 1px solid rgba(244,247,242,0.4);
+        position: relative; display: grid; place-items: center; width: 64px; height: 64px; margin: 0 auto;
+        box-sizing: border-box; overflow: hidden; border-radius: 22px 8px 22px 8px; border: 1px solid rgba(244,247,242,0.4);
         background: linear-gradient(160deg, #FFFFFF 0%, #E4EAE1 100%);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 6px 18px -6px rgba(61,220,132,0.45);
-        color: #040605; font-weight: 800; font-size: 22px; letter-spacing: 0.08em;
-        animation: boot-pulse 3.2s ease-in-out infinite;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 8px 24px -12px rgba(61,220,132,0.45);
+        color: #040605; font-weight: 800; font-size: 17px; letter-spacing: 0.08em;
       }
-      .boot-name { margin: 32px 0 0; font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 300; line-height: 1; }
-      .boot-sub { margin: 10px 0 0; font-family: ui-monospace, Menlo, monospace; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: #8DF5A8; }
-      .boot-track { position: relative; margin-top: 32px; width: 176px; height: 1px; overflow: hidden; background: rgba(244,247,242,0.08); }
+      .boot-logo { display: block; width: 100%; height: 100%; object-fit: contain; object-position: 50% 52%; transform: scale(1.9); }
+      .boot-name { position: relative; margin: 24px 0 0; font-size: clamp(28px, 4vw, 36px); font-weight: 400; line-height: 1.2; letter-spacing: -0.035em; }
+      .boot-sub { position: relative; margin: 8px 0 0; font-size: 12px; line-height: 1.5; letter-spacing: 0.04em; color: #ABC0B3; }
+      .boot-loading { position: relative; margin: 32px auto 0; max-width: 256px; }
+      .boot-status { margin: 0 0 14px; font-size: 14px; font-weight: 500; line-height: 1.5; color: #E4EAE1; }
+      .boot-track { position: relative; height: 4px; border-radius: 999px; overflow: hidden; background: #24372D; }
       .boot-track::after {
-        content: ""; position: absolute; inset: 0 auto 0 0; width: 33%;
-        background: linear-gradient(90deg, transparent, #B8FF7A, #3DDC84, transparent);
-        animation: boot-sweep 1.6s cubic-bezier(0.16,1,0.3,1) infinite;
+        content: ""; position: absolute; inset: 0 auto 0 0; width: 40%; border-radius: inherit;
+        background: #8DF5A8; animation: boot-sweep 1.5s ease-in-out infinite alternate;
       }
-      @keyframes boot-breathe { 0%,100% { opacity: .7; transform: translate(-50%,-50%) scale(1); } 50% { opacity: 1; transform: translate(-50%,-50%) scale(1.06); } }
-      @keyframes boot-pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.03); } }
-      @keyframes boot-sweep { 0% { transform: translateX(-100%); } 100% { transform: translateX(400%); } }
-      @media (prefers-reduced-motion: reduce) { .boot *, .boot-track::after { animation: none !important; } }
+      .boot-help { min-height: 40px; margin: 16px 0 0; font-size: 12px; line-height: 1.6; color: #ABC0B3; }
+      .boot-help span { visibility: hidden; animation: boot-reveal 0s 12s forwards; }
+      @keyframes boot-sweep { from { transform: translateX(0); } to { transform: translateX(150%); } }
+      @keyframes boot-reveal { to { visibility: visible; } }
+      @media (prefers-reduced-motion: reduce) { .boot-track::after { animation: none; left: 30%; } }
     </style>
   </head>
   <body>
-    <div id="root"
-      ><div class="boot" role="status" aria-label="Loading the All Terrain Tree Service portal">
-        <div class="boot-glow" aria-hidden="true"></div>
-        <div class="boot-tile" aria-hidden="true">ATTS</div>
-        <p class="boot-name">All Terrain</p>
-        <p class="boot-sub">Tree Service · Employee Portal</p>
-        <div class="boot-track" aria-hidden="true"></div>
-      </div
-    ></div>
+    <div id="root">
+      <div class="boot">
+        <div class="boot-content">
+          <div class="boot-tile">
+            <img class="boot-logo" src="/src/assets/atts-logo.webp" alt="ATTS" width="64" height="64" fetchpriority="high" />
+          </div>
+          <p class="boot-name">All Terrain</p>
+          <p class="boot-sub">Tree Service · Employee Portal</p>
+          <div class="boot-loading">
+            <p class="boot-status" role="status">Opening your portal…</p>
+            <div class="boot-track" aria-hidden="true"></div>
+            <p class="boot-help"><span>Taking longer than usual.<br />If this continues, check your connection.</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

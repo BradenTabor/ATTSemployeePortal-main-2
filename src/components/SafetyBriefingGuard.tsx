@@ -18,7 +18,7 @@ export default function SafetyBriefingGuard({ children }: SafetyBriefingGuardPro
   const { mustComplete, isLoading } = useSafetyBriefingStatus();
 
   if (isLoading) {
-    return <LoadingScreen />;
+    return <LoadingScreen message="Checking today’s safety briefing…" />;
   }
 
   if (mustComplete) {
